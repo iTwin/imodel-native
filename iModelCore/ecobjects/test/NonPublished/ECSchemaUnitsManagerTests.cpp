@@ -20,16 +20,10 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-//[TestFixture]
  class ECSchemaUnitsManagerTests : public UnitsTestBase
 {
-public: ECSchemaUnitsManagerTests()
-	{}
-
-
-//public: void TearDownTestCase()
-//	{}
-
+public:
+    ECSchemaUnitsManagerTests() { }
 };
  
  /*====================================================================================**/
@@ -38,11 +32,10 @@ public: ECSchemaUnitsManagerTests()
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhereSupplementalSchemaOverridesDomainSchemaAtPropertyLevel)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_trainingWheelDiameterProp));
-        VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_trainingWheelDiameterProp));
+    VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
@@ -50,9 +43,9 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhere
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaOverrideOfBaseClass)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcWeightProp));
-        VerifyDefaultUnit (L"POUND", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcWeightProp));
+    VerifyDefaultUnit (L"POUND", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -61,11 +54,10 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaOverr
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromPropertyOverridesSupplementalSchema)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_seatPostAngleProp));
-        VerifyDefaultUnit (L"ANGLE_SECOND", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_seatPostAngleProp));
+    VerifyDefaultUnit (L"ANGLE_SECOND", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
@@ -73,62 +65,54 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromPropertyOverrid
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromProperty)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_AreaProp));
-        VerifyDefaultUnit (L"INCH_SQUARED", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_AreaProp));
+    VerifyDefaultUnit (L"INCH_SQUARED", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromClassUsingKOQFromProperty)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_spokeLengthProp));
-        VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_spokeLengthProp));
+    VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromDomainSchemaUsingKOQFromPropertyOnBaseClass)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcDiameterProp));
-        VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcDiameterProp));
+    VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsingKOQFromProperty)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_headSetAngleProp));
-        VerifyDefaultUnit (L"RADIAN", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_headSetAngleProp));
+    VerifyDefaultUnit (L"RADIAN", defaultUnit);
     }
 
  /*====================================================================================**/
 /// <summary></summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsingKOQFromDomainSchema)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_rearWheelDiameterProp));
-        VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_rearWheelDiameterProp));
+    VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
@@ -136,23 +120,20 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsingKOQFromSupplementalSchema)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_trainingWheelDiameterProp));
-        VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_trainingWheelDiameterProp));
+    VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
     }
-
 
  /*====================================================================================**/
 /// <summary></summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-
-
 TEST_F (ECSchemaUnitsManagerTests, GetUnitFromExternalSchemaUsingKOQFromProperty)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_frontWheelPressureProp));
-        VerifyDefaultUnit (L"ATMOSPHERE", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_frontWheelPressureProp));
+    VerifyDefaultUnit (L"ATMOSPHERE", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -161,22 +142,20 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitFromExternalSchemaUsingKOQFromProperty
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnitFromDomainSchemaOverridingExternalSchemaUsingKOQFromProperty)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_rearWheelPressureProp));
-        VerifyDefaultUnit (L"FOOT_OF_H2O_CONVENTIONAL", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_rearWheelPressureProp));
+    VerifyDefaultUnit (L"FOOT_OF_H2O_CONVENTIONAL", defaultUnit);
     }
 
  /*====================================================================================**/
 /// <summary></summary>
 /// <author>Muhammad.Zaighum</author>                             <date>12/12</date>
 /*==============+===============+===============+===============+===============+======*/
-
-
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults1)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucAreaProp));
-        VerifyDefaultUnit (L"FOOT_SQUARED", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucAreaProp));
+    VerifyDefaultUnit (L"FOOT_SQUARED", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -185,9 +164,9 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults1)
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults2)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucVolumeProp));
-        VerifyDefaultUnit (L"FOOT_CUBED", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucVolumeProp));
+    VerifyDefaultUnit (L"FOOT_CUBED", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -196,9 +175,9 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults2)
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults3)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucTemperatureProp));
-        VerifyDefaultUnit (L"DEGREE_FAHRENHEIT", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucTemperatureProp));
+    VerifyDefaultUnit (L"DEGREE_FAHRENHEIT", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -207,10 +186,9 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults3)
 /*==============+===============+===============+===============+===============+======*/
 TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults)
     {
-		Unit defaultUnit;
-		EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucWidthProp));
-        VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
+    Unit defaultUnit;
+    EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucWidthProp));
+    VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
     }
-//#endif
 
 END_BENTLEY_ECOBJECT_NAMESPACE

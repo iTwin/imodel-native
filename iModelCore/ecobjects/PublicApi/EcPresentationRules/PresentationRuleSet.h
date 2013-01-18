@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,6 +20,7 @@ typedef bvector<LabelOverrideP>                      LabelOverrideList;
 typedef bvector<StyleOverrideP>                      StyleOverrideList;
 typedef bvector<GroupingRuleP>                       GroupingRuleList;
 typedef bvector<LocalizationResourceKeyDefinitionP>  LocalizationResourceKeyDefinitionList;
+typedef bvector<UserSettingsGroupP>                  UserSettingsGroupList;
 typedef bvector<CheckBoxRuleP>                       CheckBoxRuleList;
 typedef bvector<RenameNodeRuleP>                     RenameNodeRuleList;
 typedef bvector<SortingRuleP>                        SortingRuleList;
@@ -50,6 +51,7 @@ struct PresentationRuleSet : public RefCountedBase
         CheckBoxRuleList                       m_checkBoxRules;
         RenameNodeRuleList                     m_renameNodeRules;
         SortingRuleList                        m_sortingRules;
+        UserSettingsGroupList                  m_userSettings;
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
@@ -145,6 +147,9 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when localization resource key definition is predefined.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList&  GetLocalizationResourceKeyDefinitions (void) { return m_localizationResourceKeyDefinitions; }
 
+        //! Collection of user settings definitions, that can affect behavior of the hierarchy. These settings will be shown in UserSettingsDialog.
+        ECOBJECTS_EXPORT UserSettingsGroupList&         GetUserSettings (void)            { return m_userSettings;     }
+
         //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
         ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void)           { return m_checkBoxRules;    }
 
@@ -152,7 +157,7 @@ struct PresentationRuleSet : public RefCountedBase
         ECOBJECTS_EXPORT RenameNodeRuleList&            GetRenameNodeRules (void)         { return m_renameNodeRules;  }
 
         //! Collection of rules, which should be used for configuring sorting of ECInstances.
-        ECOBJECTS_EXPORT SortingRuleList&               GetSortingRules (void)            { return m_sortingRules;}
+        ECOBJECTS_EXPORT SortingRuleList&               GetSortingRules (void)            { return m_sortingRules;     }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

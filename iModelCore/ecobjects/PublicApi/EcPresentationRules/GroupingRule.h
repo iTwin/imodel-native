@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -255,7 +255,7 @@ struct PropertyRangeGroupSpecification
             {
             }
 
-        //! Grouping range node label. If not set label will be formated using From and To values.
+        //! Reads specification from xml.
         ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.

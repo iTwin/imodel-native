@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -80,6 +80,7 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)LabelOverride.h \
                              $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
                              $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
+                             $(ecpresentationRulesPublicAPISrc)UserSettingsGroup.h \
                              $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
                              $(ecpresentationRulesPublicAPISrc)SortingRule.h \
                              $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
@@ -194,6 +195,8 @@ $(o)LabelOverride$(oext)                                   : $(baseDir)presentat
 $(o)StyleOverride$(oext)                                   : $(baseDir)presentation/PresentationRules/StyleOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)LocalizationResourceKeyDefinition$(oext)               : $(baseDir)presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)UserSettingsGroup$(oext)                               : $(baseDir)presentation/PresentationRules/UserSettingsGroup.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)GroupingRule$(oext)                                    : $(baseDir)presentation/PresentationRules/GroupingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
