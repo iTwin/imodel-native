@@ -74,7 +74,7 @@ public:
 
     // Formats the ECValue according to UnitSpecification custom attribute on the ECProperty.
     // If instance is non-null and an IECTypeAdapter can be located to perform the formatting, the IECTypeAdapter::ConvertToString() method will be used
-    // Otherwise basic formatting will be applied, ignoring the FormatString property of any DisplayUnitSpecification custom attribute on the ECProperty
+    // The numeric value will be formatted according to the DisplayFormatString property of any DisplayUnitSpecification custom attribute on the ECProperty
     // Returns false if no UnitSpecification present or if an error occurs
     ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance);
     };
