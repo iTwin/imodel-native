@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -55,7 +55,7 @@ ECSchemaPtr   CreateCustomAttributeTestSchema()
     schema->CreateClass(classWithProperties, L"ClassWithProperties");
     classWithProperties->AddBaseClass(*baseClass);
 
-    PrimitiveECPropertyP stringProp;
+    PrimitiveECPropertyP stringProp = NULL;
     EXPECT_EQ(ECOBJECTS_STATUS_Success, classWithProperties->CreatePrimitiveProperty(stringProp, L"StringMember", PRIMITIVETYPE_String));
     EXPECT_EQ(baseStringProp, stringProp->GetBaseProperty());
 

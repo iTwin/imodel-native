@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1368,8 +1368,8 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     baseClass1->CreateArrayProperty(baseStringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String);
     baseClass1->CreateArrayProperty(baseStructProperty, L"StructArrayProperty", structClass);
     
-    PrimitiveECPropertyP longProperty;
-    PrimitiveECPropertyP stringProperty;
+    PrimitiveECPropertyP longProperty = NULL;
+    PrimitiveECPropertyP stringProperty = NULL;
     
     DISABLE_ASSERTS;
     // Primitives overriding primitives
