@@ -167,13 +167,28 @@ TEST_F (SchemaTest, TestsLatestCompatible)
 	schemaContext = ECSchemaReadContext::CreateContext();
 	schemaContext->AddSchemaLocater (*schemaLocater);
 	SchemaKey key(L"Widgets", 01, 00);
-	testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+	testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_LatestCompatible);
 	EXPECT_TRUE(testSchema.IsValid());
 	EXPECT_TRUE(testSchema->GetVersionMajor()==9);
 	EXPECT_TRUE(testSchema->GetVersionMinor()==6);
 }
 
-
+TEST_F (SchemaTest, TestsLatest)
+{
+	ECSchemaPtr testSchema;
+	ECSchemaReadContextPtr   schemaContext;
+	SearchPathSchemaFileLocaterPtr schemaLocater;
+	bvector<WString> searchPaths;
+	searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+	schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+	schemaContext = ECSchemaReadContext::CreateContext();
+	schemaContext->AddSchemaLocater (*schemaLocater);
+	SchemaKey key(L"Widgets", 9, 7);
+	testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+	EXPECT_TRUE(testSchema.IsValid());
+	EXPECT_TRUE(testSchema->GetVersionMajor()==9);
+	EXPECT_TRUE(testSchema->GetVersionMinor()==6);
+}
 TEST_F (SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
 {
 	ECSchemaPtr testSchema;
