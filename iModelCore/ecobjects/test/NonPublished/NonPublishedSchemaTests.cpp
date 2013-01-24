@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: test/NonPublished/NonPublishedSchemaTests.cpp $
-|         $Id: $
+|
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
