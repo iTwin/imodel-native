@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: test/NonPublished/NonPublishedSchemaTests.cpp $
-|
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|         $Id: $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -53,4 +53,37 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         }
     ASSERT_EQ(4, count);
     }
+
+TEST_F (SchemaTest, DISABLED_TestCircularReference)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key(L"CircleSchema", 01, 00);
+    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    EXPECT_FALSE(testSchema.IsValid());
+    }
+
+TEST_F (SchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key(L"Widgets", 9, 7);
+    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    EXPECT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(testSchema->GetVersionMajor()==9);
+    EXPECT_TRUE(testSchema->GetVersionMinor()==6);
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

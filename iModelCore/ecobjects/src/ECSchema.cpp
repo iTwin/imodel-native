@@ -1,10 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/ECSchema.cpp $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
 |
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -1421,6 +1417,8 @@ ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key,
     wchar_t versionString[24];
     if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
         BeStringUtilities::Snwprintf(versionString, 24, L".%02d.*.ecschema.xml", key.m_versionMajor);
+    else if (matchType == SCHEMAMATCHTYPE_Latest)
+        BeStringUtilities::Snwprintf(versionString, 24, L".*.*.ecschema.xml", key.m_versionMajor);
     else
         BeStringUtilities::Snwprintf(versionString, 24, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
 
