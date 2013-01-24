@@ -1507,7 +1507,10 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     schemaOut->m_key.m_checkSum = checkSum;
     
     if (ECOBJECTS_STATUS_DuplicateSchema == schemaContext.AddSchema (*schemaOut))
+        {
+        schemaContext.RemoveSchema(*schemaOut);
         return SCHEMA_READ_STATUS_DuplicateSchema;
+        }
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid        
     WString value;  // used by macro.
@@ -1518,9 +1521,11 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     StopWatch readingSchemaReferences(L"Reading Schema References", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadSchemaReferencesFromXml (*schemaNode, schemaContext)))
         {
+        schemaContext.RemoveSchema(*schemaOut);
         schemaOut = NULL;
         return status;
         }
+
     readingSchemaReferences.Stop();
     LOG.tracev(L"Reading schema references for %ls took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingSchemaReferences.GetElapsedSeconds());
 
@@ -1528,6 +1533,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     StopWatch readingClassStubs(L"Reading class stubs", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassStubsFromXml (*schemaNode, classes, schemaContext)))
         {
+        schemaContext.RemoveSchema(*schemaOut);
         schemaOut = NULL;
         return status;
         }
@@ -1538,6 +1544,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     StopWatch readingClassContents(L"Reading class contents", true);
     if (SCHEMA_READ_STATUS_Success != (status = schemaOut->ReadClassContentsFromXml (classes, schemaContext)))
         {
+        schemaContext.RemoveSchema(*schemaOut);
         schemaOut = NULL;
         return status;
         }
