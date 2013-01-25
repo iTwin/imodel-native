@@ -979,6 +979,7 @@ TEST_F(SchemaReferenceTest, ExpectFailureWithCircularReferences)
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"CircleSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_FALSE (SCHEMA_READ_STATUS_Success == status);
+    EXPECT_FALSE(schema.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
