@@ -54,16 +54,12 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ASSERT_EQ(4, count);
     }
 
-TEST_F (SchemaTest, DISABLED_TestCircularReference)
+TEST_F (SchemaTest, TestCircularReferenceWithLocateSchema)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater (*schemaLocater);
+    schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key(L"CircleSchema", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_FALSE(testSchema.IsValid());
