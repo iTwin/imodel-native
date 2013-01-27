@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -31,7 +31,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL), m_ecPropertyId(0)
     {
     //
     }
@@ -82,9 +82,20 @@ WStringCR ECProperty::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyId ECProperty::GetId () const
     {
-    ECNameHashCodeGenerator::ECHashCode propertyId = GetClass().GetId();
-    ECNameHashCodeGenerator::Update (propertyId, GetName().c_str());
-    return propertyId;
+    BeAssert (0 != m_ecPropertyId);
+    return m_ecPropertyId;
+
+    }
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyId ECProperty::GenerateId () const
+    {
+
+    ECNameHashCodeGenerator::ECHashCode ecPropertyId = GetClass().GetId();
+    ECNameHashCodeGenerator::Update (ecPropertyId, ":");
+    ECNameHashCodeGenerator::Update (ecPropertyId, GetName().c_str());
+    return ecPropertyId;
     }
 
 /*---------------------------------------------------------------------------------**//**

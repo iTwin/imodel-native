@@ -6,7 +6,7 @@
 |       $Date: 2005/11/07 15:38:45 $
 |     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -31,7 +31,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true)
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_ecClassId(0)
     {
     //
     };
@@ -65,10 +65,25 @@ WStringCR ECClass::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassId ECClass::GetId () const
     {
-    ECNameHashCodeGenerator::ECHashCode classId = GetSchema().GetId();
-    ECNameHashCodeGenerator::Update(classId, GetName().c_str());
-    return classId;
+
+    BeAssert (0 != m_ecClassId);
+    return m_ecClassId;
+
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassId ECClass::GenerateId () const
+    {
+    BeAssert (0 == m_ecClassId);
+    ECNameHashCodeGenerator::ECHashCode ecClassId = GetSchema().GetId();
+    ECNameHashCodeGenerator::Update(ecClassId, ":");
+    ECNameHashCodeGenerator::Update(ecClassId, GetName().c_str());
+    return ecClassId;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/

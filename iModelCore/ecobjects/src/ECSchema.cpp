@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -85,9 +85,9 @@ bool ECNameHashCodeGenerator::Update(ECNameHashCodeGenerator::ECHashCode& hashco
 
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * Update the hashcode using ECName. Call InitHashCode() before calling this function
-                                                                                      * @bsimethod                                                        Casey.Mullen   12/11
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/    
+* Update the hashcode using ECName. Call ECNameHashCodeGenerator::Init() before calling this function
+* @bsimethod                                                        Casey.Mullen   12/11
++---------------+---------------+---------------+---------------+---------------+------*/    
 bool ECNameHashCodeGenerator::Update(ECNameHashCodeGenerator::ECHashCode& hashcode, Utf8CP name)
     {
     // There are only 64 possible characters in a valid EC name (if we include ':' from ECClass::GetFullName(),
@@ -310,7 +310,7 @@ void ECValidatedName::SetDisplayLabel (WCharCP label)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false)
+    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
     {
     //
     };
@@ -2337,56 +2337,21 @@ void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSc
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaId ECSchema::GetId() const
     {
-    return m_key.GetId();
-    }
+    BeAssert (0 != m_ecSchemaId);
+    return m_ecSchemaId;
 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECSchema::GenerateIdFromECName(WCharCP schemaName, WCharCP className, WCharCP propertyName)
+ECSchemaId ECSchema::GenerateId() const
     {
-    BeAssert (schemaName != NULL && "schemaName should never be null");
-    if (propertyName != NULL)
-        BeAssert(className != NULL && "className should not be null if propertyName is provided");
 
-    ECNameHashCodeGenerator::ECHashCode hashCode;
-    ECNameHashCodeGenerator::Init(hashCode);
-    if (schemaName != NULL)
-        {
-        ECNameHashCodeGenerator::Update(hashCode, schemaName);
-        if (className != NULL)
-            {
-            ECNameHashCodeGenerator::Update(hashCode, className);
-            if (propertyName != NULL)
-                ECNameHashCodeGenerator::Update(hashCode, propertyName);
-            }
-        }
-    return hashCode;
+    BeAssert (0 == m_ecSchemaId);
+    ECNameHashCodeGenerator::ECHashCode ecSchemaId = ECNameHashCodeGenerator::Compute(GetName().c_str());
+    return ecSchemaId;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECSchema::GenerateIdFromECName(Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
-    {
-    BeAssert (schemaName != NULL && "schemaName should never be null");
-    if (propertyName != NULL)
-        BeAssert(className != NULL && "className should not be null if propertyName is provided");
-
-    ECNameHashCodeGenerator::ECHashCode hashCode;
-    ECNameHashCodeGenerator::Init(hashCode);
-    if (schemaName != NULL)
-        {
-        ECNameHashCodeGenerator::Update(hashCode, schemaName);
-        if (className != NULL)
-            {
-            ECNameHashCodeGenerator::Update(hashCode, className);
-            if (propertyName != NULL)
-                ECNameHashCodeGenerator::Update(hashCode, propertyName);
-            }
-        }
-    return hashCode;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod 
@@ -2636,14 +2601,6 @@ IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer()
 ECObjectsStatus SchemaKey::ParseSchemaFullName (SchemaKeyR key, WCharCP schemaFullName)
     {
     return ECSchema::ParseSchemaFullName (key.m_schemaName, key.m_versionMajor, key.m_versionMinor, schemaFullName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Affan.Khan                      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaId SchemaKey::GetId () const
-    {
-    return ECNameHashCodeGenerator::Compute(m_schemaName.c_str());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
