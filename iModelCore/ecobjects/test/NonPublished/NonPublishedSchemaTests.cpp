@@ -54,7 +54,7 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ASSERT_EQ(4, count);
     }
 
-TEST_F (SchemaTest, DISABLED_TestCircularReference)
+TEST_F (SchemaTest, TestCircularReference)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;

@@ -1763,5 +1763,4 @@ TEST_F (UnitsTest, Formatting)
     // Storage: km Display: miles Format: 0000.###### \"ignored\"
     TestUnitFormatting (L"FromDimension", 123.456, L"0076.712002 ignored mi");
     }
-
 END_BENTLEY_ECOBJECT_NAMESPACE
