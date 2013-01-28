@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -3265,6 +3265,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
     }
 #endif //defined (NEEDSWORK_XML)
 
+#ifdef DGN_IMPORTER_REORG_WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3280,6 +3281,7 @@ Bentley::DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
     {
     return const_cast<Bentley::DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

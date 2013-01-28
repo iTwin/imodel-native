@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,9 +17,6 @@ BENTLEY_TYPEDEFS (BeXmlDom)
 BENTLEY_TYPEDEFS (BeXmlNode)
 
 /*__PUBLISH_SECTION_END__*/
-namespace Bentley { namespace DgnPlatform {
-    struct DgnECInstance;
-} }
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -125,7 +122,9 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
 /*__PUBLISH_SECTION_END__*/
+#ifdef DGN_IMPORTER_REORG_WIP
     virtual Bentley::DgnPlatform::DgnECInstance const*  _GetAsDgnECInstance() const   { return NULL; }
+#endif
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
@@ -249,8 +248,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
 
     // These are provided to avoid the cost of dynamic cast.
+#ifdef DGN_IMPORTER_REORG_WIP
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
+#endif
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
