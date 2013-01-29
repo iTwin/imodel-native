@@ -63,12 +63,21 @@
   <ItemGroup>
     <ClCompile Include="ECObjectsTestPCH.cpp" />
     <ClCompile Include="NonPublished\CalculatedPropertyTests.cpp" />
+    <ClCompile Include="NonPublished\ECSchemaUnitsManagerTests.cpp" />
     <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />
     <ClCompile Include="NonPublished\NonPublishedSchemaTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesTests.cpp" />
+    <ClCompile Include="NonPublished\StopWatch.cpp" />
+    <ClCompile Include="NonPublished\StringEncodingTests.cpp" />
+    <ClCompile Include="NonPublished\TestFixture.cpp" />
+    <ClCompile Include="NonPublished\UnitsTestBase.cpp" />
+    <ClCompile Include="NonPublished\UnitsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
+    <ClInclude Include="NonPublished\StopWatch.h" />
+    <ClInclude Include="NonPublished\TestFixture.h" />
+    <ClInclude Include="NonPublished\UnitsTestBase.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="NonPublishedTests.mke" />
