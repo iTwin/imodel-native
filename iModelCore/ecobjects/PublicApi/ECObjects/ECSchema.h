@@ -1326,9 +1326,10 @@ struct SchemaKey
         return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
         }
 /*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT WStringCR GetName() const {return m_schemaName;}
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
-    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
-    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
+                      UInt32 GetVersionMajor() const { return m_versionMajor; };
+                      UInt32 GetVersionMinor() const { return m_versionMinor; };
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1552,12 +1553,13 @@ protected:
     // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
-
+public:
+                ECObjectsStatus DropAllReferencesOfSchema(SchemaKeyCR key);
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR);
-    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (ECSchemaR);
+    ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
+    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
