@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceXMLTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -761,5 +761,40 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString
     Utf8CP actualString = actualValue.GetUtf8CP ();
     EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (InstanceSerializationTest, EmptyPropertyTags)
+    {
+    // Ensure native impl produces same values as managed:
+    // "<StringProperty />" => L"", not a NULL string
+    // "<IntOrDoubleProperty />" => NULL
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+
+    ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
+    WCharCP instanceXml =   L"<TestClass xmlns=\"SimpleTest_FirstSchema.01.00\">"
+                            L"  <StringMember />"
+                            L"  <DoubleMember />"
+                            L"  <LongMember />"
+                            L"</TestClass>";
+
+    IECInstancePtr instance;
+    IECInstance::ReadFromXmlString (instance, instanceXml, *instanceContext);
+
+    ECValue v;
+    EXPECT_EQ (0, instance->GetValue (v, L"StringMember"));
+    EXPECT_EQ (false, v.IsNull());
+    EXPECT_EQ (L'\0', *v.GetString());
+
+    EXPECT_EQ (0, instance->GetValue (v, L"DoubleMember"));
+    EXPECT_TRUE (v.IsNull());
+
+    EXPECT_EQ (0, instance->GetValue (v, L"LongMember"));
+    EXPECT_TRUE (v.IsNull());
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
