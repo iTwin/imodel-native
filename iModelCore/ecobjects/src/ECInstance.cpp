@@ -1869,7 +1869,7 @@ bool                         IECInstance::GetInstanceLabelPropertyName (WStringR
         return true;
 
     const WCharCP* standardName = s_standardInstanceLabelPropertyNames;
-    while (standardName)
+    while (*standardName)
         {
         if (NULL != ecClass.GetPropertyP (*standardName))
             {
