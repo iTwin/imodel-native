@@ -1831,55 +1831,56 @@ WString                         IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WCharCP getInstanceLabelPropertyNameFromClass (ECClassCR ecClass)
+static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClassCR ecClass)
     {
     IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"InstanceLabelSpecification");
     if (caInstance.IsValid())
         {
         ECValue value;
         if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
-            return value.GetString();
+            {
+            propertyName = value.GetString();
+            return true;
+            }
         }
 
     FOR_EACH (ECClassCP baseClass, ecClass.GetBaseClasses())
         {
-        WCharCP propName = getInstanceLabelPropertyNameFromClass (*baseClass);
-        if (NULL != propName)
-            return propName;
+        if (getInstanceLabelPropertyNameFromClass (propertyName, *baseClass))
+            return true;
         }
 
-    return NULL;
+    return false;
     }
+
+// ordered by precedence
+static const WCharCP s_standardInstanceLabelPropertyNames[] =
+    {
+    L"DisplayLabel", L"DISPLAYLABEL", L"displaylabel", L"Name", L"NAME", L"name", NULL
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP                         IECInstance::GetInstanceLabelPropertyName () const
+bool                         IECInstance::GetInstanceLabelPropertyName (WStringR propName) const
     {
     ECClassCR ecClass = GetClass();
-    WCharCP propName = getInstanceLabelPropertyNameFromClass (ecClass);
-    if (NULL != propName)
-        return propName;
+    if (getInstanceLabelPropertyNameFromClass (propName, ecClass))
+        return true;
 
-    if (NULL != ecClass.GetPropertyP (L"DisplayLabel"))
-        return L"DisplayLabel";
+    const WCharCP* standardName = s_standardInstanceLabelPropertyNames;
+    while (standardName)
+        {
+        if (NULL != ecClass.GetPropertyP (*standardName))
+            {
+            propName = *standardName;
+            return true;
+            }
 
-    if (NULL != ecClass.GetPropertyP (L"DISPLAYLABEL"))
-        return L"DISPLAYLABEL";
+        ++standardName;
+        }
 
-    if (NULL != ecClass.GetPropertyP (L"displaylabel"))
-        return L"displaylabel";
-   
-    if (NULL != ecClass.GetPropertyP (L"Name"))
-        return L"Name";
-
-    if (NULL != ecClass.GetPropertyP (L"NAME"))
-        return L"NAME";
-
-    if (NULL != ecClass.GetPropertyP (L"name"))
-        return L"name";
-
-    return NULL;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1887,12 +1888,12 @@ WCharCP                         IECInstance::GetInstanceLabelPropertyName () con
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayLabel) const
     {
-    WCharCP propertyName = GetInstanceLabelPropertyName ();
-    if (NULL == propertyName)
+    WString propertyName;
+    if (!GetInstanceLabelPropertyName (propertyName))
         return ECOBJECTS_STATUS_Error;
 
     ECN::ECValue ecValue;
-    if (SUCCESS == GetValue (ecValue, propertyName) && !ecValue.IsNull())
+    if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
         {
         displayLabel = ecValue.GetString();
         return ECOBJECTS_STATUS_Success;
@@ -1914,14 +1915,14 @@ ECObjectsStatus                 IECInstance::GetDisplayLabel (WString& displayLa
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLabel)    
     {
-    WCharCP propertyName = GetInstanceLabelPropertyName ();
-    if (NULL == propertyName)
+    WString propertyName;
+    if (!GetInstanceLabelPropertyName (propertyName))
         return ECOBJECTS_STATUS_Error;
 
     ECN::ECValue ecValue;
-    ecValue.SetString (displayLabel);
+    ecValue.SetString (displayLabel, false);
 
-    if (SUCCESS == SetValue (propertyName, ecValue))
+    if (SUCCESS == SetValue (propertyName.c_str(), ecValue))
         return ECOBJECTS_STATUS_Success;
 
     return  ECOBJECTS_STATUS_Error;

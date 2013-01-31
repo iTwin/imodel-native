@@ -90,7 +90,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 struct IECInstance : RefCountedBase
     {
 private:
-    WCharCP GetInstanceLabelPropertyName () const;
+    bool                        GetInstanceLabelPropertyName (WString& propertyName) const;
 
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
