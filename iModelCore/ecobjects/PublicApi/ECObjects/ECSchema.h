@@ -491,7 +491,6 @@ public:
 public:
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECPropertyId       GetId() const;
-    ECOBJECTS_EXPORT ECPropertyId       GenerateId() const;
     //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     // ECClass implementation will index property by name so publicly name can not be reset
@@ -830,8 +829,6 @@ public:
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert (0 == m_ecClassId); m_ecClassId = id; };
     ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != 0; };
-
-    ECOBJECTS_EXPORT ECClassId GenerateId() const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -1688,7 +1685,6 @@ public:
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECSchemaId id) { BeAssert (0 == m_ecSchemaId); m_ecSchemaId = id; };
     ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
-    ECOBJECTS_EXPORT ECSchemaId GenerateId() const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

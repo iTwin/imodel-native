@@ -84,18 +84,6 @@ ECPropertyId ECProperty::GetId () const
     {
     BeAssert (0 != m_ecPropertyId);
     return m_ecPropertyId;
-
-    }
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                      Affan.Khan        12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyId ECProperty::GenerateId () const
-    {
-
-    ECNameHashCodeGenerator::ECHashCode ecPropertyId = GetClass().GetId();
-    ECNameHashCodeGenerator::Update (ecPropertyId, ":");
-    ECNameHashCodeGenerator::Update (ecPropertyId, GetName().c_str());
-    return ecPropertyId;
     }
 
 /*---------------------------------------------------------------------------------**//**

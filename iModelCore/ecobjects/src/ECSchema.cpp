@@ -2339,19 +2339,7 @@ ECSchemaId ECSchema::GetId() const
     {
     BeAssert (0 != m_ecSchemaId);
     return m_ecSchemaId;
-
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaId ECSchema::GenerateId() const
-    {
-
-    BeAssert (0 == m_ecSchemaId);
-    ECNameHashCodeGenerator::ECHashCode ecSchemaId = ECNameHashCodeGenerator::Compute(GetName().c_str());
-    return ecSchemaId;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod 

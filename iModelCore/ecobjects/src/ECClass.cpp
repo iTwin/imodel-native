@@ -71,19 +71,6 @@ ECClassId ECClass::GetId () const
 
     }
 
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                      Affan.Khan        12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId ECClass::GenerateId () const
-    {
-    BeAssert (0 == m_ecClassId);
-    ECNameHashCodeGenerator::ECHashCode ecClassId = GetSchema().GetId();
-    ECNameHashCodeGenerator::Update(ecClassId, ":");
-    ECNameHashCodeGenerator::Update(ecClassId, GetName().c_str());
-    return ecClassId;
-    }
-
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
