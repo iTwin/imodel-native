@@ -227,9 +227,9 @@ public:
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
+    ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
-    ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
+    ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) const;
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -533,8 +533,6 @@ protected:
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
-
-    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
@@ -587,11 +585,12 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
 
-    // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
-    // do other similiar classes deal with this.
-    ECOBJECTS_EXPORT PrimitiveECPropertyP GetAsPrimitiveProperty () const;    // FUSION_WIP: this removes const!
-    ECOBJECTS_EXPORT ArrayECPropertyP     GetAsArrayProperty () const;        //  "
-    ECOBJECTS_EXPORT StructECPropertyP    GetAsStructProperty () const;       //  "
+    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const;
+    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP ();
+    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const;
+    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP ();
+    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const;
+    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP ();
 };
 
 //=======================================================================================
@@ -617,7 +616,6 @@ protected:
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
 
 public:
     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;

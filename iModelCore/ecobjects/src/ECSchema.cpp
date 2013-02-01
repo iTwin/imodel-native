@@ -1675,12 +1675,12 @@ SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, EC
         {
         if (prop->GetIsStruct())
             {
-            StructECPropertyP structProperty = prop->GetAsStructProperty();
+            StructECPropertyP structProperty = prop->GetAsStructPropertyP();
             WriteClass(parentNode, structProperty->GetType(), context);
             }
         else if (prop->GetIsArray())
             {
-            ArrayECPropertyP arrayProperty = prop->GetAsArrayProperty();
+            ArrayECPropertyP arrayProperty = prop->GetAsArrayPropertyP();
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
                 WriteClass(parentNode, *(arrayProperty->GetStructElementType()), context);

@@ -475,7 +475,7 @@ static ECPropertyP getProperty  (ECClassCR ecClass, WCharCP accessor, wchar_t* b
         if (NULL == prop)
             return NULL;
 
-        StructECPropertyP structProperty = prop->GetAsStructProperty();
+        StructECPropertyP structProperty = prop->GetAsStructPropertyP();
 
         if (NULL == structProperty)
             return NULL;
@@ -2365,12 +2365,12 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     PrimitiveECPropertyP    primitiveProperty;
     ArrayECPropertyP        arrayProperty;
     StructECPropertyP       structProperty;
-    if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
+    if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
         return ReadPrimitivePropertyValue (primitiveProperty, ecInstance, baseAccessString, propertyValueNode);
                 //Above is good, if SkipToElementEnd() is returned from ReadPrimitiveValue.
-    else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
+    else if (NULL != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
         return ReadArrayPropertyValue (arrayProperty, ecInstance, baseAccessString, propertyValueNode);
-    else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
+    else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
         return ReadEmbeddedStructPropertyValue (structProperty, ecInstance, baseAccessString, propertyValueNode);
 
     // should be one of those!
@@ -2856,11 +2856,11 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
         StructECPropertyP       structProperty;
         InstanceWriteStatus     ixwStatus;
             
-        if (NULL != (primitiveProperty = ecProperty->GetAsPrimitiveProperty()))
+        if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
             ixwStatus = WritePrimitivePropertyValue (*primitiveProperty, ecInstance, baseAccessString, rootNode);
-        else if (NULL != (arrayProperty = ecProperty->GetAsArrayProperty()))
+        else if (NULL != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
             ixwStatus = WriteArrayPropertyValue (*arrayProperty, ecInstance, baseAccessString, rootNode);
-        else if (NULL != (structProperty = ecProperty->GetAsStructProperty()))
+        else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
             {
             ICustomECStructSerializerP customECStructSerializerP;
             if (NULL != (customECStructSerializerP = customStructSerializerMgr.GetCustomSerializer (structProperty, ecInstance)))
