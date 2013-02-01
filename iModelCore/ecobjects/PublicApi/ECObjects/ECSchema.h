@@ -74,19 +74,6 @@ public:
     void                SetDisplayLabel (WCharCP label);
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                        Affan.Khan   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECNameHashCodeGenerator
-    {
-public:
-    typedef UInt64 ECHashCode;
-    static void         Init(ECHashCode& hashcode);
-    static bool         Update(ECHashCode& hashcode, WCharCP name);
-    static bool         Update(ECHashCode& hashcode, Utf8CP name);
-    static ECHashCode   Compute(WCharCP name);
-    static ECHashCode   Compute(Utf8CP name);
-    };
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
