@@ -173,12 +173,6 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-/*__PUBLISH_SECTION_END__*/
-// NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
-// this is overkill for the native implementation.  Alternatively we could have a single ECProperty class that could act as primitive/struct/array or we can take the
-// appoach I've implemented below.
-/*__PUBLISH_SECTION_START__*/
-
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;

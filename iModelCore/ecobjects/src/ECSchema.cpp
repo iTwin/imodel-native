@@ -193,30 +193,16 @@ ECSchema::ECSchema ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::~ECSchema ()
     {
-    // NEEDSWORK make sure everything is destroyed
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;
-        ECRelationshipClassP relClass = ecClass ? ecClass->GetRelationshipClassP() : NULL;
         classIterator = m_classMap.erase(classIterator);
-        if (NULL != relClass)
-            delete relClass;
-        else
-            delete ecClass;
+        delete ecClass;
         }
 
     BeAssert (m_classMap.empty());
-
-    /*
-    for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
-        {
-        CECSchemaReference & schemaRef = *sit;
-        if (NULL != schemaRef.m_pECSchema)
-            delete schemaRef.m_pECSchema; //needswork: are we sure that something else isn't holding it... we need a DgnECManager
-        }
-    m_referencedSchemas.clear();*/
 
     m_refSchemaList.clear();
     memset (this, 0xececdead, sizeof(this));

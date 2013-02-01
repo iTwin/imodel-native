@@ -37,7 +37,6 @@ ECClass::ECClass (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::~ECClass ()
     {
-    // NEEDSWORK make sure everything is destroyed
     m_propertyList.clear();
     
     for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
