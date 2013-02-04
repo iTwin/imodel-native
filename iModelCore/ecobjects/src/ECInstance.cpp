@@ -2016,15 +2016,13 @@ BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (In
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString              ConvertByteArrayToString (const byte *byteData, size_t numBytes)
+void              convertByteArrayToString (WStringR outString, const byte *byteData, size_t numBytes)
     {
     static const wchar_t    base64Chars[] = {L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
 
-    if (0 == numBytes)
-        return L"";
+    outString.clear();
 
     // from each 3 bytes we get 4 output characters, rounded up.
-    WString    outString;
     for (size_t iByte=0; iByte < numBytes; iByte += 3)
         {
         UInt32      nextThreeBytes = byteData[iByte] | (byteData[iByte+1] << 8) | (byteData[iByte+2] << 16);
@@ -2041,20 +2039,18 @@ static WString              ConvertByteArrayToString (const byte *byteData, size
             nextThreeBytes = nextThreeBytes >> 6;
             }
         }
-
-    return outString;
     }
 
-typedef std::vector<byte>   T_ByteArray;
+typedef bvector<byte>   T_ByteArray;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static InstanceReadStatus   ConvertStringToByteArray (T_ByteArray& byteData, WCharCP stringData)
+bool   convertStringToByteArray (T_ByteArray& byteData, WCharCP stringData)
     {
     // the length of stringData should be a muttiple of four.
     size_t  stringLen = wcslen (stringData);
     if (0 != (stringLen % 4))
-        return INSTANCE_READ_STATUS_BadBinaryData;
+        return false;
 
     // from each 4 characters we get 3 byte values.
     for (size_t iPos=0; iPos < stringLen; iPos+= 4)
@@ -2080,13 +2076,13 @@ static InstanceReadStatus   ConvertStringToByteArray (T_ByteArray& byteData, WCh
                 {
                 // = should only appear in the last two characters of the string.
                 if (stringLen - (iPos + jPos) > 2)
-                    return INSTANCE_READ_STATUS_BadBinaryData;
+                    return false;
                 numBytesToPush = jPos-1;
                 break;
                 }
             else
                 {
-                return INSTANCE_READ_STATUS_BadBinaryData;
+                return false;
                 }
             }
 
@@ -2098,7 +2094,7 @@ static InstanceReadStatus   ConvertStringToByteArray (T_ByteArray& byteData, WCh
             byteData.push_back (*(bytes+2));
         }
 
-    return INSTANCE_READ_STATUS_Success;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2605,7 +2601,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             if (BEXML_Success != primitiveValueNode.GetContent (propertyValueString))
                 return INSTANCE_READ_STATUS_Success;
 
-            if (INSTANCE_READ_STATUS_Success != ConvertStringToByteArray (byteArray, propertyValueString.c_str ()))
+            if (!convertStringToByteArray (byteArray, propertyValueString.c_str ()))
                 {
                 LOG.warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
                 return INSTANCE_READ_STATUS_TypeMismatch;
@@ -2935,7 +2931,8 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
             const byte* byteData; 
             if (NULL != (byteData = ecValue.GetBinary (numBytes)))
                 {
-                WString    byteString = ConvertByteArrayToString (byteData, numBytes);
+                WString    byteString;
+                convertByteArrayToString (byteString, byteData, numBytes);
                 propertyValueNode.SetContentFast (byteString.c_str());
                 }
             return INSTANCE_WRITE_STATUS_Success;
@@ -3311,6 +3308,64 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
         return schema;
 
     return &m_fallBackSchema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool initializeDefaultValues (IECInstanceR instance, ECClassCR ecClass, WCharCP accessStringPrefix)
+    {
+    ECValue defaultValue;
+    IECInstancePtr custAttr;
+    bool setAllPropertiesSuccessfully = true;
+    FOR_EACH (ECPropertyCP ecprop, ecClass.GetProperties(true))
+        {
+        PrimitiveECPropertyCP primProp = ecprop->GetAsPrimitiveProperty();
+        StructECPropertyCP structProp;
+
+        if (NULL != primProp && (custAttr = primProp->GetCustomAttribute (L"UserDefinedPropertySpecification")).IsValid()
+            && ECOBJECTS_STATUS_Success == custAttr->GetValue (defaultValue, L"DefaultValue") && defaultValue.ConvertToPrimitiveType (primProp->GetType())
+           )
+            {
+            WString localAccessString;
+            if (NULL != accessStringPrefix)
+                {
+                localAccessString.append (accessStringPrefix);
+                localAccessString.append (1, '.');
+                localAccessString.append (primProp->GetName());
+                }
+
+            if (ECOBJECTS_STATUS_Success != instance.SetValue (!localAccessString.empty() ? localAccessString.c_str() : primProp->GetName().c_str(), defaultValue))
+                setAllPropertiesSuccessfully = false;
+            }
+        else if (NULL != (structProp = ecprop->GetAsStructProperty()))
+            {
+            WString localAccessString;
+            if (NULL != accessStringPrefix)
+                {
+                localAccessString.append (accessStringPrefix);
+                localAccessString.append (1, '.');
+                localAccessString.append (structProp->GetName());
+                }
+
+            localAccessString.append (ecprop->GetName());
+            if (!initializeDefaultValues (instance, structProp->GetType(), !localAccessString.empty() ? localAccessString.c_str() : structProp->GetName().c_str()))
+                setAllPropertiesSuccessfully = false;
+            }
+        }
+
+    return setAllPropertiesSuccessfully;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::InitializeDefaultValues()
+    {
+    if (!GetClass().GetSchema().IsDefined (L"IsUserDefinedSchema"))
+        return true;
+    else
+        return initializeDefaultValues (*this, GetClass(), NULL);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

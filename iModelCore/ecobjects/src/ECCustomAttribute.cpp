@@ -106,10 +106,7 @@ ECCustomAttributeCollection& returnList
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::IsDefined
-(
-WStringCR className
-) 
+bool IECCustomAttributeContainer::IsDefined (WStringCR className) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -133,10 +130,7 @@ WStringCR className
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::IsDefined
-(
-ECClassCR classDefinition
-) 
+bool IECCustomAttributeContainer::IsDefined (ECClassCR classDefinition) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
