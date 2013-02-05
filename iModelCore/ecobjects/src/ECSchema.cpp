@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,132 +27,6 @@ extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVe
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 
-
-/*---------------------------------------------------------------------------------**//**
-* Initialize hashcode variable
-* @bsimethod                                                        Affan.Khan   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void ECNameHashCodeGenerator::Init(ECNameHashCodeGenerator::ECHashCode& hashcode)
-    {
-    hashcode = 0; // Initializing to a 64bit prime number can further enhance strength of this hash
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Update the hashcode using ECName. Call InitHashCode() before calling this function
-* @bsimethod                                                        Casey.Mullen   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/    
-bool ECNameHashCodeGenerator::Update(ECNameHashCodeGenerator::ECHashCode& hashcode, WCharCP name)
-    {
-    // There are only 64 possible characters in a valid EC name (if we include ':' from ECClass::GetFullName(),
-    // and thus they can all be represented in 6 bits.
-    // We map the possible characters to numbers from 0 to 63
-    // We add one number to the hashcode, shift everything up by 6 bits, then add the next.
-    // If bits start rolling off the top, we recycle them at the bottom... exclusive-or-ing them with the lowest bits.
-    // Thus for names of 10 or fewer characters, the hash is always unique (and actually loses no information)
-    // For longer names, duplication is theoretically possible, but highly unlikely
-    if (NULL == name)
-        return false;
-
-    if (hashcode != 0) // we are chaining up hash to another string adding  ':' as prefix
-        {
-        unsigned char high6bits = hashcode >> 58;
-        hashcode = (hashcode << 6) ^ 0 ^ high6bits;
-        }
-
-    for (size_t i = 0; i < wcslen(name); ++i)
-        {
-        unsigned char high6bits = hashcode >> 58; // Get the 6 bits that we are going to roll off the top, and recycle them into the low bits
-        char w = (char)name[i];
-        char d;
-        if (w == 95)                  // _
-            d = 1;
-        else if (w >= 48 && w <= 57)  // 0 - 9
-            d = w - 46;
-        else if (w >= 65 && w <= 90)  // A - Z
-            d = w - 53;
-        else if (w >= 97 && w <= 122) // a - z
-            d = w - 59;
-        else if (w == 58)             // :
-            d = 0;
-        else
-            d = 0; // illegal char... this should not happen. Log it.
-
-        hashcode = (hashcode << 6) ^ d ^ high6bits;
-        //wprintf(L"name=%ls, i=%2d, id=%I64x\n", name, i, id);
-        }
-    return true;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-                                                                                      * Update the hashcode using ECName. Call InitHashCode() before calling this function
-                                                                                      * @bsimethod                                                        Casey.Mullen   12/11
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/    
-bool ECNameHashCodeGenerator::Update(ECNameHashCodeGenerator::ECHashCode& hashcode, Utf8CP name)
-    {
-    // There are only 64 possible characters in a valid EC name (if we include ':' from ECClass::GetFullName(),
-    // and thus they can all be represented in 6 bits.
-    // We map the possible characters to numbers from 0 to 63
-    // We add one number to the hashcode, shift everything up by 6 bits, then add the next.
-    // If bits start rolling off the top, we recycle them at the bottom... exclusive-or-ing them with the lowest bits.
-    // Thus for names of 10 or fewer characters, the hash is always unique (and actually loses no information)
-    // For longer names, duplication is theoretically possible, but highly unlikely
-    if (NULL == name)
-        return false;
-    
-    if (hashcode != 0) // we are chaining up hash to another string adding  ':' as prefix
-        {
-        unsigned char high6bits = hashcode >> 58;
-        hashcode = (hashcode << 6) ^ 0 ^ high6bits;
-        }
-
-    for (size_t i = 0; i < strlen(name); ++i)
-        {
-        unsigned char high6bits = hashcode >> 58; // Get the 6 bits that we are going to roll off the top, and recycle them into the low bits
-        char w = name[i];
-        char d;
-        if (w == 95)                  // _
-            d = 1;
-        else if (w >= 48 && w <= 57)  // 0 - 9
-            d = w - 46;
-        else if (w >= 65 && w <= 90)  // A - Z
-            d = w - 53;
-        else if (w >= 97 && w <= 122) // a - z
-            d = w - 59;
-        else if (w == 58)             // :
-            d = 0;
-        else
-            d = 0; // illegal char... this should not happen. Log it.
-
-        hashcode = (hashcode << 6) ^ d ^ high6bits;
-        //wprintf(L"name=%ls, i=%2d, id=%I64x\n", name, i, id);
-        }
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Generate hashcode for a given ECName.
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECNameHashCodeGenerator::ECHashCode ECNameHashCodeGenerator::Compute(WCharCP name)
-    {
-    ECNameHashCodeGenerator::ECHashCode hashCode;
-    Init(hashCode);
-    Update(hashCode, name);
-    return hashCode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Generate hashcode for a given ECName.
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECNameHashCodeGenerator::ECHashCode ECNameHashCodeGenerator::Compute(Utf8CP name)
-    {
-    ECNameHashCodeGenerator::ECHashCode hashCode;
-    Init(hashCode);
-    Update(hashCode, name);
-    return hashCode;
-    }
 /*---------------------------------------------------------------------------------**//**
 * Currently this is only used by ECValidatedName and ECSchema.
 * @bsimethod                                                    Paul.Connelly   09/12
@@ -318,7 +192,7 @@ void ECValidatedName::SetDisplayLabel (WCharCP label)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false)
+    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
     {
     //
     };
@@ -2345,55 +2219,8 @@ void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSc
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaId ECSchema::GetId() const
     {
-    return m_key.GetId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECSchema::GenerateIdFromECName(WCharCP schemaName, WCharCP className, WCharCP propertyName)
-    {
-    BeAssert (schemaName != NULL && "schemaName should never be null");
-    if (propertyName != NULL)
-        BeAssert(className != NULL && "className should not be null if propertyName is provided");
-
-    ECNameHashCodeGenerator::ECHashCode hashCode;
-    ECNameHashCodeGenerator::Init(hashCode);
-    if (schemaName != NULL)
-        {
-        ECNameHashCodeGenerator::Update(hashCode, schemaName);
-        if (className != NULL)
-            {
-            ECNameHashCodeGenerator::Update(hashCode, className);
-            if (propertyName != NULL)
-                ECNameHashCodeGenerator::Update(hashCode, propertyName);
-            }
-        }
-    return hashCode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECSchema::GenerateIdFromECName(Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
-    {
-    BeAssert (schemaName != NULL && "schemaName should never be null");
-    if (propertyName != NULL)
-        BeAssert(className != NULL && "className should not be null if propertyName is provided");
-
-    ECNameHashCodeGenerator::ECHashCode hashCode;
-    ECNameHashCodeGenerator::Init(hashCode);
-    if (schemaName != NULL)
-        {
-        ECNameHashCodeGenerator::Update(hashCode, schemaName);
-        if (className != NULL)
-            {
-            ECNameHashCodeGenerator::Update(hashCode, className);
-            if (propertyName != NULL)
-                ECNameHashCodeGenerator::Update(hashCode, propertyName);
-            }
-        }
-    return hashCode;
+    BeAssert (0 != m_ecSchemaId);
+    return m_ecSchemaId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2644,14 +2471,6 @@ IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer()
 ECObjectsStatus SchemaKey::ParseSchemaFullName (SchemaKeyR key, WCharCP schemaFullName)
     {
     return ECSchema::ParseSchemaFullName (key.m_schemaName, key.m_versionMajor, key.m_versionMinor, schemaFullName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Affan.Khan                      12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaId SchemaKey::GetId () const
-    {
-    return ECNameHashCodeGenerator::Compute(m_schemaName.c_str());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

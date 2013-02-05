@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -193,16 +193,11 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
             BeStringUtilities::Utf8ToWChar (buf, m_utf8);
         else if (NULL != m_utf16)
             BeStringUtilities::Utf16ToWChar (buf, m_utf16);
-
-        if (!buf.empty())
-            {
-            m_wchar = BeStringUtilities::Wcsdup(buf.c_str());
-            setDataOwned (flags, ECVALUE_DATA_WChar, true);
-            }
         else
-            {
-            setDataOwned (flags, ECVALUE_DATA_WChar, false);
-            }
+            return NULL;
+
+        m_wchar = BeStringUtilities::Wcsdup(buf.c_str());
+        setDataOwned (flags, ECVALUE_DATA_WChar, true);
         }
             
     return m_wchar;

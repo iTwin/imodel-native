@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,19 +74,6 @@ public:
     void                SetDisplayLabel (WCharCP label);
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                        Affan.Khan   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECNameHashCodeGenerator
-    {
-public:
-    typedef UInt64 ECHashCode;
-    static void         Init(ECHashCode& hashcode);
-    static bool         Update(ECHashCode& hashcode, WCharCP name);
-    static bool         Update(ECHashCode& hashcode, Utf8CP name);
-    static ECHashCode   Compute(WCharCP name);
-    static ECHashCode   Compute(Utf8CP name);
-    };
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
@@ -444,6 +431,7 @@ friend struct ECClass;
 private:
     WString                 m_description;
     ECValidatedName         m_validatedName;
+    mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
     bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     ECClassCR               m_class;
@@ -482,9 +470,14 @@ public:
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
 
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
+
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert (0 == m_ecPropertyId); m_ecPropertyId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecPropertyId != 0; };
+
 /*__PUBLISH_SECTION_START__*/
 public:
-    //! Return unique id that is computed using the schemaName:className:propertyName.
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECPropertyId       GetId() const;
     //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
@@ -761,6 +754,7 @@ private:
     mutable WString                 m_fullName;
     WString                         m_description;
     ECValidatedName                 m_validatedName;
+    mutable ECClassId               m_ecClassId;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -819,10 +813,15 @@ protected:
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
 
+public:
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert (0 == m_ecClassId); m_ecClassId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != 0; };
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    //! Return unique id that is computed using the schemaName:className.
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECClassId             GetId() const;
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     //! Used to avoid dynamic_cast
@@ -1326,7 +1325,7 @@ struct SchemaKey
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
     ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
     ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
-    ECOBJECTS_EXPORT ECSchemaId GetId () const;
+
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1620,6 +1619,7 @@ private:
     SchemaKey               m_key;
     WString                 m_namespacePrefix;
     WString                 m_displayLabel;
+    mutable ECSchemaId      m_ecSchemaId;
     WString                 m_description;
     ECClassContainer        m_classContainer;
 
@@ -1669,6 +1669,11 @@ private:
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
+public:
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECSchemaId id) { BeAssert (0 == m_ecSchemaId); m_ecSchemaId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
@@ -1676,7 +1681,7 @@ public:
     ECOBJECTS_EXPORT void               DebugDump() const;
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
-    //! Return unique id that is computed using the schema name.
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECSchemaId         GetId() const;
     //! Get a unique id base on schema name.
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
@@ -1973,9 +1978,6 @@ public:
 
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName
     ECOBJECTS_EXPORT ECSchemaP FindSchemaP (SchemaKeyCR schema, SchemaMatchType matchType);
-
-    ECOBJECTS_EXPORT static Int64 GenerateIdFromECName(WCharCP schemaName, WCharCP className, WCharCP propertyName);
-    ECOBJECTS_EXPORT static Int64 GenerateIdFromECName(Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
     //!Set the schema to be immutable. Immutable schema cannot be modified.
     ECOBJECTS_EXPORT void   SetImmutable();
