@@ -24,18 +24,19 @@ struct RefPtrComparer
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename ProviderType, typename ContainerType>
-void            ECPresentationManager::CheckAndAddProviderFromList (ProviderType & provider, ContainerType& providerList)
+bool            ECPresentationManager::CheckAndAddProviderFromList (ProviderType & provider, ContainerType& providerList)
     {
     if (providerList.empty())
         {
         providerList.push_back(&provider);
-        return;
+        return false;
         }
     RefCountedPtr <ProviderType> providerPtr (&provider);
     typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
     if (iter != providerList.end() && iter->get() == &provider)
-        return;
+        return false;
     providerList.insert (iter, &provider);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -305,11 +306,47 @@ WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tabl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIDataContextCP ECPresentationManager::GetSelection (void const* eventHub, bool subSelection)
+    {
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        {
+        if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
+            {
+            IAUIDataContextCP dataContext = (*iter)->_GetSelection (subSelection);
+            if (NULL == dataContext)
+                continue;
+
+            ECInstanceIterableCP iterable = dataContext->GetInstanceIterable();
+            if (NULL == iterable || iterable->begin() == iterable->end())
+                {
+                delete dataContext;
+                continue;
+                }
+
+            return dataContext;
+            }
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool sortECSelectionListenersByPriority (RefCountedPtr<ECSelectionListener> x, RefCountedPtr<ECSelectionListener> y)
+    {
+    return (x->GetPriority () > y->GetPriority ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RegisterSelectionHook (ECSelectionListener& listener)
     {
-    CheckAndAddProviderFromList (listener, m_selecitonListeners);
+    if (CheckAndAddProviderFromList (listener, m_selecitonListeners))
+        std::sort (m_selecitonListeners.begin(), m_selecitonListeners.end(), sortECSelectionListenersByPriority);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -328,7 +365,7 @@ void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR
     void const* eventHub = selectionEvent.GetEventHub();
     for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
         {
-        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+        if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             (*iter)->_OnSelection(selectionEvent);
         }
     }
@@ -341,7 +378,7 @@ void            ECPresentationManager::TriggerSubSelectionEvent (ECSelectionEven
     void const* eventHub = selectionEvent.GetEventHub();
     for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
         {
-        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+        if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             (*iter)->_OnSubSelection(selectionEvent);
         }
     }
