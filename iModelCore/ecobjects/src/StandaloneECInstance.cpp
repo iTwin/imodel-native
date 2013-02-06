@@ -1176,7 +1176,18 @@ bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
     {
     return GetClassLayout().IsPropertyReadOnly (propertyIndex);
     }
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     09/09
++---------------+---------------+---------------+---------------+---------------+------*/        
+StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, UInt32 size)
+    {
+    StandaloneECInstanceP instance = new StandaloneECInstance (*this, data, size);
+    instance->SetUsingSharedMemory ();
 
+    return instance;
+    }
+  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
