@@ -491,6 +491,7 @@ typedef RefCountedPtr<IECSymbolProvider> IECSymbolProviderPtr;
 enum            ExpressionToken
     {
     TOKEN_None                = 0,
+    TOKEN_Null                = 16,               // Null
     TOKEN_True                = 17,
     TOKEN_False               = 18,
     TOKEN_Like                = 19,
@@ -526,9 +527,12 @@ enum            ExpressionToken
     TOKEN_RightBracket        = 70,               //      ]
     TOKEN_Dot                 = 71,               //      .
     TOKEN_IIf                 = 72,               //      IFF
+    TOKEN_LCurly              = 73,               //      {
+    TOKEN_RCurly              = 74,               //      }
     TOKEN_Error               = 81,
     TOKEN_Ident               = 82,
     TOKEN_StringConst         = 83,
+    TOKEN_PointConst          = 84,
     TOKEN_IntegerConstant     = 87,
     TOKEN_HexConstant         = 88,
     TOKEN_FloatConst          = 89,
@@ -750,6 +754,9 @@ public:
     static NodePtr          CreateIntegerLiteral (int value);
     static NodePtr          CreateInt64Literal(Int64 value);
     static NodePtr          CreateFloatLiteral(double value);
+    static NodePtr          CreateNullLiteral();
+    static NodePtr          CreatePoint2DLiteral (DPoint2dCR value);
+    static NodePtr          CreatePoint3DLiteral (DPoint3dCR value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
     static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);
     static NodePtr          CreateShift (ExpressionToken tokenID, NodeR left, NodeR right);

@@ -1183,7 +1183,6 @@ bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
 StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     StandaloneECInstancePtr instance = new StandaloneECInstance (*this, minimumBufferSize);
-    instance->InitializeDefaultValues();
     return instance;
     }    
     
