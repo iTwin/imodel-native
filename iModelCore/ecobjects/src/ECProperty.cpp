@@ -191,28 +191,20 @@ bool ECProperty::GetIsPrimitive () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty () const
-    {
-    // virtual get method is significantly faster than dynamic_cast
-    BeAssert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
-    return const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsStruct () const
     {
     return this->_IsStruct();
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+* @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StructECPropertyP ECProperty::GetAsStructProperty () const
-    {
-    return GetIsStruct() ? static_cast<StructECPropertyP>((ECPropertyP)this) : NULL;
-    }
+PrimitiveECPropertyCP   ECProperty::GetAsPrimitiveProperty() const  { return GetIsPrimitive() ? static_cast<PrimitiveECPropertyCP>(this) : NULL; }
+PrimitiveECPropertyP    ECProperty::GetAsPrimitivePropertyP()       { return const_cast<PrimitiveECPropertyP>(GetAsPrimitiveProperty()); }
+ArrayECPropertyCP       ECProperty::GetAsArrayProperty() const      { return GetIsArray() ? static_cast<ArrayECPropertyCP>(this) : NULL; }
+ArrayECPropertyP        ECProperty::GetAsArrayPropertyP()           { return const_cast<ArrayECPropertyP>(GetAsArrayProperty()); }
+StructECPropertyCP      ECProperty::GetAsStructProperty() const     { return GetIsStruct() ? static_cast<StructECPropertyCP>(this) : NULL; }
+StructECPropertyP       ECProperty::GetAsStructPropertyP()          { return const_cast<StructECPropertyP>(GetAsStructProperty()); }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -220,14 +212,6 @@ StructECPropertyP ECProperty::GetAsStructProperty () const
 bool ECProperty::GetIsArray () const
     {
     return this->_IsArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ArrayECPropertyP ECProperty::GetAsArrayProperty () const
-    {
-    return GetIsArray() ? static_cast<ArrayECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -349,7 +333,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
     // we allow it to be overridden.
     if (baseProperty.GetIsArray())
         {
-        ArrayECPropertyP arrayProperty = baseProperty.GetAsArrayProperty();
+        ArrayECPropertyCP arrayProperty = baseProperty.GetAsArrayProperty();
         if (ARRAYKIND_Struct == arrayProperty->GetKind())
             return false;
         basePrimitiveType = arrayProperty->GetPrimitiveElementType();
@@ -463,7 +447,7 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
         
     if (baseProperty.GetIsArray())
         {
-        ArrayECPropertyP arrayProp = baseProperty.GetAsArrayProperty();
+        ArrayECPropertyCP arrayProp = baseProperty.GetAsArrayProperty();
         if (ARRAYKIND_Struct != arrayProp->GetKind())
             return false;
         }

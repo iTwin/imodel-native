@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/CalculatedPropertyTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -182,7 +182,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     ecClass->CreateArrayProperty (arrayProp, L"A", PRIMITIVETYPE_Integer);
 
     // Apply the CalculatedECPropertySpecification
-    ecProp = ecClass->GetPropertyP (propName)->GetAsPrimitiveProperty();
+    ecProp = ecClass->GetPropertyP (propName)->GetAsPrimitivePropertyP();
 
     ECClassCP calcSpecClass = customAttrSchema->GetClassCP (L"CalculatedECPropertySpecification");
     IECInstancePtr calcSpecAttr = calcSpecClass->GetDefaultStandaloneEnabler()->CreateInstance();

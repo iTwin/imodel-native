@@ -193,30 +193,16 @@ ECSchema::ECSchema ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::~ECSchema ()
     {
-    // NEEDSWORK make sure everything is destroyed
     ClassMap::iterator          classIterator = m_classMap.begin();
     ClassMap::const_iterator    classEnd = m_classMap.end();        
     while (classIterator != classEnd)
         {
         ECClassP ecClass = classIterator->second;
-        ECRelationshipClassP relClass = ecClass ? ecClass->GetRelationshipClassP() : NULL;
         classIterator = m_classMap.erase(classIterator);
-        if (NULL != relClass)
-            delete relClass;
-        else
-            delete ecClass;
+        delete ecClass;
         }
 
     BeAssert (m_classMap.empty());
-
-    /*
-    for (ECSchemaReferenceVector::iterator sit = m_referencedSchemas.begin(); sit != m_referencedSchemas.end(); sit++)
-        {
-        CECSchemaReference & schemaRef = *sit;
-        if (NULL != schemaRef.m_pECSchema)
-            delete schemaRef.m_pECSchema; //needswork: are we sure that something else isn't holding it... we need a DgnECManager
-        }
-    m_referencedSchemas.clear();*/
 
     m_refSchemaList.clear();
     memset (this, 0xececdead, sizeof(this));
@@ -1675,12 +1661,12 @@ SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, EC
         {
         if (prop->GetIsStruct())
             {
-            StructECPropertyP structProperty = prop->GetAsStructProperty();
+            StructECPropertyP structProperty = prop->GetAsStructPropertyP();
             WriteClass(parentNode, structProperty->GetType(), context);
             }
         else if (prop->GetIsArray())
             {
-            ArrayECPropertyP arrayProperty = prop->GetAsArrayProperty();
+            ArrayECPropertyP arrayProperty = prop->GetAsArrayPropertyP();
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
                 WriteClass(parentNode, *(arrayProperty->GetStructElementType()), context);
@@ -2309,14 +2295,45 @@ ECObjectsStatus ECSchemaCache::AddSchema   (ECSchemaR ecSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::DropSchema  (ECSchemaR ecSchema)
+ECObjectsStatus ECSchemaCache::DropSchema  (SchemaKeyCR ecSchemaKey)
     {
-    SchemaMap::iterator iter = m_schemas.find (ecSchema.GetSchemaKey());
+    SchemaMap::iterator iter = m_schemas.find (ecSchemaKey);
     if (iter == m_schemas.end())
         return ECOBJECTS_STATUS_SchemaNotFound;
 
     m_schemas.erase(iter);
-    return ECOBJECTS_STATUS_Success;;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(SchemaKeyCR schemaKey)
+    {
+    ECObjectsStatus status = DropSchema(schemaKey);
+    
+    bset<SchemaKey> schemasToRemove;
+    for (SchemaMap::iterator iter = m_schemas.begin(); iter != m_schemas.end(); ++iter)
+        {
+        bvector<ECSchemaP> schemas;
+        iter->second->FindAllSchemasInGraph(schemas, true);
+        for (bvector<ECSchemaP>::const_iterator refIter = schemas.begin(); refIter != schemas.end(); ++refIter)
+            {
+            if ((*refIter)->GetSchemaKey() == schemaKey)
+                {
+                schemasToRemove.insert(iter->second->GetSchemaKey());
+                break;
+                }
+            }
+        }
+    
+    for (bset<SchemaKey>::const_iterator iter = schemasToRemove.begin(); iter != schemasToRemove.end(); ++iter)
+        {
+        if (ECOBJECTS_STATUS_Success == DropSchema(*iter))
+            status = ECOBJECTS_STATUS_Success;
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

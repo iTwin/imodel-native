@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auicommand.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -18,6 +18,14 @@ BentleyStatus   IUICommand::ExecuteCmd (IAUIDataContextCP instance)
     {
     ECPresentationManager::GetManager().JournalCmd (*this, instance);
     return _ExecuteCmd(instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas             02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void IUICommand::GetChildren (bvector<IUICommandPtr>& children)
+    {
+    return _GetChildren (children);
     }
 
 /*---------------------------------------------------------------------------------**//**

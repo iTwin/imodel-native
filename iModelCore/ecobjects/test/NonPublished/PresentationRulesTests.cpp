@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/PresentationRulesTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -112,7 +112,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
     ValidateImageIdOverride (*imageIdOverride2, L"TestCondition2", L"Expression2", 3);
     ValidateImageIdOverride (*imageIdOverride3, L"TestCondition3", L"Expression3", 2);
 
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"File", L"BaseElmentSchema", false, 1, L"MyImage");
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"File", L"BaseElmentSchema", false, 1, L"MyImage", true);
     EXPECT_STREQ (L"File", ruleSet->GetRuleSetId ().c_str ());
     EXPECT_STREQ (L"BaseElmentSchema", ruleSet->GetSupportedSchemas ().c_str ());
     EXPECT_FALSE (ruleSet->GetIsSupplemental ());
@@ -231,7 +231,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
 TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     {
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"TestRuleSet", L"DummySchemaName", true, 2, L"MyImage");
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"TestRuleSet", L"DummySchemaName", true, 2, L"MyImage", true);
     
     RootNodeRuleP rootNodeRule = new RootNodeRule (L"TestCondition1", 1, true, TargetTree_Both);
     ruleSet->GetRootNodesRules ().push_back (rootNodeRule);

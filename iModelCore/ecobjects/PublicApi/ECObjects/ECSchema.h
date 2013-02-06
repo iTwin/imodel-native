@@ -173,12 +173,6 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-/*__PUBLISH_SECTION_END__*/
-// NEEDSWORK - unsure what the best way is to model ECProperty.  Managed implementation has a single ECProperty and introduces an ECType concept.  My gut is that
-// this is overkill for the native implementation.  Alternatively we could have a single ECProperty class that could act as primitive/struct/array or we can take the
-// appoach I've implemented below.
-/*__PUBLISH_SECTION_START__*/
-
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
@@ -227,9 +221,9 @@ public:
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) ;
+    ECOBJECTS_EXPORT bool               IsDefined(WStringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
-    ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) ;
+    ECOBJECTS_EXPORT bool               IsDefined(ECClassCR classDefinition) const;
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -533,8 +527,6 @@ protected:
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
-
-    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return NULL;}
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
@@ -587,11 +579,12 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
 
-    // NEEDSWORK, don't necessarily like this pattern but it will suffice for now.  Necessary since you can't dynamic_cast when using the published headers.  How
-    // do other similiar classes deal with this.
-    ECOBJECTS_EXPORT PrimitiveECPropertyP GetAsPrimitiveProperty () const;    // FUSION_WIP: this removes const!
-    ECOBJECTS_EXPORT ArrayECPropertyP     GetAsArrayProperty () const;        //  "
-    ECOBJECTS_EXPORT StructECPropertyP    GetAsStructProperty () const;       //  "
+    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const;
+    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP ();
+    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const;
+    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP ();
+    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const;
+    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP ();
 };
 
 //=======================================================================================
@@ -617,7 +610,6 @@ protected:
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual PrimitiveECProperty*        _GetAsPrimitiveECProperty() {return this;}
 
 public:
     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
@@ -1326,9 +1318,10 @@ struct SchemaKey
         return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
         }
 /*__PUBLISH_SECTION_END__*/
+    ECOBJECTS_EXPORT WStringCR GetName() const {return m_schemaName;}
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
-    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
-    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
+                      UInt32 GetVersionMajor() const { return m_versionMajor; };
+                      UInt32 GetVersionMinor() const { return m_versionMinor; };
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -1552,12 +1545,13 @@ protected:
     // ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
-
+public:
+                ECObjectsStatus DropAllReferencesOfSchema(SchemaKeyCR key);
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR);
-    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (ECSchemaR);
+    ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
+    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
     ECOBJECTS_EXPORT virtual ~ECSchemaCache ();

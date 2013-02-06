@@ -317,7 +317,13 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
         else if (NULL != m_utf16)
             BeStringUtilities::Utf16ToWChar (buf, m_utf16);
 
-        m_wchar = buf.c_str();
+        if (!buf.empty())
+            {
+            size_t size = buf.size() * sizeof(WChar);
+            m_wchar = (WCharCP)malloc (size);
+            memcpy (const_cast<WCharP>(m_wchar), &buf[0], size);
+            }
+
         setDataOwned (flags, ECVALUE_DATA_WChar, NULL != m_wchar);
         }
             
@@ -1139,7 +1145,7 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 WCharCP ECValue::GetString() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an ECN::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
-    return m_stringInfo.GetWChar (m_ownershipFlags);
+    return IsNull() ? NULL : m_stringInfo.GetWChar (m_ownershipFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1153,7 +1159,7 @@ Utf8CP  ECValue::GetUtf8CP() const
         return NULL;
         }
 
-    return m_stringInfo.GetUtf8 (m_ownershipFlags);
+    return IsNull() ? NULL : m_stringInfo.GetUtf8 (m_ownershipFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1167,7 +1173,7 @@ Utf16CP ECValue::GetUtf16CP() const
         return NULL;
         }
 
-    return m_stringInfo.GetUtf16 (m_ownershipFlags);
+    return IsNull() ? NULL : m_stringInfo.GetUtf16 (m_ownershipFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**

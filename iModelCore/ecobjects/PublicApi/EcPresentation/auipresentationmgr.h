@@ -39,7 +39,7 @@ struct  ECPresentationManager: public NonCopyableClass
         IECPresentationViewDefinitionPtr AggregateViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
 
         template <typename ProviderType, typename ContainerType> 
-        static void CheckAndAddProviderFromList (ProviderType & provider, ContainerType& );
+        static bool CheckAndAddProviderFromList (ProviderType & provider, ContainerType& );
 
         template <typename ProviderType, typename ContainerType> 
         static void RemoveProviderFromList (ProviderType & provider, ContainerType& );
@@ -96,11 +96,17 @@ struct  ECPresentationManager: public NonCopyableClass
 
     //! Fetch an overlay image of the specified size and name from the image providers.
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetOverlayImage (IAUIDataContextCR imageKey, DPoint2dCR size);
+
     //! Get string from localization providers.
     //!@param[in] rscFileName   Dll name which contains the resource.
     //!@param[in] tableId       Table ID form which resource shoud be taken.
     //!@param[in] rscId         Resource ID.
     ECOBJECTS_EXPORT WCharCP                            GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
+
+    //! Get current selection or sub-selection.
+    //!@param[in] eventHub      Event hub.
+    //!@param[in] subSelection  If true then returns sub-selection.
+    ECOBJECTS_EXPORT IAUIDataContextCP                  GetSelection (void const* eventHub, bool subSelection);
 
     //! Execute command automatically calls these. So explicit call is usually un necessary.
     void                                                JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);

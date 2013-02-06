@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ friend struct SearchPathSchemaFileLocater;
         };
 private:
     IStandaloneEnablerLocaterP                              m_standaloneEnablerLocater;
-    ECSchemaCache                                           m_knownSchemas;
+    ECSchemaCachePtr                                        m_knownSchemas;
     bvector<bool>                                           m_knownSchemaDirtyStack;
     typedef bset<SchemaLocatorKey>                          SchemaLocatorSet;
     SchemaLocatorSet                                        m_locators;
