@@ -50,7 +50,8 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
     m_standaloneEnablerLocater(enablerLocater),
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
     {
-    m_locators.insert(SchemaLocatorKey (&m_knownSchemas, ReaderContext));
+    m_knownSchemas = ECSchemaCache::Create();
+    m_locators.insert(SchemaLocatorKey (m_knownSchemas.get(), ReaderContext));
     
     bvector<WString> searchPaths;
     if (GetStandardPaths (searchPaths))
@@ -187,7 +188,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
 
         if (m_knownSchemaDirtyStack.back())
             {
-            schema = m_knownSchemas.LocateSchema (key, matchType, *this);
+            schema = m_knownSchemas->LocateSchema (key, matchType, *this);
             m_knownSchemaDirtyStack.back() = false;
             }
         
@@ -222,7 +223,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
                 {
                 for (bset<SchemaMatchType>::const_iterator kmatchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
                     {
-                    schema = m_knownSchemas.LocateSchema (key, *kmatchIter, *this);
+                    schema = m_knownSchemas->LocateSchema (key, *kmatchIter, *this);
                     if (schema.IsValid())
                         break;
                     }
@@ -339,7 +340,7 @@ ECSchemaCR      ECInstanceReadContext::GetFallBackSchema ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
     {
-    return m_knownSchemas.GetSchema(key, matchType);
+    return m_knownSchemas->GetSchema(key, matchType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -347,7 +348,7 @@ ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatch
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus   ECSchemaReadContext::AddSchema(ECSchemaR schema) 
     {
-    if (NULL != m_knownSchemas.GetSchema(schema.GetSchemaKey()))
+    if (NULL != m_knownSchemas->GetSchema(schema.GetSchemaKey()))
         return ECOBJECTS_STATUS_DuplicateSchema;
 
     _AddSchema(schema);
@@ -359,7 +360,7 @@ ECObjectsStatus   ECSchemaReadContext::AddSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
     {
-    if (ECOBJECTS_STATUS_Success != m_knownSchemas.AddSchema(schema))
+    if (ECOBJECTS_STATUS_Success != m_knownSchemas->AddSchema(schema))
         return;
 
     for (bvector<bool>::iterator iter = m_knownSchemaDirtyStack.begin(); iter != m_knownSchemaDirtyStack.end(); ++iter)
@@ -371,7 +372,7 @@ void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
-    m_knownSchemas.DropSchema(schema);
+    m_knownSchemas->DropAllReferencesOfSchema(schema.GetSchemaKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -379,5 +380,5 @@ void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCacheR  ECSchemaReadContext::GetFoundSchemas ()
     {
-    return m_knownSchemas;
+    return *m_knownSchemas;
     }

@@ -14,12 +14,9 @@
 BENTLEY_TYPEDEFS (BeXmlDom)
 BENTLEY_TYPEDEFS (BeXmlNode)
 
-/*__PUBLISH_SECTION_END__*/
 namespace Bentley { namespace DgnPlatform {
     struct DgnECInstance;
-} }
-
-/*__PUBLISH_SECTION_START__*/
+    }}
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -93,7 +90,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 struct IECInstance : RefCountedBase
     {
 private:
-    WCharCP GetInstanceLabelPropertyName () const;
+    bool                        GetInstanceLabelPropertyName (WString& propertyName) const;
 
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
@@ -123,9 +120,7 @@ protected:
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
-/*__PUBLISH_SECTION_END__*/
     virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
-/*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;

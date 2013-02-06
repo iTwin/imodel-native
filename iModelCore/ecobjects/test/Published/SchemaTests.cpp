@@ -127,7 +127,7 @@ ECSchemaPtr const&   schema
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_TRUE (pProperty->GetIsArray());
     EXPECT_STREQ (L"Struct1", pProperty->GetTypeName().c_str());
-    ArrayECPropertyP arrayProperty = pProperty->GetAsArrayProperty();
+    ArrayECPropertyP arrayProperty = pProperty->GetAsArrayPropertyP();
     EXPECT_TRUE (ARRAYKIND_Struct == arrayProperty->GetKind());
     EXPECT_EQ (schema->GetClassP(L"Struct1"), arrayProperty->GetStructElementType());
     EXPECT_EQ (0, arrayProperty->GetMinOccurs());
@@ -148,7 +148,7 @@ ECSchemaPtr const&   schema
     EXPECT_TRUE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
     EXPECT_STREQ (L"Struct1", pProperty->GetTypeName().c_str());
-    StructECPropertyP structProperty = pProperty->GetAsStructProperty();    
+    StructECPropertyP structProperty = pProperty->GetAsStructPropertyP();    
     EXPECT_EQ (schema->GetClassP(L"Struct1"), &(structProperty->GetType()));
     EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined());
     EXPECT_STREQ (L"EmbeddedStruct", pProperty->GetDisplayLabel().c_str());

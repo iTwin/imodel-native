@@ -37,7 +37,6 @@ ECClass::ECClass (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::~ECClass ()
     {
-    // NEEDSWORK make sure everything is destroyed
     m_propertyList.clear();
     
     for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
@@ -297,7 +296,7 @@ bool copyCustomAttributes
     if (sourceProperty->GetIsPrimitive())
         {
         PrimitiveECPropertyP destPrimitive;
-        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
+        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitivePropertyP();
         destPrimitive = new PrimitiveECProperty(*this);
         destPrimitive->SetType(sourcePrimitive->GetType());
 
@@ -306,7 +305,7 @@ bool copyCustomAttributes
     else if (sourceProperty->GetIsArray())
         {
         ArrayECPropertyP destArray;
-        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayProperty();
+        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayPropertyP();
         destArray = new ArrayECProperty (*this);
         if (NULL != sourceArray->GetStructElementType())
             {
@@ -327,7 +326,7 @@ bool copyCustomAttributes
     else if (sourceProperty->GetIsStruct())
         {
         StructECPropertyP destStruct;
-        StructECPropertyP sourceStruct = sourceProperty->GetAsStructProperty();
+        StructECPropertyP sourceStruct = sourceProperty->GetAsStructPropertyP();
         destStruct = new StructECProperty (*this);
         ECClassCR sourceType = sourceStruct->GetType();
         ECClassP targetType = schema->GetClassP(sourceType.GetName().c_str());

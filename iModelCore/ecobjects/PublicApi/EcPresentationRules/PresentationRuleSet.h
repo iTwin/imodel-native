@@ -39,6 +39,7 @@ struct PresentationRuleSet : public RefCountedBase
         bool                                   m_isSupplemental;
         int                                    m_version;
         WString                                m_preferredImage;
+        bool                                   m_isSearchEnabled;
 
         RootNodeRuleList                       m_rootNodesRules;
         ChildNodeRuleList                      m_childNodesRules;
@@ -55,7 +56,7 @@ struct PresentationRuleSet : public RefCountedBase
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
-            : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_version (1)
+            : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_version (1), m_isSearchEnabled (true)
             {
             }
 
@@ -66,9 +67,11 @@ struct PresentationRuleSet : public RefCountedBase
             WStringCR supportedSchemas,
             bool      isSupplemental,
             int       version,
-            WStringCR preferredImage
+            WStringCR preferredImage,
+            bool      isSearchEnabled
             )
-            : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), m_version (version), m_preferredImage (preferredImage)
+            : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), 
+              m_version (version), m_preferredImage (preferredImage), m_isSearchEnabled (isSearchEnabled)
             {
             }
 
@@ -90,7 +93,8 @@ struct PresentationRuleSet : public RefCountedBase
             WStringCR supportedSchemas,
             bool      isSupplemental,
             int       version,
-            WStringCR preferredImage
+            WStringCR preferredImage,
+            bool      isSearchEnabled
             );
 
         //! Reads PresentationRuleSet from XmlString.
@@ -122,6 +126,9 @@ struct PresentationRuleSet : public RefCountedBase
 
         //! Preferred ImageId for the tree that is configured using this presentation rule set.
         ECOBJECTS_EXPORT WStringCR                      GetPreferredImage (void) const    { return m_preferredImage;   }
+
+        //! Returns true if search should be enabled for the tree that uses this presentation rule set.
+        ECOBJECTS_EXPORT bool                           GetIsSearchEnabled (void) const   { return m_isSearchEnabled;   }
 
         //! Collection of rules, which should be used when root nodes needs to be populated.
         ECOBJECTS_EXPORT RootNodeRuleList&              GetRootNodesRules (void)          { return m_rootNodesRules;   }

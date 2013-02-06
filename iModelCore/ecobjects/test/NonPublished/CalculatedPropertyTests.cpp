@@ -182,7 +182,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     ecClass->CreateArrayProperty (arrayProp, L"A", PRIMITIVETYPE_Integer);
 
     // Apply the CalculatedECPropertySpecification
-    ecProp = ecClass->GetPropertyP (propName)->GetAsPrimitiveProperty();
+    ecProp = ecClass->GetPropertyP (propName)->GetAsPrimitivePropertyP();
 
     ECClassCP calcSpecClass = customAttrSchema->GetClassCP (L"CalculatedECPropertySpecification");
     IECInstancePtr calcSpecAttr = calcSpecClass->GetDefaultStandaloneEnabler()->CreateInstance();

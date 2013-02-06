@@ -757,7 +757,7 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
 
         if (property->GetIsPrimitive())
             {
-            PrimitiveECPropertyP  primitiveProp = property->GetAsPrimitiveProperty();
+            PrimitiveECPropertyP  primitiveProp = property->GetAsPrimitivePropertyP();
             PrimitiveType         primitiveType = primitiveProp->GetType();
 
             bool isFixedSize = PrimitiveTypeIsFixedSize(primitiveType);
@@ -769,14 +769,14 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
             }
         else if (property->GetIsStruct())
             {
-            StructECPropertyP  structProp = property->GetAsStructProperty();
+            StructECPropertyP  structProp = property->GetAsStructPropertyP();
             ECClassCR          nestedClass = structProp->GetType();
             
             AddProperties (nestedClass, propName.c_str(), addingFixedSizeProps);
             }
         else if (property->GetIsArray())
             {
-            ArrayECPropertyP  arrayProp = property->GetAsArrayProperty();
+            ArrayECPropertyP  arrayProp = property->GetAsArrayPropertyP();
             ArrayKind arrayKind = arrayProp->GetKind();
             if (arrayKind == ARRAYKIND_Primitive)
                 {

@@ -46,6 +46,7 @@ always:
 PCHCompilandBaseName    = ECObjectsTestPCH
 PchCompiland            = $(baseDir)$(PCHCompilandBaseName).cpp
 PchOutputDir            = $(o)
+PchExtraOptions	        = -D_VARIADIC_MAX=10
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts  = $(UsePrecompiledHeaderOptions)
