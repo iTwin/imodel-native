@@ -517,22 +517,20 @@ public:
 //======================================================================================= 
 struct ECValuesCollection : RefCountedBase
     {
+public:
+    typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
 /*__PUBLISH_SECTION_END__*/
     friend struct ECPropertyValue;
 
 private:
-    ECPropertyValue     m_parentPropertyValue;
+    ECPropertyValue                                     m_parentPropertyValue;
+    mutable RefCountedPtr<ECValuesCollectionIterator>   m_end;
 
     ECValuesCollection ();
     ECValuesCollection (ECPropertyValueCR parentPropValue);
 public:
     ECOBJECTS_EXPORT ECValuesCollection (IECInstanceCR);
 /*__PUBLISH_SECTION_START__*/
-
-public:
-
-    typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
-
     ECOBJECTS_EXPORT const_iterator begin () const;
     ECOBJECTS_EXPORT const_iterator end ()   const;
 

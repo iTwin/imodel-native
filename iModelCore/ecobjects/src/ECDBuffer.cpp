@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -3048,8 +3048,8 @@ void ECDBuffer::SetDefaultStringEncoding (StringEncoding def)                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
     {
-    static bool s_skipDump = false;
-    static int s_dumpCount = 0;
+    static const bool s_skipDump = false;
+    static int s_dumpCount = 0;             // MT: For debugging purposes only...
     s_dumpCount++;
     
     WString oss;

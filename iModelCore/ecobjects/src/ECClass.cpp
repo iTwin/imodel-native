@@ -463,23 +463,19 @@ ECPropertyP ECClass::GetPropertyP (Utf8CP name, bool includeBaseClasses) const
     return NULL;
     }
 
-static bvector<WString> s_schemasThatAllowOverridingArrays;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void initSchemasThatAllowOverridingArrays ()
+static const WCharCP s_schemasThatAllowOverridingArrays[] =
     {
-    if (!s_schemasThatAllowOverridingArrays.empty())
-        return;
-    s_schemasThatAllowOverridingArrays.push_back (L"jclass.01");
-    s_schemasThatAllowOverridingArrays.push_back (L"jclass.02");
-    s_schemasThatAllowOverridingArrays.push_back (L"ECXA_ams.01");
-    s_schemasThatAllowOverridingArrays.push_back (L"ECXA_ams_user.01");
-    s_schemasThatAllowOverridingArrays.push_back (L"ams.01");
-    s_schemasThatAllowOverridingArrays.push_back (L"ams_user.01");
-    s_schemasThatAllowOverridingArrays.push_back (L"Bentley_JSpace_CustomAttributes.02");
-    s_schemasThatAllowOverridingArrays.push_back (L"Bentley_Plant.06");
-    }
+    L"jclass.01",
+    L"jclass.02",
+    L"ECXA_ams.01",
+    L"ECXA_ams_user.01",
+    L"ams.01",
+    L"ams_user.01",
+    L"Bentley_JSpace_CustomAttributes.02",
+    L"Bentley_Plant.06"
+    };
+
+static const size_t s_numSchemasThatAllowOverridingArrays = sizeof(s_schemasThatAllowOverridingArrays)/sizeof(WCharCP);
 
 /*---------------------------------------------------------------------------------**//**
 From .NET implementation:
@@ -497,13 +493,14 @@ bool ECClass::SchemaAllowsOverridingArrays
 ECSchemaCP schema
 )
     {
-    initSchemasThatAllowOverridingArrays();
     wchar_t buf[1024]; 
 
     BeStringUtilities::Snwprintf (buf, L"%ls.%02d", schema->GetName().c_str(), schema->GetVersionMajor());
-    WString nameAndVersion(buf);
-    bvector<WString>::iterator iter = std::find(s_schemasThatAllowOverridingArrays.begin(), s_schemasThatAllowOverridingArrays.end(), nameAndVersion);
-    return (iter != s_schemasThatAllowOverridingArrays.end());
+    for (size_t i = 0; i < s_numSchemasThatAllowOverridingArrays; i++)
+        if (0 == wcscmp (s_schemasThatAllowOverridingArrays[i], buf))
+            return true;
+
+    return false;
     }
 
 
@@ -1269,14 +1266,16 @@ bool            ECPropertyIterable::const_iterator::operator!= (const_iterator c
     return (m_state->m_listIterator != rhs.m_state->m_listIterator);
     }
 
+static const ECPropertyP s_nullPropertyPtr = NULL;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyP const& ECPropertyIterable::const_iterator::operator*() const
     {
-    static ECPropertyP s_nullPtr;
     if (m_isEnd)
-        return s_nullPtr;
+        return s_nullPropertyPtr;
+
     ECPropertyP const& ecProperty = *(m_state->m_listIterator);
     return ecProperty;
     }

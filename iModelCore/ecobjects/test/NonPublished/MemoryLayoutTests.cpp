@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1383,7 +1383,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
     WString point3Str = pntVal3.ToString();
-    EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
+    EXPECT_TRUE (0 == point3Str.compare (L"10,100,1000"));
 
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
@@ -1392,7 +1392,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
     WString point2Str = pntVal2.ToString();
-    EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
+    EXPECT_TRUE (0 == point2Str.compare (L"10,100"));
 
     // DateTime
     SystemTime now = SystemTime::GetLocalTime();

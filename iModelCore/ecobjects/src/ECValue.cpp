@@ -2677,8 +2677,11 @@ ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
-    static ECValuesCollection::const_iterator s_end(*new ECValuesCollectionIterator());
-    return s_end;
+    // WIP_FUSION: can we reduce the amount of dynamic allocation associated with iterating an ECValuesCollection?
+    if (m_end.IsNull())
+        m_end = new ECValuesCollectionIterator();
+
+    return const_iterator (*m_end);
     }
 
 /*---------------------------------------------------------------------------------**//**
