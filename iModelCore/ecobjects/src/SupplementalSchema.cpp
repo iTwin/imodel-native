@@ -46,8 +46,9 @@ public:
 StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::s_schemaHolder;
 
 static WCharCP s_customAttributeAccessor = L"SupplementalSchemaMetaData";
-static UInt32 s_bscaVersionMajor = 1;
-static UInt32 s_bscaVersionMinor = 4;
+static const UInt32 s_bscaVersionMajor = 1;
+static const UInt32 s_bscaVersionMinor = 5;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

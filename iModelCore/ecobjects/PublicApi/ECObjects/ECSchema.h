@@ -533,6 +533,7 @@ public:
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
+
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the name of the ECClass that this property is contained within

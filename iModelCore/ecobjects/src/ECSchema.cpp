@@ -313,38 +313,33 @@ bool ECSchema::GetIsDisplayLabelDefined () const
     return m_hasExplicitDisplayLabel;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                08/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<WString> s_standardSchemaNames;
-void initStandardSchemaNames()
+static WCharCP s_standardSchemaNames[] =
     {
-    if (!s_standardSchemaNames.empty())
-        return;
-    s_standardSchemaNames.push_back(L"Bentley_Standard_CustomAttributes");
-    s_standardSchemaNames.push_back(L"Bentley_Standard_Classes");
-    s_standardSchemaNames.push_back(L"Bentley_ECSchemaMap");
-    s_standardSchemaNames.push_back(L"EditorCustomAttributes");
-    s_standardSchemaNames.push_back(L"Bentley_Common_Classes");
-    s_standardSchemaNames.push_back(L"Dimension_Schema");
-    s_standardSchemaNames.push_back(L"iip_mdb_customAttributes");
-    s_standardSchemaNames.push_back(L"KindOfQuantity_Schema");
-    s_standardSchemaNames.push_back(L"rdl_customAttributes");
-    s_standardSchemaNames.push_back(L"SIUnitSystemDefaults");
-    s_standardSchemaNames.push_back(L"Unit_Attributes");
-    s_standardSchemaNames.push_back(L"Units_Schema");
-    s_standardSchemaNames.push_back(L"USCustomaryUnitSystemDefaults");
-
-    }
+    L"Bentley_Standard_CustomAttributes",
+    L"Bentley_Standard_Classes",
+    L"Bentley_ECSchemaMap",
+    L"EditorCustomAttributes",
+    L"Bentley_Common_Classes",
+    L"Dimension_Schema",
+    L"iip_mdb_customAttributes",
+    L"KindOfQuantity_Schema",
+    L"rdl_customAttributes",
+    L"SIUnitSystemDefaults",
+    L"Unit_Attributes",
+    L"Units_Schema",
+    L"USCustomaryUnitSystemDefaults"
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::IsStandardSchema(WStringCR schemaName)
     {
-    initStandardSchemaNames();
-    bvector<WString>::iterator iter = std::find(s_standardSchemaNames.begin(), s_standardSchemaNames.end(), schemaName);
-    return (iter != s_standardSchemaNames.end());
+    for (WCharCP* cur = s_standardSchemaNames, *end = cur + _countof(s_standardSchemaNames); cur < end; ++cur)
+        if (schemaName.Equals (*cur))
+            return true;
+
+    return false;
     }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -354,28 +349,21 @@ bool ECSchema::IsStandardSchema () const
     return IsStandardSchema(m_key.m_schemaName);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                08/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<WString> s_originalStandardSchemaFullNames;
-
-void initOriginalStandardSchemaNames()
+static WCharCP s_originalStandardSchemaFullNames[] =
     {
-    if (!s_originalStandardSchemaFullNames.empty())
-        return;
-    s_originalStandardSchemaFullNames.push_back(L"Bentley_Standard_CustomAttributes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"Bentley_Standard_Classes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"EditorCustomAttributes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"Bentley_Common_Classes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"Dimension_Schema.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"iip_mdb_customAttributes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"KindOfQuantity_Schema.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"rdl_customAttributes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"SIUnitSystemDefaults.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"Unit_Attributes.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"Units_Schema.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"USCustomaryUnitSystemDefaults.01.00");
-    }
+    L"Bentley_Standard_CustomAttributes.01.00",
+    L"Bentley_Standard_Classes.01.00",
+    L"EditorCustomAttributes.01.00",
+    L"Bentley_Common_Classes.01.00",
+    L"Dimension_Schema.01.00",
+    L"iip_mdb_customAttributes.01.00",
+    L"KindOfQuantity_Schema.01.00",
+    L"rdl_customAttributes.01.00",
+    L"SIUnitSystemDefaults.01.00",
+    L"Unit_Attributes.01.00",
+    L"Units_Schema.01.00",
+    L"USCustomaryUnitSystemDefaults.01.00"
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
@@ -409,10 +397,10 @@ bool ECSchema::IsSupplemented
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::ShouldNotBeStored () const
     {
-    initOriginalStandardSchemaNames();
-    bvector<WString>::iterator iter = std::find(s_originalStandardSchemaFullNames.begin(), s_originalStandardSchemaFullNames.end(), GetFullSchemaName());
-    if (iter != s_originalStandardSchemaFullNames.end())
-        return true;
+    WString schemaName = GetFullSchemaName();
+    for (WCharCP* cur = s_originalStandardSchemaFullNames, *end = cur + _countof(s_originalStandardSchemaFullNames); cur < end; ++cur)
+        if (schemaName.Equals (*cur))
+            return true;
 
     // We don't want to import any version of the Units_Schema
     if (BeStringUtilities::Wcsicmp(L"Units_Schema", m_key.m_schemaName.c_str()) == 0)

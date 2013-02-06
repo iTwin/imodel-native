@@ -245,6 +245,9 @@ public:
     // These are provided to avoid the cost of dynamic cast.
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
+
+    ECOBJECTS_EXPORT bool               InitializeDefaultValues();
+
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.

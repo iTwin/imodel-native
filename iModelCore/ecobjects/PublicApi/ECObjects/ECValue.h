@@ -98,7 +98,8 @@ private:
     mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
 
     void                InitForString (void const * str);
-    BentleyStatus  SetBinaryInternal (const byte * data, size_t size, bool holdADuplicate = false);
+    BentleyStatus       SetBinaryInternal (const byte * data, size_t size, bool holdADuplicate = false);
+    bool                ConvertToPrimitiveFromString (PrimitiveType primitiveType);
 
 protected:    
     typedef bvector<ECValue>  ValuesVector;
@@ -218,9 +219,13 @@ public:
     // Attempts to convert this ECValue's primitive value to a different primitive type.
     // Currently supported conversions (motivated by ECExpressions):
     //  - double, int, and string are all interconvertible. double => int rounds
-    //  - int, long, double, boolean, points, and datetime can be converted to string (uses ToString())
+    //  - conversion to and from string is supported for any other primitive type
     //  - a null value of any primitive type can be converted a null value of any other primitive type
     ECOBJECTS_EXPORT bool           ConvertToPrimitiveType (PrimitiveType primitiveType);
+    // Attempts to convert a primitive ECValue to a string representation suitable for serialization.
+    // Fails if this ECValue is not a primitive
+    // Returns an empty string if this ECValue is null
+    ECOBJECTS_EXPORT bool           ConvertPrimitiveToString (WStringR str) const;
 
     // Attempts to format the underlying value using the specified .NET-style format string.
     // Typically the format string originated from an ECCustomAttribute.
@@ -512,22 +517,20 @@ public:
 //======================================================================================= 
 struct ECValuesCollection : RefCountedBase
     {
+public:
+    typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
 /*__PUBLISH_SECTION_END__*/
     friend struct ECPropertyValue;
 
 private:
-    ECPropertyValue     m_parentPropertyValue;
+    ECPropertyValue                                     m_parentPropertyValue;
+    mutable RefCountedPtr<ECValuesCollectionIterator>   m_end;
 
     ECValuesCollection ();
     ECValuesCollection (ECPropertyValueCR parentPropValue);
 public:
     ECOBJECTS_EXPORT ECValuesCollection (IECInstanceCR);
 /*__PUBLISH_SECTION_START__*/
-
-public:
-
-    typedef VirtualCollectionIterator<ECValuesCollectionIterator> const_iterator;
-
     ECOBJECTS_EXPORT const_iterator begin () const;
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
