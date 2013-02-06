@@ -2,7 +2,7 @@ P*------------------------------------------------------------------------------
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1170,6 +1170,14 @@ bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) co
     }*/
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
+    {
+    return GetClassLayout().IsPropertyReadOnly (propertyIndex);
+    }
+ 
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, UInt32 size)
@@ -1179,21 +1187,15 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
 
     return instance;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
-    {
-    return GetClassLayout().IsPropertyReadOnly (propertyIndex);
-    }
-
+  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
-    return new StandaloneECInstance (*this, minimumBufferSize);
+    StandaloneECInstancePtr instance = new StandaloneECInstance (*this, minimumBufferSize);
+    instance->InitializeDefaultValues();
+    return instance;
     }    
     
 END_BENTLEY_ECOBJECT_NAMESPACE

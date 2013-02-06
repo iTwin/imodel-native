@@ -225,7 +225,7 @@ TEST_F (CalculatedPropertyTests, BasicExpressions)
 
     SetValue (*instance, L"I", 5);
     SetValue (*instance, L"D", 1.234);
-    Test (*instance, L"S", L"6.234000");
+    Test (*instance, L"S", L"6.234");
 
 #ifdef ECEXPRESSIONS_SUPPORTS_PROMOTING_STRING_TO_NUMERIC
     instance = CreateTestCase (L"I", L"this.D + this.S", 0, L"-999");

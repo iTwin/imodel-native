@@ -1316,6 +1316,164 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     return SUCCESS;
     }    
 
+extern void convertByteArrayToString (WStringR outString, const byte *byteData, size_t numBytes);
+extern bool convertStringToByteArray (bvector<byte>& byteData, WCharCP stringData);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECValue::ConvertPrimitiveToString (WStringR str) const
+    {
+    PRECONDITION (IsPrimitive() && "ECValue::ConvertPrimitiveToString() requires a primitive value", false);    
+    if (!IsPrimitive())
+        return false;
+    
+    str.clear();
+    if (IsNull())
+        return true;
+
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Binary:
+        {
+        size_t nBytes;
+        byte const* bytes = GetBinary (nBytes);
+        if (NULL != bytes)
+            convertByteArrayToString (str, bytes, nBytes);
+        }
+        break;
+    case PRIMITIVETYPE_Boolean:
+        str = GetBoolean() ? L"True" : L"False";
+        break;
+    case PRIMITIVETYPE_DateTime:
+        str.Sprintf (L"%I64d", GetDateTimeTicks());
+        break;
+    case PRIMITIVETYPE_Double:
+        str.Sprintf (L"%.13g", GetDouble());
+        break;
+    case PRIMITIVETYPE_Integer:
+        str.Sprintf (L"%d", GetInteger());
+        break;
+    case PRIMITIVETYPE_Long:
+        str.Sprintf (L"%I64d", GetLong());
+        break;
+    case PRIMITIVETYPE_Point2D:
+        {
+        DPoint2d pt = GetPoint2D();
+        str.Sprintf (L"%.13g,%.13g", pt.x, pt.y);
+        }
+        break;
+    case PRIMITIVETYPE_Point3D:
+        {
+        DPoint3d pt = GetPoint3D();
+        str.Sprintf (L"%.13g,%.13g,%.13g", pt.x, pt.y, pt.z);
+        }
+        break;
+    case PRIMITIVETYPE_String:
+        str = GetString();
+        break;
+    default:
+        BeAssert (false);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
+    {
+    if (!IsString())
+        {
+        BeAssert (false);   // It's a private method, ought to have checked preconditions...
+        return false;
+        }
+    else if (PRIMITIVETYPE_String == primitiveType)
+        return true;
+    else if (IsNull())
+        {
+        SetPrimitiveType (primitiveType);
+        return true;
+        }
+            
+    WCharCP str = GetString();
+    switch (primitiveType)
+        {
+    case PRIMITIVETYPE_Binary:
+        {
+        bvector<byte> bytes;
+        if (!convertStringToByteArray (bytes, str))
+            return false;
+
+        SetBinary (&bytes.front(), bytes.size(), true);
+        }
+        break;
+    case PRIMITIVETYPE_Boolean:
+        if (0 == BeStringUtilities::Wcsicmp (L"true", str) || 0 == wcscmp (L"1", str))
+            SetBoolean (true);
+        else if (0 == BeStringUtilities::Wcsicmp (L"false", str) || 0 == wcscmp (L"0", str))
+            SetBoolean (false);
+        else
+            return false;
+        break;
+    case PRIMITIVETYPE_DateTime:
+    case PRIMITIVETYPE_Long:
+        {
+        Int64 i;
+        if (1 != BeStringUtilities::Swscanf (str, L"%lld", &i))
+            return false;
+        else if (PRIMITIVETYPE_Long == primitiveType)
+            SetLong (i);
+        else
+            SetDateTimeTicks (i);
+        }
+        break;
+    case PRIMITIVETYPE_Double:
+        {
+        double d;
+        if (1 == BeStringUtilities::Swscanf (str, L"%lg", &d))
+            SetDouble (d);
+        else
+            return false;
+        }
+        break;
+    case PRIMITIVETYPE_Integer:
+        {
+        Int32 i;
+        if (1 == BeStringUtilities::Swscanf (str, L"%d", &i))
+            SetInteger (i);
+        else
+            return false;
+        }
+        break;
+    case PRIMITIVETYPE_Point2D:
+        {
+        DPoint2d pt;
+        if (2 == BeStringUtilities::Swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
+            SetPoint2D (pt);
+        else
+            return false;
+        }
+        break;
+    case PRIMITIVETYPE_Point3D:
+        {
+        DPoint3d pt;
+        if (3 == BeStringUtilities::Swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+            SetPoint3D (pt);
+        else
+            return false;
+        }
+        break;
+    default:
+        BeAssert (false);
+        return false;
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -1335,57 +1493,10 @@ WString    ECValue::ToString () const
         {
         return L"IECInstance containing struct value";
         }
-    else
-        {
-        UShort  valueKind = m_valueKind;
-        switch (valueKind)
-            {
-            case PRIMITIVETYPE_Integer:
-                {
-                str.Sprintf (L"%d", GetInteger());
-                break;
-                }
-            case PRIMITIVETYPE_Long:
-                {
-                str.Sprintf (L"%lld", GetLong());
-                break;
-                }            
-            case PRIMITIVETYPE_Double:
-                {
-                str.Sprintf (L"%lf", GetDouble());
-                break;
-                }            
-            case PRIMITIVETYPE_String:
-                {
-                return GetString();
-                }            
-            case PRIMITIVETYPE_Boolean:
-                {
-                return GetBoolean() ? L"true" : L"false";
-                }
-            case PRIMITIVETYPE_Point2D:
-                {
-                DPoint2d point = GetPoint2D();
-                str.Sprintf (L"{%lg,%lg}", point.x, point.y);
-                break;          
-                }
-            case PRIMITIVETYPE_Point3D:
-                {
-                DPoint3d point = GetPoint3D();
-                str.Sprintf (L"{%lg,%lg,%lg}", point.x, point.y, point.z);
-                break;          
-                }
-            case PRIMITIVETYPE_DateTime:
-                {
-                SystemTime timeDate = GetDateTime();
-                return timeDate.ToString();
-                }
-            default:
-                {
-                return L"ECN::ECValue::ToString needs work... unsupported data type";
-                }            
-            }
-        }
+    else if (PRIMITIVETYPE_DateTime == m_valueKind)
+        str = GetDateTime().ToString(); // want something more readable than the ticks
+    else if (!ConvertPrimitiveToString (str))
+        str = L"<error>";
         
     return str;
     }
@@ -1410,6 +1521,8 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         SetString (strVal.c_str());
         return true;
         }
+    else if (IsString())
+        return ConvertToPrimitiveFromString (newType);
 
     PrimitiveType curType = GetPrimitiveType();
     switch (newType)
@@ -1422,7 +1535,16 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
             double roundingTerm = DoubleOps::AlmostEqual (GetDouble(), 0.0) ? 0.0 : GetDouble() > 0.0 ? 0.5 : -0.5;
             i = (Int32)(GetDouble() + roundingTerm);
             }
-        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%d", &i))
+        else if (PRIMITIVETYPE_Boolean == curType)
+            i = GetBoolean() ? 1 : 0;
+        else if (PRIMITIVETYPE_Long == curType)
+            {
+            if (INT_MAX <= GetLong() && INT_MIN >= GetLong())
+                i = (Int32)GetLong();
+            else
+                return false;
+            }
+        else
             return false;
 
         SetInteger (i);
@@ -1433,10 +1555,29 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         double d;
         if (PRIMITIVETYPE_Integer == curType)
             d = GetInteger();
-        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%lf", &d))
+        else if (PRIMITIVETYPE_Long == curType)
+            d = GetLong();
+        else if (PRIMITIVETYPE_Boolean == curType)
+            d = GetBoolean() ? 1.0 : 0.0;
+        else
             return false;
 
         SetDouble (d);
+        }
+        return true;
+    case PRIMITIVETYPE_Boolean:
+        {
+        bool b;
+        if (PRIMITIVETYPE_Integer == curType)
+            b = GetInteger() != 0;
+        else if (PRIMITIVETYPE_Long == curType)
+            b = GetLong() != 0;
+        else if (PRIMITIVETYPE_Double == curType)
+            b = !DoubleOps::AlmostEqual (GetDouble(), 0.0);
+        else
+            return false;
+
+        SetBoolean (b);
         }
         return true;
         }
@@ -2536,8 +2677,11 @@ ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
-    static ECValuesCollection::const_iterator s_end(*new ECValuesCollectionIterator());
-    return s_end;
+    // WIP_FUSION: can we reduce the amount of dynamic allocation associated with iterating an ECValuesCollection?
+    if (m_end.IsNull())
+        m_end = new ECValuesCollectionIterator();
+
+    return const_iterator (*m_end);
     }
 
 /*---------------------------------------------------------------------------------**//**
