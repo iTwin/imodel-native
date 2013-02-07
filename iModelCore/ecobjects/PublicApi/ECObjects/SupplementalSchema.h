@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SupplementalSchema.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,26 +50,29 @@ public:
     //! Constructor for SupplementalSchemaMetaData
     ECOBJECTS_EXPORT SupplementalSchemaMetaData
         (
-        WString primarySchemaName,
-        UInt32    primarySchemaMajorVersion,
-        UInt32    primarySchemaMinorVersion,
-        UInt32    supplementalSchemaPrecedence,
-        WString supplementalSchemaPurpose,
-        bool   isUserSpecific
+        WString primarySchemaName, //!< Name of the primary schema that this schema supplements
+        UInt32    primarySchemaMajorVersion, //!< Major version of the primary schema that this schema supplements
+        UInt32    primarySchemaMinorVersion, //!< Minor version of the primary schema that this schema supplements
+        UInt32    supplementalSchemaPrecedence, //!< custom attributes with higher precedence overrride custom attributes with lower precedence
+        WString supplementalSchemaPurpose, //!< Purpose of this supplemental schema
+        bool   isUserSpecific //!< if true this schema supplements the primary schema on a per user basis
         );
 
+    //! Creates an instance of SupplementalSchemaMetaData
     ECOBJECTS_EXPORT static SupplementalSchemaMetaDataPtr Create
         (
-        WString primarySchemaName,
-        UInt32    primarySchemaMajorVersion,
-        UInt32    primarySchemaMinorVersion,
-        UInt32    supplementalSchemaPrecedence,
-        WString supplementalSchemaPurpose,
-        bool   isUserSpecific
+        WString primarySchemaName, //!< Name of the primary schema that this schema supplements
+        UInt32    primarySchemaMajorVersion, //!< Major version of the primary schema that this schema supplements
+        UInt32    primarySchemaMinorVersion, //!< Minor version of the primary schema that this schema supplements
+        UInt32    supplementalSchemaPrecedence, //!< custom attributes with higher precedence overrride custom attributes with lower precedence
+        WString supplementalSchemaPurpose, //!< Purpose of this supplemental schema
+        bool   isUserSpecific //!< if true this schema supplements the primary schema on a per user basis
         );
 
     //! Constructor that takes the custom attribute itself
     ECOBJECTS_EXPORT SupplementalSchemaMetaData(IECInstanceCR supplementalSchemaMetaDataCustomAttribute);
+
+    //! Creates an instance of SupplementalSchemaMetaData
     ECOBJECTS_EXPORT static SupplementalSchemaMetaDataPtr Create(IECInstanceCR supplementalSchemaMetaDataCustomAttribute);
 
     ECOBJECTS_EXPORT virtual ~SupplementalSchemaMetaData() {}
@@ -163,6 +166,7 @@ public:
     //! @param[in]  supplementalSchemaMetadata  The attribute to set on the schema
     ECOBJECTS_EXPORT static void SetMetadata(ECSchemaR supplementalSchema, SupplementalSchemaMetaDataR supplementalSchemaMetadata);
 
+    //! Represents the Standard Purposes a supplemental schema can have
     struct StandardPurpose
         {
         //! The Standard Purpose for a Supplemental schema that contains Units information
@@ -336,6 +340,7 @@ public:
     //! Gets the primary schema name
     ECOBJECTS_EXPORT WStringCR GetPrimarySchemaName() const;
 
+    //! Default Constructor
     SupplementedSchemaBuilder() { m_schemaCache = ECSchemaCache::Create(); }
 
     //! Calling this method supplements the custom attributes of the primarySchema and all sub-containers, and applies the
@@ -370,6 +375,8 @@ public:
     //! @param[in]  primarySchemaFullName   The full name of the primary schema this SupplementalSchemaInfo instance relates to
     //! @param[in]  schemaFullNameToPurposeMapping  The bmap of schema full names and purposes used to supplement the primary schema.h  Schema Fullname is the key, Purpose is the value
     ECOBJECTS_EXPORT SupplementalSchemaInfo(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
+
+    //! Creates an instance of SupplementalSchemaInfo
     ECOBJECTS_EXPORT static SupplementalSchemaInfoPtr Create(WStringCR primarySchemaFullName, SchemaNamePurposeMap& schemaFullNameToPurposeMapping);
 
     //! Returns the full name of the primary schema this SupplementalSchemaInfo instance relates to

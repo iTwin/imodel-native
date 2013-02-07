@@ -3206,7 +3206,7 @@ InstanceReadStatus   IECInstance::ReadFromBeXmlNode (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool writeInstanceId, bool utf16)
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
 
