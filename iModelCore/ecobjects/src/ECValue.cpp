@@ -3038,7 +3038,7 @@ bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
                 endPos = formattedDouble.length();
 
             if ((UInt32)endPos < numFormat.widthBeforeDecimal)
-                formattedDouble.insert (0, numFormat.widthBeforeDecimal - (UInt32)endPos, '0');
+                formattedDouble.insert ((size_t)0, numFormat.widthBeforeDecimal - (UInt32)endPos, '0');
             }
         else if (formattedDouble.length() > 0 && formattedDouble[0] == '0')
             {
