@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -70,24 +70,36 @@ private:
     PropertyLayout (){}
 
 public:
-    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;
-    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;
-    ECOBJECTS_EXPORT UInt32                      GetOffset() const;
-    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const;
-    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const;
-    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const;
-    ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const;
-    ECOBJECTS_EXPORT UInt32                      GetModifierData() const;
-    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;
+    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const; //!< Returns the access string for retrieving this property
+    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const; //!< Returns the property index of the struct parent of this property. If this is a root property an index of zero is returned.
+    ECOBJECTS_EXPORT UInt32                      GetOffset() const; //!< Returns the offset to either the data holding this property's value (for fixed-size values) or to the offset at which the property's value can be found
+    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const; //!< Returns the offset to Null flags bit mask.
+    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const; //!< Returns a bit mask that has the a single bit set. It can be used to AND with the bitmask at the offset returned by GetNullflagsOffset() to determine if the property is NULL.
+    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const; //!< Returns an ECTypeDescriptor that defines this property
 
+    //! Returns the modifier flags that describe this property, which can indicate
+    //! @li that a string should be treated as fixed size
+    //! @li that a string should have a max length
+    //! @li that a longer fixed size type should be treated as an optional variable-sized type
+    //! @li that for a string, only an entry to the string table is stored
+    //! @li a default value should be used
+    ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const; 
+    ECOBJECTS_EXPORT UInt32                      GetModifierData() const; //!< Returns the data used with the modifier flag, like the length of a fixed-sized string.
+    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const; //!< Returns whether this is a read-only property
+
+    //! Sets the readonly flag for this property
+    //! @param[in] readOnly Flag indicating whether this property is read-only or not
+    //! @returns The readOnly status of this property
     ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
-    ECOBJECTS_EXPORT bool                        IsFixedSized() const;
-    ECOBJECTS_EXPORT bool                        HoldsCalculatedProperty() const;
+    ECOBJECTS_EXPORT bool                        IsFixedSized() const; //<! Returns whether this is a fixed-size property
+    ECOBJECTS_EXPORT bool                        HoldsCalculatedProperty() const; //<! Returns whether this property is actually a Calculated Property
 
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
     
+    //! Returns a string containing detailed information about this property's characteristics
+    //! (including access string, type name, offset, nullflagsOffset, nullflagsBitmask
     ECOBJECTS_EXPORT WString                      ToString();
     };
 

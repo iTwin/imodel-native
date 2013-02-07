@@ -82,30 +82,31 @@ typedef bvector<EvaluationResult>                   EvaluationResultVector;
 typedef EvaluationResultVector::iterator            EvaluationResultVectorIterator;
 
 //! @ingroup ECObjectsGroup
+//! Enumerates the possible return values for evaluating an expression or its value
 enum ExpressionStatus
     {
-    ExprStatus_Success              =   0,
-    ExprStatus_UnknownError         =   1,
-    ExprStatus_UnknownMember        =   2,
-    ExprStatus_PrimitiveRequired    =   3,
-    ExprStatus_StructRequired       =   4,
-    ExprStatus_ArrayRequired        =   5,
-    ExprStatus_UnknownSymbol        =   6,
+    ExprStatus_Success              =   0, //!< Success
+    ExprStatus_UnknownError         =   1, //!< There as an unknown error in evaluation
+    ExprStatus_UnknownMember        =   2, //!< Returned if a property name in the expression cannot be found in the containing class
+    ExprStatus_PrimitiveRequired    =   3, //!< Returned when a primitive is expected and not found
+    ExprStatus_StructRequired       =   4, //!< Returned when a struct is expected and not found
+    ExprStatus_ArrayRequired        =   5, //!< Returned when an array is expected and not found
+    ExprStatus_UnknownSymbol        =   6, //!< Returned when the symbol in the expression cannot be resolved
     ExprStatus_DotNotSupported      =   7,
 
     //  Returning ExprStatus_NotImpl in base methods is the lazy approach for methods that should be 
     //  pure virtual.  Should be eliminated after prototyping phase is done
     ExprStatus_NotImpl              =   8,
 
-    ExprStatus_NeedsLValue          =   9,
-    ExprStatus_WrongType            =  10,
-    ExprStatus_IncompatibleTypes    =  11,
-    ExprStatus_MethodRequired       =  12,
-    ExprStatus_InstanceMethodRequired =  13,
-    ExprStatus_StaticMethodRequired =  14,
-    ExprStatus_InvalidTypesForDivision =  15,
-    ExprStatus_DivideByZero             =  16,
-    ExprStatus_WrongNumberOfArguments   =  17,
+    ExprStatus_NeedsLValue          =   9, //!< Returned when the symbol needs to be an lvalue
+    ExprStatus_WrongType            =  10, //!< Returned when the symbol type is of the wrong type for the expression
+    ExprStatus_IncompatibleTypes    =  11, //!< Returned when expression uses incompatible types (ie, trying to perform arithmetic on two strings)
+    ExprStatus_MethodRequired       =  12, //!< Returned when a method token is expected and not found
+    ExprStatus_InstanceMethodRequired =  13, //!< Returned when an instance method is called, but has not been defined
+    ExprStatus_StaticMethodRequired =  14, //!< Returned when a static method is called, but has not been defined
+    ExprStatus_InvalidTypesForDivision =  15, //!< Returned when the expression tries to perform a division operation on types that cannot be divided
+    ExprStatus_DivideByZero             =  16, //!< Returned when the division operation tries to divide by zero
+    ExprStatus_WrongNumberOfArguments   =  17, //!< Returned when the number of arguments to a method in an expression do not match the number of arguments actually expected
     };
 
 /*__PUBLISH_SECTION_END__*/

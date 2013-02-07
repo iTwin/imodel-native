@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/DesignByContract.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,11 +20,11 @@ private:
     static int s_globalIgnoreCount;    
 
 public:
-/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static bool AreAssertsDisabled (void);
     ECOBJECTS_EXPORT AssertDisabler(void);
     ECOBJECTS_EXPORT ~AssertDisabler(void);
 };
+/*__PUBLISH_SECTION_START__*/
 
     //! Utilize this macro to disable asserts that may occur within a codeblock.
     //! The intent is that this macro will only ever be used by ATPs when testing failure scenarios.  No delivered code should ever utilize this macro.
