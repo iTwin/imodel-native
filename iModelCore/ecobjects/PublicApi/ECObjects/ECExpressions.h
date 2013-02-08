@@ -533,6 +533,7 @@ enum            ExpressionToken
     TOKEN_Ident               = 82,
     TOKEN_StringConst         = 83,
     TOKEN_PointConst          = 84,
+    TOKEN_DateTimeConst       = 85,               //      @
     TOKEN_IntegerConstant     = 87,
     TOKEN_HexConstant         = 88,
     TOKEN_FloatConst          = 89,
@@ -757,6 +758,7 @@ public:
     static NodePtr          CreateNullLiteral();
     static NodePtr          CreatePoint2DLiteral (DPoint2dCR value);
     static NodePtr          CreatePoint3DLiteral (DPoint3dCR value);
+    static NodePtr          CreateDateTimeLiteral (Int64 ticks);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
     static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);
     static NodePtr          CreateShift (ExpressionToken tokenID, NodeR left, NodeR right);

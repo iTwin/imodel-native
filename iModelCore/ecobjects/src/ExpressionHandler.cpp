@@ -527,6 +527,9 @@ ExpressionToken Lexer::ScanToken ()
             case '}':
                 return TOKEN_RCurly;
 
+            case '@':
+                return TOKEN_DateTimeConst;
+
             case '*':
                 t = TOKEN_Star;
     modify:         if ((current = GetNextChar()) == '=')
@@ -983,6 +986,18 @@ NodePtr         ECEvaluator::ParsePrimary
                     }
 
                 result = Must (TOKEN_RCurly, *result);
+                }
+                break;
+
+            case TOKEN_DateTimeConst:
+                {
+                m_lexer->Advance();
+                Int64 ticks;
+                if (1 != BeStringUtilities::Swscanf (m_lexer->GetTokenStringCP(), L"%lld", &ticks))
+                    return GetErrorNode (L"DateTimeLiteralExpected");
+
+                result = Node::CreateDateTimeLiteral (ticks);
+                m_lexer->Advance();
                 }
                 break;
 

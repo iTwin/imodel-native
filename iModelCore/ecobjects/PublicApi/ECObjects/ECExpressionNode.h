@@ -222,18 +222,20 @@ struct          LiteralNode : Node
     {
 private:
     T           m_value;
-protected:
-    virtual WString             _ToString() const override      { return ECN::ECValue (m_value).ToString(); }
+
+    virtual WString             _ToString() const override      { return GetECValue().ToString(); }
     virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
         {
-        evalResult = ECN::ECValue (m_value);
+        evalResult = GetECValue();
         return ExprStatus_Success;
         }
     virtual ExpressionToken     _GetOperation() const override  { return TOKEN; }
+protected:
+    virtual ECValue             GetECValue() const { return ECValue (m_value); }
 public:
     LiteralNode (T const& value) : m_value(value) { }
     
-    T           GetInternalValue() { return m_value; }
+    T           GetInternalValue() const { return m_value; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -245,6 +247,17 @@ typedef LiteralNode<double, TOKEN_FloatConst>       DoubleLiteralNode;
 typedef LiteralNode<bool, TOKEN_True>               BooleanLiteralNode;
 typedef LiteralNode<DPoint2d, TOKEN_PointConst>     Point2DLiteralNode;
 typedef LiteralNode<DPoint3d, TOKEN_PointConst>     Point3DLiteralNode;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DateTimeLiteralNode : LiteralNode<Int64, TOKEN_DateTimeConst>
+    {
+protected:
+    virtual ECValue         GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
+public:
+    DateTimeLiteralNode (Int64 ticks) : LiteralNode<Int64, TOKEN_DateTimeConst>(ticks) { }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13

@@ -555,6 +555,10 @@ ECObjectsStatus ECClass::RemoveProperty (WStringCR name)
 
     delete ecProperty;
 
+    // ###TODO? If we're going to cache this, and also allow people to modify the ECClass in memory, we need a strategy for managing cache.
+    // The following only works if no one else holds a pointer to our cached enabler...
+    m_defaultStandaloneEnabler = NULL;
+
     return ECOBJECTS_STATUS_Success;
     }
     
