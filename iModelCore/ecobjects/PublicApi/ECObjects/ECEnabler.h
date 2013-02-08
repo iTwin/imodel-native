@@ -39,8 +39,10 @@ struct ECEnabler : RefCountedBase
         virtual bool _ProcessPrimitiveProperty (IECInstance const& instance, WCharCP propName, ECValue const& propValue) const = 0;
         };
 
+#if defined (EXPERIMENTAL_TEXT_FILTER)
     enum PropertyProcessingResult  {PROPERTY_PROCESSING_RESULT_Miss=0, PROPERTY_PROCESSING_RESULT_Hit=1, PROPERTY_PROCESSING_RESULT_NoCandidates=3};
     enum PropertyProcessingOptions {PROPERTY_PROCESSING_OPTIONS_SingleType=0, PROPERTY_PROCESSING_OPTIONS_AllTypes=1};
+#endif
 
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -84,10 +86,10 @@ protected:
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, ECN::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
+    ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 #endif
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
 
-    ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 
 public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (UInt32 propertyIndex) const;
@@ -123,7 +125,13 @@ public:
     //! Get the IStandaloneEnablerLocater for this enabler
     ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
 
+    //! Returns the number of properties that this enabler enables.
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
+
+    //! Returns an enabler for the given class from the given schema.
+    //! @param[in] schemaKey    The SchemaKey defining the schema (schema name and version info) that the className ECClass comes from
+    //! @param[in] className    The name of the ECClass to retrieve the enabler for
+    //! @returns A StandaloneECEnabler that enables the requested class
     ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
     
 #if defined (EXPERIMENTAL_TEXT_FILTER)
@@ -193,6 +201,7 @@ protected:
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
     ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
+    //! Returns the relationship class that this enabler 'enables'
     ECOBJECTS_EXPORT ECN::ECRelationshipClassCR      GetRelationshipClass() const;
  };
 

@@ -94,12 +94,14 @@ private:
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
 /*__PUBLISH_SECTION_START__*/
 public:
+
+    //! Enumeration defining the result of a validation check
     enum ValidationResult
         {
-        RESULT_Valid = 0,
-        RESULT_NullOrEmpty,
-        RESULT_BeginsWithDigit,
-        RESULT_IncludesInvalidCharacters
+        RESULT_Valid = 0, //!< The name is valid
+        RESULT_NullOrEmpty, //!< The string to check was NULL or empty
+        RESULT_BeginsWithDigit, //!< The string begins with a digit
+        RESULT_IncludesInvalidCharacters //!< The string contains invalid characters
         };
 
     //! Encodes special characters in a possibly invalid name to produce a valid name
@@ -140,11 +142,20 @@ private:
         };
 
 public:
+    //! Creates a TypeDescriptor for the given primitiveType
+    //! @param[in] primitiveType    The primitive type to describe
+    //! @returns an ECTypeDescriptor describing this primitive type
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
+    //! Creates a TypeDescriptor of an array of the given primitiveType
+    //! @param[in] primitiveType    The primitiveType to create an array descriptor for
+    //! @returns An ECTypeDescriptor describing an array of the given primitiveType
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
+
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();    //!< Creates a TypeDescriptor for a struct array type
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor (); //!< Creates a TypeDescriptor for a struct
+
+    //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
 /*__PUBLISH_SECTION_END__*/
@@ -179,6 +190,8 @@ struct SupplementedSchemaBuilder;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
+//! Base class for ECSchema, ECClass, ECProperty.  Represents a container object that can hold 
+//! Custom Attributes.
 //! @bsiclass
 //=======================================================================================
 struct IECCustomAttributeContainer
@@ -289,6 +302,7 @@ public:
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
+//! Iterates over the custom attribute instances in a container
 //! @bsiclass
 //=======================================================================================
 struct ECCustomAttributeInstanceIterable
@@ -319,6 +333,7 @@ public:
 /*__PUBLISH_SECTION_START__*/
         };
 
+    //! Iterator for the custom attribute instances
     struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr const>
         {
         private:
@@ -331,15 +346,15 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
         public:
-            ECOBJECTS_EXPORT const_iterator&     operator++();
-            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const;
+            ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increment the iterator
+            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const; //!< Compare iterator to value
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const; //!< Compare iterator to value
+            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const; //!< Return the IECInstance at the iterator location
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
+    ECOBJECTS_EXPORT const_iterator begin () const; //! Returns the beginning of the collection
+    ECOBJECTS_EXPORT const_iterator end ()   const; //! Returns the end of the collection
 };
 
 struct PrimitiveECProperty;
@@ -533,7 +548,6 @@ public:
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
-
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the name of the ECClass that this property is contained within
@@ -580,12 +594,12 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
 
-    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const;
-    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP ();
-    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const;
-    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP ();
-    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const;
-    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP ();
+    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const; //!< Returns the property as a const PrimitiveECProperty*
+    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP (); //!< Returns the property as a PrimitiveECProperty*
+    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const; //!< Returns the property as a const ArrayECProperty*
+    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP (); //!< Returns the property as an ArrayECProperty*
+    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const; //!< Returns the property as a const StructECProperty*
+    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
 };
 
 //=======================================================================================
@@ -654,7 +668,7 @@ public:
     //! The property type.
     //! This type must be an ECClass where IsStruct is set to true.
     ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECClassCR value);
-    ECOBJECTS_EXPORT ECClassCR          GetType() const;
+    ECOBJECTS_EXPORT ECClassCR          GetType() const; //!< Gets the ECClass that defines the type for this property
 };
 
 //=======================================================================================
@@ -756,6 +770,7 @@ public:
 /*__PUBLISH_SECTION_START__*/
         };
 
+    //! Iterator over the properties
     struct const_iterator : std::iterator<std::forward_iterator_tag, const ECPropertyP>
         {
         private:
@@ -769,15 +784,15 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
         public:
-            ECOBJECTS_EXPORT const_iterator&     operator++();
-            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const;
+            ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increments the iterator
+            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const; //!< Checks for inequality
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const; //!< Checks for equality
+            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const; //!< Returns the value at the current location
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
+    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
+    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
     };
 
 typedef bvector<ECClassP> ECBaseClassesList;
@@ -874,6 +889,7 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
@@ -1025,8 +1041,13 @@ public:
 
 }; // ECClass
 
+//! Used to define which end of the relationship, source or target
 //! @ingroup ECObjectsGroup
-enum ECRelationshipEnd { ECRelationshipEnd_Source = 0, ECRelationshipEnd_Target };
+enum ECRelationshipEnd 
+    { 
+    ECRelationshipEnd_Source = 0, //!< End is the source
+    ECRelationshipEnd_Target  //!< End is the target
+    };
 
 //! Used to describe the direction of a related instance within the context
 //! of an IECRelationshipInstance
@@ -1160,8 +1181,8 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
-
-    ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint();
+ 
+    ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
@@ -1271,6 +1292,7 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
+//! Defines what sort of match should be used when locating a schema
 //! @ingroup ECObjectsGroup
 enum SchemaMatchType
     {
@@ -1286,6 +1308,7 @@ enum SchemaMatchType
 
 /*=================================================================================**//**
 * @ingroup ECObjectsGroup
+* Fully defines a schema with its name, major and minor versions, and a checksum
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
 struct SchemaKey
