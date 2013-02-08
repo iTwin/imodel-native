@@ -1341,6 +1341,14 @@ NodePtr         Node::CreateBooleanLiteral(bool literalValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+NodePtr         Node::CreateNullLiteral()                   { return new NullLiteralNode(); }
+NodePtr         Node::CreatePoint2DLiteral (DPoint2dCR pt)  { return new Point2DLiteralNode (pt); }
+NodePtr         Node::CreatePoint3DLiteral (DPoint3dCR pt)  { return new Point3DLiteralNode (pt); }
+NodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return new DateTimeLiteralNode (ticks); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr         Node::CreateStringLiteral (wchar_t const* value)

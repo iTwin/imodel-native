@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionHandler.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -480,6 +480,8 @@ ExpressionToken Lexer::GetIdentifier ()
         return TOKEN_Is;
     else if (wcscmp (L"IIf", identifier) == 0)
         return TOKEN_IIf;
+    else if (wcscmp (L"Null", identifier) == 0)
+        return TOKEN_Null;
 
     return TOKEN_Ident;
     }
@@ -518,6 +520,15 @@ ExpressionToken Lexer::ScanToken ()
 
             case ')':
                 return TOKEN_RParen;
+
+            case '{':
+                return TOKEN_LCurly;
+
+            case '}':
+                return TOKEN_RCurly;
+
+            case '@':
+                return TOKEN_DateTimeConst;
 
             case '*':
                 t = TOKEN_Star;
@@ -753,6 +764,23 @@ NodePtr  ECEvaluator::ParseArguments
     return Must (TOKEN_RParen, *argTree);
     }
 
+#define EXTRACT_COORDINATE(COORD)   \
+if (m_lexer->GetTokenType() == TOKEN_Minus)     \
+    {     \
+    fac = -1.0;     \
+    m_lexer->Advance();     \
+    }     \
+else     \
+    fac = 1.0;     \
+ \
+if (1 != BeStringUtilities::Swscanf (m_lexer->GetTokenStringCP(), L"%lg", &COORD))     \
+    return GetErrorNode (L"PointLiteralExpected");     \
+else     \
+    {   \
+    m_lexer->Advance();     \
+    COORD *= fac;   \
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -772,6 +800,11 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_False:
                 result = Node::CreateBooleanLiteral (false);
                 m_lexer->Advance ();
+                break;
+
+            case TOKEN_Null:
+                result = Node::CreateNullLiteral();
+                m_lexer->Advance();
                 break;
 
             case TOKEN_IIf:
@@ -923,6 +956,49 @@ NodePtr         ECEvaluator::ParsePrimary
                 result = ParseValueExpression ();               //  We do not allow embedded assignments
                 result->SetHasParens(true);
                 result = Must (TOKEN_RParen, *result);
+                break;
+
+            case TOKEN_LCurly:
+                {
+                m_lexer->Advance();
+                double x, y, z, fac;
+                
+                EXTRACT_COORDINATE(x)
+                if (m_lexer->GetTokenType() != TOKEN_Comma)
+                    return GetErrorNode (L"PointLiteralExpected");
+
+                m_lexer->Advance();
+
+                EXTRACT_COORDINATE(y)
+
+                switch (m_lexer->GetTokenType())
+                    {
+                    case TOKEN_RCurly:
+                        result = Node::CreatePoint2DLiteral (DPoint2d::From (x, y));
+                        break;
+                    case TOKEN_Comma:
+                        m_lexer->Advance();
+                        EXTRACT_COORDINATE(z)
+                        result = Node::CreatePoint3DLiteral (DPoint3d::FromXYZ (x, y, z));
+                        break;
+                    default:
+                        return GetErrorNode (L"PointLiteralExpected");
+                    }
+
+                result = Must (TOKEN_RCurly, *result);
+                }
+                break;
+
+            case TOKEN_DateTimeConst:
+                {
+                m_lexer->Advance();
+                Int64 ticks;
+                if (1 != BeStringUtilities::Swscanf (m_lexer->GetTokenStringCP(), L"%lld", &ticks))
+                    return GetErrorNode (L"DateTimeLiteralExpected");
+
+                result = Node::CreateDateTimeLiteral (ticks);
+                m_lexer->Advance();
+                }
                 break;
 
     //        case NULL_LITERAL:
