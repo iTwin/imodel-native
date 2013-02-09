@@ -643,7 +643,7 @@ ECDiffNodeP ECSchemaDiff::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedClasse
     BeAssert (classes.size() == 2);
     AlignedClassMap baseClassMap;
     bvector<WCharCP> baseClassOrderedList;
-    for (int i = 0 ; i < classes.size(); i++)
+    for (size_t i = 0 ; i < classes.size(); i++)
         {
         ECClassCP ecclass = classes[i];
         if (ecclass == NULL)
@@ -656,7 +656,7 @@ ECDiffNodeP ECSchemaDiff::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedClasse
             if (baseClassMap.find (baseClass.GetFullName())== baseClassMap.end())
                 baseClassOrderedList.push_back (baseClass.GetFullName());
             AlignedClasses& baseClasses = baseClassMap [baseClass.GetFullName()];
-            int nNullEntriesRequired = i - (int)baseClasses.size();
+            size_t nNullEntriesRequired = i - baseClasses.size();
             if (nNullEntriesRequired > 0)
                 do
                     {
