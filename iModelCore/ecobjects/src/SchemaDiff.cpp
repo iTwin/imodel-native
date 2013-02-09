@@ -793,7 +793,7 @@ ECDiffNodeP ECSchemaDiff::DiffRelationshipConstraintClasses (ECDiffNodeR parentD
     BeAssert (constraints.size() == 2);
     AlignedClassMap constraintClassMap;
     bvector<WCharCP> constraintClassOrderedList;
-    for (int i = 0 ; i < constraints.size(); i++)
+    for (size_t i = 0 ; i < constraints.size(); i++)
         {
         ECRelationshipConstraintCP ecRelationshipConstraint = constraints[i];
         if (ecRelationshipConstraint == NULL)
