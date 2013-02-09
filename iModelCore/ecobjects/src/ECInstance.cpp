@@ -2383,7 +2383,7 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
     PrimitiveType        propertyType = primitiveProperty->GetType();
     InstanceReadStatus   ixrStatus;
     ECValue              ecValue;
-    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType, propertyValueNode)))
+    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType, propertyValueNode, m_context.GetSerializedPrimitiveType (*primitiveProperty))))
         return ixrStatus;
 
     if(ecValue.IsUninitialized())
@@ -2453,7 +2453,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             // read it, populating the ECInstance using accessString and arrayIndex.
             InstanceReadStatus      ixrStatus;
             ECValue                 ecValue;
-            if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode)))
+            if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode, m_context.GetSerializedPrimitiveArrayType (*arrayProperty))))
                 continue;
 
             if ( !isFixedSizeArray)
@@ -2577,17 +2577,35 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType, BeXmlNodeR primitiveValueNode)
+InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType, BeXmlNodeR primitiveValueNode, PrimitiveType serializedType)
     {
+    // If we fail to read the property value for some reason, return it as null
+    ecValue.SetToNull();
+    ecValue.SetPrimitiveType (propertyType);
+
     // On entry primitiveValueNode is the XML node that holds the value. 
     // First check to see if the value is set to NULL
     bool         nullValue;
     if (BEXML_Success == primitiveValueNode.GetAttributeBooleanValue (nullValue, XSI_NIL_ATTRIBUTE))
-        {
         if (true == nullValue)
-            {
-            ecValue.SetToNull();
             return INSTANCE_READ_STATUS_Success;
+
+    // If we're able to determine that the serialized type differs from the ECProperty's type, use that information to convert to correct type
+    if (serializedType != propertyType)
+        {
+        WString propertyValueString;
+        if (BEXML_Success == primitiveValueNode.GetContent (propertyValueString))
+            {
+            ecValue.SetString (propertyValueString.c_str(), false);
+            if (ecValue.ConvertToPrimitiveType (serializedType) && ecValue.ConvertToPrimitiveType (propertyType))
+                return INSTANCE_READ_STATUS_Success;
+            else if (PRIMITIVETYPE_Integer == propertyType && PRIMITIVETYPE_Long == serializedType)
+                {
+                // Code below will give us INT_MAX if serialized integer out of range of Int32.
+                // We don't want that when converting primitive types, and it's not really helpful to users, but not sure if anyone depends on it
+                // So only circumventing it for this special case when we know the serialized type
+                return INSTANCE_READ_STATUS_TypeMismatch;
+                }
             }
         }
 
