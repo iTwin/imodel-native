@@ -251,8 +251,8 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
     ECSchemaCR                          m_schema;
     SchemaKey                           m_key;
     public:
-    ECSchemaBackedInstanceReadContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
-        :m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema), m_key(schema.GetSchemaKey())
+    ECSchemaBackedInstanceReadContext(ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
+        :m_schema(schema), ECInstanceReadContext(standaloneEnablerLocater, schema, typeResolver), m_key(schema.GetSchemaKey())
         {
         }
     
@@ -265,9 +265,9 @@ struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    10/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater)
+ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaCR schema, IStandaloneEnablerLocaterP standaloneEnablerLocater, IPrimitiveTypeResolver const* typeResolver)
     {
-    return new ECSchemaBackedInstanceReadContext (schema, standaloneEnablerLocater);
+    return new ECSchemaBackedInstanceReadContext (schema, standaloneEnablerLocater, typeResolver);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -280,7 +280,7 @@ struct ECSchemaReadContextBackedInstanceReadContext: public ECInstanceReadContex
     ECSchemaPtr*            m_foundSchema;
     public:
     ECSchemaReadContextBackedInstanceReadContext(ECSchemaReadContextR schemaReadContext,  ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema)
-        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema)
+        :m_schemaReadContext(schemaReadContext), m_foundSchema (foundSchema), ECInstanceReadContext(schemaReadContext.GetStandaloneEnablerLocater(), fallBackSchema, NULL)
         {
         }
     

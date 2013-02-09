@@ -1059,6 +1059,9 @@ SystemTime          ECValue::GetDateTime () const
 
     memset (&systemTime, 0, sizeof(systemTime));
 
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", systemTime);
+    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", systemTime);
+
     // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
     systemDateTicks -= TICKADJUSTMENT; 
     _FILETIME fileTime;
@@ -1441,9 +1444,14 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
         break;
     case PRIMITIVETYPE_Integer:
         {
-        Int32 i;
-        if (1 == BeStringUtilities::Swscanf (str, L"%d", &i))
-            SetInteger (i);
+        Int64 i;
+        if (1 == BeStringUtilities::Swscanf (str, L"%lld", &i))
+            {
+            if (INT_MAX >= i && INT_MIN <= i)
+                SetInteger ((Int32)i);
+            else
+                return false;
+            }
         else
             return false;
         }
@@ -1539,7 +1547,7 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
             i = GetBoolean() ? 1 : 0;
         else if (PRIMITIVETYPE_Long == curType)
             {
-            if (INT_MAX <= GetLong() && INT_MIN >= GetLong())
+            if (INT_MAX >= GetLong() && INT_MIN <= GetLong())
                 i = (Int32)GetLong();
             else
                 return false;
@@ -1580,9 +1588,23 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         SetBoolean (b);
         }
         return true;
+    case PRIMITIVETYPE_Point3D:
+        if (PRIMITIVETYPE_Point2D == curType)
+            {
+            SetPoint3D (DPoint3d::FromXYZ (GetPoint2D().x, GetPoint2D().y, 0.0));
+            return true;
+            }
+        return false;
+    case PRIMITIVETYPE_Point2D:
+        if (PRIMITIVETYPE_Point3D == curType)
+            {
+            SetPoint2D (DPoint2d::From (GetPoint3D().x, GetPoint3D().y));
+            return true;
+            }
+        return false;
+    default:
+        return false;
         }
-
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
