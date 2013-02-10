@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -255,7 +255,7 @@ CalculatedPropertySpecification::~CalculatedPropertySpecification()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (PrimitiveECPropertyCR ecprop)
+CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPropertyCR ecprop, PrimitiveType primitiveType)
     {
     IECInstancePtr customAttr = ecprop.GetCustomAttribute (L"CalculatedECPropertySpecification");
     if (customAttr.IsNull())
@@ -274,7 +274,7 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
     // ###TODO: It seems to me that if the calculated property spec is for default value only, then setting the value should not affect dependent properties and we don't require ParserRegex...correct?
     // Note: ParserRegex only makes sense for string properties
     ParserRegexP parserRegex = NULL;
-    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == ecprop.GetType() && !ecprop.IsReadOnlyFlagSet();
+    bool wantParserRegex = !isDefaultOnly && PRIMITIVETYPE_String == primitiveType && !ecprop.IsReadOnlyFlagSet();
     if (wantParserRegex)
         {
         // ###TODO: there is also a configuration variable which can be used to control this...In System.Configuration.ConfigurationManager.AppSettings[] - relevant?
@@ -289,13 +289,13 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (Prim
 
     ECValue failureValue;
     customAttr->GetValue (failureValue, L"FailureValue");
-    if (!failureValue.ConvertToPrimitiveType (ecprop.GetType()))
+    if (!failureValue.ConvertToPrimitiveType (primitiveType))
         {
         LOG.infov (L"Unable to convert failure value %ls to primitive type %ls\n", failureValue.GetString(), ecprop.GetTypeName().c_str());
         failureValue.SetToNull();
         }
 
-    return new CalculatedPropertySpecification (*node, parserRegex, *customAttr, ecprop.GetType(), failureValue);
+    return new CalculatedPropertySpecification (*node, parserRegex, *customAttr, primitiveType, failureValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -344,7 +344,7 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
         return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
-
 #undef HAVE_REGEX
+
+END_BENTLEY_ECOBJECT_NAMESPACE
 

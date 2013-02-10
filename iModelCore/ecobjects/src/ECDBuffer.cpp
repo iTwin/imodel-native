@@ -684,7 +684,7 @@ void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly)
+void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly, bool isCalculated)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -694,6 +694,9 @@ void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessS
     UInt32  modifierFlags = PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount;
     if (isReadOnly)
         modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly; 
+
+    if (isCalculated)
+        modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated;
    
     AddProperty (accessString, typeDescriptor, size, modifierFlags, arrayCount);
     }
@@ -724,7 +727,7 @@ void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly)
+void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly, bool isCalculated)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -736,6 +739,9 @@ void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount
     UInt32 modifierFlags = PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount;
     if (isReadOnly)
         modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly; 
+
+    if (isCalculated)
+        modifierFlags |= PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated;
 
     AddProperty (accessString, typeDescriptor, size, modifierFlags, arrayCount);
     }
@@ -784,22 +790,22 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP 
                 bool isFixedPropertySize = isFixedArrayCount && PrimitiveTypeIsFixedSize (arrayProp->GetPrimitiveElementType());
                 
                 if (addingFixedSizeProps && isFixedPropertySize)
-                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly());
+                    AddFixedSizeArrayProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                 else if (!addingFixedSizeProps && !isFixedPropertySize)
                     {
                     if (isFixedArrayCount)
-                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly());
+                        AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                     else
-                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), property->GetIsReadOnly(), false);
+                        AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor (arrayProp->GetPrimitiveElementType()), property->GetIsReadOnly(), arrayProp->IsCalculated());
                     }
                 }
             else if ((arrayKind == ARRAYKIND_Struct) && (!addingFixedSizeProps))
                 {
                 bool isFixedArrayCount = (arrayProp->GetMinOccurs() == arrayProp->GetMaxOccurs());
                 if (isFixedArrayCount)
-                    AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), arrayProp->GetMinOccurs(), property->GetIsReadOnly());
+                    AddVariableSizeArrayPropertyWithFixedCount (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), arrayProp->GetMinOccurs(), property->GetIsReadOnly(), arrayProp->IsCalculated());
                 else
-                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), property->GetIsReadOnly(), false);                
+                    AddVariableSizeProperty (propName.c_str(), ECTypeDescriptor::CreateStructArrayTypeDescriptor(), property->GetIsReadOnly(), arrayProp->IsCalculated()); 
                 }
             }
         }
@@ -2451,7 +2457,7 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
         }
 
     if (ECOBJECTS_STATUS_Success == status && propertyLayout.HoldsCalculatedProperty())
-        status = EvaluateCalculatedProperty (propertyLayout, v);
+        status = EvaluateCalculatedProperty (propertyLayout, v, useIndex, index);
 
     return status;
     }
@@ -2927,16 +2933,23 @@ static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (
     {
     UInt32 propertyIndex;
     ECPropertyCP ecprop;
-    if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) || NULL == (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
-        return NULL;
-    else
-        return ecprop->GetAsPrimitiveProperty()->GetCalculatedPropertySpecification();
+    if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
+        {
+        PrimitiveECPropertyCP primProp;
+        ArrayECPropertyCP arrayProp;
+        if (NULL != (primProp = ecprop->GetAsPrimitiveProperty()))
+            return primProp->GetCalculatedPropertySpecification();
+        else if (NULL != (arrayProp = ecprop->GetAsArrayProperty()))
+            return arrayProp->GetCalculatedPropertySpecification();
+        }
+
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLayout, ECValueR existingValue) const
+ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLayout, ECValueR existingValue, bool useArrayIndex, UInt32 arrayIndex) const
     {
     IECInstanceCP iecInstance = this->GetAsIECInstance();
     if (NULL == iecInstance)
@@ -2954,7 +2967,7 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
 
     // ###TODO: I don't like this cast either. Calculated properties require that we modify the instance in order to store the calculated value
     ECDBuffer& memInst = const_cast<ECDBuffer&> (*this);
-    evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, propLayout, false, 0, true);
+    evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex, true);
     if (ECOBJECTS_STATUS_Success == evalStatus)
         existingValue = updatedValue;
 

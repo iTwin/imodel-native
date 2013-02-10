@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -166,9 +166,9 @@ private:
         void        AddProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
         void        AddStructProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
         void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
-        void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount, bool isReadOnly);
+        void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount, bool isReadOnly, bool isCalculated);
         void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
-        void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly);        
+        void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly, bool isCalculated);
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
         Factory (ECClassCR ecClass);
@@ -467,7 +467,7 @@ private:
     ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
     ECObjectsStatus                   GrowPropertyValue (PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
     // Updates the calculated value in memory and returns the updated value in existingValue
-    ECObjectsStatus                   EvaluateCalculatedProperty (PropertyLayoutCR propertyLayout, ECValueR existingValue) const;
+    ECObjectsStatus                   EvaluateCalculatedProperty (PropertyLayoutCR propertyLayout, ECValueR existingValue, bool useArrayIndex, UInt32 arrayIndex) const;
     // Updates the dependent properties of the calculated property
     ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, PropertyLayoutCR propertyLayout);
     ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
