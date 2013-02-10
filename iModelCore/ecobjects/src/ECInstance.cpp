@@ -2444,26 +2444,30 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
         // step through the nodes. Each should be a primitive value type like <int>value</int>
         for (BeXmlNodeP arrayValueNode = propertyValueNode.GetFirstChild (BEXMLNODE_Element); NULL != arrayValueNode; arrayValueNode = arrayValueNode->GetNextSibling(BEXMLNODE_Element))
             {
-            if (!ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
+            PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType (*arrayProperty);
+            if (memberType == serializedMemberType && !ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
                 {
                 LOG.warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %hs  Found: %hs", accessString.c_str(), GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
                 continue;
                 }
 
-            // read it, populating the ECInstance using accessString and arrayIndex.
-            InstanceReadStatus      ixrStatus;
-            ECValue                 ecValue;
-            if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode, m_context.GetSerializedPrimitiveArrayType (*arrayProperty))))
-                continue;
-
             if ( !isFixedSizeArray)
                 ecInstance->AddArrayElements (accessString.c_str(), 1);
 
-            ECObjectsStatus   setStatus = ecInstance->SetInternalValue (accessString.c_str(), ecValue, index);
-            if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
+            // read it, populating the ECInstance using accessString and arrayIndex.
+            InstanceReadStatus      ixrStatus;
+            ECValue                 ecValue;
+            if (INSTANCE_READ_STATUS_Success == (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode, serializedMemberType)))
                 {
-                BeAssert (false);
-                return INSTANCE_READ_STATUS_CantSetValue;
+                // If we failed to read the value above, the array member will have been allocated but left null.
+                // This allows any default value to be applied to it via CalculatedECPropertySpecification, 
+                // and is less surprising than the old behavior which would have omitted the member entirely.
+                ECObjectsStatus   setStatus = ecInstance->SetInternalValue (accessString.c_str(), ecValue, index);
+                if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
+                    {
+                    BeAssert (false);
+                    return INSTANCE_READ_STATUS_CantSetValue;
+                    }
                 }
 
             // increment the array index.
