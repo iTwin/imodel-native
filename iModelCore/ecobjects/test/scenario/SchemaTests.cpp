@@ -31,6 +31,8 @@ struct SchemaSearchTest          : ECTestFixture {};
 struct SchemaComparisonTest      : ECTestFixture {};
 struct SchemaCacheTest           : ECTestFixture {};
 struct SchemaReferenceTest       : ECTestFixture {};
+struct SchemaChecksumTest        : ECTestFixture {};
+struct SchemaImmutableTest        : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
@@ -632,6 +634,49 @@ TEST_F(SchemaCacheTest, DropSchema)
     EXPECT_EQ (cache->GetCount(), 1);
     EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema1", 2, 0)) == ECOBJECTS_STATUS_Success);
     EXPECT_EQ (cache->GetCount(), 0);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
+    {
+    WCharCP schemaXml =
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
+        L"       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />"
+        L"    </ECClass>"
+        L"</ECSchema>";
+        
+    EXPECT_EQ (ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 3278352953);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaImmutableTest, SetImmutable)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    
+    //schema->SetImmutable();
+    
+    ECClassP class1 = NULL;
+    //ECClassP class2 = ECClassP();
+    ECRelationshipClassP relationshipClass;
+    EXPECT_EQ (schema->CreateClass(class1, L"TestClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_TRUE (class1 == NULL);
+    //EXPECT_EQ (schema->CopyClass(class1, *class2), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->CreateRelationshipClass(relationshipClass, L"RelationshipClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetName(L"Some new name"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetNamespacePrefix(L"Some new prefix"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetDescription(L"Some new description"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetDisplayLabel(L"Some new label"), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetVersionMajor(13), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->SetVersionMinor(13), ECOBJECTS_STATUS_SchemaIsImmutable);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
