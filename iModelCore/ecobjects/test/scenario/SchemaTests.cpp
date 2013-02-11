@@ -662,14 +662,14 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
     
-    //schema->SetImmutable();
+    schema->SetImmutable();
     
     ECClassP class1 = NULL;
-    //ECClassP class2 = ECClassP();
+    ECClassP class2 = schema->GetClassP(L"ecProject");
     ECRelationshipClassP relationshipClass;
     EXPECT_EQ (schema->CreateClass(class1, L"TestClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_TRUE (class1 == NULL);
-    //EXPECT_EQ (schema->CopyClass(class1, *class2), ECOBJECTS_STATUS_SchemaIsImmutable);
+    EXPECT_EQ (schema->CopyClass(class1, *class2), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_EQ (schema->CreateRelationshipClass(relationshipClass, L"RelationshipClass"), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_EQ (schema->SetName(L"Some new name"), ECOBJECTS_STATUS_SchemaIsImmutable);
     EXPECT_EQ (schema->SetNamespacePrefix(L"Some new prefix"), ECOBJECTS_STATUS_SchemaIsImmutable);
