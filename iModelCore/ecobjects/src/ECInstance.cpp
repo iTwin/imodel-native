@@ -2485,7 +2485,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             ECClassCP   thisMemberType;
             WString     arrayMemberType (arrayValueNode->GetName(), true);
             if (NULL == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str(), structMemberType)))
-                return INSTANCE_READ_STATUS_BadArrayElement;
+                continue;
 
 
             InstanceReadStatus ixrStatus;
@@ -2802,16 +2802,8 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 
     // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base GetClass().
     ECClassCP    classFound;
-    if (NULL == (classFound = schema->GetClassCP (typeFound)))
-        {
-        BeAssert (false);
+    if (NULL == (classFound = schema->GetClassCP (typeFound)) || !classFound->Is (expectedType))
         return NULL;
-        }
-    if (!classFound->Is (expectedType))
-        {
-        BeAssert (false);
-        return NULL;
-        }
 
     return classFound;
     }
