@@ -258,7 +258,9 @@ public:
     ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
     // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
     // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
+    // NOTE: Check IsEmpty() before GetMaxIndex() to ensure there is at least one ClassLayout, otherwise the return value of GetMaxIndex() is undefined
     ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
+    ECOBJECTS_EXPORT bool                   IsEmpty() const;
     ECOBJECTS_EXPORT static SchemaLayoutP   Create (SchemaIndex index);
 };
 
@@ -542,6 +544,7 @@ protected:
     //! with a binary token that will actually be stored with the instance at the array index value that can then be used to locate the externalized struct value.
     //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
     //! externally.
+    //! If isInitializing is true, we are in the process of copying ECD memory buffer from another ECDBuffer, in which case this buffer's struct value ID entries are not valid.
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     virtual ECN::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;

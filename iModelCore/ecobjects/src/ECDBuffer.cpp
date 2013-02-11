@@ -1222,7 +1222,7 @@ UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
     // Return the first member of the parent's childList
     bvector<UInt32> const& childIndexList = mapIterator->second;
 
-    return *childIndexList.begin();
+    return !childIndexList.empty() ? *childIndexList.begin() : 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1350,6 +1350,14 @@ BentleyStatus   SchemaLayout::FindClassIndex (ClassIndex& classIndex, WCharCP cl
 UInt32          SchemaLayout::GetMaxIndex()
     {
     return (UInt32)m_classLayouts.size() - 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            SchemaLayout::IsEmpty() const
+    {
+    return m_classLayouts.empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2311,6 +2319,15 @@ ECObjectsStatus ECDBuffer::CopyInstancePropertiesToBuffer (IECInstanceCR source)
                 ECValue srcStructVal;
                 if (ECOBJECTS_STATUS_Success == srcBuffer->_GetStructArrayValueFromMemory (srcStructVal, *propLayout, arrayIdx) && !srcStructVal.IsNull())
                     {
+                    // The ECDBuffer we copied from source to 'this' contains struct ID values relevant only to source buffer
+                    // So clear out the struct ID entry in 'this' first.
+                    // WIP_FUSION: Assumption that struct IDs are always integers and 0 == null struct
+                    //  There seems to be no reason not to enforce that.
+                    ECValue nullStructIdValue (0);
+                    status = SetPrimitiveValueToMemory (nullStructIdValue, *propLayout, true, arrayIdx);
+                    if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)  // useless redundant return value...
+                        break;
+
                     if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, *propLayout, arrayIdx)))
                         {
                         // This useless return value is a constant pain in the...
