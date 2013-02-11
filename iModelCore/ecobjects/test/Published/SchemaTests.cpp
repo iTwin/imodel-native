@@ -21,9 +21,6 @@ struct SchemaCreationTest        : ECTestFixture {};
 struct SchemaCopyTest            : ECTestFixture {};
 struct ClassTest                 : ECTestFixture {};
 struct SchemaLocateTest          : ECTestFixture {};
-struct SchemaSearchTest          : ECTestFixture {};
-struct SchemaComparisonTest      : ECTestFixture {};
-struct SchemaCacheTest           : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
@@ -186,20 +183,23 @@ static  void    ValidateSchemaNameParsing (WCharCP fullName, bool expectFailure,
     WString    shortNameStr;
     UInt32     versionMajor;
     UInt32     versionMinor;
-    //WStringCR  fullNameStr = WStringCR(fullName);
+    WString    fullNameStr = WString(fullName);
 
     ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMinor, fullName);
-    //ECObjectsStatus statusStr = ECSchema::ParseSchemaFullName (shortNameStr, versionMajor, versionMinor, fullNameStr);
+    ECObjectsStatus statusStr = ECSchema::ParseSchemaFullName (shortNameStr, versionMajor, versionMinor, fullNameStr);
 
     if (expectFailure)
         {
         EXPECT_TRUE (ECOBJECTS_STATUS_Success != status);
-        //EXPECT_TRUE (ECOBJECTS_STATUS_Success != statusStr);
+        EXPECT_TRUE (ECOBJECTS_STATUS_Success != statusStr);
         return;
         }
     
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == status);
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == statusStr);
+    
     EXPECT_STREQ (shortName.c_str(), expectName);
-    //EXPECT_STREQ (shortNameStr.c_str(), expectName);
+    EXPECT_STREQ (shortNameStr.c_str(), expectName);
     EXPECT_EQ    (versionMajor,      expectMajor);
     EXPECT_EQ    (versionMinor,      expectMinor);
     }
@@ -690,28 +690,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingFile)
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
-    VerifyWidgetsSchema(schema);
-    
-    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"widgets.xml").c_str());
-    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);
-    
-    ECSchemaPtr deserializedSchema;
-    schemaContext = ECSchemaReadContext::CreateContext();
-    status = ECSchema::ReadFromXmlFile(deserializedSchema, ECTestFixture::GetTempDataPath( L"widgets.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
-    VerifyWidgetsSchema(deserializedSchema);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
@@ -910,30 +888,6 @@ TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
 
     EXPECT_TRUE(schemaIterator == refList.end());
     EXPECT_EQ(ECOBJECTS_STATUS_SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, FindClassInReferenceList)
-    {
-    ECSchemaPtr schema, refSchema;
-    ECSchema::CreateSchema (schema, L"TestSchema", 5, 5);
-    ECSchema::CreateSchema (refSchema, L"RefSchema", 5, 5);
-    
-    ECRelationshipClassP relClass;
-    ECClassP targetClass, sourceClass;
-    schema->CreateRelationshipClass (relClass, L"RElationshipClass");
-    schema->CreateClass (targetClass, L"Target");
-    refSchema->CreateClass (sourceClass, L"Source");
-    
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->AddReferencedSchema (*refSchema));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, relClass->GetTarget().AddClass(*targetClass));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, relClass->GetSource().AddClass(*sourceClass));
-    
-    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
-    
-    EXPECT_TRUE (refList.FindClassP(SchemaNameClassNamePair(L"RefSchema", L"Source")) != NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2162,201 +2116,6 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
 
     EXPECT_NE (SCHEMA_READ_STATUS_Success, status);    
     EXPECT_TRUE (schema.IsNull());
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaSearchTest, FindSchemaByName)
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    schemaContext->AddSchemaPath(seedPath.c_str());
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath( L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);    
-
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferencez", 1, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferences", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"SchemaThatReferences", 1, 1), SCHEMAMATCHTYPE_Exact) == NULL);
-    
-    EXPECT_TRUE (schema->FindSchema(SchemaKey(L"BaseSchema", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP(SchemaKey(L"SchemaThatReferences", 1, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (schema->FindSchemaP(SchemaKey(L"a", 123, 456), SCHEMAMATCHTYPE_Exact) == NULL);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaComparisonTest, VerifyMatchesOperator)
-    {
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaNotTest", 1, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaTest", 2, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) == SchemaKey(L"SchemaTest", 1, 1));
-    
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 1), SCHEMAMATCHTYPE_Exact));
-    
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 1), SCHEMAMATCHTYPE_Identical));
-    
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 1).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaNotTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 1).Matches(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).Matches(SchemaKey(L"SchemaTest", 1, 1), SCHEMAMATCHTYPE_LatestCompatible));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaComparisonTest, VerifyLessThanOperator)
-    {
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) < SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0) < SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) < SchemaKey(L"SchemaTest", 2, 0));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 1) < SchemaKey(L"SchemaTest", 1, 0));
-    
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Exact));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 1).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Exact));
-    
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Identical));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 1).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Identical));
-    
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_Latest));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 9), SCHEMAMATCHTYPE_Latest));
-    
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey(L"SchemaTesa", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 2, 0), SCHEMAMATCHTYPE_LatestCompatible));
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0).LessThan(SchemaKey(L"SchemaTest", 1, 9), SCHEMAMATCHTYPE_LatestCompatible));
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaComparisonTest, VerifyNotMatchesOperator)
-    {
-    EXPECT_FALSE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaNotTest", 1, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaTest", 2, 0));
-    EXPECT_TRUE (SchemaKey(L"SchemaTest", 1, 0) != SchemaKey(L"SchemaTest", 1, 1));
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, LoadAndGetSchema)
-    {
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
-    ECSchemaPtr schema1;
-    ECSchemaPtr schema2;
-    ECSchemaPtr schema3;
-    
-    ECSchema::CreateSchema(schema1, L"Widget", 5, 1);
-    ECSchema::CreateSchema(schema2, L"BaseSchema1", 2, 0);
-    ECSchema::CreateSchema(schema3, L"BaseSchema2", 5, 5);
-    
-    EXPECT_TRUE (cache->AddSchema(*schema1) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->AddSchema(*schema2) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->AddSchema(*schema3) == ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (cache->GetCount(), 3);
-    
-    ECSchemaPtr fetchedSchema = cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0));
-    ASSERT_TRUE (fetchedSchema != NULL);
-    EXPECT_TRUE (fetchedSchema->GetSchemaKey() == SchemaKey(L"BaseSchema1", 2, 0));
-    
-    cache->Clear();
-    EXPECT_EQ (cache->GetCount(), 0);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, FilterSchema)
-    {
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
-    ECSchemaPtr schema1;
-    ECSchemaPtr schema2;
-    ECSchemaPtr schema3;
-    
-    ECSchema::CreateSchema (schema1, L"Widget", 5, 1);
-    ECSchema::CreateSchema (schema2, L"BaseSchema1", 2, 0);
-    ECSchema::CreateSchema (schema3, L"BaseSchema2", 5, 5);
-    
-    EXPECT_TRUE (cache->AddSchema(*schema1) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->AddSchema(*schema2) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->AddSchema(*schema3) == ECOBJECTS_STATUS_Success);
-    
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Exact) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Exact) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Exact) == NULL);
-    
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Identical) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Identical) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Identical) == NULL);
-    
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema1", 2, 0), SCHEMAMATCHTYPE_Latest) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 3, 0), SCHEMAMATCHTYPE_Latest) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 1), SCHEMAMATCHTYPE_Latest) != NULL);
-    
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseZchema2", 5, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema2", 3, 5), SCHEMAMATCHTYPE_LatestCompatible) == NULL);
-    EXPECT_TRUE (cache->GetSchema(SchemaKey(L"BaseSchema2", 5, 3), SCHEMAMATCHTYPE_LatestCompatible) != NULL);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCacheTest, DropSchema)
-    {
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
-    ECSchemaPtr schema1;
-    ECSchemaPtr schema2;
-    ECSchemaPtr schema3;
-    
-    ECSchema::CreateSchema (schema1, L"Widget", 5, 1);
-    ECSchema::CreateSchema (schema2, L"BaseSchema1", 2, 0);
-    ECSchema::CreateSchema (schema3, L"BaseSchema2", 5, 5);
-    
-    EXPECT_TRUE (cache->AddSchema(*schema1) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->AddSchema(*schema2) == ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->AddSchema(*schema3) == ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (cache->GetCount(), 3);
-    
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"Widget", 5, 1)) == ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (cache->GetCount(), 2);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"Widget", 5, 1)) != ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 5, 3)) != ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 5, 7)) != ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 1, 5)) != ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (cache->GetCount(), 2);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema2", 5, 5)) == ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (cache->GetCount(), 1);
-    EXPECT_TRUE (cache->DropSchema(SchemaKey(L"BaseSchema1", 2, 0)) == ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (cache->GetCount(), 0);
     }
     
 END_BENTLEY_ECOBJECT_NAMESPACE
