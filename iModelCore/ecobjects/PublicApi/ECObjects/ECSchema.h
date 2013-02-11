@@ -683,9 +683,9 @@ struct ArrayECProperty : public ECProperty
 friend struct ECClass;
 
 private:
-    UInt32              m_minOccurs;
-    UInt32              m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
-
+    UInt32                                      m_minOccurs;
+    UInt32                                      m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
+    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
     union
         {
         PrimitiveType   m_primitiveType;
@@ -715,6 +715,8 @@ public:
     void                                SetCachedMemberTypeAdapter (IECTypeAdapter* adapter) const { m_cachedMemberTypeAdapter = adapter; }
     IECTypeAdapter*                     GetMemberTypeAdapter() const;
 
+    CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+    bool                                IsCalculated() const;
 /*__PUBLISH_SECTION_START__*/
 public:
     //! The ArrayKind of this ECProperty
