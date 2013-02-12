@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,6 +68,7 @@
 #include <ECObjects/ecprovider.h>
 #include <ECObjects/ECInstanceIterable.h>
 #include <ECObjects/PresentationMetadataHelper.h>
+#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Bentley/ScopedArray.h>
 
 /*__PUBLISH_SECTION_END__*/

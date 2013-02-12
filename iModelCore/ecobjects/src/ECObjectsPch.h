@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECObjectsPch.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -13,6 +13,7 @@
 #include <boost/foreach.hpp>
 #include <Bentley/BeStringUtilities.h>
 #include "ecxml.h"
+#include "DateTimeInfoAccessor.h"
 #include "Logger.h"
 #include "StopWatch.h"
 #include <Bentley/BeFileName.h>

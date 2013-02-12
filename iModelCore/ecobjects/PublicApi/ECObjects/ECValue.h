@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -109,6 +109,13 @@ protected:
         void                FreeAndClear (UInt8& flags);
         void                SetNull();          // does not free pointers - used to init from Uninitialized ECValue state
         bool                Equals (StringInfo const& rhs, UInt8& flags);
+        };
+
+    struct DateTimeInfo
+        {
+        ::Int64             m_ceTicks;
+        DateTime::Kind      m_kind;
+        DateTime::Component m_component;
         };
 
     union
