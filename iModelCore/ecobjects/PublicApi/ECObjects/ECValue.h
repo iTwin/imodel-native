@@ -27,22 +27,36 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 struct SystemTime
 {
 public:
-    unsigned short wYear;
-    unsigned short wMonth;
-    unsigned short wDayOfWeek;
-    unsigned short wDay;
-    unsigned short wHour;
-    unsigned short wMinute;
-    unsigned short wSecond;
-    unsigned short wMilliseconds;
+    unsigned short wYear; //!< The year component
+    unsigned short wMonth; //!< The month component (1-12; January = 1) 
+    unsigned short wDayOfWeek; //!< The day of the week (0-6; Sunday = 0)
+    unsigned short wDay; //!< Day of month (1-31)
+    unsigned short wHour; //!< The hour component 
+    unsigned short wMinute; //!< The minute component
+    unsigned short wSecond; //!< The second component
+    unsigned short wMilliseconds; //!< The milliseconds component
 
+    //! Creates a new SystemTime instance to the specified year, month, day, hour, minute, second, and millisecond
+    //! @param[in] year The year component (1 through 9999)
+    //! @param[in] month The month component (1-12)
+    //! @param[in] day The day (1 through the number of days in month)
+    //! @param[in] hour The hours (0-23)
+    //! @param[in] minute The minutes (0-59)
+    //! @param[in] second The seconds (0-59)
+    //! @param[in] milliseconds The milliseconds (0-999)
     ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
-    ECOBJECTS_EXPORT static SystemTime GetLocalTime();
-    ECOBJECTS_EXPORT static SystemTime GetSystemTime();
-    ECOBJECTS_EXPORT WString      ToString ();
-    ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const;
 
+    ECOBJECTS_EXPORT static SystemTime GetLocalTime(); //!< Returns a SystemTime instance representing the current Local Time.
+    ECOBJECTS_EXPORT static SystemTime GetSystemTime(); //!< Returns a SystemTime instance representing the current system time expressed in Coordinated Univeral Time (UTC)
+    ECOBJECTS_EXPORT WString      ToString (); //!< Returns the time as a string: M/D/Y-H:M:S:MS
+    ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const; //!< Compares two SystemTime instances for equality
+
+    //! Given a FileTime object, creates the equivalent SystemTime object
+    //! @param[in] fileTime The _FILETIME object containing the specified time
     ECOBJECTS_EXPORT BentleyStatus  InitFromFileTime (_FILETIME const& fileTime);
+
+    //! Initializes this SystemTime object from unix milliseconds
+    //! @param[in] unixMillis   The unix millisecond representation of the specified time
     ECOBJECTS_EXPORT BentleyStatus  InitFromUnixMillis (UInt64 unixMillis);
     };
 
@@ -63,15 +77,23 @@ private:
     UInt32              m_count;
             
 public:
+    //! Initialize the array as a struct array with the given number of entries
+    //! @param[in] count    How many elements the array (initially) holds
+    //! @param[in] isFixedSize  Indicates whether the array can grow or not
     void InitializeStructArray (UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
+
+    //! Initialize the array as a primitive array with the given number of entries
+    //! @param[in] elementPrimitiveType The PrimitiveType of elements that this array can hold
+    //! @param[in] count    How many elements the array (initially) holds
+    //! @param[in] isFixedCount  Indicates whether the array can grow or not
     void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
-    ECOBJECTS_EXPORT UInt32          GetCount() const;
-    ECOBJECTS_EXPORT bool            IsFixedCount() const;    
-    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;
-    ECOBJECTS_EXPORT bool            IsStructArray() const;
-    ECOBJECTS_EXPORT ValueKind       GetKind() const;    
-    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;
+    ECOBJECTS_EXPORT UInt32          GetCount() const; //!< Returns the number of entries in this array
+    ECOBJECTS_EXPORT bool            IsFixedCount() const; //!< Returns whether this is a fixed size array or not
+    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const; //!< Returns whether this is a primitive array
+    ECOBJECTS_EXPORT bool            IsStructArray() const; //!< Returns whether this is a struct array
+    ECOBJECTS_EXPORT ValueKind       GetKind() const; //!< Returns the kind of array this is (primitive or struct)
+    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const; //!< Returns the primitive type that this array was initialized with
     };
 
 //=======================================================================================    
@@ -86,6 +108,7 @@ public:
 struct ECValue
     {
 public:
+    //! Performs a shallow copy
     void ShallowCopy (ECValueCR v);
 private:        
     union
@@ -105,12 +128,14 @@ protected:
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
     
+    //! Structure to hold information about a binary type
     struct BinaryInfo
         {
-        const byte *        m_data;
-        size_t              m_size;
+        const byte *        m_data; //!< The actual binary data
+        size_t              m_size; //!< The size of the data
         };
 
+    //! Structure to hold information about String values
     struct StringInfo
         {
     private:
@@ -126,31 +151,66 @@ protected:
     public:
         // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
         // If we stored the flags on StringInfo, we would increase the size of the union.
+
+        //! Returns the stored string information as a WChar
+        //! @param[out]  flags   A flag indicating whether this ECValue owns the data
+        //! @returns The data as a WChar const pointer
         WCharCP             GetWChar (UInt8& flags);
+
+        //! Returns the stored string information as Utf8
+        //! @param[out]  flags   A flag indicating whether this ECValue owns the data
+        //! @returns The data as a Utf8 const pointer
         Utf8CP              GetUtf8 (UInt8& flags);
+
+        //! Returns the stored string information as Utf16
+        //! @param[out]  flags   A flag indicating whether this ECValue owns the data
+        //! @returns The data as a Utf16 const pointer
         Utf16CP             GetUtf16 (UInt8& flags);
 
+        //! Sets the string data as WChar
+        //!@param[in] str    The string data to store
+        //!@param[out] flags A flag indicating whether this ECValue owns the data
+        //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
         void                SetWChar (WCharCP str, UInt8& flags, bool makeCopy);
+
+        //! Sets the string data as Utf8
+        //!@param[in] str    The string data to store
+        //!@param[out] flags A flag indicating whether this ECValue owns the data
+        //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
         void                SetUtf8 (Utf8CP str, UInt8& flags, bool makeCopy);
+
+        //! Sets the string data as Utf16
+        //!@param[in] str    The string data to store
+        //!@param[out] flags A flag indicating whether this ECValue owns the data
+        //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
         void                SetUtf16 (Utf16CP str, UInt8& flags, bool makeCopy);
 
+        //! Frees (if necessary) the string data and clears out the memory
+        //! @param[out] flags   Gets reset to 0, indicating the data is not owned
         void                FreeAndClear (UInt8& flags);
-        void                SetNull();          // does not free pointers - used to init from Uninitialized ECValue state
+
+        void                SetNull();          //! does not free pointers - used to init from Uninitialized ECValue state
+
+        //! Compares two StringInfo objects for equality
+        //! @param[in] rhs  The StringInfo object to compare this object to
+        //! @param[out] flags   A flag indicating whether the ECValue owns the data in the StringInfo object
         bool                Equals (StringInfo const& rhs, UInt8& flags);
         };
 
+    //! The union storing the actual data of this ECValue
     union
         {
-        bool                m_boolean;
-        ::Int32             m_integer32;
-        ::Int64             m_long64;
-        double              m_double;
+        bool                m_boolean;  //!< If a Boolean primitive type, holds the bool value
+        ::Int32             m_integer32; //!< If an Int32 primitive type, holds the Int32 value
+        ::Int64             m_long64; //!< If an Int64 primitive type, holds the Int64 value
+        double              m_double; //!< If a double primitive type, holds the double value
+        //! If a String primitive type, holds the StringInfo struct defining the string
         mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
-        ::Int64             m_dateTime;
-        DPoint2d            m_dPoint2d;   
-        DPoint3d            m_dPoint3d; 
-        ArrayInfo           m_arrayInfo;
-        BinaryInfo          m_binaryInfo;
+        ::Int64             m_dateTime; //!< If a DateTime primitive, holds the DateTime value as an Int64 representation
+        DPoint2d            m_dPoint2d;  //!< If a DPoint2d primitive, holds the DPoint2d value
+        DPoint3d            m_dPoint3d; //!< If a DPoint3d primitive, holds the DPoint3d value
+        ArrayInfo           m_arrayInfo; //!< If an array value, holds the ArrayInfo struct defining the array
+        BinaryInfo          m_binaryInfo; //!< If a binary value, holds the BinaryInfo struct defining the binary data
         IECInstanceP        m_structInstance;   // The ECValue class calls AddRef and Release for the member as needed
         };
 
