@@ -8,7 +8,7 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="Logging" ExcludeLibType="Static"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
-        <SubPart PartName="LoggingSDK"          PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
+        <SubPart PartName="LoggingNative"   PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
     </Part>
 
     <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
