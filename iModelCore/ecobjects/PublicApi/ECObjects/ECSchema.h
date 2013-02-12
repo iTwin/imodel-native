@@ -1752,6 +1752,12 @@ public:
     //@return True if this version of the schema is one that should never be imported into a repository
     ECOBJECTS_EXPORT bool               ShouldNotBeStored() const;
 
+    //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
+    //! be stored persistently in a repository (we expect it to be found elsewhere)
+    //! @param[in]  SchemaKey to test
+    //@return True if this version of the schema is one that should never be imported into a repository
+    ECOBJECTS_EXPORT static bool        ShouldNotBeStored (SchemaKeyCR key);
+
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object
     //! @param[in]  name    Name of the class to create

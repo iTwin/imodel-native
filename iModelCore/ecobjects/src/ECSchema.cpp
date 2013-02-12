@@ -397,13 +397,21 @@ bool ECSchema::IsSupplemented
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECSchema::ShouldNotBeStored () const
     {
-    WString schemaName = GetFullSchemaName();
+    return ShouldNotBeStored (GetSchemaKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
+    {
+    WString schemaName = key.GetFullSchemaName();
     for (WCharCP* cur = s_originalStandardSchemaFullNames, *end = cur + _countof(s_originalStandardSchemaFullNames); cur < end; ++cur)
         if (schemaName.Equals (*cur))
             return true;
 
     // We don't want to import any version of the Units_Schema
-    if (BeStringUtilities::Wcsicmp(L"Units_Schema", m_key.m_schemaName.c_str()) == 0)
+    if (BeStringUtilities::Wcsicmp(L"Units_Schema", key.m_schemaName.c_str()) == 0)
         return true;
 
     return false;
