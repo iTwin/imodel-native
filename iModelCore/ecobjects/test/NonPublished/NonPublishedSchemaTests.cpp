@@ -63,7 +63,8 @@ TEST_F (SchemaTest, TestCircularReferenceWithLocateSchema)
     searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->AddSchemaLocater (*schemaLocater);    SchemaKey key(L"CircleSchema", 01, 00);
+    schemaContext->AddSchemaLocater (*schemaLocater);    
+    SchemaKey key(L"CircleSchema", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_FALSE(testSchema.IsValid());
     }

@@ -1352,7 +1352,8 @@ struct SchemaKey
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass
+//! Determines whether two SchemaKeys match
+//! @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
@@ -1364,7 +1365,8 @@ struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass
+//! Determines whether one SchemaKey is less than the other
+//! @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
@@ -1532,6 +1534,10 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 
 public:
+    //! Given a SchemaKey and a className, tries to locate the StandaloneEnabler for the ECClass
+    //! @param[in] schemaKey    SchemaKey fully describing the schema that the class belongs to
+    //! @param[in] className    The name of the class to find the enabler for
+    //! @returns A valid StandaloneECEnabler, if one was located
     ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
 };
 
@@ -1547,6 +1553,11 @@ protected:
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) = 0;
 
 public:
+    //! Tries to locate the requested schema.
+    //! @param[in] key  The SchemaKey fully describing the schema to locate
+    //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
+    //! @param[in] schemaContext    Contains the information of where to look for referenced schemas
+    //! @returns A valid ECSchemaPtr if the schema was located
     ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext);
 };
 
@@ -1576,15 +1587,33 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Adds a schema to the cache
+    //! @param[in] schema   The ECSchema to add to the cache
+    //! @returns ECOBJECTS_STATUS_DuplicateSchema is the schema is already in the cache, otherwise ECOBJECTS_STATUS_Success
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
+
+    //! Removes the specified schema from the cache
+    //! @param[in] key  The SchemaKey fully describing the schema that should be removed from the cache
+    //! @returns ECOBJECTS_STATUS_SchemaNotFound is the schema was not found in the cache, otherwise ECOBJECTS_STATUS_Success
     ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
+
+    //! Get the requested schema from the cache
+    //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
+    //! @returns The ECSchema if it is contained in the cache, NULL otherwise
+    //! @remarks This will do an Identical match type for the requested schema
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
+
+    //! Get the requested schema from the cache
+    //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
+    //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
+    //! @returns The ECSchema if it is contained in the cache, NULL otherwise
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
-    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
-    ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
-    ECOBJECTS_EXPORT int     GetCount();
-    ECOBJECTS_EXPORT void    Clear();
-    ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater();
+
+    ECOBJECTS_EXPORT virtual ~ECSchemaCache (); //!< Destructor
+    ECOBJECTS_EXPORT static  ECSchemaCachePtr Create (); //!< Creates an ECSchemaCachePtr
+    ECOBJECTS_EXPORT int     GetCount(); //!< Returns the number of schemas currently in the cache
+    ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
+    ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
 };
 
 
@@ -1692,8 +1721,12 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const;
-    ECOBJECTS_EXPORT void               DebugDump() const;
+    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const; //<! Returns a SchemaKey fully describing this schema
+    ECOBJECTS_EXPORT void               DebugDump() const; //<! Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
+
+    //! Used for debugging purposes.
+    //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
+    //! @param[in] doAssert Controls whether asserts should be tested or not.  Defaults to true.
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
     //! Sets the name of this schema
@@ -1778,8 +1811,12 @@ public:
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
-    //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
+    //! @return   A const pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassCP          GetClassCP (WCharCP name) const;
+
+    //! Get a class by name within the context of this schema.
+    //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
+    //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP           GetClassP (WCharCP name);
 
     //! Gets the other schemas that are used by classes within this schema.
@@ -1840,6 +1877,8 @@ public:
     //! @param[in]  sourceClass The class to copy
     ECOBJECTS_EXPORT ECObjectsStatus        CopyClass(ECClassP& targetClass, ECClassCR sourceClass);
 
+    //! Copies this schema
+    //! @param[out] schemaOut   If successful, will contain a copy of this schema
     ECOBJECTS_EXPORT ECObjectsStatus        CopySchema(ECSchemaPtr& schemaOut) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
@@ -1858,10 +1897,6 @@ public:
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName,
                                                           UInt32 versionMajor, UInt32 versionMinor);
-
-/*__PUBLISH_SECTION_END__*/
-    
-/*__PUBLISH_SECTION_START__*/
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in]  versionMajor    The major version number
