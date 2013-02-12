@@ -29,4 +29,4 @@ $(o)BuildInstanceAndSerializeToXML$(oext)  : $(baseDir)Published/BuildInstanceAn
 
 $(o)SupplementalSchemaTests$(oext)  : $(baseDir)Published/SupplementalSchemaTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)StandardClassesHelperTests$(oext)  : $(baseDir)Published/StandardClassesHelperTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)StandardCustomAttributeHelperTests$(oext)  : $(baseDir)Published/StandardCustomAttributeHelperTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
