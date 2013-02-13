@@ -2,7 +2,7 @@
 |
 |     $Source: test/scenario/TestFixture.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,6 +32,7 @@ public:
     void    TestForIECInstanceLeaks ();
 
     static WString GetTestDataPath(WCharCP fileName);
+    static WString GetTempDataPath(WCharCP fileName);
     static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
     };
 

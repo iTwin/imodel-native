@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/CalculatedProperty.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,7 +42,7 @@ public:
 
     bool                    IsReadOnly() const { return NULL == m_parserRegex && !m_isDefaultOnly; }
 
-    static RefCountedPtr<CalculatedPropertySpecification> Create (PrimitiveECPropertyCR ecprop);
+    static RefCountedPtr<CalculatedPropertySpecification> Create (ECPropertyCR hostProperty, PrimitiveType propertyType);
     };
 
 typedef RefCountedPtr<CalculatedPropertySpecification> CalculatedPropertySpecificationPtr;

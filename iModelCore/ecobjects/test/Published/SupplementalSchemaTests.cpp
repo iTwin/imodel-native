@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SupplementalSchemaTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -599,7 +599,6 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 {
                 countA++;
                 WStringCR className = attributeA->GetClass().GetName();
-                ECCustomAttributeCollection::const_iterator iter;
                 bool customAttributeFound = false;
                 FOR_EACH(IECInstancePtr attributeB, customAttributesB)
                     {

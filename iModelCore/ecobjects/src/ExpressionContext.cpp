@@ -590,7 +590,7 @@ void            InstanceExpressionContext::SetInstance(ECN::IECInstanceCR instan
 ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
     {
     if (NULL == m_staticMethod)
-        return ExprStatus_InstanceMethodRequired;
+        return ExprStatus_StaticMethodRequired;
 
     return (*m_staticMethod)(evalResult, arguments);
     }
@@ -601,7 +601,7 @@ ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR
 ExpressionStatus MethodReferenceStandard::_InvokeInstanceMethod (EvaluationResultR evalResult, EvaluationResultCR instanceData, EvaluationResultVector& arguments)
     {
     if (NULL == m_instanceMethod)
-        return ExprStatus_StaticMethodRequired;
+        return ExprStatus_InstanceMethodRequired;
 
     return (*m_instanceMethod)(evalResult, instanceData, arguments);
     }

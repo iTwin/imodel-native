@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/TestFixture.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,7 @@ public:
     virtual void            TearDown () override;
 
     static WString GetTestDataPath(WCharCP fileName);
+    static WString GetTempDataPath(WCharCP fileName);
     static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
     };
 

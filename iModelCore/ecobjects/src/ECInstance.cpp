@@ -2383,7 +2383,7 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
     PrimitiveType        propertyType = primitiveProperty->GetType();
     InstanceReadStatus   ixrStatus;
     ECValue              ecValue;
-    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType, propertyValueNode)))
+    if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, propertyType, propertyValueNode, m_context.GetSerializedPrimitiveType (*primitiveProperty))))
         return ixrStatus;
 
     if(ecValue.IsUninitialized())
@@ -2444,26 +2444,30 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
         // step through the nodes. Each should be a primitive value type like <int>value</int>
         for (BeXmlNodeP arrayValueNode = propertyValueNode.GetFirstChild (BEXMLNODE_Element); NULL != arrayValueNode; arrayValueNode = arrayValueNode->GetNextSibling(BEXMLNODE_Element))
             {
-            if (!ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
+            PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType (*arrayProperty);
+            if (memberType == serializedMemberType && !ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
                 {
                 LOG.warningv(L"Incorrectly formatted array element found in array %ls.  Expected: %hs  Found: %hs", accessString.c_str(), GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
                 continue;
                 }
 
-            // read it, populating the ECInstance using accessString and arrayIndex.
-            InstanceReadStatus      ixrStatus;
-            ECValue                 ecValue;
-            if (INSTANCE_READ_STATUS_Success != (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode)))
-                continue;
-
             if ( !isFixedSizeArray)
                 ecInstance->AddArrayElements (accessString.c_str(), 1);
 
-            ECObjectsStatus   setStatus = ecInstance->SetInternalValue (accessString.c_str(), ecValue, index);
-            if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
+            // read it, populating the ECInstance using accessString and arrayIndex.
+            InstanceReadStatus      ixrStatus;
+            ECValue                 ecValue;
+            if (INSTANCE_READ_STATUS_Success == (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode, serializedMemberType)))
                 {
-                BeAssert (false);
-                return INSTANCE_READ_STATUS_CantSetValue;
+                // If we failed to read the value above, the array member will have been allocated but left null.
+                // This allows any default value to be applied to it via CalculatedECPropertySpecification, 
+                // and is less surprising than the old behavior which would have omitted the member entirely.
+                ECObjectsStatus   setStatus = ecInstance->SetInternalValue (accessString.c_str(), ecValue, index);
+                if (ECOBJECTS_STATUS_Success != setStatus && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != setStatus)   
+                    {
+                    BeAssert (false);
+                    return INSTANCE_READ_STATUS_CantSetValue;
+                    }
                 }
 
             // increment the array index.
@@ -2481,7 +2485,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             ECClassCP   thisMemberType;
             WString     arrayMemberType (arrayValueNode->GetName(), true);
             if (NULL == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str(), structMemberType)))
-                return INSTANCE_READ_STATUS_BadArrayElement;
+                continue;
 
 
             InstanceReadStatus ixrStatus;
@@ -2577,17 +2581,35 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType, BeXmlNodeR primitiveValueNode)
+InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propertyType, BeXmlNodeR primitiveValueNode, PrimitiveType serializedType)
     {
+    // If we fail to read the property value for some reason, return it as null
+    ecValue.SetToNull();
+    ecValue.SetPrimitiveType (propertyType);
+
     // On entry primitiveValueNode is the XML node that holds the value. 
     // First check to see if the value is set to NULL
     bool         nullValue;
     if (BEXML_Success == primitiveValueNode.GetAttributeBooleanValue (nullValue, XSI_NIL_ATTRIBUTE))
-        {
         if (true == nullValue)
-            {
-            ecValue.SetToNull();
             return INSTANCE_READ_STATUS_Success;
+
+    // If we're able to determine that the serialized type differs from the ECProperty's type, use that information to convert to correct type
+    if (serializedType != propertyType)
+        {
+        WString propertyValueString;
+        if (BEXML_Success == primitiveValueNode.GetContent (propertyValueString))
+            {
+            ecValue.SetString (propertyValueString.c_str(), false);
+            if (ecValue.ConvertToPrimitiveType (serializedType) && ecValue.ConvertToPrimitiveType (propertyType))
+                return INSTANCE_READ_STATUS_Success;
+            else if (PRIMITIVETYPE_Integer == propertyType && PRIMITIVETYPE_Long == serializedType)
+                {
+                // Code below will give us INT_MAX if serialized integer out of range of Int32.
+                // We don't want that when converting primitive types, and it's not really helpful to users, but not sure if anyone depends on it
+                // So only circumventing it for this special case when we know the serialized type
+                return INSTANCE_READ_STATUS_TypeMismatch;
+                }
             }
         }
 
@@ -2780,16 +2802,8 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 
     // typeFound must resolve to an ECClass that is either expectedType or a class that has expectedType as a Base GetClass().
     ECClassCP    classFound;
-    if (NULL == (classFound = schema->GetClassCP (typeFound)))
-        {
-        BeAssert (false);
+    if (NULL == (classFound = schema->GetClassCP (typeFound)) || !classFound->Is (expectedType))
         return NULL;
-        }
-    if (!classFound->Is (expectedType))
-        {
-        BeAssert (false);
-        return NULL;
-        }
 
     return classFound;
     }
@@ -3206,7 +3220,7 @@ InstanceReadStatus   IECInstance::ReadFromBeXmlNode (IECInstancePtr& ecInstance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16)
+InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool writeInstanceId, bool utf16)
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
 

@@ -175,23 +175,31 @@ ECSchemaPtr const&   schema
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 static  void    ValidateSchemaNameParsing (WCharCP fullName, bool expectFailure, WCharCP expectName, UInt32 expectMajor, UInt32 expectMinor)
     {
     WString    shortName;
-    UInt32      versionMajor;
-    UInt32      versionMinor;
+    WString    shortNameStr;
+    UInt32     versionMajor;
+    UInt32     versionMinor;
+    WString    fullNameStr = WString(fullName);
 
     ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMinor, fullName);
+    ECObjectsStatus statusStr = ECSchema::ParseSchemaFullName (shortNameStr, versionMajor, versionMinor, fullNameStr);
 
     if (expectFailure)
         {
         EXPECT_TRUE (ECOBJECTS_STATUS_Success != status);
+        EXPECT_TRUE (ECOBJECTS_STATUS_Success != statusStr);
         return;
         }
-
+    
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == status);
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == statusStr);
+    
     EXPECT_STREQ (shortName.c_str(), expectName);
+    EXPECT_STREQ (shortNameStr.c_str(), expectName);
     EXPECT_EQ    (versionMajor,      expectMajor);
     EXPECT_EQ    (versionMinor,      expectMinor);
     }
@@ -755,26 +763,23 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ(status, SCHEMA_READ_STATUS_Success);
+    VerifyWidgetsSchema(schema);
+
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"test.xml").c_str());
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);
+    }
 
 #if defined (NEEDSWORK_LIBXML)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F(SchemaDeserializationTest, ExpectSuccessWhenSerializingToFile)
-//    {
-//    ECSchemaPtr schema;
-//    
-//    ECSchemaCachePtr                    schemaOwner = ECSchemaCache::Create();
-//    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-//
-//    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, SCHEMAS_PATH L"Widgets.01.00.ecschema.xml", *schemaContext);
-//    wprintf(L"Verifying original schema from file.\n"); 
-//    VerifyWidgetsSchema(schema);
-//
-//    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
-//
-//    SchemaWriteStatus status2 = schema->WriteToXmlFile(L"d:\\temp\\test.xml");
-//    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -819,8 +824,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingStream)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     {
-    
-
     ECSchemaPtr schema;
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
@@ -851,18 +854,12 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*anotherBase));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, gadget->AddBaseClass(*class1));
     
-//    WCharCPecSchemaXmlString;
-    
-    //SchemaWriteStatus status2 = schema->WriteToXmlFile(L"d:\\temp\\base.xml");
-    //
-    //ECSchemaP schema4;
-    //ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    //SchemaReadStatus status3 = ECSchema::ReadFromXmlFile (schema4, L"d:\\temp\\base.xml", *schemaContext);
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"base.xml").c_str());
+    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
     
     WString ecSchemaXmlString;
-    
-    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString);
-    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
+    SchemaWriteStatus status3 = schema->WriteToXmlString(ecSchemaXmlString);
+    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1062,10 +1059,13 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         bpair<WString, WCharCP>const& entry = *it;
         
         SchemaKey key (entry.first.c_str(), 1, 0);
-        ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, entry.second);
+        EXPECT_TRUE(ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, entry.second) == ECOBJECTS_STATUS_Success);
+        EXPECT_EQ(key.m_versionMajor, _wtoi(entry.second));
+        EXPECT_EQ(key.m_versionMinor, _wtoi(wcschr(entry.second, L'.') + 1));
         schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsStandardSchema());
+        EXPECT_STREQ(entry.second, ECSchema::FormatSchemaVersion(key.m_versionMajor, key.m_versionMinor).c_str());
         }
     }
   
@@ -2117,5 +2117,5 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     EXPECT_NE (SCHEMA_READ_STATUS_Success, status);    
     EXPECT_TRUE (schema.IsNull());
     }
-
+    
 END_BENTLEY_ECOBJECT_NAMESPACE

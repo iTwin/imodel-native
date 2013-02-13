@@ -1187,10 +1187,10 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
 
     return instance;
     }
-  
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/        
++---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     StandaloneECInstancePtr instance = new StandaloneECInstance (*this, minimumBufferSize);

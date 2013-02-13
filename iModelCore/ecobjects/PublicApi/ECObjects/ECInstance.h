@@ -47,15 +47,35 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 
 //! @ingroup ECObjectsGroup
+//! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
+//! to generate a custom XML representation of itself.
 //! @bsiclass
 struct ICustomECStructSerializer
     {
-    virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0;
+    //! Returns whether the given property uses a custom xml string
+    //! @param[in] structProperty   The property to check against
+    //! @param[in] ecInstance   The instance the property comes from
+    //! @returns True if this property uses a custom xml string
+    virtual bool            UsesCustomStructXmlString  (StructECPropertyP structProperty, IECInstanceCR ecInstance) const = 0; 
+
+    //! Generates a custom XML representation of the property
+    //! @param[out] xmlString   A string with the Xml representing the serialized struct
+    //! @param[in] structProperty   The property to serialize
+    //! @param[in] ecInstance   The instance the property comes from
+    //! @param[in] baseAccessString The access string used to get the struct property value
+    //! @returns SUCCESS if the serialization was successful, otherwise an error code indicating the type of failure
     virtual ECObjectsStatus GenerateXmlString  (WString& xmlString, StructECPropertyP structProperty, IECInstanceCR ecInstance, WCharCP baseAccessString) const = 0;
+
+    //! Given an Xml string, deserializes the StructProperty and sets the value on the instance
+    //! @param[in] structProperty   The StructECProperty that the Xml string describes
+    //! @param[in] ecInstance   The instance upon which to set the de-serialized value
+    //! @param[in] baseAccessString The access string used to get the struct property value
+    //! @param[in] valueString  The Xml contained the serialized struct information
     virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, WCharCP baseAccessString, WCharCP valueString) = 0;
     };
 
 //! @ingroup ECObjectsGroup
+//! Used to manage multiple custom struct serializers
 //! @bsiclass
 struct CustomStructSerializerManager
 {
@@ -69,8 +89,19 @@ private:
     ICustomECStructSerializerP GetCustomSerializer (WCharCP serializerName) const;
 //__PUBLISH_SECTION_START__
 public:
+
+    //! Given a struct property and an instance, returns the ICustomECStructSerializer
+    //! @param[in] structProperty   The StructECProperty that we want the serializer for
+    //! @param[in] ecInstance   The instance that the struct property comes from
+    //! @returns An ICustomECStructSerializer pointer if one has been added for this particular struct property, NULL otherwise
     ECOBJECTS_EXPORT  ICustomECStructSerializerP            GetCustomSerializer (StructECPropertyP structProperty, IECInstanceCR ecInstance) const;
-    ECOBJECTS_EXPORT  static CustomStructSerializerManagerR GetManager();
+
+    //! Returns the static CustomStructSerializerManager
+    ECOBJECTS_EXPORT  static CustomStructSerializerManagerR GetManager(); 
+
+    //! Adds a CustomStructSerializer to the manager with the given serializer name
+    //! @param[in] serializerName   Name of the custom serializer.  
+    //! @param[in] serializer   The ICustomECStructSerializer to add
     ECOBJECTS_EXPORT  BentleyStatus                         AddCustomSerializer (WCharCP serializerName, ICustomECStructSerializerP serializer);
 };
 
@@ -122,8 +153,14 @@ protected:
 
     virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
 public:
+
+    //! Returns the base address for this instance
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
+
+    //! Returns a const reference to the ECEnabler that supports this instance
     ECOBJECTS_EXPORT ECEnablerCR        GetEnabler() const;
+
+    //! Returns a reference to the ECEnabler that supports this instance
     ECOBJECTS_EXPORT ECEnablerR         GetEnablerR() const;      // use when enabler.ObtainStandaloneEnabler is called since a new enabler may be created.
 
     //! Gets the unique ID for this instance
@@ -147,12 +184,12 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 index) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
@@ -168,7 +205,7 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
     //! Sets the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @param[in]  v   The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
@@ -191,12 +228,12 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
     //! Change the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @param[in]  v   The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v);
     //! Change the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @param[in]  v   The value to set onto the property
     //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
@@ -223,13 +260,13 @@ public:
 
     //! Check for Null property value
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex) const; 
 
     //! Check for Null property value
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the ClassLayout indicating which property to retrieve
     //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex, UInt32 arrayIndex) const; 
@@ -257,44 +294,164 @@ public:
     //! @returns true if the property is a fixed size array.
     ECOBJECTS_EXPORT static bool        IsFixedArrayProperty (ECN::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries=NULL);
 
+    //! Given an access string, returns whether that property is readonly
+    //! @param[in] accessString The access string to the property to check the read-only state for
+    //! @returns true if the property is read-only
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
+
+    //! Given the propertyIndex (into the ClassLayout) of a property, returns whether that property is readonly
+    //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
-    //! Contract:
-    //! - For all of the methods, the propertyAccessString shall not contain brackets.
-    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
+    // Contract:
+    // - For all of the methods, the propertyAccessString shall not contain brackets.
+    //   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
+    //! Given an access string, will inserting size number of empty array elements at the given index
+    //! @param[in] propertyAccessString The access string to the array property (shall not contain brackets)
+    //! @param[in] index    The starting index of the array at which to insert the new elements
+    //! @param[in] size The number of empty array elements to insert
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size);
+
+    //! Given an access string and an array index, will remove a single array element
+    //! @param[in] propertyAccessString The access string to the array property (shall not contain brackets)
+    //! @param[in] index    The index of the element to remove
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    RemoveArrayElement (WCharCP propertyAccessString, UInt32 index);
+
+    //! Given an access string, will add size number of empty array elements to the end of the array
+    //! @param[in] propertyAccessString The access string to the array property (shall not contain brackets)
+    //! @param[in] size The number of empty array elements to add
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    AddArrayElements (WCharCP propertyAccessString, UInt32 size);
+
+    //! Given an access string, removes all array elements from the array
+    //! @param[in] propertyAccessString The access string to the array property (shall not contain brackets)
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ClearArray (WCharCP propertyAccessString);    
 
+    //! Given a property index, will inserting size number of empty array elements at the given index
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] index    The starting index of the array at which to insert the new elements
+    //! @param[in] size The number of empty array elements to insert
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    InsertArrayElements (UInt32 propertyIndex, UInt32 index, UInt32 size);
+
+    //! Given a property index and an array index, will remove a single array element
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] index    The index of the element to remove
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    RemoveArrayElement (UInt32 propertyIndex, UInt32 index);
+
+    //! Given a property index, will add size number of empty array elements to the end of the array
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] size The number of empty array elements to add
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    AddArrayElements (UInt32 propertyIndex, UInt32 size);
+
+    //! Given a property index, removes all array elements from the array
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ClearArray (UInt32 propertyIndex);
 
+    //! Returns the display label for the instance.  The following are checked (in order) for the label:
+    //! @li InstanceLabelSpecification custom attribute set on the instance itself
+    //! @li InstanceLabelSpecification custom attribute set on base classes
+    //! @li An ECProperty with one of the following propertyNames: "DisplayLabel", "DISPLAYLABEL", "displaylabel", "Name", "NAME", "name"
+    //! @param[out] displayLabel    The display label for this instance
+    //! @returns SUCCESS if the display label was found, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WString& displayLabel) const;    
+
+    //! Sets the display label for this instance
+    //! @param[in]  displayLabel    The display label
+    //! @returns SUCCESS if the display label was set, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (WCharCP displayLabel);    
     
-    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const;
-    ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const;
-    ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const;
+    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const; //!< Returns the underlying ECDBuffer for this instance
+    ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance
+    ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const; //!< Returns the offset to the IECInstance
 
+    //! Returns a dump of the instance
+    //! @param[in] indent   String to prepend to each line of the dump
     ECOBJECTS_EXPORT WString            ToString (WCharCP indent) const;
 
+    //! Creates a copy of this instance by serializing and then deserializing
     ECOBJECTS_EXPORT IECInstancePtr     CreateCopyThroughSerialization();
 
+    //! Given an xml file and an instance read context, deserializes and constructs an IECInstance
+    //! @param[out] ecInstance  The instance constructed from deserializing the xml file
+    //! @param[in] fileName The name of the file contained the serialized Xml
+    //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
+    //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlFile   (IECInstancePtr& ecInstance, WCharCP fileName,   ECInstanceReadContextR context);
+
+    //! Given a stream containing Xml and an instance read context, deserializes and constructs an IECInstance
+    //! @param[out] ecInstance  The instance constructed from deserializing the xml file
+    //! @param[in] stream The stream containing the xml
+    //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
+    //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlStream (IECInstancePtr& ecInstance, IStreamP stream,    ECInstanceReadContextR context);
+
+    //! Given a string containing Xml and an instance read context, deserializes and constructs an IECInstance
+    //! @param[out] ecInstance  The instance constructed from deserializing the xml file
+    //! @param[in] xmlString The string containing the xml
+    //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
+    //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, WCharCP xmlString,  ECInstanceReadContextR context);
+
+    //! Given a string containing Xml and an instance read context, deserializes and constructs an IECInstance
+    //! @param[out] ecInstance  The instance constructed from deserializing the xml file
+    //! @param[in] xmlString The string containing the xml
+    //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
+    //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP xmlString,   ECInstanceReadContextR context);
+
+    //! Given a BeXmlDom and an instance read context, deserializes and constructs an IECInstance
+    //! @param[out] ecInstance  The instance constructed from deserializing the xml file
+    //! @param[in] xmlNode The BeXmlDom that contains a single serialized instance
+    //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
+    //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlDom  (IECInstancePtr& ecInstance, BeXmlDomR xmlNode,  ECInstanceReadContextR context);
+
+    //! Given a BeXmlNode and an instance read context, deserializes and constructs an IECInstance
+    //! @param[out] ecInstance  The instance constructed from deserializing the xml file
+    //! @param[in] xmlNode The BeXmlNode from an xml document that contains a single serialized instance
+    //! @param[in] context  The ECInstanceReadContext which is used to deserialize the xml (for locating schemas and resolving references)
+    //! @returns SUCCESS if the instance is successfully deserialized, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT static InstanceReadStatus  ReadFromBeXmlNode (IECInstancePtr& ecInstance, BeXmlNodeR xmlNode, ECInstanceReadContextR context);
 
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
+    //! Serializes the instance to a file
+    //! @param[in] fileName Full path to the file that will be written to.
+    //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
+    //! @param[in] utf16    If true, the Xml will be written as utf16
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlFile   (WCharCP fileName, bool writeInstanceId, bool utf16);
+
+    //! Serializes the instance to a stream
+    //! @param[in] stream   The stream to write to
+    //! @param[in] isStandAlone If true, the Xml will start with the Xml declaration.  Otherwise, if this is part of a larger Xml stream, no declaration will be written
+    //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
+    //! @param[in] utf16    If true, the Xml will be written as utf16
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlStream (IStreamP stream, bool isStandAlone, bool writeInstanceId, bool utf16);
+
+    //! Serializes the instance to a Utf8 string
+    //! @param[out] ecInstanceXml   The string to write to
+    //! @param[in] isStandAlone If true, the Xml will start with the Xml declaration.  Otherwise, if this is part of a larger Xml stream, no declaration will be written
+    //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+
+    //! Serializes the instance to a WString
+    //! @param[out] ecInstanceXml   The string to write to
+    //! @param[in] isStandAlone If true, the Xml will start with the Xml declaration.  Otherwise, if this is part of a larger Xml stream, no declaration will be written
+    //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
+
+    //! Serializes the instance to a BeXmlNode
+    //! @param[in] xmlNode The node to write to
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
     };
     
@@ -315,11 +472,27 @@ struct IECRelationshipInstance : virtual IECInstance
         virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const = 0;
 
     public:
+
+        //! Sets the Source instance of the relationship
+        //! @param[in] instance The source instance
         ECOBJECTS_EXPORT void            SetSource (IECInstanceP instance);
-        ECOBJECTS_EXPORT IECInstancePtr  GetSource () const;
-        ECOBJECTS_EXPORT ECObjectsStatus GetSourceOrderId (Int64& targetOrderId) const;
+
+        //! Gets the source instance of the relationship
+        ECOBJECTS_EXPORT IECInstancePtr  GetSource () const; 
+
+        //! Gets the source order id
+        //! @param[out] sourceOrderId Contains the orderId of the source instance
+        ECOBJECTS_EXPORT ECObjectsStatus GetSourceOrderId (Int64& sourceOrderId) const;
+
+        //! Sets the Target instance of the relationship
+        //! @param[in] instance The target instance
         ECOBJECTS_EXPORT void            SetTarget (IECInstanceP instance);
+
+        //! Gets the target instance of the relationship
         ECOBJECTS_EXPORT IECInstancePtr  GetTarget () const;
+
+        //! Gets the target order id
+        //! @param[out] targetOrderId Contains the orderId of the target instance
         ECOBJECTS_EXPORT ECObjectsStatus GetTargetOrderId (Int64& targetOrderId) const;
     };
 

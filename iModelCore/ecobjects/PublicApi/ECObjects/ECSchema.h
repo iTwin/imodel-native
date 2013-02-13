@@ -94,12 +94,14 @@ private:
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
 /*__PUBLISH_SECTION_START__*/
 public:
+
+    //! Enumeration defining the result of a validation check
     enum ValidationResult
         {
-        RESULT_Valid = 0,
-        RESULT_NullOrEmpty,
-        RESULT_BeginsWithDigit,
-        RESULT_IncludesInvalidCharacters
+        RESULT_Valid = 0, //!< The name is valid
+        RESULT_NullOrEmpty, //!< The string to check was NULL or empty
+        RESULT_BeginsWithDigit, //!< The string begins with a digit
+        RESULT_IncludesInvalidCharacters //!< The string contains invalid characters
         };
 
     //! Encodes special characters in a possibly invalid name to produce a valid name
@@ -140,11 +142,20 @@ private:
         };
 
 public:
+    //! Creates a TypeDescriptor for the given primitiveType
+    //! @param[in] primitiveType    The primitive type to describe
+    //! @returns an ECTypeDescriptor describing this primitive type
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveTypeDescriptor (PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
+    //! Creates a TypeDescriptor of an array of the given primitiveType
+    //! @param[in] primitiveType    The primitiveType to create an array descriptor for
+    //! @returns An ECTypeDescriptor describing an array of the given primitiveType
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
+
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();    //!< Creates a TypeDescriptor for a struct array type
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor (); //!< Creates a TypeDescriptor for a struct
+
+    //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
 /*__PUBLISH_SECTION_END__*/
@@ -179,6 +190,8 @@ struct SupplementedSchemaBuilder;
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
+//! Base class for ECSchema, ECClass, ECProperty.  Represents a container object that can hold 
+//! Custom Attributes.
 //! @bsiclass
 //=======================================================================================
 struct IECCustomAttributeContainer
@@ -289,6 +302,7 @@ public:
 
 //=======================================================================================
 //! @ingroup ECObjectsGroup
+//! Iterates over the custom attribute instances in a container
 //! @bsiclass
 //=======================================================================================
 struct ECCustomAttributeInstanceIterable
@@ -319,6 +333,7 @@ public:
 /*__PUBLISH_SECTION_START__*/
         };
 
+    //! Iterator for the custom attribute instances
     struct const_iterator : std::iterator<std::forward_iterator_tag, IECInstancePtr const>
         {
         private:
@@ -331,15 +346,15 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
         public:
-            ECOBJECTS_EXPORT const_iterator&     operator++();
-            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const;
+            ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increment the iterator
+            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const; //!< Compare iterator to value
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const; //!< Compare iterator to value
+            ECOBJECTS_EXPORT IECInstancePtr const& operator* () const; //!< Return the IECInstance at the iterator location
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
+    ECOBJECTS_EXPORT const_iterator begin () const; //! Returns the beginning of the collection
+    ECOBJECTS_EXPORT const_iterator end ()   const; //! Returns the end of the collection
 };
 
 struct PrimitiveECProperty;
@@ -533,7 +548,6 @@ public:
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
-
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the name of the ECClass that this property is contained within
@@ -580,12 +594,12 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
 
-    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const;
-    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP ();
-    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const;
-    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP ();
-    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const;
-    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP ();
+    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const; //!< Returns the property as a const PrimitiveECProperty*
+    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP (); //!< Returns the property as a PrimitiveECProperty*
+    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const; //!< Returns the property as a const ArrayECProperty*
+    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP (); //!< Returns the property as an ArrayECProperty*
+    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const; //!< Returns the property as a const StructECProperty*
+    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
 };
 
 //=======================================================================================
@@ -654,7 +668,7 @@ public:
     //! The property type.
     //! This type must be an ECClass where IsStruct is set to true.
     ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECClassCR value);
-    ECOBJECTS_EXPORT ECClassCR          GetType() const;
+    ECOBJECTS_EXPORT ECClassCR          GetType() const; //!< Gets the ECClass that defines the type for this property
 };
 
 //=======================================================================================
@@ -669,9 +683,9 @@ struct ArrayECProperty : public ECProperty
 friend struct ECClass;
 
 private:
-    UInt32              m_minOccurs;
-    UInt32              m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
-
+    UInt32                                      m_minOccurs;
+    UInt32                                      m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
+    mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
     union
         {
         PrimitiveType   m_primitiveType;
@@ -701,6 +715,8 @@ public:
     void                                SetCachedMemberTypeAdapter (IECTypeAdapter* adapter) const { m_cachedMemberTypeAdapter = adapter; }
     IECTypeAdapter*                     GetMemberTypeAdapter() const;
 
+    CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+    bool                                IsCalculated() const;
 /*__PUBLISH_SECTION_START__*/
 public:
     //! The ArrayKind of this ECProperty
@@ -756,6 +772,7 @@ public:
 /*__PUBLISH_SECTION_START__*/
         };
 
+    //! Iterator over the properties
     struct const_iterator : std::iterator<std::forward_iterator_tag, const ECPropertyP>
         {
         private:
@@ -769,15 +786,15 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
         public:
-            ECOBJECTS_EXPORT const_iterator&     operator++();
-            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
-            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const;
+            ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increments the iterator
+            ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const; //!< Checks for inequality
+            ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const; //!< Checks for equality
+            ECOBJECTS_EXPORT ECPropertyP const&  operator* () const; //!< Returns the value at the current location
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
+    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
+    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
     };
 
 typedef bvector<ECClassP> ECBaseClassesList;
@@ -874,6 +891,7 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClassCP() const;
@@ -1025,8 +1043,13 @@ public:
 
 }; // ECClass
 
+//! Used to define which end of the relationship, source or target
 //! @ingroup ECObjectsGroup
-enum ECRelationshipEnd { ECRelationshipEnd_Source = 0, ECRelationshipEnd_Target };
+enum ECRelationshipEnd 
+    { 
+    ECRelationshipEnd_Source = 0, //!< End is the source
+    ECRelationshipEnd_Target  //!< End is the target
+    };
 
 //! Used to describe the direction of a related instance within the context
 //! of an IECRelationshipInstance
@@ -1160,8 +1183,8 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
-
-    ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint();
+ 
+    ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
     //! Returns true if the constraint allows for a variable number of classes
     ECOBJECTS_EXPORT bool                       GetIsMultiple() const;
@@ -1271,6 +1294,7 @@ public:
 
 typedef RefCountedPtr<ECRelationshipClass>      ECRelationshipClassPtr;
 
+//! Defines what sort of match should be used when locating a schema
 //! @ingroup ECObjectsGroup
 enum SchemaMatchType
     {
@@ -1286,6 +1310,7 @@ enum SchemaMatchType
 
 /*=================================================================================**//**
 * @ingroup ECObjectsGroup
+* Fully defines a schema with its name, major and minor versions, and a checksum
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
 struct SchemaKey
@@ -1327,7 +1352,8 @@ struct SchemaKey
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass
+//! Determines whether two SchemaKeys match
+//! @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
@@ -1339,7 +1365,8 @@ struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass
+//! Determines whether one SchemaKey is less than the other
+//! @ingroup ECObjectsGroup
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
@@ -1507,6 +1534,10 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 
 public:
+    //! Given a SchemaKey and a className, tries to locate the StandaloneEnabler for the ECClass
+    //! @param[in] schemaKey    SchemaKey fully describing the schema that the class belongs to
+    //! @param[in] className    The name of the class to find the enabler for
+    //! @returns A valid StandaloneECEnabler, if one was located
     ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
 };
 
@@ -1522,6 +1553,11 @@ protected:
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) = 0;
 
 public:
+    //! Tries to locate the requested schema.
+    //! @param[in] key  The SchemaKey fully describing the schema to locate
+    //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
+    //! @param[in] schemaContext    Contains the information of where to look for referenced schemas
+    //! @returns A valid ECSchemaPtr if the schema was located
     ECOBJECTS_EXPORT ECSchemaPtr LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext);
 };
 
@@ -1551,15 +1587,33 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Adds a schema to the cache
+    //! @param[in] schema   The ECSchema to add to the cache
+    //! @returns ECOBJECTS_STATUS_DuplicateSchema is the schema is already in the cache, otherwise ECOBJECTS_STATUS_Success
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
+
+    //! Removes the specified schema from the cache
+    //! @param[in] key  The SchemaKey fully describing the schema that should be removed from the cache
+    //! @returns ECOBJECTS_STATUS_SchemaNotFound is the schema was not found in the cache, otherwise ECOBJECTS_STATUS_Success
     ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
+
+    //! Get the requested schema from the cache
+    //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
+    //! @returns The ECSchema if it is contained in the cache, NULL otherwise
+    //! @remarks This will do an Identical match type for the requested schema
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key);
+
+    //! Get the requested schema from the cache
+    //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
+    //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
+    //! @returns The ECSchema if it is contained in the cache, NULL otherwise
     ECOBJECTS_EXPORT ECSchemaP       GetSchema   (SchemaKeyCR key, SchemaMatchType matchType);
-    ECOBJECTS_EXPORT virtual ~ECSchemaCache ();
-    ECOBJECTS_EXPORT static  ECSchemaCachePtr Create ();
-    ECOBJECTS_EXPORT int     GetCount();
-    ECOBJECTS_EXPORT void    Clear();
-    ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater();
+
+    ECOBJECTS_EXPORT virtual ~ECSchemaCache (); //!< Destructor
+    ECOBJECTS_EXPORT static  ECSchemaCachePtr Create (); //!< Creates an ECSchemaCachePtr
+    ECOBJECTS_EXPORT int     GetCount(); //!< Returns the number of schemas currently in the cache
+    ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
+    ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
 };
 
 
@@ -1667,8 +1721,12 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const;
-    ECOBJECTS_EXPORT void               DebugDump() const;
+    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const; //<! Returns a SchemaKey fully describing this schema
+    ECOBJECTS_EXPORT void               DebugDump() const; //<! Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
+
+    //! Used for debugging purposes.
+    //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
+    //! @param[in] doAssert Controls whether asserts should be tested or not.  Defaults to true.
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
 
     //! Sets the name of this schema
@@ -1727,6 +1785,12 @@ public:
     //@return True if this version of the schema is one that should never be imported into a repository
     ECOBJECTS_EXPORT bool               ShouldNotBeStored() const;
 
+    //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
+    //! be stored persistently in a repository (we expect it to be found elsewhere)
+    //! @param[in]  SchemaKey to test
+    //@return True if this version of the schema is one that should never be imported into a repository
+    ECOBJECTS_EXPORT static bool        ShouldNotBeStored (SchemaKeyCR key);
+
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECClass object
     //! @param[in]  name    Name of the class to create
@@ -1753,8 +1817,12 @@ public:
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
-    //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
+    //! @return   A const pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassCP          GetClassCP (WCharCP name) const;
+
+    //! Get a class by name within the context of this schema.
+    //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
+    //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
     ECOBJECTS_EXPORT ECClassP           GetClassP (WCharCP name);
 
     //! Gets the other schemas that are used by classes within this schema.
@@ -1815,6 +1883,8 @@ public:
     //! @param[in]  sourceClass The class to copy
     ECOBJECTS_EXPORT ECObjectsStatus        CopyClass(ECClassP& targetClass, ECClassCR sourceClass);
 
+    //! Copies this schema
+    //! @param[out] schemaOut   If successful, will contain a copy of this schema
     ECOBJECTS_EXPORT ECObjectsStatus        CopySchema(ECSchemaPtr& schemaOut) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
@@ -1833,10 +1903,6 @@ public:
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName,
                                                           UInt32 versionMajor, UInt32 versionMinor);
-
-/*__PUBLISH_SECTION_END__*/
-    
-/*__PUBLISH_SECTION_START__*/
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in]  versionMajor    The major version number

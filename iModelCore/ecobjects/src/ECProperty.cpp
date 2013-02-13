@@ -400,7 +400,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveECProperty::IsCalculated() const
     {
-    return GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -408,8 +408,32 @@ bool PrimitiveECProperty::IsCalculated() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecificationCP PrimitiveECProperty::GetCalculatedPropertySpecification() const
     {
+    // It's possible in pathological cases where schema specifies an invalid CalculatedECPropertySpecification we will attempt to evaluate
+    // it every time this method is called, but do we need to cater to such cases by avoiding doing so?
     if (m_calculatedSpec.IsNull())
-        m_calculatedSpec = CalculatedPropertySpecification::Create (*this);
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetType());
+
+    return m_calculatedSpec.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::IsCalculated() const
+    {
+    if (ARRAYKIND_Primitive == GetKind())
+        return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    else
+        return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecificationCP ArrayECProperty::GetCalculatedPropertySpecification() const
+    {
+    if (ARRAYKIND_Primitive == GetKind() && m_calculatedSpec.IsNull())
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
 
     return m_calculatedSpec.get();
     }

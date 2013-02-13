@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,9 +67,9 @@ struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std
     {
     public:
     typedef value_type&         reference;
-    virtual void                MoveToNext  () = 0;
-    virtual bool                IsDifferent (IInstanceCollectionIteratorAdapter const &) const = 0;
-    virtual reference           GetCurrent () = 0;
+    virtual void                MoveToNext  () = 0; //!< Moves to next item in the collection
+    virtual bool                IsDifferent (IInstanceCollectionIteratorAdapter const &) const = 0; //!< Compares the item at the current location of the passed in iterator with this iterator's current item
+    virtual reference           GetCurrent () = 0; //!< Returns the item at the current iterator location
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -83,8 +83,8 @@ private:
 
 public:
     typedef VirtualCollectionIterator<IInstanceCollectionIteratorAdapter<value_type> > const_iterator;
-    virtual const_iterator begin() const = 0;
-    virtual const_iterator end() const = 0;
+    virtual const_iterator begin() const = 0; //!< returns the beginning of the collection
+    virtual const_iterator end() const = 0; //!< returns the end of the collection
     };
 
 typedef ECN::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
@@ -224,16 +224,20 @@ struct ECInstanceIterable
         IECInstanceCollectionAdapterPtr m_collectionPtr;
 
     public:
+        //! Default constructor
         ECInstanceIterable ()
             {
             }
+
+        //! Constructor that takes another collection
+        //! @param[in] collection   The collection to make an ECInstanceIterable out of
         ECOBJECTS_EXPORT ECInstanceIterable (IECInstanceCollectionAdapter* collection);
     
         typedef IECInstanceCollectionAdapter::const_iterator  const_iterator;
-        ECOBJECTS_EXPORT const_iterator begin () const;
-        ECOBJECTS_EXPORT const_iterator end   () const;
-        ECOBJECTS_EXPORT bool empty() const;
-        ECOBJECTS_EXPORT bool IsNull () const;
+        ECOBJECTS_EXPORT const_iterator begin () const; //!< returns the beginning of this collection
+        ECOBJECTS_EXPORT const_iterator end   () const; //!< returns the end of the collection
+        ECOBJECTS_EXPORT bool empty() const; //!< returns whether the collection is empty or not
+        ECOBJECTS_EXPORT bool IsNull () const; //!< returns whether the collection is Null
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
