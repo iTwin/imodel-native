@@ -22,9 +22,8 @@ struct DateTimeInfo
     {
 private: 
     bool m_isKindNull;
-    DateTime::Kind m_kind;
     bool m_isComponentNull;
-    DateTime::Component m_component;
+    DateTime::Info m_info;
 
 public:
     //***** Construction ******
@@ -34,12 +33,11 @@ public:
 
     DateTimeInfo () : m_isKindNull (true), m_isComponentNull (true) {}
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component) 
-        : m_isKindNull (isKindNull), m_kind (kind), m_isComponentNull (isComponentNull), m_component (component) {}
+        : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component) {}
 
     bool IsKindNull () const {return m_isKindNull;}
-    DateTime::Kind GetKind () const {return m_kind;}
     bool IsComponentNull () const {return m_isComponentNull;}
-    DateTime::Component GetComponent () const {return m_component;}
+    DateTime::Info const& GetInfo () const {return m_info;}
     };
 
 //=======================================================================================    

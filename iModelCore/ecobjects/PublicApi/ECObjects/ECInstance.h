@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 
 #include <Bentley/DateTime.h>
 #include "ECObjects.h"
+#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Geom/GeomApi.h>
 
 BENTLEY_TYPEDEFS (BeXmlDom)
@@ -95,7 +96,12 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
 private:
+    ECObjectsStatus ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
+    ECObjectsStatus GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const;
+
     WCharCP GetInstanceLabelPropertyName () const;
+
+    bool TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, UInt32 propertyIndex) const;
 
 protected:
     ECOBJECTS_EXPORT IECInstance();

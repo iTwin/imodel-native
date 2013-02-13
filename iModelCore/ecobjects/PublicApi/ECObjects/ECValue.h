@@ -13,6 +13,7 @@
 #include <Bentley/DateTime.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
+#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -72,7 +73,9 @@ private:
     UInt8               m_stateFlags;
     mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
 
+    BentleyStatus       SetDateTime (Int64 commonEraTicks, DateTime::Info const& dateTimeMetaData);
     void                InitForString (void const * str);
+
 protected:
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -113,9 +116,26 @@ protected:
 
     struct DateTimeInfo
         {
+    private:
         ::Int64             m_ceTicks;
         DateTime::Kind      m_kind;
         DateTime::Component m_component;
+        bool                m_isMetadataSet;
+
+        void SetMetadata (DateTime::Kind kind, DateTime::Component component);
+
+        DateTime::Kind GetDefaultKind () const;
+        DateTime::Component GetDefaultComponent () const;
+    public:
+        void Set (::Int64 ceTicks);
+        BentleyStatus Set (::Int64 ceTicks, DateTime::Info const& metadata);
+        BentleyStatus Set (DateTimeCR dateTime);
+        ::Int64 GetCETicks () const;
+        BentleyStatus GetDateTime (DateTimeR dateTime) const;
+
+        bool IsMetadataSet () const {return m_isMetadataSet;}
+        void AssignMetadataFromDateTimeInfo (ECN::DateTimeInfo const& dateTimeInfo);
+        bool MetadataMatches (ECN::DateTimeInfo const& dateTimeInfo) const;
         };
 
     union
@@ -125,7 +145,7 @@ protected:
         ::Int64             m_long64;
         double              m_double;
         mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
-        ::Int64             m_dateTime;
+        DateTimeInfo        m_dateTimeInfo;
         DPoint2d            m_dPoint2d;
         DPoint3d            m_dPoint3d;
         ArrayInfo           m_arrayInfo;
@@ -255,6 +275,10 @@ public:
     //! @param[in] value DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
+
+    bool IsDateTimeMetadataSet () const;
+    bool DateTimeInfoMatches (ECN::DateTimeInfo const& dateTimeInfo) const;
+    void ApplyDateTimeInfo (ECN::DateTimeInfo const& dateTimeInfo);
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.

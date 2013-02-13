@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -883,7 +883,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v1.SetDateTime(timeInput);
     v2.SetDateTime(timeInput);
     EXPECT_TRUE   (v1.Equals (v2));
-    DateTime timeInput2 (timeInput.GetKind (), timeInput.GetYear () + 1, timeInput.GetMonth (), timeInput.GetDay (), timeInput.GetHour (), timeInput.GetMinute (), timeInput.GetSecond (), timeInput.GetHectoNanosecond ());
+    DateTime timeInput2 (timeInput.GetInfo ().GetKind (), timeInput.GetYear () + 1, timeInput.GetMonth (), timeInput.GetDay (), timeInput.GetHour (), timeInput.GetMinute (), timeInput.GetSecond (), timeInput.GetHectoNanosecond ());
     v2.SetDateTime(timeInput2);
     EXPECT_FALSE  (v1.Equals (v2));
 
@@ -1972,7 +1972,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
     DPoint3d   inPoint2 ={200.100, 210.110, 220.120};
-    DateTime   inTime = DateTime::GetCurrentTimeUtc ();
+    DateTime   inTimeUtc = DateTime::GetCurrentTimeUtc ();
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;
@@ -1985,7 +1985,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     instance->SetValue (L"Size",         ECValue (inSize));
     instance->SetValue (L"StartPoint",   ECValue (inPoint1));
     instance->SetValue (L"EndPoint",     ECValue (inPoint2));
-    instance->SetValue (L"Service_Date", ECValue (inTime));
+    instance->SetValue (L"Service_Date", ECValue (inTimeUtc));
 
     ECValue ecValue;
     ecValue.SetDateTimeTicks(inTicks);
@@ -2008,9 +2008,12 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"EndPoint"));
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
+    //in absence of the DateTimeInfo custom attribute on Service_Date the retrieved
+    //date time will always be of kind Unspecified, i.e. the original kind (here Utc)
+    //gets lost
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (inTime.Compare (sysTime, true));
+    EXPECT_TRUE (inTimeUtc.Compare (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
