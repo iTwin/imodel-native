@@ -32,7 +32,7 @@ struct SchemaComparisonTest      : ECTestFixture {};
 struct SchemaCacheTest           : ECTestFixture {};
 struct SchemaReferenceTest       : ECTestFixture {};
 struct SchemaChecksumTest        : ECTestFixture {};
-struct SchemaImmutableTest        : ECTestFixture {};
+struct SchemaImmutableTest       : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
@@ -641,15 +641,15 @@ TEST_F(SchemaCacheTest, DropSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
     {
-    WCharCP schemaXml =
+    WChar schemaXml[] =
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
         L"       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />"
         L"    </ECClass>"
         L"</ECSchema>";
-        
-    EXPECT_EQ (ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 3278352953);
+    
+    EXPECT_EQ (ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 2661612606);
     }
     
 /*---------------------------------------------------------------------------------**//**

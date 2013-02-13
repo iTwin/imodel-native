@@ -18,3 +18,5 @@ $(o)ScenarioSchemaTests$(oext)    : $(baseDir)scenario/SchemaTests.cpp   $(PCHHe
 $(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/CompressInstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/TestCopySchema.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)InstanceTests$(oext)          : $(baseDir)scenario/InstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
