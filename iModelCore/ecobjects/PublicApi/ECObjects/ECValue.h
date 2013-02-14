@@ -123,9 +123,6 @@ protected:
         bool                m_isMetadataSet;
 
         void SetMetadata (DateTime::Kind kind, DateTime::Component component);
-
-        DateTime::Kind GetDefaultKind () const;
-        DateTime::Component GetDefaultComponent () const;
     public:
         void Set (::Int64 ceTicks);
         BentleyStatus Set (::Int64 ceTicks, DateTime::Info const& metadata);

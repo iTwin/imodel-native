@@ -25,6 +25,10 @@ private:
     bool m_isComponentNull;
     DateTime::Info m_info;
 
+    static const DateTime::Kind DEFAULT_KIND;
+    static const DateTime::Component DEFAULT_COMPONENT;
+    static const DateTime::Info s_default;
+
 public:
     //***** Construction ******
 //__PUBLISH_SECTION_END__
@@ -37,7 +41,10 @@ public:
 
     bool IsKindNull () const {return m_isKindNull;}
     bool IsComponentNull () const {return m_isComponentNull;}
-    DateTime::Info const& GetInfo () const {return m_info;}
+    DateTime::Info const& GetInfo () const { return m_info; }
+
+    ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
+    ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
     };
 
 //=======================================================================================    

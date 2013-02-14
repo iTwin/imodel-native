@@ -276,22 +276,6 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-DateTime::Kind ECValue::DateTimeInfo::GetDefaultKind () const
-    {
-    return DateTime::DATETIMEKIND_Unspecified;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                   02/13
-//+---------------+---------------+---------------+---------------+---------------+-------
-DateTime::Component ECValue::DateTimeInfo::GetDefaultComponent () const
-    {
-    return DateTime::DATETIMECOMPONENT_DateTime;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                   02/13
-//+---------------+---------------+---------------+---------------+---------------+-------
 void ECValue::DateTimeInfo::Set (::Int64 ceTicks)
     {
     m_ceTicks = ceTicks;
@@ -361,9 +345,7 @@ void ECValue::DateTimeInfo::SetMetadata (DateTime::Kind kind, DateTime::Componen
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ECValue::DateTimeInfo::GetDateTime (DateTimeR dateTime) const
     {
-    DateTime::Kind kind = m_isMetadataSet ? m_kind : GetDefaultKind ();
-    DateTime::Component component = m_isMetadataSet ? m_component : GetDefaultComponent ();
-    DateTime::Info info (kind, component);
+    DateTime::Info info = m_isMetadataSet ? DateTime::Info (m_kind, m_component) : ECN::DateTimeInfo::GetDefault ();
 
     return DateTime::FromCommonEraTicks (dateTime, m_ceTicks, info);
     }
@@ -379,10 +361,8 @@ void ECValue::DateTimeInfo::AssignMetadataFromDateTimeInfo (ECN::DateTimeInfo co
         return;
         }
 
-    DateTime::Kind kind = dateTimeInfo.IsKindNull () ? GetDefaultKind () : dateTimeInfo.GetInfo ().GetKind ();
-    DateTime::Component component = dateTimeInfo.IsComponentNull () ? GetDefaultComponent () : dateTimeInfo.GetInfo ().GetComponent ();
-
-    SetMetadata (kind, component);
+    DateTime::Info metadata = dateTimeInfo.GetInfo (true);
+    SetMetadata (metadata.GetKind (), metadata.GetComponent ());
     }
 
 //----------------------------------------------------------------------------------------
