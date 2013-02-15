@@ -247,7 +247,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     ruleSet->GetStyleOverrides ().push_back (new StyleOverride (L"TestCondition6", 6, L"Blue", L"Red", L"Bold"));
     ruleSet->GetLocalizationResourceKeyDefinitions ().push_back (new LocalizationResourceKeyDefinition (7, L"UniqueId:)", L"LocalizedStringAccessKey", L"ThisIsTheValueIfItFails"));
     
-    GroupingRuleP groupingRule = new GroupingRule (L"TestCondition7", 7, true, L"DummySchemaName", L"DummyClassName", L"ContextMenuCondition", L"ContextMenuLabel");
+    GroupingRuleP groupingRule = new GroupingRule (L"TestCondition7", 7, true, L"DummySchemaName", L"DummyClassName", L"ContextMenuCondition", L"ContextMenuLabel", L"SettingsId");
     ClassGroupP classGroup = new ClassGroup (L"ContextMenuLabel", true, L"SchemaName", L"BaseClassName");
     groupingRule->GetGroups ().push_back (classGroup);
     PropertyGroupP propertyGroup = new PropertyGroup (L"ImageId", L"ContextMenuLabel", true, L"PropertyName");
