@@ -1049,9 +1049,15 @@ BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
 BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime) 
     {
     Clear ();
-    SetIsNull (false);
     m_primitiveType = PRIMITIVETYPE_DateTime;
-    return m_dateTimeInfo.Set (dateTime);
+    //in case of error, keep IsNull set.
+    BentleyStatus stat = m_dateTimeInfo.Set (dateTime);
+    if (stat == SUCCESS)
+        {
+        SetIsNull (false);
+        }
+
+    return stat;
     }
 
 //--------------------------------------------------------------------------------------

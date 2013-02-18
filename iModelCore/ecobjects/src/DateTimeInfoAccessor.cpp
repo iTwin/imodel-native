@@ -24,8 +24,9 @@ WCharCP const DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYNAME = L"Date
 //static
 bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
-    PrimitiveECPropertyP dateTimePropertyPrim = dateTimeProperty.GetAsPrimitiveProperty ();
-    PRECONDITION (dateTimePropertyPrim != NULL && dateTimePropertyPrim->GetType () == PRIMITIVETYPE_DateTime, false);
+    ArrayECPropertyP arrayDateTimeProp = NULL;
+    PRECONDITION ((dateTimeProperty.GetIsPrimitive () && dateTimeProperty.GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) || 
+                  ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), false);
 
     IECInstancePtr caInstance = dateTimeProperty.GetCustomAttribute (DATETIMEINFO_CLASSNAME);
     if (caInstance.IsNull())

@@ -284,8 +284,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, boo
         }
 
     //only set date time meta data if it wasn't already set (by impl of _GetValue)
-    //(also checks whether the ECValue is a date time ECValue at all)
-    if (!v.IsDateTimeMetadataSet ())
+    if (v.IsDateTime () && !v.IsDateTimeMetadataSet ())
         {
         DateTimeInfo dti;
         if (TryGetDateTimeInfo (dti, propertyIndex))
@@ -405,6 +404,7 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     { 
+
     return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
     }
 
@@ -449,7 +449,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
     if (IsPropertyReadOnly (propertyIndex) && !isNull)
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 
-    if (v.IsDateTime ())
+    if (v.IsDateTime () && !v.IsNull ())
         {
         DateTimeInfo dateTimeInfo;
         const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);

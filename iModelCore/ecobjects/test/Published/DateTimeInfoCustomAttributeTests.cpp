@@ -99,6 +99,15 @@ protected:
             "               </DateTimeInfo>"
             "           </ECCustomAttributes>"
             "        </ECProperty>"                    
+            "        <ECArrayProperty propertyName=\"dateTimeArrayProp\" typeName=\"dateTime\" minOccurs=\"0\" maxOccurs=\"unbounded\">"
+            "           <ECCustomAttributes>"
+            "               <DateTimeInfo xmlns=\"Bentley_Standard_CustomAttributes.01.05\">"
+            "                   <DateTimeKind>Utc</DateTimeKind>"
+            "               </DateTimeInfo>"
+            "           </ECCustomAttributes>"
+            "        </ECArrayProperty>"                    
+            "        <ECProperty propertyName=\"intProp\" typeName=\"int\" />"
+            "        <ECArrayProperty propertyName=\"intArrayProp\" typeName=\"int\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
             "    </ECClass>"
             "</ECSchema>";
 
@@ -156,8 +165,26 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
             expectedResults.push_back (ExpectedResultPerProperty (L"dateonly", ExpectedResult (DateTime::DATETIMECOMPONENT_Date)));
             expectedResults.push_back (ExpectedResultPerProperty (L"garbagecomponent", ExpectedResult ()));
             expectedResults.push_back (ExpectedResultPerProperty (L"garbagekindgarbagecomponent", ExpectedResult ()));
+            expectedResults.push_back (ExpectedResultPerProperty (L"dateTimeArrayProp", ExpectedResult (DateTime::DATETIMEKIND_Utc)));
 
             return DateTimeInfoTestFixture::CreateTestSchema (context);
+            }
+
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                   Krischan.Eberle                  02/13                               
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static ECSchemaPtr CreateTestSchemaNotReferencingBSCA (ECSchemaReadContextPtr& context)
+            {
+            Utf8CP testSchemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                "<ECSchema schemaName=\"StandardClassesHelperTest\" nameSpacePrefix=\"t\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                "   <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"prop1\" typeName=\"dateTime\" />"
+                "        <ECProperty propertyName=\"prop2\" typeName=\"int\" />"
+                "    </ECClass>"
+                "</ECSchema>";
+
+            return DeserializeSchema (context, testSchemaXml);
             }
 
         //---------------------------------------------------------------------------------------
@@ -183,8 +210,6 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
 
             return DeserializeSchema (context, testSchemaXml);
             }
-
-
     };
 
 //=======================================================================================
@@ -224,22 +249,6 @@ protected:
 
     static void AssertSetValueWithInvalidDateTimeInfo (IECInstancePtr instance, WCharCP propertyName)
         {
-        bvector<DateTime> testDateTimes;
-        testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Utc, 2013, 2, 18, 14, 22));
-        testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 18, 14, 22));
-        testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Local, 2013, 2, 18, 14, 22));
-        testDateTimes.push_back (DateTime (2013, 2, 18));
-
-        DISABLE_ASSERTS
-
-        FOR_EACH (DateTimeCR testDateTime, testDateTimes)
-            {
-            ECValue value;
-            const BentleyStatus expectedStat = testDateTime.GetInfo ().GetKind () != DateTime::DATETIMEKIND_Local ? SUCCESS : ERROR;
-            EXPECT_EQ (expectedStat, value.SetDateTime (testDateTime)) << "Return value of ECValue::SetDateTime ('" << testDateTime.ToString ().c_str () << "')";
-
-            EXPECT_NE (ECOBJECTS_STATUS_Success, instance->SetValue (propertyName, value)) << "IECInstance::SetValue> Property name: " << propertyName << " DateTime: " << testDateTime.ToString ().c_str ();
-            }
         }
 
     static void AssertGetValue (IECInstancePtr instance, WCharCP propertyName, DateTimeCR expectedDateTime, bool expectedMatch)
@@ -282,8 +291,52 @@ TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfo)
     FOR_EACH (ExpectedResultPerProperty const& result, expectedResults)
         {
         ECPropertyP prop = testClass->GetPropertyP (result.first.c_str ());
+        ASSERT_TRUE (prop != NULL);
         Assert (*prop, result.second);
         }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/13                               
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfoInSchemaNotReferencingBSCA)
+    {
+    ECSchemaReadContextPtr context = NULL;
+    ECSchemaPtr testSchema = CreateTestSchemaNotReferencingBSCA (context);
+
+    ECClassP testClass = testSchema->GetClassP (L"TestClass");
+    ASSERT_TRUE (testClass != NULL);
+
+    ECPropertyP prop = testClass->GetPropertyP (L"prop1");
+    DateTimeInfo dti;
+    bool found = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
+    EXPECT_FALSE (found) << "No DateTimeInfo CA expected on property that doesn't have the DateTimeInfo CA";
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/13                               
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeForNonDateTimeProperties)
+    {
+    ExpectedResults expectedResults;
+    ECSchemaReadContextPtr context = NULL;
+    ECSchemaPtr testSchema = CreateTestSchema (context, expectedResults);
+
+    ECClassP testClass = testSchema->GetClassP (L"TestClass");
+    ASSERT_TRUE (testClass != NULL);
+
+    ECPropertyP prop = testClass->GetPropertyP (L"intProp");
+    ASSERT_TRUE (prop != NULL);
+    DISABLE_ASSERTS
+
+    DateTimeInfo dti;
+    bool found = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
+    ASSERT_FALSE (found);
+
+    prop = testClass->GetPropertyP (L"intArrayProp");
+    ASSERT_TRUE (prop != NULL);
+    found = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
+    ASSERT_FALSE (found);
     };
 
 //---------------------------------------------------------------------------------------
@@ -334,18 +387,54 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTime)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/13                               
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithInvalidDateTimeInfo)
+TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
     {
+    bvector<DateTime> testDateTimes;
+    testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Utc, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Local, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back (DateTime (2013, 2, 18));
+
     ECSchemaReadContextPtr context = NULL;
     ECSchemaPtr testSchema = CreateTestSchema (context);
 
     ECClassP testClass = testSchema->GetClassP (L"TestClass");
     ASSERT_TRUE (testClass != NULL);
+    WCharCP localDateTimePropName = L"local";
 
-    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    ASSERT_TRUE (instance.IsValid ());
+    DISABLE_ASSERTS
 
-    AssertSetValueWithInvalidDateTimeInfo (instance, L"local");
+    FOR_EACH (DateTimeCR testDateTime, testDateTimes)
+        {
+        const bool isLocal = testDateTime.GetInfo ().GetKind () == DateTime::DATETIMEKIND_Local;
+        ECValue value;
+        const BentleyStatus expectedStat = isLocal ? ERROR : SUCCESS;
+        EXPECT_EQ (expectedStat, value.SetDateTime (testDateTime)) << "Return value of ECValue::SetDateTime ('" << testDateTime.ToString ().c_str () << "')";
+
+        value = ECValue (testDateTime);
+        if (!isLocal)
+            {
+            EXPECT_FALSE (value.IsNull ()) << "ECValue (DateTime) is expected to return an ECValue which is not IsNull if the passed DateTime was not local.";
+            EXPECT_TRUE (testDateTime == value.GetDateTime ()) << "ECValue::GetDateTime () is expected to return a non-empty DateTime if the passed DateTime was not local.";
+            }
+        else
+            {
+            EXPECT_TRUE (value.IsNull ()) << "ECValue (local DateTime) is expected to return an ECValue which is IsNull.";
+            EXPECT_TRUE (DateTime () == value.GetDateTime ()) << "ECValue (local DateTime)::GetDateTime () is expected to return an empty DateTime.";
+            }
+
+        IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        ASSERT_TRUE (instance.IsValid ());
+
+        if (!isLocal)
+            {
+            EXPECT_NE (ECOBJECTS_STATUS_Success, instance->SetValue (localDateTimePropName, value)) << "IECInstance::SetValue> Property name: " << localDateTimePropName << " DateTime: " << testDateTime.ToString ().c_str ();
+            }
+        else
+            {
+            EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (localDateTimePropName, value)) << "IECInstance::SetValue> Property name: " << localDateTimePropName << " with a local date time is expected to succeed, but the inserted value is null.";
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
