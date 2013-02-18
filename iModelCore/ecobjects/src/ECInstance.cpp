@@ -284,7 +284,8 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, boo
         }
 
     //only set date time meta data if it wasn't already set (by impl of _GetValue)
-    if (v.IsDateTime () && !v.IsDateTimeMetadataSet ())
+    //(also checks whether the ECValue is a date time ECValue at all)
+    if (!v.IsDateTimeMetadataSet ())
         {
         DateTimeInfo dti;
         if (TryGetDateTimeInfo (dti, propertyIndex))
@@ -879,7 +880,7 @@ bool IECInstance::TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, UInt32 propert
     //and then parses to access string (to check whether it might refer to a struct member) before
     //actually calling ECClass::GetProperty
     ECPropertyCP ecProperty = GetEnabler ().LookupECProperty (propertyIndex);
-    if (ecProperty != NULL)
+    if (ecProperty == NULL)
         {
         return false;
         }

@@ -48,7 +48,7 @@
     <ClCompile Include="Published\SupplementalSchemaTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\StandardCustomAttributeHelperTests.cpp">
+    <ClCompile Include="Published\DateTimeInfoCustomAttributeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
