@@ -73,7 +73,6 @@ private:
     UInt8               m_stateFlags;
     mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
 
-    BentleyStatus       SetDateTime (Int64 commonEraTicks, DateTime::Info const& dateTimeMetaData);
     void                InitForString (void const * str);
 
 protected:
@@ -122,16 +121,17 @@ protected:
         DateTime::Component m_component;
         bool                m_isMetadataSet;
 
-        void SetMetadata (DateTime::Kind kind, DateTime::Component component);
     public:
         void Set (::Int64 ceTicks);
-        BentleyStatus Set (::Int64 ceTicks, DateTime::Info const& metadata);
         BentleyStatus Set (DateTimeCR dateTime);
         ::Int64 GetCETicks () const;
         BentleyStatus GetDateTime (DateTimeR dateTime) const;
 
         bool IsMetadataSet () const {return m_isMetadataSet;}
-        void AssignMetadataFromDateTimeInfo (ECN::DateTimeInfo const& dateTimeInfo);
+        bool TryGetMetadata (DateTime::Info& metadata) const;
+        BentleyStatus SetMetadata (DateTime::Info const& metadata);
+        BentleyStatus SetMetadata (ECN::DateTimeInfo const& dateTimeInfo);
+
         bool MetadataMatches (ECN::DateTimeInfo const& dateTimeInfo) const;
         };
 
@@ -266,16 +266,31 @@ public:
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
 
+    //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @params[out] hasMetadata true, if date time metadata is available in this ECValue, false otherwise.
+    //! @params[out] metadata if hasMetadata is true, contains the metadata available in this ECValue.
+    //! @return DateTime value as ticks since the beginning of the Common Era epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
+
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @param[in] value DateTime Common Era ticks to set
+    //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks);
 
+    //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @param[in] ceTicks DateTime Common Era ticks to set
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
+
+    BentleyStatus SetDateTimeMetadata (ECN::DateTimeInfo const& caDateTimeMetadata);
     bool IsDateTimeMetadataSet () const;
-    bool DateTimeInfoMatches (ECN::DateTimeInfo const& dateTimeInfo) const;
-    void ApplyDateTimeInfo (ECN::DateTimeInfo const& dateTimeInfo);
+    bool DateTimeInfoMatches (ECN::DateTimeInfo const& caDateTimeMetadata) const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.

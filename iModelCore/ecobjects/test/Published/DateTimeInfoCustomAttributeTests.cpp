@@ -218,7 +218,7 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
 struct ECInstanceGetSetDateTimeTestFixture : DateTimeInfoTestFixture
     {
 protected:
-    static void AssertSetValue (IECInstancePtr instance, WCharCP propertyName, ECN::DateTimeInfo const& expected = DateTimeInfo (true, DateTime::DATETIMEKIND_Unspecified, true, DateTime::DATETIMECOMPONENT_DateTime))
+    static void AssertSetValue (IECInstancePtr instance, WCharCP propertyName, bool expectedKindIsNull, bool expectedComponentIsNull, DateTime::Info const& expectedInfo)
         {
         bvector<DateTime> testDateTimes;
         testDateTimes.push_back (DateTime::GetCurrentTimeUtc ());
@@ -230,9 +230,9 @@ protected:
             ECValue value;
             EXPECT_EQ (SUCCESS, value.SetDateTime (testDateTime)) << "Return value of ECValue::SetDateTime";
 
-            const bool isExpectedToSucceed = (expected.IsKindNull () || testDateTime.GetInfo ().GetKind () == expected.GetInfo ().GetKind ()) &&
-                                             (expected.IsComponentNull () || testDateTime.GetInfo ().GetComponent () == expected.GetInfo ().GetComponent ()); 
-
+            DateTime::Info const& actualInfo = testDateTime.GetInfo ();
+            const bool isExpectedToSucceed = (expectedKindIsNull || expectedInfo.GetKind () == actualInfo.GetKind ()) &&
+                                            (expectedComponentIsNull || expectedInfo.GetComponent () == actualInfo.GetComponent ());
             if (!isExpectedToSucceed)
                 {
                 DISABLE_ASSERTS
@@ -245,10 +245,6 @@ protected:
                 EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue with a matching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString ().c_str ();
                 }
             }
-        }
-
-    static void AssertSetValueWithInvalidDateTimeInfo (IECInstancePtr instance, WCharCP propertyName)
-        {
         }
 
     static void AssertGetValue (IECInstancePtr instance, WCharCP propertyName, DateTimeCR expectedDateTime, bool expectedMatch)
@@ -372,16 +368,41 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTime)
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ASSERT_TRUE (instance.IsValid ());
 
-    AssertSetValue (instance, L"nodatetimeinfo");
-    AssertSetValue (instance, L"emptydatetimeinfo");
-    AssertSetValue (instance, L"utc", DateTimeInfo (false, DateTime::DATETIMEKIND_Utc, true, DateTime::DATETIMECOMPONENT_DateTime));
-    AssertSetValue (instance, L"unspecified", DateTimeInfo (false, DateTime::DATETIMEKIND_Unspecified, true, DateTime::DATETIMECOMPONENT_DateTime));
-    AssertSetValue (instance, L"dateonly", DateTimeInfo (true, DateTime::DATETIMEKIND_Unspecified, false, DateTime::DATETIMECOMPONENT_Date));
+    AssertSetValue (instance, L"nodatetimeinfo", true, true, DateTime::Info ());
+    AssertSetValue (instance, L"emptydatetimeinfo", true, true, DateTime::Info ());
+    AssertSetValue (instance, L"utc", false, true, DateTime::Info (DateTime::DATETIMEKIND_Utc, DateTime::DATETIMECOMPONENT_DateTime));
+    AssertSetValue (instance, L"unspecified", false, true, DateTime::Info (DateTime::DATETIMEKIND_Unspecified, DateTime::DATETIMECOMPONENT_DateTime));
+    AssertSetValue (instance, L"dateonly", true, false, DateTime::Info (DateTime::DATETIMEKIND_Unspecified, DateTime::DATETIMECOMPONENT_Date));
 
     //wrong values are treated as if the meta data wasn't specified
-    AssertSetValue (instance, L"garbagekind", DateTimeInfo (true, DateTime::DATETIMEKIND_Unspecified, true, DateTime::DATETIMECOMPONENT_DateTime));
-    AssertSetValue (instance, L"garbagecomponent", DateTimeInfo (true, DateTime::DATETIMEKIND_Unspecified, true, DateTime::DATETIMECOMPONENT_DateTime));
-    AssertSetValue (instance, L"garbagekindgarbagecomponent", DateTimeInfo (true, DateTime::DATETIMEKIND_Unspecified, true, DateTime::DATETIMECOMPONENT_DateTime));
+    AssertSetValue (instance, L"garbagekind", true, true, DateTime::Info ());
+    AssertSetValue (instance, L"garbagecomponent", true, true, DateTime::Info ());
+    AssertSetValue (instance, L"garbagekindgarbagecomponent", true, true, DateTime::Info ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/13                               
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
+    {
+    ECSchemaReadContextPtr context = NULL;
+    ECSchemaPtr testSchema = CreateTestSchema (context);
+
+    ECClassP testClass = testSchema->GetClassP (L"TestClass");
+    ASSERT_TRUE (testClass != NULL);
+
+    DateTime expectedDate = DateTime::GetCurrentTimeUtc ();
+    Int64 ceTicks = 0LL;
+    ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (ceTicks));
+
+    ECValue value;
+    value.SetDateTimeTicks (ceTicks);
+
+    WCharCP propName = L"utc";
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ASSERT_TRUE (instance.IsValid ());
+    ECObjectsStatus stat = instance->SetValue (propName, value);
+    ASSERT_EQ (ECOBJECTS_STATUS_DataTypeMismatch, stat) << "Setting an ECValue which has only been populated from Common Era ticks in a date time ECProperty which has a DateTimeInfo CA is not supported.";
     }
 
 //---------------------------------------------------------------------------------------

@@ -35,16 +35,23 @@ public:
     //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
 //__PUBLISH_SECTION_START__
 
-    DateTimeInfo () : m_isKindNull (true), m_isComponentNull (true) {}
-    DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component) 
-        : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component) {}
+    ECOBJECTS_EXPORT DateTimeInfo ();
+    DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
 
-    bool IsKindNull () const {return m_isKindNull;}
-    bool IsComponentNull () const {return m_isComponentNull;}
-    DateTime::Info const& GetInfo () const { return m_info; }
+    ECOBJECTS_EXPORT bool IsKindNull () const;
+    ECOBJECTS_EXPORT bool IsComponentNull () const;
+    ECOBJECTS_EXPORT DateTime::Info const& GetInfo () const;
 
     ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
     ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
+
+    //! Checks whether the RHS object matches this object.
+    //! @remarks If one of the members
+    //!          of this object is null, the RHS counterpart is ignored and the
+    //!          members are considered matching.
+    //! @param[in] rhs RHS
+    //! @return true, if the RHS matches this object. false otherwise
+    ECOBJECTS_EXPORT bool IsMatchedBy (DateTime::Info const& rhs) const;
     };
 
 //=======================================================================================    

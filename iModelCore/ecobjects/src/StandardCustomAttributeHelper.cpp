@@ -20,6 +20,22 @@ const DateTime::Info DateTimeInfo::s_default = DateTime::Info (DateTimeInfo::DEF
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+DateTimeInfo::DateTimeInfo ()
+    : m_isKindNull (true), m_isComponentNull (true)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component)
+    : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 DateTime::Info DateTimeInfo::GetInfo (bool useDefaultIfUnset) const
     {
     if (!useDefaultIfUnset)
@@ -36,10 +52,47 @@ DateTime::Info DateTimeInfo::GetInfo (bool useDefaultIfUnset) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::IsKindNull () const
+    {
+    return m_isKindNull;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::IsComponentNull () const
+    {
+    return m_isComponentNull;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+DateTime::Info const& DateTimeInfo::GetInfo () const
+    {
+    return m_info;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
 DateTime::Info const& DateTimeInfo::GetDefault ()
     {
     return s_default;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::IsMatchedBy (DateTime::Info const& rhs) const
+    {
+    DateTime::Info const& lhsInfo = GetInfo ();
+    //If one of the members
+    //of this object is null, the RHS counterpart is ignored and the
+    //members are considered matching.
+    return (IsKindNull () || lhsInfo.GetKind () == rhs.GetKind ()) &&
+        (IsComponentNull () || lhsInfo.GetComponent () == rhs.GetComponent ());
     }
 
 //---------------------------------------------------------------------------------------

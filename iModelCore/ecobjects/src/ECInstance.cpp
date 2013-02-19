@@ -283,13 +283,15 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, boo
         return stat;
         }
 
-    //only set date time meta data if it wasn't already set (by impl of _GetValue)
-    if (v.IsDateTime () && !v.IsDateTimeMetadataSet ())
+    //only set date time meta data if the value is not null and if the metadata wasn't already set (by impl of _GetValue)
+    if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
         {
-        DateTimeInfo dti;
-        if (TryGetDateTimeInfo (dti, propertyIndex))
+        DateTimeInfo caDateTimeMetadata;
+        if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
             {
-            v.ApplyDateTimeInfo (dti);
+            //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
+            BentleyStatus success = v.SetDateTimeMetadata (caDateTimeMetadata);
+            POSTCONDITION (success == SUCCESS, ECOBJECTS_STATUS_DataTypeNotSupported);
             }
         }
 

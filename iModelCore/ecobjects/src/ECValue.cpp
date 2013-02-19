@@ -285,22 +285,6 @@ void ECValue::DateTimeInfo::Set (::Int64 ceTicks)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ECValue::DateTimeInfo::Set (::Int64 ceTicks, DateTime::Info const& metadata)
-    {
-    //No support for local DateTimes (yet?) as client might expect this to do time zone
-    //conversions - which we want the client / application side to do as it is nearly
-    //impossible to do time zone conversions right in a generic and portable way.
-    PRECONDITION (metadata.GetKind () != DateTime::DATETIMEKIND_Local, ERROR);
-
-    m_ceTicks = ceTicks;
-    SetMetadata (metadata.GetKind (), metadata.GetComponent ());
-    return SUCCESS;
-    }
-
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                   02/13
-//+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ECValue::DateTimeInfo::Set (DateTimeCR dateTime)
     {
     //No support for local DateTimes (yet?) as client might expect this to do time zone
@@ -315,21 +299,9 @@ BentleyStatus ECValue::DateTimeInfo::Set (DateTimeCR dateTime)
         return stat;
         }
 
-    Set (ceTicks, dateTime.GetInfo ());
-
-    return SUCCESS;
+    Set (ceTicks);
+    return SetMetadata (dateTime.GetInfo ());
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                   02/13
-//+---------------+---------------+---------------+---------------+---------------+-------
-void ECValue::DateTimeInfo::SetMetadata (DateTime::Kind kind, DateTime::Component component)
-    {
-    m_kind = kind;
-    m_component = component;
-    m_isMetadataSet = true;
-    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
@@ -345,7 +317,11 @@ void ECValue::DateTimeInfo::SetMetadata (DateTime::Kind kind, DateTime::Componen
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ECValue::DateTimeInfo::GetDateTime (DateTimeR dateTime) const
     {
-    DateTime::Info info = m_isMetadataSet ? DateTime::Info (m_kind, m_component) : ECN::DateTimeInfo::GetDefault ();
+    DateTime::Info info;
+    if (!TryGetMetadata (info))
+        {
+        info = ECN::DateTimeInfo::GetDefault ();
+        }
 
     return DateTime::FromCommonEraTicks (dateTime, m_ceTicks, info);
     }
@@ -353,25 +329,52 @@ BentleyStatus ECValue::DateTimeInfo::GetDateTime (DateTimeR dateTime) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-void ECValue::DateTimeInfo::AssignMetadataFromDateTimeInfo (ECN::DateTimeInfo const& dateTimeInfo)
+bool ECValue::DateTimeInfo::TryGetMetadata (DateTime::Info& metadata) const
     {
-    if (IsMetadataSet ())
+    if (!IsMetadataSet ())
         {
-        //meta data was already set. So not repeating that.
-        return;
+        return false;
         }
 
-    DateTime::Info metadata = dateTimeInfo.GetInfo (true);
-    SetMetadata (metadata.GetKind (), metadata.GetComponent ());
+    metadata = DateTime::Info (m_kind, m_component);
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-bool ECValue::DateTimeInfo::MetadataMatches (ECN::DateTimeInfo const& dateTimeInfo) const
+BentleyStatus ECValue::DateTimeInfo::SetMetadata (ECN::DateTimeInfo const& caMetadata)
     {
-    return (dateTimeInfo.IsKindNull () || m_kind == dateTimeInfo.GetInfo ().GetKind ()) &&
-        (dateTimeInfo.IsComponentNull () || m_component == dateTimeInfo.GetInfo ().GetComponent ());
+    DateTime::Info metadata = caMetadata.GetInfo (true);
+    return SetMetadata (metadata);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata)
+    {
+    //No support for local DateTimes (yet?) as client might expect this to do time zone
+    //conversions - which we want the client / application side to do as it is nearly
+    //impossible to do time zone conversions right in a generic and portable way.
+    PRECONDITION (metadata.GetKind () != DateTime::DATETIMEKIND_Local, ERROR);
+
+    m_kind = metadata.GetKind ();
+    m_component = metadata.GetComponent ();
+    m_isMetadataSet = true;
+
+    return SUCCESS;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+bool ECValue::DateTimeInfo::MetadataMatches (ECN::DateTimeInfo const& caDateTimeMetadata) const
+    {
+    DateTime::Info const& rhsInfo = caDateTimeMetadata.GetInfo ();
+
+    return m_isMetadataSet && (caDateTimeMetadata.IsKindNull () || m_kind == rhsInfo.GetKind ()) &&
+        (caDateTimeMetadata.IsComponentNull () || m_component == rhsInfo.GetComponent ());
     }
 
 
@@ -996,11 +999,23 @@ BentleyStatus       ECValue::SetBoolean (bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64          ECValue::GetDateTimeTicks() const
+Int64 ECValue::GetDateTimeTicks () const
     {
     PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0LL);
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0LL);
+    PRECONDITION (!IsNull(), 0LL);
     return m_dateTimeInfo.GetCETicks ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Int64 ECValue::GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const
+    {
+    const Int64 ceTicks = GetDateTimeTicks ();
+
+    hasMetadata = m_dateTimeInfo.TryGetMetadata (metadata);
+
+    return ceTicks;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1009,7 +1024,7 @@ Int64          ECValue::GetDateTimeTicks() const
 DateTime ECValue::GetDateTime () const
     {
     PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", DateTime ());
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", DateTime ());
+    PRECONDITION (!IsNull(), DateTime ());
 
     DateTime dateTime;
     BentleyStatus stat = m_dateTimeInfo.GetDateTime (dateTime);
@@ -1024,7 +1039,7 @@ DateTime ECValue::GetDateTime () const
 Int64 ECValue::GetDateTimeUnixMillis () const
     {
     PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0LL);
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0LL);
+    PRECONDITION (!IsNull(), 0LL);
 
     Int64 commonEraTicks = m_dateTimeInfo.GetCETicks ();
     UInt64 jdInHns = DateTime::CommonEraTicksToJulianDay (commonEraTicks);
@@ -1034,13 +1049,22 @@ Int64 ECValue::GetDateTimeUnixMillis () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
+BentleyStatus       ECValue::SetDateTimeTicks (Int64 ceTicks)
     {
     Clear ();
     SetIsNull (false);
     m_primitiveType = PRIMITIVETYPE_DateTime;
-    m_dateTimeInfo.Set (value);
+    m_dateTimeInfo.Set (ceTicks);
     return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus ECValue::SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata) 
+    {
+    SetDateTimeTicks (ceTicks);
+    return m_dateTimeInfo.SetMetadata (dateTimeMetadata);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1063,13 +1087,12 @@ BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
-BentleyStatus          ECValue::SetDateTime (Int64 commonEraTicks, DateTime::Info const& dateTimeMetadata) 
+BentleyStatus ECValue::SetDateTimeMetadata (ECN::DateTimeInfo const& dateTimeInfo)
     {
-    Clear ();
-    SetIsNull (false);
-    m_primitiveType = PRIMITIVETYPE_DateTime;
-    return m_dateTimeInfo.Set (commonEraTicks, dateTimeMetadata);
+    PRECONDITION (IsDateTime () && !IsNull (), ERROR);
+    return m_dateTimeInfo.SetMetadata (dateTimeInfo);
     }
+
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -1085,14 +1108,6 @@ bool ECValue::IsDateTimeMetadataSet () const
 bool ECValue::DateTimeInfoMatches (ECN::DateTimeInfo const& dateTimeInfo) const
     {
     return IsDateTime () && !IsNull () && m_dateTimeInfo.MetadataMatches (dateTimeInfo);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+-----
-void ECValue::ApplyDateTimeInfo (ECN::DateTimeInfo const& dateTimeInfo)
-    {
-    m_dateTimeInfo.AssignMetadataFromDateTimeInfo (dateTimeInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
