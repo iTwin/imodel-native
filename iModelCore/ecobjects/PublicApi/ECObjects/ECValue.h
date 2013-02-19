@@ -37,12 +37,12 @@ public:
     unsigned short wMilliseconds; //!< The milliseconds component
 
     //! Creates a new SystemTime instance to the specified year, month, day, hour, minute, second, and millisecond
-    //! @param[in] year The year component (1 through 9999)
-    //! @param[in] month The month component (1-12)
-    //! @param[in] day The day (1 through the number of days in month)
-    //! @param[in] hour The hours (0-23)
-    //! @param[in] minute The minutes (0-59)
-    //! @param[in] second The seconds (0-59)
+    //! @param[in] year         The year component (1 through 9999)
+    //! @param[in] month        The month component (1-12)
+    //! @param[in] day          The day (1 through the number of days in month)
+    //! @param[in] hour         The hours (0-23)
+    //! @param[in] minute       The minutes (0-59)
+    //! @param[in] second       The seconds (0-59)
     //! @param[in] milliseconds The milliseconds (0-999)
     ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
 
@@ -78,14 +78,14 @@ private:
             
 public:
     //! Initialize the array as a struct array with the given number of entries
-    //! @param[in] count    How many elements the array (initially) holds
+    //! @param[in] count        How many elements the array (initially) holds
     //! @param[in] isFixedSize  Indicates whether the array can grow or not
     void InitializeStructArray (UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
 
     //! Initialize the array as a primitive array with the given number of entries
     //! @param[in] elementPrimitiveType The PrimitiveType of elements that this array can hold
-    //! @param[in] count    How many elements the array (initially) holds
-    //! @param[in] isFixedCount  Indicates whether the array can grow or not
+    //! @param[in] count                How many elements the array (initially) holds
+    //! @param[in] isFixedCount         Indicates whether the array can grow or not
     void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
     ECOBJECTS_EXPORT UInt32          GetCount() const; //!< Returns the number of entries in this array
@@ -168,20 +168,20 @@ protected:
         Utf16CP             GetUtf16 (UInt8& flags);
 
         //! Sets the string data as WChar
-        //!@param[in] str    The string data to store
-        //!@param[out] flags A flag indicating whether this ECValue owns the data
+        //!@param[in] str       The string data to store
+        //!@param[out] flags    A flag indicating whether this ECValue owns the data
         //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
         void                SetWChar (WCharCP str, UInt8& flags, bool makeCopy);
 
         //! Sets the string data as Utf8
-        //!@param[in] str    The string data to store
-        //!@param[out] flags A flag indicating whether this ECValue owns the data
+        //!@param[in] str       The string data to store
+        //!@param[out] flags    A flag indicating whether this ECValue owns the data
         //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
         void                SetUtf8 (Utf8CP str, UInt8& flags, bool makeCopy);
 
         //! Sets the string data as Utf16
-        //!@param[in] str    The string data to store
-        //!@param[out] flags A flag indicating whether this ECValue owns the data
+        //!@param[in] str       The string data to store
+        //!@param[out] flags    A flag indicating whether this ECValue owns the data
         //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
         void                SetUtf16 (Utf16CP str, UInt8& flags, bool makeCopy);
 
@@ -250,17 +250,17 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
 
     //! Constructs a new string ECValue, holding the passed in string
-    //! @param[in]  string  The string value
+    //! @param[in]  string          The string value
     //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
 
     //! Constructs a new string ECValue, holding the passed in string
-    //! @param[in]  string  The string value
+    //! @param[in]  string          The string value
     //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT explicit ECValue (Utf8CP string, bool holdADuplicate = true);
 
     //! Constructs a new string ECValue, holding the passed in string
-    //! @param[in]  string  The string value
+    //! @param[in]  string          The string value
     //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
 
@@ -309,30 +309,35 @@ public:
     //! @returns true if the value has been loaded, false otherwise
     ECOBJECTS_EXPORT bool           IsLoaded() const; 
 
-    ECOBJECTS_EXPORT void           SetToNull();
+    ECOBJECTS_EXPORT void           SetToNull(); //!< Frees the values memory, if necessary, and sets the state to NULL.
 
+    //! Does a ShallowCopy of the supplied ECValue
+    //! @param[in] v    The ECValue to copy from
     ECOBJECTS_EXPORT void           From(ECValueCR v);
 
-    ECOBJECTS_EXPORT ValueKind      GetKind() const;
-    ECOBJECTS_EXPORT bool           IsUninitialized () const;
+    ECOBJECTS_EXPORT ValueKind      GetKind() const; //!< Returns the ValueKind of this value
+    ECOBJECTS_EXPORT bool           IsUninitialized () const; //!< Checks whether this ECValue is uninitialized
     
-    ECOBJECTS_EXPORT bool           IsString () const;
-    ECOBJECTS_EXPORT bool           IsInteger () const;
-    ECOBJECTS_EXPORT bool           IsLong () const;
-    ECOBJECTS_EXPORT bool           IsDouble () const;
-    ECOBJECTS_EXPORT bool           IsBinary () const;
-    ECOBJECTS_EXPORT bool           IsBoolean () const;
+    ECOBJECTS_EXPORT bool           IsString () const; //!< Checks whether this ECValue holds a String
+    ECOBJECTS_EXPORT bool           IsInteger () const; //!< Checks whether this ECValue holds an Integer
+    ECOBJECTS_EXPORT bool           IsLong () const; //!< Checks whether this ECValue holds a Long
+    ECOBJECTS_EXPORT bool           IsDouble () const; //!< Checks whether this ECValue holds a Double
+    ECOBJECTS_EXPORT bool           IsBinary () const; //!< Checks whether this ECValue holds a binary
+    ECOBJECTS_EXPORT bool           IsBoolean () const; //!< Checks whether this ECValue holds a boolean
     
-    ECOBJECTS_EXPORT bool           IsPoint2D () const; 
-    ECOBJECTS_EXPORT bool           IsPoint3D () const; 
-    ECOBJECTS_EXPORT bool           IsDateTime () const; 
-    ECOBJECTS_EXPORT bool           IsIGeometry() const;
+    ECOBJECTS_EXPORT bool           IsPoint2D () const; //!< Checks whether this ECValue holds a Point2d
+    ECOBJECTS_EXPORT bool           IsPoint3D () const; //!< Checks whether this ECValue holds a Point3d
+    ECOBJECTS_EXPORT bool           IsDateTime () const; //!< Checks whether this ECValue holds a DateTime
+    ECOBJECTS_EXPORT bool           IsIGeometry() const; //!< Checks whether this ECValue holds an IGeometry
 
-    ECOBJECTS_EXPORT bool           IsArray () const;
-    ECOBJECTS_EXPORT bool           IsStruct () const;
-    ECOBJECTS_EXPORT bool           IsPrimitive () const;
+    ECOBJECTS_EXPORT bool           IsArray () const; //!< Checks whether this ECValue is an array
+    ECOBJECTS_EXPORT bool           IsStruct () const; //!< Checks whether this ECValue is a struct
+    ECOBJECTS_EXPORT bool           IsPrimitive () const; //!< Checks whether this ECValue is a primitive
         
-    ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const;
+    ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const; //!< Gets the PrimitiveType of this ECValue
+
+    //! Sets the PrimitiveType of this ECValue
+    //! @param[in] primitiveElementType The type of primitive that this ECValue holds.
     ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
     
 /*__PUBLISH_SECTION_END__*/
@@ -355,59 +360,133 @@ public:
     ECOBJECTS_EXPORT bool           SupportsDotNetFormatting() const;
 /*__PUBLISH_SECTION_START__*/
 
+    //! Defines the StructArray for this ECValue
+    //! @param[in] count        The initial size of the array
+    //! @param[in] isFixedSize  Indicates whether this array can grow or not
     ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);
+
+    //! Defines the primitive array for this ECValue
+    //! @param[in] primitiveElementtype The type of primitive the array will hold
+    //! @param[in] count                The initial size of the array
+    //! @param[in] isFixedSize          Indicates whether this array can grow or not
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
+    
+    //! Returns the array information defining this ECValue
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
     
-    ECOBJECTS_EXPORT Int32          GetInteger () const;
-    ECOBJECTS_EXPORT BentleyStatus  SetInteger (Int32 integer);
+    //! Returns the integer value, if this ECValue holds an Integer 
+    ECOBJECTS_EXPORT Int32          GetInteger () const;  
+    //! Sets the value of this ECValue to the given integer
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to an Integer Primitive
+    //! @param[in] integer  The value to set
+    ECOBJECTS_EXPORT BentleyStatus  SetInteger (Int32 integer); 
     
+    //! Returns the long value, if this ECValue holds a long
     ECOBJECTS_EXPORT Int64          GetLong () const;
+    //! Sets the value of this ECValue to the given long
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a Long Primitive
+    //! @param[in] long64  The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetLong (Int64 long64);
  
+    //! Returns the boolean value, if this ECValue holds a boolean
     ECOBJECTS_EXPORT bool           GetBoolean () const;
+    //! Sets the value of this ECValue to the given bool
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a bool Primitive
+    //! @param[in] value  The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetBoolean (bool value);
 
+    //! Returns the double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     //! @returns    The double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     ECOBJECTS_EXPORT double         GetDouble () const;
+    //! Sets the value of this ECValue to the given double
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a double Primitive
+    //! @param[in] value  The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
+    //! Returns the string value as a WCharCP, if this ECValue holds a string
     ECOBJECTS_EXPORT WCharCP        GetString () const;
+    //! Returns the string value as a Utf8CP, if this ECValue holds a string
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
+    //! Returns the string value as a Utf16CP, if this ECValue holds a string
     ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be ECDBuffer
 
+    //! Sets the value of this ECValue to the given string
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
+    //! @param[in] string           The value to set
+    //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
+    //! Sets the value of this ECValue to the given string
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
+    //! @param[in] string           The value to set
+    //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT BentleyStatus  SetUtf8CP (Utf8CP string, bool holdADuplicate = true);
+    //! Sets the value of this ECValue to the given string
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
+    //! @param[in] string           The value to set
+    //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT BentleyStatus  SetUtf16CP (Utf16CP string, bool holdADuplicate = true);    // primarily for use by ECDBuffer
 
+    //! Returns the binary value, if this ECValue holds binary data
+    //! @param[in]  size    The size of the binary data
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
+
+    //! Sets the value of this ECValue to the given byte array
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a binary Primitive
+    //! @param[in] data             The value to set
+    //! @param[in] size             The size of the data
+    //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
 
     ECOBJECTS_EXPORT const byte *   GetIGeometry (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const byte * data, size_t size, bool holdADuplicate = false);
 
+    //! Gets the struct instance of this ECValue, if the ECValue holds a struct
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
+    //! Sets the value of this ECValue to the given IECInstance
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to Struct
+    //! @param[in] structInstance   The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
+    //! Returns the SystemTime value, if this ECValue holds a SystemTime
     ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
+    //! Sets the value of this ECValue to the given SystemTime
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DateTime primitive
+    //! @param[in] systemTime   The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime const& systemTime); 
 
+    //! Returns the SystemTime value as ticks, if this ECValue holds a SystemTime
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
+    //! Sets the value of this ECValue to the given time in ticks
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DateTime primitive
+    //! @param[in] value   The time value to set as ticks
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
 
+    //! Returns the SystemTime value as Unix milliseconds, if this ECValue holds a SystemTime
     ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
 
+    //! Returns the DPoint2d value, if this ECValue holds a Point2d
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
+    //! Sets the value of this ECValue to the given DPoint2d
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DPoint2d primitive
+    //! @param[in] value   The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
 
+    //! Returns the DPoint3d value, if this ECValue holds a Point3d
     ECOBJECTS_EXPORT DPoint3d       GetPoint3D() const;
+    //! Sets the value of this ECValue to the given DPoint3d
+    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DPoint3d primitive
+    //! @param[in] value   The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetPoint3D (DPoint3dCR value);
 
+    //! For fixed primitive types, returns the number of bytes required to represent the type
+    //! @param[in]  primitiveType   The type to measure
+    //! @returns The sizeof the given type, if it is a fixed size primitive 
     static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT WString       ToString () const;
     
+    //! Checks 2 ECValues for equality.
     ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
     };
 
