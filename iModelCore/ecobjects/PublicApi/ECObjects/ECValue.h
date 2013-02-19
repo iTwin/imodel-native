@@ -218,35 +218,95 @@ protected:
     inline void FreeMemory ();
          
 public:
-    ECOBJECTS_EXPORT void            Clear();
-    ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs);
+    ECOBJECTS_EXPORT void            Clear(); //!< Clears memory, if necessary, and sets the value back to an uninitialized state
+    ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs); //!< Compares two ECValues for equality
     
-    ECOBJECTS_EXPORT ~ECValue();
+    ECOBJECTS_EXPORT ~ECValue(); //!< Destructor
     
-    ECOBJECTS_EXPORT ECValue ();
+    ECOBJECTS_EXPORT ECValue (); //!< Default Constructor.  Construct an uninitialized value
+    
+    //! Constructs a new ECValue based on the passed in ECValue
+    //! @param[in] v    The ECValue to initialize the new ECValue from
     ECOBJECTS_EXPORT ECValue (ECValueCR v);
+
+    //! Constructs an uninitialized ECValue of the specified ValueKind
+    //! @param[in] classification   The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (ValueKind classification);
+
+    //! Constructs an uninitialized ECValue of the specified PrimitiveType
+    //! @param[in] primitiveType The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
+    //! Constructs a new Int32 ECValue, holding the value of the passed in integer
+    //! @param[in] integer32    The value to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
+
+    //! Constructs a new Int64 ECValue, holding the value of the passed in long
+    //! @param[in] long64    The value to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
+
+    //! Constructs a new double ECValue, holding the value of the passed in double
+    //! @param[in] doubleVal    The value to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
+
+    //! Constructs a new string ECValue, holding the passed in string
+    //! @param[in]  string  The string value
+    //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
+
+    //! Constructs a new string ECValue, holding the passed in string
+    //! @param[in]  string  The string value
+    //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT explicit ECValue (Utf8CP string, bool holdADuplicate = true);
+
+    //! Constructs a new string ECValue, holding the passed in string
+    //! @param[in]  string  The string value
+    //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
+
+    //! Constructs a new binary ECValue holding the passed in blob
+    //! @param[in] blob The byte array containing the binary data to store
+    //! @param[in] size The size of the blob
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
+
+    //! Constructs a new DPoint2d ECValue
+    //! @param[in] point2d  The DPoint2d to store
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
+
+    //! Constructs a new DPoint3d ECValue
+    //! @param[in] point3d  The DPoint3d to store
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
+
+    //! Constructs a new bool ECValue
+    //! @param[in] value    The bool to store
     ECOBJECTS_EXPORT explicit ECValue (bool value);
+
+    //! Constructs a new SystemTime ECValue
+    //! @param[in] time The SystemTime value to store
     ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
 
+    //! Sets whether this ECValue is read-only
+    //! @param[in] isReadOnly Sets the read-only status of the ECValue
     ECOBJECTS_EXPORT void           SetIsReadOnly(bool isReadOnly);
+
+    //! Gets whether this ECValue is read-only or not
+    //! @returns true if the ECValue is read-only, false otherwise
     ECOBJECTS_EXPORT bool           IsReadOnly() const;
 
+    //! Sets whether this ECValue is NULL.
+    //! @param[in] isNull   Indicates whether the ECValue is null or not
     ECOBJECTS_EXPORT void           SetIsNull(bool isNull); 
+
+    //! Gets whether this ECValue is NULL or not
+    //! @returns true if the ECValue is NULL, false otherwise
     ECOBJECTS_EXPORT bool           IsNull() const;
 
+    //! Sets whether this ECValue has had its value loaded
+    //! @param[in] isLoaded Indicates whether the value has been loaded
     ECOBJECTS_EXPORT void           SetIsLoaded(bool isLoaded); 
+
+    //! Gets whether this ECValue's value has been loaded
+    //! @returns true if the value has been loaded, false otherwise
     ECOBJECTS_EXPORT bool           IsLoaded() const; 
 
     ECOBJECTS_EXPORT void           SetToNull();
