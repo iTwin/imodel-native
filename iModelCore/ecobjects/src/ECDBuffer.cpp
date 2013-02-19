@@ -1578,6 +1578,9 @@ UInt32              index
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECDBuffer::IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
     {
+    if (propertyLayout.GetTypeDescriptor().IsStruct())
+        return true;    // embedded structs always null
+
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
     byte const * data = GetPropertyData();
@@ -2852,6 +2855,8 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
 ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout)
     {
     ECTypeDescriptor typeDescriptor = propertyLayout.GetTypeDescriptor();
+    PRECONDITION (!typeDescriptor.IsStruct() && "Cannot set an embedded struct value directly. Set the individual struct members instead.", ECOBJECTS_STATUS_DataTypeNotSupported);
+
     if (typeDescriptor.IsPrimitive())
         return SetPrimitiveValueToMemory (v, propertyLayout, false, 0);
 
@@ -2868,6 +2873,8 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
         "Can not set the value to memory at an array index using the specified property layout because it is not an array datatype", 
         ECOBJECTS_STATUS_PreconditionViolated);  
                         
+    PRECONDITION (!typeDescriptor.IsStruct() && "Cannot set an embedded struct value directly. Set the individual struct members instead.", ECOBJECTS_STATUS_DataTypeNotSupported);
+
     if (index >= GetReservedArrayCount (propertyLayout))
         return ECOBJECTS_STATUS_IndexOutOfRange;
 
