@@ -1787,7 +1787,7 @@ public:
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
     //! be stored persistently in a repository (we expect it to be found elsewhere)
-    //! @param[in]  SchemaKey to test
+    //! @param[in]  key SchemaKey to test
     //@return True if this version of the schema is one that should never be imported into a repository
     ECOBJECTS_EXPORT static bool        ShouldNotBeStored (SchemaKeyCR key);
 
