@@ -1578,6 +1578,9 @@ UInt32              index
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECDBuffer::IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
     {
+    if (propertyLayout.GetTypeDescriptor().IsStruct())
+        return true;    // embedded structs always null
+
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
     byte const * data = GetPropertyData();
