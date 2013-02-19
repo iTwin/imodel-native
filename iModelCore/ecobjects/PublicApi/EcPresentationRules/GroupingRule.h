@@ -32,6 +32,7 @@ struct GroupingRule : public PresentationRule
         WString               m_className;
         WString               m_contextMenuCondition;
         WString               m_contextMenuLabel;
+        WString               m_settingsId;
         GroupList             m_groups;
 
     protected:
@@ -42,13 +43,13 @@ struct GroupingRule : public PresentationRule
 
     public:
         ECOBJECTS_EXPORT GroupingRule ()
-            : PresentationRule (), m_schemaName (L""), m_className (L""), m_contextMenuCondition (L""), m_contextMenuLabel (L"")
+            : PresentationRule (), m_schemaName (L""), m_className (L""), m_contextMenuCondition (L""), m_contextMenuLabel (L""), m_settingsId (L"")
             {
             }
 
-        ECOBJECTS_EXPORT GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel)
+        ECOBJECTS_EXPORT GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel, WStringCR settingsId)
             : PresentationRule (condition, priority, onlyIfNotHandled), 
-              m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel)
+              m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
             {
             }
 
@@ -69,6 +70,9 @@ struct GroupingRule : public PresentationRule
         //! If this parameters is not set, the default name will be used - "Group By". 
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
         ECOBJECTS_EXPORT WStringCR           GetContextMenuLabel (void) const        { return m_contextMenuLabel; }
+
+        //! Id that is used to store current active group. This is used only if there are more than one Group available.
+        ECOBJECTS_EXPORT WStringCR           GetSettingsId (void) const              { return m_settingsId; }
 
         //! Returns a list of GroupSpecifications.
         ECOBJECTS_EXPORT GroupList&          GetGroups (void)                        { return m_groups; }

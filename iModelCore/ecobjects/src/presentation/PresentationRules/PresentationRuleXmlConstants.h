@@ -68,6 +68,7 @@
 #define GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME                                         "ClassName"
 #define GROUPING_RULE_XML_ATTRIBUTE_MENUCONDITION                                     "ContextMenuCondition"
 #define GROUPING_RULE_XML_ATTRIBUTE_MENULABEL                                         "ContextMenuLabel"
+#define GROUPING_RULE_XML_ATTRIBUTE_SETTINGSID                                        "SettingsId"
 
 #define CHECKBOX_RULE_XML_NODE_NAME                                                   "CheckBoxRule"
 #define CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                          "UseInversedPropertyValue"
