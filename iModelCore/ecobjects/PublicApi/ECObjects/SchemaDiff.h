@@ -135,8 +135,8 @@ public:
     WCharCP GetValueWCharCP() const;
     Int32 GetValueInt32() const;
     Int64 GetValueInt64() const;
-    Int64 GetValueBool() const;
-    Int64 GetValueDouble() const;
+    bool  GetValueBool() const;
+    double GetValueDouble() const;
     bool IsValueNill() const;
     void Clear();
     bool IsEqual(ECDiffValue const& value);
