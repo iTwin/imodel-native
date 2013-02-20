@@ -2,11 +2,16 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+
+/// @cond BENTLEY_SDK_All
+
+/** \namespace ECN Types defined by ECObjects. */
+
 /// @cond BENTLEY_SDK_Desktop
 
 #include <Bentley/Bentley.h>
@@ -324,3 +329,5 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 USING_NAMESPACE_BENTLEY
 
 /// @endcond BENTLEY_SDK_Desktop
+
+/// @endcond BENTLEY_SDK_All
