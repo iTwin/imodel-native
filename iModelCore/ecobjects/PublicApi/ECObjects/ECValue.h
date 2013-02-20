@@ -98,6 +98,7 @@ protected:
         void                ConvertToUtf8 (UInt8& flags);
         void                ConvertToUtf16 (UInt8& flags);
     public:
+        bool                IsUtf8 () const;
         // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
         // If we stored the flags on StringInfo, we would increase the size of the union.
         WCharCP             GetWChar (UInt8& flags);
@@ -193,6 +194,8 @@ public:
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
 
     ECOBJECTS_EXPORT bool           IsString () const;
+    bool                            IsUtf8 () const;
+
     ECOBJECTS_EXPORT bool           IsInteger () const;
     ECOBJECTS_EXPORT bool           IsLong () const;
     ECOBJECTS_EXPORT bool           IsDouble () const;
