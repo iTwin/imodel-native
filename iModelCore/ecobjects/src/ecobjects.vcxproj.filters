@@ -253,6 +253,9 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />
