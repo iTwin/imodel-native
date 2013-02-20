@@ -290,8 +290,10 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, boo
         if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
             {
             //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
-            BentleyStatus success = v.SetDateTimeMetadata (caDateTimeMetadata);
-            POSTCONDITION (success == SUCCESS, ECOBJECTS_STATUS_DataTypeNotSupported);
+            if (SUCCESS != v.SetDateTimeMetadata (caDateTimeMetadata))
+                {
+                return ECOBJECTS_STATUS_DataTypeNotSupported;
+                }
             }
         }
 
@@ -457,6 +459,8 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
         const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
         if (found && !v.DateTimeInfoMatches (dateTimeInfo))
             {
+            ECObjectsLogger::Log ()->errorv (L"Setting a DateTime ECValue in ECInstance failed. DateTime metadata in ECValue mismatches the DateTimeInfo custom attribute on the respective ECProperty. Actual: %ls. Expected: %ls.",
+                            v.DateTimeMetadataToString ().c_str (), dateTimeInfo.ToString ().c_str ());
             return ECN::ECOBJECTS_STATUS_DataTypeMismatch;
             }
         }

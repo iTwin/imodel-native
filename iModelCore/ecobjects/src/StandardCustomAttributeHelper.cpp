@@ -98,6 +98,38 @@ bool DateTimeInfo::IsMatchedBy (DateTime::Info const& rhs) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+WString DateTimeInfo::ToString () const
+    {
+    DateTime::Info const& info = GetInfo ();
+
+    WString str;
+    //reserve for the maximum length
+    str.reserve (36);
+
+    const bool isKindNull = IsKindNull ();
+    if (!isKindNull)
+        {
+        str.append (L"Kind: ");
+        str.append (DateTime::Info::KindToString (info.GetKind ()));
+        }
+
+    if (!IsComponentNull ())
+        {
+        if (!isKindNull)
+            {
+            str.append (L" ");
+            }
+
+        str.append (L"Component: ");
+        str.append (DateTime::Info::ComponentToString (info.GetComponent ()));
+        }
+
+    return str;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
 bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
