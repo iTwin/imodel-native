@@ -20,3 +20,7 @@ $(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/CompressInstanceTests.cpp
 $(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/TestCopySchema.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)InstanceTests$(oext)          : $(baseDir)scenario/InstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)ValueTests$(oext)             : $(baseDir)scenario/ValueTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)AccessorTests$(oext)          : $(baseDir)scenario/AccessorTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

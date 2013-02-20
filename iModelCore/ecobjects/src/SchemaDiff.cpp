@@ -142,7 +142,7 @@ Int64 ECDiffValue::GetValueInt64() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECDiffValue::GetValueBool() const
+bool ECDiffValue::GetValueBool() const
     { 
     BeAssert(m_type == VALUETYPE_Boolean); 
     return m_valueBool;
@@ -150,7 +150,7 @@ Int64 ECDiffValue::GetValueBool() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECDiffValue::GetValueDouble() const
+double ECDiffValue::GetValueDouble() const
     { 
     BeAssert(m_type == VALUETYPE_Double); 
     return m_valueDouble;

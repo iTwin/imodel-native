@@ -1564,7 +1564,7 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         if (PRIMITIVETYPE_Integer == curType)
             d = GetInteger();
         else if (PRIMITIVETYPE_Long == curType)
-            d = GetLong();
+            d = static_cast<double>(GetLong());     // warning C4244: '=' : conversion from 'Int64' to 'double', possible loss of data
         else if (PRIMITIVETYPE_Boolean == curType)
             d = GetBoolean() ? 1.0 : 0.0;
         else

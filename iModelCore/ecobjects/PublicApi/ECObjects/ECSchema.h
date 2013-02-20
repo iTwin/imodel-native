@@ -1721,8 +1721,8 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const; //<! Returns a SchemaKey fully describing this schema
-    ECOBJECTS_EXPORT void               DebugDump() const; //<! Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
+    ECOBJECTS_EXPORT SchemaKeyCR        GetSchemaKey() const; //!< Returns a SchemaKey fully describing this schema
+    ECOBJECTS_EXPORT void               DebugDump() const; //!< Prints out detailed information about this ECSchema, and then calls Dump() on each ECClass.
 
     //! Used for debugging purposes.
     //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
@@ -1782,13 +1782,13 @@ public:
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
     //! be stored persistently in a repository (we expect it to be found elsewhere)
-    //@return True if this version of the schema is one that should never be imported into a repository
+    //! @return True if this version of the schema is one that should never be imported into a repository
     ECOBJECTS_EXPORT bool               ShouldNotBeStored() const;
 
     //! Returns true if and only if the full schema name (including version) represents a standard schema that should never
     //! be stored persistently in a repository (we expect it to be found elsewhere)
-    //! @param[in]  SchemaKey to test
-    //@return True if this version of the schema is one that should never be imported into a repository
+    //! @param[in] key SchemaKey to test
+    //! @return True if this version of the schema is one that should never be imported into a repository
     ECOBJECTS_EXPORT static bool        ShouldNotBeStored (SchemaKeyCR key);
 
     //! If the class name is valid, will create an ECClass object and add the new class to the schema
