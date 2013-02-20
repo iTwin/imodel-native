@@ -62,9 +62,6 @@
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryInstanceSupport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StandaloneECInstance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -182,9 +179,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h">
