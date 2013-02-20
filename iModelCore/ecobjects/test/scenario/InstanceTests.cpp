@@ -259,8 +259,8 @@ struct InstanceTests : ECTestFixture
         return prop;
         }
     };
-struct RelationTests : ECTestFixture {};
 
+struct PropertyTests : InstanceTests{};
     
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                               Raimondas.Rimkus   02/2013
@@ -442,6 +442,43 @@ TEST_F(InstanceTests, InstanceWriteReadFile)
     VerifyTestInstance (readbackInstance.get());
     };
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyTests, DISABLED_SetReadOnlyAndSetValue)
+    {
+    CreateSchema();
+    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
+    ecClass->GetPropertyP (L"PropertyString")->SetIsReadOnly(true);
+    CreateInstance();
+    
+    ECValue getValue;
+    EXPECT_TRUE (getValue.IsReadOnly());
+    
+    EXPECT_EQ (instance->SetValue (L"PropertyString", ECValue(L"Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (instance->GetValue (getValue, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetString(), L"Some value");
+    EXPECT_TRUE (ecClass->GetPropertyP (L"PropertyString")->GetIsReadOnly());
+    };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyTests, DISABLED_SetReadOnlyAndChangeValue)
+    {
+    CreateSchema();
+    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
+    ecClass->GetPropertyP (L"PropertyString")->SetIsReadOnly(true);
+    CreateInstance();
+    
+    ECValue getValue;
+    EXPECT_TRUE (getValue.IsReadOnly());
+   
+    EXPECT_EQ (instance->ChangeValue (L"PropertyString", ECValue(L"Other value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (instance->GetValue (getValue, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetString(), L"Other value");
+    EXPECT_TRUE (ecClass->GetPropertyP (L"PropertyString")->GetIsReadOnly());
+    };
     
 END_BENTLEY_ECOBJECT_NAMESPACE
 
