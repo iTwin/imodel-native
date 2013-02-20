@@ -22,6 +22,30 @@ WCharCP const DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYNAME = L"Date
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+Utf8CP const DateTimeInfoAccessor::DATETIMEKIND_UTC_STR = "Utc";
+//static
+WCharCP const DateTimeInfoAccessor::DATETIMEKIND_UTC_WSTR = L"Utc";
+//static
+Utf8CP const DateTimeInfoAccessor::DATETIMEKIND_UNSPECIFIED_STR = "Unspecified";
+//static
+WCharCP const DateTimeInfoAccessor::DATETIMEKIND_UNSPECIFIED_WSTR = L"Unspecified";
+//static
+Utf8CP const DateTimeInfoAccessor::DATETIMEKIND_LOCAL_STR = "Local";
+//static
+WCharCP const DateTimeInfoAccessor::DATETIMEKIND_LOCAL_WSTR = L"Local";
+//static
+Utf8CP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATETIME_STR = "DateTime";
+//static
+WCharCP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATETIME_WSTR = L"DateTime";
+//static
+Utf8CP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATE_STR = "Date";
+//static
+WCharCP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATE_WSTR = L"Date";
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     ArrayECPropertyP arrayDateTimeProp = NULL;
@@ -84,31 +108,85 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR 
 //static
 bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind, ECValueCR ecValue)
     {
+    PRECONDITION (ecValue.IsString (), false);
+
     if (ecValue.IsNull ())
         {
         isKindNull = true;
         return true;
         }
 
-    WCharCP kindStr = ecValue.GetString ();
-    if (WString::IsNullOrEmpty (kindStr))
+    if (ecValue.IsUtf8 ())
+        {
+        Utf8CP kindStr = ecValue.GetUtf8CP ();
+        return TryParseKind (isKindNull, kind, kindStr);
+        }
+    else
+        {
+        Utf16CP kindStr = ecValue.GetUtf16CP ();
+        return TryParseKind (isKindNull, kind, kindStr);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind, Utf8CP kindStr)
+    {
+    if (Utf8String::IsNullOrEmpty (kindStr))
         {
         isKindNull = true;
         return true;
         }
 
     isKindNull = false;
-    if (BeStringUtilities::Wcsicmp (kindStr, L"Unspecified") == 0)
+    if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_UNSPECIFIED_STR) == 0)
         {
         kind = DateTime::DATETIMEKIND_Unspecified;
         return true;
         }
-    else if (BeStringUtilities::Wcsicmp (kindStr, L"Utc") == 0)
+    else if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_UTC_STR) == 0)
         {
         kind = DateTime::DATETIMEKIND_Utc;
         return true;
         }
-    else if (BeStringUtilities::Wcsicmp (kindStr, L"Local") == 0)
+    else if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_LOCAL_STR) == 0)
+        {
+        kind = DateTime::DATETIMEKIND_Local;
+        return true;
+        }
+    else
+        {
+        //wrong date time kind
+        return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind, Utf16CP kindStr)
+    {
+    if (kindStr == NULL || BeStringUtilities::Utf16Len (kindStr) == 0)
+        {
+        isKindNull = true;
+        return true;
+        }
+
+    isKindNull = false;
+    if (BeStringUtilities::CompareUtf16WChar (kindStr, DATETIMEKIND_UNSPECIFIED_WSTR) == 0)
+        {
+        kind = DateTime::DATETIMEKIND_Unspecified;
+        return true;
+        }
+    else if (BeStringUtilities::CompareUtf16WChar (kindStr, DATETIMEKIND_UTC_WSTR) == 0)
+        {
+        kind = DateTime::DATETIMEKIND_Utc;
+        return true;
+        }
+    else if (BeStringUtilities::CompareUtf16WChar (kindStr, DATETIMEKIND_LOCAL_WSTR) == 0)
         {
         kind = DateTime::DATETIMEKIND_Local;
         return true;
@@ -126,26 +204,73 @@ bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind,
 //static
 bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::Component& component, ECValueCR ecValue)
     {
+    PRECONDITION (ecValue.IsString (), false);
+
     if (ecValue.IsNull ())
         {
         isComponentNull = true;
         return true;
         }
 
-    WCharCP componentStr = ecValue.GetString ();
-    if (WString::IsNullOrEmpty (componentStr))
+    if (ecValue.IsUtf8 ())
+        {
+        return TryParseComponent (isComponentNull, component, ecValue.GetUtf8CP ());
+        }
+    else
+        {
+        return TryParseComponent (isComponentNull, component, ecValue.GetUtf16CP ());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf8CP componentStr)
+    {
+    if (Utf8String::IsNullOrEmpty (componentStr))
         {
         isComponentNull = true;
         return true;
         }
 
     isComponentNull = false;
-    if (BeStringUtilities::Wcsicmp (componentStr, L"Date") == 0)
+    if (BeStringUtilities::Stricmp (componentStr, DATETIMECOMPONENT_DATE_STR) == 0)
         {
         component = DateTime::DATETIMECOMPONENT_Date;
         return true;
         }
-    else if (BeStringUtilities::Wcsicmp (componentStr, L"DateTime") == 0)
+    else if (BeStringUtilities::Stricmp (componentStr, DATETIMECOMPONENT_DATETIME_STR) == 0)
+        {
+        component = DateTime::DATETIMECOMPONENT_DateTime;
+        return true;
+        }
+    else
+        {
+        //wrong date time component
+        return false;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf16CP componentStr)
+    {
+    if (componentStr == NULL || BeStringUtilities::Utf16Len (componentStr) == 0)
+        {
+        isComponentNull = true;
+        return true;
+        }
+
+    isComponentNull = false;
+    if (BeStringUtilities::CompareUtf16WChar (componentStr, DATETIMECOMPONENT_DATE_WSTR) == 0)
+        {
+        component = DateTime::DATETIMECOMPONENT_Date;
+        return true;
+        }
+    else if (BeStringUtilities::CompareUtf16WChar (componentStr, DATETIMECOMPONENT_DATETIME_WSTR) == 0)
         {
         component = DateTime::DATETIMECOMPONENT_DateTime;
         return true;
