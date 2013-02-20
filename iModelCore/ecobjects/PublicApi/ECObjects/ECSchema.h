@@ -1089,7 +1089,6 @@ private:
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
 
-    ECObjectsStatus             SetCardinality(WCharCP cardinality);
     ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
 
     SchemaWriteStatus           WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const;
@@ -1136,6 +1135,9 @@ public:
 
     //! Sets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(RelationshipCardinalityCR value);
+    //! Sets the cardinality of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(WCharCP cardinality);
+
     //! Gets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT RelationshipCardinalityCR  GetCardinality() const;
 
