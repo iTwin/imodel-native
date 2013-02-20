@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -245,7 +245,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return _GetValue (v, propertyIndex, false, 0); 
+    return GetValue (v, propertyIndex, false, 0); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,18 +259,44 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return _GetValue (v, propertyIndex, true, arrayIndex); 
+    return GetValue (v, propertyIndex, true, arrayIndex); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return GetValue (v, propertyIndex, false, 0); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return _GetValue (v, propertyIndex, true, arrayIndex); }
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const { return GetValue (v, propertyIndex, true, arrayIndex); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    02/13
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const 
+    {
+    ECObjectsStatus stat = _GetValue (v, propertyIndex, useArrayIndex, arrayIndex); 
+    if (stat != ECOBJECTS_STATUS_Success)
+        {
+        return stat;
+        }
+
+    //only set date time meta data if the value is not null and if the metadata wasn't already set (by impl of _GetValue)
+    if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
+        {
+        DateTimeInfo caDateTimeMetadata;
+        if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
+            {
+            //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
+            BentleyStatus success = v.SetDateTimeMetadata (caDateTimeMetadata);
+            POSTCONDITION (success == SUCCESS, ECOBJECTS_STATUS_DataTypeNotSupported);
+            }
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -365,24 +391,6 @@ ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v) 
-    {
-    if (IsReadOnly())
-        return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
-
-    bool isNull = false;
-    if (GetIsPropertyNull (isNull, propertyIndex, false, 0))
-        return ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag;
-
-    if (IsPropertyReadOnly (propertyIndex) && !isNull)
-        return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
-
-    return _SetValue (propertyIndex, v, false, 0); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
     {
     ECObjectsStatus status = ChangeValue (propertyIndex, v);
@@ -398,6 +406,7 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     { 
+
     return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
     }
 
@@ -415,19 +424,46 @@ ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     {
+    return ChangeValue (propertyIndex, v, true, arrayIndex);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                    CaseyMullen     09/09
+//+---------------+---------------+---------------+---------------+---------------+-----
+ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v) 
+    {
+    return ChangeValue (propertyIndex, v, false, 0);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) 
+    {
     if (IsReadOnly())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     bool isNull = false;
-    ECObjectsStatus status = GetIsPropertyNull (isNull, propertyIndex, true, arrayIndex);
+    ECObjectsStatus status = GetIsPropertyNull (isNull, propertyIndex, useArrayIndex, arrayIndex);
     if (status != ECOBJECTS_STATUS_Success)
         return status;
 
     if (IsPropertyReadOnly (propertyIndex) && !isNull)
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 
-    return _SetValue (propertyIndex, v, true, arrayIndex); 
+    if (v.IsDateTime () && !v.IsNull ())
+        {
+        DateTimeInfo dateTimeInfo;
+        const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
+        if (found && !v.DateTimeInfoMatches (dateTimeInfo))
+            {
+            return ECN::ECOBJECTS_STATUS_DataTypeMismatch;
+            }
+        }
+
+    return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex); 
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2012
@@ -835,6 +871,23 @@ ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIn
 ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIndex, UInt32 arrayIndex) const 
     {
     return _GetIsPropertyNull (isNull, propertyIndex, true, arrayIndex); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IECInstance::TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, UInt32 propertyIndex) const
+    {
+    //TODO: Need to profile this. The implementation does look up the access string from the prop index
+    //and then parses to access string (to check whether it might refer to a struct member) before
+    //actually calling ECClass::GetProperty
+    ECPropertyCP ecProperty = GetEnabler ().LookupECProperty (propertyIndex);
+    if (ecProperty == NULL)
+        {
+        return false;
+        }
+
+    return StandardCustomAttributeHelper::TryGetDateTimeInfo (dateTimeInfo, *ecProperty);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////

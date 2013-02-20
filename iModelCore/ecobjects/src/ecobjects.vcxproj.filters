@@ -146,6 +146,12 @@
     <ClCompile Include="ECDBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DateTimeInfoAccessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StandardCustomAttributeHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -246,6 +252,12 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h">
       <Filter>ECPersistence</Filter>
+    </ClInclude>
+    <ClInclude Include="DateTimeInfoAccessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

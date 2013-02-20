@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -56,7 +56,9 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \
                     $(baseDir)StopWatch.h \
-                    $(ecobjectsPublicAPISrc)CalculatedProperty.h
+                    $(ecobjectsPublicAPISrc)CalculatedProperty.h \
+                    $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
+                    $(baseDir)DateTimeInfoAccessor.h
                     
 
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
@@ -149,6 +151,10 @@ $(o)ecprovider$(oext)                                      : $(baseDir)ecprovide
 $(o)ecinstanceiterable$(oext)                              : $(baseDir)ecinstanceiterable.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)CalculatedProperty$(oext)                              : $(baseDir)CalculatedProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)DateTimeInfoAccessor$(oext)                            : $(baseDir)DateTimeInfoAccessor.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardCustomAttributeHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 

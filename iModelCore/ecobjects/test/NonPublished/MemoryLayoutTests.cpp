@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1399,8 +1399,8 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     ECValue dateValue (nowUtc);
     EXPECT_TRUE (dateValue.IsDateTime());
     DateTime nowtoo = dateValue.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, nowtoo.GetKind ());
-    EXPECT_TRUE (nowUtc.Compare (nowtoo, true));
+    EXPECT_TRUE (nowUtc.GetInfo () == nowtoo.GetInfo ());
+    EXPECT_TRUE (nowUtc.Compare (nowtoo));
 
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
@@ -1408,7 +1408,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == dateStr.compare (L"2010-02-25T16:28:27.091")) << L"Expected date: " << fixedDate.GetDateTime ().ToString ().c_str ();
 
     // test operator ==
-    DateTime specificTime (nowUtc.GetKind (), nowUtc.GetYear (), nowUtc.GetMonth (), nowUtc.GetDay (), nowUtc.GetHour (), nowUtc.GetMinute (), nowUtc.GetSecond (), nowUtc.GetHectoNanosecond ());
+    DateTime specificTime (nowUtc.GetInfo ().GetKind (), nowUtc.GetYear (), nowUtc.GetMonth (), nowUtc.GetDay (), nowUtc.GetHour (), nowUtc.GetMinute (), nowUtc.GetSecond (), nowUtc.GetHectoNanosecond ());
     EXPECT_TRUE (specificTime == nowUtc);
 
     DateTime defaultTime1;
