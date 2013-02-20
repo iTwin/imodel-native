@@ -394,6 +394,7 @@ public:
         int                     GetArrayIndex() const       { return m_arrayIndex; }
         };
 
+/*__PUBLISH_SECTION_END__*/
     typedef bvector<Location> LocationVector;
 
 public:
@@ -405,7 +406,6 @@ private:
     const LocationVector&   GetLocationVector() const;
 
 public:
-/*__PUBLISH_SECTION_END__*/
 
     ECOBJECTS_EXPORT Location&          operator[] (UInt32 depth);
 
