@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
 #include <Bentley/DateTime.h>
 #include "ECObjects.h"
@@ -44,6 +44,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!
 //! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
 //! @see Bentley::EC
+//! \todo WIP_DOC_EC - tailor this to MobileDgnSdk
 
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
@@ -412,4 +413,4 @@ struct ECInstanceInteropHelper
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All
