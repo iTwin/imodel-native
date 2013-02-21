@@ -64,7 +64,6 @@
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="MemoryInstanceSupport.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="persistence\IECSchemaManager.cpp" />
@@ -89,6 +88,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
@@ -118,7 +118,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="ecxml.h" />
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
     <ClInclude Include="StopWatch.h" />
   </ItemGroup>

@@ -134,6 +134,8 @@ protected:
         BentleyStatus SetMetadata (ECN::DateTimeInfo const& dateTimeInfo);
 
         bool MetadataMatches (ECN::DateTimeInfo const& dateTimeInfo) const;
+
+        WString MetadataToString () const;
         };
 
     union
@@ -294,6 +296,7 @@ public:
     BentleyStatus SetDateTimeMetadata (ECN::DateTimeInfo const& caDateTimeMetadata);
     bool IsDateTimeMetadataSet () const;
     bool DateTimeInfoMatches (ECN::DateTimeInfo const& caDateTimeMetadata) const;
+    WString DateTimeMetadataToString () const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.

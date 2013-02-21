@@ -35,6 +35,7 @@ public:
     //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
 //__PUBLISH_SECTION_START__
 
+    //! Initializes a new instance of the DateTimeInfo type.
     ECOBJECTS_EXPORT DateTimeInfo ();
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
 
@@ -52,6 +53,10 @@ public:
     //! @param[in] rhs RHS
     //! @return true, if the RHS matches this object. false otherwise
     ECOBJECTS_EXPORT bool IsMatchedBy (DateTime::Info const& rhs) const;
+
+    //! Generates a text representation of this object.
+    //! @return Text representation of this object
+    ECOBJECTS_EXPORT WString ToString () const;
     };
 
 //=======================================================================================    
