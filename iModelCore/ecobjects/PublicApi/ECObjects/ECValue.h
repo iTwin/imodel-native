@@ -290,7 +290,7 @@ public:
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
     //! @param[in] ceTicks DateTime Common Era ticks to set
-    //! @param[in] dateTimeMetadata \todo WIP_DOC_DATETIME
+    //! @param[in] dateTimeMetadata DateTime metadata to set along with the ticks.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
