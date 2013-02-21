@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -90,9 +90,8 @@ public:
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler
+struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public ECEnabler
 //__PUBLISH_SECTION_END__
-    ,public ECEnabler
     ,public ClassLayoutHolder
 //__PUBLISH_SECTION_START__
    {
