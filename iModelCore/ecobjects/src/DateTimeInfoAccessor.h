@@ -22,8 +22,6 @@ struct DateTimeInfoAccessor : NonCopyableClass
     {
 private:
     static WCharCP const DATETIMEINFO_CLASSNAME;
-    static const UInt32 DATETIMEINFO_KIND_PROPERTYINDEX;
-    static const UInt32 DATETIMEINFO_COMPONENT_PROPERTYINDEX;
     static WCharCP const DATETIMEINFO_KIND_PROPERTYNAME;
     static WCharCP const DATETIMEINFO_COMPONENT_PROPERTYNAME;
 
@@ -48,6 +46,8 @@ private:
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, ECValueCR ecValue);
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf8CP componentStr);
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf16CP componentStr);
+
+    static void LogPropertyNotFoundError (WCharCP propertyName);
 
 public:
     //! Retrieves the DateTimeInfo meta data from the specified DateTime ECProperty.

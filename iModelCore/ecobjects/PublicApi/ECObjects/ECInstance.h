@@ -101,6 +101,20 @@ private:
 
     WCharCP GetInstanceLabelPropertyName () const;
 
+    //! If the property is a DateTime property looks up the DateTimeInfo custom attribute and, if present,
+    //! validates whether the DateTime metadata of the input ECValue matches the DateTimeInfo custom attribute
+    //! information.
+    //! @param[in] propertyIndex Index of property to validate against
+    //! @param[in] v ECValue to validate
+    //! @return ECOBJECT_STATUS_Success if the validation was successful. ECOBJECTS_STATUS_DataTypeMismatch otherwise
+    ECObjectsStatus ValidateDateTimeMetadata (UInt32 propertyIndex, ECValueCR v) const;
+    //! If the property is a DateTime property looks up the DateTimeInfo custom attribute and, if present,
+    //! applies the DateTime metadata to the given ECValue.
+    //! @remarks The metadata is used to build the DateTime object when the client calls ECValue::GetDateTime.
+    //! @param[in] v ECValue to apply metadata to
+    //! @param[in] propertyIndex Index of property to retrieve metadata from
+    //! @return ECOBJECT_STATUS_Success if successful. ECOBJECTS_STATUS_DataTypeMismatch if the 
+    ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const;
     bool TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, UInt32 propertyIndex) const;
 
 protected:
