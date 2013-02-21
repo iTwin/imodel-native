@@ -47,6 +47,8 @@ private:
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf8CP componentStr);
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf16CP componentStr);
 
+    static void LogPropertyNotFoundError (WCharCP propertyName);
+
 public:
     //! Retrieves the DateTimeInfo meta data from the specified DateTime ECProperty.
     //! @param[out] dateTimeInfo the retrieved DateTimeInfo meta data

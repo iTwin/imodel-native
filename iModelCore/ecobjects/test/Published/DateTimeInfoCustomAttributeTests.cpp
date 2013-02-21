@@ -19,6 +19,26 @@ protected:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                   Krischan.Eberle                  02/13                               
     //+---------------+---------------+---------------+---------------+---------------+------
+    static void AssertDateTime (DateTimeCR expected, DateTimeCR actual, bool ignoreDateTimeInfo)
+        {
+        WString expectedActualStr;
+        expectedActualStr.Sprintf (L"Expected: %ls - Actual: %ls", expected.ToString (), actual.ToString ());
+
+        if (ignoreDateTimeInfo)
+            {
+            EXPECT_TRUE (expected.Compare (actual, true)) << L"DateTimes are expected to be equal except for date time info. " << expectedActualStr.c_str ();
+            EXPECT_FALSE (expected == actual) << L"DateTime metadata is expected to differ. " << expectedActualStr.c_str ();
+            }
+        else
+            {
+            EXPECT_TRUE (expected == actual) << L"DateTimes are expected to be equal. " << expectedActualStr.c_str ();
+            }
+        }
+
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Krischan.Eberle                  02/13                               
+    //+---------------+---------------+---------------+---------------+---------------+------
     static ECSchemaPtr DeserializeSchema (ECSchemaReadContextPtr& context, Utf8CP schemaXml)
         {
         EXPECT_FALSE (Utf8String::IsNullOrEmpty (schemaXml));
@@ -537,6 +557,95 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/13                               
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
+    {
+    ECSchemaReadContextPtr context = NULL;
+    ECSchemaPtr testSchema = CreateTestSchema (context);
+
+    ECClassP testClass = testSchema->GetClassP (L"TestClass");
+    ASSERT_TRUE (testClass != NULL);
+    WCharCP propertyName = L"nodatetimeinfo";
+
+    //test 1: Original date is UTC
+    DateTime expectedDate = DateTime::GetCurrentTimeUtc ();
+    Int64 expectedTicks = 0LL;
+    ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (expectedTicks));
+
+    ECValue v;
+    BentleyStatus stat = v.SetDateTimeTicks (expectedTicks);
+    EXPECT_EQ (SUCCESS, stat);
+    
+    DateTime actualDate = v.GetDateTime ();
+    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    AssertDateTime (expectedDate, actualDate, true);
+
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECObjectsStatus ecstat = instance->SetValue (propertyName, v);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+
+    ECValue actualValue;
+    ecstat = instance->GetValue (actualValue, propertyName);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+
+    actualDate = actualValue.GetDateTime ();
+    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    AssertDateTime (expectedDate, actualDate, true);
+
+    //test 2: Original date is Unspecified
+    expectedDate = DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 2, 13, 14);
+    expectedTicks = 0LL;
+    ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (expectedTicks));
+
+    v.Clear ();
+    stat = v.SetDateTimeTicks (expectedTicks);
+    EXPECT_EQ (SUCCESS, stat);
+
+    actualDate = v.GetDateTime ();
+    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    AssertDateTime (expectedDate, actualDate, false);
+
+    instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ecstat = instance->SetValue (propertyName, v);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+
+    actualValue.Clear ();
+    ecstat = instance->GetValue (actualValue, propertyName);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+
+    actualDate = actualValue.GetDateTime ();
+    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    AssertDateTime (expectedDate, actualDate, false);
+
+
+    //test 3: Original date has component Date
+    expectedDate = DateTime (2013, 2, 2);
+    expectedTicks = 0LL;
+    ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (expectedTicks));
+
+    v.Clear ();
+    stat = v.SetDateTimeTicks (expectedTicks);
+    EXPECT_EQ (SUCCESS, stat);
+
+    actualDate = v.GetDateTime ();
+    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    AssertDateTime (expectedDate, actualDate, true);
+
+    instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ecstat = instance->SetValue (propertyName, v);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+
+    actualValue.Clear ();
+    ecstat = instance->GetValue (actualValue, propertyName);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
+
+    actualDate = actualValue.GetDateTime ();
+    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    AssertDateTime (expectedDate, actualDate, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/13                               
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
     {
     bvector<DateTime> testDateTimes;
@@ -640,6 +749,114 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, GetDateTime)
     AssertGetValue (instance, L"garbagekind", expectedDateTime, false);
     AssertGetValue (instance, L"garbagekindgarbagecomponent", expectedDateTime, false);
     AssertGetValue (instance, L"garbagecomponent", expectedDateTime, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/13                               
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceGetSetDateTimeTestFixture, DateTimeArrayRoundtrip)
+    {
+    ECSchemaReadContextPtr context = NULL;
+    ECSchemaPtr testSchema = CreateTestSchema (context);
+
+    ECClassP testClass = testSchema->GetClassP (L"TestClass");
+    ASSERT_TRUE (testClass != NULL);
+    WCharCP propertyName = L"dateTimeArrayProp";
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ASSERT_TRUE (instance.IsValid ());
+
+    const UInt32 expectedArraySize = 3;
+    DateTime expected [expectedArraySize];
+    expected[0] = DateTime::GetCurrentTimeUtc ();
+    expected[1] = DateTime (DateTime::DATETIMEKIND_Utc, 2012, 1, 1, 13, 14);
+    expected[2] = DateTime (DateTime::DATETIMEKIND_Utc, 2011, 1, 1, 13, 14);
+
+    instance->AddArrayElements (propertyName, expectedArraySize);
+    for (UInt32 i = 0; i < expectedArraySize; i++)
+        {
+        ECValue v (expected[i]);
+        ECObjectsStatus stat = instance->SetValue (propertyName, v, i);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+        }
+    
+
+    ECValue actualArrayInfoValue;
+    ECObjectsStatus stat = instance->GetValue (actualArrayInfoValue, propertyName);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    EXPECT_TRUE (actualArrayInfoValue.IsArray ());
+    ArrayInfo actualArrayInfo = actualArrayInfoValue.GetArrayInfo ();
+    EXPECT_TRUE (PRIMITIVETYPE_DateTime == actualArrayInfo.GetElementPrimitiveType ());
+    EXPECT_EQ (expectedArraySize, actualArrayInfo.GetCount ());
+
+    for (UInt32 i = 0; i < expectedArraySize; i++)
+        {
+        ECValue v;
+        ECObjectsStatus stat = instance->GetValue (v, propertyName, i);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+
+        DateTime actual = v.GetDateTime ();
+        AssertDateTime (expected[i], actual, false);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  02/13                               
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArrayElements)
+    {
+    ECSchemaReadContextPtr context = NULL;
+    ECSchemaPtr testSchema = CreateTestSchema (context);
+
+    ECClassP testClass = testSchema->GetClassP (L"TestClass");
+    ASSERT_TRUE (testClass != NULL);
+    WCharCP propertyName = L"dateTimeArrayProp";
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ASSERT_TRUE (instance.IsValid ());
+
+    const UInt32 expectedArraySize = 3;
+    DateTime expected [expectedArraySize];
+    ECObjectsStatus expectedSuccess [expectedArraySize];
+    expected[0] = DateTime::GetCurrentTimeUtc ();
+    expectedSuccess[0] = ECOBJECTS_STATUS_Success;
+    expected[1] = DateTime (DateTime::DATETIMEKIND_Unspecified, 2012, 1, 1, 13, 14);
+    expectedSuccess[1] = ECOBJECTS_STATUS_DataTypeMismatch;
+    expected[2] = DateTime (2011, 1, 1);
+    expectedSuccess[2] = ECOBJECTS_STATUS_DataTypeMismatch;
+    
+    instance->AddArrayElements (propertyName, expectedArraySize);
+    for (UInt32 i = 0; i < expectedArraySize; i++)
+        {
+        ECValue v (expected[i]);
+        ECObjectsStatus stat = instance->SetValue (propertyName, v, i);
+        EXPECT_EQ (expectedSuccess[i], stat);
+        }
+
+    //retrieving the date time from the one array element that was inserted successfully
+    ECValue actualArrayInfoValue;
+    ECObjectsStatus stat = instance->GetValue (actualArrayInfoValue, propertyName);
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+    EXPECT_TRUE (actualArrayInfoValue.IsArray ());
+    ArrayInfo actualArrayInfo = actualArrayInfoValue.GetArrayInfo ();
+    EXPECT_TRUE (PRIMITIVETYPE_DateTime == actualArrayInfo.GetElementPrimitiveType ());
+    //array was initialized with the full size, although only one element was actually successfully inserted.
+    EXPECT_EQ (expectedArraySize, actualArrayInfo.GetCount ());
+
+    for (UInt32 i = 0; i < expectedArraySize; i++)
+        {
+        ECValue v;
+        ECObjectsStatus stat = instance->GetValue (v, propertyName, i);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
+
+        if (expectedSuccess[i] == ECOBJECTS_STATUS_Success)
+            {
+            DateTime actual = v.GetDateTime ();
+            AssertDateTime (expected[i], actual, false);
+            }
+        else
+            {
+            EXPECT_TRUE (v.IsDateTime () && v.IsNull ());
+            }
+        }
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
