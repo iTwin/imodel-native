@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/VirtualCollectionIterator.h>
 #include <Bentley/DateTime.h>
@@ -274,8 +274,8 @@ public:
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @params[out] hasMetadata true, if date time metadata is available in this ECValue, false otherwise.
-    //! @params[out] metadata if hasMetadata is true, contains the metadata available in this ECValue.
+    //! @param[out] hasMetadata true, if date time metadata is available in this ECValue, false otherwise.
+    //! @param[out] metadata if hasMetadata is true, contains the metadata available in this ECValue.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
 
@@ -290,6 +290,7 @@ public:
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
     //! @param[in] ceTicks DateTime Common Era ticks to set
+    //! @param[in] dateTimeMetadata \todo WIP_DOC_DATETIME
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
@@ -572,4 +573,4 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECValuesCollection)
 //__PUBLISH_SECTION_START__
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All
