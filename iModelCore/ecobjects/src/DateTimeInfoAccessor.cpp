@@ -13,6 +13,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 WCharCP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = L"DateTimeInfo";
+
+//the index of the first property is 1 and not 0 (index 0 is reserved for the class as a struct)
+//static
+const UInt32 DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYINDEX = 1;
+//static
+const UInt32 DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYINDEX = 2;
+
 //static
 WCharCP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = L"DateTimeKind";
 //static
@@ -58,7 +65,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR 
 
     //Retrieve DateTimeKind
     ECValue caVal;
-    ECObjectsStatus stat = caInstance->GetValue (caVal, DATETIMEINFO_KIND_PROPERTYNAME);
+    ECObjectsStatus stat = caInstance->GetValue (caVal, DATETIMEINFO_KIND_PROPERTYINDEX);
     if (stat != ECOBJECTS_STATUS_Success)
         {
         ECObjectsLogger::Log ()->errorv (L"Property '%ls' not found in custom attribute class '%ls'.", DATETIMEINFO_KIND_PROPERTYNAME, DATETIMEINFO_CLASSNAME);
@@ -76,7 +83,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR 
 
     //Retrieve DateTimeComponent
     caVal.Clear ();
-    stat = caInstance->GetValue (caVal, DATETIMEINFO_COMPONENT_PROPERTYNAME);
+    stat = caInstance->GetValue (caVal, DATETIMEINFO_COMPONENT_PROPERTYINDEX);
     if (stat != ECOBJECTS_STATUS_Success)
         {
         ECObjectsLogger::Log ()->errorv (L"Property '%ls' not found in custom attribute class '%ls'.", DATETIMEINFO_KIND_PROPERTYNAME, DATETIMEINFO_CLASSNAME);
