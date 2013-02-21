@@ -181,4 +181,76 @@ TEST_F (ValueAccessorTests, DISABLED_GetDefaultStandaloneEnablerBug)
     EXPECT_STREQ (propertyName, L"Prop2");
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/    
+TEST_F (ValueAccessorTests, PushPopLocation)
+    {
+    CreateSchema();
+    WCharP properties[4] = {L"Property_1", L"Property_2", L"Property_3", L"Property_4"};
+    
+    for (int i=0; i<4; i++)
+        {
+        PrimitiveECPropertyP prop;
+        m_ecClass->CreatePrimitiveProperty (prop, properties[i]);
+        }
+    CreateInstance();
+    
+    ECValueAccessor accessor = ECValueAccessor();
+    for (int i=0; i<4; i++)
+        accessor.PushLocation(*m_instance, properties[i]);
+    
+    EXPECT_EQ (accessor.GetDepth(), 4);
+    EXPECT_STREQ (accessor.GetAccessString(), L"Property_4");
+    EXPECT_STREQ (accessor.GetPropertyName().c_str(), L"Property_4");
+    for (int i=0; i<4; i++)
+        {
+        EXPECT_STREQ (accessor.GetAccessString(i), properties[i]);
+        }
+        
+    accessor.PopLocation();
+    EXPECT_EQ (accessor.GetDepth(), 3);
+    EXPECT_STREQ (accessor.GetAccessString(), L"Property_3");
+    EXPECT_STREQ (accessor.GetPropertyName().c_str(), L"Property_3");
+    for (int i=0; i<3; i++)
+        {
+        EXPECT_STREQ (accessor.GetAccessString(i), properties[i]);
+        }
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/    
+TEST_F (ValueAccessorTests, MatchAccessors)
+    {
+    CreateSchema();
+    WCharP properties[4] = {L"Property_1", L"Property_2", L"Property_3", L"Property_4"};
+    IECInstancePtr instance_1;
+    IECInstancePtr instance_2;
+    
+    for (int i=0; i<4; i++)
+        {
+        PrimitiveECPropertyP prop;
+        m_ecClass->CreatePrimitiveProperty (prop, properties[i]);
+        }
+    instance_1 = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    instance_2 = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    
+    ECValueAccessor accessor_1 = ECValueAccessor();
+    ECValueAccessor accessor_2 = ECValueAccessor();
+    ECValueAccessor accessor_3 = ECValueAccessor();
+    for (int i=0; i<4; i++)
+        {
+        accessor_1.PushLocation(*instance_1, properties[i]);
+        accessor_2.PushLocation(*instance_2, properties[i]);
+        accessor_3.PushLocation(*instance_1, properties[i]);
+        }
+    accessor_3.PopLocation();
+    
+    EXPECT_TRUE (accessor_1 == accessor_2);
+    EXPECT_FALSE (accessor_1 == accessor_3);
+    EXPECT_FALSE (accessor_1 != accessor_2);
+    EXPECT_TRUE (accessor_1 != accessor_3);
+    }
+    
 END_BENTLEY_ECOBJECT_NAMESPACE
