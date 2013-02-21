@@ -2,7 +2,7 @@
 #
 #     $Source: PublicApi/BuildPublishedDoc.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -23,7 +23,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     ~mkdir $(DOXYGEN_OUTPUT)
     > $(DOXYGEN_OUTPUT)doxygen.cfg
     @INCLUDE      = bentley-doxygen.cfg
-    ENABLED_SECTIONS += ECOBJECTS_MAINPAGE
+    ENABLED_SECTIONS += ECOBJECTS_MAINPAGE BENTLEY_SDK_Desktop
     <
     ~@putenv PROJECT_NAME="ECObjects SDK Documentation"
     ~@putenv DOXYGEN_INPUT=$(DOXYGEN_INPUT)
