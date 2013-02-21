@@ -10,7 +10,19 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-struct ValueTests : ECTestFixture {};
+struct ValueTests : ECTestFixture
+    {
+    void compareDateTimes(SystemTime dateTime1, SystemTime dateTime2)
+        {
+        EXPECT_EQ (dateTime1.wYear, dateTime2.wYear);
+        EXPECT_EQ (dateTime1.wMonth, dateTime2.wMonth);
+        EXPECT_EQ (dateTime1.wDay, dateTime2.wDay);
+        EXPECT_EQ (dateTime1.wHour, dateTime2.wHour);
+        EXPECT_EQ (dateTime1.wMinute, dateTime2.wMinute);
+        EXPECT_EQ (dateTime1.wSecond, dateTime2.wSecond);
+        EXPECT_EQ (dateTime1.wMilliseconds, dateTime2.wMilliseconds);
+        }
+    };
 struct ValueAccessorTests : ECTestFixture {};
     
 /*---------------------------------------------------------------------------------**//**
@@ -203,6 +215,37 @@ TEST_F(ValueTests, DISABLED_ValueReadOnly)
     
     IECInstancePtr instance = base->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ (instance->SetValue (L"readOnlyProp", ECValue(L"Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ValueTests, DateTimeConversions)
+    {
+    SystemTime dateTime = SystemTime(2013, 2, 14, 9, 58, 17, 456);
+    ECValue value = ECValue(dateTime);
+    
+    EXPECT_TRUE (value.IsDateTime());
+    compareDateTimes(value.GetDateTime(), dateTime);
+    EXPECT_EQ (value.GetDateTimeTicks(), 634964326974560000LL);
+    EXPECT_EQ (value.GetDateTimeUnixMillis(), 1360835897456L);
+    
+    dateTime.InitFromUnixMillis(1260835897957L);
+    value.SetDateTime(dateTime);
+    
+    compareDateTimes(value.GetDateTime(), dateTime);
+    EXPECT_EQ (value.GetDateTimeTicks(), 633964326979570000LL);
+    EXPECT_EQ (value.GetDateTimeUnixMillis(), 1260835897957L);
+
+    _FILETIME fileTime;
+    fileTime.dwLowDateTime  = (633974326929510000LL - 504911232000000000LL) & 0xffffffff; // = 1994575472L
+    fileTime.dwHighDateTime = (633974326929510000LL - 504911232000000000LL) >> 32;        // = 30049843L
+    dateTime.InitFromFileTime(fileTime);
+    value.SetDateTime(dateTime);
+    
+    compareDateTimes(value.GetDateTime(), dateTime);
+    EXPECT_EQ (value.GetDateTimeTicks(), 633974326929510000LL);
+    EXPECT_EQ (value.GetDateTimeUnixMillis(), 1261835892951);
     }
     
 END_BENTLEY_ECOBJECT_NAMESPACE
