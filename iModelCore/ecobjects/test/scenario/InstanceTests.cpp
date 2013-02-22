@@ -19,7 +19,7 @@ struct  Struct1
 struct  Struct2
     {
     bool            struct2StringMemberNull;
-    WCharCP  struct2StringMember;
+    WCharCP         struct2StringMember;
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
@@ -219,48 +219,48 @@ void VerifyTestInstance (IECInstanceCP testInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InstanceTests : ECTestFixture
     {
-    ECSchemaPtr          schema;
-    ECClassP             ecClass;
-    IECInstancePtr       instance;
+    ECSchemaPtr          m_schema;
+    ECClassP             m_ecClass;
+    IECInstancePtr       m_instance;
     UInt32               propIndex;
 
     void CreateSchema(WString schemaName = L"TestSchema", WString className = L"TestClass")
         {
-        ECSchema::CreateSchema (schema, schemaName, 1, 0);
-        schema->CreateClass (ecClass, className);
+        ECSchema::CreateSchema (m_schema, schemaName, 1, 0);
+        m_schema->CreateClass (m_ecClass, className);
         }
     
     void CreateInstance()
         {
-        instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        m_instance = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
         }
         
     PrimitiveECPropertyP CreateProperty(WCharCP name, PrimitiveType primitiveType)
         {
         PrimitiveECPropertyP prop;
-        ecClass->CreatePrimitiveProperty (prop, name, primitiveType);
-        ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
+        m_ecClass->CreatePrimitiveProperty (prop, name, primitiveType);
+        m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
         return prop;
         }
         
     PrimitiveECPropertyP CreateProperty(WCharCP name)
         {
         PrimitiveECPropertyP prop;
-        ecClass->CreatePrimitiveProperty (prop, name);
-        ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
+        m_ecClass->CreatePrimitiveProperty (prop, name);
+        m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
         return prop;
         }
         
     ArrayECPropertyP CreateArrayProperty(WCharCP name)
         {
         ArrayECPropertyP prop;
-        ecClass->CreateArrayProperty (prop, name);
-        ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
+        m_ecClass->CreateArrayProperty (prop, name);
+        m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, name);
         return prop;
         }
     };
-struct RelationTests : ECTestFixture {};
 
+struct PropertyTests : InstanceTests{};
     
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                               Raimondas.Rimkus   02/2013
@@ -273,16 +273,16 @@ TEST_F (InstanceTests, TestIsNullPrimitive)
     
     bool isNull = NULL;
     
-    EXPECT_EQ (instance->IsPropertyNull(isNull, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
-    EXPECT_EQ (instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     
-    EXPECT_EQ (instance->SetValue (L"PropertyString", ECValue(L"Some value")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue (L"PropertyString", ECValue(L"Some value")), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (instance->IsPropertyNull(isNull, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyString"), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
-    EXPECT_EQ (instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     }
 
@@ -297,29 +297,29 @@ TEST_F (InstanceTests, TestIsNullArray)
     
     bool isNull;
     
-    EXPECT_EQ (instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
-    EXPECT_EQ (instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     
-    EXPECT_EQ (instance->AddArrayElements (L"PropertyArray", 15), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (instance->SetValue (L"PropertyArray", ECValue(L"Some value"), 3), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->AddArrayElements (L"PropertyArray", 15), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue (L"PropertyArray", ECValue(L"Some value"), 3), ECOBJECTS_STATUS_Success);
     
     //Strangelly array property doesn't exist as PrimitiveProperty
-    EXPECT_EQ (instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
-    EXPECT_EQ (instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     //-------------------------------------------------------------
     
-    EXPECT_EQ (instance->IsPropertyNull(isNull, L"PropertyArray", 3), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray", 3), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
-    EXPECT_EQ (instance->IsPropertyNull(isNull, propIndex, 3), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex, 3), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);
     
-    EXPECT_EQ (instance->IsPropertyNull(isNull, L"PropertyArray", 13), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray", 13), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
-    EXPECT_EQ (instance->IsPropertyNull(isNull, propIndex, 13), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex, 13), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (isNull);
     }
 
@@ -334,31 +334,31 @@ TEST_F (InstanceTests, TestArraySize)
     
     ECValue arrayVal;
     
-    EXPECT_EQ (instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 0);
     
-    EXPECT_EQ (instance->AddArrayElements (L"PropertyArray", 13), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->AddArrayElements (L"PropertyArray", 13), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 13);
     
-    EXPECT_EQ (instance->ClearArray (L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->ClearArray (L"PropertyArray"), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, L"PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 0);
     
-    EXPECT_EQ (instance->AddArrayElements (propIndex, 42), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->AddArrayElements (propIndex, 42), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (instance->GetValue (arrayVal, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 42);
     
-    EXPECT_EQ (instance->ClearArray (propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->ClearArray (propIndex), ECOBJECTS_STATUS_Success);
     
-    EXPECT_EQ (instance->GetValue (arrayVal, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (arrayVal, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (arrayVal.IsArray());
     EXPECT_EQ (arrayVal.GetArrayInfo().GetCount(), 0);
     }
@@ -374,12 +374,12 @@ TEST_F (InstanceTests, TestSetValueString)
     
     ECValue value;
     
-    EXPECT_EQ (instance->SetValue (L"Property_1", ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (instance->GetValue (value, L"Property_1"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue (L"Property_1", ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (value, L"Property_1"), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (value.GetString(), L"Some value 1");
     
-    EXPECT_EQ (instance->SetValue (propIndex, ECValue(L"Some value 2")), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (instance->GetValue (value, propIndex), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValue (propIndex, ECValue(L"Some value 2")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetValue (value, propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (value.GetString(), L"Some value 2");
     }
     
@@ -394,23 +394,23 @@ TEST_F (InstanceTests, TestSetDisplayLabel)
         
     StandaloneECEnablerP m_customAttributeEnabler = customAttributesSchema->GetClassP (L"InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
     CreateSchema();
-    schema->AddReferencedSchema (*customAttributesSchema);
+    m_schema->AddReferencedSchema (*customAttributesSchema);
 
     PrimitiveECPropertyP prop;
-    ecClass->CreatePrimitiveProperty (prop, L"InstanceLabel", PRIMITIVETYPE_String);
+    m_ecClass->CreatePrimitiveProperty (prop, L"InstanceLabel", PRIMITIVETYPE_String);
 
     IECInstancePtr labelAttr = m_customAttributeEnabler->CreateInstance();
     labelAttr->SetValue (L"PropertyName", ECValue(L"InstanceLabel"));
-    ecClass->SetCustomAttribute (*labelAttr);
+    m_ecClass->SetCustomAttribute (*labelAttr);
         
-    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    IECInstancePtr m_instance = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     
     WString displayLabel;
-    EXPECT_EQ (instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Error);
+    EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Error);
     
-    EXPECT_EQ (instance->SetDisplayLabel(L"Some fancy instance label"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetDisplayLabel(L"Some fancy instance label"), ECOBJECTS_STATUS_Success);
 
-    EXPECT_EQ (instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (displayLabel.c_str(), L"Some fancy instance label");
     }
     
@@ -442,6 +442,64 @@ TEST_F(InstanceTests, InstanceWriteReadFile)
     VerifyTestInstance (readbackInstance.get());
     };
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyTests, DISABLED_SetReadOnlyAndSetValue)
+    {
+    CreateSchema();
+    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
+    m_ecClass->GetPropertyP (L"PropertyString")->SetIsReadOnly(true);
+    CreateInstance();
+    
+    ECValue getValue;
+    EXPECT_TRUE (getValue.IsReadOnly());
+    
+    EXPECT_EQ (m_instance->SetValue (L"PropertyString", ECValue(L"Some value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (m_instance->GetValue (getValue, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetString(), L"Some value");
+    EXPECT_TRUE (m_ecClass->GetPropertyP (L"PropertyString")->GetIsReadOnly());
+    };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyTests, DISABLED_SetReadOnlyAndChangeValue)
+    {
+    CreateSchema();
+    CreateProperty(L"PropertyString", PRIMITIVETYPE_String);
+    m_ecClass->GetPropertyP (L"PropertyString")->SetIsReadOnly(true);
+    CreateInstance();
+    
+    ECValue getValue;
+    EXPECT_TRUE (getValue.IsReadOnly());
+   
+    EXPECT_EQ (m_instance->ChangeValue (L"PropertyString", ECValue(L"Other value")), ECOBJECTS_STATUS_UnableToSetReadOnlyInstance);
+    EXPECT_EQ (m_instance->GetValue (getValue, L"PropertyString"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (getValue.GetString(), L"Other value");
+    EXPECT_TRUE (m_ecClass->GetPropertyP (L"PropertyString")->GetIsReadOnly());
+    };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyTests, GetValueFromInstance)
+    {
+    CreateSchema();
+    CreateProperty(L"Property_1");
+    CreateInstance();
+    
+    m_instance->SetValue (L"Property_1", ECValue(L"Some value"));
+    ECPropertyValuePtr propValue = ECPropertyValue::GetPropertyValue (*m_instance, L"Property_1");
+    
+    IECInstanceCR instance = propValue->GetInstance();
+    EXPECT_STREQ (m_instance->GetInstanceId().c_str(), instance.GetInstanceId().c_str());
+    ECValueCR value = propValue->GetValue();
+    EXPECT_STREQ (value.ToString().c_str(), L"Some value");
+    ECValueAccessorCR accessor = propValue->GetValueAccessor();
+    EXPECT_STREQ (accessor.GetAccessString(), L"Property_1");
+    EXPECT_FALSE (propValue->HasChildValues());
+    }
     
 END_BENTLEY_ECOBJECT_NAMESPACE
 

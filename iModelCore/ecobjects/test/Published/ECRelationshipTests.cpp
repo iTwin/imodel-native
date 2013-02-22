@@ -2,21 +2,16 @@
 |
 |     $Source: test/Published/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
-#include "StopWatch.h"
 #include "TestFixture.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-using namespace std;
-
 struct ECRelationshipTests : ECTestFixture {};
 
-#if defined (NOT_RUNNING) // Turning these off temporarily until Bill or Abeesh has a chance to look at them
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -51,19 +46,16 @@ static WString    GetTestSchemaXMLString ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
+static ECSchemaPtr CreateTestSchema ()
     {
     WString schemaXMLString = GetTestSchemaXMLString ();
-
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;        
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));  
 
-    CoUninitialize();
-    return schema.get();
+    return schema;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,9 +63,9 @@ static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECRelationshipTests, SimpleRelationship)
     {
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
-
+    
     ECClassP sourceClass = schema->GetClassP (L"ClassA");
     ASSERT_TRUE (NULL != sourceClass);
     StandaloneECEnablerPtr sourceEnabler =  sourceClass->GetDefaultStandaloneEnabler();
@@ -127,7 +119,7 @@ TEST_F(ECRelationshipTests, SimpleRelationship)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECRelationshipTests, SetRelationshipProperties)
     {
-    ECSchemaP        schema = CreateTestSchema(*schemaOwner);
+    ECSchemaPtr schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
 
     ECClassP sourceClass = schema->GetClassP (L"ClassA");
@@ -193,7 +185,5 @@ TEST_F(ECRelationshipTests, SetRelationshipProperties)
     InstanceWriteStatus status2 = relationshipInstance->WriteToXmlString(ecInstanceXml, true, true);
     EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
     }
-#endif // Turning these off temporarily until Bill or Abeesh has a chance to look at them
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE

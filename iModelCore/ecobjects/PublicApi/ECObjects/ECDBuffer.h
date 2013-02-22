@@ -91,8 +91,8 @@ public:
     //! @param[in] readOnly Flag indicating whether this property is read-only or not
     //! @returns The readOnly status of this property
     ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
-    ECOBJECTS_EXPORT bool                        IsFixedSized() const; //<! Returns whether this is a fixed-size property
-    ECOBJECTS_EXPORT bool                        HoldsCalculatedProperty() const; //<! Returns whether this property is actually a Calculated Property
+    ECOBJECTS_EXPORT bool                        IsFixedSized() const; //!< Returns whether this is a fixed-size property
+    ECOBJECTS_EXPORT bool                        HoldsCalculatedProperty() const; //!< Returns whether this property is actually a Calculated Property
 
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
