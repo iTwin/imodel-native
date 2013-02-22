@@ -10,7 +10,6 @@
 #include <Bentley/CatchNonPortable.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>
-#include <boost/foreach.hpp>
 #include <Bentley/BeStringUtilities.h>
 #include "ecxml.h"
 #include "DateTimeInfoAccessor.h"
