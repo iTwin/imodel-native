@@ -283,19 +283,12 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, boo
         return stat;
         }
 
-    //only set date time meta data if the value is not null and if the metadata wasn't already set (by impl of _GetValue)
-    if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
+    if (!v.IsDateTime ())
         {
-        DateTimeInfo caDateTimeMetadata;
-        if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
-            {
-            //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
-            BentleyStatus success = v.SetDateTimeMetadata (caDateTimeMetadata);
-            POSTCONDITION (success == SUCCESS, ECOBJECTS_STATUS_DataTypeNotSupported);
-            }
+        return stat;
         }
 
-    return ECOBJECTS_STATUS_Success;
+    return SetDateTimeMetadataInECValue (v, propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -451,13 +444,12 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
     if (IsPropertyReadOnly (propertyIndex) && !isNull)
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
 
-    if (v.IsDateTime () && !v.IsNull ())
+    if (v.IsDateTime ())
         {
-        DateTimeInfo dateTimeInfo;
-        const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
-        if (found && !v.DateTimeInfoMatches (dateTimeInfo))
+        status = ValidateDateTimeMetadata (propertyIndex, v);
+        if (status != ECOBJECTS_STATUS_Success)
             {
-            return ECN::ECOBJECTS_STATUS_DataTypeMismatch;
+            return status;
             }
         }
 
@@ -871,6 +863,48 @@ ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIn
 ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIndex, UInt32 arrayIndex) const 
     {
     return _GetIsPropertyNull (isNull, propertyIndex, true, arrayIndex); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECValueCR v) const
+    {
+    if (v.IsDateTime () && !v.IsNull ())
+        {
+        DateTimeInfo dateTimeInfo;
+        const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
+        if (found && !v.DateTimeInfoMatches (dateTimeInfo))
+            {
+            ECObjectsLogger::Log ()->errorv (L"Setting a DateTime ECValue in ECInstance failed. DateTime metadata in ECValue mismatches the DateTimeInfo custom attribute on the respective ECProperty. Actual: %ls. Expected: %ls.",
+                v.DateTimeMetadataToString ().c_str (), dateTimeInfo.ToString ().c_str ());
+            return ECOBJECTS_STATUS_DataTypeMismatch;
+            }
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const
+    {
+    //only set date time meta data if the value is not null and if the metadata wasn't already set (by impl of _GetValue)
+    if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
+        {
+        DateTimeInfo caDateTimeMetadata;
+        if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
+            {
+            //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
+            if (SUCCESS != v.SetDateTimeMetadata (caDateTimeMetadata))
+                {
+                return ECOBJECTS_STATUS_DataTypeNotSupported;
+                }
+            }
+        }
+
+    return ECOBJECTS_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------

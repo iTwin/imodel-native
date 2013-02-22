@@ -13,6 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 WCharCP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = L"DateTimeInfo";
+
 //static
 WCharCP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = L"DateTimeKind";
 //static
@@ -61,8 +62,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR 
     ECObjectsStatus stat = caInstance->GetValue (caVal, DATETIMEINFO_KIND_PROPERTYNAME);
     if (stat != ECOBJECTS_STATUS_Success)
         {
-        ECObjectsLogger::Log ()->errorv (L"Property '%ls' not found in custom attribute class '%ls'.", DATETIMEINFO_KIND_PROPERTYNAME, DATETIMEINFO_CLASSNAME);
-        BeAssert (false);
+        LogPropertyNotFoundError (DATETIMEINFO_KIND_PROPERTYNAME);
         return false;
         }
 
@@ -79,8 +79,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR 
     stat = caInstance->GetValue (caVal, DATETIMEINFO_COMPONENT_PROPERTYNAME);
     if (stat != ECOBJECTS_STATUS_Success)
         {
-        ECObjectsLogger::Log ()->errorv (L"Property '%ls' not found in custom attribute class '%ls'.", DATETIMEINFO_KIND_PROPERTYNAME, DATETIMEINFO_CLASSNAME);
-        BeAssert (false);
+        LogPropertyNotFoundError (DATETIMEINFO_COMPONENT_PROPERTYNAME);
         return false;
         }
 
@@ -282,4 +281,13 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+void DateTimeInfoAccessor::LogPropertyNotFoundError (WCharCP propertyName)
+    {
+    ECObjectsLogger::Log ()->errorv (L"Property '%ls' not found in custom attribute class '%ls'.", propertyName, DATETIMEINFO_CLASSNAME);
+    BeAssert (false);
+    }
 END_BENTLEY_ECOBJECT_NAMESPACE

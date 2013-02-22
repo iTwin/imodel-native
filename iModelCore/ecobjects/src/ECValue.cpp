@@ -365,7 +365,12 @@ BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata
     //No support for local DateTimes (yet?) as client might expect this to do time zone
     //conversions - which we want the client / application side to do as it is nearly
     //impossible to do time zone conversions right in a generic and portable way.
-    PRECONDITION (metadata.GetKind () != DateTime::DATETIMEKIND_Local, ERROR);
+    if (metadata.GetKind () == DateTime::DATETIMEKIND_Local)
+        {
+        ECObjectsLogger::Log ()->error (L"DateTime kind 'Local' not supported.");
+        BeAssert (false && L"DateTime kind 'Local' not supported.");
+        return ERROR;
+        }
 
     m_kind = metadata.GetKind ();
     m_component = metadata.GetComponent ();
@@ -381,10 +386,33 @@ bool ECValue::DateTimeInfo::MetadataMatches (ECN::DateTimeInfo const& caDateTime
     {
     DateTime::Info const& rhsInfo = caDateTimeMetadata.GetInfo ();
 
-    return m_isMetadataSet && (caDateTimeMetadata.IsKindNull () || m_kind == rhsInfo.GetKind ()) &&
-        (caDateTimeMetadata.IsComponentNull () || m_component == rhsInfo.GetComponent ());
+    //if ECValue doesn't have meta data (e.g. in case when SetDateTimeTicks was used to populate it),
+    //no metadata check will be done. I.e. the CA metadata will implicitly become the CA of the ECValue.
+    return !m_isMetadataSet || ((caDateTimeMetadata.IsKindNull () || m_kind == rhsInfo.GetKind ()) &&
+        (caDateTimeMetadata.IsComponentNull () || m_component == rhsInfo.GetComponent ()));
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+WString ECValue::DateTimeInfo::MetadataToString () const
+    {
+    DateTime::Info metadata;
+    if (!TryGetMetadata (metadata))
+        {
+        return L"";
+        }
+
+    WString str;
+    //reserve for the longest possible string 
+    str.reserve (36);
+    str.append (L"Kind: ");
+    str.append (DateTime::Info::KindToString (m_kind));
+    str.append (L" Component: ");
+    str.append (DateTime::Info::ComponentToString (m_component));
+
+    return str;
+    }
 
 //*********************** ECValue ***************************************
 
@@ -1126,6 +1154,19 @@ bool ECValue::DateTimeInfoMatches (ECN::DateTimeInfo const& dateTimeInfo) const
     return IsDateTime () && !IsNull () && m_dateTimeInfo.MetadataMatches (dateTimeInfo);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+WString ECValue::DateTimeMetadataToString () const
+    {
+    if (!IsDateTime () || IsNull ())
+        {
+        return L"";
+        }
+
+    return m_dateTimeInfo.MetadataToString ();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1389,8 +1430,14 @@ WString    ECValue::ToString () const
                 }
             case PRIMITIVETYPE_DateTime:
                 {
-                DateTime timeDate = GetDateTime();
-                return timeDate.ToString();
+                DateTime dateTime = GetDateTime();
+                if (!m_dateTimeInfo.IsMetadataSet ())
+                    {
+                    return dateTime.ToString ();
+                    }
+
+                str.Sprintf (L"%ls [%ls]", dateTime.ToString ().c_str (), m_dateTimeInfo.MetadataToString ().c_str ());
+                break;
                 }
             case PRIMITIVETYPE_Binary:
                 {
