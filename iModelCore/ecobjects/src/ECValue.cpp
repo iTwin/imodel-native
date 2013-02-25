@@ -382,7 +382,7 @@ BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-bool ECValue::DateTimeInfo::MetadataMatches (ECN::DateTimeInfo const& caDateTimeMetadata) const
+bool ECValue::DateTimeInfo::MetadataMatches (DateTimeInfoCR caDateTimeMetadata) const
     {
     DateTime::Info const& rhsInfo = caDateTimeMetadata.GetInfo ();
 
@@ -1131,7 +1131,7 @@ BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
-BentleyStatus ECValue::SetDateTimeMetadata (ECN::DateTimeInfo const& dateTimeInfo)
+BentleyStatus ECValue::SetDateTimeMetadata (DateTimeInfoCR dateTimeInfo)
     {
     PRECONDITION (IsDateTime () && !IsNull (), ERROR);
     return m_dateTimeInfo.SetMetadata (dateTimeInfo);
@@ -1149,7 +1149,7 @@ bool ECValue::IsDateTimeMetadataSet () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
-bool ECValue::DateTimeInfoMatches (ECN::DateTimeInfo const& dateTimeInfo) const
+bool ECValue::DateTimeInfoMatches (DateTimeInfoCR dateTimeInfo) const
     {
     return IsDateTime () && !IsNull () && m_dateTimeInfo.MetadataMatches (dateTimeInfo);
     }

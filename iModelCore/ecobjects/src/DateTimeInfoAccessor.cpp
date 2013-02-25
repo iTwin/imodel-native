@@ -47,7 +47,7 @@ WCharCP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATE_WSTR = L"Date";
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfo& dateTimeInfo, ECPropertyCR dateTimeProperty)
+bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     ArrayECPropertyP arrayDateTimeProp = NULL;
     PRECONDITION ((dateTimeProperty.GetIsPrimitive () && dateTimeProperty.GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) || 

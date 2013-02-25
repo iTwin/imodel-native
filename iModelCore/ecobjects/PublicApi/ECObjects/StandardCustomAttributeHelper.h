@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/DateTime.h>
@@ -15,8 +15,14 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
-//! DateTimeInfo contains the meta data that can be assigned to an ECProperty of type 
-//! 'DateTime'.
+//! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
+//! ECProperty of type PRIMITIVETYPE_DateTime.
+//! @remarks 
+//! Date time values in ECObjects are represented by the DateTime type. Each instance of the 
+//! DateTime type can contain metadata about the actual date time value (See DateTime::Info). 
+//! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
+//! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct DateTimeInfo
@@ -38,13 +44,35 @@ public:
 
     //! Initializes a new instance of the DateTimeInfo type.
     ECOBJECTS_EXPORT DateTimeInfo ();
+    //__PUBLISH_SECTION_END__
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
+    //__PUBLISH_SECTION_START__
 
+    //! Indicates whether the DateTime::Kind is unset or not.
+    //! @return true, if the DateTime::Kind is unset. false, otherwise
     ECOBJECTS_EXPORT bool IsKindNull () const;
+    //! Indicates whether the DateTime::Component is unset or not.
+    //! @return true, if the DateTime::Component is unset. false, otherwise
     ECOBJECTS_EXPORT bool IsComponentNull () const;
-    ECOBJECTS_EXPORT DateTime::Info const& GetInfo () const;
 
+    //__PUBLISH_SECTION_END__
+    //! Gets the content of this object as DateTime::Info.
+    //! @remarks Should only be called if DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull are not true.
+    //! @return DateTime::Info representing the content of this object
+    DateTime::Info const& GetInfo () const;
+    //__PUBLISH_SECTION_START__
+
+    //! Gets the content of this object as DateTime::Info.
+    //! @remarks if \p useDefaultIfUnset is true, fills in default values for date time kind
+    //!         and date time component if they are unset.
+    //! @param[in] useDefaultIfUnset if true, default values are filled in, if a member of this object is unset,
+    //!            if false, no default values are filled in. The value of unset members is undefined.
+    //!            Callers have to check the unset status first using DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull
+    //! @return DateTime::Info representing the content of this object
     ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
+    
+    //! Gets a DateTimeInfo object with the default values used by ECObjects.
+    //! @return Default DateTime::Info
     ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
 
     //! Checks whether the RHS object matches this object.
@@ -62,26 +90,31 @@ public:
 
 //=======================================================================================    
 //! StandardCustomAttributeHelper provides APIs to access items of the Bentley standard schemas
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct StandardCustomAttributeHelper : NonCopyableClass
     {
+    //__PUBLISH_SECTION_END__
 private:
     //static class
     StandardCustomAttributeHelper ();
     ~StandardCustomAttributeHelper ();
+    //__PUBLISH_SECTION_START__
 
 public:
-    //! Retrieves the DateTimeInfo meta data from the specified DateTime ECProperty.
-    //! @param[out] dateTimeInfo the retrieved DateTimeInfo meta data
-    //! @param[in] dateTimeProperty the DateTime ECProperty from which the meta data is to be retrieved
-    //! @return true if the ECProperty contains the DateTimeInfo meta data, false if the
-    //!         ECProperty doesn't contain the DateTimeInfo meta data or in case of errors.
-    ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, ECPropertyCR dateTimeProperty);
+    //! Retrieves the content of the \b %DateTimeInfo custom attribute from the specified date time ECProperty.
+    //! @remarks The \b %DateTimeInfo custom attribute is defined in the standard schema \b Bentley_Standard_CustomAttributes.
+    //!          See also DateTimeInfo.
+    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute
+    //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
+    //! @return true if \p dateTimeProperty contains the %DateTimeInfo custom attribute, false if \p dateTimeProperty 
+    //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
+    ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All
 
 //__PUBLISH_SECTION_END__

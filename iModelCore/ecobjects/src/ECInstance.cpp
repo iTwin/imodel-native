@@ -910,7 +910,7 @@ ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECInstance::TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, UInt32 propertyIndex) const
+bool IECInstance::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const
     {
     //TODO: Need to profile this. The implementation does look up the access string from the prop index
     //and then parses to access string (to check whether it might refer to a struct member) before

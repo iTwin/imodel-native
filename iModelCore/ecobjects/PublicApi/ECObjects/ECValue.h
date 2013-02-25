@@ -131,9 +131,9 @@ protected:
         bool IsMetadataSet () const {return m_isMetadataSet;}
         bool TryGetMetadata (DateTime::Info& metadata) const;
         BentleyStatus SetMetadata (DateTime::Info const& metadata);
-        BentleyStatus SetMetadata (ECN::DateTimeInfo const& dateTimeInfo);
+        BentleyStatus SetMetadata (DateTimeInfoCR dateTimeInfo);
 
-        bool MetadataMatches (ECN::DateTimeInfo const& dateTimeInfo) const;
+        bool MetadataMatches (DateTimeInfoCR dateTimeInfo) const;
 
         WString MetadataToString () const;
         };
@@ -294,9 +294,9 @@ public:
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
-    BentleyStatus SetDateTimeMetadata (ECN::DateTimeInfo const& caDateTimeMetadata);
+    BentleyStatus SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
     bool IsDateTimeMetadataSet () const;
-    bool DateTimeInfoMatches (ECN::DateTimeInfo const& caDateTimeMetadata) const;
+    bool DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
     WString DateTimeMetadataToString () const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.

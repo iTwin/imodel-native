@@ -131,7 +131,7 @@ WString DateTimeInfo::ToString () const
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfo& dateTimeInfo, ECPropertyCR dateTimeProperty)
+bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     return DateTimeInfoAccessor::TryGetFrom (dateTimeInfo, dateTimeProperty);
     }
