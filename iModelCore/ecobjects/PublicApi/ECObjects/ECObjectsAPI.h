@@ -18,7 +18,7 @@
 * This file describes the public API for writing applications using the ECObjects library.
 *
 * \section Namespaces
-* All of the ECObjects APIs are contained within the Bentley::EC namespace.
+* All of the ECObjects APIs are contained within the Bentley::ECN namespace.
 *
 * \section headerFiles Header Files
 * By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:

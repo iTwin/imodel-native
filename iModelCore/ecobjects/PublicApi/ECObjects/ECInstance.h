@@ -43,7 +43,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! An ECSchema is just a collection of ECClasses.
 //!
 //! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
-//! @see Bentley::EC
+//! @see Bentley::ECN
 //! \todo WIP_DOC_EC - tailor this to MobileDgnSdk
 
 //////////////////////////////////////////////////////////////////////////////////
