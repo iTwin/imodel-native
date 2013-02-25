@@ -16,7 +16,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
 //! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
-//! ECProperty of type PRIMITIVETYPE_DateTime.
+//! ECProperty of type PrimitiveType::PRIMITIVETYPE_DateTime.
 //! @remarks 
 //! Date time values in ECObjects are represented by the DateTime type. Each instance of the 
 //! DateTime type can contain metadata about the actual date time value (See DateTime::Info). 
