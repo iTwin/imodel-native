@@ -351,7 +351,7 @@ bool ECValue::DateTimeInfo::TryGetMetadata (DateTime::Info& metadata) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ECValue::DateTimeInfo::SetMetadata (ECN::DateTimeInfo const& caMetadata)
+BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTimeInfoCR caMetadata)
     {
     DateTime::Info metadata = caMetadata.GetInfo (true);
     return SetMetadata (metadata);
