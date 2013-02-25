@@ -20,10 +20,6 @@
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
 
-//__PUBLISH_SECTION_END__
-#include <boost/foreach.hpp>
-//__PUBLISH_SECTION_START__
-
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
 
@@ -1996,11 +1992,5 @@ public:
 }; // ECSchema
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-//__PUBLISH_SECTION_END__
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECCustomAttributeInstanceIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECPropertyIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECClassContainer)
-//__PUBLISH_SECTION_START__
 
 /// @endcond BENTLEY_SDK_All

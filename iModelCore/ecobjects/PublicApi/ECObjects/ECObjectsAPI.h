@@ -66,7 +66,6 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/StandaloneECRelationshipInstance.h>
 #include <ECObjects/ecprovider.h>
-#include <ECObjects/ECInstanceIterable.h>
 #include <ECObjects/PresentationMetadataHelper.h>
 #include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Bentley/ScopedArray.h>
