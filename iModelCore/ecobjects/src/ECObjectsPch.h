@@ -19,6 +19,7 @@
 #include <ECObjects/BeXmlCommonGeometry.h>
 #include <Logging/bentleylogging.h>
 #include <ECObjects/CalculatedProperty.h>
+#include <ECObjects/ECInstanceIterable.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 extern ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath);
