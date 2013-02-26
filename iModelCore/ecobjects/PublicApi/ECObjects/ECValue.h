@@ -87,7 +87,9 @@ protected:
     struct StringInfo
         {
     private:
+//__PUBLISH_SECTION_END__
         friend void ECValue::ShallowCopy (ECValueCR);
+//__PUBLISH_SECTION_START__
 
         Utf8CP              m_utf8;
         Utf16CP             m_utf16;
