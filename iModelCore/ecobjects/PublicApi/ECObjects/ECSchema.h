@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
@@ -19,10 +19,6 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
-
-//__PUBLISH_SECTION_END__
-#include <boost/foreach.hpp>
-//__PUBLISH_SECTION_START__
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -1089,7 +1085,6 @@ private:
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
 
-    ECObjectsStatus             SetCardinality(WCharCP cardinality);
     ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
 
     SchemaWriteStatus           WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const;
@@ -1136,6 +1131,9 @@ public:
 
     //! Sets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(RelationshipCardinalityCR value);
+    //! Sets the cardinality of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(WCharCP cardinality);
+
     //! Gets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT RelationshipCardinalityCR  GetCardinality() const;
 
@@ -1711,6 +1709,16 @@ public:
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
     ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
+    //! Determine if schema is a dynamic schema or not. It check that by check for "DynamicSchema" custom attribute
+    //! @remarks Dynamic schema is application generated schemas where schema name is use as namespace for classes.
+    //! @return True if its a dynamic schema and False if its not.
+    ECOBJECTS_EXPORT bool GetIsDynamic () const;
+    //! Mark a schema as "Dynamic" schema by adding a custom attribute "DynamicSchema" from Bentley Standard Custom Attributes.
+    //! If bsca schema is not referenced already this function will return error.
+    //! @remarks Dynamic schema is application generated schemas where schema name is use as namespace for classes.
+    //! @param[in]  isDynamic Mark this schema as dynamic or not dynamic.
+    //! @return A status code indicating whether "DynamicSchema" custom attribute was applied successfully or not
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsDynamic (bool isDynamic);
 
     //! Gets the number of classes in the schema
     ECOBJECTS_EXPORT UInt32             GetClassCount() const;
@@ -1985,10 +1993,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//__PUBLISH_SECTION_END__
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECCustomAttributeInstanceIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECPropertyIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECClassContainer)
-//__PUBLISH_SECTION_START__
-
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All

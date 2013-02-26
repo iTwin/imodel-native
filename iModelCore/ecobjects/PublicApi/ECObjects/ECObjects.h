@@ -2,12 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+
+/// @cond BENTLEY_SDK_All
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
@@ -45,6 +46,7 @@ EC_TYPEDEFS (SchemaKey);
 EC_TYPEDEFS(ECSchemaReadContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
+EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
 EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
@@ -148,6 +150,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
     ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
     ECOBJECTS_STATUS_SchemaIsImmutable                                  = ECOBJECTS_ERROR_BASE + 0x28,
+    ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound            = ECOBJECTS_ERROR_BASE + 0x29,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     };
 
@@ -323,4 +326,4 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 
 USING_NAMESPACE_BENTLEY
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All

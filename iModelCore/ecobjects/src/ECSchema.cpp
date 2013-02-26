@@ -17,7 +17,7 @@
 
 #include <ECObjects/StronglyConnectedGraph.h>
 #include <boost/iterator/iterator_adaptor.hpp>
-
+#define  DYNAMIC_SCHEMA_CLASS L"DynamicSchema"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
@@ -230,7 +230,41 @@ ECSchema::~ECSchema ()
     m_refSchemaList.clear();
     memset (this, 0xececdead, sizeof(this));
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan    02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::GetIsDynamic () const
+    {
+     return IsDefined (DYNAMIC_SCHEMA_CLASS);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan    02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::SetIsDynamic (bool isDynamic)
+    {
+    bool isDynamicExistingValue = GetIsDynamic();
+    if (isDynamic)
+        {
+        if (isDynamicExistingValue)
+            return ECOBJECTS_STATUS_Success;
 
+        SchemaNameClassNamePair dynamicSchemaClassId (L"Bentley_Standard_CustomAttributes", DYNAMIC_SCHEMA_CLASS);
+        ECClassP dynamicSchemaClass = GetReferencedSchemas().FindClassP (dynamicSchemaClassId);
+        BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.5");
+        if (dynamicSchemaClass == NULL)
+            return ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound;
+
+        IECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        return ECSchema::SetCustomAttribute (*dynamicSchemaInstance);
+        }
+    
+    if (!isDynamicExistingValue)
+        return ECOBJECTS_STATUS_Success;
+
+    if (RemoveCustomAttribute (DYNAMIC_SCHEMA_CLASS))
+        return ECOBJECTS_STATUS_Success;
+    return ECOBJECTS_STATUS_Error;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
