@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,7 @@
 * This file describes the public API for writing applications using the ECObjects library.
 *
 * \section Namespaces
-* All of the ECObjects APIs are contained within the Bentley::EC namespace.
+* All of the ECObjects APIs are contained within the Bentley::ECN namespace.
 *
 * \section headerFiles Header Files
 * By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
@@ -66,8 +66,8 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/StandaloneECRelationshipInstance.h>
 #include <ECObjects/ecprovider.h>
-#include <ECObjects/ECInstanceIterable.h>
 #include <ECObjects/PresentationMetadataHelper.h>
+#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Bentley/ScopedArray.h>
 
 /*__PUBLISH_SECTION_END__*/

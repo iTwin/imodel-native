@@ -2595,13 +2595,13 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, ClassLa
             if (!v.IsBinary ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
-            UInt32 currentSize;
+            UInt32 currentSize = 0;
             if (useIndex)
                 currentSize = GetPropertyValueSize (propertyLayout, index);
             else
                 currentSize = GetPropertyValueSize (propertyLayout);
 
-            size_t size;
+            size_t size = 0;
             byte const * data = v.GetBinary (size);
             size_t totalSize = size + sizeof(UInt32);
             UInt32 propertySize = (UInt32)size;

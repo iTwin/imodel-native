@@ -2,17 +2,18 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/VirtualCollectionIterator.h>
 #include <Bentley/DateTime.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
+#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -73,6 +74,7 @@ private:
     mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
 
     void                InitForString (void const * str);
+
 protected:
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -96,6 +98,7 @@ protected:
         void                ConvertToUtf8 (UInt8& flags);
         void                ConvertToUtf16 (UInt8& flags);
     public:
+        bool                IsUtf8 () const;
         // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
         // If we stored the flags on StringInfo, we would increase the size of the union.
         WCharCP             GetWChar (UInt8& flags);
@@ -111,6 +114,30 @@ protected:
         bool                Equals (StringInfo const& rhs, UInt8& flags);
         };
 
+    struct DateTimeInfo
+        {
+    private:
+        ::Int64             m_ceTicks;
+        DateTime::Kind      m_kind;
+        DateTime::Component m_component;
+        bool                m_isMetadataSet;
+
+    public:
+        void Set (::Int64 ceTicks);
+        BentleyStatus Set (DateTimeCR dateTime);
+        ::Int64 GetCETicks () const;
+        BentleyStatus GetDateTime (DateTimeR dateTime) const;
+
+        bool IsMetadataSet () const {return m_isMetadataSet;}
+        bool TryGetMetadata (DateTime::Info& metadata) const;
+        BentleyStatus SetMetadata (DateTime::Info const& metadata);
+        BentleyStatus SetMetadata (DateTimeInfoCR dateTimeInfo);
+
+        bool MetadataMatches (DateTimeInfoCR dateTimeInfo) const;
+
+        WString MetadataToString () const;
+        };
+
     union
         {
         bool                m_boolean;
@@ -118,7 +145,7 @@ protected:
         ::Int64             m_long64;
         double              m_double;
         mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
-        ::Int64             m_dateTime;
+        DateTimeInfo        m_dateTimeInfo;
         DPoint2d            m_dPoint2d;
         DPoint3d            m_dPoint3d;
         ArrayInfo           m_arrayInfo;
@@ -169,6 +196,8 @@ public:
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
 
     ECOBJECTS_EXPORT bool           IsString () const;
+    bool                            IsUtf8 () const;
+
     ECOBJECTS_EXPORT bool           IsInteger () const;
     ECOBJECTS_EXPORT bool           IsLong () const;
     ECOBJECTS_EXPORT bool           IsDouble () const;
@@ -242,12 +271,33 @@ public:
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
 
+    //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @param[out] hasMetadata true, if date time metadata is available in this ECValue, false otherwise.
+    //! @param[out] metadata if hasMetadata is true, contains the metadata available in this ECValue.
+    //! @return DateTime value as ticks since the beginning of the Common Era epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
+
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @param[in] value DateTime Common Era ticks to set
+    //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks);
+
+    //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @param[in] ceTicks DateTime Common Era ticks to set
+    //! @param[in] dateTimeMetadata DateTime metadata to set along with the ticks.
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
+
+    BentleyStatus SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
+    bool IsDateTimeMetadataSet () const;
+    bool DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
+    WString DateTimeMetadataToString () const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
@@ -518,9 +568,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//__PUBLISH_SECTION_END__
-#include <boost/foreach.hpp>
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECValuesCollection)
-//__PUBLISH_SECTION_START__
-
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All

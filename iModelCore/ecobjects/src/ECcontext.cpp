@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -40,6 +40,8 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
+#if defined (LEGACY_ECSCHEMAS_FOLDER_STRUCTURE)
+    // For Graphite, there are no subfolders under "Standard"
     BeFileName generalPath = standardPath;
     generalPath.AppendToPath (L"General");
     generalPath.AppendSeparator();
@@ -49,6 +51,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     libraryPath.AppendToPath (L"LibraryUnits");
     libraryPath.AppendSeparator();
     searchPaths.push_back (libraryPath.GetName());
+#endif
 
     return true;
     }
