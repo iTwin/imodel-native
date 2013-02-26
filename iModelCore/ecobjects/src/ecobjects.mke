@@ -182,7 +182,7 @@ $(o)ContentRule$(oext)                                     : $(baseDir)presentat
 
 $(o)CheckBoxRule$(oext)                                    : $(baseDir)presentation/PresentationRules/CheckBoxRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
-$(o)IncludeRelatedItemsSpecification$(oext)                : $(baseDir)presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+$(o)DisplayRelatedItemsSpecification$(oext)                : $(baseDir)presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)RenameNodeRule$(oext)                                  : $(baseDir)presentation/PresentationRules/RenameNodeRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
