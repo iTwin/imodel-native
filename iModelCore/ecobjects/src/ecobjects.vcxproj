@@ -106,6 +106,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECInstanceIterable.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\auicommand.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\auievent.h" />

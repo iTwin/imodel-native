@@ -195,7 +195,10 @@ public:
  struct IECRelationshipEnabler
  {
 protected:
+    //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
+
+    //! Returns the relationship class that this enabler 'enables'
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:

@@ -127,30 +127,97 @@ protected:
     ECOBJECTS_EXPORT IECInstance(); 
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
+    //! Gets the unique ID for this instance
     virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
+    //! Gets the value stored in the specified ECProperty
+    //! @param[out] v               If successful, will contain the value of the property
+    //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve
+    //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
+    //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
-protected:
+    //! Sets the value for the specified property
+    //! @param[in]  propertyIndex   Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v               The value to set onto the property
+    //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
+    //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
-    virtual ECObjectsStatus     _InsertArrayElements (UInt32 propertyIndex, UInt32 index, UInt32 size) = 0;
-    virtual ECObjectsStatus     _AddArrayElements (UInt32 propertyIndex, UInt32 size) = 0;
-    virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propertyIndex, UInt32 index) = 0;
-    virtual ECObjectsStatus     _ClearArray (UInt32 propertyIndex) = 0;    
-    virtual ECEnablerCR         _GetEnabler() const = 0;
-    virtual bool                _IsReadOnly() const = 0;
-    virtual WString             _ToString (WCharCP indent) const = 0;
-    virtual size_t              _GetOffsetToIECInstance () const = 0;
-    virtual ECObjectsStatus     _GetIsPropertyNull (bool& v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
 
+    //! Given an access string, will inserting size number of empty array elements at the given index
+    //! @param[in]  propertyIndex   Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  index           The starting index of the array at which to insert the new elements
+    //! @param[in]  size            The number of empty array elements to insert
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    virtual ECObjectsStatus     _InsertArrayElements (UInt32 propertyIndex, UInt32 index, UInt32 size) = 0;
+
+    //! Given a property index, will add size number of empty array elements to the end of the array
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] size The number of empty array elements to add
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    virtual ECObjectsStatus     _AddArrayElements (UInt32 propertyIndex, UInt32 size) = 0;
+
+    //! Given a property index and an array index, will remove a single array element
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @param[in] index    The index of the element to remove
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propertyIndex, UInt32 index) = 0;
+
+    //! Given a property index, removes all array elements from the array
+    //! @param[in] propertyIndex The index (into the ClassLayout) of the array property
+    //! @returns SUCCESS if successful, otherwise an error code indicating the failure
+    virtual ECObjectsStatus     _ClearArray (UInt32 propertyIndex) = 0;    
+    //! Returns a const reference to the ECEnabler that supports this instance
+    virtual ECEnablerCR         _GetEnabler() const = 0;
+    //! Returns whether the ECInstance as a whole is ReadOnly
+    virtual bool                _IsReadOnly() const = 0;
+    //! Returns a dump of the instance
+    //! @param[in] indent   String to prepend to each line of the dump
+    virtual WString             _ToString (WCharCP indent) const = 0;
+    //! Returns the offset to the IECInstance
+    virtual size_t              _GetOffsetToIECInstance () const = 0;
+
+    //! Check for Null property value
+    //! @param[out] isNull          If successful, will contain true if property value is NULL.
+    //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve
+    //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
+    //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+
+    //! Sets the unique id for this instance
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetInstanceId(WCharCP);
+    //! Returns the display label for the instance
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetDisplayLabel (WString& displayLabel) const;    
+    //! Sets the display label for this instance
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetDisplayLabel (WCharCP displayLabel);    
+    //! Returns the instance as a MemoryECInstance
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const;
+    //! Returns the underlying ECDBuffer for this instance
     ECOBJECTS_EXPORT virtual ECDBuffer*            _GetECDBuffer() const;
-    //! If you override one of these IsPropertyReadOnly methods, you should override the other.
+
+    //! Given an access string, returns whether that property is readonly
+    //! @param[in] accessString The access string to the property to check the read-only state for
+    //! @returns true if the property is read-only
+    //! @remarks If you override one of these IsPropertyReadOnly methods, you should override the other.
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (WCharCP accessString) const;
+
+    //! Given the propertyIndex (into the ClassLayout) of a property, returns whether that property is readonly
+    //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check
+    //! @returns true if the property is read-only
+    //! @remarks If you override one of these IsPropertyReadOnly methods, you should override the other.
     ECOBJECTS_EXPORT virtual bool                   _IsPropertyReadOnly (UInt32 propertyIndex) const;
+
+    //! Sets the value for the specified property
+    //! @param[in]  propertyIndex   Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  v               The value to set onto the property
+    //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
+    //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    //! @remarks For when the caller wants to directly set the InternalValue, and not go through any processing, for example with calculated properties
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 
+    //! Convenience method for DgnPlatform to return this instance as a DgnECInstance
     virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
 public:
 
