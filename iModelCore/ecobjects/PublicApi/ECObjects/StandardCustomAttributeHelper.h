@@ -16,12 +16,13 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
 //! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
-//! ECProperty of type PrimitiveType::PRIMITIVETYPE_DateTime.
+//! ECProperty of type PRIMITIVETYPE_DateTime.
 //! @remarks 
-//! Date time values in ECObjects are represented by the DateTime type. Each instance of the 
-//! DateTime type can contain metadata about the actual date time value (See DateTime::Info). 
+//! Date time values in ECObjects are represented by the DateTime class. Each DateTime instance can 
+//! contain metadata about the actual date time value (see DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
+//! @see \ref ECInstancesDateTimePropertiesHowTos
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
@@ -65,6 +66,7 @@ public:
     //! Gets the content of this object as DateTime::Info.
     //! @remarks if \p useDefaultIfUnset is true, fills in default values for date time kind
     //!         and date time component if they are unset.
+    //!         @see GetDefault
     //! @param[in] useDefaultIfUnset if true, default values are filled in, if a member of this object is unset,
     //!            if false, no default values are filled in. The value of unset members is undefined.
     //!            Callers have to check the unset status first using DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull
@@ -72,6 +74,7 @@ public:
     ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
     
     //! Gets a DateTimeInfo object with the default values used by ECObjects.
+    //! @remarks The default values are DateTime::DATETIMEKIND_Unspecified and DateTime::DATETIMECOMPONENT_DateTime.
     //! @return Default DateTime::Info
     ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
 
@@ -110,6 +113,7 @@ public:
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
     //! @return true if \p dateTimeProperty contains the %DateTimeInfo custom attribute, false if \p dateTimeProperty 
     //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
     };
 
