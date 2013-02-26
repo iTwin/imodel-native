@@ -74,7 +74,6 @@ private:
 
     void                InitForString (void const * str);
 
-//__PUBLISH_SECTION_END__
 protected:
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
@@ -155,7 +154,6 @@ protected:
 
     void ConstructUninitialized();
     inline void FreeMemory ();
-//__PUBLISH_SECTION_START__
 
 public:
     ECOBJECTS_EXPORT void            Clear();
@@ -312,12 +310,12 @@ public:
     //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
-    //__PUBLISH_SECTION_END__
+//__PUBLISH_SECTION_END__
     BentleyStatus SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
     bool IsDateTimeMetadataSet () const;
     bool DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
     WString DateTimeMetadataToString () const;
-    //__PUBLISH_SECTION_START__
+//__PUBLISH_SECTION_START__
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
