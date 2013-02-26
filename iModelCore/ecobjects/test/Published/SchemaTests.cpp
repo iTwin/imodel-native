@@ -712,6 +712,44 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     EXPECT_STREQ (L"string", pProperty->GetTypeName().c_str());
     }
 
+TEST_F(SchemaDeserializationTest, EnsureSupplementalSchemaCannotHaveBaseClasses)
+	{
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, 
+		L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+		L"<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"SupplementalSchemaWithBaseClasses_Supplemental_Mapping\" nameSpacePrefix=\"ss\" version=\"01.00\" description=\"Test Supplemental Mapping Schema\" displayLabel=\"Electrical Extended Supplemental Mapping\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+			L"<ECClass typeName=\"MAPPING\" displayLabel=\"Mapping\" isStruct=\"false\" isDomainClass=\"true\" isCustomAttributeClass=\"false\"/>"
+			L"<ECClass typeName=\"ELECTRICAL_PROPERTY_MAPPING\" displayLabel=\"Electrical Property Mapping\" isStruct=\"false\" isDomainClass=\"false\" isCustomAttributeClass=\"true\">"
+				L"<BaseClass>MAPPING</BaseClass>"
+				L"<ECProperty propertyName=\"APPLICATION_PROPERTY_NAME\" typeName=\"string\" displayLabel=\"Application Property Name\" readOnly=\"false\"/>"
+			L"</ECClass>"
+			L"<ECClass typeName=\"ELECTRICAL_ITEM\" displayLabel=\"Electrical Item\" isStruct=\"false\" isDomainClass=\"true\" isCustomAttributeClass=\"false\">"
+				L"<BaseClass>bentley:BENTLEY_BASE_OBJECT</BaseClass>"
+				L"<ECProperty propertyName=\"ID\" typeName=\"string\" description=\"Business ID for an electrical item.\" readOnly=\"false\">"
+					L"<ECCustomAttributes>"
+						L"<ELECTRICAL_PROPERTY_MAPPING xmlns=\"ElectricalExtended_Supplemental_Mapping.01.00\">"
+						L"<APPLICATION_PROPERTY_NAME>DeviceID</APPLICATION_PROPERTY_NAME>"
+						L"</ELECTRICAL_PROPERTY_MAPPING>"
+					L"</ECCustomAttributes>"
+				L"</ECProperty>"
+			L"</ECClass>"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status); 
+	WCharCP className = L"ELECTRICAL_ITEM";
+    ECClassCP ecClass = schema->GetClassCP (className);
+
+    const ECBaseClassesList& baseClassList = ecClass->GetBaseClasses ();
+    EXPECT_EQ (0, baseClassList.size ()) << L"Class " << className << L" should not have any base classes since it is in a supplemental schema.";
+	
+	className = L"ELECTRICAL_PROPERTY_MAPPING";
+    ecClass = schema->GetClassCP (className);
+
+    const ECBaseClassesList& baseClassList2 = ecClass->GetBaseClasses ();
+    EXPECT_EQ (0, baseClassList2.size ()) << L"Class " << className << L" should not have any base classes since it is in a supplemental schema.";
+	}
 
 #if defined (NEEDSWORK_LIBXML)
 /*---------------------------------------------------------------------------------**//**

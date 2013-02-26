@@ -909,6 +909,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {            
+	bool isSchemaSupplemental = WString::npos != GetSchema().GetName().find(L"_Supplemental_");
     // Get the BaseClass child nodes.
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
@@ -920,7 +921,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SCHEMA_READ_STATUS_Success != status)
                 return status;
             }
-        else if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
+        else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode);
             if (SCHEMA_READ_STATUS_Success != status)
