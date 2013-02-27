@@ -151,7 +151,10 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! dt = v.GetDateTime (); //dt.GetInfo ().GetKind () will amount to DateTime::DATETIMEKIND_Utc
 //! 
 //! \endcode
-
+//!
+//! \subsection ECInstancesPropertyIndex Property Index
+//! The property index is the index into the PropertyLayout of the corresponding ECProperty.
+//! \Note The property index is \b 1-based
 //!
 //! @see Bentley::ECN
 //! \todo WIP_DOC_EC - tailor this to MobileDgnSdk

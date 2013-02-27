@@ -197,7 +197,27 @@ public:
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
 
     ECOBJECTS_EXPORT bool           IsString () const;
-    bool                            IsUtf8 () const;
+    //! Indicates whether the content of this ECValue is a string encoded in UTF-8.
+    //! @remarks Use this method to pick the appropriate Get method to avoid unnecessary
+    //!          string conversions.
+    //!          \code
+    //!             
+    //!          ECValue v = ...;
+    //!          if (v.IsUtf8 ())
+    //!             {
+    //!             Utf8CP string = v.GetUtf8CP ();
+    //!             ...
+    //!             }
+    //!          else
+    //!             {
+    //!             WCharCP string = v.GetString ();
+    //!             ...
+    //!             }
+    //!
+    //!            \endcode
+    //!
+    //! @return true if the ECValue content is encoded in UTF-8. false otherwise.
+    ECOBJECTS_EXPORT bool           IsUtf8 () const;
 
     ECOBJECTS_EXPORT bool           IsInteger () const;
     ECOBJECTS_EXPORT bool           IsLong () const;
@@ -243,7 +263,15 @@ public:
     ECOBJECTS_EXPORT double         GetDouble () const;
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);
 
+    //! Gets the string content of this ECValue.
+    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
+    //! @return string content
     ECOBJECTS_EXPORT WCharCP        GetString () const;
+    //! Gets the string content of this ECValue in UTF-8 encoding.
+    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
+    //! @return string content in UTF-8 encoding
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
     ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be ECDBuffer
 
