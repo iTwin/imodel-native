@@ -80,9 +80,13 @@ protected:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const; 
+    //! Returns the RelationshipEnabler for the RelationshipClass that this RelationshipInstance represents
+    ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const;  
+    //! Returns the RelationshipClass that this Instance is an instance of
     ECOBJECTS_EXPORT ECRelationshipClassCR              GetRelationshipClass () const;
+    //! Gets the name of this RelationshipInstance
     ECOBJECTS_EXPORT WCharCP                            GetName(); 
+    //! Sets the name of this RelationshipInstance
     ECOBJECTS_EXPORT void                               SetName(WCharCP name); 
     };
 
@@ -119,8 +123,13 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public: 
+    //! Given an ECRelationshipClass, will create an enabler for that class
+    //! @param[in]  ecClass The relationship class which to create an enabler for
+    //! @returns The StandaloneECRelationshipEnabler for the given class.
     ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
+    //! Creates an instance of the supported ECRelationshipClass
     ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr       CreateRelationshipInstance () const;
+    //! Returns this enabler as a base ECEnabler
     ECOBJECTS_EXPORT ECEnablerCR                               GetECEnabler() const;
     };
 
