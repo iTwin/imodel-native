@@ -20,12 +20,11 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
-//! @group "ECInstance"
 
 //=======================================================================================
-//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
-//! @ingroup ECObjectsGroup
+//! Information about an array property in an ECN::IECInstance. Does not contain the actual elements.
 //! @see ECValue
+//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct ArrayInfo
     {
@@ -51,18 +50,18 @@ public:
     };
 
 //=======================================================================================
+//! Variant-like object used to set and retrieve property values in \ref ECN::IECInstance "ECInstances".
+//! @remarks It does not represent a "live" reference into the underlying ECN::IECInstance
+//! (or the object that the ECN::IECInstance represents). Changing the ECValue will not affect
+//! the IECInstance unless you subsequently call IECInstance::SetValue with it.
 //! @ingroup ECObjectsGroup
-//! Variant-like object representing the value of an ECPropertyValue.
-//! It does not represent a "live" reference into the underlying ECN::IECInstance
-//! (or the object that the ECN::IECInstance represents). Changing the ECN::ECValue will not affect
-//! the ECN::IECInstance unless you subsequently call SetValue() with it.
-//!
-//! @group "ECInstance"
 //=======================================================================================
 struct ECValue
     {
+//__PUBLISH_SECTION_END__
 public:
     void ShallowCopy (ECValueCR v);
+//__PUBLISH_SECTION_START__
 private:
     union
         {
@@ -88,7 +87,9 @@ protected:
     struct StringInfo
         {
     private:
+//__PUBLISH_SECTION_END__
         friend void ECValue::ShallowCopy (ECValueCR);
+//__PUBLISH_SECTION_START__
 
         Utf8CP              m_utf8;
         Utf16CP             m_utf16;
@@ -196,7 +197,27 @@ public:
     ECOBJECTS_EXPORT bool           IsUninitialized () const;
 
     ECOBJECTS_EXPORT bool           IsString () const;
-    bool                            IsUtf8 () const;
+    //! Indicates whether the content of this ECValue is a string encoded in UTF-8.
+    //! @remarks Use this method to pick the appropriate Get method to avoid unnecessary
+    //!          string conversions.
+    //!          \code
+    //!             
+    //!          ECValue v = ...;
+    //!          if (v.IsUtf8 ())
+    //!             {
+    //!             Utf8CP string = v.GetUtf8CP ();
+    //!             ...
+    //!             }
+    //!          else
+    //!             {
+    //!             WCharCP string = v.GetString ();
+    //!             ...
+    //!             }
+    //!
+    //!            \endcode
+    //!
+    //! @return true if the ECValue content is encoded in UTF-8. false otherwise.
+    ECOBJECTS_EXPORT bool           IsUtf8 () const;
 
     ECOBJECTS_EXPORT bool           IsInteger () const;
     ECOBJECTS_EXPORT bool           IsLong () const;
@@ -242,7 +263,15 @@ public:
     ECOBJECTS_EXPORT double         GetDouble () const;
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);
 
+    //! Gets the string content of this ECValue.
+    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
+    //! @return string content
     ECOBJECTS_EXPORT WCharCP        GetString () const;
+    //! Gets the string content of this ECValue in UTF-8 encoding.
+    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
+    //! @return string content in UTF-8 encoding
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
     ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be ECDBuffer
 
@@ -254,34 +283,51 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
 
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
+    //!Sets the specified struct instance in the ECValue. 
+    //! \Note ECValue doesn't create a copy of \p structInstance. Its ref-count is incremented by this method though.
+    //!@param[in] structInstance struct instance to set in the ECValue
+    //!@return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
 
     //! Gets the DateTime value.
     //! @return DateTime value
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT DateTime       GetDateTime () const;
 
     //! Sets the DateTime value.
     //! @param[in] dateTime DateTime value to set
     //! @return SUCCESS or ERROR
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT BentleyStatus  SetDateTime (DateTimeCR dateTime);
 
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
+
+    //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
+    //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
+    //! DateTimes before the Unix epoch are negative.
+    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @return DateTime as milliseconds since the beginning of the Unix epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
 
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @param[out] hasMetadata true, if date time metadata is available in this ECValue, false otherwise.
-    //! @param[out] metadata if hasMetadata is true, contains the metadata available in this ECValue.
+    //! @param[out] hasMetadata true, if this ECValue objects contains date time metadata. false otherwise
+    //! @param[out] metadata if \p hasMetadata is true, contains the metadata available in this ECValue.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
 
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @Note If the ECProperty to which this ECValue will be applied contains the %DateTimeInfo custom attribute,
+    //! the ticks will be enriched with the metadata from the custom attribute.
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks);
@@ -292,18 +338,15 @@ public:
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @param[in] dateTimeMetadata DateTime metadata to set along with the ticks.
     //! @return SUCCESS or ERROR
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
+//__PUBLISH_SECTION_END__
     BentleyStatus SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
     bool IsDateTimeMetadataSet () const;
     bool DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
     WString DateTimeMetadataToString () const;
-
-    //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
-    //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
-    //! DateTimes before the Unix epoch are negative.
-    //! @return DateTime as milliseconds since the beginning of the Unix epoch.
-    ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
+//__PUBLISH_SECTION_START__
 
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     ECOBJECTS_EXPORT BentleyStatus  SetPoint2D (DPoint2dCR value);
@@ -327,7 +370,6 @@ public:
 //! an ECEnabler, property index, and array index.  In cases where the array index is not
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant
 //! is used.
-//! @group "ECInstance"
 //! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass

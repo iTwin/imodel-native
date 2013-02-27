@@ -304,14 +304,16 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
-//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-//! These should correspond to all of the datatypes supported in .NET ECObjects
+//! Enumeration of primitive data types for ECProperties
 //! @ingroup ECObjectsGroup
 //=======================================================================================
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
     PRIMITIVETYPE_Binary                    = 0x101,
     PRIMITIVETYPE_Boolean                   = 0x201,
+    //!Additional date time metadata can be specified on an ECProperty of this type via
+    //!the custom attribute \b %DateTimeInfo defined in the schema \b Bentley_Standard_CustomAttributes.
+    //!@see DateTimeInfo
     PRIMITIVETYPE_DateTime                  = 0x301,
     PRIMITIVETYPE_Double                    = 0x401,
     PRIMITIVETYPE_Integer                   = 0x501,

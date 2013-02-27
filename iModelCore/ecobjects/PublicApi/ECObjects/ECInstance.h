@@ -25,21 +25,134 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @addtogroup ECObjectsGroup
 //! ECObjects is a set of abstractions for working with engineering/business data and metadata.
-//! "EC" stands for "Engineering Content".
-//! There are several implementations of the ECObjects abstractions:
-//! @li In XML (two formats ECSchemaXML and ECInstanceXML)
-//! @li This native C++ implementation
-//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces.
+//! \b EC stands for Engineering Content.
+//! 
+//! An ECSchema is used to describe the data model / metadata of the Engineering Content. An ECSchema is just a collection of \ref ECClass "ECClasses".
+//! You can think of an ECClass as being like a C++ class that only defines properties (ECClasses define no methods or behaviors.) 
+//! In some ways, they are closer to C++ pure virtual abstract base classes that only contain property getters and setters. 
+//! They are also very analogous to a database table definition.
+//! ECClasses contain \ref ECProperty "ECProperties". These are property *definitions*, not values.
 //!
-//! You can think of an ECClass as being like a C++ or .NET class that only defines properties (ECClasses define no methods or behaviors.) In some ways, they are closer to .NET interfaces that hold only properties... or C++ pure virtual abstract base classes that only contain property getters and setters. They are also very analogous to a database table definition.
+//! There are also \ref ECRelationshipClass "ECRelationshipClasses" that are ECClasses that define \ref ECRelationshipConstraint "ECRelationshipConstraints" 
+//! indicating what ECClasses they relate. 
+//! ECRelationshipInstances represent the relationships between the ECInstances (defined/constrained by their ECRelationshipClass) 
+//! ECRelationships are analogous to database foreign key constraint.
+//! 
+//! \ref IECInstance "ECInstances" represent instances of business data and refer to an ECClass and can hold values for each ECProperty. 
+//! They are analogous to the rows of a database table.
 //!
-//! ECClasses contain ECProperties. These are property *definitions*, not values.
+//! \section ECInstanceHowTos Working with ECInstances
+//! \subsection ECInstancesStructPropertiesHowTos ECInstances and struct properties
+//! Structs can only be set in an IECInstance member by member using the fully qualified property access string to each member.
+//! Using %ECValue::SetStruct will result in an error. This is intentional to protect clients from performance issues which the 
+//! %ECValue::SetStruct option would have.
 //!
-//! ECInstances represent instances of objects. Each "belongs" to an ECClass and holds ECPropertyValues. They are somewhat analogous to the rows of a database table.
+//! \e Right:
+//! \code
 //!
-//! An ECSchema is just a collection of ECClasses.
+//! IECInstanceP instance = ...;
+//! ECValue v;
+//! v.SetUtf8CP (...);
+//! instance->SetValue (L"Headquarter.Name", v);
+//! v.SetUtf8CP (...);
+//! instance->SetValue (L"Headquarter.TelephoneNumber", v);
+//! ...
+//! v.SetInteger (...);
+//! instance->SetValue (L"Headquarter.Location.Zip", v);
+//! ...
 //!
-//! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
+//! \endcode
+//!
+//! \e Wrong:
+//! \code
+//!
+//! IECInstanceP instance = ...;
+//! IECInstanceP headquarterStructInstance = ...;
+//! //populate the headquarterStructInstance...
+//! ...
+//! ECValue v;
+//! v.SetStruct (headquarterStructInstance);
+//! instance->SetValue (L"Headquarter", v); //returns error
+//!
+//! \endcode
+//!
+//! \subsection ECInstancesStructArrayPropertiesHowTos ECInstances and struct array properties
+//! In contrast to \ref ECInstancesStructPropertiesHowTos "struct properties", struct array properties can only be set 
+//! in an IECInstance using ECValue::SetStruct. Here using the property access string option would fail.
+//!
+//! \Note ECValue::SetStruct does not copy the struct object.
+//!
+//! \e Example:
+//! \code
+//!
+//! IECInstanceP instance = ...;
+//! IECInstanceP affiliate1StructInstance = ...;
+//! IECInstanceP affiliate2StructInstance = ...;
+//! IECInstanceP affiliate3StructInstance = ...;
+//! ...
+//! instance->AddArrayElements (L"Affiliates", 3); //initialize the struct array to hold 3 struct elements
+//! ECValue v;
+//! v.SetStruct (affiliate1StructInstance); // does not copy the struct
+//! instance->SetValue (L"Affiliates", v, 0); 
+//! v.SetStruct (affiliate2StructInstance); // does not copy the struct
+//! instance->SetValue (L"Affiliates", v, 1);
+//! v.SetStruct (affiliate3StructInstance); // does not copy the struct
+//! instance->SetValue (L"Affiliates", v, 2);
+//!
+//! \endcode
+//!
+//!
+//! \subsection ECInstancesDateTimePropertiesHowTos ECInstances and DateTime properties
+//! %DateTime values in ECObjects are represented by the Bentley::DateTime class. Each DateTime instance
+//! can contain metadata about the actual date time value (see also DateTime::Info). 
+//! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
+//! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
+//! \Note The metadata is not persisted per-instance. Instead it is the custom attribute that holds the information on a per-property
+//! base. So all date times within a given ECProperty have the same date time metadata.
+//! @see DateTimeInfo, StandardCustomAttributeHelper
+//!
+//! ### How the \b %DateTimeInfo custom attribute affects %IECInstance::SetValue
+//! @li If the custom attribute is present, the metadata of the DateTime object is checked against the custom attribute. If it doesn't match,
+//! IECInstance::SetValue is aborted with an error.
+//! @li If the custom attribute is not present, no metadata checks are performed. 
+//!
+//! \code
+//! 
+//! //Assume an ECProperty 'LastModified' without DateTimeInfo custom attribute and
+//! //an ECProperty 'LastModifiedUtc' with a DateTimeInfo custom attribute where DateTimeKind is set to 'Utc'
+//! DateTime dt (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 26, 12, 30);
+//! ECValue v (dt);
+//! IECInstanceP instance = ...;
+//! instance->SetValue (L"LastModified", v); // works as LastModified doesn't have a DateTimeInfo custom attribute
+//! instance->SetValue (L"LastModifiedUtc", v); //returns error as DateTime metadata doesn't match ECProperty's DateTimeInfo custom attribute
+//! 
+//! \endcode
+//!
+//! ### How the \b %DateTimeInfo custom attribute affects IECInstance::GetValue
+//! @li If the custom attribute is present, the resulting DateTime object will have the metadata from the custom attribute.
+//! @li If the custom attribute is not present, the resulting DateTime object will get \e default metadata as defined by DateTimeInfo::GetDefault
+//!
+//! \Note Only the use of the %DateTimeInfo custom attribute preserves the full information of a DateTime object during a roundtrip. Not using
+//! the custom attribute is applicable for use cases where the metadata is irrelevant or of no interest.
+//!
+//! \code
+//! 
+//! //Assume an ECProperty 'LastModified' without DateTimeInfo custom attribute and
+//! //an ECProperty 'LastModifiedUtc' with a DateTimeInfo custom attribute where DateTimeKind is set to 'Utc'
+//! ECValue v;
+//! IECInstanceP instance = ...;
+//! instance->GetValue (v, L"LastModified");
+//! DateTime dt = v.GetDateTime (); //dt.GetInfo () will amount to default
+//! ...
+//! instance->GetValue (v, L"LastModifiedUtc");
+//! dt = v.GetDateTime (); //dt.GetInfo ().GetKind () will amount to DateTime::DATETIMEKIND_Utc
+//! 
+//! \endcode
+//!
+//! \subsection ECInstancesPropertyIndex Property Index
+//! The property index is the index into the PropertyLayout of the corresponding ECProperty.
+//! \Note The property index is \b 1-based
+//!
 //! @see Bentley::ECN
 //! \todo WIP_DOC_EC - tailor this to MobileDgnSdk
 
@@ -80,15 +193,18 @@ public:
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //=======================================================================================
-//! @ingroup ECObjectsGroup
-//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
-//! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
-//! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
-//! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality
-//! to the ECN::IECInstance.
-//! We could call these "enabled" instances as opposed to "lightweight".
+//! An IECInstance represents an instance of an ECClass.
+//!
+//! IECInstance is not a pure interface. Functionality is supplied to an IECInstance through
+//! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
+//!
+//! ### Comparison to .NET ECObjects
+//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
+//! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
+//! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
+//! Native IECInstances could be called "enabled" as opposed to "lightweight".
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
@@ -102,7 +218,7 @@ private:
     //! If the property is a DateTime property looks up the DateTimeInfo custom attribute and, if present,
     //! validates whether the DateTime metadata of the input ECValue matches the DateTimeInfo custom attribute
     //! information.
-    //! @param[in] propertyIndex Index of property to validate against
+    //! @param[in] propertyIndex Index of property to validate against (index is 1-based)
     //! @param[in] v ECValue to validate
     //! @return ECOBJECT_STATUS_Success if the validation was successful. ECOBJECTS_STATUS_DataTypeMismatch otherwise
     ECObjectsStatus ValidateDateTimeMetadata (UInt32 propertyIndex, ECValueCR v) const;
@@ -110,7 +226,7 @@ private:
     //! applies the DateTime metadata to the given ECValue.
     //! @remarks The metadata is used to build the DateTime object when the client calls ECValue::GetDateTime.
     //! @param[in] v ECValue to apply metadata to
-    //! @param[in] propertyIndex Index of property to retrieve metadata from
+    //! @param[in] propertyIndex Index of property to retrieve metadata from (index is 1-based)
     //! @return ECOBJECT_STATUS_Success if successful. ECOBJECTS_STATUS_DataTypeMismatch if the 
     ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const;
     bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const;
@@ -120,8 +236,22 @@ protected:
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
     virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
+    //! Gets the value stored in the ECProperty referred to by the specified property index
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (property index is 1-based)
+    //! @param[in]  useArrayIndex true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
+    //!                           indicates the index in the array
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (array index is 0-based)
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
-protected:
+
+    //! Sets the value for the property referred to by the specified property index
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (property index is 1-based)
+    //! @param[in]  v   The value to set onto the property
+    //! @param[in]  useArrayIndex true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
+    //!                           indicates the index in the array
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (array index is 0-based)
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
     virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
     virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size) = 0;
@@ -168,18 +298,20 @@ public:
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
-    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 index) const;
-    //! Gets the value stored in the specified ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 arrayIndex) const;
+    //! Gets the value stored in the ECProperty referred to by the specified property index
+    //! @Note The property index is 1-based!
     //! @param[out] v   If successful, will contain the value of the property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex) const;
     //! Gets the value stored in the specified ECProperty
+    //! @Note The property index is 1-based!
     //! @param[out] v   If successful, will contain the value of the property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
-    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const;
     //! Sets the value for the specified property
@@ -190,18 +322,20 @@ public:
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v   The value to set onto the property
-    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
     //! Sets the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @Note The property index is 1-based!
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
     //! @param[in]  v   The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
     //! Sets the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @Note The property index is 1-based!
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
     //! @param[in]  v   The value to set onto the property
-    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
 
@@ -213,18 +347,20 @@ public:
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v   The value to set onto the property
-    //! @param[in]  index   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
     //! Change the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @Note The property index is 1-based!
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
     //! @param[in]  v   The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v);
     //! Change the value for the specified property
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @Note The property index is 1-based!
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
     //! @param[in]  v   The value to set onto the property
-    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex);
 
@@ -243,20 +379,22 @@ public:
     //! Check for Null property value
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
     //! @param[in]  propertyAccessString Name of the property to retrieve
-    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString, UInt32 arrayIndex) const;
 
     //! Check for Null property value
+    //! @Note The property index is 1-based!
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex) const;
 
     //! Check for Null property value
+    //! @Note The property index is 1-based!
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
-    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve
-    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty
+    //! @param[in]  propertyIndex Index into the PropertyLayout indicating which property to retrieve (1-based)
+    //! @param[in]  arrayIndex   The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex, UInt32 arrayIndex) const;
 
