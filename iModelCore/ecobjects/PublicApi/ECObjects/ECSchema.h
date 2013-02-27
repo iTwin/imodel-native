@@ -558,7 +558,7 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    //! Sets the PrimitiveType of this ECProperty.  The default type is PrimitiveType::PRIMITIVETYPE_String
+    //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
     //! Gets the PrimitiveType of this ECProperty
     ECOBJECTS_EXPORT PrimitiveType GetType() const;
