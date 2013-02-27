@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECObjectsPch.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@
 #include "ecxml.h"
 #include "ECObjectsNativeLog.h"
 #include "FileUtilities.h"
-#include "StopWatch.h"
+#include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeFileName.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
 #include <Logging/bentleylogging.h>

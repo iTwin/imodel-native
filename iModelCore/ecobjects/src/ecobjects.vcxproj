@@ -127,7 +127,6 @@
     <ClInclude Include="FileUtilities.h" />
     <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
-    <ClInclude Include="StopWatch.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

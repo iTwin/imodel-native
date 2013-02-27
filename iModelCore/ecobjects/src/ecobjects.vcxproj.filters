@@ -163,9 +163,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StopWatch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h">
       <Filter>Header Files</Filter>
     </ClInclude>
