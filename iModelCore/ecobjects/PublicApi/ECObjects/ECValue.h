@@ -289,7 +289,8 @@ public:
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @param[out] metadata if hasMetadata is true, contains the metadata available in this ECValue.
+    //! @param[out] hasMetadata true, if this ECValue objects contains date time metadata. false otherwise
+    //! @param[out] metadata if \p hasMetadata is true, contains the metadata available in this ECValue.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
