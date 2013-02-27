@@ -24,3 +24,5 @@ $(o)InstanceTests$(oext)          : $(baseDir)scenario/InstanceTests.cpp $(PCHHe
 $(o)ValueTests$(oext)             : $(baseDir)scenario/ValueTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)AccessorTests$(oext)          : $(baseDir)scenario/AccessorTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)ECRelationshipTests$(oext)    : $(baseDir)scenario/ECRelationshipTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

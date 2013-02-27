@@ -413,7 +413,7 @@ TEST_F (CalculatedPropertyTests, SerializeAndDeserializeInstanceWithFailedCalcul
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CalculatedPropertyTests, TestFailureValuesWithIntsAndDoubles)
     {
-    IECInstancePtr instance = CreateTestCase(L"I", L"this.S1", NULL, NULL);
+    IECInstancePtr instance = CreateTestCase(L"I", L"this.S1", 0, NULL, NULL);
         {
         DISABLE_ASSERTS
         TestNull (*instance, L"I");
@@ -430,11 +430,11 @@ TEST_F (CalculatedPropertyTests, TestFailureValuesWithIntsAndDoubles)
         DISABLE_ASSERTS
         TestNull (*instance, L"I");
         }
-    instance = CreateTestCase(L"I", L"this.I1 + this.I2", NULL, NULL);
+    instance = CreateTestCase(L"I", L"this.I1 + this.I2", 0, NULL, NULL);
     SetValue(*instance, L"I1", 3);
     TestNull (*instance, L"I");
 
-    instance = CreateTestCase(L"I", L"this.I1 / this.I2", NULL, NULL);
+    instance = CreateTestCase(L"I", L"this.I1 / this.I2", 0, NULL, NULL);
     SetValue(*instance, L"I1", 3);
     SetValue(*instance, L"I2", 0);
     TestNull (*instance, L"I");
@@ -444,11 +444,11 @@ TEST_F (CalculatedPropertyTests, TestFailureValuesWithIntsAndDoubles)
     SetValue(*instance, L"I2", 0);
     Test (*instance, L"I", -1);
 
-    instance = CreateTestCase(L"D", L"this.D1 + this.D2", NULL, NULL);
+    instance = CreateTestCase(L"D", L"this.D1 + this.D2", 0, NULL, NULL);
     SetValue(*instance, L"D1", 3.7);
     TestNull (*instance, L"D");
 
-    instance = CreateTestCase(L"D", L"this.D1 / this.D2", NULL, NULL);
+    instance = CreateTestCase(L"D", L"this.D1 / this.D2", 0, NULL, NULL);
     SetValue(*instance, L"D1", 3.7);
     SetValue(*instance, L"D2", 0);
     TestNull (*instance, L"D");

@@ -119,7 +119,8 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
                 return true;    // parsing an inner group
             }
 
-        converted.append (1, *in++);
+        if (in < end)
+            converted.append (1, *in++);
         }
 
     return true;

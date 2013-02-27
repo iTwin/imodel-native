@@ -218,26 +218,77 @@ private:
     //ClassLayout (){}
 
 public:
+
+    //! Given a class, will create the ClassLayout that manages that class
+    //! @param[in] ecClass  The ECClass to build the ClassLayout from
+    //! @returns ClassLayout pointer managing this ECClass
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass);
+
+    //! Creates an empty ClassLayout for a class with the given name
+    //! @param[in] className    The name of the class that this ClassLayout will define
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className);
 
-    ECOBJECTS_EXPORT WString const & GetECClassName() const;
+    //! Returns the name of the ECClass that this ClassLayout manages
+    ECOBJECTS_EXPORT WString const & GetECClassName() const; 
+
+    //! Returns the property index of the given relationship end
+    //! @param[in] end  The ECRelationshipEnd for which to get the pointer index
+    //! @returns The property index of the pointer for the given relationship end
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
+    //! Returns the checksum for this ClassLayout
     ECOBJECTS_EXPORT UInt32          GetChecksum () const;
+
+    //! Returns the number of properties this ClassLayout manages
     ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
+
+    //! Returns the number of properties this ClassLayout manages, not counting embedded structs
     ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
+
+    //! Given a property access string, will return the PropertyLayout
+    //! @param[out] propertyLayout  Will point to the PropertyLayout if found
+    //! @param[in]  accessString    The access string for the desired property
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
+
+    //! Given a property index, will return the PropertyLayout
+    //! @param[out] propertyLayout  Will point to the PropertyLayout if found
+    //! @param[in]  propertyIndex   The index in the ClassLayout of the desired property
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+
+    //! Given a property layout, will return the property index within the ClassLayout
+    //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
+    //! @param[in]  propertyLayout  The propertyLayout of the property that we want the index for
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
+
+    //! Given an access string, will return the property index within the ClassLayout
+    //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
+    //! @param[in]  accessString    The access string for the desired property
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
+
+    //! Given a propertyIndex, will return whether the property is read-only or not
+    //! @param[in]  propertyIndex   The index within the ClassLayout of the property to check
+    //! @returns true if the property is read-only, false otherwise
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
+
+    //! Sets the read-only status of a property, given its index within the ClassLayout
+    //! @param[in]  propertyIndex   The index within the ClassLayout of the property to set the read-only flag for
+    //! @param[in]  readOnly        Flag indicating whether this property is read-only
+    //! @returns The value of readOnly if successfully set, otherwise false
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
     
     //! Determines the number of bytes used for property data, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * propertyData) const;
+
+    //! Checks the given classLayout to see if it is equal to, or a subset of, this layout
+    //! @param[in]  layout  The ClassLayout to test compatibility of
+    //! @returns true if the given ClassLayout is equal to or a subset of this layout, false otherwise
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
+    //! Returns a string containing a description of the class and its properties
     ECOBJECTS_EXPORT WString       ToString() const;
     };
 
@@ -262,17 +313,49 @@ private:
     SchemaLayout (){}
 
 public:
+
+    //! Gets the SchemaIndex of this particular SchemaLayout.
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const;
-    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex);
+
+    //! Adds the ClassLayout at the given index
+    //! @param[in]  classLayout The ClassLayout to add
+    //! @param[in]  classIndex  The index where to add the ClassLayout
+    //! @returns SUCCESS
+    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex);
+
+    //! Returns the ClassLayout at the given index
+    //! @param[in]  classIndex  The index of the desired ClassLayout
+    //! @returns A pointer to the requested ClassLayout if the index is valid, NULL otherwise
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
+
+    //! Given a classname, tries to find the corresponding ClassLayout
+    //! @param[in]  className   The name of the class to find
+    //! @returns A pointer to the corresponding ClassLayout if found, NULL otherwise
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className);
+
+    //! Given a classname, tries to find the index of the corresponding ClassLayout
+    //! @param[out] classIndex  The index of the corresponding ClassLayout, if found
+    //! @param[in]  className   The name of the class to find the ClassLayout index of
+    //! @returns SUCCESS if the ClassLayout is found, ERROR otherwise
     ECOBJECTS_EXPORT BentleyStatus          FindClassIndex (ClassIndex& classIndex, WCharCP className) const;
-    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
-    // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
-    // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
-    // NOTE: Check IsEmpty() before GetMaxIndex() to ensure there is at least one ClassLayout, otherwise the return value of GetMaxIndex() is undefined
+
+    //! Finds the first available index for adding a class layout
+    //! @param[out] classIndex  The first available index in the layout.  This is not necessarily the size of the layout because there can be gaps.
+    //! @returns SUCCESS if the index is found, ERROR otherwise
+    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex& classIndex);
+   
+    //! Returns the max index in the ClassLayout
+    //! @remarks This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
+    //!          so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
+    //! @remarks NOTE: Check IsEmpty() before GetMaxIndex() to ensure there is at least one ClassLayout, otherwise the return value of GetMaxIndex() is undefined
     ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
+
+    //! Returns whether or not this SchemaLayout has any ClassLayouts defined.
     ECOBJECTS_EXPORT bool                   IsEmpty() const;
+
+    //! Creates a new SchemaLayout object
+    //! @param[in]  index   The SchemaIndex used to identify this SchemaLayout
+    //! @remarks It is up to the calling application to ensure uniqueness for the SchemaIndex.
     ECOBJECTS_EXPORT static SchemaLayoutP   Create (SchemaIndex index);
 };
 
@@ -639,9 +722,9 @@ public:
     ECOBJECTS_EXPORT static void            SetDefaultStringEncoding (StringEncoding defaultEncoding);
 /*__PUBLISH_SECTION_START__*/  
 public:
-    // Sets all values to null
+    //! Sets all values to null
     ECOBJECTS_EXPORT void                   ClearValues();
-    // Copies property values from source instance
+    //! Copies property values from source instance
     ECOBJECTS_EXPORT ECObjectsStatus        CopyInstanceProperties (IECInstanceCR sourceInstance);
 
     };   
