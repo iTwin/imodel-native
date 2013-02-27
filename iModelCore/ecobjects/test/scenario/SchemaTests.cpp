@@ -226,6 +226,7 @@ TEST_F(SchemaTest,ExpectReadOnly)
     customAttributeClass->CreateStructProperty(PropertyOfCustomAttribute, L"PropertyOfCustomAttribute",*structClass);
     ASSERT_TRUE(PropertyOfCustomAttribute!=NULL);
 }
+
 TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
