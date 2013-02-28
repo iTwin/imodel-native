@@ -24,6 +24,20 @@ struct ValueTests : ECTestFixture
         }
     };
     
+void checkBinary(WCharCP text, ECValue &value)
+    {
+    const byte binary[] = {0x00, 0x01, 0x02, 0x03};
+    
+    EXPECT_EQ (value.SetString(text), ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Binary));
+    EXPECT_TRUE (value.IsBinary());
+    size_t sizeOut;
+    const byte *binaryOut = value.GetBinary(sizeOut);
+    EXPECT_EQ (sizeOut, sizeof(binary));
+    for (size_t i=0; i<sizeOut; i++)
+        EXPECT_EQ (binaryOut[i], binary[i]);
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -31,7 +45,6 @@ TEST_F(ValueTests, StringToECValue)
     {
     ECValue value;
     WCharCP unichar = L"TestingTesting\x017D\x06C6\x0F3D\x132B\x25E7\x277C\x28BE";
-    byte binary[4] = {0x00, 0x01, 0x02, 0x03};
     DPoint2d point2d = {123.456, 456.789};
     DPoint3d point3d = {1.2, -3.4, 5.6};
     
@@ -40,17 +53,14 @@ TEST_F(ValueTests, StringToECValue)
     EXPECT_TRUE (value.IsString());
     EXPECT_STREQ (value.GetString(), unichar);
     
-    EXPECT_EQ (value.SetString(L"AEgADw=="), ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Binary));
-    EXPECT_TRUE (value.IsBinary());
-    size_t sizeOut;
-    const byte *binaryOut = value.GetBinary(sizeOut);
-    EXPECT_EQ (sizeOut, 4);
-    for (size_t i=0; i<sizeOut; i++)
-        EXPECT_EQ (binaryOut[i], binary[i]);
+    //All these strings decode into same byte array
+    //Byte array is onverted into one of these strings
+    checkBinary(L"AEgADg==", value);
+    checkBinary(L"AEgADw==", value);
+    checkBinary(L"AEgADA==", value);
     
-    WCharCP boolString[6] = {L"True", L"False", L"true", L"FALSE", L"1", L"0"};
-    bool boolResults[6] = {true, false, true, false, true, false};
+    WCharCP boolString[] = {L"True", L"False", L"true", L"FALSE", L"1", L"0"};
+    bool boolResults[] = {true, false, true, false, true, false};
     for (int i=0; i<sizeof(boolResults); i++)
         {
         EXPECT_EQ (value.SetString(boolString[i]), ECOBJECTS_STATUS_Success);
@@ -105,14 +115,14 @@ TEST_F(ValueTests, StringToECValue)
 TEST_F(ValueTests, DISABLED_StringToIGeometry)
     {
     ECValue value;
-    byte binary[4] = {0x00, 0x01, 0x02, 0x03};
+    const byte binary[] = {0x00, 0x01, 0x02, 0x03};
     
     EXPECT_EQ (value.SetString(L"AEgADw=="), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_IGeometry));
     EXPECT_TRUE (value.IsBinary());
     size_t sizeOut;
     const byte *binaryOut = value.GetBinary(sizeOut);
-    EXPECT_EQ (sizeOut, 4);
+    EXPECT_EQ (sizeOut, sizeof(binary));
     for (size_t i=0; i<sizeOut; i++)
         EXPECT_EQ (binaryOut[i], binary[i]);
     }
