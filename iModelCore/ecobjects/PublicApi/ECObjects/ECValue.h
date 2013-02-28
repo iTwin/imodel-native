@@ -586,7 +586,7 @@ public:
     ECOBJECTS_EXPORT ECN::ECPropertyCP       GetECProperty() const;
 
 /*__PUBLISH_SECTION_START__*/
-
+public:
     ECOBJECTS_EXPORT UInt32                 GetDepth() const;
 
     //! Gets the native-style access string for a given stack depth.  This access string does 
