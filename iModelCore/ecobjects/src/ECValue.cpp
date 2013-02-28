@@ -581,7 +581,6 @@ bool            ECValue::IsPrimitive () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Copies this value, including all strings and array values held by this value.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()

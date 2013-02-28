@@ -275,9 +275,9 @@ public:
     ECN::IECInstanceP            GetInstanceP() { return m_instance.get(); }
 /*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT ECN::IECInstanceCP          GetInstanceCP() const;
-    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance);
-    ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer);
+    ECOBJECTS_EXPORT ECN::IECInstanceCP          GetInstanceCP() const; //!< Returns the IECInstance that is the context of this expression
+    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance); //!< Sets the instance that is used as the context for this expression
+    ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer); //!< Creates a new InstanceExpressionContext from the supplied ExpressionContext
 }; // End of class InstanceExpressionContext
 
 /*=================================================================================**//**
@@ -312,6 +312,7 @@ protected:
     void                                        Reset() { m_instances.clear(); m_initialized = false; }
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Creates a new InstanceListExpressionContext from the list of IECInstances
     ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances);
     };
 
@@ -344,7 +345,9 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Adds a symbol to the context to be used in expression evaluation
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
+    //! Creates a new SymbolExpressionContext from the given ExpressionContext
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(ExpressionContextP outer);
 }; // End of class SymbolExpressionContext
 
@@ -405,7 +408,10 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-
+    //! Creates a new ContextSymbol
+    //! @param[in] name     The name to be used for this context symbol
+    //! @param[in] context  The expression context to be used for this context
+    //! @returns A new ContextSymbolPtr
     ECOBJECTS_EXPORT static ContextSymbolPtr        CreateContextSymbol(wchar_t const* name, ExpressionContextR context);
 };
 
@@ -433,6 +439,7 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Creates a new method symbol context, using the supplied methods
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
 };
 
@@ -458,8 +465,11 @@ public:
                 ValueSymbol (wchar_t const* name, ECN::ECValueCR exprValue);
 
 /*__PUBLISH_SECTION_START__*/
+    //! Gets the value of this symbol
     ECOBJECTS_EXPORT void       GetValue(ECN::ECValueR exprValue);
+    //! Sets the value of this symbol to a new ECValue
     ECOBJECTS_EXPORT void       SetValue(ECN::ECValueCR exprValue);
+    //! Creates a new ValueSymbol with the given name and given ECValue
     ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
@@ -679,7 +689,9 @@ private:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Parses a value expression and returns the root node of the expression tree.
     ECOBJECTS_EXPORT static NodePtr  ParseValueExpressionAndCreateTree(wchar_t const* expression);
+    //! Parses an assignment expression and returns the root node of the expression tree.
     ECOBJECTS_EXPORT static NodePtr  ParseAssignmentExpressionAndCreateTree(wchar_t const* expression);
 
 };  // End of ECEvaluator class
@@ -701,6 +713,7 @@ public:
     static ValueResultPtr      Create(EvaluationResultR result);
 
 /*__PUBLISH_SECTION_START__*/
+    //! Gets the result of the evalution
     ECOBJECTS_EXPORT ExpressionStatus  GetECValue (ECN::ECValueR ecValue);
 };
 
@@ -777,11 +790,14 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Returns the value of this expression node using the supplied context
     ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides);
 
-    //  Traverses in parse order
+    //!  Traverses in parse order
     ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor);
+
+    //! Returns a string representation of the Node expression
     ECOBJECTS_EXPORT WString  ToString() const;
 
 };  //  End of struct Node

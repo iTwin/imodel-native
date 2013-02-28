@@ -353,8 +353,8 @@ public:
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const; //! Returns the beginning of the collection
-    ECOBJECTS_EXPORT const_iterator end ()   const; //! Returns the end of the collection
+    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the collection
+    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the collection
 };
 
 struct PrimitiveECProperty;
@@ -1015,6 +1015,12 @@ public:
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
 
+    //! Get a property by name within the context of this class and its base classes.
+    //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
+    //! is removed from the class.
+    //! @param[in]  name     The name of the property to lookup.
+    //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
+    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (Utf8CP name, bool includeBaseClasses=true) const;
 
     // ************************************************************************************************************************
@@ -1320,25 +1326,53 @@ struct SchemaKey
     UInt32        m_versionMinor;
     UInt32        m_checkSum;
 
+    //! Creates a new SchemaKey with the given name and version information
+    //! @param[in]  name    The name of the ECSchema
+    //! @param[in]  major   The major portion of the version
+    //! @param[in]  minor   The minor portion of the version
     SchemaKey (WCharCP name, UInt32 major, UInt32 minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor), m_checkSum(0){}
+
+    //! Default constructor
     SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
 
+    //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
+    //! @param[out] key             A SchemaKey with the schema's name and version set
+    //! @param[in]  schemaFullName  The full name of the schema.
     ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, WCharCP schemaFullName);
 
+    //! Compares two SchemaKeys and returns whether the target schema is less than this SchemaKey, where LessThan is dependent on the match type
+    //! @param[in]  rhs         The SchemaKey to compare to
+    //! @param[in]  matchType   The type of match to compare for
+    //! @returns The comparison is based on the SchemaMatchType, defined by:
+    //! @li SCHEMAMATCHTYPE_Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SCHEMAMATCHTYPE_Exact - This will first test the names, then the major version, and lastly the minor version
+    //! @li SCHEMAMATCHTYPE_LatestCompatible - This will first test the names and then the major versions.
+    //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is less than the target's.
     ECOBJECTS_EXPORT bool LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const;
     
+    //! Compares two SchemaKeys and returns whether the target schema matches this SchemaKey, where "matches" is dependent on the match type
+    //! @param[in]  rhs         The SchemaKey to compare to
+    //! @param[in]  matchType   The type of match to compare for
+    //! @returns The comparison is based on the SchemaMatchType, defined by:
+    //! @li SCHEMAMATCHTYPE_Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SCHEMAMATCHTYPE_Exact - Returns whether this schema's name, major version, and minor version are all equal to the target's.
+    //! @li SCHEMAMATCHTYPE_LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
+    //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
+    //! Returns whether this SchemaKey is Identical to the target SchemaKey
     bool operator == (SchemaKeyCR rhs) const
         {
         return Matches(rhs, SCHEMAMATCHTYPE_Identical);
         }
 
+    //! Returns true if the target SchemaKey is not Identical to this SchemaKey, false otherwise
     bool operator != (SchemaKeyCR rhs) const
         {
         return !(*this == rhs);
         }
 
+    //! Returns whether this SchemaKey's checksum is less than the target SchemaKey's.
     bool operator < (SchemaKeyCR rhs) const
         {
         return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
@@ -1358,6 +1392,7 @@ struct SchemaKey
 template <SchemaMatchType MatchType>
 struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
     {
+    //! Determines whether two SchemaKeys match
     bool operator () (SchemaKeyCR lhs, SchemaKeyCR rhs) const
         {
         return lhs.Matches (rhs, MatchType);
@@ -1371,6 +1406,7 @@ struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
 template <SchemaMatchType MatchType>
 struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
     {
+    //! Determines whether one SchemaKey is less than the other
     bool operator () (SchemaKeyCR lhs, SchemaKeyCR rhs) const
         {
         return lhs.LessThan (rhs, MatchType);
@@ -1506,15 +1542,15 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
     public:
-        ECOBJECTS_EXPORT const_iterator&     operator++();
-        ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const;
-        ECOBJECTS_EXPORT ECClassP const&     operator* () const;
+        ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increments the iterator
+        ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const; //!< Checks for inequality
+        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const; //!< Checks for equality
+        ECOBJECTS_EXPORT ECClassP const&     operator* () const; //!< Returns the value at the current location
     };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const;
-    ECOBJECTS_EXPORT const_iterator end ()   const;
+    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
+    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
 
 };
 
@@ -1550,6 +1586,7 @@ public:
 struct IECSchemaLocater
 {
 protected:
+    //! Tries to locate the requested schema.
     virtual ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) = 0;
 
 public:
@@ -1893,6 +1930,7 @@ public:
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
+    //! Given a str containing SchemaXml, will compute the CheckSum
     ECOBJECTS_EXPORT static UInt32          ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len);
 
     //! If the given schemaName is valid, this will create a new schema object
@@ -2040,6 +2078,9 @@ public:
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
     //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
     ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema=true) const;
+    //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
+    //! @param[out]   allSchemas            Vector of schemas including rootSchema.
+    //! @param[in]    includeRootSchema     If true then root schema is added to the vector of allSchemas. Defaults to true.
     ECOBJECTS_EXPORT void FindAllSchemasInGraph (bvector<ECN::ECSchemaP>& allSchemas, bool includeRootSchema=true);
 
     //! Returns this if the name matches, otherwise searches referenced ECSchemas for one whose name matches schemaName

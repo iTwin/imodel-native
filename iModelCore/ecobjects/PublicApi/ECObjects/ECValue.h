@@ -189,7 +189,8 @@ protected:
         //! @param[out] flags   Gets reset to 0, indicating the data is not owned
         void                FreeAndClear (UInt8& flags);
 
-        void                SetNull();          //! does not free pointers - used to init from Uninitialized ECValue state
+        //! does not free pointers - used to init from Uninitialized ECValue state
+        void                SetNull();
 
         //! Compares two StringInfo objects for equality
         //! @param[in] rhs  The StringInfo object to compare this object to
@@ -211,11 +212,11 @@ protected:
         DPoint3d            m_dPoint3d; //!< If a DPoint3d primitive, holds the DPoint3d value
         ArrayInfo           m_arrayInfo; //!< If an array value, holds the ArrayInfo struct defining the array
         BinaryInfo          m_binaryInfo; //!< If a binary value, holds the BinaryInfo struct defining the binary data
-        IECInstanceP        m_structInstance;   // The ECValue class calls AddRef and Release for the member as needed
+        IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
         };
 
-    void ConstructUninitialized();
-    inline void FreeMemory ();
+    void ConstructUninitialized(); //!< Constructs an uninitialized ECValue object
+    inline void FreeMemory (); //!< If appropriate for the value type, frees the memory used to store the value
          
 public:
     ECOBJECTS_EXPORT void            Clear(); //!< Clears memory, if necessary, and sets the value back to an uninitialized state
@@ -437,7 +438,9 @@ public:
     //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
 
+    //! Returns the IGeometry as binary data, and sets the size of the data, if this ECValue holds an IGeometry
     ECOBJECTS_EXPORT const byte *   GetIGeometry (size_t& size) const;
+    //! Sets the value of this ECValue to the given IGeometry, as binary byte data.
     ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const byte * data, size_t size, bool holdADuplicate = false);
 
     //! Gets the struct instance of this ECValue, if the ECValue holds a struct

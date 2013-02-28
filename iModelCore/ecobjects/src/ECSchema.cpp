@@ -2639,10 +2639,6 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
             return m_versionMinor < rhs.m_versionMinor;
             break;
             }
-        case SCHEMAMATCHTYPE_Latest: //Only compare by name
-            {
-            return wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) < 0;
-            }
         case SCHEMAMATCHTYPE_LatestCompatible:
             {
             int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
@@ -2651,6 +2647,10 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
                 return nameCompare < 0;
 
             return m_versionMajor < rhs.m_versionMajor;
+            }
+        case SCHEMAMATCHTYPE_Latest: //Only compare by name
+            {
+            return wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) < 0;
             }
         default:
             return false;
@@ -2672,10 +2672,10 @@ bool            SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) 
             }
         case SCHEMAMATCHTYPE_Exact:
             return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
-        case SCHEMAMATCHTYPE_Latest:
-            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
         case SCHEMAMATCHTYPE_LatestCompatible:
             return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
+        case SCHEMAMATCHTYPE_Latest:
+            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
         default:
             return false;
         }
