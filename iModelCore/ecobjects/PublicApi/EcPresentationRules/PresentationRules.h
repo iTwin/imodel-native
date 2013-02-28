@@ -10,6 +10,7 @@
 
 #include <ECObjects/ECObjectsAPI.h>
 
+EC_TYPEDEFS (SubCondition);
 EC_TYPEDEFS (ChildNodeRule);
 EC_TYPEDEFS (ContentRule);
 EC_TYPEDEFS (ImageIdOverride);
