@@ -8,7 +8,7 @@
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir =   $(_MakeFilePath)
 
-programName = ECObjectsTest_scenario
+programName = ECObjectsTest_Scenario
 
 compileRulesPath=$(baseDir)ScenarioCompileRules.mki
 
