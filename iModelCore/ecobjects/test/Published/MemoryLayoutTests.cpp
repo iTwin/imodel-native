@@ -2597,4 +2597,9 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     };
     
 
+TEST_F (MemoryLayoutTests, TestValueAccessor)
+    {
+    ECValueAccessor m_accessor;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -1,31 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/scenario/CompressInstanceTests.cpp $
+|     $Source: test/NonPublishedScenario/CompressInstanceTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\ECSchema.h>
-
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-using namespace std;
+struct CompressInstanceTests : ECTestFixture {};
 
-struct CompressInstanceTests : ECTestFixture {
-//IECInstance GetClassInstance(L"CustomAttribute", *schema, *schemaOwner)
-//{
-//    return NULL;
-//}
-
-};
 static WString       GetKitchenSinkSchemaXml ()
     {
     wchar_t* buff = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -76,6 +63,7 @@ static WString       GetKitchenSinkSchemaXml ()
 
     return WString (buff);
     }
+    
 static ECSchemaPtr   CreateKitchenSinkSchema ()
     {
     ECSchemaPtr schema;

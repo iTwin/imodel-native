@@ -517,8 +517,8 @@ public:
         ECEnablerCP             m_enabler;
         int                     m_propertyIndex;
         int                     m_arrayIndex;
-/*__PUBLISH_SECTION_END__*/
         mutable ECPropertyCP    m_cachedProperty;
+/*__PUBLISH_SECTION_END__*/
     public:
 
         Location (ECEnablerCP enabler, int propIdx, int arrayIdx) : m_enabler(enabler), m_propertyIndex(propIdx), m_arrayIndex(arrayIdx), m_cachedProperty(NULL) { }
@@ -536,19 +536,20 @@ public:
         int                     GetArrayIndex() const       { return m_arrayIndex; }
         };
 
-/*__PUBLISH_SECTION_END__*/
     typedef bvector<Location> LocationVector;
 
+/*__PUBLISH_SECTION_END__*/
 public:
     LocationVector const &   GetLocationVectorCR() const;
 
+/*__PUBLISH_SECTION_START__*/
 private:
     //"BACK" OF VECTOR IS DEEPEST ELEMENT
     LocationVector          m_locationVector;
+/*__PUBLISH_SECTION_END__*/
     const LocationVector&   GetLocationVector() const;
 
 public:
-
     ECOBJECTS_EXPORT Location&          operator[] (UInt32 depth);
 
     //! Constructs an ECValueAccessor for a given instance.
@@ -588,7 +589,7 @@ public:
     ECOBJECTS_EXPORT ECN::ECPropertyCP       GetECProperty() const;
 
 /*__PUBLISH_SECTION_START__*/
-
+public:
     ECOBJECTS_EXPORT UInt32                 GetDepth() const;
 
     //! Gets the native-style access string for a given stack depth.  This access string does 

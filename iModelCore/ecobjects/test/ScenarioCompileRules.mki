@@ -9,15 +9,9 @@
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
-$(o)StopWatch$(oext)              : $(baseDir)scenario/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
-
 $(o)TestFixture$(oext)            : $(baseDir)scenario/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)ScenarioSchemaTests$(oext)    : $(baseDir)scenario/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
-
-$(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/CompressInstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
-
-$(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/TestCopySchema.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)InstanceTests$(oext)          : $(baseDir)scenario/InstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 

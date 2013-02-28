@@ -103,47 +103,6 @@ TEST_F (ValueAccessorTests, CreateFromInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/    
-TEST_F (ValueAccessorTests, CreateFromInstanceIndexConstructAndClone)
-    {
-    CreateSchema();
-    CreateProperty(L"Property_1");
-    CreateInstance();
-    
-    ECValueAccessor m_accessor1 = ECValueAccessor(*m_instance, propIndex);
-    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor1, ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);
-    
-    ECValue value1;
-    m_instance->GetValueUsingAccessor (value1, m_accessor1);
-    EXPECT_STREQ (value1.GetString(), L"Some value 1");
-    
-    ECValueAccessor m_accessor2;
-    m_accessor2.Clone(m_accessor1);
-    
-    ECValue value2;
-    m_instance->GetValueUsingAccessor (value2, m_accessor2);
-    EXPECT_STREQ (value2.GetString(), L"Some value 1");
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/    
-TEST_F (ValueAccessorTests, CreateFromEnabledIndexConstruct)
-    {
-    CreateSchema();
-    CreateProperty(L"Property_1");
-    CreateInstance();
-    
-    ECValueAccessor m_accessor = ECValueAccessor(*m_ecClass->GetDefaultStandaloneEnabler(), propIndex);
-    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);
-    
-    ECValue value1;
-    m_instance->GetValueUsingAccessor (value1, m_accessor);
-    EXPECT_STREQ (value1.GetString(), L"Some value 1");
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/    
 TEST_F (ValueAccessorTests, GetAccessString)
     {
     CreateSchema();

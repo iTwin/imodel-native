@@ -1,0 +1,24 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: test/NonPublishedScenarioCompileRules.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+#########################################################################################
+# Compile the list of tests. 
+#########################################################################################
+$(o)StopWatch$(oext)              : $(baseDir)NonPublishedScenario/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)TestFixture$(oext)            : $(baseDir)NonPublishedScenario/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)AccessorTests$(oext)          : $(baseDir)NonPublishedScenario/AccessorTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)SchemaTests$(oext)            : $(baseDir)NonPublishedScenario/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)CompressInstanceTests$(oext)  : $(baseDir)NonPublishedScenario/CompressInstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)TestCopySchema$(oext)         : $(baseDir)NonPublishedScenario/TestCopySchema.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)ValueTests$(oext)             : $(baseDir)NonPublishedScenario/ValueTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

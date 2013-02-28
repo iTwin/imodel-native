@@ -1,23 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/scenario/TestCopySchema.cpp $
+|     $Source: test/NonPublishedScenario/TestCopySchema.cpp $
 |
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include <comdef.h>
 #include "StopWatch.h"
 #include "TestFixture.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\ECSchema.h>
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-using namespace std;
 
 struct TestCopySchema : ECTestFixture {
 	ECSchemaPtr m_testSchema;
