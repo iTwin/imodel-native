@@ -6,13 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__PUBLISH_SECTION_START__*/
+//__PUBLISH_SECTION_START__
 
 /// @cond BENTLEY_SDK_All
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/// \namespace Bentley::ECN Types defined by \ref ECObjectsGroup
+//! \namespace Bentley::ECN Types defined by \ref ECObjectsGroup
 
 //****** API doc main page *******
 

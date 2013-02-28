@@ -74,7 +74,7 @@ private:
 
     void                InitForString (void const * str);
 
-protected:
+//protected:
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
 
