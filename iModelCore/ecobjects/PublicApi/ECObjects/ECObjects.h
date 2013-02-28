@@ -260,7 +260,7 @@ enum SupplementedSchemaStatus
 //=======================================================================================
 /*__PUBLISH_SECTION_START__*/
 //=======================================================================================
-//! Represents the classification of the data type of an EC ECValue.  The classification is not the data type itself, but a category of type
+//! Represents the classification of the data type of an ECValue. The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
 //! @ingroup ECObjectsGroup
 //=======================================================================================
