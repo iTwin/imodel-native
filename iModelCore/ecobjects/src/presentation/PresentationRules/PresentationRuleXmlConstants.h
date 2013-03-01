@@ -46,6 +46,8 @@
 
 #define ROOT_NODE_RULE_XML_NODE_NAME                                                  "RootNodeRule"
 
+#define SUB_CONDITION_XML_NODE_NAME                                                   "SubCondition"
+
 #define CHILD_NODE_RULE_XML_NODE_NAME                                                 "ChildNodeRule"
 #define CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE                                      "TargetTree"
 
