@@ -6,14 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
 #include <ECObjects\ECValue.h>
-
+#include <Bentley/BeTimeUtilities.h>
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;

@@ -15,9 +15,6 @@
     <ClCompile Include="ECObjectsTestPCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\StopWatch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -27,9 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Performance\StopWatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Performance\TestFixture.h">

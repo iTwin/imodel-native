@@ -9,8 +9,6 @@
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
-$(o)StopWatch$(oext)                : $(baseDir)NonPublished/StopWatch.cpp                 $(PCHHeaderDependency) ${MultiCompileDepends}
-
 $(o)TestFixture$(oext)              : $(baseDir)NonPublished/TestFixture.cpp               $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)MemoryLayoutTests$(oext)        : $(baseDir)NonPublished/MemoryLayoutTests.cpp         $(PCHHeaderDependency) ${MultiCompileDepends}

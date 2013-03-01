@@ -2,12 +2,11 @@
 |
 |     $Source: test/Published/BuildInstanceAndSerializeToXML.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 #include <comdef.h>
-#include "StopWatch.h"
 #include "TestFixture.h"
 
 #include <ECObjects\ECInstance.h>

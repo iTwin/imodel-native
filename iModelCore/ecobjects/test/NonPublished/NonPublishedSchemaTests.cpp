@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 #include <comdef.h>
-#include "StopWatch.h"
 #include "TestFixture.h"
 
 #include <ECObjects\ECInstance.h>

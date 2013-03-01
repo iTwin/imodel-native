@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)

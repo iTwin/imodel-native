@@ -9,8 +9,6 @@
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
-$(o)StopWatch$(oext)              : $(baseDir)NonPublishedScenario/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
-
 $(o)TestFixture$(oext)            : $(baseDir)NonPublishedScenario/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)AccessorTests$(oext)          : $(baseDir)NonPublishedScenario/AccessorTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
