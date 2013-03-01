@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,30 +78,31 @@ typedef bvector<EvaluationResult>                   EvaluationResultVector;
 typedef EvaluationResultVector::iterator            EvaluationResultVectorIterator;
 
 //! @ingroup ECObjectsGroup
+//! Enumerates the possible return values for evaluating an expression or its value
 enum ExpressionStatus
     {
-    ExprStatus_Success              =   0,
-    ExprStatus_UnknownError         =   1,
-    ExprStatus_UnknownMember        =   2,
-    ExprStatus_PrimitiveRequired    =   3,
-    ExprStatus_StructRequired       =   4,
-    ExprStatus_ArrayRequired        =   5,
-    ExprStatus_UnknownSymbol        =   6,
+    ExprStatus_Success              =   0, //!< Success
+    ExprStatus_UnknownError         =   1, //!< There as an unknown error in evaluation
+    ExprStatus_UnknownMember        =   2, //!< Returned if a property name in the expression cannot be found in the containing class
+    ExprStatus_PrimitiveRequired    =   3, //!< Returned when a primitive is expected and not found
+    ExprStatus_StructRequired       =   4, //!< Returned when a struct is expected and not found
+    ExprStatus_ArrayRequired        =   5, //!< Returned when an array is expected and not found
+    ExprStatus_UnknownSymbol        =   6, //!< Returned when the symbol in the expression cannot be resolved
     ExprStatus_DotNotSupported      =   7,
 
     //  Returning ExprStatus_NotImpl in base methods is the lazy approach for methods that should be
     //  pure virtual.  Should be eliminated after prototyping phase is done
     ExprStatus_NotImpl              =   8,
 
-    ExprStatus_NeedsLValue          =   9,
-    ExprStatus_WrongType            =  10,
-    ExprStatus_IncompatibleTypes    =  11,
-    ExprStatus_MethodRequired       =  12,
-    ExprStatus_InstanceMethodRequired =  13,
-    ExprStatus_StaticMethodRequired =  14,
-    ExprStatus_InvalidTypesForDivision =  15,
-    ExprStatus_DivideByZero             =  16,
-    ExprStatus_WrongNumberOfArguments   =  17,
+    ExprStatus_NeedsLValue          =   9, //!< Returned when the symbol needs to be an lvalue
+    ExprStatus_WrongType            =  10, //!< Returned when the symbol type is of the wrong type for the expression
+    ExprStatus_IncompatibleTypes    =  11, //!< Returned when expression uses incompatible types (ie, trying to perform arithmetic on two strings)
+    ExprStatus_MethodRequired       =  12, //!< Returned when a method token is expected and not found
+    ExprStatus_InstanceMethodRequired =  13, //!< Returned when an instance method is called, but has not been defined
+    ExprStatus_StaticMethodRequired =  14, //!< Returned when a static method is called, but has not been defined
+    ExprStatus_InvalidTypesForDivision =  15, //!< Returned when the expression tries to perform a division operation on types that cannot be divided
+    ExprStatus_DivideByZero             =  16, //!< Returned when the division operation tries to divide by zero
+    ExprStatus_WrongNumberOfArguments   =  17, //!< Returned when the number of arguments to a method in an expression do not match the number of arguments actually expected
     };
 
 /*__PUBLISH_SECTION_END__*/
@@ -270,9 +271,9 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
-    ECOBJECTS_EXPORT ECN::IECInstanceCP           GetInstanceCP() const;
-    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance);
-    ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer);
+    ECOBJECTS_EXPORT ECN::IECInstanceCP          GetInstanceCP() const; //!< Returns the IECInstance that is the context of this expression
+    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance); //!< Sets the instance that is used as the context for this expression
+    ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer); //!< Creates a new InstanceExpressionContext from the supplied ExpressionContext
 }; // End of class InstanceExpressionContext
 
 /*=================================================================================**//**
@@ -303,7 +304,9 @@ public:
     static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
 
 /*__PUBLISH_SECTION_START__*/
+    //! Adds a symbol to the context to be used in expression evaluation
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
+    //! Creates a new SymbolExpressionContext from the given ExpressionContext
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(ExpressionContextP outer);
 }; // End of class SymbolExpressionContext
 
@@ -364,7 +367,10 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 
 public:
-
+    //! Creates a new ContextSymbol
+    //! @param[in] name     The name to be used for this context symbol
+    //! @param[in] context  The expression context to be used for this context
+    //! @returns A new ContextSymbolPtr
     ECOBJECTS_EXPORT static ContextSymbolPtr        CreateContextSymbol(wchar_t const* name, ExpressionContextR context);
 };
 
@@ -392,6 +398,7 @@ protected:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Creates a new method symbol context, using the supplied methods
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
 };
 
@@ -417,8 +424,11 @@ public:
                 ValueSymbol (wchar_t const* name, ECN::ECValueCR exprValue);
 
 /*__PUBLISH_SECTION_START__*/
+    //! Gets the value of this symbol
     ECOBJECTS_EXPORT void       GetValue(ECN::ECValueR exprValue);
+    //! Sets the value of this symbol to a new ECValue
     ECOBJECTS_EXPORT void       SetValue(ECN::ECValueCR exprValue);
+    //! Creates a new ValueSymbol with the given name and given ECValue
     ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
@@ -633,7 +643,9 @@ private:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Parses a value expression and returns the root node of the expression tree.
     ECOBJECTS_EXPORT static NodePtr  ParseValueExpressionAndCreateTree(wchar_t const* expression);
+    //! Parses an assignment expression and returns the root node of the expression tree.
     ECOBJECTS_EXPORT static NodePtr  ParseAssignmentExpressionAndCreateTree(wchar_t const* expression);
 
 };  // End of ECEvaluator class
@@ -655,6 +667,7 @@ public:
     static ValueResultPtr      Create(EvaluationResultR result);
 
 /*__PUBLISH_SECTION_START__*/
+    //! Gets the result of the evalution
     ECOBJECTS_EXPORT ExpressionStatus  GetECValue (ECN::ECValueR ecValue);
 };
 
@@ -727,11 +740,14 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:
-    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context,
+    //! Returns the value of this expression node using the supplied context
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides);
 
-    //  Traverses in parse order
+    //!  Traverses in parse order
     ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor);
+
+    //! Returns a string representation of the Node expression
     ECOBJECTS_EXPORT WString  ToString() const;
 
 };  //  End of struct Node

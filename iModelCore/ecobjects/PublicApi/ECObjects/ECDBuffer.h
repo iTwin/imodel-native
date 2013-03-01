@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,15 +73,22 @@ private:
     PropertyLayout (){}
 
 public:
-    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;
-    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;
-    ECOBJECTS_EXPORT UInt32                      GetOffset() const;
-    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const;
-    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const;
-    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const;
-    ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const;
-    ECOBJECTS_EXPORT UInt32                      GetModifierData() const;
-    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;
+    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;       //!< Returns the access string for retrieving this property
+    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;  //!< Returns the property index of the struct parent of this property. If this is a root property an index of zero is returned.
+    ECOBJECTS_EXPORT UInt32                      GetOffset() const;             //!< Returns the offset to either the data holding this property's value (for fixed-size values) or to the offset at which the property's value can be found
+    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const;    //!< Returns the offset to Null flags bit mask.
+    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const;   //!< Returns a bit mask that has the a single bit set. It can be used to AND with the bitmask at the offset returned by GetNullflagsOffset() to determine if the property is NULL.
+    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const;     //!< Returns an ECTypeDescriptor that defines this property
+
+    //! Returns the modifier flags that describe this property, which can indicate
+    //! @li that a string should be treated as fixed size
+    //! @li that a string should have a max length
+    //! @li that a longer fixed size type should be treated as an optional variable-sized type
+    //! @li that for a string, only an entry to the string table is stored
+    //! @li a default value should be used
+    ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const; 
+    ECOBJECTS_EXPORT UInt32                      GetModifierData() const;       //!< Returns the data used with the modifier flag, like the length of a fixed-sized string.
+    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;   //!< Returns whether this is a read-only property
 
     ECOBJECTS_EXPORT bool                        SetReadOnlyMask (bool readOnly);
     ECOBJECTS_EXPORT bool                        IsFixedSized() const;
@@ -90,7 +97,9 @@ public:
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
     ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
-
+    
+    //! Returns a string containing detailed information about this property's characteristics
+    //! (including access string, type name, offset, nullflagsOffset, nullflagsBitmask
     ECOBJECTS_EXPORT WString                      ToString();
     };
 
@@ -209,26 +218,77 @@ private:
     //ClassLayout (){}
 
 public:
+
+    //! Given a class, will create the ClassLayout that manages that class
+    //! @param[in] ecClass  The ECClass to build the ClassLayout from
+    //! @returns ClassLayout pointer managing this ECClass
     ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass);
+
+    //! Creates an empty ClassLayout for a class with the given name
+    //! @param[in] className    The name of the class that this ClassLayout will define
     ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className);
 
-    ECOBJECTS_EXPORT WString const & GetECClassName() const;
-    ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
+    //! Returns the name of the ECClass that this ClassLayout manages
+    ECOBJECTS_EXPORT WString const & GetECClassName() const; 
 
+    //! Returns the property index of the given relationship end
+    //! @param[in] end  The ECRelationshipEnd for which to get the pointer index
+    //! @returns The property index of the pointer for the given relationship end
+    ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
+    
+    //! Returns the checksum for this ClassLayout
     ECOBJECTS_EXPORT UInt32          GetChecksum () const;
+
+    //! Returns the number of properties this ClassLayout manages
     ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
+
+    //! Returns the number of properties this ClassLayout manages, not counting embedded structs
     ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
+
+    //! Given a property access string, will return the PropertyLayout
+    //! @param[out] propertyLayout  Will point to the PropertyLayout if found
+    //! @param[in]  accessString    The access string for the desired property
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const;
+
+    //! Given a property index, will return the PropertyLayout
+    //! @param[out] propertyLayout  Will point to the PropertyLayout if found
+    //! @param[in]  propertyIndex   The index in the ClassLayout of the desired property
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+
+    //! Given a property layout, will return the property index within the ClassLayout
+    //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
+    //! @param[in]  propertyLayout  The propertyLayout of the property that we want the index for
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
+
+    //! Given an access string, will return the property index within the ClassLayout
+    //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
+    //! @param[in]  accessString    The access string for the desired property
+    //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
     ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
+
+    //! Given a propertyIndex, will return whether the property is read-only or not
+    //! @param[in]  propertyIndex   The index within the ClassLayout of the property to check
+    //! @returns true if the property is read-only, false otherwise
     ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
+
+    //! Sets the read-only status of a property, given its index within the ClassLayout
+    //! @param[in]  propertyIndex   The index within the ClassLayout of the property to set the read-only flag for
+    //! @param[in]  readOnly        Flag indicating whether this property is read-only
+    //! @returns The value of readOnly if successfully set, otherwise false
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
 
     //! Determines the number of bytes used for property data, so far
     ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * propertyData) const;
+
+    //! Checks the given classLayout to see if it is equal to, or a subset of, this layout
+    //! @param[in]  layout  The ClassLayout to test compatibility of
+    //! @returns true if the given ClassLayout is equal to or a subset of this layout, false otherwise
     ECOBJECTS_EXPORT bool           IsCompatible(ClassLayoutCR layout) const;
 
+    //! Returns a string containing a description of the class and its properties
     ECOBJECTS_EXPORT WString       ToString() const;
     };
 
@@ -253,15 +313,45 @@ private:
     SchemaLayout (){}
 
 public:
+
+    //! Gets the SchemaIndex of this particular SchemaLayout.
     ECOBJECTS_EXPORT SchemaIndex            GetSchemaIndex() const;
-    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR, ClassIndex);
+
+    //! Adds the ClassLayout at the given index
+    //! @param[in]  classLayout The ClassLayout to add
+    //! @param[in]  classIndex  The index where to add the ClassLayout
+    //! @returns SUCCESS
+    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex);
+
+    //! Returns the ClassLayout at the given index
+    //! @param[in]  classIndex  The index of the desired ClassLayout
+    //! @returns A pointer to the requested ClassLayout if the index is valid, NULL otherwise
     ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
+
+    //! Given a classname, tries to find the corresponding ClassLayout
+    //! @param[in]  className   The name of the class to find
+    //! @returns A pointer to the corresponding ClassLayout if found, NULL otherwise
     ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className);
+
+    //! Given a classname, tries to find the index of the corresponding ClassLayout
+    //! @param[out] classIndex  The index of the corresponding ClassLayout, if found
+    //! @param[in]  className   The name of the class to find the ClassLayout index of
+    //! @returns SUCCESS if the ClassLayout is found, ERROR otherwise
     ECOBJECTS_EXPORT BentleyStatus          FindClassIndex (ClassIndex& classIndex, WCharCP className) const;
-    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex&);
-    // This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
-    // so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
+
+    //! Finds the first available index for adding a class layout
+    //! @param[out] classIndex  The first available index in the layout.  This is not necessarily the size of the layout because there can be gaps.
+    //! @returns SUCCESS if the index is found, ERROR otherwise
+    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex& classIndex);
+   
+    //! Returns the max index in the ClassLayout
+    //! @remarks This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
+    //!          so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
+    //! @remarks NOTE: Check IsEmpty() before GetMaxIndex() to ensure there is at least one ClassLayout, otherwise the return value of GetMaxIndex() is undefined
     ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
+    //! Creates a new SchemaLayout object
+    //! @param[in]  index   The SchemaIndex used to identify this SchemaLayout
+    //! @remarks It is up to the calling application to ensure uniqueness for the SchemaIndex.
     ECOBJECTS_EXPORT static SchemaLayoutP   Create (SchemaIndex index);
 };
 
@@ -537,6 +627,7 @@ protected:
     //! with a binary token that will actually be stored with the instance at the array index value that can then be used to locate the externalized struct value.
     //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
     //! externally.
+    //! If isInitializing is true, we are in the process of copying ECD memory buffer from another ECDBuffer, in which case this buffer's struct value ID entries are not valid.
     virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
     virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
     virtual ECN::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
