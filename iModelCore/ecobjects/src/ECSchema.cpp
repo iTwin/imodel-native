@@ -1451,7 +1451,10 @@ bvector<WString>&               searchPaths
 ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths)
     {
     wchar_t versionString[24];
-    if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
+
+    if (matchType == SCHEMAMATCHTYPE_Latest)
+        BeStringUtilities::Snwprintf(versionString, 24, L".*.*.ecschema.xml");
+    else if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
         BeStringUtilities::Snwprintf(versionString, 24, L".%02d.*.ecschema.xml", key.m_versionMajor);
     else
         BeStringUtilities::Snwprintf(versionString, 24, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
