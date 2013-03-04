@@ -10,7 +10,6 @@
 /// @cond BENTLEY_SDK_All
 
 #include <ECObjects/ECObjects.h>
-//#include <ECObjects/StandaloneECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
