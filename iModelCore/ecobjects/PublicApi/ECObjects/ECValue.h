@@ -103,7 +103,6 @@ public:
 //! (or the object that the ECN::IECInstance represents). Changing the ECN::ECValue will not affect
 //! the ECN::IECInstance unless you subsequently call SetValue() with it.
 //! 
-//! @group "ECInstance"
 //=======================================================================================    
 struct ECValue
     {
@@ -555,7 +554,6 @@ public:
 //! an ECEnabler, property index, and array index.  In cases where the array index is not 
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
 //! is used.  
-//! @group "ECInstance"
 //! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass 
