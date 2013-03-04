@@ -1213,6 +1213,21 @@ ECSchemaCP ECClass::_GetContainerSchema
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
+    {
+    size_t nProperties = m_propertyList.size();
+    if (includeBaseClasses)
+        {
+        FOR_EACH (const ECClassP& baseClass, m_baseClasses)
+            nProperties += baseClass->GetPropertyCount (true);
+        }
+
+    return nProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyIterable::const_iterator::const_iterator

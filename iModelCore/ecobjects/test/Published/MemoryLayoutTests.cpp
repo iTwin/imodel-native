@@ -945,9 +945,10 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
     const int expectedPropertyCount = 19;
 
-    UInt32 propertyCount = enabler->GetPropertyCount();
-
+/** -- Can't test this method via published API -- tested indirectly below
+    UInt32 propertyCount = enabler->GetClassLayout().GetPropertyCount();
     EXPECT_EQ (expectedPropertyCount, propertyCount);
+**/
 
     wchar_t* expectedProperties [expectedPropertyCount] = 
         {
@@ -1123,11 +1124,6 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
 
 
     StandaloneECEnablerPtr enabler = schema->GetClassP(L"EmptyClass")->GetDefaultStandaloneEnabler ();
-
-    //The class has zero properties?
-    //EXPECT_TRUE (0 == enabler->GetPropertyCount());
-
-    EXPECT_TRUE (1 == enabler->GetPropertyCount());
 
     ASSERT_TRUE (enabler.IsValid());
 
