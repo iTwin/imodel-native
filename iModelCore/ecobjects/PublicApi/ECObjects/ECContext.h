@@ -2,16 +2,19 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
-#include "ECObjects.h"
+#include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
+
+//__PUBLISH_SECTION_END__
 #include <ECObjects/StandaloneECInstance.h>
+//__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -77,7 +80,6 @@ private:
 
 protected:
     //! Constructs a context for deserializing ECSchemas
-    //! @param[in] ecSchemaCache  Uses supplied schema cache as container to store schemas that are read
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
@@ -110,13 +112,26 @@ public:
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
     ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch = false);
 
-    ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR);
-    ECOBJECTS_EXPORT void RemoveSchemaLocater (IECSchemaLocaterR);
-    ECOBJECTS_EXPORT void AddSchemaPath (WCharCP);
-    ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR);
+    //! Adds a schema locater to the current context
+    //! @param[in] locater  Locater to add to the current context
+    ECOBJECTS_EXPORT void AddSchemaLocater (IECSchemaLocaterR locater);
 
-    //Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
-    //WIP_FUSION: Why is the SchemaKey argument non-null??
+    //! Removes a schema locater from the current context
+    //! @param[in] locater  Locater to remove from the current context
+    ECOBJECTS_EXPORT void RemoveSchemaLocater (IECSchemaLocaterR locater);
+
+    //! Adds a file path that should be used to search for a matching schema name
+    //! @param[in] path Path to the directory where schemas can be found
+    ECOBJECTS_EXPORT void AddSchemaPath (WCharCP path);
+
+    //! Set the last locater to be used when trying to find a schema
+    //! @param[in] locater  Locater that should be used as the last locater when trying to find a schema
+    ECOBJECTS_EXPORT void SetFinalSchemaLocater (IECSchemaLocaterR locater);
+
+    //! Find the schema matching the schema key and using matchType as the match criteria. This uses the prioritized list of locators to find the schema.
+    //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
+    //! @param[in] matchType    The match type criteria used to locate the requested schema
+    //! @returns An ECSchemaPtr.  This ptr will return false for IsValid() if the schema could not be located.
     ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
 };
 
@@ -165,4 +180,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All
