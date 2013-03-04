@@ -152,7 +152,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! \Note The property index is \b 1-based
 //!
 //! @see Bentley::ECN
-//! \todo WIP_DOC_EC - tailor this to MobileDgnSdk
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

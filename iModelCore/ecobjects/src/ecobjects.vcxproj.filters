@@ -259,6 +259,9 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />
