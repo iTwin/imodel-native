@@ -1624,9 +1624,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus AddSchema   (ECSchemaR schema);
 
     //! Removes the specified schema from the cache
-    //! @param[in] key  The SchemaKey fully describing the schema that should be removed from the cache
+    //! @param[in] schema  The ECSchema that should be removed from the cache
     //! @returns ECOBJECTS_STATUS_SchemaNotFound is the schema was not found in the cache, otherwise ECOBJECTS_STATUS_Success
-    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (SchemaKeyCR key );
+    ECOBJECTS_EXPORT ECObjectsStatus DropSchema  (ECSchemaR schema);
 
     //! Get the requested schema from the cache
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
