@@ -100,11 +100,13 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
 //!
+//! @cond BENTLEY_SDK_Desktop
 //! ### Comparison to .NET ECObjects
 //! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
+//! @endcond BENTLEY_SDK_Desktop
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
@@ -156,25 +158,25 @@ protected:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) = 0;
     //! Given an access string to a property, will insert size number of empty array elements at the given index
-    //! @param[in]  managedPropertyAccessor   The name of the property to retrieve
+    //! @param[in]  propertyAccessor   The name of the property to set a value to
     //! @param[in]  index           The starting index of the array at which to insert the new elements
     //! @param[in]  size            The number of empty array elements to insert
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP managedPropertyAccessor, UInt32 index, UInt32 size) = 0;
+    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessor, UInt32 index, UInt32 size) = 0;
     //! Given an access string to a property, will add size number of empty array elements to the end of the array
-    //! @param[in]  managedPropertyAccessor   The name of the property to retrieve
+    //! @param[in]  propertyAccessor   The name of the array property
     //! @param[in]  size                      The number of empty array elements to add
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP managedPropertyAccessor, UInt32 size) = 0;
+    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessor, UInt32 size) = 0;
     //! Given an access string to a property and an array index, will remove a single array element
-    //! @param[in]  managedPropertyAccessor   The name of the property to retrieve
+    //! @param[in]  propertyAccessor   The name of the array property
     //! @param[in]  index                     The index of the element to remove
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
-    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP managedPropertyAccessor, UInt32 index) = 0;
+    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessor, UInt32 index) = 0;
     //! Given an access string to a property, removes all array elements from the array
-    //! @param[in]  managedPropertyAccessor   The name of the property to retrieve
+    //! @param[in]  propertyAccessor   The name of the array property
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
-    virtual ECObjectsStatus     _ClearArray (WCharCP managedPropertyAccessor) = 0;
+    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessor) = 0;
     //! Returns a const reference to the ECEnabler that supports this instance
     virtual ECEnablerCR         _GetEnabler() const = 0;
     //! Returns whether the ECInstance as a whole is ReadOnly
@@ -511,9 +513,10 @@ public:
     };
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
-//! ECN::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+//! ECN::IECRelationshipInstance is an instance of an ECRelationshipClass and represents
+//! the relationship between two \ref IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECRelationshipInstance : virtual IECInstance

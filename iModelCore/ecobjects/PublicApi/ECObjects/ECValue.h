@@ -697,16 +697,19 @@ public:
     //! @param[in]      accessor         The accessor to be copied.
     ECOBJECTS_EXPORT ECValueAccessor (ECValueAccessorCR accessor);
 
-    //! Gets the managed-style access string for this Accessor.  Includes the array indicies,
+    ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
+    ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
+
+    //! @cond BENTLEY_SDK_Desktop
+
+    //! Gets the managed-style access string for this Accessor.  Includes the array indices,
     //! and traverses structs when necessary.  This full access string can be used with
     //! managed code or the InteropHelper.
     //! @see            ECInstanceInteropHelper
     ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
 
-    ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
-    ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
-
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor);
+    //! @endcond BENTLEY_SDK_Desktop
     };
 
 /*__PUBLISH_SECTION_END__*/
