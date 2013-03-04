@@ -119,10 +119,10 @@ protected:
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const;
 
-public: 
+public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
-public: 
+public:
     //! Given an ECRelationshipClass, will create an enabler for that class
     //! @param[in]  ecClass The relationship class which to create an enabler for
     //! @returns The StandaloneECRelationshipEnabler for the given class.

@@ -668,7 +668,8 @@ public:
     //! The property type.
     //! This type must be an ECClass where IsStruct is set to true.
     ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECClassCR value);
-    ECOBJECTS_EXPORT ECClassCR          GetType() const; //!< Gets the ECClass that defines the type for this property
+    //! Gets the ECClass that defines the type for this property
+    ECOBJECTS_EXPORT ECClassCR          GetType() const; 
 };
 
 //=======================================================================================

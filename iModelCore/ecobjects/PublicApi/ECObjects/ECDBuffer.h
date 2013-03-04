@@ -55,9 +55,9 @@ private:
     ECTypeDescriptor        m_typeDescriptor;
 
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
-    UInt32              m_offset; //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
-    UInt32              m_modifierFlags; //! Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
-    UInt32              m_modifierData;  //! Data used with the modifier flag, like the length of a fixed-sized string.
+    UInt32              m_offset; //!< An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
+    UInt32              m_modifierFlags; //!< Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
+    UInt32              m_modifierData;  //!< Data used with the modifier flag, like the length of a fixed-sized string.
     UInt32              m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
 public:
@@ -361,19 +361,19 @@ public:
 
 /*__PUBLISH_SECTION_END__*/
 
-//=======================================================================================    
+//=======================================================================================
 //! Holds a ClassLayoutCR and provides a public method by which to access it.
 //! Used by StandaloneECEnabler and ECXInstanceEnabler
-//=======================================================================================    
+//=======================================================================================
 struct ClassLayoutHolder
     {
 private:
     ClassLayoutCR                   m_classLayout;
-        
+
 protected:
     ECOBJECTS_EXPORT                ClassLayoutHolder (ClassLayoutCR classLayout);
 
-public:    
+public:
     ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
     };
 
@@ -381,18 +381,18 @@ public:
 struct      ArrayResizer
     {
     friend struct ECDBuffer;
-    
+
 private:
     ClassLayoutCR           m_classLayout;
     PropertyLayoutCR        m_propertyLayout;
     ECDBufferR  m_instance;
-    
+
     UInt32          m_arrayOffset;
-    
+
     UInt32          m_resizeIndex;
-    UInt32          m_resizeElementCount; 
+    UInt32          m_resizeElementCount;
     UInt32          m_resizeFixedSectionByteCount; // bytesNeeded
-        
+
     PrimitiveType   m_elementType;
     bool            m_elementTypeIsFixedSize;
     UInt32          m_elementSizeInFixedSection;
@@ -402,29 +402,29 @@ private:
     UInt32          m_preNullFlagBitmasksCount;
     UInt32          m_preHeaderByteCount;
     UInt32          m_preFixedSectionByteCount;
-    UInt32          m_preArrayByteCount;    
-    
+    UInt32          m_preArrayByteCount;
+
     // state variables for post resize
     ArrayCount      m_postAllocatedArrayCount;
     UInt32          m_postNullFlagBitmasksCount;
     UInt32          m_postHeaderByteCount;
-    UInt32          m_postFixedSectionByteCount;    
+    UInt32          m_postFixedSectionByteCount;
     SecondaryOffset m_postSecondaryOffsetOfResizeIndex;
-    
+
     // pointers to memory that must be shifted during resize
     byte const *    m_pResizeIndexPreShift;
-    byte const *    m_pResizeIndexPostShift;    
-    
+    byte const *    m_pResizeIndexPostShift;
+
     byte const *    m_propertyData;
 
     ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
-        
+
     ECObjectsStatus       ShiftDataFollowingResizeIndex ();
     ECObjectsStatus       SetSecondaryOffsetsFollowingResizeIndex ();
     ECObjectsStatus       ShiftDataPreceedingResizeIndex ();
-    ECObjectsStatus       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);    
+    ECObjectsStatus       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);
     ECObjectsStatus       WriteArrayHeader ();
-        
+
     static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 insertIndex, UInt32 insertCount);
     };
 
@@ -498,59 +498,59 @@ public:
 
 typedef ECDHeader_v0 ECDHeader;
 
-/*__PUBLISH_SECTION_START__*/  
-//=======================================================================================    
-//! Base class for ECN::IECInstance implementations that get/set values from a block of memory, 
+/*__PUBLISH_SECTION_START__*/
+//=======================================================================================
+//! Base class for ECN::IECInstance implementations that get/set values from a block of memory,
 //! e.g. StandaloneECInstance and ECXInstance
 //! @ingroup ECObjectsGroup
 //! @bsiclass
-//=======================================================================================    
+//=======================================================================================
 struct ECDBuffer
     {
     friend  struct ArrayResizer;
-private:    
+private:
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
 
 //__PUBLISH_CLASS_VIRTUAL__
-/*__PUBLISH_SECTION_END__*/    
+/*__PUBLISH_SECTION_END__*/
 
     UInt32              GetOffsetToPropertyData() const;
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
     UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
-    
+
     //! Returns the size in bytes of the property value
-    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;   
+    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
     //! Returns the size in bytes of the array element value at the specified index
-    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    
-    //! Returns the address of the property value     
-    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const;    
+    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const;
+
+    //! Returns the address of the property value
+    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const;
     //! Returns the address of the array element value at the specified index
-    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const;        
-    
+    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const;
+
     //! Returns the offset of the specified array index relative to the start of the instance data.
     //! Note that this offset does not necessarily contain the index value.  If the element type is fixed it contains the value but if it is a variable
     //! size type then the index contains a secondary offset.  If you need the offset of the actual element value then use GetOffsetOfArrayIndexValue
     //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
     //! a valid range.
     UInt32              GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
-    
+
     //! Returns the offset of the specified array index value relative to the start of the instance data.
     //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
     //! a valid range.
     UInt32              GetOffsetOfArrayIndexValue (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
-    
+
     //! Returns true if the property value is null; otherwise false
     //! If nIndices is > 0 then the null check is based on the array element at the specified index
     bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
-    
-    //! Sets the null bit of the specified property to the value indicated by isNull
-    //! If nIndices is > 0 then the null bit is set for the array element at the specified index    
-    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);    
 
-    //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values 
+    //! Sets the null bit of the specified property to the value indicated by isNull
+    //! If nIndices is > 0 then the null bit is set for the array element at the specified index
+    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);
+
+    //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
     //! or to "compact" to reclaim unused space.
     //! @param data           Start of the data of the ECDBuffer
@@ -589,14 +589,14 @@ protected:
     //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
     //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
     ECOBJECTS_EXPORT ArrayCount          GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
-    
+
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
     //! See the description of GetReservedArrayCount for explanation about the differences between the two.
     ECOBJECTS_EXPORT ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
-    
+
 
     //! Constructor used by subclasses
-    //! @param allowWritingDirectlyToInstanceMemory     If true, ECDBuffer is allowed to memset, memmove, and poke at the 
+    //! @param allowWritingDirectlyToInstanceMemory     If true, ECDBuffer is allowed to memset, memmove, and poke at the
     //!                                                 memory directly, e.g. for StandaloneECIntance.
     //!                                                 If false, all modifications must happen through _ModifyData, e.g. for ECXData.
     ECOBJECTS_EXPORT            ECDBuffer (bool allowWritingDirectlyToInstanceMemory);
