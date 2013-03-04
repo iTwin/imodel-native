@@ -235,45 +235,45 @@ public:
     //! @param[in] primitiveType The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Integer
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Integer
     //! @param[in] integer32 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Long
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Long
     //! @param[in] long64 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Double
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Double
     //! @param[in] doubleVal Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_String
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_String
     //! @param[in] string Value to initialize this ECValue from
     //! @param[in] holdADuplicate true, if a copy of \p string should be held in the ECValue object.
     //!                           false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_String
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_String
     //! @param[in] string Value to initialize this ECValue from
     //! @param[in] holdADuplicate true, if a copy of \p string should be held in the ECValue object.
     //!                           false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (Utf8CP string, bool holdADuplicate = true);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_String
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_String
     //! @param[in] string Value to initialize this ECValue from
     //! @param[in] holdADuplicate true, if a copy of \p string should be held in the ECValue object.
     //!                           false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
     
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Binary
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Binary
     //! @Note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
     //! @see ECValue::SetBinary
     //! @param[in] blob Value to initialize this ECValue from
     //! @param[in] size Size in bytes of the blob
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Point2d
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Point2d
     //! @param[in] point2d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Point3d
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Point3d
     //! @param[in] point3d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
     //! Initializes a new instance of the ECValue type from the given value.
-    //! Initializes a new instance of ECValue from the given value. Type is set to PRIMITIVETYPE_Boolean
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Boolean
     //! @param[in] value Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (bool value);
 
@@ -578,7 +578,6 @@ public:
 //! an ECEnabler, property index, and array index.  In cases where the array index is not
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant
 //! is used.
-//! @group "ECInstance"
 //! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass
