@@ -52,6 +52,7 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECDBuffer.h \
                     $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
+                    $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \

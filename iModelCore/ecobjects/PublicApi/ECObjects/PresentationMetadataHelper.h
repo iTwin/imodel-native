@@ -2,15 +2,14 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
-#include "ECObjects.h"
-#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECObjects.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -99,4 +98,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All

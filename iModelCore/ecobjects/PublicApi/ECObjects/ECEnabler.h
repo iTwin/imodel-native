@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -125,9 +125,15 @@ public:
     //! Get the IStandaloneEnablerLocater for this enabler
     ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
 
+    //! Returns the number of properties that this enabler enables.
     ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className);
 
+    //! Returns an enabler for the given class from the given schema.
+    //! @param[in] schemaKey    The SchemaKey defining the schema (schema name and version info) that the className ECClass comes from
+    //! @param[in] className    The name of the ECClass to retrieve the enabler for
+    //! @returns A StandaloneECEnabler that enables the requested class
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
+    
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     //! Call processor on all primitive-valued properties of specified type(s) on this instance.
     //! Processing is terminated if the processor returns a non-zero value.
@@ -151,12 +157,16 @@ public:
  struct IECRelationshipEnabler
  {
 protected:
+    //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
+
+    //! Returns the relationship class that this enabler 'enables'
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
     ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
+    //! Returns the relationship class that this enabler 'enables'
     ECOBJECTS_EXPORT ECN::ECRelationshipClassCR      GetRelationshipClass() const;
  };
 
