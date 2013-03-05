@@ -391,11 +391,6 @@ void initStandardSchemaNames()
     s_standardSchemaNames.push_back(L"Unit_Attributes");
     s_standardSchemaNames.push_back(L"Units_Schema");
     s_standardSchemaNames.push_back(L"USCustomaryUnitSystemDefaults");
-    //Following schema is consider system schemas under Graphite
-    s_standardSchemaNames.push_back(L"ECDbSystem");
-    s_standardSchemaNames.push_back(L"dgn");
-
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -436,9 +431,6 @@ void initOriginalStandardSchemaNames()
     s_originalStandardSchemaFullNames.push_back(L"Unit_Attributes.01.00");
     s_originalStandardSchemaFullNames.push_back(L"Units_Schema.01.00");
     s_originalStandardSchemaFullNames.push_back(L"USCustomaryUnitSystemDefaults.01.00");
-    //Following schema is consider system schemas under Graphite
-    s_originalStandardSchemaFullNames.push_back(L"ECDbSystem.01.00");
-    s_originalStandardSchemaFullNames.push_back(L"dgn.01.00");
     }
 
 /*---------------------------------------------------------------------------------**//**
