@@ -250,7 +250,7 @@ ECObjectsStatus ECSchema::SetIsDynamic (bool isDynamic)
 
         SchemaNameClassNamePair dynamicSchemaClassId (L"Bentley_Standard_CustomAttributes", DYNAMIC_SCHEMA_CLASS);
         ECClassP dynamicSchemaClass = GetReferencedSchemas().FindClassP (dynamicSchemaClassId);
-        BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.5");
+        //BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.6");
         if (dynamicSchemaClass == NULL)
             return ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound;
 
@@ -391,6 +391,10 @@ void initStandardSchemaNames()
     s_standardSchemaNames.push_back(L"Unit_Attributes");
     s_standardSchemaNames.push_back(L"Units_Schema");
     s_standardSchemaNames.push_back(L"USCustomaryUnitSystemDefaults");
+    //Following schema is consider system schemas under Graphite
+    s_standardSchemaNames.push_back(L"ECDbSystem");
+    s_standardSchemaNames.push_back(L"dgn");
+
 
     }
 
@@ -432,6 +436,9 @@ void initOriginalStandardSchemaNames()
     s_originalStandardSchemaFullNames.push_back(L"Unit_Attributes.01.00");
     s_originalStandardSchemaFullNames.push_back(L"Units_Schema.01.00");
     s_originalStandardSchemaFullNames.push_back(L"USCustomaryUnitSystemDefaults.01.00");
+    //Following schema is consider system schemas under Graphite
+    s_originalStandardSchemaFullNames.push_back(L"ECDbSystem.01.00");
+    s_originalStandardSchemaFullNames.push_back(L"dgn.01.00");
     }
 
 /*---------------------------------------------------------------------------------**//**
