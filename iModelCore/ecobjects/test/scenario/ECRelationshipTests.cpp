@@ -100,7 +100,8 @@ TEST_F(ECRelationshipTests, InheritedEnablerIterator)
     
     WCharCP props[] = {L"p", L"SourceOrderId", L"TargetOrderId", L"Name", L"Source ECPointer", L"Target ECPointer", L"ArrayProperty"};
     
-    EXPECT_EQ (relationshipEnabler->GetPropertyCount() - 1, sizeof(props)/sizeof(props[0])); //No idea why it returns +1 of properties
+    // Target/Source ECPointer are not properties of the ECClass, they are special access strings for relationship enablers...
+    EXPECT_EQ (relationshipEnabler->GetClass().GetPropertyCount() + 2, sizeof(props)/sizeof(props[0])); 
     UInt32 tempIndex = relationshipEnabler->GetFirstPropertyIndex(0);
     EXPECT_TRUE (relationshipEnabler->HasChildProperties(0));
     
@@ -246,8 +247,8 @@ TEST_F(ECRelationshipTests, SourceDestOrderIDs)
     EXPECT_EQ (relationshipInstance->GetTargetOrderId(targetId), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (targetId, 0);
     
-    EXPECT_TRUE (relationshipInstance->GetSource() == NULL);
-    EXPECT_TRUE (relationshipInstance->GetTarget() == NULL);
+    EXPECT_TRUE (relationshipInstance->GetSource().IsNull());
+    EXPECT_TRUE (relationshipInstance->GetTarget().IsNull());
     
     relationshipInstance->SetSource (m_schema->GetClassP (L"ClassA")->GetDefaultStandaloneEnabler()->CreateInstance().get());
     relationshipInstance->SetTarget (m_schema->GetClassP (L"ClassB")->GetDefaultStandaloneEnabler()->CreateInstance().get());

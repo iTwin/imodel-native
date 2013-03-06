@@ -1619,75 +1619,6 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Dylan.Rush                      1/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ECInstanceInteropHelper::GetNextInteropProperty 
-(
-int& propertyIndex, 
-int& structNameLength, 
-WCharCP& accessor,
-IECInstanceCR instance, 
-int prefix,
-bool includeNulls,
-bool firstRunInStruct
-)
-    {
-    int maxPropertyIndex = instance.GetEnabler().GetPropertyCount();
-    bool thisValueIsNull = false;
-    do
-        {
-        if (propertyIndex >= maxPropertyIndex)
-            return false;
-
-        WCharCP currentAccessString = NULL;
-        WCharCP nextAccessString;
-
-        if (prefix > 0)
-            {
-            DEBUG_EXPECT (propertyIndex > -1);
-            if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetAccessString (currentAccessString, propertyIndex))
-                return false;
-            }
-
-        //If the caller is a struct (prefix > 0) continue to the next struct.  Else just get next access string and 
-        //continue.
-        if (firstRunInStruct)
-            {
-            accessor = currentAccessString;
-            }
-        else
-            {
-            do {
-                if (++propertyIndex >= maxPropertyIndex)
-                    return false;
-                if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetAccessString (nextAccessString, propertyIndex))
-                    return false;
-                } while (0 != prefix && 0 != wcsncmp (currentAccessString, nextAccessString, (size_t) prefix));
-            accessor = nextAccessString;
-            }
-
-        WCharCP dotPos = wcschr (accessor + prefix + 1, L'.');
-        if (NULL == dotPos)
-            structNameLength = -1;
-        else
-            structNameLength = (int) (dotPos - accessor);
-
-        if ( ! includeNulls)
-            {
-            if (-1 == structNameLength)
-                {
-                ECValue v;
-                instance.GetValue (v, propertyIndex);
-                thisValueIsNull = v.IsNull();
-                }
-            else 
-                thisValueIsNull = false;
-            }
-        } while ( ! includeNulls && thisValueIsNull);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool  ECInstanceInteropHelper::IsCalculatedECProperty  (IECInstanceCR instance, int propertyIndex)
     {
     WCharCP accessor;
@@ -1706,26 +1637,6 @@ bool  ECInstanceInteropHelper::IsCalculatedECProperty  (IECInstanceCR instance, 
         return false;
 
     return ecProperty->IsDefined (L"CalculatedECPropertySpecification");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dylan.Rush                      1/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-int   ECInstanceInteropHelper::FirstIndexOfStruct  (IECInstanceCR instance, WCharCP structName)
-    {
-    int maxPropertyIndex = instance.GetEnabler().GetPropertyCount();
-    size_t structNameLength = wcslen (structName);
-    int propertyIndex = -1;
-
-    WCharCP currentAccessString;
-    do {
-        propertyIndex ++;
-        if (propertyIndex == maxPropertyIndex)
-            return -1;
-        if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetAccessString (currentAccessString, propertyIndex))
-            return -1;
-        } while (0 != wcsncmp (currentAccessString, structName, structNameLength));
-    return propertyIndex;
     }
 
 /*---------------------------------------------------------------------------------**//**

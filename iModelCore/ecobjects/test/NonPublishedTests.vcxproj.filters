@@ -33,9 +33,6 @@
     <ClCompile Include="NonPublished\ECSchemaUnitsManagerTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\StopWatch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\StringEncodingTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,9 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\StopWatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NonPublished\TestFixture.h">

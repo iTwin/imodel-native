@@ -6,12 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
 #include <ECObjects\ECValue.h>
+#include <Bentley/BeTimeUtilities.h>
+
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -944,9 +945,10 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
     const int expectedPropertyCount = 19;
 
-    UInt32 propertyCount = enabler->GetPropertyCount();
-
+/** -- Can't test this method via published API -- tested indirectly below
+    UInt32 propertyCount = enabler->GetClassLayout().GetPropertyCount();
     EXPECT_EQ (expectedPropertyCount, propertyCount);
+**/
 
     wchar_t* expectedProperties [expectedPropertyCount] = 
         {
@@ -1122,11 +1124,6 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
 
 
     StandaloneECEnablerPtr enabler = schema->GetClassP(L"EmptyClass")->GetDefaultStandaloneEnabler ();
-
-    //The class has zero properties?
-    //EXPECT_TRUE (0 == enabler->GetPropertyCount());
-
-    EXPECT_TRUE (1 == enabler->GetPropertyCount());
 
     ASSERT_TRUE (enabler.IsValid());
 

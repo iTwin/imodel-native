@@ -74,7 +74,6 @@ protected:
     virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const = 0;
     virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const = 0;
     virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const = 0;
-    virtual UInt32                  _GetPropertyCount () const = 0;
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
 
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const;
@@ -125,9 +124,6 @@ public:
     //! Get the IStandaloneEnablerLocater for this enabler
     ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
 
-    //! Returns the number of properties that this enabler enables.
-    ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
-
     //! Returns an enabler for the given class from the given schema.
     //! @param[in] schemaKey    The SchemaKey defining the schema (schema name and version info) that the className ECClass comes from
     //! @param[in] className    The name of the ECClass to retrieve the enabler for
@@ -167,7 +163,6 @@ private:
     virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
     virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const { return m_enabler->GetFirstPropertyIndex (parentIndex); }
     virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
-    virtual UInt32                  _GetPropertyCount () const { return m_enabler->GetPropertyCount(); }
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
 
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
@@ -246,8 +241,6 @@ protected:
                 return ++inputIndex;
             return 0;
             }
-        
-        virtual UInt32          _GetPropertyCount () const override {return DerivedClass::MAX_PROPERTY_COUNT;}
         
         virtual ECObjectsStatus _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override
             {

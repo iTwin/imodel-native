@@ -62,13 +62,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ECObjectsTestPCH.cpp" />
-    <ClCompile Include="Performance\StopWatch.cpp" />
     <ClCompile Include="Performance\TestFixture.cpp" />
     <ClCompile Include="Performance\ECXmlPerformanceTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
-    <ClInclude Include="Performance\StopWatch.h" />
     <ClInclude Include="Performance\TestFixture.h" />
   </ItemGroup>
   <ItemGroup>

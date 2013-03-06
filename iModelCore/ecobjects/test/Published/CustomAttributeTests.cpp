@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -253,13 +253,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
-    EXPECT_TRUE(instance == gotInstance);
+    EXPECT_TRUE(instance.get() == gotInstance.get());
 
     ECClassP caClass = schema->GetClassP(L"CustomAttribClass");
     ASSERT_TRUE (NULL != caClass);
     gotInstance = containerClass->GetCustomAttribute(*caClass);
     EXPECT_TRUE(gotInstance.IsValid());
-    EXPECT_TRUE(instance == gotInstance);
+    EXPECT_TRUE(instance.get() == gotInstance.get());
     }
 
 TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
@@ -331,7 +331,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
-    EXPECT_TRUE(instance == gotInstance);
+    EXPECT_TRUE(instance.get() == gotInstance.get());
 
     EXPECT_TRUE(containerClass->RemoveCustomAttribute(L"CustomAttribClass"));
     IECInstancePtr gotInstance2 = containerClass->GetCustomAttribute(L"CustomAttribClass");

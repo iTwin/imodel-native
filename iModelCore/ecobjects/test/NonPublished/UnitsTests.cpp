@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 #include <ECUnits/Units.h>
 

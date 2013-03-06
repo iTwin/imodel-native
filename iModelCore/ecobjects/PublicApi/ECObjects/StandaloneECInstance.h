@@ -264,7 +264,6 @@ protected:
     virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
-    virtual UInt32                      _GetPropertyCount () const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;

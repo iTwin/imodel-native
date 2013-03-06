@@ -581,7 +581,6 @@ bool            ECValue::IsPrimitive () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Copies this value, including all strings and array values held by this value.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()
@@ -2430,7 +2429,7 @@ ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
 ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR instance)
     {
     ECEnablerCR enabler = instance.GetEnabler();
-    if (1 == enabler.GetPropertyCount())
+    if (0 == enabler.GetClass().GetPropertyCount())
         return ECPropertyValue ();
 
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);

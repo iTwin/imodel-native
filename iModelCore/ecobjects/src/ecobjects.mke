@@ -54,7 +54,6 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)FileUtilities.h \
-                    $(baseDir)StopWatch.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h
                     
 
