@@ -64,7 +64,7 @@ static ECSchemaPtr CreateTestSchema ()
 TEST_F(ECRelationshipTests, SimpleRelationship)
     {
     ECSchemaPtr schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     
     ECClassP sourceClass = schema->GetClassP (L"ClassA");
     ASSERT_TRUE (NULL != sourceClass);
@@ -120,7 +120,7 @@ TEST_F(ECRelationshipTests, SimpleRelationship)
 TEST_F(ECRelationshipTests, SetRelationshipProperties)
     {
     ECSchemaPtr schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP sourceClass = schema->GetClassP (L"ClassA");
     ASSERT_TRUE (NULL != sourceClass);

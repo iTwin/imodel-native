@@ -180,7 +180,7 @@ TEST_F(SchemaTest,ExpectReadOnly)
     ECClassP customAttributeClass;
  
     ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
-    ASSERT_TRUE(schema!=NULL);
+    ASSERT_TRUE(schema.IsValid());
  
     //Create Domain Class
     schema->CreateClass(domainClass,L"DomainClass");
@@ -375,7 +375,7 @@ TEST_F(SchemaCacheTest, LoadAndGetSchema)
     EXPECT_EQ (cache->GetCount(), 3);
     
     ECSchemaPtr fetchedSchema = cache->GetSchema(SchemaKey(L"BaseSchema1", 2, 0));
-    ASSERT_TRUE (fetchedSchema != NULL);
+    ASSERT_TRUE (fetchedSchema.IsValid());
     EXPECT_TRUE (fetchedSchema->GetSchemaKey() == SchemaKey(L"BaseSchema1", 2, 0));
     
     cache->Clear();

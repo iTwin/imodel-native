@@ -2882,7 +2882,7 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
         return SetPrimitiveValueToMemory (v, propertyLayout, true, index);
     else if (typeDescriptor.IsStructArray() && (v.IsNull() || v.IsStruct()))
         {
-        if (v.GetStruct() != NULL)
+        if (v.GetStruct().IsValid())
             {
             UInt32 propertyIndex;
             IECInstanceP instance = this->GetAsIECInstance();
