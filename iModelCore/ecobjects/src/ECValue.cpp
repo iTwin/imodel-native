@@ -2429,7 +2429,7 @@ ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
 ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR instance)
     {
     ECEnablerCR enabler = instance.GetEnabler();
-    if (1 == enabler.GetPropertyCount())
+    if (0 == enabler.GetClass().GetPropertyCount())
         return ECPropertyValue ();
 
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);

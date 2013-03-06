@@ -19,8 +19,19 @@ struct SchemaSerializationTest   : ECTestFixture {};
 struct SchemaReferenceTest       : ECTestFixture {};
 struct SchemaCreationTest        : ECTestFixture {};
 struct SchemaCopyTest            : ECTestFixture {};
-struct ClassTest                 : ECTestFixture {};
 struct SchemaLocateTest          : ECTestFixture {};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ClassTest                 : ECTestFixture
+    {
+    void TestPropertyCount (ECClassCR ecClass, size_t nPropertiesWithoutBaseClasses, size_t nPropertiesWithBaseClasses)
+        {
+        EXPECT_EQ (ecClass.GetPropertyCount (false), nPropertiesWithoutBaseClasses);
+        EXPECT_EQ (ecClass.GetPropertyCount (true), nPropertiesWithBaseClasses);
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
@@ -1338,6 +1349,50 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
     EXPECT_EQ(ECOBJECTS_STATUS_BaseClassUnacceptable, baseClass2->AddBaseClass(*class1));
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, GetPropertyCount)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"TestSchema", 1, 0);
+
+    ECClassP baseClass1, baseClass2, derivedClass, structClass;
+
+    PrimitiveECPropertyP primProp;
+    StructECPropertyP structProp;
+
+    // Struct class with 2 properties
+    schema->CreateClass (structClass, L"StructClass");
+    structClass->SetIsStruct (true);
+    structClass->CreatePrimitiveProperty (primProp, L"StructProp1");
+    structClass->CreatePrimitiveProperty (primProp, L"StructProp2");
+
+    // 1 base class with 3 primitive properties
+    schema->CreateClass (baseClass1, L"BaseClass1");
+    baseClass1->CreatePrimitiveProperty (primProp, L"Base1Prop1");
+    baseClass1->CreatePrimitiveProperty (primProp, L"Base1Prop2");
+    baseClass1->CreatePrimitiveProperty (primProp, L"Base1Prop3");
+
+    // 1 base class with 1 primitive and 2 struct properties (each struct has 2 properties
+    schema->CreateClass (baseClass2, L"BaseClass2");
+    baseClass2->CreatePrimitiveProperty (primProp, L"Base2Prop1");
+    baseClass2->CreateStructProperty (structProp, L"Base2Prop2", *structClass);
+    baseClass2->CreateStructProperty (structProp, L"Base2Prop3", *structClass);
+
+    // Derived class with 1 extra primitive property, 1 extra struct property, derived from 2 base classes
+    schema->CreateClass (derivedClass, L"DerivedClass");
+    derivedClass->CreateStructProperty (structProp, L"DerivedProp1", *structClass);
+    derivedClass->CreatePrimitiveProperty (primProp, L"DerivedProp2");
+    derivedClass->AddBaseClass (*baseClass1);
+    derivedClass->AddBaseClass (*baseClass2);
+
+    TestPropertyCount (*structClass, 2, 2);
+    TestPropertyCount (*baseClass1, 3, 3);
+    TestPropertyCount (*baseClass2, 3, 3);
+    TestPropertyCount (*derivedClass, 2, 8);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

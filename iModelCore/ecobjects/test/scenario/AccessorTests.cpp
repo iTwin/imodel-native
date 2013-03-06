@@ -124,20 +124,23 @@ TEST_F (ValueAccessorTests, GetAccessString)
 //heavyweight ECInstance.
 TEST_F (ValueAccessorTests, DISABLED_GetDefaultStandaloneEnablerBug)
     {
+#ifdef WHEN_ITS_NO_LONGER_DISABLED
+    // The test doesn't compiled. But it's disabled, so I'm just commenting it out...
     CreateSchema();
     
     PrimitiveECPropertyP prop;
     EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, L"Prop1"), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyCount(), 2);
+    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 2);
              //ecClass->GetDefaultStandaloneEnabler() locks the item count and other properties
     
     EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, L"Prop2"), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyCount(), 3);
+    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 3);
     
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, L"Prop2"), ECOBJECTS_STATUS_Success);
     WCharCP propertyName;
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetAccessString  (propertyName,  propIndex), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (propertyName, L"Prop2");
+#endif
     }
     
 /*---------------------------------------------------------------------------------**//**

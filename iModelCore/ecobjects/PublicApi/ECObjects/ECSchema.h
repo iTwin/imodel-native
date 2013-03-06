@@ -909,6 +909,8 @@ public:
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     //! Returns an iterable of all the ECProperties defined on this class
     ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const;
+    //! Returns the number of ECProperties in this class
+    ECOBJECTS_EXPORT size_t GetPropertyCount (bool includeBaseProperties = true) const;
     //! Returns a list of the classes this ECClass is derived from
     ECOBJECTS_EXPORT const ECBaseClassesList& GetBaseClasses() const;
     //! Returns a list of the classes that derive from this class.
