@@ -731,7 +731,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
@@ -840,7 +840,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
 TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
     ASSERT_TRUE (NULL != ecClass);
@@ -888,7 +888,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (ecClass != NULL);
@@ -993,7 +993,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
@@ -1017,7 +1017,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
     ASSERT_TRUE (NULL != ecClass);
@@ -1041,7 +1041,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
@@ -1140,7 +1140,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
@@ -1215,7 +1215,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
     
@@ -1429,7 +1429,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
         
@@ -1550,7 +1550,7 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
 TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);

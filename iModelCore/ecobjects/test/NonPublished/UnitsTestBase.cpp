@@ -22,7 +22,7 @@ void UnitsTestBase::SetUp()
     InitializeUnits (L"testschema",supplementalSchemas);
 
     // Test that test schemas are not null
-     ASSERT_TRUE(m_testSchema!=NULL)<<"Test setup failure: Domain Schema not loaded";
+     ASSERT_TRUE(m_testSchema.IsValid())<<"Test setup failure: Domain Schema not loaded";
      ASSERT_TRUE (supplementalSchemas.size()!=0)<< "Test setup failure: Supplemental Schema not loaded";
 
     // Build Supplemented Schema
