@@ -1388,10 +1388,7 @@ struct SchemaKey
 /*__PUBLISH_SECTION_START__*/
     };
 
-/*---------------------------------------------------------------------------------**//**
 //! Determines whether two SchemaKeys match
-//! @ingroup ECObjectsGroup
-+---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
     {
@@ -1402,10 +1399,7 @@ struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
 //! Determines whether one SchemaKey is less than the other
-//! @ingroup ECObjectsGroup
-+---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
     {
