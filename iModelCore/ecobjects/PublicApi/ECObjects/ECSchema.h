@@ -842,6 +842,7 @@ private:
 
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
     ECObjectsStatus AddProperty (ECPropertyP pProperty, WStringCR name);
+    ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
 
@@ -887,6 +888,10 @@ protected:
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
+
+public:
+    ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);
+    ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -1731,7 +1736,7 @@ private:
     static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UInt32 checkSum, ECSchemaReadContextR context);
     SchemaWriteStatus                   WriteXml (BeXmlDomR xmlDoc) const;
 
-    ECObjectsStatus                     AddClass (ECClassP& pClass);
+    ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
@@ -1756,6 +1761,10 @@ private:
     void                                ReComputeCheckSum ();
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
+
+public:
+    ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
+    ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, WCharCP newName);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

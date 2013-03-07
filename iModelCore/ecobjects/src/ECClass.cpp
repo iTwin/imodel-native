@@ -252,6 +252,68 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::RemoveProperty (ECPropertyR prop)
+    {
+    // ###TODO? Notify base and/or derived classes of this change. No known use case
+    if (HasBaseClasses() || 0 < m_derivedClasses.size())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    PropertyMap::iterator iter = m_propertyMap.find (prop.GetName().c_str());
+    if (iter == m_propertyMap.end() || iter->second != &prop)
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    m_propertyMap.erase (iter);
+    m_propertyList.erase (std::find (m_propertyList.begin(), m_propertyList.end(), &prop));
+    return ECOBJECTS_STATUS_Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
+    {
+    ECObjectsStatus status = RemoveProperty (prop);
+    if (ECOBJECTS_STATUS_Success == status)
+        delete &prop;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::RenameProperty (ECPropertyR prop, WCharCP newName)
+    {
+    ECObjectsStatus status = RemoveProperty (prop);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        ECPropertyP propertyP = &prop;
+        WString oldName = prop.GetName();
+
+        status = prop.SetName (newName);
+        if (ECOBJECTS_STATUS_Success == status)
+            {
+            status = AddProperty (propertyP);
+            if (ECOBJECTS_STATUS_Success != status)
+                {
+                // Failed to add (duplicate name?) Add back with the old name
+                prop.SetName (oldName);
+                AddProperty (propertyP);
+                }
+            }
+        else
+            {
+            // Failed to rename, add it back with the existing name
+            AddProperty (propertyP);
+            }
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)

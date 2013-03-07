@@ -494,9 +494,39 @@ void ECSchema::DebugDump()const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
+    {
+    ClassMap::const_iterator iter = m_classMap.find (ecClass.GetName().c_str());
+    if (iter == m_classMap.end() || iter->second != &ecClass)
+        return ECOBJECTS_STATUS_ClassNotFound;
+
+    m_classMap.erase (iter);
+    delete &ecClass;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, WCharCP newName)
+    {
+    ClassMap::const_iterator iter = m_classMap.find (ecClass.GetName().c_str());
+    if (iter == m_classMap.end() || iter->second != &ecClass)
+        return ECOBJECTS_STATUS_ClassNotFound;
+
+    ECClassP pClass = &ecClass;
+    m_classMap.erase (iter);
+    ECObjectsStatus renameStatus = ecClass.SetName (newName);
+    ECObjectsStatus addStatus = AddClass (pClass, false);
+    return ECOBJECTS_STATUS_Success != renameStatus ? renameStatus : addStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
+ECObjectsStatus ECSchema::AddClass (ECClassP& pClass, bool deleteClassIfDuplicate)
     {
     if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
 
@@ -505,8 +535,13 @@ ECObjectsStatus ECSchema::AddClass (ECClassP& pClass)
     if (resultPair.second == false)
         {
         LOG.warningv (L"Can not create class '%ls' because it already exists in the schema", pClass->GetName().c_str());
-        delete pClass;
-        pClass = NULL;        
+        if (deleteClassIfDuplicate)
+            {
+            // preserving weird existing behavior, added option to not do this...
+            delete pClass;
+            pClass = NULL;        
+            }
+
         return ECOBJECTS_STATUS_NamedItemAlreadyExists;
         }
     //DebugDump(); wprintf(L"\n");
