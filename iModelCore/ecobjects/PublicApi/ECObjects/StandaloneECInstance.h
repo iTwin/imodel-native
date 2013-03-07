@@ -285,3 +285,7 @@ public:
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
+//__PUBLISH_SECTION_END__
+#pragma make_public (Bentley::ECN::StandaloneECEnabler)
+#pragma make_public (Bentley::ECN::StandaloneECInstance)
+#pragma make_public (Bentley::ECN::MemoryECInstanceBase)

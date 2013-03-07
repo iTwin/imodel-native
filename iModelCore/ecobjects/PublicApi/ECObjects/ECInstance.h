@@ -642,5 +642,8 @@ struct ECInstanceInteropHelper
 
 /*__PUBLISH_SECTION_START__*/
 
-
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/
+#pragma make_public (Bentley::ECN::IECInstance)
+/*__PUBLISH_SECTION_START__*/

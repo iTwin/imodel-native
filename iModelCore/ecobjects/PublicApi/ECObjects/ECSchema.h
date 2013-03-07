@@ -2102,4 +2102,9 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECCustomAttributeInstanceIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECPropertyIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECClassContainer)
+
+#pragma make_public (Bentley::ECN::ECClass)
+#pragma make_public (Bentley::ECN::ECSchema)
+
 //__PUBLISH_SECTION_START__
+
