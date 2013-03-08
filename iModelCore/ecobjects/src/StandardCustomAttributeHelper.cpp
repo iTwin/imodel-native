@@ -128,6 +128,12 @@ WString DateTimeInfo::ToString () const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 03/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+WCharCP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_NAME = L"SystemSchema";
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -135,5 +141,16 @@ bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfoR dateTimeIn
     {
     return DateTimeInfoAccessor::TryGetFrom (dateTimeInfo, dateTimeProperty);
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 03/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool StandardCustomAttributeHelper::IsSystemSchema (ECSchemaCR schema)
+    {
+    return schema.IsDefined (SYSTEMSCHEMA_CA_NAME);
+    }
+
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -100,21 +100,31 @@ struct StandardCustomAttributeHelper : NonCopyableClass
     {
     //__PUBLISH_SECTION_END__
 private:
+    static WCharCP const SYSTEMSCHEMA_CA_NAME;
+
     //static class
     StandardCustomAttributeHelper ();
     ~StandardCustomAttributeHelper ();
     //__PUBLISH_SECTION_START__
 
 public:
-    //! Retrieves the content of the \b %DateTimeInfo custom attribute from the specified date time ECProperty.
-    //! @remarks The \b %DateTimeInfo custom attribute is defined in the standard schema \b Bentley_Standard_CustomAttributes.
+    //! Retrieves the content of the @b %DateTimeInfo custom attribute from the specified date time ECProperty.
+    //! @remarks The @b %DateTimeInfo custom attribute is defined in the standard schema @b Bentley_Standard_CustomAttributes.
     //!          See also DateTimeInfo.
     //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return true if \p dateTimeProperty contains the %DateTimeInfo custom attribute, false if \p dateTimeProperty 
+    //! @return true if @p dateTimeProperty contains the %DateTimeInfo custom attribute, false if @p dateTimeProperty 
     //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
-    //! @see \ref ECInstancesDateTimePropertiesHowTos
+    //! @see @ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
+
+    //! Indicates whether the specified schema is a system schema (in contrast to a user-supplied schema) by
+    //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
+    //! is assigned to the schema.
+    //! @remarks A system schema is a schema used and managed internally by the software.
+    //! @param[in] schema Schema to check
+    //! @return true, if @schema is a system schema. false, otherwise
+    ECOBJECTS_EXPORT static bool IsSystemSchema (ECSchemaCR schema);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
