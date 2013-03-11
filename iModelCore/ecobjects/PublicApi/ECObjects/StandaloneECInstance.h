@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-/// @cond BENTLEY_SDK_Desktop
+/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/ECObjects.h>
+/// @cond BENTLEY_SDK_Desktop
 #include <ECObjects/ECDBuffer.h>
+/// @endcond BENTLEY_SDK_Desktop
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
@@ -18,7 +20,11 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
+
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
+
+/// @cond BENTLEY_SDK_Desktop
+
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 
@@ -165,13 +171,16 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT bool                     IsHiddenInstance ();
 };
 
-/*=================================================================================**//**
+/// @endcond BENTLEY_SDK_Desktop
+
+//=================================================================================
+//! ECN::StandaloneECInstance is an implementation of IECInstance which is not tied
+//! to a specified persistence store and which holds the values in memory that it allocates,
+//! laid out according to the ClassLayout.
+//! @see IECInstance
 //! @ingroup ECObjectsGroup
-* ECN::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
-* It holds the values in memory that it allocates... laid out according to the ClassLayout
-* @see ClassLayoutHolder, IECInstance
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct StandaloneECInstance : IECInstance
 //__PUBLISH_SECTION_END__
                             , MemoryECInstanceBase
@@ -221,6 +230,8 @@ public:
     ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
     };
 
+/// @cond BENTLEY_SDK_Desktop
+
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an
 //! ECRelationship.
@@ -244,9 +255,12 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
     };
 
+/// @endcond BENTLEY_SDK_Desktop
+
 //=======================================================================================
+//! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
+//! @see StandaloneECInstance
 //! @ingroup ECObjectsGroup
-//! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
 //__PUBLISH_SECTION_END__
@@ -280,5 +294,5 @@ public:
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond BENTLEY_SDK_All
 
