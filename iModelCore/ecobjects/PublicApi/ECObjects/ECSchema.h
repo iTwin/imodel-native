@@ -890,7 +890,9 @@ protected:
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
 
 public:
+    ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);
+    ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
 
 //__PUBLISH_CLASS_VIRTUAL__

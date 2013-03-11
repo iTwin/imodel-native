@@ -284,8 +284,109 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, PrimitiveType primitiveType, bool asArray, ECPropertyR propertyToRemove)
+    {
+    if (HasBaseClasses() || 0 < m_derivedClasses.size())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    newProperty = NULL;
+
+    UInt32 propertyIndex = -1;
+    for (size_t i = 0; i < m_propertyList.size(); i++)
+        {
+        if (m_propertyList[i] == &propertyToRemove)
+            {
+            propertyIndex = (UInt32)i;
+            break;
+            }
+        }
+
+    if (-1 == propertyIndex)
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    if (asArray)
+        {
+        ArrayECPropertyP arrayProp = new ArrayECProperty (*this);
+        arrayProp->SetPrimitiveElementType (primitiveType);
+        newProperty = arrayProp;
+        }
+    else
+        {
+        PrimitiveECPropertyP primProp = new PrimitiveECProperty (*this); 
+        primProp->SetType (primitiveType);
+        newProperty = primProp;
+        }
+
+    m_propertyMap.erase (m_propertyMap.find (propertyToRemove.GetName().c_str()));
+
+    newProperty->SetName (propertyToRemove.GetName());
+    m_propertyMap[newProperty->GetName().c_str()] = newProperty;
+    m_propertyList[propertyIndex] = newProperty;
+
+    delete &propertyToRemove;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetPropertyByIndex (UInt32 index)
+    {
+    if (index >= (UInt32)m_propertyList.size())
+        return NULL;
+
+    return m_propertyList[index];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, ValueKind kind, ECPropertyR propertyToRemove)
+    {
+    if (HasBaseClasses() || 0 < m_derivedClasses.size())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    newProperty = NULL;
+
+    UInt32 propertyIndex = -1;
+    for (size_t i = 0; i < m_propertyList.size(); i++)
+        {
+        if (m_propertyList[i] == &propertyToRemove)
+            {
+            propertyIndex = (UInt32)i;
+            break;
+            }
+        }
+
+    if (-1 == propertyIndex)
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    switch (kind)
+        {
+    case VALUEKIND_Primitive:   newProperty = new PrimitiveECProperty (*this); break;
+    case VALUEKIND_Array:       newProperty = new ArrayECProperty (*this); break;
+    case VALUEKIND_Struct:      newProperty = new StructECProperty (*this); break;
+    default:                    return ECOBJECTS_STATUS_Error;
+        }
+
+    m_propertyMap.erase (m_propertyMap.find (propertyToRemove.GetName().c_str()));
+
+    newProperty->SetName (propertyToRemove.GetName());
+    m_propertyMap[newProperty->GetName().c_str()] = newProperty;
+    m_propertyList[propertyIndex] = newProperty;
+
+    delete &propertyToRemove;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::RenameProperty (ECPropertyR prop, WCharCP newName)
     {
+    if (HasBaseClasses() || 0 < m_derivedClasses.size())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
     ECObjectsStatus status = RemoveProperty (prop);
     if (ECOBJECTS_STATUS_Success == status)
         {
