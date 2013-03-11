@@ -247,8 +247,8 @@ TEST_F(ECRelationshipTests, SourceDestOrderIDs)
     EXPECT_EQ (relationshipInstance->GetTargetOrderId(targetId), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (targetId, 0);
     
-    EXPECT_TRUE (relationshipInstance->GetSource() == NULL);
-    EXPECT_TRUE (relationshipInstance->GetTarget() == NULL);
+    EXPECT_TRUE (relationshipInstance->GetSource().IsNull());
+    EXPECT_TRUE (relationshipInstance->GetTarget().IsNull());
     
     relationshipInstance->SetSource (m_schema->GetClassP (L"ClassA")->GetDefaultStandaloneEnabler()->CreateInstance().get());
     relationshipInstance->SetTarget (m_schema->GetClassP (L"ClassB")->GetDefaultStandaloneEnabler()->CreateInstance().get());

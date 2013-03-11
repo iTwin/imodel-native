@@ -668,7 +668,8 @@ public:
     //! The property type.
     //! This type must be an ECClass where IsStruct is set to true.
     ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECClassCR value);
-    ECOBJECTS_EXPORT ECClassCR          GetType() const; //!< Gets the ECClass that defines the type for this property
+    //! Gets the ECClass that defines the type for this property
+    ECOBJECTS_EXPORT ECClassCR          GetType() const; 
 };
 
 //=======================================================================================
@@ -1394,10 +1395,7 @@ struct SchemaKey
 /*__PUBLISH_SECTION_START__*/
     };
 
-/*---------------------------------------------------------------------------------**//**
 //! Determines whether two SchemaKeys match
-//! @ingroup ECObjectsGroup
-+---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
     {
@@ -1408,10 +1406,7 @@ struct SchemaKeyMatch : std::binary_function<SchemaKey, SchemaKey, bool>
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
 //! Determines whether one SchemaKey is less than the other
-//! @ingroup ECObjectsGroup
-+---------------+---------------+---------------+---------------+---------------+------*/
 template <SchemaMatchType MatchType>
 struct SchemaKeyLessThan : std::binary_function<SchemaKey, SchemaKey, bool>
     {
@@ -2112,4 +2107,9 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECCustomAttributeInstanceIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECPropertyIterable)
 BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECClassContainer)
+
+#pragma make_public (Bentley::ECN::ECClass)
+#pragma make_public (Bentley::ECN::ECSchema)
+
 //__PUBLISH_SECTION_START__
+

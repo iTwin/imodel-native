@@ -1435,7 +1435,7 @@ ECSchemaPtr     SearchPathSchemaFileLocater::LocateSchemaByPath (SchemaKeyR key,
     if (matchType == SCHEMAMATCHTYPE_LatestCompatible)
         BeStringUtilities::Snwprintf(versionString, 24, L".%02d.*.ecschema.xml", key.m_versionMajor);
     else if (matchType == SCHEMAMATCHTYPE_Latest)
-        BeStringUtilities::Snwprintf(versionString, 24, L".*.*.ecschema.xml", key.m_versionMajor);
+        BeStringUtilities::Snwprintf(versionString, 24, L".*.*.ecschema.xml");
     else
         BeStringUtilities::Snwprintf(versionString, 24, L".%02d.%02d.ecschema.xml", key.m_versionMajor, key.m_versionMinor);
 

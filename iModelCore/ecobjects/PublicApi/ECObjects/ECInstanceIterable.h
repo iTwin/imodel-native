@@ -243,3 +243,4 @@ struct ECInstanceIterable
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
+#pragma make_public (Bentley::ECN::ECInstanceIterable)
