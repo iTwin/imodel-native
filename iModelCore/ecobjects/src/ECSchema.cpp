@@ -234,7 +234,7 @@ ECSchema::~ECSchema ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSchema::IsSystem () const
+bool ECSchema::IsSystemSchema () const
     {
     return StandardCustomAttributeHelper::IsSystemSchema (*this);
     }
@@ -243,14 +243,14 @@ bool ECSchema::IsSystem () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan    02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::IsDynamic () const
+bool ECSchema::IsDynamicSchema () const
     {
     return StandardCustomAttributeHelper::IsDynamicSchema (*this);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan    02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetIsDynamic (bool isDynamic)
+ECObjectsStatus ECSchema::SetIsDynamicSchema (bool isDynamic)
     {
     return StandardCustomAttributeHelper::SetIsDynamicSchema (*this, isDynamic);
     }

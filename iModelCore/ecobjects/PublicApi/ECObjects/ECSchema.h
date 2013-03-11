@@ -1803,27 +1803,27 @@ public:
     //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
     ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
     
-    //! Indicates whether this schema is a so-called @p dynamic schema by
-    //! checking whether the @b %DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
+    //! Indicates whether this schema is a so-called @b dynamic schema by
+    //! checking whether the @b DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
     //! is assigned to the schema.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
     //! @return true, if this schema is a dynamic schema. false, otherwise
-    ECOBJECTS_EXPORT bool IsDynamic () const;
+    ECOBJECTS_EXPORT bool IsDynamicSchema () const;
 
-    //! Marks a schema as @b dynamic schema by adding the custom attribute @ DynamicSchema from the standard schema @b 
-    //! Bentley_Standard_Custom Attributes to it.
+    //! Marks a schema as @b dynamic schema by adding the custom attribute @b DynamicSchema from the standard schema @b 
+    //! Bentley_Standard_CustomAttributes to it.
     //! If the standard schema is not yet referenced, an error will be returned.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
     //! @param[in]  isDynamic true, if this schema should be marked as dynamic schema. false, otherwise.
     //! @return A status code indicating success or error
-    ECOBJECTS_EXPORT ECObjectsStatus SetIsDynamic (bool isDynamic);
+    ECOBJECTS_EXPORT ECObjectsStatus SetIsDynamicSchema (bool isDynamic);
 
     //! Indicates whether this schema is a system schema (in contrast to a user-supplied schema) by
     //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
     //! is assigned to the schema.
     //! @remarks A system schema is a schema used and managed internally by the software.
     //! @return true, if @schema is a system schema. false, otherwise
-    ECOBJECTS_EXPORT bool IsSystem () const;
+    ECOBJECTS_EXPORT bool IsSystemSchema () const;
 
     //! Gets the number of classes in the schema
     ECOBJECTS_EXPORT UInt32             GetClassCount() const;

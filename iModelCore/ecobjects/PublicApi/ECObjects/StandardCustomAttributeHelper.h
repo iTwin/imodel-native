@@ -119,7 +119,7 @@ public:
     //! @see @ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 
-    //! Indicates whether the specified schema is a @p system schema (in contrast to a user-supplied schema) by
+    //! Indicates whether the specified schema is a @b system schema (in contrast to a user-supplied schema) by
     //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
     //! is assigned to the schema.
     //! @remarks A system schema is a schema used and managed internally by the software.
@@ -127,7 +127,7 @@ public:
     //! @return true, if @schema is a system schema. false, otherwise
     ECOBJECTS_EXPORT static bool IsSystemSchema (ECSchemaCR schema);
 
-    //! Indicates whether the specified schema is a so-called @p dynamic schema by
+    //! Indicates whether the specified schema is a so-called @b dynamic schema by
     //! checking whether the @b %DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
     //! is assigned to the schema.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
@@ -135,8 +135,8 @@ public:
     //! @return true, if @schema is a dynamic schema. false, otherwise
     ECOBJECTS_EXPORT static bool IsDynamicSchema (ECSchemaCR schema);
 
-    //! Marks a schema as @b dynamic schema by adding the custom attribute @ DynamicSchema from the standard schema @b 
-    //! Bentley_Standard_Custom Attributes to it.
+    //! Marks a schema as @b dynamic schema by adding the custom attribute @b DynamicSchema from the standard schema @b 
+    //! Bentley_Standard_CustomAttributes to it.
     //! If the standard schema is not yet referenced, an error will be returned.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
     //! @param[in] schema Schema to mark as dynamic
