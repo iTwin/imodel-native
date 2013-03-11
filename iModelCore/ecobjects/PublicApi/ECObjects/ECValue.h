@@ -21,7 +21,6 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
 //=======================================================================================    
 //! SystemTime structure is used to set and get time data from ECValue objects.
-//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
 struct SystemTime
@@ -61,8 +60,7 @@ public:
     };
 
 //=======================================================================================    
-//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
-//! @ingroup ECObjectsGroup
+//! Information about an array in an IECInstance. Does not contain the actual elements.
 //! @see ECValue
 //=======================================================================================    
 struct ArrayInfo
@@ -88,23 +86,18 @@ public:
     //! @param[in] isFixedCount         Indicates whether the array can grow or not
     void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
-    ECOBJECTS_EXPORT UInt32          GetCount() const; //!< Returns the number of entries in this array
-    ECOBJECTS_EXPORT bool            IsFixedCount() const; //!< Returns whether this is a fixed size array or not
-    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const; //!< Returns whether this is a primitive array
-    ECOBJECTS_EXPORT bool            IsStructArray() const; //!< Returns whether this is a struct array
-    ECOBJECTS_EXPORT ValueKind       GetKind() const; //!< Returns the kind of array this is (primitive or struct)
-    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const; //!< Returns the primitive type that this array was initialized with
+    ECOBJECTS_EXPORT UInt32          GetCount() const;                  //!< Returns the number of entries in this array
+    ECOBJECTS_EXPORT bool            IsFixedCount() const;              //!< Returns whether this is a fixed size array or not
+    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;          //!< Returns whether this is a primitive array
+    ECOBJECTS_EXPORT bool            IsStructArray() const;             //!< Returns whether this is a struct array
+    ECOBJECTS_EXPORT ValueKind       GetKind() const;                   //!< Returns the kind of array this is (primitive or struct)
+    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;   //!< Returns the primitive type that this array was initialized with
     };
 
-//=======================================================================================    
-//! @ingroup ECObjectsGroup
 //! Variant-like object representing the value of an ECPropertyValue. 
-//! It does not represent a "live" reference into the underlying ECN::IECInstance 
-//! (or the object that the ECN::IECInstance represents). Changing the ECN::ECValue will not affect
-//! the ECN::IECInstance unless you subsequently call SetValue() with it.
-//! 
-//! @group "ECInstance"
-//=======================================================================================    
+//! It does not represent a "live" reference into the underlying IECInstance 
+//! (or the object that the IECInstance represents). Changing the ECValue will not affect
+//! the IECInstance unless you subsequently call SetValue() with it.
 struct ECValue
     {
 public:
@@ -201,17 +194,17 @@ protected:
     //! The union storing the actual data of this ECValue
     union
         {
-        bool                m_boolean;  //!< If a Boolean primitive type, holds the bool value
-        ::Int32             m_integer32; //!< If an Int32 primitive type, holds the Int32 value
-        ::Int64             m_long64; //!< If an Int64 primitive type, holds the Int64 value
-        double              m_double; //!< If a double primitive type, holds the double value
+        bool                m_boolean;      //!< If a Boolean primitive type, holds the bool value
+        ::Int32             m_integer32;    //!< If an Int32 primitive type, holds the Int32 value
+        ::Int64             m_long64;       //!< If an Int64 primitive type, holds the Int64 value
+        double              m_double;       //!< If a double primitive type, holds the double value
         //! If a String primitive type, holds the StringInfo struct defining the string
         mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
-        ::Int64             m_dateTime; //!< If a DateTime primitive, holds the DateTime value as an Int64 representation
-        DPoint2d            m_dPoint2d;  //!< If a DPoint2d primitive, holds the DPoint2d value
-        DPoint3d            m_dPoint3d; //!< If a DPoint3d primitive, holds the DPoint3d value
-        ArrayInfo           m_arrayInfo; //!< If an array value, holds the ArrayInfo struct defining the array
-        BinaryInfo          m_binaryInfo; //!< If a binary value, holds the BinaryInfo struct defining the binary data
+        ::Int64             m_dateTime;     //!< If a DateTime primitive, holds the DateTime value as an Int64 representation
+        DPoint2d            m_dPoint2d;     //!< If a DPoint2d primitive, holds the DPoint2d value
+        DPoint3d            m_dPoint3d;     //!< If a DPoint3d primitive, holds the DPoint3d value
+        ArrayInfo           m_arrayInfo;    //!< If an array value, holds the ArrayInfo struct defining the array
+        BinaryInfo          m_binaryInfo;   //!< If a binary value, holds the BinaryInfo struct defining the binary data
         IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
         };
 
@@ -238,48 +231,53 @@ public:
     //! @param[in] primitiveType The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
-    //! Constructs a new Int32 ECValue, holding the value of the passed in integer
-    //! @param[in] integer32    The value to set this new ECValue to
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Integer
+    //! @param[in] integer32 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
 
-    //! Constructs a new Int64 ECValue, holding the value of the passed in long
-    //! @param[in] long64    The value to set this new ECValue to
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Long
+    //! @param[in] long64 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
 
-    //! Constructs a new double ECValue, holding the value of the passed in double
-    //! @param[in] doubleVal    The value to set this new ECValue to
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Double
+    //! @param[in] doubleVal Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
 
-    //! Constructs a new string ECValue, holding the passed in string
-    //! @param[in]  string          The string value
-    //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_String
+    //! @param[in] string           Value to initialize this ECValue from
+    //! @param[in] holdADuplicate   true, if a copy of \p string should be held in the ECValue object.
+    //!                             false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (WCharCP string, bool holdADuplicate = true);
 
-    //! Constructs a new string ECValue, holding the passed in string
-    //! @param[in]  string          The string value
-    //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_String
+    //! @param[in] string           Value to initialize this ECValue from
+    //! @param[in] holdADuplicate   true, if a copy of \p string should be held in the ECValue object.
+    //!                             false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (Utf8CP string, bool holdADuplicate = true);
 
-    //! Constructs a new string ECValue, holding the passed in string
-    //! @param[in]  string          The string value
-    //! @param[in]  holdADuplicate  Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_String
+    //! @param[in] string           Value to initialize this ECValue from
+    //! @param[in] holdADuplicate   true, if a copy of \p string should be held in the ECValue object.
+    //!                             false, otherwise.
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
 
-    //! Constructs a new binary ECValue holding the passed in blob
-    //! @param[in] blob The byte array containing the binary data to store
-    //! @param[in] size The size of the blob
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Binary
+    //! @Note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
+    //! @see ECValue::SetBinary
+    //! @param[in] blob Value to initialize this ECValue from
+    //! @param[in] size Size in bytes of the blob
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
 
-    //! Constructs a new DPoint2d ECValue
-    //! @param[in] point2d  The DPoint2d to store
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Point2D
+    //! @param[in] point2d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
 
-    //! Constructs a new DPoint3d ECValue
-    //! @param[in] point3d  The DPoint3d to store
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Point3D
+    //! @param[in] point3d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
 
-    //! Constructs a new bool ECValue
-    //! @param[in] value    The bool to store
+    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Boolean
+    //! @param[in] value Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (bool value);
 
     //! Constructs a new SystemTime ECValue
@@ -310,32 +308,61 @@ public:
     //! @returns true if the value has been loaded, false otherwise
     ECOBJECTS_EXPORT bool           IsLoaded() const; 
 
-    ECOBJECTS_EXPORT void           SetToNull(); //!< Frees the values memory, if necessary, and sets the state to NULL.
+    //! Frees the values memory, if necessary, and sets the state to NULL.
+    ECOBJECTS_EXPORT void           SetToNull(); 
 
     //! Does a ShallowCopy of the supplied ECValue
     //! @param[in] v    The ECValue to copy from
     ECOBJECTS_EXPORT void           From(ECValueCR v);
 
-    ECOBJECTS_EXPORT ValueKind      GetKind() const; //!< Returns the ValueKind of this value
-    ECOBJECTS_EXPORT bool           IsUninitialized () const; //!< Checks whether this ECValue is uninitialized
+    //! Returns the ValueKind of this value
+    ECOBJECTS_EXPORT ValueKind      GetKind() const; 
+    //! Checks whether this ECValue is uninitialized
+    ECOBJECTS_EXPORT bool           IsUninitialized () const; 
     
-    ECOBJECTS_EXPORT bool           IsString () const; //!< Checks whether this ECValue holds a String
-    ECOBJECTS_EXPORT bool           IsInteger () const; //!< Checks whether this ECValue holds an Integer
-    ECOBJECTS_EXPORT bool           IsLong () const; //!< Checks whether this ECValue holds a Long
-    ECOBJECTS_EXPORT bool           IsDouble () const; //!< Checks whether this ECValue holds a Double
-    ECOBJECTS_EXPORT bool           IsBinary () const; //!< Checks whether this ECValue holds a binary
-    ECOBJECTS_EXPORT bool           IsBoolean () const; //!< Checks whether this ECValue holds a boolean
-    
-    ECOBJECTS_EXPORT bool           IsPoint2D () const; //!< Checks whether this ECValue holds a Point2d
-    ECOBJECTS_EXPORT bool           IsPoint3D () const; //!< Checks whether this ECValue holds a Point3d
-    ECOBJECTS_EXPORT bool           IsDateTime () const; //!< Checks whether this ECValue holds a DateTime
-    ECOBJECTS_EXPORT bool           IsIGeometry() const; //!< Checks whether this ECValue holds an IGeometry
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_String (regardless of encoding).
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_String. false otherwise.
+    ECOBJECTS_EXPORT bool           IsString () const;
+    //! Indicates whether the content of this ECValue is of type #PRIMITIVETYPE_Integer.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Integer. false otherwise.
+    ECOBJECTS_EXPORT bool           IsInteger () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Long.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Long. false otherwise.
+    ECOBJECTS_EXPORT bool           IsLong () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Double.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Double. false otherwise.
+    ECOBJECTS_EXPORT bool           IsDouble () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Binary.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Binary. false otherwise.
+    ECOBJECTS_EXPORT bool           IsBinary () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Boolean.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Boolean. false otherwise.
+    ECOBJECTS_EXPORT bool           IsBoolean () const;
 
-    ECOBJECTS_EXPORT bool           IsArray () const; //!< Checks whether this ECValue is an array
-    ECOBJECTS_EXPORT bool           IsStruct () const; //!< Checks whether this ECValue is a struct
-    ECOBJECTS_EXPORT bool           IsPrimitive () const; //!< Checks whether this ECValue is a primitive
-        
-    ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const; //!< Gets the PrimitiveType of this ECValue
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Point2D.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Point2D. false otherwise.
+    ECOBJECTS_EXPORT bool           IsPoint2D () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Point3D.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Point3D. false otherwise.
+    ECOBJECTS_EXPORT bool           IsPoint3D () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_DateTime.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_DateTime. false otherwise.
+    ECOBJECTS_EXPORT bool           IsDateTime () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_IGeometry.
+    //! @return true if the ECValue content is of type ::PRIMITIVETYPE_IGeometry. false otherwise.
+    ECOBJECTS_EXPORT bool           IsIGeometry() const;
+
+    //! Indicates whether the content of this ECValue is an array (::VALUEKIND_Array).
+    //! @return true if the ECValue content is an array. false otherwise.
+    ECOBJECTS_EXPORT bool           IsArray () const;
+    //! Indicates whether the content of this ECValue is a struct (::VALUEKIND_Struct).
+    //! @return true if the ECValue content is a struct. false otherwise.
+    ECOBJECTS_EXPORT bool           IsStruct () const;
+    //! Indicates whether the content of this ECValue is of a primitive type (::VALUEKIND_Primitive).
+    //! @return true if the ECValue content is of a primitive type. false otherwise.
+    ECOBJECTS_EXPORT bool           IsPrimitive () const;
+    //! Gets the PrimitiveType of this ECValue        
+    ECOBJECTS_EXPORT PrimitiveType  GetPrimitiveType() const; 
 
     //! Sets the PrimitiveType of this ECValue
     //! @param[in] primitiveElementType The type of primitive that this ECValue holds.
@@ -396,7 +423,6 @@ public:
     //! @param[in] value  The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetBoolean (bool value);
 
-    //! Returns the double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     //! @returns    The double held by the ECValue, or std::numeric_limits<double>::quiet_NaN() if it is not a double or IsNull
     ECOBJECTS_EXPORT double         GetDouble () const;
     //! Sets the value of this ECValue to the given double
@@ -404,9 +430,15 @@ public:
     //! @param[in] value  The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
         
-    //! Returns the string value as a WCharCP, if this ECValue holds a string
+    //! Gets the string content of this ECValue.
+    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
+    //! @return string content
     ECOBJECTS_EXPORT WCharCP        GetString () const;
-    //! Returns the string value as a Utf8CP, if this ECValue holds a string
+    //! Gets the string content of this ECValue in UTF-8 encoding.
+    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
+    //! @return string content in UTF-8 encoding
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
     //! Returns the string value as a Utf16CP, if this ECValue holds a string
     ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be ECDBuffer
@@ -445,9 +477,10 @@ public:
 
     //! Gets the struct instance of this ECValue, if the ECValue holds a struct
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
-    //! Sets the value of this ECValue to the given IECInstance
-    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to Struct
+    //!Sets the specified struct instance in the ECValue. 
+    //! \Note ECValue doesn't create a copy of \p structInstance. Its ref-count is incremented by this method though.
     //! @param[in] structInstance   The value to set
+    //!@return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
     //! Returns the SystemTime value, if this ECValue holds a SystemTime
@@ -457,15 +490,29 @@ public:
     //! @param[in] systemTime   The value to set
     ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime const& systemTime); 
 
-    //! Returns the SystemTime value as ticks, if this ECValue holds a SystemTime
-    ECOBJECTS_EXPORT Int64          GetDateTimeTicks() const;
-    //! Sets the value of this ECValue to the given time in ticks
-    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DateTime primitive
-    //! @param[in] value   The time value to set as ticks
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 value);
+    //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @return DateTime value as ticks since the beginning of the Common Era epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
+
+    //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
+    //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
+    //! DateTimes before the Unix epoch are negative.
+    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @return DateTime as milliseconds since the beginning of the Unix epoch.
 
     //! Returns the SystemTime value as Unix milliseconds, if this ECValue holds a SystemTime
     ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
+    //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @Note If the ECProperty to which this ECValue will be applied contains the %DateTimeInfo custom attribute,
+    //! the ticks will be enriched with the metadata from the custom attribute.
+    //! @param[in] ceTicks DateTime Common Era ticks to set
+    //! @return SUCCESS or ERROR
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks);
 
     //! Returns the DPoint2d value, if this ECValue holds a Point2d
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
@@ -501,7 +548,6 @@ public:
 //! an ECEnabler, property index, and array index.  In cases where the array index is not 
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
 //! is used.  
-//! @group "ECInstance"
 //! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass 

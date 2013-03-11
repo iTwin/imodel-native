@@ -123,7 +123,13 @@ public:
 //__PUBLISH_SECTION_START__
 
 public: // These must be public so that ECXInstanceEnabler can get at the guts of StandaloneECInstance to copy it into an XAttribute
-    ECOBJECTS_EXPORT void                     SetData (const byte * data, UInt32 size, bool freeExisitingData); //The MemoryECInstanceBase will take ownership of the memory
+
+    //! It is use to set ECD buffer for instance.
+    //! @remarks This api should not be used in normal circumstances instead use CreateSharedInstance() to create instance from existing buffer.
+    //! @param[in]  data  pointer to ECD buffer
+    //! @param[in]  size  size of ECD buffer.
+    //! @param[in]  freeExisitingDataAndCreateCopyOfNewData if True it frees existing memory and allocate new memory of specified by 'size' and copy user specified data buffer into it. If False it will simply assign user provide buffer to instance without freeing any existing memory.
+    ECOBJECTS_EXPORT void                     SetData (const byte * data, UInt32 size, bool freeExisitingDataAndCreateCopyOfNewData); //The MemoryECInstanceBase will take ownership of the memory
 
     ECOBJECTS_EXPORT byte const *             GetData () const;
     ECOBJECTS_EXPORT UInt32                   GetBytesUsed () const;
