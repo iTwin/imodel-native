@@ -1802,9 +1802,12 @@ public:
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
     ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
-    //! Determine if schema is a dynamic schema or not. It check that by check for "DynamicSchema" custom attribute
+    
+    //! Indicates whether this schema is a so-called @p dynamic schema by
+    //! checking whether the @b %DynamicSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
+    //! is assigned to the schema.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
-    //! @return True if its a dynamic schema and False if its not.
+    //! @return true, if this schema is a dynamic schema. false, otherwise
     ECOBJECTS_EXPORT bool IsDynamic () const;
 
     //! Marks a schema as @b dynamic schema by adding the custom attribute @ DynamicSchema from the standard schema @b 
