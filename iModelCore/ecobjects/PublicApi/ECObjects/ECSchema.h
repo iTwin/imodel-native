@@ -1803,15 +1803,24 @@ public:
     //! Fills a vector will the ECClasses of the ECSchema in the original order in which they were added.
     ECOBJECTS_EXPORT void               GetClasses(bvector<ECClassP>& classes) const;
     //! Determine if schema is a dynamic schema or not. It check that by check for "DynamicSchema" custom attribute
-    //! @remarks Dynamic schema is application generated schemas where schema name is use as namespace for classes.
+    //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
     //! @return True if its a dynamic schema and False if its not.
-    ECOBJECTS_EXPORT bool GetIsDynamic () const;
-    //! Mark a schema as "Dynamic" schema by adding a custom attribute "DynamicSchema" from Bentley Standard Custom Attributes.
-    //! If bsca schema is not referenced already this function will return error.
-    //! @remarks Dynamic schema is application generated schemas where schema name is use as namespace for classes.
-    //! @param[in]  isDynamic Mark this schema as dynamic or not dynamic.
-    //! @return A status code indicating whether "DynamicSchema" custom attribute was applied successfully or not
+    ECOBJECTS_EXPORT bool IsDynamic () const;
+
+    //! Marks a schema as @b dynamic schema by adding the custom attribute @ DynamicSchema from the standard schema @b 
+    //! Bentley_Standard_Custom Attributes to it.
+    //! If the standard schema is not yet referenced, an error will be returned.
+    //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
+    //! @param[in]  isDynamic true, if this schema should be marked as dynamic schema. false, otherwise.
+    //! @return A status code indicating success or error
     ECOBJECTS_EXPORT ECObjectsStatus SetIsDynamic (bool isDynamic);
+
+    //! Indicates whether this schema is a system schema (in contrast to a user-supplied schema) by
+    //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
+    //! is assigned to the schema.
+    //! @remarks A system schema is a schema used and managed internally by the software.
+    //! @return true, if @schema is a system schema. false, otherwise
+    ECOBJECTS_EXPORT bool IsSystem () const;
 
     //! Gets the number of classes in the schema
     ECOBJECTS_EXPORT UInt32             GetClassCount() const;

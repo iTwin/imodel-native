@@ -132,6 +132,8 @@ WString DateTimeInfo::ToString () const
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 WCharCP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_NAME = L"SystemSchema";
+//static
+WCharCP const StandardCustomAttributeHelper::DYNAMICSCHEMA_CA_NAME = L"DynamicSchema";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -152,5 +154,44 @@ bool StandardCustomAttributeHelper::IsSystemSchema (ECSchemaCR schema)
     return schema.IsDefined (SYSTEMSCHEMA_CA_NAME);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 03/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool StandardCustomAttributeHelper::IsDynamicSchema (ECSchemaCR schema)
+    {
+    return schema.IsDefined (DYNAMICSCHEMA_CA_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan    02/13
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema (ECSchemaR schema, bool isDynamic)
+    {
+    const bool isDynamicExistingValue = IsDynamicSchema (schema);
+    if (isDynamic)
+        {
+        if (isDynamicExistingValue)
+            return ECOBJECTS_STATUS_Success;
+
+        SchemaNameClassNamePair dynamicSchemaClassId (L"Bentley_Standard_CustomAttributes", DYNAMICSCHEMA_CA_NAME);
+        ECClassP dynamicSchemaClass = schema.GetReferencedSchemas().FindClassP (dynamicSchemaClassId);
+        //BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.6");
+        if (dynamicSchemaClass == NULL)
+            return ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound;
+
+        IECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        return schema.SetCustomAttribute (*dynamicSchemaInstance);
+        }
+
+    if (!isDynamicExistingValue)
+        return ECOBJECTS_STATUS_Success;
+
+    if (schema.RemoveCustomAttribute (DYNAMICSCHEMA_CA_NAME))
+        return ECOBJECTS_STATUS_Success;
+
+    return ECOBJECTS_STATUS_Error;
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
