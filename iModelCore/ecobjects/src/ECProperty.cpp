@@ -393,6 +393,7 @@ PrimitiveType PrimitiveECProperty::GetType () const
 ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     {        
     m_primitiveType = primitiveType;        
+    SetCachedTypeAdapter (NULL);
     return ECOBJECTS_STATUS_Success;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -566,6 +567,7 @@ ECObjectsStatus StructECProperty::SetType (ECClassCR structType)
         }
     
     m_structType = &structType;
+    SetCachedTypeAdapter (NULL);
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -709,6 +711,10 @@ ECObjectsStatus ArrayECProperty::SetPrimitiveElementType (PrimitiveType primitiv
     {        
     m_arrayKind = ARRAYKIND_Primitive;
     m_primitiveType = primitiveType;
+
+    SetCachedTypeAdapter (NULL);
+    SetCachedMemberTypeAdapter (NULL);
+ 
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -743,6 +749,10 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
 
     m_arrayKind = ARRAYKIND_Struct;
     m_structType = structType;
+ 
+    SetCachedTypeAdapter (NULL);
+    SetCachedMemberTypeAdapter (NULL);
+
     return ECOBJECTS_STATUS_Success;
     }
 

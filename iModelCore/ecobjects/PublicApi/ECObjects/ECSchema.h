@@ -890,6 +890,7 @@ protected:
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
 
+    void                                InvalidateDefaultStandaloneEnabler() const;
 public:
     ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);

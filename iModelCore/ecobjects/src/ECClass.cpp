@@ -266,6 +266,9 @@ ECObjectsStatus ECClass::RemoveProperty (ECPropertyR prop)
 
     m_propertyMap.erase (iter);
     m_propertyList.erase (std::find (m_propertyList.begin(), m_propertyList.end(), &prop));
+
+    InvalidateDefaultStandaloneEnabler();
+
     return ECOBJECTS_STATUS_Success;
     }
     
@@ -279,52 +282,6 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
         delete &prop;
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, PrimitiveType primitiveType, bool asArray, ECPropertyR propertyToRemove)
-    {
-    if (HasBaseClasses() || 0 < m_derivedClasses.size())
-        return ECOBJECTS_STATUS_OperationNotSupported;
-
-    newProperty = NULL;
-
-    UInt32 propertyIndex = -1;
-    for (size_t i = 0; i < m_propertyList.size(); i++)
-        {
-        if (m_propertyList[i] == &propertyToRemove)
-            {
-            propertyIndex = (UInt32)i;
-            break;
-            }
-        }
-
-    if (-1 == propertyIndex)
-        return ECOBJECTS_STATUS_PropertyNotFound;
-
-    if (asArray)
-        {
-        ArrayECPropertyP arrayProp = new ArrayECProperty (*this);
-        arrayProp->SetPrimitiveElementType (primitiveType);
-        newProperty = arrayProp;
-        }
-    else
-        {
-        PrimitiveECPropertyP primProp = new PrimitiveECProperty (*this); 
-        primProp->SetType (primitiveType);
-        newProperty = primProp;
-        }
-
-    m_propertyMap.erase (m_propertyMap.find (propertyToRemove.GetName().c_str()));
-
-    newProperty->SetName (propertyToRemove.GetName());
-    m_propertyMap[newProperty->GetName().c_str()] = newProperty;
-    m_propertyList[propertyIndex] = newProperty;
-
-    delete &propertyToRemove;
-    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -376,6 +333,9 @@ ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, ValueKind ki
     m_propertyList[propertyIndex] = newProperty;
 
     delete &propertyToRemove;
+
+    InvalidateDefaultStandaloneEnabler();
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -415,6 +375,16 @@ ECObjectsStatus ECClass::RenameProperty (ECPropertyR prop, WCharCP newName)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECClass::InvalidateDefaultStandaloneEnabler() const
+    {
+    // When class structure changes, the ClassLayout stored in this enabler becomes out-of-date
+    // nullify it so it will be reconstructed on next call to GetDefaultStandaloneEnabler()
+    m_defaultStandaloneEnabler = NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
@@ -432,6 +402,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
         {
         m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
         m_propertyList.push_back(pProperty);
+
+        InvalidateDefaultStandaloneEnabler();
         return ECOBJECTS_STATUS_Success;
         }
 
@@ -442,6 +414,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
     pProperty->SetBaseProperty (baseProperty);
     m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
     m_propertyList.push_back(pProperty);
+
+    InvalidateDefaultStandaloneEnabler();
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -718,9 +692,7 @@ ECObjectsStatus ECClass::RemoveProperty (WStringCR name)
 
     delete ecProperty;
 
-    // ###TODO? If we're going to cache this, and also allow people to modify the ECClass in memory, we need a strategy for managing cache.
-    // The following only works if no one else holds a pointer to our cached enabler...
-    m_defaultStandaloneEnabler = NULL;
+    InvalidateDefaultStandaloneEnabler();
 
     return ECOBJECTS_STATUS_Success;
     }
