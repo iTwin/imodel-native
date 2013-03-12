@@ -123,6 +123,7 @@
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY                   "HideNodesInHierarchy"
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDEIFNOCHILDREN                       "HideIfNoChildren"
+#define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_EXTENDEDDATA                           "ExtendedData"
 
 #define ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                                "AllInstances"
 
