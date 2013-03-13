@@ -542,12 +542,22 @@ protected:
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
+    
+    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const { return NULL; }
+    virtual bool                                _IsCalculated() const { return false; }
+    virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) { return false; }
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedTypeAdapter() const { return m_cachedTypeAdapter; }
     void                                SetCachedTypeAdapter (IECTypeAdapter* adapter) const { m_cachedTypeAdapter = adapter; }
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
+
+    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+    ECOBJECTS_EXPORT bool                                IsCalculated() const;
+    //! Call this method rather than setting the custom attribute directly!
+    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
+
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the name of the ECClass that this property is contained within
@@ -625,11 +635,9 @@ protected:
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-
-public:
-    CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
-    bool                                IsCalculated() const;
-
+    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
+    virtual bool                                _IsCalculated() const override;
+    virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
@@ -709,15 +717,15 @@ protected:
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
+    virtual bool                                _IsCalculated() const override;
+    virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
 
 public:
     // The following are used by the 'extended type' system which is currently implemented in DgnPlatform
     IECTypeAdapter*                     GetCachedMemberTypeAdapter() const  { return m_cachedMemberTypeAdapter; }
     void                                SetCachedMemberTypeAdapter (IECTypeAdapter* adapter) const { m_cachedMemberTypeAdapter = adapter; }
     IECTypeAdapter*                     GetMemberTypeAdapter() const;
-
-    CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
-    bool                                IsCalculated() const;
 /*__PUBLISH_SECTION_START__*/
 public:
     //! The ArrayKind of this ECProperty
@@ -825,6 +833,7 @@ struct ECClass : IECCustomAttributeContainer
 friend struct ECSchema;
 friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
+friend bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP);
 
 private:
     mutable WString                 m_fullName;

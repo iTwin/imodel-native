@@ -205,6 +205,17 @@ ArrayECPropertyCP       ECProperty::GetAsArrayProperty() const      { return Get
 ArrayECPropertyP        ECProperty::GetAsArrayPropertyP()           { return const_cast<ArrayECPropertyP>(GetAsArrayProperty()); }
 StructECPropertyCP      ECProperty::GetAsStructProperty() const     { return GetIsStruct() ? static_cast<StructECPropertyCP>(this) : NULL; }
 StructECPropertyP       ECProperty::GetAsStructPropertyP()          { return const_cast<StructECPropertyP>(GetAsStructProperty()); }
+CalculatedPropertySpecificationCP ECProperty::GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
+bool                    ECProperty::IsCalculated() const            { return _IsCalculated(); }
+bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
+    {
+    bool wasCalculated = IsCalculated();
+    bool set = _SetCalculatedPropertySpecification (spec);
+    if (set && wasCalculated != IsCalculated())
+        m_class.InvalidateDefaultStandaloneEnabler();  // PropertyLayout has flag indicating property is calculated
+    
+    return set;
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -399,7 +410,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveECProperty::IsCalculated() const
+bool PrimitiveECProperty::_IsCalculated() const
     {
     return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
     }
@@ -407,7 +418,7 @@ bool PrimitiveECProperty::IsCalculated() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP PrimitiveECProperty::GetCalculatedPropertySpecification() const
+CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpecification() const
     {
     // It's possible in pathological cases where schema specifies an invalid CalculatedECPropertySpecification we will attempt to evaluate
     // it every time this method is called, but do we need to cater to such cases by avoiding doing so?
@@ -420,7 +431,7 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::GetCalculatedPropertySpec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ArrayECProperty::IsCalculated() const
+bool ArrayECProperty::_IsCalculated() const
     {
     if (ARRAYKIND_Primitive == GetKind())
         return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
@@ -429,14 +440,66 @@ bool ArrayECProperty::IsCalculated() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationPtr& spec, IECInstanceP attr, ECPropertyR ecprop, PrimitiveType primitiveType)
+    {
+    if (NULL == attr)
+        {
+        spec = NULL;
+        return true;
+        }
+    else
+        {
+        IECInstancePtr oldAttr = ecprop.GetCustomAttribute (L"CalculatedECPropertySpecification");
+        ecprop.SetCustomAttribute (*attr);
+        CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
+        if (newSpec.IsValid())
+            {
+            spec = newSpec;
+            return true;
+            }
+        else
+            {
+            // retain old specification
+            if (oldAttr.IsValid())
+                ecprop.SetCustomAttribute (*oldAttr);
+            else
+                ecprop.RemoveCustomAttribute (L"CalculatedECPropertySpecification");
+
+            return false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
+    {
+    return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetType());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP ArrayECProperty::GetCalculatedPropertySpecification() const
+CalculatedPropertySpecificationCP ArrayECProperty::_GetCalculatedPropertySpecification() const
     {
     if (ARRAYKIND_Primitive == GetKind() && m_calculatedSpec.IsNull())
         m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
 
     return m_calculatedSpec.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
+    {
+    if (ARRAYKIND_Primitive == GetKind())
+        return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
+    else
+        return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

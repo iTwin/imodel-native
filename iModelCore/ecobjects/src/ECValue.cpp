@@ -9,6 +9,7 @@
 #include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
 #include <Bentley/ValueFormat.h>
+#include <boost/algorithm/string/replace.hpp>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -1383,6 +1384,50 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
+    {
+    if (IsNull())
+        {
+        expr = L"Null";
+        return true;
+        }
+
+    PRECONDITION (IsPrimitive() && "ECValue::ConvertPrimitiveToECExpressionLiteral requires a primitive value", false);
+    
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
+    case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%I64d", GetDateTimeTicks()); return true;
+    case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13g", GetDouble()); return true;
+    case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
+    case PRIMITIVETYPE_Long:        expr.Sprintf (L"%I64d", GetLong()); return true;
+    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13g,%.13g}", GetPoint2D().x, GetPoint2D().y); return true;
+    case PRIMITIVETYPE_Point3D:
+        {
+        DPoint3d pt = GetPoint3D();
+        expr.Sprintf (L"{%.13g,%.13g,%.13g}", pt.x, pt.y, pt.z);
+        }
+        return true;
+    case PRIMITIVETYPE_String:
+        {
+        // Must escape quotes...
+        WString s (GetString());
+        boost::replace_all (s, L"\"", L"\"\"");
+        expr.Sprintf (L"\"%ls\"", s);
+        }
+        return true;
+    case PRIMITIVETYPE_Binary:
+    case PRIMITIVETYPE_IGeometry:
+        return false;
+    default:
+        BeAssert (false && L"Unsupported PrimitiveType");
+        return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
@@ -1555,6 +1600,24 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
             return false;
 
         SetInteger (i);
+        }
+        return true;
+    case PRIMITIVETYPE_Long:
+        {
+        Int64 i;
+        if (PRIMITIVETYPE_Double == curType)
+            {
+            double roundingTerm = DoubleOps::AlmostEqual (GetDouble(), 0.0) ? 0.0 : GetDouble() > 0.0 ? 0.5 : -0.5;
+            i = (Int64)(GetDouble() + roundingTerm);
+            }
+        else if (PRIMITIVETYPE_Boolean == curType)
+            i = GetBoolean() ? 1 : 0;
+        else if (PRIMITIVETYPE_Integer == curType)
+            i = (Int64)GetInteger();
+        else
+            return false;
+
+        SetLong (i);
         }
         return true;
     case PRIMITIVETYPE_Double:
