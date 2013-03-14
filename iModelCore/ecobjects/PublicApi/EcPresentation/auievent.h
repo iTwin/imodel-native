@@ -50,6 +50,8 @@ struct ECSelectionListener : public IECPresentationProvider
 
     virtual ProviderType      _GetProviderType(void) const override { return SelectionService; }
 
+    virtual int               _GetSelectionQueryScope (void) const {return 0;}
+
     public:
         ECOBJECTS_EXPORT void const *      GetEventHub () const;
 

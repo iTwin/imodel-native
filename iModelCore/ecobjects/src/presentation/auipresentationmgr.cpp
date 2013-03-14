@@ -399,3 +399,15 @@ IECNativeImagePtr ECPresentationManager::GetOverlayImage (IAUIDataContextCR cont
     return NULL;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+int             ECPresentationManager::GetSelectionQueryScope()
+    {
+    int mask = 0;
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        mask |= (*iter)->_GetSelectionQueryScope();
+    
+    return mask;
+    }

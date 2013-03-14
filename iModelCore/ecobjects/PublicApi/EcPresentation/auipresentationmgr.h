@@ -108,6 +108,8 @@ struct  ECPresentationManager: public NonCopyableClass
     //!@param[in] subSelection  If true then returns sub-selection.
     ECOBJECTS_EXPORT IAUIDataContextCP                  GetSelection (void const* eventHub, bool subSelection);
 
+    //!This returns the ECQueryProcessFlags that is to be used when creating a datacontext that represents a selection set.
+    ECOBJECTS_EXPORT int                                GetSelectionQueryScope ();
     //! Execute command automatically calls these. So explicit call is usually un necessary.
     void                                                JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
 
