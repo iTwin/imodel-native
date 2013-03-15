@@ -380,6 +380,10 @@ public:
     // Returns an empty string if this ECValue is null
     ECOBJECTS_EXPORT bool           ConvertPrimitiveToString (WStringR str) const;
 
+    // Attempts to convert this ECValue's primitive value to a literal ECExpression
+    // Does not support binary or IGeometry
+    ECOBJECTS_EXPORT bool           ConvertPrimitiveToECExpressionLiteral (WStringR expression) const;
+
     // Attempts to format the underlying value using the specified .NET-style format string.
     // Typically the format string originated from an ECCustomAttribute.
     // Currently only supports numeric types: double, int, and long
