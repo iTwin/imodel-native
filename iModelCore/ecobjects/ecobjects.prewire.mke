@@ -10,9 +10,9 @@ PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 
 # Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecPublicAPISrc)ECObjects"   
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentation=$(ecPublicAPISrc)ECPresentation"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentationRules=$(ecPublicAPISrc)ECPresentationRules"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECUnits=$(ecPublicAPISrc)ECUnits"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPersistence=$(ecPublicAPISrc)ECPersistence"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecobjectsPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentation=$(ecpresentationPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentationRules=$(ecpresentationRulesPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECUnits=$(ecunitsPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPersistence=$(ecpersistencePublicAPISrc)"
 
