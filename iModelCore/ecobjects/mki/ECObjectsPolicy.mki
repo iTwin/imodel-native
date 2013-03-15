@@ -50,7 +50,7 @@ ecobjectsSrc        = $(SrcRoot)ecobjects/
 
 ecpersistencePublicAPISrc = $(ecPublicAPISrc)ECPersistence/
 ecpresentationPublicAPISrc = $(ecPublicAPISrc)EcPresentation/
-ecpresentationRulesPublicAPISrc = $(ecPublicAPISrc)ECPresentationRules/
+ecpresentationRulesPublicAPISrc = $(ecPublicAPISrc)EcPresentationRules/
 ecunitsPublicAPISrc = $(ecPublicAPISrc)ECUnits/
 
 #-----------------------------------------------------------------------

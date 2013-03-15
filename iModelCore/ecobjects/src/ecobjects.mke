@@ -231,7 +231,7 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 
 # ECUnits
 
-$(o)units$(oext)                                           : $(baseDir)units/units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+$(o)units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 
 # ECPersistence
