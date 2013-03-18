@@ -124,7 +124,7 @@ public:
     //! is assigned to the schema.
     //! @remarks A system schema is a schema used and managed internally by the software.
     //! @param[in] schema Schema to check
-    //! @return true, if @schema is a system schema. false, otherwise
+    //! @return true, if @p schema is a system schema. false, otherwise
     ECOBJECTS_EXPORT static bool IsSystemSchema (ECSchemaCR schema);
 
     //! Indicates whether the specified schema is a so-called @b dynamic schema by
@@ -132,7 +132,7 @@ public:
     //! is assigned to the schema.
     //! @remarks A dynamic schema is an application-generated schema where schema name is used as namespace for classes.
     //! @param[in] schema Schema to check
-    //! @return true, if @schema is a dynamic schema. false, otherwise
+    //! @return true, if @p schema is a dynamic schema. false, otherwise
     ECOBJECTS_EXPORT static bool IsDynamicSchema (ECSchemaCR schema);
 
     //! Marks a schema as @b dynamic schema by adding the custom attribute @b DynamicSchema from the standard schema @b 

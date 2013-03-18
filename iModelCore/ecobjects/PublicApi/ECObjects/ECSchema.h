@@ -1822,7 +1822,7 @@ public:
     //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
     //! is assigned to the schema.
     //! @remarks A system schema is a schema used and managed internally by the software.
-    //! @return true, if @schema is a system schema. false, otherwise
+    //! @return true, if this schema is a system schema. false, otherwise
     ECOBJECTS_EXPORT bool IsSystemSchema () const;
 
     //! Gets the number of classes in the schema
