@@ -94,10 +94,10 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 typedef enum ECErrorCategories
     {
-    ECOBJECTS_ERROR_BASE                    = 0x31000,
-    SCHEMA_READ_STATUS_BASE      = 0x32000,
+    ECOBJECTS_ERROR_BASE            = 0x31000,
+    SCHEMA_READ_STATUS_BASE         = 0x32000,
     SCHEMA_WRITE_STATUS_BASE        = 0x33000,
-    INSTANCE_READ_STATUS_BASE    = 0x34000,
+    INSTANCE_READ_STATUS_BASE       = 0x34000,
     INSTANCE_WRITE_STATUS_BASE      = 0x35000,
     SUPPLEMENTED_SCHEMA_STATUS_BASE = 0x36000,
     } ECErrorCategories;
