@@ -36,7 +36,7 @@ typedef RefCountedPtr<ECDiff> ECDiffPtr;
 
 //======================================================================================
 //! Status return by diff operations
-//! @ingroup ECDbGroup
+//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum DiffStatus
@@ -48,7 +48,7 @@ enum DiffStatus
 
 //======================================================================================
 //! Provide detail on a diff node in a ECDiff tree.
-//! @ingroup ECDbGroup
+//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum DiffNodeState
@@ -62,7 +62,7 @@ enum DiffNodeState
 //! In case of conflict during merge where difference contain different values for same 
 //! schema facet. A simple rule is use to determine which input schema have higher priority
 //! then other and its value would be use for that facet in merged schema.
-//! @ingroup ECDbGroup
+//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum ConflictRule
@@ -73,7 +73,7 @@ enum ConflictRule
 
 //======================================================================================
 //! Provide status of merge operations
-//! @ingroup ECDbGroup
+//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum MergeStatus
@@ -93,7 +93,7 @@ enum MergeStatus
 
 //======================================================================================
 //! ECDiff can be use to take a difference of two ECSchemas and if required merge them together.
-//! @ingroup ECDbGroup
+//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDiff : RefCountedBase
