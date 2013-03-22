@@ -368,13 +368,15 @@ struct IECTypeAdapterContext : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual ECPropertyCP                _GetProperty() const = 0;
-    virtual UInt32                      _GetComponentIndex() const = 0;
-    virtual bool                        _Is3d() const = 0;
-    virtual IECInstanceCP               _GetECInstance() const = 0;
+    virtual ECPropertyCP                        _GetProperty() const = 0;
+    virtual UInt32                              _GetComponentIndex() const = 0;
+    virtual bool                                _Is3d() const = 0;
+    virtual IECInstanceCP               	_GetECInstance() const = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
 public:
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
+    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
 
     //! The following are relevant to adapters for point types.
     ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
