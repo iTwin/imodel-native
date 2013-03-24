@@ -633,23 +633,22 @@ void            ECValue::ShallowCopy (ECValueCR v)
 
         case PRIMITIVETYPE_String:
             {
-            // Only make a copy of the string if the original object had a copy.
-            if (0 != m_ownershipFlags)
-                {
-                // ###TODO: only copy the preferred encoding? Copy all encodings contained in other StringInfo?
-                m_ownershipFlags = 0; // prevent FreeAndClear() from attempting to free the strings that were temporarily copied by memset
-                m_stringInfo.FreeAndClear (m_ownershipFlags);
-                if (NULL != v.m_stringInfo.m_utf8)
-                    SetUtf8CP (v.m_stringInfo.m_utf8);
-                else if (NULL != v.m_stringInfo.m_utf16)
-                    SetUtf16CP (v.m_stringInfo.m_utf16);
+            // NB: Original comment: "Only make a copy of the string if the original object had a copy."
+            // ^ We don't know the lifetime of the original object vs. that of 'this', so we must always copy.
+
+            // ###TODO: only copy the preferred encoding? Copy all encodings contained in other StringInfo?
+            m_ownershipFlags = 0; // prevent FreeAndClear() from attempting to free the strings that were temporarily copied by memset
+            m_stringInfo.FreeAndClear (m_ownershipFlags);
+            if (NULL != v.m_stringInfo.m_utf8)
+                SetUtf8CP (v.m_stringInfo.m_utf8);
+            else if (NULL != v.m_stringInfo.m_utf16)
+                SetUtf16CP (v.m_stringInfo.m_utf16);
 #if !defined (_WIN32)
-                else if (NULL != v.m_stringInfo.m_wchar)
-                    SetString (v.m_stringInfo.m_wchar);
+            else if (NULL != v.m_stringInfo.m_wchar)
+                SetString (v.m_stringInfo.m_wchar);
 #endif
-                else
-                    SetString (NULL);
-                }
+            else
+                SetString (NULL);
 
             break;
             }
