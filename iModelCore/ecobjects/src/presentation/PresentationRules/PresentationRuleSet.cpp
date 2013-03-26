@@ -38,14 +38,16 @@ PresentationRuleSet::~PresentationRuleSet ()
 PresentationRuleSetPtr PresentationRuleSet::CreateInstance
 (
 WStringCR ruleSetId,
-WStringCR supportedSchemas,
+int       versionMajor,
+int       versionMinor,
 bool      isSupplemental,
-int       version,
+WStringCR supplementationPurpose,
+WStringCR supportedSchemas,
 WStringCR preferredImage,
 bool      isSearchEnabled
 )
     {
-    return new PresentationRuleSet (ruleSetId, supportedSchemas, isSupplemental, version, preferredImage, isSearchEnabled);
+    return new PresentationRuleSet (ruleSetId, versionMajor, versionMinor, isSupplemental, supplementationPurpose, supportedSchemas, preferredImage, isSearchEnabled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,9 +58,9 @@ WString PresentationRuleSet::GetFullRuleSetId (void) const
     wchar_t fullId[255];
 
     if (GetIsSupplemental ())
-        BeStringUtilities::Snwprintf (fullId, L"%ls_supplemental.%02d", GetRuleSetId ().c_str(), GetVersion ());
+        BeStringUtilities::Snwprintf (fullId, L"%ls_supplemental_%ls.%02d.%02d", GetRuleSetId ().c_str(), GetSupplementationPurpose ().c_str(), GetVersionMajor (), GetVersionMinor ());
     else
-        BeStringUtilities::Snwprintf (fullId, L"%ls.%02d", GetRuleSetId ().c_str(), GetVersion ());
+        BeStringUtilities::Snwprintf (fullId, L"%ls.%02d.%02d", GetRuleSetId ().c_str(), GetVersionMajor (), GetVersionMinor ());
 
     return fullId;
     }
@@ -89,8 +91,14 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSupplemental, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL))
         m_isSupplemental = false;
 
-    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_version, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSION))
-        m_version = 1;
+    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supplementationPurpose, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE))
+        m_supplementationPurpose = L"";
+
+    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_versionMajor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR))
+        m_versionMajor = 1;
+
+    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_versionMinor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR))
+        m_versionMinor = 0;
 
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_preferredImage, PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE))
         m_preferredImage = L"";
@@ -121,12 +129,14 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     {
     BeXmlNodeP ruleSetNode = xmlDom.AddNewElement (PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, NULL);
 
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID,       m_ruleSetId.c_str ());
-    ruleSetNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS,               m_supportedSchemas.c_str ());
-    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL,  m_isSupplemental);
-    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSION,         m_version);
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE,  m_preferredImage.c_str ());
-    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED, m_isSearchEnabled);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID,              m_ruleSetId.c_str ());
+    ruleSetNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS,                      m_supportedSchemas.c_str ());
+    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL,         m_isSupplemental);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE, m_supplementationPurpose.c_str ());
+    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR,           m_versionMajor);
+    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR,           m_versionMinor);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE,         m_preferredImage.c_str ());
+    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED,        m_isSearchEnabled);
 
     CommonTools::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
     CommonTools::WriteRulesToXmlNode<ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules);
