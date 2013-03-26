@@ -68,7 +68,9 @@
 #include <ECObjects/ecprovider.h>
 #include <ECObjects/PresentationMetadataHelper.h>
 #include <ECObjects/StandardCustomAttributeHelper.h>
+#include <ECObjects/ECDiff.h>
 #include <Bentley/ScopedArray.h>
+
 
 /*__PUBLISH_SECTION_END__*/
 #include <ECObjects/DesignByContract.h>
