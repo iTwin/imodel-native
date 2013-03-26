@@ -21,9 +21,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
-//=======================================================================================
-//! Information about an array property in an ECN::IECInstance. Does not contain the actual elements.
-//! @see ECValue
 //=======================================================================================    
 //! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
 //! @ingroup ECObjectsGroup
@@ -266,10 +263,10 @@ public:
     //! @param[in] blob Value to initialize this ECValue from
     //! @param[in] size Size in bytes of the blob
     ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
-    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Point2d
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Point2D
     //! @param[in] point2d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint2dCR point2d);
-    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Point3d
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Point3D
     //! @param[in] point3d Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (DPoint3dCR point3d);
     //! Initializes a new instance of the ECValue type from the given value.

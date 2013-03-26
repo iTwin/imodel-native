@@ -57,6 +57,7 @@
     <ClCompile Include="ECcontext.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECDBuffer.cpp" />
+    <ClCompile Include="ECDiff.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ecinstanceiterable.cpp" />
@@ -95,6 +96,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECDiff.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
