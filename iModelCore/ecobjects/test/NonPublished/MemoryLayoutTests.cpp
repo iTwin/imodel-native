@@ -1113,7 +1113,7 @@ static void  checkValue (WCharCP accessString, ECValueCR value, ECN::StandaloneE
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
     EXPECT_TRUE (true == isSet);
-    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex));
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex));
     EXPECT_TRUE ((0==propertyIndex%2) == isSet);
     }
 
@@ -1130,7 +1130,7 @@ static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECI
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
     EXPECT_TRUE (true  == isSet);
-    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex, 0==propertyIndex%2));
+    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex, 0==propertyIndex%2));
     }
 
  /*---------------------------------------------------------------------------------**//**

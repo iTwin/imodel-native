@@ -26,7 +26,7 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 enum PropertyFlagIndex : UInt8
     {
     PROPERTYFLAGINDEX_IsLoaded = 0,
-    PROPERTYFLAGINDEX_IsDirty  = 1
+    PROPERTYFLAGINDEX_IsReadOnly  = 1   // For a *conditionally* read-only property
     };
 
 enum MemoryInstanceUsageBitmask : UInt32
