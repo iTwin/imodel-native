@@ -534,4 +534,26 @@ TEST_F (CalculatedPropertyTests, UseLastValidValueInsteadOfFailure)
 	TestNull(*instance, L"S2");
 	Test(*instance, L"S", L"3-4");
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
+    {
+    // According to email from graphite team, an imodel containing specification with following parser regex:
+    //  "^(?<S1>[ a-z\\d/]+[\"]?)[\\s]*X[\\s]*(?<S2>[ a-z\\d/]+[\"]?)|[\\w]*"
+    // causes exception in construction of std::wregex from ParserRegex::Create()
+    // We're mainly testing to make sure we don't get an exception in constructing the regex for the CalculatedPropertySpecfication
+    IECInstancePtr instance = CreateTestCase (L"S", L"this.S1 & \" X \" & this.S2", 0, L"FAILED", L"^(?<S1>[ a-z\\\\d/]+[\\\"]?)[\\\\s]*X[\\\\s]*(?<S2>[ a-z\\\\d/]+[\\\"]?)|[\\\\w]*");
+    SetValue (*instance, L"S1", L"a");
+    SetValue (*instance, L"S2", L"b");
+    Test (*instance, L"S", L"a X b");
+
+
+    // Note that the parser regex doesn't appear to match what the author thinks it should match...he seems to be confused about escape characters.
+    SetValue (*instance, L"S", L"xXy");
+    Test (*instance, L"S1", L"x");
+    Test (*instance, L"S2", L"y");
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

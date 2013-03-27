@@ -38,7 +38,9 @@
 #define PRESENTATION_RULE_SET_XML_NODE_NAME                                           "PresentationRuleSet"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID                                 "RuleSetId"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL                            "IsSupplemental"
-#define PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSION                                   "Version"
+#define PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE                    "SupplementationPurpose"
+#define PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR                              "VersionMajor"
+#define PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR                              "VersionMinor"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE                            "PreferredImage"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED                           "IsSearchEnabled"
 

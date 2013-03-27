@@ -37,7 +37,9 @@ struct PresentationRuleSet : public RefCountedBase
         WString                                m_ruleSetId;
         WString                                m_supportedSchemas;
         bool                                   m_isSupplemental;
-        int                                    m_version;
+        WString                                m_supplementationPurpose;
+        int                                    m_versionMajor;
+        int                                    m_versionMinor;
         WString                                m_preferredImage;
         bool                                   m_isSearchEnabled;
 
@@ -56,7 +58,7 @@ struct PresentationRuleSet : public RefCountedBase
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
-            : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_version (1), m_isSearchEnabled (true)
+            : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_supplementationPurpose (L""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true)
             {
             }
 
@@ -64,14 +66,16 @@ struct PresentationRuleSet : public RefCountedBase
         PresentationRuleSet
             (
             WStringCR ruleSetId,
-            WStringCR supportedSchemas,
+            int       versionMajor,
+            int       versionMinor,
             bool      isSupplemental,
-            int       version,
+            WStringCR supplementationPurpose,
+            WStringCR supportedSchemas,
             WStringCR preferredImage,
             bool      isSearchEnabled
             )
-            : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), 
-              m_version (version), m_preferredImage (preferredImage), m_isSearchEnabled (isSearchEnabled)
+            : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), m_supplementationPurpose (supplementationPurpose),
+              m_versionMajor (versionMajor), m_versionMinor (versionMinor), m_preferredImage (preferredImage), m_isSearchEnabled (isSearchEnabled)
             {
             }
 
@@ -90,9 +94,11 @@ struct PresentationRuleSet : public RefCountedBase
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  CreateInstance 
             (
             WStringCR ruleSetId,
-            WStringCR supportedSchemas,
+            int       versionMajor,
+            int       versionMinor,
             bool      isSupplemental,
-            int       version,
+            WStringCR supplementationPurpose,
+            WStringCR supportedSchemas,
             WStringCR preferredImage,
             bool      isSearchEnabled
             );
@@ -115,14 +121,20 @@ struct PresentationRuleSet : public RefCountedBase
         //! Full id of PresentationRuleSet that includes RuleSetId, Version, and IsSupplemental flag.
         ECOBJECTS_EXPORT WString                        GetFullRuleSetId (void) const;
 
-        //! Schemas list for which rules should be applied
-        ECOBJECTS_EXPORT WStringCR                      GetSupportedSchemas (void) const  { return m_supportedSchemas; }
+        //! Major version of the PresentationRuleSet. This will be used in the future if we add some incompatible changes to the system.
+        ECOBJECTS_EXPORT int                            GetVersionMajor (void) const      { return m_versionMajor;     }
+
+        //! Minor version of the PresentationRuleSet. This can be used to identify compatible changes in the PresentationRuleSet.
+        ECOBJECTS_EXPORT int                            GetVersionMinor (void) const      { return m_versionMinor;     }
 
         //! Returns true if PresentationRuleSet is supplemental. This allows to add additional rules for already existing PresentationRuleSet.
         ECOBJECTS_EXPORT bool                           GetIsSupplemental (void) const    { return m_isSupplemental;   }
 
-        //! Version fo the PresentationRuleSet. This will be used in the future if we add some incompatible changes to the system.
-        ECOBJECTS_EXPORT int                            GetVersion (void) const           { return m_version;          }
+        //! Purpose of supplementation. There can be one RuleSet with the same version and same supplementation purpose.
+        ECOBJECTS_EXPORT WStringCR                      GetSupplementationPurpose (void) const { return m_supplementationPurpose; }
+
+        //! Schemas list for which rules should be applied
+        ECOBJECTS_EXPORT WStringCR                      GetSupportedSchemas (void) const  { return m_supportedSchemas; }
 
         //! Preferred ImageId for the tree that is configured using this presentation rule set.
         ECOBJECTS_EXPORT WStringCR                      GetPreferredImage (void) const    { return m_preferredImage;   }
