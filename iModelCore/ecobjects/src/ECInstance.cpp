@@ -802,6 +802,21 @@ ECObjectsStatus    IECInstance::GetIsPropertyNull (bool& isNull, UInt32 property
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Paul.Connelly                   03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+    {
+    // default implementation. ECD-based implementations can be more efficient.
+    isNull = true;
+    ECValue v;
+    ECObjectsStatus status = _GetValue (v, propertyIndex, useArrayIndex, arrayIndex);
+    if (ECOBJECTS_STATUS_Success == status)
+        isNull = v.IsNull();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, WCharCP propertyAccessString) const 
