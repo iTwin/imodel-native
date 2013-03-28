@@ -185,7 +185,7 @@ protected:
     //! @param[in]  useArrayIndex   Flag indicating whether an array index should be used
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus       _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const;
 
     //! Sets the unique id for this instance
     ECOBJECTS_EXPORT virtual ECObjectsStatus       _SetInstanceId(WCharCP);
