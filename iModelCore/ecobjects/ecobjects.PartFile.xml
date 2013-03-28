@@ -142,6 +142,15 @@
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
 
+        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="ecschemas"                    LibType="Static"    Deliver="false"/>
+
         <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
         <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
@@ -166,6 +175,10 @@
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
+
+        <ProductDirectory Name="PublicAPI"  LibType="Static"        Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"  LibType="Static"        Deliver="false" />
+        <ProductDirectory Name="libs"       LibType="Static"        Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
         <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>
