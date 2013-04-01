@@ -2254,8 +2254,8 @@ static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR s
             duplicateProperties (target, *prop.GetChildValues());
             continue;
             }
-
-        target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        else if (prop.GetValueAccessor().GetECProperty()->GetIsPrimitive())
+            target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
         }
     }
 

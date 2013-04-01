@@ -2465,8 +2465,10 @@ bool                ECPropertyValue::HasChildValues () const
         return false;       // null array (should not happen) or null struct array instance
     else if (m_ecValue.IsStruct())
         return true;        // struct array entry
+#ifdef EMPTY_ARRAYS_DONT_HAVE_CHILD_VALUES
     else if (m_ecValue.IsArray() && 0 == m_ecValue.GetArrayInfo().GetCount())
         return false;       // empty array
+#endif
     else
         {
         BeAssert (m_ecValue.IsArray());
