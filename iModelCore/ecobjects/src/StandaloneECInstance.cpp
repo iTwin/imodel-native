@@ -1043,6 +1043,7 @@ ECObjectsStatus StandaloneECInstance::_SetInternalValue (UInt32 propertyIndex, E
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
+    SetIsLoadedBit (propIdx);
     ECObjectsStatus status = InsertNullArrayElementsAt (propIdx, index, size);
     
     return status;
@@ -1053,6 +1054,7 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
+    SetIsLoadedBit (propIdx);
     ECObjectsStatus status = AddNullArrayElementsAt (propIdx, size);
     
     return status;
