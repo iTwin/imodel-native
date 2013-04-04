@@ -3586,4 +3586,30 @@ bool ECDBuffer::IsCompatibleVersion (ECDHeader* header, byte const* data, bool r
         return header->IsReadable();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECDBuffer::GetBufferSize() const
+    {
+    ScopedDataAccessor scopedDataAccessor (*this);
+    if (scopedDataAccessor.IsValid())
+        return (size_t)CalculateBytesUsed();
+    else
+        return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDBuffer::GetBufferData (byte* dest) const
+    {
+    ScopedDataAccessor scopedDataAccessor (*this);
+    if (!scopedDataAccessor.IsValid())
+        { BeAssert (false); return; }
+
+    size_t nBytes = GetBufferSize();
+    memcpy (dest, _GetData(), nBytes);
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
+

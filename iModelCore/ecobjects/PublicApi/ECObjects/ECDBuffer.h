@@ -681,14 +681,10 @@ protected:
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 public:
     ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
-
     ECOBJECTS_EXPORT IECInstanceP           GetAsIECInstance () const;
-
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
-   
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
-
-    ECOBJECTS_EXPORT ECN::PrimitiveType      GetStructArrayPrimitiveType () const;
+    ECOBJECTS_EXPORT ECN::PrimitiveType     GetStructArrayPrimitiveType () const;
 
     // Compress the memory storing the data to as small a size as possible
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
@@ -720,6 +716,12 @@ public:
     ECOBJECTS_EXPORT static StringEncoding  GetDefaultStringEncoding();
     // Override the platform-dependent preferred encoding used when creating new in-memory ECDBuffers.
     ECOBJECTS_EXPORT static void            SetDefaultStringEncoding (StringEncoding defaultEncoding);
+
+    // Get the size in bytes of the ECD memory buffer (including the header).
+    ECOBJECTS_EXPORT size_t                 GetBufferSize() const;
+    // Copies the ECD memory buffer (including the header) to the specified block of memory. Caller is responsible for allocating a block of memory of sufficient size.
+    // (Call GetBufferSize() to determine the required size of the allocation).
+    ECOBJECTS_EXPORT void                   GetBufferData (byte* dest) const;
 /*__PUBLISH_SECTION_START__*/  
 public:
     //! Sets all values to null
