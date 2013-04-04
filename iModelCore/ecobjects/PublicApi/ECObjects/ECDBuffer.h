@@ -726,7 +726,6 @@ public:
     ECOBJECTS_EXPORT void                   ClearValues();
     //! Copies property values from source instance
     ECOBJECTS_EXPORT ECObjectsStatus        CopyInstanceProperties (IECInstanceCR sourceInstance);
-
     };   
 
 END_BENTLEY_ECOBJECT_NAMESPACE
