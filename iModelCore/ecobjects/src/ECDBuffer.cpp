@@ -2255,19 +2255,38 @@ ClassLayoutCR ECDBuffer::GetClassLayout() const                             { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
     {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
         ECPropertyValue const& prop = *it;
         if (prop.HasChildValues())
             {
-            duplicateProperties (target, *prop.GetChildValues());
+            if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues())))
+                return status;
             continue;
             }
-        else if (prop.GetValueAccessor().GetECProperty()->GetIsPrimitive())
-            target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        else if (prop.GetValueAccessor().GetECProperty()->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            return status;
         }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
+    {
+    if (!GetClass().GetName().Equals (source.GetClass().GetName()))
+        return ECOBJECTS_STATUS_Error;
+
+    ECDBuffer* buffer = this->GetECDBuffer();
+    if (NULL != buffer)
+        return buffer->CopyInstanceProperties(source);
+    
+    ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
+    return duplicateProperties (*this, *srcValues);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -372,7 +372,8 @@ public:
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 #endif
     ECOBJECTS_EXPORT bool               InitializeDefaultValues();
-
+    //!Utility function to copy values from one ecinstance to another assuming they have the same 
+    ECOBJECTS_EXPORT ECObjectsStatus    CopyValues(ECN::IECInstanceCR source);
 /*__PUBLISH_SECTION_START__*/
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
