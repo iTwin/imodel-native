@@ -30,16 +30,23 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
 
     protected:
         /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT AllRelatedInstanceNodesSpecification ()
             : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_skipRelatedLevel (0), m_supportedSchemas (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
                                               bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, WStringCR supportedSchemas)
             : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
