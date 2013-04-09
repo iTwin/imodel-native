@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SelectedNodeInstancesSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,16 +29,23 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SelectedNodeInstancesSpecification () 
             : ContentSpecification (), m_onlyIfNotHandled (false), m_acceptableSchemaName (L""), m_acceptableClassNames (L""), m_acceptablePolymorphically (false)
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT SelectedNodeInstancesSpecification (int priority, bool onlyIfNotHandled, WStringCR acceptableSchemaName, WStringCR acceptableClassNames, bool acceptablePolymorphically) 
             : ContentSpecification (priority), m_onlyIfNotHandled (onlyIfNotHandled), m_acceptableSchemaName (acceptableSchemaName), m_acceptableClassNames (acceptableClassNames), m_acceptablePolymorphically (acceptablePolymorphically)
             {

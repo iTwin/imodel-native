@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRelatedInstancesSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,17 +31,24 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification () 
             : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (L""), 
             m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification 
                                              (
                                               int                        priority,

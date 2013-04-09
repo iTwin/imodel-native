@@ -30,11 +30,13 @@ struct SubCondition
 
     public:
         /*__PUBLISH_SECTION_START__*/
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SubCondition ()
             : m_condition (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT SubCondition (WStringCR condition)
             : m_condition (condition)
             {
@@ -74,16 +76,23 @@ struct ChildNodeRule : public PresentationRule
 
     protected:
         /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ChildNodeRule ()
             : PresentationRule ()
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
             : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree)
             {
@@ -112,14 +121,17 @@ struct RootNodeRule : public ChildNodeRule
     /*__PUBLISH_SECTION_END__*/
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RootNodeRule ()
             : ChildNodeRule ()
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
             : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree)
             {

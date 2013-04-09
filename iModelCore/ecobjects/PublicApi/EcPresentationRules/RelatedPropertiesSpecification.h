@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedPropertiesSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,11 +31,13 @@ struct RelatedPropertiesSpecification
 
     public:
     /*__PUBLISH_SECTION_START__*/
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification ()
             : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L""), m_propertyNames (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification 
                                        (
                                         RequiredRelationDirection  requiredDirection,

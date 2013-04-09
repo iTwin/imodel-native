@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentInstancesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,16 +28,23 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification () 
             : ContentSpecification (), m_instanceFilter (L""), m_classNames (L""), m_arePolymorphic (false)
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic) 
             : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_classNames (classNames), m_arePolymorphic (arePolymorphic)
             {

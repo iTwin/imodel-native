@@ -35,11 +35,19 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
+    //! Constructor. It is used to initialize the rule with default settings.
     ECOBJECTS_EXPORT ChildNodeSpecification ();
+
+    //! Constructor.
     ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
 
+    //! Returns XmlElement name that is used to read/save this rule information.
     ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () = 0;
+
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) = 0;
+
+    //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) = 0;
 
 public:

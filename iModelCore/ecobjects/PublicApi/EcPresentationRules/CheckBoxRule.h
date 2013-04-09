@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CheckBoxRule.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,16 +25,23 @@ struct CheckBoxRule : public PresentationRule
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT CheckBoxRule ()
             : PresentationRule (), m_propertyName (L""), m_useInversedPropertyValue (false), m_defaultValue (false)
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT CheckBoxRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR propertyName, bool useInversedPropertyValue, bool defaultValue)
             : PresentationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), m_useInversedPropertyValue (useInversedPropertyValue), m_defaultValue (defaultValue)
             {
