@@ -1487,7 +1487,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
     {
-    SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType)
+    SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType) const
         {
         switch (matchType)
             {
