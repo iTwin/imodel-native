@@ -765,7 +765,7 @@ void            MemoryECInstanceBase::SetPartiallyLoaded (bool set)
 * the property values returned.
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool           MemoryECInstanceBase::IsPartiallyLoaded ()
+bool           MemoryECInstanceBase::IsPartiallyLoaded () const
     {
     return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
     }
@@ -789,7 +789,7 @@ bool            MemoryECInstanceBase::SetHiddenInstance (bool set)
 * Currently only used by ECXA Instance serialization/deserialization
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool           MemoryECInstanceBase::IsHiddenInstance ()
+bool           MemoryECInstanceBase::IsHiddenInstance () const
     {
     return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
     }
