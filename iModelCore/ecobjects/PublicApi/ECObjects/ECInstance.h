@@ -444,8 +444,8 @@ public:
     //! @returns SUCCESS if the display label was set, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (WCharCP displayLabel);    
     
-    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const; //!< Returns the underlying ECDBuffer for this instance
-    ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance
+    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const; //!< Returns the underlying ECDBuffer for this instance. WIP_FUSION: casts away const...
+    ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance. WIP_FUSION: casts away const...
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const; //!< Returns the offset to the IECInstance
 
     //! Returns a dump of the instance
