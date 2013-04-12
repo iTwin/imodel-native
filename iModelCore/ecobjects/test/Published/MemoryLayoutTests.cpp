@@ -1275,7 +1275,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
-    ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstance()->CopyInstanceProperties (*instance);
+    ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstanceP()->CopyInstanceProperties (*instance);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
 
     collection = ECValuesCollection::Create (*duplicateInstance);
@@ -1320,7 +1320,7 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     mergeFromInstance->SetValue(L"Field_Tested", nullBool);
     mergeFromInstance->SetValue (L"Size",        ECValue (tstSize));
 
-    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstance ();
+    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*mergeFromInstance);
 
     bvector <AccessStringValuePair> expectedValues;
@@ -1770,7 +1770,7 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
 
     ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
-    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*instance);
 
     collection = ECValuesCollection::Create (*toInstance);
@@ -1806,7 +1806,7 @@ TEST_F(MemoryLayoutTests, MergeStruct)
 
     ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
-    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*employeeInstance);
 
     collection = ECValuesCollection::Create (*toInstance);
@@ -2587,7 +2587,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
         timer.Stop();
         
         elapsedSeconds += timer.GetElapsedSeconds();
-        instance->GetAsMemoryECInstance()->ClearValues();
+        instance->GetAsMemoryECInstanceP()->ClearValues();
         }
     
     //wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);

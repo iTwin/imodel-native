@@ -681,7 +681,8 @@ protected:
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 public:
     ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
-    ECOBJECTS_EXPORT IECInstanceP           GetAsIECInstance () const;  // WIP_FUSION: casts away const...
+    ECOBJECTS_EXPORT IECInstanceCP          GetAsIECInstance () const;
+    ECOBJECTS_EXPORT IECInstanceP           GetAsIECInstanceP();
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
     ECOBJECTS_EXPORT ECN::PrimitiveType     GetStructArrayPrimitiveType () const;

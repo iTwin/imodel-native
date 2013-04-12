@@ -2238,7 +2238,8 @@ ECN::PrimitiveType         ECDBuffer::GetStructArrayPrimitiveType () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDBuffer::ClearValues()                                               { _ClearValues(); }
 ECObjectsStatus ECDBuffer::CopyInstanceProperties (IECInstanceCR source)    { return _CopyInstanceProperties (source); }
-IECInstanceP ECDBuffer::GetAsIECInstance() const                            { return _GetAsIECInstance(); }
+IECInstanceP ECDBuffer::GetAsIECInstanceP()                                 { return _GetAsIECInstance(); }
+IECInstanceCP ECDBuffer::GetAsIECInstance() const                           { return _GetAsIECInstance(); }
 ClassLayoutCR ECDBuffer::GetClassLayout() const                             { return _GetClassLayout(); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2281,12 +2282,12 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::CopyInstancePropertiesToBuffer (IECInstanceCR source)
     {
-    IECInstanceP thisInstance = GetAsIECInstance();
+    IECInstanceP thisInstance = GetAsIECInstanceP();
     if (!thisInstance->GetClass().GetName().Equals (source.GetClass().GetName()))
         return ECOBJECTS_STATUS_Error;
 
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    ECDBuffer* srcBuffer = source.GetECDBuffer();
+    ECDBuffer const* srcBuffer = source.GetECDBuffer();
     ClassLayoutCR classLayout = GetClassLayout();
     if (NULL != srcBuffer && classLayout.Equals (srcBuffer->GetClassLayout()))
         {
@@ -2885,7 +2886,7 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
         if (v.GetStruct().IsValid())
             {
             UInt32 propertyIndex;
-            IECInstanceP instance = this->GetAsIECInstance();
+            IECInstanceP instance = this->GetAsIECInstanceP();
             if (NULL != instance && ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propertyIndex, propertyLayout))
                 {
                 // Determine if the struct is valid to add to this array
@@ -3003,7 +3004,7 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECDBuffer::SetCalculatedProperty (ECValueCR v, PropertyLayoutCR propertyLayout)
     {
-    IECInstanceP iecInstance = this->GetAsIECInstance();
+    IECInstanceP iecInstance = this->GetAsIECInstanceP();
     if (NULL == iecInstance)
         { BeAssert (false); return ECOBJECTS_STATUS_Error; }
 
