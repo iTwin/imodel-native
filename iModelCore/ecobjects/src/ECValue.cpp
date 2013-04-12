@@ -6,133 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
 #include <Bentley/ValueFormat.h>
 #include <boost/algorithm/string/replace.hpp>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-#pragma warning(disable:4189) // umillisCheck unused if NDEBUG set.
-static void unixMillisToSystemTime (SystemTime& systemTime, UInt64 umillis)
-    {
-    struct tm tm;
-    BeTimeUtilities::ConvertUnixMillisToTm (tm, umillis);
-    systemTime.wYear        = (UInt16)tm.tm_year + 1900;
-    systemTime.wMonth       = (UInt16)tm.tm_mon + 1;
-    systemTime.wDayOfWeek   = (UInt16)tm.tm_wday;
-    systemTime.wDay         = (UInt16)tm.tm_mday;
-    systemTime.wHour        = (UInt16)tm.tm_hour;
-    systemTime.wMinute      = (UInt16)tm.tm_min;
-    systemTime.wSecond      = (UInt16)tm.tm_sec;
-    systemTime.wMilliseconds = umillis % 1000LL;
-
-    BeAssert (BeTimeUtilities::ConvertTmToUnixMillis(tm) + systemTime.wMilliseconds == umillis);
-    }
-#pragma warning(default:4189)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-static UInt64 systemTimeToUnixMillis (SystemTime const& systemTime)
-    {
-    struct tm tm;
-    memset (&tm, 0, sizeof(tm));
-    tm.tm_year              = systemTime.wYear - 1900;
-    tm.tm_mon               = systemTime.wMonth - 1;     
-    tm.tm_mday              = systemTime.wDay;
-    tm.tm_hour              = systemTime.wHour;        
-    tm.tm_min               = systemTime.wMinute;      
-    tm.tm_sec               = systemTime.wSecond;     
-    UInt64 umillis          = BeTimeUtilities::ConvertTmToUnixMillis (tm);
-    umillis                += systemTime.wMilliseconds;
-    return umillis;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static unsigned short  getMaxDay (unsigned short year, unsigned short month)
-    {
-    static unsigned short monthDays [] = {31,28,31,30,31,30,31,31,30,31,30,31};
-
-    bool isLeap = (0 == year%4) && ((0 != year%100) || (0 == year%400));
-
-    if (isLeap && (2==month))
-        return monthDays[month-1]+1;
-
-    return monthDays[month-1];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Day of week 0=Sunday
-* @bsimethod                                    Bill.Steinbock                  11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static unsigned short  getDayOfWeek (unsigned short year, unsigned short month, unsigned short day)
-    {
-    int a = (14 - month) / 12;  // 1 for Jan and Feb else 0
-    int y = year - a;
-    int m = month + (12 * a) - 2;
-    return (unsigned short) (day + y + (y / 4.0) - (y / 100) + (y / 400) + ((31 * m) / 12))  % 7;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime::SystemTime
-(
-unsigned short year, 
-unsigned short month, 
-unsigned short day, 
-unsigned short hour, 
-unsigned short minute, 
-unsigned short second, 
-unsigned short milliseconds
-)
-    {
-    wYear =  (year >= 1601 && year < 9999) ? year : 1601;
-    wMonth = (month > 0 && month <= 12)? month : 1;
-    wDay = (day > 0 && day <= getMaxDay(wYear, wMonth)) ? day : 1;
-    wHour = (hour >= 0 && hour < 24) ? hour : 0;
-    wMinute = (minute >= 0 && minute < 60) ? minute : 0;
-    wSecond = (second >= 0 && second < 60) ? second : 0;
-    wMilliseconds = (milliseconds >= 0 && milliseconds < 1000) ? milliseconds : 0;
-    wDayOfWeek = getDayOfWeek (wYear, wMonth, wDay);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
- bool SystemTime::operator== (const SystemTime& rhs) const
-     {
-     return 0 == memcmp (this, &rhs, sizeof(SystemTime));
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString SystemTime::ToString
-(
-)
-    {
-    WString str;
-    str.Sprintf (L"#%d/%d/%d-%d:%d:%d:%d#", wYear, wMonth, wDay, wHour, wMinute, wSecond, wMilliseconds);
-    return str;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* UTC time
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetSystemTime()
-    {
-    SystemTime time;
-    unixMillisToSystemTime (time, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    return time;
-    }
 
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     {
@@ -300,6 +178,14 @@ void ECValue::StringInfo::SetNull()
 #endif
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+bool ECValue::StringInfo::IsUtf8 () const
+    {
+    return m_utf8 != NULL;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -400,6 +286,142 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
     return false;
     }
 
+//*********************** ECValue::DateTimeInfo ***************************************
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+void ECValue::DateTimeInfo::Set (::Int64 ceTicks)
+    {
+    m_ceTicks = ceTicks;
+    m_isMetadataSet = false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ECValue::DateTimeInfo::Set (DateTimeCR dateTime)
+    {
+    //No support for local DateTimes (yet?) as client might expect this to do time zone
+    //conversions - which we want the client / application side to do as it is nearly
+    //impossible to do time zone conversions right in a generic and portable way.
+    PRECONDITION (dateTime.GetInfo ().GetKind () != DateTime::DATETIMEKIND_Local, ERROR);
+
+    Int64 ceTicks = 0LL;
+    BentleyStatus stat = dateTime.ToCommonEraTicks (ceTicks);
+    if (stat != SUCCESS)
+        {
+        return stat;
+        }
+
+    Set (ceTicks);
+    return SetMetadata (dateTime.GetInfo ());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+::Int64 ECValue::DateTimeInfo::GetCETicks () const
+    {
+    return m_ceTicks;
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ECValue::DateTimeInfo::GetDateTime (DateTimeR dateTime) const
+    {
+    DateTime::Info info;
+    if (!TryGetMetadata (info))
+        {
+        info = ECN::DateTimeInfo::GetDefault ();
+        }
+
+    return DateTime::FromCommonEraTicks (dateTime, m_ceTicks, info);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+bool ECValue::DateTimeInfo::TryGetMetadata (DateTime::Info& metadata) const
+    {
+    if (!IsMetadataSet ())
+        {
+        return false;
+        }
+
+    metadata = DateTime::Info (m_kind, m_component);
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTimeInfoCR caMetadata)
+    {
+    DateTime::Info metadata = caMetadata.GetInfo (true);
+    return SetMetadata (metadata);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata)
+    {
+    //No support for local DateTimes (yet?) as client might expect this to do time zone
+    //conversions - which we want the client / application side to do as it is nearly
+    //impossible to do time zone conversions right in a generic and portable way.
+    if (metadata.GetKind () == DateTime::DATETIMEKIND_Local)
+        {
+        LOG.error (L"DateTime kind 'Local' not supported.");
+        BeAssert (false && L"DateTime kind 'Local' not supported.");
+        return ERROR;
+        }
+
+    m_kind = metadata.GetKind ();
+    m_component = metadata.GetComponent ();
+    m_isMetadataSet = true;
+
+    return SUCCESS;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+bool ECValue::DateTimeInfo::MetadataMatches (DateTimeInfoCR caDateTimeMetadata) const
+    {
+    DateTime::Info const& rhsInfo = caDateTimeMetadata.GetInfo ();
+
+    //if ECValue doesn't have meta data (e.g. in case when SetDateTimeTicks was used to populate it),
+    //no metadata check will be done. I.e. the CA metadata will implicitly become the CA of the ECValue.
+    return !m_isMetadataSet || ((caDateTimeMetadata.IsKindNull () || m_kind == rhsInfo.GetKind ()) &&
+        (caDateTimeMetadata.IsComponentNull () || m_component == rhsInfo.GetComponent ()));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                   02/13
+//+---------------+---------------+---------------+---------------+---------------+-------
+WString ECValue::DateTimeInfo::MetadataToString () const
+    {
+    DateTime::Info metadata;
+    if (!TryGetMetadata (metadata))
+        {
+        return L"";
+        }
+
+    WString str;
+    //reserve for the longest possible string 
+    str.reserve (36);
+    str.append (L"Kind: ");
+    str.append (DateTime::Info::KindToString (m_kind));
+    str.append (L" Component: ");
+    str.append (DateTime::Info::ComponentToString (m_component));
+
+    return str;
+    }
+
+//*********************** ECValue ***************************************
+
 /*---------------------------------------------------------------------------------**//**
 *  Really indicates that the property from which this came is readonly... not the value itself.
 * @bsimethod                                                    CaseyMullen     09/09
@@ -483,6 +505,14 @@ bool            ECValue::IsUninitialized () const
 bool            ECValue::IsString () const 
     { 
     return m_primitiveType == PRIMITIVETYPE_String; 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    02/13
+//+---------------+---------------+---------------+---------------+---------------+------
+bool            ECValue::IsUtf8 () const 
+    { 
+    return IsString () && m_stringInfo.IsUtf8 ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -840,7 +870,7 @@ ECValue::ECValue (bool value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (SystemTime const& time)
+ECValue::ECValue (DateTimeCR time)
     {
     ConstructUninitialized();
     SetDateTime (time);
@@ -1009,87 +1039,137 @@ BentleyStatus       ECValue::SetBoolean (bool value)
     return SUCCESS;
     }
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// DateTime   - The DateTime ticks are the number of 100-nanosecond intervals 
+//              that have elapsed since the beginning of the Common Era epoch (0001-01-01 00:00:00 UTC)
+//              (This is the same as in managed ECObjects and .NET's System.DateTime respectively)
+//////////////////////////////////////////////////////////////////////////////////////////
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64          ECValue::GetDateTimeTicks() const
+Int64 ECValue::GetDateTimeTicks () const
     {
-    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
-    return m_dateTime;
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0LL);
+    PRECONDITION (!IsNull(), 0LL);
+    return m_dateTimeInfo.GetCETicks ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Int64 ECValue::GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const
+    {
+    const Int64 ceTicks = GetDateTimeTicks ();
+
+    hasMetadata = m_dateTimeInfo.TryGetMetadata (metadata);
+
+    return ceTicks;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Krischan.Eberle             10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime ECValue::GetDateTime () const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", DateTime ());
+    PRECONDITION (!IsNull(), DateTime ());
+
+    DateTime dateTime;
+    BentleyStatus stat = m_dateTimeInfo.GetDateTime (dateTime);
+    POSTCONDITION (stat == SUCCESS, DateTime ());
+
+    return dateTime;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+Int64 ECValue::GetDateTimeUnixMillis () const
+    {
+    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0LL);
+    PRECONDITION (!IsNull(), 0LL);
+
+    Int64 commonEraTicks = m_dateTimeInfo.GetCETicks ();
+    UInt64 jdInHns = DateTime::CommonEraTicksToJulianDay (commonEraTicks);
+    return DateTime::JulianDayToUnixMilliseconds (jdInHns);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       ECValue::SetDateTimeTicks (Int64 value)
+BentleyStatus       ECValue::SetDateTimeTicks (Int64 ceTicks)
     {
-    Clear();
+    Clear ();
     SetIsNull (false);
-    m_primitiveType  = PRIMITIVETYPE_DateTime;
-    m_dateTime       = value;
-    
+    m_primitiveType = PRIMITIVETYPE_DateTime;
+    m_dateTimeInfo.Set (ceTicks);
     return SUCCESS;
     }
 
-//////////////////////////////////////////////////////////////////////////////////////////
-// Native Code
-// FILETIME   - A file time is a 64-bit value that represents the number of 100-nanosecond 
-//              intervals that have elapsed since 00:00:00 01/01/1601.
-//
-// SYSTEMTIME - A structure that specifies a date and time, using individual members for 
-//              the month, day, year, weekday, hour, minute, second, and millisecond.
-//
-//---------------------------------------------------------------------------------------
-// Managed Code
-// DateTime   - The DateTime.Ticks value stored in a ECXAttribute represents the number 
-//              of 100-nanosecond  intervals that have elapsed since 00:00:00 01/01/01 
-//////////////////////////////////////////////////////////////////////////////////////////
-
-static const Int64 TICKADJUSTMENT = 504911232000000000LL;     // ticks between 01/01/01 and 01/01/1601
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime          ECValue::GetDateTime () const
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus ECValue::SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata) 
     {
-    SystemTime systemTime;
-    Int64      systemDateTicks = GetDateTimeTicks ();
-
-    memset (&systemTime, 0, sizeof(systemTime));
-
-    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", systemTime);
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", systemTime);
-
-    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
-    systemDateTicks -= TICKADJUSTMENT; 
-    _FILETIME fileTime;
-    fileTime.dwLowDateTime  = systemDateTicks & 0xffffffff;
-    fileTime.dwHighDateTime = systemDateTicks >> 32;
-
-    UInt64 umillis = BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime);
-
-    unixMillisToSystemTime (systemTime, umillis);
-
-    return systemTime;
+    SetDateTimeTicks (ceTicks);
+    return m_dateTimeInfo.SetMetadata (dateTimeMetadata);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus          ECValue::SetDateTime (SystemTime const& systemTime) 
+BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime) 
     {
-    Clear();
+    Clear ();
+    m_primitiveType = PRIMITIVETYPE_DateTime;
+    //in case of error, keep IsNull set.
+    BentleyStatus stat = m_dateTimeInfo.Set (dateTime);
+    if (stat == SUCCESS)
+        {
+        SetIsNull (false);
+        }
 
-    UInt64 umillis = systemTimeToUnixMillis (systemTime);
+    return stat;
+    }
 
-    _FILETIME fileTime;
-    BeTimeUtilities::ConvertUnixMillisToFiletime (fileTime, umillis);
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus ECValue::SetDateTimeMetadata (DateTimeInfoCR dateTimeInfo)
+    {
+    PRECONDITION (IsDateTime () && !IsNull (), ERROR);
+    return m_dateTimeInfo.SetMetadata (dateTimeInfo);
+    }
 
-    // m_dateTime is number of ticks since 00:00:00 01/01/01 - Fileticks are relative to 00:00:00 01/01/1601
-    Int64 systemDateTicks = (Int64)fileTime.dwLowDateTime | ((Int64)fileTime.dwHighDateTime << 32);
-    systemDateTicks += TICKADJUSTMENT; 
-    return SetDateTimeTicks (systemDateTicks);
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+bool ECValue::IsDateTimeMetadataSet () const
+    {
+    return IsDateTime () && !IsNull () && m_dateTimeInfo.IsMetadataSet ();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+bool ECValue::DateTimeInfoMatches (DateTimeInfoCR dateTimeInfo) const
+    {
+    return IsDateTime () && !IsNull () && m_dateTimeInfo.MetadataMatches (dateTimeInfo);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+-----
+WString ECValue::DateTimeMetadataToString () const
+    {
+    if (!IsDateTime () || IsNull ())
+        {
+        return L"";
+        }
+
+    return m_dateTimeInfo.MetadataToString ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2767,40 +2847,6 @@ ECValuesCollection::const_iterator ECValuesCollection::end () const
         m_end = new ECValuesCollectionIterator();
 
     return const_iterator (*m_end);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  01/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   SystemTime::InitFromFileTime (_FILETIME const& fileTime)
-    {
-    unixMillisToSystemTime (*this, BeTimeUtilities::ConvertFiletimeToUnixMillis(fileTime));
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SystemTime::InitFromUnixMillis (UInt64 unixMillis)
-    {
-    unixMillisToSystemTime (*this, unixMillis);
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-UInt64 ECValue::GetDateTimeUnixMillis() const
-    {
-    PRECONDITION (IsDateTime() && "Tried to get DateTime value from an ECN::ECValue that is not a DateTime.", 0);
-    PRECONDITION (!IsNull() && "Getting the value of a NULL non-string primitive is ill-defined", 0);
-
-    Int64 ticks = (UInt64)GetDateTimeTicks();
-    ticks -= TICKADJUSTMENT;
-    _FILETIME fileTime;
-    fileTime.dwLowDateTime = ticks & 0xFFFFFFFF;
-    fileTime.dwHighDateTime = ticks >> 0x20;
-    return BeTimeUtilities::ConvertFiletimeToUnixMillis (fileTime);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -822,7 +822,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     WCharCP stringValueP = NULL;
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].Name", testString.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name"));
     EXPECT_STREQ (testString.c_str(), stringValueP);
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
@@ -880,12 +880,12 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v2.SetBoolean (true);
     EXPECT_FALSE  (v1.Equals (v2));
 
-    SystemTime timeInput  = SystemTime::GetLocalTime();
+    DateTime timeInput = DateTime::GetCurrentTimeUtc ();
     v1.SetDateTime(timeInput);
     v2.SetDateTime(timeInput);
     EXPECT_TRUE   (v1.Equals (v2));
-    timeInput.wYear++;
-    v2.SetDateTime(timeInput);
+    DateTime timeInput2 (timeInput.GetInfo().GetKind(), timeInput.GetYear()+1, timeInput.GetMonth(), timeInput.GetDay(), timeInput.GetHour(), timeInput.GetMinute(), timeInput.GetSecond(), timeInput.GetHectoNanosecond());
+    v2.SetDateTime(timeInput2);
     EXPECT_FALSE  (v1.Equals (v2));
 
     v1.SetDateTimeTicks((Int64)633487865666864601);
@@ -1969,7 +1969,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
     DPoint3d   inPoint2 ={200.100, 210.110, 220.120};
-    SystemTime inTime = SystemTime::GetLocalTime();
+    DateTime   inTimeUtc = DateTime::GetCurrentTimeUtc ();
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;
@@ -1982,7 +1982,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     instance->SetValue (L"Size",         ECValue (inSize));
     instance->SetValue (L"StartPoint",   ECValue (inPoint1));
     instance->SetValue (L"EndPoint",     ECValue (inPoint2));
-    instance->SetValue (L"Service_Date", ECValue (inTime));
+    instance->SetValue (L"Service_Date", ECValue (inTimeUtc));
 
     ECValue ecValue;
     ecValue.SetDateTimeTicks(inTicks);
@@ -2006,8 +2006,8 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
-    SystemTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inTime, &sysTime, sizeof(SystemTime)));
+    DateTime  sysTime = ecValue.GetDateTime ();
+    EXPECT_TRUE (inTimeUtc.Compare (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
@@ -2202,17 +2202,16 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (0 == point2Str.compare (L"10,100"));
 
     // DateTime
-    SystemTime now = SystemTime::GetLocalTime();
-    ECValue dateValue (now);
-    SystemTime nowUTC = SystemTime::GetSystemTime();
-    //Int64 ticks = dateValue.GetDateTimeTicks ();
+    DateTime nowUtc = DateTime::GetCurrentTimeUtc ();
+    ECValue dateValue (nowUtc);
     EXPECT_TRUE (dateValue.IsDateTime());
-    SystemTime nowtoo = dateValue.GetDateTime ();
-    EXPECT_TRUE (0 == memcmp(&nowtoo, &now, sizeof(nowtoo)));
+    DateTime nowToo = dateValue.GetDateTime ();
+    EXPECT_TRUE (nowToo.Compare (nowUtc, true));
+
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);
     WString dateStr = fixedDate.ToString();
-    EXPECT_TRUE (0 == dateStr.compare (L"#2010/2/25-16:28:27:91#"));
+    EXPECT_TRUE (0 == dateStr.compare (L"2010-02-25T16:28:27.091")) << L"Expected date: " << fixedDate.GetDateTime ().ToString ().c_str ();
     };
   
 /*---------------------------------------------------------------------------------**//**
