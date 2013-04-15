@@ -135,7 +135,7 @@ public:
 
     //! Gets the schemas cached by this context.
     //! @returns Schemas cached by this context
-    ECSchemaCacheR GetCache ()  { return m_knownSchemas; }
+    ECOBJECTS_EXPORT ECSchemaCacheR GetCache ();
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
