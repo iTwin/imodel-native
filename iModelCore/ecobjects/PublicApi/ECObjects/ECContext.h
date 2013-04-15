@@ -90,7 +90,6 @@ public:
     void                AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
-    ECSchemaCacheR      GetCache()  { return m_knownSchemas; }
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
@@ -132,7 +131,11 @@ public:
     //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
     //! @param[in] matchType    The match type criteria used to locate the requested schema
     //! @returns An ECSchemaPtr.  This ptr will return false for IsValid() if the schema could not be located.
-    ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECSchemaPtr LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+
+    //! Gets the schemas cached by this context.
+    //! @returns Schemas cached by this context
+    ECOBJECTS_EXPORT ECSchemaCacheR GetCache ();
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
