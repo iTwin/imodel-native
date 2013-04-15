@@ -260,6 +260,15 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCacheR ECSchemaReadContext::GetCache ()
+    {
+    return m_knownSchemas;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
     {
     private:
