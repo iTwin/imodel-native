@@ -504,12 +504,12 @@ StructArrayEntry const* MemoryECInstanceBase::GetAddressOfStructArrayEntry (Stru
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           MemoryECInstanceBase::SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId)
+ECObjectsStatus           MemoryECInstanceBase::SetStructArrayInstance (MemoryECInstanceBaseR instance, StructValueIdentifier structValueId)
     {
     if (NULL == m_structInstances)
         m_structInstances = new StructInstanceVector ();
 
-    IECInstancePtr instancePtr = instance.GetAsIECInstance();
+    IECInstancePtr instancePtr = instance.GetAsIECInstanceP();
     m_structInstances->push_back (StructArrayEntry (structValueId, instancePtr));
     if (m_structValueId < structValueId)
         m_structValueId = structValueId;
@@ -765,7 +765,7 @@ void            MemoryECInstanceBase::SetPartiallyLoaded (bool set)
 * the property values returned.
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool           MemoryECInstanceBase::IsPartiallyLoaded ()
+bool           MemoryECInstanceBase::IsPartiallyLoaded () const
     {
     return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsPartiallyLoaded); 
     }
@@ -789,7 +789,7 @@ bool            MemoryECInstanceBase::SetHiddenInstance (bool set)
 * Currently only used by ECXA Instance serialization/deserialization
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool           MemoryECInstanceBase::IsHiddenInstance ()
+bool           MemoryECInstanceBase::IsHiddenInstance () const
     {
     return  0 != (m_usageBitmask & (UInt16)MEMORYINSTANCEUSAGE_IsHidden); 
     }
@@ -803,7 +803,7 @@ ECObjectsStatus MemoryECInstanceBase::MergePropertiesFromInstance
 ECN::IECInstanceCR     fromNativeInstance
 )
     {
-    IECInstancePtr  thisAsIECInstance = GetAsIECInstance ();
+    IECInstancePtr  thisAsIECInstance = GetAsIECInstanceP ();
 
     if (!thisAsIECInstance->GetClass().GetName().Equals (fromNativeInstance.GetClass().GetName().c_str()))
         return ECOBJECTS_STATUS_Error;
@@ -859,7 +859,7 @@ ECObjectsStatus MemoryECInstanceBase::_CopyInstanceProperties
 ECN::IECInstanceCR     fromNativeInstance
 )
     {
-    MemoryECInstanceBase* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance();
+    MemoryECInstanceBase const* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance();
     if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
         {
         SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());

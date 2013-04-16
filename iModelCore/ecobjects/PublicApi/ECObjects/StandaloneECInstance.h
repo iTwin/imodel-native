@@ -147,7 +147,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT MemoryECInstanceBase const *   GetParentInstance () const;
 
     ECOBJECTS_EXPORT IECInstancePtr           GetStructArrayInstanceByIndex (UInt32 index, StructValueIdentifier& structValueId) const;
-    ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseCR instance, StructValueIdentifier structValueId);
+    ECOBJECTS_EXPORT ECObjectsStatus          SetStructArrayInstance (MemoryECInstanceBaseR instance, StructValueIdentifier structValueId);
     ECOBJECTS_EXPORT ECObjectsStatus          MergePropertiesFromInstance (ECN::IECInstanceCR fromNativeInstance);
 
     ECOBJECTS_EXPORT void                     SetUsingSharedMemory ();
@@ -159,9 +159,9 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT UInt16                   GetUsageBitmask () const;
     ECOBJECTS_EXPORT void                     SetUsageBitmask (UInt16 mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
-    ECOBJECTS_EXPORT bool                     IsPartiallyLoaded ();
+    ECOBJECTS_EXPORT bool                     IsPartiallyLoaded () const;
     ECOBJECTS_EXPORT bool                     SetHiddenInstance (bool set);
-    ECOBJECTS_EXPORT bool                     IsHiddenInstance ();
+    ECOBJECTS_EXPORT bool                     IsHiddenInstance () const;
 };
 
 /*=================================================================================**//**

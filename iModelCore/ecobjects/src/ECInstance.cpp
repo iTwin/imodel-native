@@ -237,8 +237,10 @@ bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) cons
 ECEnablerCR           IECInstance::GetEnabler() const { return _GetEnabler();  }
 ECEnablerR            IECInstance::GetEnablerR() const { return *const_cast<ECEnablerP>(&_GetEnabler());  }
 bool                  IECInstance::IsReadOnly() const { return _IsReadOnly();  }
-ECDBuffer*            IECInstance::GetECDBuffer() const { return _GetECDBuffer(); }
-MemoryECInstanceBase* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
+ECDBuffer const*            IECInstance::GetECDBuffer() const { return _GetECDBuffer(); }
+ECDBuffer*                  IECInstance::GetECDBufferP() { return _GetECDBuffer(); }
+MemoryECInstanceBase const* IECInstance::GetAsMemoryECInstance () const {return _GetAsMemoryECInstance();}
+MemoryECInstanceBase*       IECInstance::GetAsMemoryECInstanceP () { return _GetAsMemoryECInstance(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
