@@ -21,7 +21,8 @@ typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
 //=======================================================================================    
-//! Information about an array in an IECInstance. Does not contain the actual elements.
+//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
+//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
 struct ArrayInfo
@@ -47,18 +48,27 @@ public:
     //! @param[in] isFixedCount         Indicates whether the array can grow or not
     void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
-    ECOBJECTS_EXPORT UInt32          GetCount() const;                  //!< Returns the number of entries in this array
-    ECOBJECTS_EXPORT bool            IsFixedCount() const;              //!< Returns whether this is a fixed size array or not
-    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;          //!< Returns whether this is a primitive array
-    ECOBJECTS_EXPORT bool            IsStructArray() const;             //!< Returns whether this is a struct array
-    ECOBJECTS_EXPORT ValueKind       GetKind() const;                   //!< Returns the kind of array this is (primitive or struct)
-    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;   //!< Returns the primitive type that this array was initialized with
+    //! Returns the number of entries in this array
+    ECOBJECTS_EXPORT UInt32          GetCount() const;
+    //! Returns whether this is a fixed size array or not
+    ECOBJECTS_EXPORT bool            IsFixedCount() const;
+    //! Returns whether this is a primitive array
+    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;
+    //! Returns whether this is a struct array
+    ECOBJECTS_EXPORT bool            IsStructArray() const;
+    //! Returns the kind of array this is (primitive or struct)
+    ECOBJECTS_EXPORT ValueKind       GetKind() const;
+    //! Returns the primitive type that this array was initialized with
+    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;
     };
 
-//! Variant-like object representing the value of an ECPropertyValue. 
-//! It does not represent a "live" reference into the underlying IECInstance 
-//! (or the object that the IECInstance represents). Changing the ECValue will not affect
-//! the IECInstance unless you subsequently call SetValue() with it.
+//=======================================================================================
+//! Variant-like object used to set and retrieve property values in \ref ECN::IECInstance "ECInstances".
+//! @remarks It does not represent a "live" reference into the underlying ECN::IECInstance
+//! (or the object that the ECN::IECInstance represents). Changing the ECValue will not affect
+//! the IECInstance unless you subsequently call IECInstance::SetValue with it.
+//! @ingroup ECObjectsGroup
+//=======================================================================================
 struct ECValue
     {
 public:
@@ -194,19 +204,23 @@ protected:
         IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
         };
 
-    void ConstructUninitialized(); //!< Constructs an uninitialized ECValue object
-    inline void FreeMemory (); //!< If appropriate for the value type, frees the memory used to store the value
+    //! Constructs an uninitialized ECValue object
+    void ConstructUninitialized();
+    //! If appropriate for the value type, frees the memory used to store the value
+    inline void FreeMemory ();
          
 public:
-    ECOBJECTS_EXPORT void            Clear(); //!< Clears memory, if necessary, and sets the value back to an uninitialized state
-    ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs); //!< Compares two ECValues for equality
-    
-    ECOBJECTS_EXPORT ~ECValue(); //!< Destructor
-    
-    ECOBJECTS_EXPORT ECValue (); //!< Default Constructor.  Construct an uninitialized value
-    
-    //! Constructs a new ECValue based on the passed in ECValue
-    //! @param[in] v    The ECValue to initialize the new ECValue from
+    //! Clears memory, if necessary, and sets the value back to an uninitialized state
+    ECOBJECTS_EXPORT void            Clear();
+    //! Compares two ECValues for equality
+    ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs);    
+    //! Destructor
+    ECOBJECTS_EXPORT ~ECValue();
+
+    //! Initializes a new instance of the ECValue type.
+    ECOBJECTS_EXPORT ECValue ();
+    //! Initializes a new instance of the ECValue type from the given ECValue.
+    //! @param[in] v ECValue to initialize this object from
     ECOBJECTS_EXPORT ECValue (ECValueCR v);
 
     //! Constructs an uninitialized ECValue of the specified ValueKind
@@ -217,15 +231,15 @@ public:
     //! @param[in] primitiveType The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Integer
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Integer
     //! @param[in] integer32 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Long
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Long
     //! @param[in] long64 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Double
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Double
     //! @param[in] doubleVal Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
 

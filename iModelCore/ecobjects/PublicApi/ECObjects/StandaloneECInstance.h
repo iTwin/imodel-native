@@ -164,13 +164,14 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT bool                     IsHiddenInstance () const;
 };
 
-/*=================================================================================**//**
+//=================================================================================
+//! ECN::StandaloneECInstance is an implementation of IECInstance which is not tied
+//! to a specified persistence store and which holds the values in memory that it allocates,
+//! laid out according to the ClassLayout.
+//! @see IECInstance
 //! @ingroup ECObjectsGroup
-* ECN::StandaloneECInstance is the native equivalent of a .NET "Heavyweight" ECInstance.
-* It holds the values in memory that it allocates... laid out according to the ClassLayout
-* @see ClassLayoutHolder, IECInstance
-* @bsiclass 
-+===============+===============+===============+===============+===============+======*/
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct StandaloneECInstance : IECInstance
 //__PUBLISH_SECTION_END__
                             , MemoryECInstanceBase
@@ -251,8 +252,9 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     };
 
 //=======================================================================================
+//! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
+//! @see StandaloneECInstance
 //! @ingroup ECObjectsGroup
-//! ECEnabler for Standalone ECInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
 //__PUBLISH_SECTION_END__

@@ -107,16 +107,21 @@ public:
 };
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
-//=======================================================================================    
-//! @ingroup ECObjectsGroup
-//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
-//! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
-//! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
-//! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality 
-//! to the ECN::IECInstance.
-//! We could call these "enabled" instances as opposed to "lightweight".
+//=======================================================================================
+//! An IECInstance represents an instance of an ECClass.
+//!
+//! IECInstance is not a pure interface. Functionality is supplied to an IECInstance through
+//! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
+//!
+//! @cond BENTLEY_SDK_Desktop
+//! ### Comparison to .NET ECObjects
+//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
+//! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
+//! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
+//! Native IECInstances could be called "enabled" as opposed to "lightweight".
+//! @endcond BENTLEY_SDK_Desktop
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct IECInstance : RefCountedBase
@@ -149,7 +154,7 @@ protected:
 
     //! Gets the unique ID for this instance
     virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
-    //! Gets the value stored in the specified ECProperty
+    //! Gets the value stored in the ECProperty referred to by the specified property index
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (property index is 1-based)
     //! @param[in]  useArrayIndex   true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
@@ -157,7 +162,8 @@ protected:
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (array index is 0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
-    //! Sets the value for the specified property
+
+    //! Sets the value for the property referred to by the specified property index
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (property index is 1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  useArrayIndex   true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
@@ -400,9 +406,9 @@ public:
     //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
-    // Contract:
-    // - For all of the methods, the propertyAccessString shall not contain brackets.
-    //   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
+    //! Contract:
+    //! - For all of the methods, the propertyAccessString shall not contain brackets.
+    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
     //! Given an access string, will inserting size number of empty array elements at the given index
     //! @param[in] propertyAccessString     The access string to the array property (shall not contain brackets)
     //! @param[in] index                    The starting index of the array at which to insert the new elements
@@ -553,11 +559,12 @@ public:
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
     };
-    
-//=======================================================================================    
-//! @ingroup ECObjectsGroup
-//! ECN::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+
+//=======================================================================================
+//! ECN::IECRelationshipInstance is an instance of an ECRelationshipClass and represents
+//! the relationship between two \ref IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct IECRelationshipInstance : virtual IECInstance

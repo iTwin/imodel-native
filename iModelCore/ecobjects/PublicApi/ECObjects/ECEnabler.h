@@ -99,20 +99,21 @@ public:
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
     ECOBJECTS_EXPORT WCharCP                    GetName() const;
-    
+
     //! Get the ECClass that this enabler 'enables'
     ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
-    
+
     //! Obtain a propertyIndex given an access string. The propertyIndex can be used with ECInstances enabled by this enabler for more efficient property value access
     ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;
-    
+
     //! Given a propertyIndex, find the corresponding property access string
     ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, UInt32 propertyIndex) const;
-    
+
     //! Get the first propertyIndex (used in conjunction with GetNextPropertyIndex for efficiently looping over property values.)
     ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
-    
-    //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetNeGetFirstPropertyIndexxtPropertyIndex for efficiently looping over property values.)
+
+    //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetFirstPropertyIndex for efficiently looping over property values.)
+    //! @return 0 if there are no more
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
 
     //! Return true if the property associated with parentIndex has child properties
@@ -205,7 +206,7 @@ protected:
 
  /*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
-//! A derived helper enabler that allows you to generates property indices based on a array of 
+//! A derived helper enabler that allows you to generates property indices based on a array of
 //! property strings. This will only work on simple instances with no embedded structs.
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -225,7 +226,7 @@ protected:
                 }
             return ECOBJECTS_STATUS_InvalidPropertyAccessString;
             }
-        
+
         virtual ECObjectsStatus _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override
             {
             if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
@@ -250,7 +251,7 @@ protected:
 
             }
         virtual UInt32          _GetFirstPropertyIndex (UInt32 parentIndex) const override {return 1;}
-        
+
         virtual bool            _HasChildProperties (UInt32 parentIndex) const override {return false;}
 
     protected:
@@ -258,7 +259,7 @@ protected:
             :BaseEnablerClass(ecClass, structStandaloneEnablerLocater)
             {}
     };
- 
+
  /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
