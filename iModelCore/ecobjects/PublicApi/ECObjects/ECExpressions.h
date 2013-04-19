@@ -9,7 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 /// @cond BENTLEY_SDK_Desktop
 
-#include "ECInstanceIterable.h"
+//#include "ECInstanceIterable.h"
 
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
