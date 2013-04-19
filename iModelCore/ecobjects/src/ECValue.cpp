@@ -3331,4 +3331,6 @@ bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
         BeAssert (false && L"Call ECValue::SupportsDotNetFormatting() to determine if this ECValue can be formatted");
         return false;
         }
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

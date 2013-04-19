@@ -229,6 +229,7 @@ protected:
 #ifdef DGN_IMPORTER_REORG_WIP
     virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
 #endif
+/*__PUBLISH_SECTION_START__*/
 public:
 
     //! Returns the base address for this instance
@@ -510,11 +511,10 @@ public:
 
     //! Serializes the instance to a file
     //! @param[in] fileName Full path to the file that will be written to.
-    //! @param[in] isStandAlone If true, the Xml will start with the Xml declaration.  Otherwise, if this is part of a larger Xml stream, no declaration will be written
     //! @param[in] writeInstanceId  If true, the instanceId will be written as an attribute on the node
     //! @param[in] utf16    If true, the Xml will be written as utf16
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlFile   (WCharCP fileName, bool isStandAlone, bool writeInstanceId, bool utf16);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlFile   (WCharCP fileName, bool writeInstanceId, bool utf16);
 
     //! Serializes the instance to a stream
     //! @param[in] stream   The stream to write to

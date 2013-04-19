@@ -1002,88 +1002,6 @@ static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInst
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static SupplementedSchemaStatus mergeAttributeProperty (IECInstanceR to, IECInstanceCR from, WCharCP accessor, bool checkForConflict)
-    {
-    ECValue vFrom;
-    from.GetValue (vFrom, accessor);
-
-    bool toIsNull;
-    if (ECOBJECTS_STATUS_Success != to.IsPropertyNull (toIsNull, accessor))
-        return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
-
-    if (toIsNull)
-        to.SetValue (accessor, vFrom);
-    else if (checkForConflict)
-        {
-        ECValue vTo;
-        to.GetValue (vTo, accessor);
-        if (!vTo.Equals (vFrom))
-            return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
-        }
-    
-    return SUPPLEMENTED_SCHEMA_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool allowableUnitsContains (WCharCP search, IECInstanceCR instance, UInt32 size)
-    {
-    ECValue v;
-    for (UInt32 i = 0; i < size; i++)
-        {
-        if (ECOBJECTS_STATUS_Success == instance.GetValue (v, L"AllowableUnits", i) && !v.IsNull() && 0 == wcscmp (search, v.GetString()))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInstanceCR from, bool detectConflicts)
-    {
-    WCharCP propertyNames[] = { L"DimensionName", L"KindOfQuantityName", L"UnitName" };
-    for (size_t i = 0; i < _countof(propertyNames); i++)
-        {
-        SupplementedSchemaStatus mergeStatus = mergeAttributeProperty (to, from, propertyNames[i], detectConflicts);
-        if (SUPPLEMENTED_SCHEMA_STATUS_Success != mergeStatus)
-            return mergeStatus;
-        }
-
-    if (detectConflicts)
-        {
-        // Native code doesn't use AllowableUnits, but we have to compare them for managed (though managed doesn't really seem to use them either...)
-        ECValue listTo, listFrom;
-        to.GetValue (listTo, L"AllowableUnits");
-        from.GetValue (listFrom, L"AllowableUnits");
-        if (listTo.IsNull() != listFrom.IsNull())
-            return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException; // they differ
-        else if (!listTo.IsNull())  // both are non-null, compare them
-            {
-            ArrayInfo infoTo    = listTo.GetArrayInfo(),
-                      infoFrom  = listFrom.GetArrayInfo();
-            if (infoTo.GetCount() != infoFrom.GetCount())
-                return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException; // they differ
-
-            // compare contents.
-            UInt32 size = infoTo.GetCount();
-            for (UInt32 i = 0; i < size; i++)
-                {
-                ECValue v;
-                if (ECOBJECTS_STATUS_Success == to.GetValue (v, L"AllowableUnits", i) && !v.IsNull() && !allowableUnitsContains (v.GetString(), from, size))
-                    return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException; // unit in one list not found in another
-                }
-            }
-        }
-
-    return SUPPLEMENTED_SCHEMA_STATUS_Success; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeUnitSpecificationCustomAttribute
@@ -1111,20 +1029,6 @@ SchemaPrecedence precedence
         setStatus = SetMergedCustomAttribute (consolidatedCustomAttributeContainer, supplementalCustomAttribute, precedence);
 
     return setStatus == ECOBJECTS_STATUS_Success ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void buildUnitSpecificationKey (WStringR key, IECInstanceCR spec)
-    {
-    ECValue v;
-    if (ECOBJECTS_STATUS_Success == spec.GetValue (v, L"KindOfQuantityName") && !v.IsNull())
-        key = v.GetString();
-    else if (ECOBJECTS_STATUS_Success == spec.GetValue (v, L"DimensionName") && !v.IsNull())
-        key = v.GetString();
-    else
-        key = L"@#$";   // a Dimension or KOQ name must be a valid ECClass name, so any invalid string suffices to represent "KindOfQuantity and Dimension not present"
     }
 
 /*---------------------------------------------------------------------------------**//**

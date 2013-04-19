@@ -263,7 +263,7 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCacheR ECSchemaReadContext::GetCache ()
     {
-    return m_knownSchemas;
+    return *m_knownSchemas;
     }
 
 

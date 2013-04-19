@@ -150,7 +150,7 @@ WString ECTestFixture::GetTestDataPath(WCharCP dataFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
     {
-    WString testData = WString(getenv("TEMP"));
+    WString testData = WString(getenv("TEMP"), false);
     testData.append(L"\\");
     testData.append(dataFile);
     return testData;

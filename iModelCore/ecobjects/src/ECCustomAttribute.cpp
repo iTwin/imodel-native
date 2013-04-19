@@ -376,7 +376,7 @@ bool requireSchemaReference
             {
             if (requireSchemaReference)
                 {
-                ECObjectsLogger::Log()->errorv(L"%ls (used in ECSchema %ls) requires a (missing) reference to ECSchema %ls", 
+                LOG.errorv(L"%ls (used in ECSchema %ls) requires a (missing) reference to ECSchema %ls", 
                     classDefinition.GetFullName(), 
                     containerSchema->GetName().c_str(), 
                     classDefinition.GetSchema().GetFullSchemaName().c_str());

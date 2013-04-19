@@ -276,18 +276,37 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return GetValue (v, propertyIndex, false, 0); }
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const 
+    { 
+    return GetValue (v, propertyIndex, false, 0); 
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const
     {
-    ECObjectsStatus stat = _GetValue (v, propertyIndex, true, arrayIndex);
-    if (ECOBJECTS_STATUS_Success == stat && v.IsDateTime())
-        stat = SetDateTimeMetadataInECValue (v, propertyIndex);
+    return GetValue (v, propertyIndex, true, arrayIndex); 
+    }
 
-    return stat;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    02/13
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const 
+    {
+    ECObjectsStatus stat = _GetValue (v, propertyIndex, useArrayIndex, arrayIndex); 
+    if (stat != ECOBJECTS_STATUS_Success)
+        {
+        return stat;
+        }
+
+    if (!v.IsDateTime ())
+        {
+        return stat;
+        }
+
+    return SetDateTimeMetadataInECValue (v, propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -378,12 +397,6 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v) 
     {
     return _SetInternalValue (propertyIndex, v, false, 0); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/   
-    return ChangeValue (propertyIndex, v, false, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -899,65 +912,6 @@ ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECV
         if (found && !v.DateTimeInfoMatches (dateTimeInfo))
             {
             LOG.errorv (L"Setting a DateTime ECValue in ECInstance failed. DateTime metadata in ECValue mismatches the DateTimeInfo custom attribute on the respective ECProperty. Actual: %ls. Expected: %ls.",
-                v.DateTimeMetadataToString ().c_str (), dateTimeInfo.ToString ().c_str ());
-            return ECOBJECTS_STATUS_DataTypeMismatch;
-            }
-        }
-
-    return ECOBJECTS_STATUS_Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const
-    {
-    //only set date time meta data if the value is not null and if the metadata wasn't already set (by impl of _GetValue)
-    if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
-        {
-        DateTimeInfo caDateTimeMetadata;
-        if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
-            {
-            //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
-            if (SUCCESS != v.SetDateTimeMetadata (caDateTimeMetadata))
-                {
-                return ECOBJECTS_STATUS_DataTypeNotSupported;
-                }
-            }
-        }
-
-    return ECOBJECTS_STATUS_Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool IECInstance::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const
-    {
-    //TODO: Need to profile this. The implementation does look up the access string from the prop index
-    //and then parses to access string (to check whether it might refer to a struct member) before
-    //actually calling ECClass::GetProperty
-    ECPropertyCP ecProperty = GetEnabler ().LookupECProperty (propertyIndex);
-    if (ecProperty == NULL)
-        {
-        return false;
-        }
-
-    return StandardCustomAttributeHelper::TryGetDateTimeInfo (dateTimeInfo, *ecProperty);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECValueCR v) const
-    {
-    if (v.IsDateTime () && !v.IsNull ())
-        {
-        DateTimeInfo dateTimeInfo;
-        const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
-        if (found && !v.DateTimeInfoMatches (dateTimeInfo))
-            {
-            ECObjectsLogger::Log ()->errorv (L"Setting a DateTime ECValue in ECInstance failed. DateTime metadata in ECValue mismatches the DateTimeInfo custom attribute on the respective ECProperty. Actual: %ls. Expected: %ls.",
                 v.DateTimeMetadataToString ().c_str (), dateTimeInfo.ToString ().c_str ());
             return ECOBJECTS_STATUS_DataTypeMismatch;
             }
@@ -3250,23 +3204,6 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
     return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                12/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP ecInstanceXml, ECInstanceReadContextR context)
-    {
-    ecInstance = NULL;
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml, strlen (ecInstanceXml) * sizeof(Utf8Char));
-    if (!xmlDom.IsValid())
-        {
-        BeAssert (false);
-        LogXmlLoadError ();
-        return INSTANCE_READ_STATUS_XmlParseError;
-        }
-    return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3319,26 +3256,6 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool writ
 
     return (BEXML_Success == xmlDom->ToFile (fileName, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
             ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                12/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-InstanceWriteStatus     IECInstance::WriteToXmlString (Utf8String & ecInstanceXml, bool isStandAlone, bool writeInstanceId)
-    {
-    ecInstanceXml.clear();
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
-    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
-    InstanceWriteStatus status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
-        return status;
-
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
-    if ( ! isStandAlone)
-        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
-
-    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
-    return INSTANCE_WRITE_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------

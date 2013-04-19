@@ -38,7 +38,6 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
     {
     if (regexStr == NULL)
         return NULL;
-        }
 
     ParserRegexP parserRegex = new ParserRegex();
     WString fixedRegexStr;

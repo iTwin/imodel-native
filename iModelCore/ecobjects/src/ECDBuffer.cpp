@@ -2994,7 +2994,7 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
         { 
         // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
         // BeAssert (false);
-        ECObjectsLogger::Log()->errorv(L"Calculated properties are ignored on Graphite");
+        LOG.errorv(L"Calculated properties are ignored on Graphite");
         return ECOBJECTS_STATUS_Success; 
         }
 
@@ -3027,14 +3027,14 @@ ECObjectsStatus ECDBuffer::SetCalculatedProperty (ECValueCR v, PropertyLayoutCR 
         { 
         // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
         // BeAssert (false);
-        ECObjectsLogger::Log()->errorv(L"Calculated properties are ignored on Graphite");
+        LOG.errorv(L"Calculated properties are ignored on Graphite");
         return ECOBJECTS_STATUS_Success; 
         }
     else
         {
         ECObjectsStatus status = spec->UpdateDependentProperties (v, *iecInstance);
         if (ECOBJECTS_STATUS_Success != status)
-            ECObjectsLogger::Log()->infov(L"Failed to update dependent ECPropertyValues when setting CalculatedECProperty '%ls'", propertyLayout.GetAccessString());
+            LOG.infov(L"Failed to update dependent ECPropertyValues when setting CalculatedECProperty '%ls'", propertyLayout.GetAccessString());
 
         return status;
         }
