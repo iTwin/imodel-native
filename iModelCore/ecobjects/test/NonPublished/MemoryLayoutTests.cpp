@@ -6,14 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
 #include <ECObjects\ECValue.h>
-
+#include <Bentley/BeTimeUtilities.h>
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
@@ -732,7 +731,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
@@ -841,7 +840,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
 TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"ClassWithStructArray");
     ASSERT_TRUE (NULL != ecClass);
@@ -889,7 +888,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (ecClass != NULL);
@@ -994,7 +993,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
@@ -1018,7 +1017,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"EmptyClass");
     ASSERT_TRUE (NULL != ecClass);
@@ -1042,7 +1041,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
@@ -1089,7 +1088,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
-    DateTime  sysTime = ecValue.GetDateTime ();
+    DateTime sysTime = ecValue.GetDateTime ();
     EXPECT_TRUE (inTime.Compare (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
@@ -1114,7 +1113,7 @@ static void  checkValue (WCharCP accessString, ECValueCR value, ECN::StandaloneE
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
     EXPECT_TRUE (true == isSet);
-    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex));
+    EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex));
     EXPECT_TRUE ((0==propertyIndex%2) == isSet);
     }
 
@@ -1131,7 +1130,7 @@ static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECI
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
     EXPECT_TRUE (true  == isSet) << L"IECInstance::IsPerPropertyBitSet for property " << accessString;
-    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsDirty, propertyIndex, 0==propertyIndex%2));
+    EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex, 0==propertyIndex%2));
     }
 
  /*---------------------------------------------------------------------------------**//**
@@ -1141,7 +1140,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"CadData");
     ASSERT_TRUE (NULL != ecClass);
     
@@ -1216,7 +1215,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
     
@@ -1383,7 +1382,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
     WString point3Str = pntVal3.ToString();
-    EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
+    EXPECT_TRUE (0 == point3Str.compare (L"10,100,1000"));
 
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
@@ -1392,7 +1391,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
     WString point2Str = pntVal2.ToString();
-    EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
+    EXPECT_TRUE (0 == point2Str.compare (L"10,100"));
 
     // DateTime
     DateTime nowUtc = DateTime::GetCurrentTimeUtc ();
@@ -1410,7 +1409,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     // test operator ==
     DateTime specificTime (nowUtc.GetInfo ().GetKind (), nowUtc.GetYear (), nowUtc.GetMonth (), nowUtc.GetDay (), nowUtc.GetHour (), nowUtc.GetMinute (), nowUtc.GetSecond (), nowUtc.GetHectoNanosecond ());
     EXPECT_TRUE (specificTime == nowUtc);
-
+ 
     DateTime defaultTime1;
     DateTime defaultTime2;
     EXPECT_TRUE (defaultTime1 == defaultTime2);
@@ -1423,7 +1422,7 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
     ECClassP ecClass = schema->GetClassP (L"TestClass");
     ASSERT_TRUE (NULL != ecClass);
         
@@ -1544,7 +1543,7 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
 TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     {
     ECSchemaPtr      schema = CreateTestSchema();
-    ASSERT_TRUE (schema != NULL);
+    ASSERT_TRUE (schema.IsValid());
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (NULL != ecClass);
@@ -1589,8 +1588,88 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     EXPECT_TRUE(SUCCESS == instance->GetValue(v, L"Struct1", 0));
     EXPECT_TRUE(v.IsStruct());
     EXPECT_TRUE(v.IsNull());
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* MemoryECInstanceBase stores supporting instances as StandaloneECInstances.
+* For efficiency we want to avoid making a copy of the supporting instance when setting
+* it to the parent's struct array.
+* But we also want to avoid having more than one parent instance claim ownership of
+* a single supporting instance; otherwise modifying one would modify the other.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, SupportingInstanceOwnership)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ECClassP parentClass = schema->GetClassP (L"NestedStructArray");    // contains an array of Manufacturer structs
+    ECClassP structClass = schema->GetClassP (L"Manufacturer");
 
+    StandaloneECInstancePtr originalStruct = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    StandaloneECInstancePtr parentA = parentClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    StandaloneECInstancePtr parentB = parentClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    parentA->AddArrayElements (L"ManufacturerArray", 1);
+    parentB->AddArrayElements (L"ManufacturerArray", 1);
+    
+    ECValue structVal;
+    structVal.SetStruct (originalStruct.get());
+
+    parentA->SetValue (L"ManufacturerArray", structVal, 0);
+    parentB->SetValue (L"ManufacturerArray", structVal, 0);
+
+    parentA->GetValue (structVal, L"ManufacturerArray", 0);
+    EXPECT_EQ (structVal.GetStruct().get(), originalStruct.get());
+
+    parentB->GetValue (structVal, L"ManufacturerArray", 0);
+    EXPECT_NE (structVal.GetStruct().get(), originalStruct.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* When we duplicate instances, we want to make sure that supporting instances are copied
+* recursively.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+
+    // populate our source instance with nested struct arrays
+    IECInstancePtr outer    = schema->GetClassP (L"ClassWithStructArray")->GetDefaultStandaloneEnabler()->CreateInstance(),
+                   middle   = schema->GetClassP (L"NestedStructArray")->GetDefaultStandaloneEnabler()->CreateInstance(),
+                   inner    = schema->GetClassP (L"Manufacturer")->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    inner->SetValue (L"Name", ECValue (L"Hooray!"));
+    
+    ECValue structVal;
+    middle->AddArrayElements (L"ManufacturerArray", 1);
+    structVal.SetStruct (inner.get());
+    middle->SetValue (L"ManufacturerArray", structVal, 0);
+
+    outer->AddArrayElements (L"ComplicatedStructArray", 1);
+    structVal.SetStruct (middle.get());
+    outer->SetValue (L"ComplicatedStructArray", structVal, 0);
+
+    // make a copy
+    StandaloneECInstancePtr outerCopy = outer->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+    outerCopy->CopyInstanceProperties (*outer);
+
+    // confirm the nested struct array instances have been copied as well
+    outerCopy->GetValue (structVal, L"ComplicatedStructArray", 0);
+    IECInstancePtr middleCopy = structVal.GetStruct();
+    EXPECT_NE (middleCopy.get(), middle.get());
+
+    middleCopy->GetValue (structVal, L"ManufacturerArray", 0);
+    IECInstancePtr innerCopy = structVal.GetStruct();
+    EXPECT_NE (innerCopy.get(), inner.get());
+    
+    // modify the original deepest supporting instance
+    ECValue v (L"Oh no!");
+    inner->SetValue (L"Name", v);
+
+    // confirm our copy of the deepest supporting instance remains intact
+    innerCopy->GetValue (v, L"Name");
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"Hooray!"));
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

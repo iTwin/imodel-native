@@ -277,13 +277,13 @@ TEST_F(CustomAttributeTest, ExpectCanGetCustomAttribute)
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
-    EXPECT_TRUE(instance == gotInstance);
+    EXPECT_TRUE(instance.get() == gotInstance.get());
 
     ECClassP caClass = schema->GetClassP(L"CustomAttribClass");
     ASSERT_TRUE (NULL != caClass);
     gotInstance = containerClass->GetCustomAttribute(*caClass);
     EXPECT_TRUE(gotInstance.IsValid());
-    EXPECT_TRUE(instance == gotInstance);
+    EXPECT_TRUE(instance.get() == gotInstance.get());
     }
 
 //---------------------------------------------------------------------------------------
@@ -361,7 +361,7 @@ TEST_F(CustomAttributeTest, ExpectCanRemoveCustomAttribute)
 
     IECInstancePtr gotInstance = containerClass->GetCustomAttribute(L"CustomAttribClass");
     EXPECT_TRUE(gotInstance.IsValid());
-    EXPECT_TRUE(instance == gotInstance);
+    EXPECT_TRUE(instance.get() == gotInstance.get());
 
     EXPECT_TRUE(containerClass->RemoveCustomAttribute(L"CustomAttribClass"));
     IECInstancePtr gotInstance2 = containerClass->GetCustomAttribute(L"CustomAttribClass");
@@ -575,9 +575,6 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
 
     //verify UTF-8 property value
     ECValue actualUtf8Value;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualUtf8Value, caUtf8StringPropName)) << L"Property " << caUtf8StringPropName << L"not found in custom attribute instance on test class.";
-    EXPECT_TRUE (expectedUtf8Value.Equals (actualUtf8Value)) << L"Unexpected ECValue of property " << caUtf8StringPropName << L" of custom attribute instance";
-    EXPECT_STREQ (expectedCAPropValueUtf8String.c_str (), actualUtf8Value.GetUtf8CP ()) << L"Unexpected string value of property " << caUtf8StringPropName << L" of custom attribute instance";
 
     //verify wchar property value
     ECValue actualWCharValue;

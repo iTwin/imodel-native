@@ -2,7 +2,7 @@
 #
 #  $Source: test/ECObjectsNativeTest.run.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -11,5 +11,7 @@ PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 always:
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_NonPublished.exe
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Published.exe
+     $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Scenario.exe
+     $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_NonPublishedScenario.exe
 
 

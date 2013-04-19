@@ -43,7 +43,7 @@ struct SchemaHolderTestFixture : ECTestFixture
             EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
             ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-            SchemaKey key (L"Bentley_Standard_CustomAttributes", 1, 4);
+            SchemaKey key (L"Bentley_Standard_CustomAttributes", 1, 6);
 
             m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
             __super::SetUp();

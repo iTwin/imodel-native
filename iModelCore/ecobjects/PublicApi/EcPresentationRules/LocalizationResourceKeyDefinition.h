@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/LocalizationResourceKeyDefinition.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,16 +26,23 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP  _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinition ()
             : PresentationKey (), m_id (L""), m_key (L""), m_defaultValue (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinition (int priority, WStringCR id, WStringCR key, WStringCR defaultValue)
             : PresentationKey (priority), m_id (id), m_key (key), m_defaultValue (defaultValue)
             {

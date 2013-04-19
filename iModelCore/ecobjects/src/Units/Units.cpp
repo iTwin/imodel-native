@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/Units.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -384,7 +384,7 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/12
+* @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop)
     {
@@ -395,11 +395,63 @@ bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR e
         fmt.clear();
         if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
             fmt = v.GetString();
-        
+
         return true;
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This method was requested by Graphite team. They have a need to format Units values
+* without dependency on DgnPlatform, where ECUnitsTypeAdapter lives.
+* If DgnPlatform is present, the method will use the type adapter.
+* Otherwise we will do the formatting here in ECObjects.
+* (The difference is that DgnPlatform will search for and apply any unit label customization
+* schemas present in the instance's DgnFile).
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
+    {
+    Unit storedUnit;
+    ECValue v (inputVal);
+
+    // if GetForECProperty() fails, we have no valid UnitSpecification attribute
+    if (v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) || !Unit::GetUnitForECProperty (storedUnit, ecprop))
+        return false;
+
+    // See if we've got a registered ECUnitsTypeAdapter from DgnPlatform
+    IECTypeAdapter* typeAdapter;
+    if (NULL != instance && NULL != (typeAdapter = ecprop.GetTypeAdapter()))
+        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance));
+
+    // No TypeAdapter
+    WCharCP label = storedUnit.GetShortLabel();
+
+    Unit displayUnit;
+    WString fmt;
+    if (Unit::GetDisplayUnitForECProperty (displayUnit, fmt, ecprop))
+        {
+        double displayValue = v.GetDouble();
+        if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
+            return false;
+
+        v.SetDouble (displayValue);
+        label = displayUnit.GetShortLabel();
+        }
+
+    formatted.clear();
+    WCharCP fmtCP = fmt.empty() ? L"f" : fmt.c_str();
+    if (!v.ApplyDotNetFormatting (formatted, fmtCP))
+        return false;
+
+    if (NULL != label)
+        {
+        formatted.append (1, ' ');
+        formatted.append (label);
+        }
+
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

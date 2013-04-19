@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/PresentationRulesTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -112,11 +112,13 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
     ValidateImageIdOverride (*imageIdOverride2, L"TestCondition2", L"Expression2", 3);
     ValidateImageIdOverride (*imageIdOverride3, L"TestCondition3", L"Expression3", 2);
 
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"File", L"BaseElmentSchema", false, 1, L"MyImage");
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"File", 1, 0, false, L"Supplemental", L"BaseElmentSchema", L"MyImage", true);
     EXPECT_STREQ (L"File", ruleSet->GetRuleSetId ().c_str ());
     EXPECT_STREQ (L"BaseElmentSchema", ruleSet->GetSupportedSchemas ().c_str ());
     EXPECT_FALSE (ruleSet->GetIsSupplemental ());
-    EXPECT_EQ    (1, ruleSet->GetVersion ());
+    EXPECT_STREQ (L"Supplemental", ruleSet->GetSupplementationPurpose ().c_str ());
+    EXPECT_EQ    (1, ruleSet->GetVersionMajor ());
+    EXPECT_EQ    (0, ruleSet->GetVersionMinor ());
 
     ruleSet->GetRootNodesRules ().push_back (rootNodeRule1);
     ruleSet->GetRootNodesRules ().push_back (rootNodeRule2);
@@ -143,7 +145,8 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
     WCharP ruleSetXmlString = L"<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                               L"  <PresentationRuleSet"
                               L"    RuleSetId=\"Items\""
-                              L"    Version=\"1\""
+                              L"    VersionMajor=\"5\""
+                              L"    VersionMinor=\"3\""
                               L"    SupportedSchemas=\"E:DgnFileSchema,DgnModelSchema,BaseElementSchema\""
                               L"    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
                               L"    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
@@ -173,7 +176,8 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
     EXPECT_STREQ (L"Items", ruleSet->GetRuleSetId ().c_str ());
     EXPECT_STREQ (L"E:DgnFileSchema,DgnModelSchema,BaseElementSchema", ruleSet->GetSupportedSchemas ().c_str ());
     EXPECT_FALSE (ruleSet->GetIsSupplemental ());
-    EXPECT_EQ    (1, ruleSet->GetVersion ());
+    EXPECT_EQ    (5, ruleSet->GetVersionMajor ());
+    EXPECT_EQ    (3, ruleSet->GetVersionMinor ());
 
     //Check for root node rules
     int rootRulesCount = 0;
@@ -231,7 +235,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetLoadingFromXml)
 TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     {
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"TestRuleSet", L"DummySchemaName", true, 2, L"MyImage");
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"TestRuleSet", 2, 1, true, L"Supplemental", L"DummySchemaName", L"MyImage", true);
     
     RootNodeRuleP rootNodeRule = new RootNodeRule (L"TestCondition1", 1, true, TargetTree_Both);
     ruleSet->GetRootNodesRules ().push_back (rootNodeRule);
@@ -247,8 +251,8 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     ruleSet->GetStyleOverrides ().push_back (new StyleOverride (L"TestCondition6", 6, L"Blue", L"Red", L"Bold"));
     ruleSet->GetLocalizationResourceKeyDefinitions ().push_back (new LocalizationResourceKeyDefinition (7, L"UniqueId:)", L"LocalizedStringAccessKey", L"ThisIsTheValueIfItFails"));
     
-    GroupingRuleP groupingRule = new GroupingRule (L"TestCondition7", 7, true, L"DummySchemaName", L"DummyClassName", L"ContextMenuCondition", L"ContextMenuLabel");
-    ClassGroupP classGroup = new ClassGroup (L"ImageId", L"ContextMenuLabel", true, L"SchemaName", L"BaseClassName");
+    GroupingRuleP groupingRule = new GroupingRule (L"TestCondition7", 7, true, L"DummySchemaName", L"DummyClassName", L"ContextMenuCondition", L"ContextMenuLabel", L"SettingsId");
+    ClassGroupP classGroup = new ClassGroup (L"ContextMenuLabel", true, L"SchemaName", L"BaseClassName");
     groupingRule->GetGroups ().push_back (classGroup);
     PropertyGroupP propertyGroup = new PropertyGroup (L"ImageId", L"ContextMenuLabel", true, L"PropertyName");
     propertyGroup->GetRanges ().push_back (new PropertyRangeGroupSpecification (L"Label", L"ImageId", L"FromValue", L"ToValue"));
@@ -264,7 +268,9 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     EXPECT_STREQ (L"TestRuleSet", loadedRuleSet->GetRuleSetId ().c_str ());
     EXPECT_STREQ (L"DummySchemaName", loadedRuleSet->GetSupportedSchemas ().c_str ());
     EXPECT_TRUE  (loadedRuleSet->GetIsSupplemental ());
-    EXPECT_EQ    (2, loadedRuleSet->GetVersion ());
+    EXPECT_STREQ (L"Supplemental", ruleSet->GetSupplementationPurpose ().c_str ());
+    EXPECT_EQ    (2, loadedRuleSet->GetVersionMajor ());
+    EXPECT_EQ    (1, loadedRuleSet->GetVersionMinor ());
     EXPECT_STREQ (L"MyImage", loadedRuleSet->GetPreferredImage ().c_str ());
 
     //Check for root node rules

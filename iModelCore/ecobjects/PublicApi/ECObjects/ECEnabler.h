@@ -40,8 +40,10 @@ struct ECEnabler : RefCountedBase
         virtual bool _ProcessPrimitiveProperty (IECInstance const& instance, WCharCP propName, ECValue const& propValue) const = 0;
         };
 
+#if defined (EXPERIMENTAL_TEXT_FILTER)
     enum PropertyProcessingResult  {PROPERTY_PROCESSING_RESULT_Miss=0, PROPERTY_PROCESSING_RESULT_Hit=1, PROPERTY_PROCESSING_RESULT_NoCandidates=3};
     enum PropertyProcessingOptions {PROPERTY_PROCESSING_OPTIONS_SingleType=0, PROPERTY_PROCESSING_OPTIONS_AllTypes=1};
+#endif
 
 /*__PUBLISH_SECTION_END__*/
 private:
@@ -73,7 +75,6 @@ protected:
     virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const = 0;
     virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const = 0;
     virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const = 0;
-    virtual UInt32                  _GetPropertyCount () const = 0;
     virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
 
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const;
@@ -85,10 +86,10 @@ protected:
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, ECN::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
+    ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 #endif
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
 
-    ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 
 public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (UInt32 propertyIndex) const;
@@ -125,9 +126,6 @@ public:
     //! Get the IStandaloneEnablerLocater for this enabler
     ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
 
-    //! Returns the number of properties that this enabler enables.
-    ECOBJECTS_EXPORT UInt32                     GetPropertyCount () const;
-
     //! Returns an enabler for the given class from the given schema.
     //! @param[in] schemaKey    The SchemaKey defining the schema (schema name and version info) that the className ECClass comes from
     //! @param[in] className    The name of the ECClass to retrieve the enabler for
@@ -150,7 +148,44 @@ public:
 #endif
     };
 
+/*__PUBLISH_SECTION_END__*/
+
 //=======================================================================================
+//! Wraps another enabler
+//=======================================================================================    
+struct ECWrappedEnabler : ECEnabler
+    {
+private:
+    ECEnablerPtr            m_enabler;
+
+    ECWrappedEnabler (ECEnablerR enabler) : ECEnabler (enabler.GetClass(), NULL), m_enabler (&enabler) { }
+
+    virtual WCharCP                 _GetName() const { return m_enabler->GetName(); }
+    virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const { return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
+    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
+    virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const { return m_enabler->GetFirstPropertyIndex (parentIndex); }
+    virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
+    virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
+
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const { return m_enabler->LookupECProperty (accessString); }
+    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (UInt32 propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
+
+    // IStandaloneEnablerLocater
+    ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
+
+#if defined (EXPERIMENTAL_TEXT_FILTER)
+    ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primType, IPropertyProcessor const& processor, PropertyProcessingOptions opts) const
+        { return m_enabler->ProcessPrimitiveProperties (failedClasses, instance, primType, processor, opts); }
+#endif
+    virtual bool                    _HasChildProperties (UInt32 parentIndex) const { return m_enabler->HasChildProperties (parentIndex); }
+public:
+    static ECEnablerPtr Create (ECEnablerR enabler) { return new ECWrappedEnabler (enabler); }
+    };
+
+/*__PUBLISH_SECTION_START__*/
+
+//=======================================================================================    
 //! Base class for all relationship enablers
 //! @ingroup ECObjectsGroup
 //=======================================================================================
@@ -209,8 +244,7 @@ protected:
             return 0;
             }
 
-        virtual UInt32          _GetPropertyCount () const override {return DerivedClass::MAX_PROPERTY_COUNT;}
-
+        
         virtual ECObjectsStatus _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override
             {
             for (UInt32 index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)

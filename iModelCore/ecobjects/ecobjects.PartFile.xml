@@ -90,8 +90,16 @@
 
     <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
         <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="PublishedApi"/>
         <Bindings>
-            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_scenario.exe</Files>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Scenario.exe</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublishedScenario.exe</Files>
         </Bindings>
     </Part>
 
@@ -109,6 +117,7 @@
         <SubPart PartName="ECObjectsNonPublishedTests" />
         <SubPart PartName="ECObjectsPerformanceTests" />
         <SubPart PartName="ECObjectsScenarioTests" />
+        <SubPart PartName="ECObjectsNonPublishedScenarioTests" />
     </Part>
 
     <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
@@ -136,6 +145,15 @@
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
 
+        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="ecschemas"                    LibType="Static"    Deliver="false"/>
+
         <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
         <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
@@ -160,6 +178,10 @@
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
+
+        <ProductDirectory Name="PublicAPI"  LibType="Static"        Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"  LibType="Static"        Deliver="false" />
+        <ProductDirectory Name="libs"       LibType="Static"        Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
         <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>

@@ -1,12 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/ECCustomAttribute.cpp $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -633,15 +629,15 @@ bool    ECCustomAttributeInstanceIterable::const_iterator::operator==(const_iter
     return !(*this != rhs);
     }
 
-
+static const IECInstancePtr s_nullInstancePtr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr const& ECCustomAttributeInstanceIterable::const_iterator::operator*() const
     {
-    static IECInstancePtr s_result;
     if (m_isEnd)
-        return s_result;
+        return s_nullInstancePtr;
+
     return *(m_state->m_customAttributesIterator);
     }
 

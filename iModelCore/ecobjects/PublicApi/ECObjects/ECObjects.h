@@ -74,6 +74,7 @@ EC_TYPEDEFS(ClassLayout);
 EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneECInstance);
 EC_TYPEDEFS(MemoryECInstanceBase);
+EC_TYPEDEFS(ECDBuffer);
 EC_TYPEDEFS(ClassLayoutHolder);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
@@ -84,14 +85,13 @@ EC_TYPEDEFS (PresentationMetadataHelper);
 
 EC_TYPEDEFS (CalculatedPropertySpecification);
 EC_TYPEDEFS (ParserRegex);
+EC_TYPEDEFS(IECTypeAdapterContext);
 
 typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Error code categories
 typedef enum ECErrorCategories
     {
     ECOBJECTS_ERROR_BASE            = 0x31000,
@@ -102,11 +102,7 @@ typedef enum ECErrorCategories
     SUPPLEMENTED_SCHEMA_STATUS_BASE = 0x36000,
     } ECErrorCategories;
 
-
-/*=================================================================================**//**
-* @bsiclass
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
+//! General purpose result codes
 enum ECObjectsStatus
     {
     ECOBJECTS_STATUS_Success                                            = SUCCESS,
@@ -154,10 +150,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
+//! Result status for deserializing an ECSchema from Xml
 enum SchemaReadStatus
     {
     SCHEMA_READ_STATUS_Success                               = SUCCESS,
@@ -169,10 +162,7 @@ enum SchemaReadStatus
     SCHEMA_READ_STATUS_HasReferenceCycle                     = SCHEMA_READ_STATUS_BASE + 0x07,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
+//! Result status for serializing an ECSchema to Xml
 enum SchemaWriteStatus
     {
     SCHEMA_WRITE_STATUS_Success                                 = SUCCESS,
@@ -181,10 +171,7 @@ enum SchemaWriteStatus
     SCHEMA_WRITE_STATUS_FailedToWriteFile                       = SCHEMA_WRITE_STATUS_BASE + 0x03,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
+//! Result status of deserializing an IECInstance from Xml
 enum InstanceReadStatus
     {
     INSTANCE_READ_STATUS_Success                             = 0,
@@ -219,10 +206,7 @@ enum InstanceReadStatus
     INSTANCE_READ_STATUS_PropertyNotFound                    = INSTANCE_READ_STATUS_BASE + 46,
     };
 
-/*=================================================================================**//**
-* @bsiclass
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
+//! Result status of writing an IECInstance to Xml
 enum InstanceWriteStatus
     {
     INSTANCE_WRITE_STATUS_Success                               = 0,
@@ -236,10 +220,7 @@ enum InstanceWriteStatus
     INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass
-* @ingroup ECObjectsGroup
-+---------------+---------------+---------------+---------------+---------------+------*/
+//! Result status of trying to supplement an ECSchema
 enum SupplementedSchemaStatus
     {
     SUPPLEMENTED_SCHEMA_STATUS_Success                          = 0,
@@ -249,6 +230,7 @@ enum SupplementedSchemaStatus
     SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException             = SUPPLEMENTED_SCHEMA_STATUS_BASE + 4,
     SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass    = SUPPLEMENTED_SCHEMA_STATUS_BASE + 5,
     };
+
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -266,10 +248,10 @@ enum SupplementedSchemaStatus
 //=======================================================================================
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
-    VALUEKIND_Uninitialized                  = 0x00,
-    VALUEKIND_Primitive                      = 0x01,
-    VALUEKIND_Struct                         = 0x02,
-    VALUEKIND_Array                          = 0x04,
+    VALUEKIND_Uninitialized                  = 0x00, //!< The ECValue has not be initialized yet
+    VALUEKIND_Primitive                      = 0x01, //!< The ECValue holds a Primitive type 
+    VALUEKIND_Struct                         = 0x02, //!< The ECValue holds a struct
+    VALUEKIND_Array                          = 0x04, //!< The ECValue holds an array
     };
 
 /*__PUBLISH_SECTION_END__*/

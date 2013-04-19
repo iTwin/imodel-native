@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,10 @@ typedef bvector<LabelOverrideP>                      LabelOverrideList;
 typedef bvector<StyleOverrideP>                      StyleOverrideList;
 typedef bvector<GroupingRuleP>                       GroupingRuleList;
 typedef bvector<LocalizationResourceKeyDefinitionP>  LocalizationResourceKeyDefinitionList;
+typedef bvector<UserSettingsGroupP>                  UserSettingsGroupList;
 typedef bvector<CheckBoxRuleP>                       CheckBoxRuleList;
+typedef bvector<RenameNodeRuleP>                     RenameNodeRuleList;
+typedef bvector<SortingRuleP>                        SortingRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 PresentationRuleSet is a container of all presentation rules for particular type of the tree
@@ -34,8 +37,11 @@ struct PresentationRuleSet : public RefCountedBase
         WString                                m_ruleSetId;
         WString                                m_supportedSchemas;
         bool                                   m_isSupplemental;
-        int                                    m_version;
+        WString                                m_supplementationPurpose;
+        int                                    m_versionMajor;
+        int                                    m_versionMinor;
         WString                                m_preferredImage;
+        bool                                   m_isSearchEnabled;
 
         RootNodeRuleList                       m_rootNodesRules;
         ChildNodeRuleList                      m_childNodesRules;
@@ -46,10 +52,13 @@ struct PresentationRuleSet : public RefCountedBase
         GroupingRuleList                       m_groupingRules;
         LocalizationResourceKeyDefinitionList  m_localizationResourceKeyDefinitions;
         CheckBoxRuleList                       m_checkBoxRules;
+        RenameNodeRuleList                     m_renameNodeRules;
+        SortingRuleList                        m_sortingRules;
+        UserSettingsGroupList                  m_userSettings;
 
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void)
-            : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_version (1)
+            : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_supplementationPurpose (L""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true)
             {
             }
 
@@ -57,12 +66,16 @@ struct PresentationRuleSet : public RefCountedBase
         PresentationRuleSet
             (
             WStringCR ruleSetId,
-            WStringCR supportedSchemas,
+            int       versionMajor,
+            int       versionMinor,
             bool      isSupplemental,
-            int       version,
-            WStringCR preferredImage
+            WStringCR supplementationPurpose,
+            WStringCR supportedSchemas,
+            WStringCR preferredImage,
+            bool      isSearchEnabled
             )
-            : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), m_version (version), m_preferredImage (preferredImage)
+            : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), m_supplementationPurpose (supplementationPurpose),
+              m_versionMajor (versionMajor), m_versionMinor (versionMinor), m_preferredImage (preferredImage), m_isSearchEnabled (isSearchEnabled)
             {
             }
 
@@ -81,10 +94,13 @@ struct PresentationRuleSet : public RefCountedBase
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  CreateInstance 
             (
             WStringCR ruleSetId,
-            WStringCR supportedSchemas,
+            int       versionMajor,
+            int       versionMinor,
             bool      isSupplemental,
-            int       version,
-            WStringCR preferredImage
+            WStringCR supplementationPurpose,
+            WStringCR supportedSchemas,
+            WStringCR preferredImage,
+            bool      isSearchEnabled
             );
 
         //! Reads PresentationRuleSet from XmlString.
@@ -99,23 +115,32 @@ struct PresentationRuleSet : public RefCountedBase
         //! Writes PresentationRuleSet to XmlFile.
         ECOBJECTS_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
 
-        //! PresentationRuleSet identificator.
+        //! PresentationRuleSet identification.
         ECOBJECTS_EXPORT WStringCR                      GetRuleSetId (void) const         { return m_ruleSetId;        }
 
         //! Full id of PresentationRuleSet that includes RuleSetId, Version, and IsSupplemental flag.
         ECOBJECTS_EXPORT WString                        GetFullRuleSetId (void) const;
 
-        //! Schemas list for which rules should be applied
-        ECOBJECTS_EXPORT WStringCR                      GetSupportedSchemas (void) const  { return m_supportedSchemas; }
+        //! Major version of the PresentationRuleSet. This will be used in the future if we add some incompatible changes to the system.
+        ECOBJECTS_EXPORT int                            GetVersionMajor (void) const      { return m_versionMajor;     }
+
+        //! Minor version of the PresentationRuleSet. This can be used to identify compatible changes in the PresentationRuleSet.
+        ECOBJECTS_EXPORT int                            GetVersionMinor (void) const      { return m_versionMinor;     }
 
         //! Returns true if PresentationRuleSet is supplemental. This allows to add additional rules for already existing PresentationRuleSet.
         ECOBJECTS_EXPORT bool                           GetIsSupplemental (void) const    { return m_isSupplemental;   }
 
-        //! Version fo the PresentationRuleSet. This will be used in the future if we add some incompatible changes to the system.
-        ECOBJECTS_EXPORT int                            GetVersion (void) const           { return m_version;          }
+        //! Purpose of supplementation. There can be one RuleSet with the same version and same supplementation purpose.
+        ECOBJECTS_EXPORT WStringCR                      GetSupplementationPurpose (void) const { return m_supplementationPurpose; }
+
+        //! Schemas list for which rules should be applied
+        ECOBJECTS_EXPORT WStringCR                      GetSupportedSchemas (void) const  { return m_supportedSchemas; }
 
         //! Preferred ImageId for the tree that is configured using this presentation rule set.
         ECOBJECTS_EXPORT WStringCR                      GetPreferredImage (void) const    { return m_preferredImage;   }
+
+        //! Returns true if search should be enabled for the tree that uses this presentation rule set.
+        ECOBJECTS_EXPORT bool                           GetIsSearchEnabled (void) const   { return m_isSearchEnabled;   }
 
         //! Collection of rules, which should be used when root nodes needs to be populated.
         ECOBJECTS_EXPORT RootNodeRuleList&              GetRootNodesRules (void)          { return m_rootNodesRules;   }
@@ -126,13 +151,13 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when content for selected nodes needs to be populated.
         ECOBJECTS_EXPORT ContentRuleList&               GetContentRules (void)            { return m_contentRules;     }
 
-        //! Collection of rules, which should be used when default ImageId for nodes should be overriden.
+        //! Collection of rules, which should be used when default ImageId for nodes should be overridden.
         ECOBJECTS_EXPORT ImageIdOverrideList&           GetImageIdOverrides (void)        { return m_imageIdRules;     }
 
-        //! Collection of rules, which should be used when defaul Label or Description for nodes should be overriden.
+        //! Collection of rules, which should be used when default Label or Description for nodes should be overridden.
         ECOBJECTS_EXPORT LabelOverrideList&             GetLabelOverrides (void)          { return m_labelOverrides;   }
 
-        //! Collection of rules, which should be used when defaul style for nodes should be overriden.
+        //! Collection of rules, which should be used when default style for nodes should be overridden.
         ECOBJECTS_EXPORT StyleOverrideList&             GetStyleOverrides (void)          { return m_styleOverrides;   }
 
         //! Collection of rules, which should be used when advanced grouping should be applied for particular classes.
@@ -141,9 +166,17 @@ struct PresentationRuleSet : public RefCountedBase
         //! Collection of rules, which should be used when localization resource key definition is predefined.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinitionList&  GetLocalizationResourceKeyDefinitions (void) { return m_localizationResourceKeyDefinitions; }
 
-        //! Collection of rules, which should be used when check boxes for particural nodes should be displayed.
+        //! Collection of user settings definitions, that can affect behavior of the hierarchy. These settings will be shown in UserSettingsDialog.
+        ECOBJECTS_EXPORT UserSettingsGroupList&         GetUserSettings (void)            { return m_userSettings;     }
+
+        //! Collection of rules, which should be used when check boxes for particular nodes should be displayed.
         ECOBJECTS_EXPORT CheckBoxRuleList&              GetCheckBoxRules (void)           { return m_checkBoxRules;    }
 
+        //! Collection of rules, which should be used when particular nodes can be renamed.
+        ECOBJECTS_EXPORT RenameNodeRuleList&            GetRenameNodeRules (void)         { return m_renameNodeRules;  }
+
+        //! Collection of rules, which should be used for configuring sorting of ECInstances.
+        ECOBJECTS_EXPORT SortingRuleList&               GetSortingRules (void)            { return m_sortingRules;     }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

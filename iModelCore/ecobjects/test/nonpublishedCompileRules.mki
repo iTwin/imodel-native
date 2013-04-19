@@ -2,15 +2,13 @@
 #
 #  $Source: test/nonpublishedCompileRules.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
-$(o)StopWatch$(oext)                : $(baseDir)NonPublished/StopWatch.cpp                 $(PCHHeaderDependency) ${MultiCompileDepends}
-
 $(o)TestFixture$(oext)              : $(baseDir)NonPublished/TestFixture.cpp               $(PCHHeaderDependency) ${MultiCompileDepends}
 
 $(o)MemoryLayoutTests$(oext)        : $(baseDir)NonPublished/MemoryLayoutTests.cpp         $(PCHHeaderDependency) ${MultiCompileDepends}
@@ -25,7 +23,7 @@ $(o)StringEncodingTests$(oext)      : $(baseDir)NonPublished/StringEncodingTests
 
 $(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)UnitsTestBase$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
 
 
-$(o)UnitsTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)ECSchemaUnitsManagerTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}

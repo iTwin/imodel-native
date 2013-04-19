@@ -54,9 +54,7 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
                     $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
                     $(baseDir)ecxml.h \
-                    $(baseDir)Logger.h \
                     $(baseDir)FileUtilities.h \
-                    $(baseDir)StopWatch.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                     $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                     $(baseDir)DateTimeInfoAccessor.h \
@@ -77,6 +75,8 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
                              $(ecpresentationRulesPublicAPISrc)CheckBoxRule.h \
+                             $(ecpresentationRulesPublicAPISrc)DisplayRelatedItemsSpecification.h \
+                             $(ecpresentationRulesPublicAPISrc)RenameNodeRule.h \
                              $(ecpresentationRulesPublicAPISrc)ContentRule.h \
                              $(ecpresentationRulesPublicAPISrc)ImageIdOverride.h \
                              $(ecpresentationRulesPublicAPISrc)PresentationRule.h \
@@ -84,7 +84,9 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ecpresentationRulesPublicAPISrc)LabelOverride.h \
                              $(ecpresentationRulesPublicAPISrc)StyleOverride.h \
                              $(ecpresentationRulesPublicAPISrc)LocalizationResourceKeyDefinition.h \
+                             $(ecpresentationRulesPublicAPISrc)UserSettingsGroup.h \
                              $(ecpresentationRulesPublicAPISrc)GroupingRule.h \
+                             $(ecpresentationRulesPublicAPISrc)SortingRule.h \
                              $(ecpresentationRulesPublicAPISrc)AllInstanceNodesSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)AllRelatedInstanceNodesSpecification.h \
                              $(ecpresentationRulesPublicAPISrc)CustomNodeSpecification.h \
@@ -143,8 +145,6 @@ $(o)SupplementalSchema$(oext)                              : $(baseDir)Supplemen
 
 $(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 
-$(o)Logger$(oext)                                          : $(baseDir)Logger.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
 $(o)BeXmlCGReader$(oext)                                   : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
 $(o)BeXmlCGWriter$(oext)                                   : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
@@ -195,6 +195,10 @@ $(o)ContentRule$(oext)                                     : $(baseDir)presentat
 
 $(o)CheckBoxRule$(oext)                                    : $(baseDir)presentation/PresentationRules/CheckBoxRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
+$(o)DisplayRelatedItemsSpecification$(oext)                : $(baseDir)presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)RenameNodeRule$(oext)                                  : $(baseDir)presentation/PresentationRules/RenameNodeRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
 $(o)ImageIdOverride$(oext)                                 : $(baseDir)presentation/PresentationRules/ImageIdOverride.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)PresentationRule$(oext)                                : $(baseDir)presentation/PresentationRules/PresentationRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
@@ -207,7 +211,11 @@ $(o)StyleOverride$(oext)                                   : $(baseDir)presentat
 
 $(o)LocalizationResourceKeyDefinition$(oext)               : $(baseDir)presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
+$(o)UserSettingsGroup$(oext)                               : $(baseDir)presentation/PresentationRules/UserSettingsGroup.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
 $(o)GroupingRule$(oext)                                    : $(baseDir)presentation/PresentationRules/GroupingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)SortingRule$(oext)                                     : $(baseDir)presentation/PresentationRules/SortingRule.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)AllInstanceNodesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/AllInstanceNodesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 

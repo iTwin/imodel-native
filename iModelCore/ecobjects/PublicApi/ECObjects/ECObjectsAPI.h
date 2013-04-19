@@ -7,43 +7,39 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //#define EC_TRACE_MEMORY
+// This file describes the public API for writing applications using the ECObjects library.
 /*__PUBLISH_SECTION_START__*/
 /// @cond BENTLEY_SDK_Desktop
 
 /*=================================================================================**//**
-* @if ECOBJECTS_MAINPAGE
-*     @mainpage ECObjects Public API Documentation
-* @endif
-*
-* This file describes the public API for writing applications using the ECObjects library.
-*
-* \section Namespaces
-* All of the ECObjects APIs are contained within the Bentley::ECN namespace.
-*
-* \section headerFiles Header Files
-* By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
+@if ECOBJECTS_MAINPAGE
+    @mainpage ECObjects Public API Documentation
+@endif
+\image html BentleyLOGO_4C_no-tag.gif
 
-\code
+@section Namespaces
+All of the ECObjects APIs are contained within the Bentley::ECN namespace. 
+
+@section headerFiles Header Files
+By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:
+
+@code
     #include <ECObjects/ECObjectsAPI.h>
-\endcode
+@endcode
 
-* in each of your source files. This will include \e all of the individual header files in the API.
-* @note If you have more than one source file linked into a single .dll, you should <b>probably use precompiled
-* header files</b> (see Microsoft Visual C++ documentation for details.)
-*
-* \section ECObjectsApiOverview Overview
-*
-* \section Logging
-* ECObjects makes use of the BSI logger for logging warnings and errors in the code, as well
-* as debug information.  If the calling application has configured a logger already, ECObjects
-* will log to that logger.  Otherwise, ECObjects may register a new logger and configure it, according to
-* these rules:
-*   -# If the environment variable "BENTLEY_LOGGING_CONFIG" is set, it will use the file pointed
-*      to by this path as the configuration file.
-*   -# It will next look in the same directory as the ECObjects.dll for a file named "logging.config.xml"
-*   -# It will next look for $(OutRoot)WinX86(or 64)/Product/ECFrameworkNativeTest/Tests/logging.config.xml
-*   -# As a default, it will not configure any logger.
-*
+in each of your source files. This will include \e all of the individual header files in the API.
+@note If you have more than one source file linked into a single .dll, you should <b>probably use precompiled
+header files</b> (see Microsoft Visual C++ documentation for details.)
+
+@section ECObjectsApiOverview Overview
+ECObjects is a native implementation of the .NET Bentley.ECObjects namespace.  It provides for a
+subset of classes from the managed API, including ECSchemas, ECClasses, and ECInstances.
+
+@section Logging
+ECObjects makes use of the BSI logger for logging warnings and errors in the code, as well
+as debug information.  It is incumbent upon the calling application to configure a logger to
+capture this information.
+
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 
@@ -79,6 +75,11 @@
 // This define is checked from the ECObjects Published ATPs to ensure that they are building against the published header files.
 #define NON_PUBLISHED_HEADER_INCLUDED
 
+#if defined (NDEBUG) && !defined (ANDROID)
+    #define EC_INLINE inline
+#else
+    #define EC_INLINE
+#endif
 /*__PUBLISH_SECTION_START__*/
 
 /// @endcond BENTLEY_SDK_Desktop

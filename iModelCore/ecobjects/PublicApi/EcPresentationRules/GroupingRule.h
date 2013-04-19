@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,23 +32,31 @@ struct GroupingRule : public PresentationRule
         WString               m_className;
         WString               m_contextMenuCondition;
         WString               m_contextMenuLabel;
+        WString               m_settingsId;
         GroupList             m_groups;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool        _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT GroupingRule ()
-            : PresentationRule (), m_schemaName (L""), m_className (L""), m_contextMenuCondition (L""), m_contextMenuLabel (L"")
+            : PresentationRule (), m_schemaName (L""), m_className (L""), m_contextMenuCondition (L""), m_contextMenuLabel (L""), m_settingsId (L"")
             {
             }
 
-        ECOBJECTS_EXPORT GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel)
+        //! Constructor.
+        ECOBJECTS_EXPORT GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel, WStringCR settingsId)
             : PresentationRule (condition, priority, onlyIfNotHandled), 
-              m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel)
+              m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
             {
             }
 
@@ -70,6 +78,9 @@ struct GroupingRule : public PresentationRule
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
         ECOBJECTS_EXPORT WStringCR           GetContextMenuLabel (void) const        { return m_contextMenuLabel; }
 
+        //! Id that is used to store current active group. This is used only if there are more than one Group available.
+        ECOBJECTS_EXPORT WStringCR           GetSettingsId (void) const              { return m_settingsId; }
+
         //! Returns a list of GroupSpecifications.
         ECOBJECTS_EXPORT GroupList&          GetGroups (void)                        { return m_groups; }
 
@@ -83,25 +94,30 @@ struct GroupSpecification
     {
 //__PUBLISH_SECTION_END__
     private:
-        WString                 m_imageId;
-        WString                 m_contextMenuLabel;
-        bool                    m_createGroupForSingleItem;
+        WString  m_contextMenuLabel;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
+    //! Constructor. It is used to initialize the rule with default settings.
     ECOBJECTS_EXPORT GroupSpecification ()
-        : m_imageId (L""), m_contextMenuLabel (L""), m_createGroupForSingleItem (false)
+        : m_contextMenuLabel (L"")
         {
         }
 
-    ECOBJECTS_EXPORT GroupSpecification (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem)
-        : m_imageId (imageId), m_contextMenuLabel (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem)
+    //! Constructor.
+    ECOBJECTS_EXPORT GroupSpecification (WStringCR contextMenuLabel)
+        : m_contextMenuLabel (contextMenuLabel)
         {
         }
 
+    //! Returns XmlElement name that is used to read/save this rule information.
     ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () = 0;
+
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) = 0;
+
+    //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) = 0;
 
 public:
@@ -111,14 +127,42 @@ public:
     //! Writes group specification to xml node.
     ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
-    //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
-    ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
-
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
     ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const            { return m_contextMenuLabel; }
+    };
 
-    //! Idendifies whether a group should be created even if there is only single of particular group.
-    ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
+/*---------------------------------------------------------------------------------**//**
+This grouping option allows to create a Instance NavNode that represents mutiple instances
+of the same label.
+* @bsiclass                                     Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SameLabelInstanceGroup : public GroupSpecification
+    {
+    /*__PUBLISH_SECTION_END__*/
+    protected:
+    /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
+        ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
+        ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
+        ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
+
+    public:
+        //! Constructor. It is used to initialize the rule with default settings.
+        ECOBJECTS_EXPORT SameLabelInstanceGroup ()
+            : GroupSpecification ()
+            {
+            }
+
+        //! Constructor.
+        ECOBJECTS_EXPORT SameLabelInstanceGroup (WStringCR contextMenuLabel)
+            : GroupSpecification (contextMenuLabel)
+            {
+            }
+
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,25 +173,36 @@ struct ClassGroup : public GroupSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString                 m_schemaName;
-        WString                 m_baseClassName;
+        bool      m_createGroupForSingleItem;
+        WString   m_schemaName;
+        WString   m_baseClassName;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ClassGroup ()
-            : GroupSpecification (), m_schemaName (L""), m_baseClassName (L"")
+            : GroupSpecification (), m_createGroupForSingleItem (false), m_schemaName (L""), m_baseClassName (L"")
             {
             }
 
-        ECOBJECTS_EXPORT ClassGroup (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName)
-            : GroupSpecification (imageId, contextMenuLabel, createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
+        //! Constructor.
+        ECOBJECTS_EXPORT ClassGroup (WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName)
+            : GroupSpecification (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
             {
             }
+
+        //! Idendifies whether a group should be created even if there is only single of particular group.
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
 
         //! ECSchema name of base class.
         ECOBJECTS_EXPORT WStringCR                GetSchemaName (void) const                  { return m_schemaName; }
@@ -166,28 +221,43 @@ struct PropertyGroup : public GroupSpecification
     {
     /*__PUBLISH_SECTION_END__*/
     private:
+        WString                 m_imageId;
+        bool                    m_createGroupForSingleItem;
         WString                 m_propertyName;
         PropertyRangeGroupList  m_ranges;
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT PropertyGroup ()
-            : GroupSpecification (), m_propertyName (L"")
+            : GroupSpecification (), m_imageId (L""), m_createGroupForSingleItem (false), m_propertyName (L"")
             {
             }
 
-        ECOBJECTS_EXPORT PropertyGroup (WStringCR imageId, WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR propertyName)
-            : GroupSpecification (imageId, contextMenuLabel, createGroupForSingleItem), m_propertyName (propertyName)
+        //! Constructor.
+        ECOBJECTS_EXPORT PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName)
+            : GroupSpecification (contextMenuLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_propertyName (propertyName)
             {
             }
 
         //! Destructor.
         ECOBJECTS_EXPORT                          ~PropertyGroup (void);
+
+        //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
+        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
+
+        //! Idendifies whether a group should be created even if there is only single of particular group.
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
 
         //! ECProperty name to group ECInstances by.
         ECOBJECTS_EXPORT WStringCR                GetPropertyName (void) const                { return m_propertyName; }
@@ -214,17 +284,19 @@ struct PropertyRangeGroupSpecification
 
     public:
     /*__PUBLISH_SECTION_START__*/
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT PropertyRangeGroupSpecification ()
             : m_label (L""), m_imageId (L""), m_fromValue (L""), m_toValue (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT PropertyRangeGroupSpecification (WStringCR label, WStringCR imageId, WStringCR fromValue, WStringCR toValue)
             : m_label (label), m_imageId (imageId), m_fromValue (fromValue), m_toValue (toValue)
             {
             }
 
-        //! Grouping range node label. If not set label will be formated using From and To values.
+        //! Reads specification from xml.
         ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
         //! Writes specification to xml node.

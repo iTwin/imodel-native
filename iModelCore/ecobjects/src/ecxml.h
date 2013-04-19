@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -76,7 +76,9 @@ static const WString ECXML_TYPENAME_LONG               = L"long";
 static const WString ECXML_TYPENAME_POINT2D            = L"point2d";
 static const WString ECXML_TYPENAME_POINT3D            = L"point3d";
 static const WString ECXML_TYPENAME_STRING             = L"string";
-static const WString ECXML_TYPENAME_IGEOMETRY          = L"Bentley.Geometry.Common.IGeometry";
+static const WString ECXML_TYPENAME_IGEOMETRY          = L"Bentley.GeometryNET.Common.IGeometry";
+static const WString ECXML_TYPENAME_IGEOMETRY_GENERIC  = L"Bentley.GeometryNET.Common"; // This is used for matching incoming types to any common geometry type
+static const WString ECXML_TYPENAME_IGEOMETRY_LEGACY   = L"Bentley.Geometry.Common";
 static const WString EMPTY_STRING = L"";
 
 static const WString ECXML_STRENGTH_REFERENCING        = L"referencing";
@@ -100,7 +102,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs  attribute", _xmlAttributeName, _elementName);     \
+        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs  attribute", _xmlAttributeName, _elementName);     \
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName (value.c_str())) \
@@ -109,7 +111,7 @@ static const WString ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar,_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))     \
         {   \
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  _xmlAttributeName, _elementName);     \
+        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  _xmlAttributeName, _elementName);     \
         status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName (value.c_str())) \

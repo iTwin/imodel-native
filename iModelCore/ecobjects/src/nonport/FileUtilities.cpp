@@ -2,7 +2,7 @@
 |
 |     $Source: src/nonport/FileUtilities.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_WIN32) // WIP_NONPORT
@@ -44,22 +44,4 @@ WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirect
 #endif    
 
 #if WIP_DEAD_DGNEC_CODE
-/*---------------------------------------------------------------------------------**//**
-* Time in local time zone
-* @bsimethod                                    Bill.Steinbock                  02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemTime SystemTime::GetLocalTime()
-    {
-#if defined (_WIN32) // WIP_NONPORT
-    SYSTEMTIME wtime;
-    ::GetLocalTime(&wtime);
-    SystemTime time;
-    memcpy (&time, &wtime, sizeof(time));
-    return time;
-#elif defined (__unix__)
-    BeAssert (false && "*** TBD - convert UTC to local time");
-    return GetSystemTime();
 #endif
-    }
-#endif
-

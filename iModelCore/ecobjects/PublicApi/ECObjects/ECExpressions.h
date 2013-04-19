@@ -9,6 +9,8 @@
 /*__PUBLISH_SECTION_START__*/
 /// @cond BENTLEY_SDK_Desktop
 
+#include "ECInstanceIterable.h"
+
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
             struct _name_;      \
@@ -31,6 +33,7 @@ EXPR_TYPEDEFS(ExpressionContext)
 EXPR_TYPEDEFS(ExpressionType)
 EXPR_TYPEDEFS(IdentNode)
 EXPR_TYPEDEFS(InstanceExpressionContext)
+EXPR_TYPEDEFS(InstanceListExpressionContext)
 EXPR_TYPEDEFS(LBracketNode)
 EXPR_TYPEDEFS(Lexer)
 EXPR_TYPEDEFS(MethodReference)
@@ -57,6 +60,7 @@ typedef RefCountedPtr<ExpressionType>               ExpressionTypePtr;
 typedef RefCountedPtr<ExpressionContext>            ExpressionContextPtr;
 typedef RefCountedPtr<IdentNode>                    IdentNodePtr;
 typedef RefCountedPtr<InstanceExpressionContext>    InstanceExpressionContextPtr;
+typedef RefCountedPtr<InstanceListExpressionContext> InstanceListExpressionContextPtr;
 typedef RefCountedPtr<LBracketNode>                 LBracketNodePtr;
 typedef RefCountedPtr<Lexer>                        LexerPtr;
 typedef RefCountedPtr<MethodReference>              MethodReferencePtr;
@@ -268,13 +272,49 @@ protected:
 
 public:
     ECN::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
-
+    ECN::IECInstanceP            GetInstanceP() { return m_instance.get(); }
 /*__PUBLISH_SECTION_START__*/
-
+public:
     ECOBJECTS_EXPORT ECN::IECInstanceCP          GetInstanceCP() const; //!< Returns the IECInstance that is the context of this expression
     ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance); //!< Sets the instance that is used as the context for this expression
     ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer); //!< Creates a new InstanceExpressionContext from the supplied ExpressionContext
 }; // End of class InstanceExpressionContext
+
+/*=================================================================================**//**
+* A context in which multiple IECInstances provide the context for expression evaluation
+* @ingroup ECObjectsGroup
++===============+===============+===============+===============+===============+======*/
+struct          InstanceListExpressionContext : ExpressionContext
+    {
+/*__PUBLISH_SECTION_END__*/
+private:
+    bvector<InstanceExpressionContextPtr>                   m_instances;
+    bool                                                    m_initialized;
+
+    InstanceListExpressionContext (bvector<IECInstancePtr> const& instances);
+
+    void                                        Initialize();
+    void                                        Initialize (bvector<IECInstancePtr> const& instances);
+
+                     virtual bool               _IsNamespace() const override { return true; }
+    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus   _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
+protected:
+    // The following protected methods are only relevant to derived classes, which may want to:
+    //  -lazily load the instance list, and/or
+    //  -Reuse the context for differing lists of instances
+    ECOBJECTS_EXPORT InstanceListExpressionContext();
+
+    virtual void                                _GetInstances (bvector<IECInstancePtr>& instances) { }
+
+    bool                                        IsInitialized() const { return m_initialized; }
+    void                                        Reset() { m_instances.clear(); m_initialized = false; }
+/*__PUBLISH_SECTION_START__*/
+public:
+    //! Creates a new InstanceListExpressionContext from the list of IECInstances
+    ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances);
+    };
 
 /*=================================================================================**//**
 * A context which provides a set of symbols for expression evaluation.
@@ -288,11 +328,11 @@ private:
 
 protected:
 
-    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
-    virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
 
-    virtual bool                _IsNamespace() const { return true; }
+    ECOBJECTS_EXPORT virtual bool                _IsNamespace() const { return true; }
                                 SymbolExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
 
 public:
@@ -301,9 +341,10 @@ public:
     BentleyStatus               RemoveSymbol (SymbolR symbol);
     BentleyStatus               RemoveSymbol (wchar_t const* ident);
 
-    static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
 
 /*__PUBLISH_SECTION_START__*/
+public:
     //! Adds a symbol to the context to be used in expression evaluation
     ECOBJECTS_EXPORT BentleyStatus  AddSymbol (SymbolR symbol);
     //! Creates a new SymbolExpressionContext from the given ExpressionContext
@@ -461,6 +502,7 @@ typedef RefCountedPtr<IECSymbolProvider> IECSymbolProviderPtr;
 enum            ExpressionToken
     {
     TOKEN_None                = 0,
+    TOKEN_Null                = 16,               // Null
     TOKEN_True                = 17,
     TOKEN_False               = 18,
     TOKEN_Like                = 19,
@@ -496,9 +538,13 @@ enum            ExpressionToken
     TOKEN_RightBracket        = 70,               //      ]
     TOKEN_Dot                 = 71,               //      .
     TOKEN_IIf                 = 72,               //      IFF
+    TOKEN_LCurly              = 73,               //      {
+    TOKEN_RCurly              = 74,               //      }
     TOKEN_Error               = 81,
     TOKEN_Ident               = 82,
     TOKEN_StringConst         = 83,
+    TOKEN_PointConst          = 84,
+    TOKEN_DateTimeConst       = 85,               //      @
     TOKEN_IntegerConstant     = 87,
     TOKEN_HexConstant         = 88,
     TOKEN_FloatConst          = 89,
@@ -723,6 +769,10 @@ public:
     static NodePtr          CreateIntegerLiteral (int value);
     static NodePtr          CreateInt64Literal(Int64 value);
     static NodePtr          CreateFloatLiteral(double value);
+    static NodePtr          CreateNullLiteral();
+    static NodePtr          CreatePoint2DLiteral (DPoint2dCR value);
+    static NodePtr          CreatePoint3DLiteral (DPoint3dCR value);
+    static NodePtr          CreateDateTimeLiteral (Int64 ticks);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
     static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);
     static NodePtr          CreateShift (ExpressionToken tokenID, NodeR left, NodeR right);

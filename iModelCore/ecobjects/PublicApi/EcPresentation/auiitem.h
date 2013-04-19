@@ -2,12 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentation/auiitem.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+/*__PUBLISH_SECTION_START__*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
-#include <ECObjects/ECObjectsAPI.h>
+
+#include <ECObjects\ECObjectsAPI.h>
+#include "ecpresentationtypedefs.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -16,20 +19,20 @@ A Uiitem is an instance of a control facing a user.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IAUIItem : public RefCountedBase // Content Service Element
     {
+/*__PUBLISH_SECTION_END__*/
     protected:
         
         virtual IAUIItemCP          _GetParent () const {return NULL;}
         virtual IAUIDataContextCP   _GetDataInstance() const = 0;
         virtual IAUIItemInfoCR      _GetUIItemInfo () const = 0;
+/*__PUBLISH_SECTION_START__*/
+
     public:
         //! Get the data instance bind with this ui instance.
         ECOBJECTS_EXPORT IAUIDataContextCP GetDataInstance() const;
 
         //! Get the command associated with this ui instance if any
         ECOBJECTS_EXPORT IAUIItemInfoCR GetUIItemInfo () const;
-
-        //! Do all the actions associated with the ui item using the bound data context.
-        ECOBJECTS_EXPORT BentleyStatus ExecuteActions() const;
 
         //! Get the parent instance associated with this instance.
         ECOBJECTS_EXPORT IAUIItemCP     GetParent () const;
@@ -54,11 +57,14 @@ struct  IAUIItemInfo
         Panel,
         DgnViewPort,
         };
-    
+
+/*__PUBLISH_SECTION_END__*/
+
     protected:
         virtual bool        _IsAggregatable () const = 0;
         virtual ItemType    _GetItemType() const = 0;
 
+/*__PUBLISH_SECTION_START__*/
     public:
     //Constructor that initializes an item from a primitive type.
     virtual ~IAUIItemInfo ()
@@ -74,7 +80,7 @@ struct  IAUIItemInfo
 //! provider, and data context work in unison to describe the UI.
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  IAUIDataContext // Query
+struct  IAUIDataContext 
     {
     //!Describes the different type of context available to the user
     enum ContextType
@@ -86,23 +92,25 @@ struct  IAUIDataContext // Query
         //TODO Move this enum to a string for repository dependant values
         DgnECInstanceCollection = 1<<3,
         DgnHitPathInfo          = 1<<4,
-        DgnActionItemInfo       = DgnECInstanceCollection | DgnHitPathInfo,
+        DgnActionItemInfoType   = DgnECInstanceCollection | DgnHitPathInfo,
         ECGroupingNode          = 1<<5,
         NodeCollection          = 1<<6,
-
         };
     
     //! Get context type which can be used to call the appropriate Get function
-    virtual ContextType             GetContextType() const = 0;
+    virtual ContextType             _GetContextType() const = 0;
 
     //!Get the data instance that this datacontext stores.
     virtual IECInstanceP            GetInstance () const {return NULL;}
-    virtual WString                 GetMoniker () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
     virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
+    virtual WString                 GetMoniker () const {return NULL;}
+    ECOBJECTS_EXPORT ContextType    GetContextType () const;
     //!Virtual destructor
     virtual ~IAUIDataContext () {}
     };
+
+/*__PUBLISH_SECTION_END__*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
@@ -111,13 +119,13 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
     {
     private:
     ECInstanceIterable m_data;
-
+    virtual ContextType             _GetContextType() const override {return ECInstanceCollection;}
     public:
         ECInstanceIterableDataContext (ECInstanceIterable const& data)
             :m_data(data)
             {}
-        virtual ContextType             GetContextType() const {return ECInstanceCollection;}
-        virtual ECInstanceIterableCP    GetInstanceIterable () const {return &m_data;}
+        
+        virtual ECInstanceIterableCP    GetInstanceIterable () const override{return &m_data;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,10 +143,12 @@ struct  AUIInstanceDataContext : public IAUIDataContext
             :m_instancePtr(&instance)
             {}
         
-        virtual ContextType GetContextType() const override {return IAUIDataContext::Instance;}
+        virtual ContextType     _GetContextType() const override {return IAUIDataContext::Instance;}
         virtual IECInstanceP    GetInstance () const override {return m_instancePtr.get();}
         InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
     };
+
+typedef AUIInstanceDataContext<IECInstanceP>   ECInstanceDataContext;
 
 /*---------------------------------------------------------------------------------**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
@@ -154,7 +164,7 @@ struct  ECGroupingNodeDataContext : public IAUIDataContext
             :m_nodeMoniker (moniker)
             {}
         
-        virtual ContextType GetContextType() const override { return IAUIDataContext::ECGroupingNode; }
+        virtual ContextType _GetContextType() const override { return IAUIDataContext::ECGroupingNode; }
         virtual WString     GetMoniker () const override { return m_nodeMoniker; }
     };
 
@@ -174,10 +184,15 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
             :m_labels (labels), m_data (data), m_customData (customData)
             {}
         
-        virtual ContextType GetContextType() const override { return IAUIDataContext::NodeCollection; }
+        virtual ContextType _GetContextType() const override { return IAUIDataContext::NodeCollection; }
         virtual WString     GetMoniker () const override { return m_labels; }
         virtual ECInstanceIterableCP    GetInstanceIterable () const { return &m_data; }
         virtual void*                   GetCustomData() const {return m_customData;}
     };
 
+/*__PUBLISH_SECTION_START__*/
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/
+#pragma make_public (Bentley::ECN::IAUIDataContext)
+#pragma make_public (Bentley::ECN::IUICommand)

@@ -23,11 +23,14 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     ~mkdir $(DOXYGEN_OUTPUT)
     > $(DOXYGEN_OUTPUT)doxygen.cfg
     @INCLUDE      = bentley-doxygen.cfg
+    @INCLUDE      = bentley-doxygen-html-aliases.cfg
     ENABLED_SECTIONS += ECOBJECTS_MAINPAGE BENTLEY_SDK_All BENTLEY_SDK_Desktop
     <
     ~@putenv PROJECT_NAME="ECObjects SDK Documentation"
     ~@putenv DOXYGEN_INPUT=$(DOXYGEN_INPUT)
+    ~@putenv DOXYGEN_IMAGES=$(_MakefilePath)htmlinclude
     ~@putenv DOXYGEN_OUTPUT=$(DOXYGEN_OUTPUT)
+    ~@putenv DOXYGEN_INCLUDE=$(includeDir)
     ~@putenv HHC=
     %if defined (NO_CHM)
         ~@putenv DOXYGEN_GENERATE_CHM=NO
@@ -38,7 +41,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
         ~@putenv DOXYGEN_GENERATE_CHM=YES
         ~@putenv CHM_FILE=$(DOXYGEN_OUTPUT)$(OutputName)
     %endif
-    ~chdir $(SrcBsitools)doxygen
+    ~chdir $(SrcRoot)ecobjects/docs
     !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
     %if !defined (NO_CHM)
         | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]

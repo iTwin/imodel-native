@@ -34,7 +34,7 @@ StandaloneECRelationshipInstance::~StandaloneECRelationshipInstance()
     {
     m_relationshipEnabler->Release();
 
-    //ECObjectsLogger::Log()->tracev (L"StandaloneECRelationshipInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
+    //LOG.tracev (L"StandaloneECRelationshipInstance at 0x%x is being destructed. It references enabler 0x%x", this, m_sharedWipEnabler);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,7 +75,7 @@ size_t                StandaloneECRelationshipInstance::_LoadObjectDataIntoManag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr      StandaloneECRelationshipInstance::_GetAsIECInstance () const
+IECInstanceP      StandaloneECRelationshipInstance::_GetAsIECInstance () const
     {
     return const_cast<StandaloneECRelationshipInstance*>(this);
     }
@@ -134,9 +134,7 @@ bool                StandaloneECRelationshipInstance::_IsReadOnly() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetValueFromMemory (v, classLayout, propertyIndex, useArrayIndex, arrayIndex);
+    return GetValueFromMemory (v, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,9 +142,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
-    return GetIsNullValueFromMemory (classLayout, isNull, propertyIndex, useArrayIndex, arrayIndex);
+    return GetIsNullValueFromMemory (isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,11 +150,9 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-
     SetIsLoadedBit (propertyIndex);
 
-    return SetValueToMemory (classLayout, propertyIndex, v, useArrayIndex, arrayIndex);
+    return SetValueToMemory (propertyIndex, v, useArrayIndex, arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,10 +166,9 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
     {
-    ClassLayoutCR classLayout = GetClassLayout();
-    ECObjectsStatus status = InsertNullArrayElementsAt (classLayout, propertyAccessString, index, size);
+    ECObjectsStatus status = InsertNullArrayElementsAt (propIdx, index, size);
     
     return status;
     } 
@@ -183,10 +176,9 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = AddNullArrayElementsAt (classLayout, propertyAccessString, size);
+    ECObjectsStatus status = AddNullArrayElementsAt (propIdx, size);
     
     return status;
     }        
@@ -194,10 +186,9 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
+ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
     {
-    ClassLayoutCR classLayout = GetClassLayout();    
-    ECObjectsStatus status = RemoveArrayElementsAt (classLayout, propertyAccessString, index, 1);
+    ECObjectsStatus status = RemoveArrayElementsAt (propIdx, index, 1);
     
     return status;
     } 
@@ -205,7 +196,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (WCharCP propertyAccessString)
+ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (UInt32 propIdx)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      
@@ -215,7 +206,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (WCharCP
 +---------------+---------------+---------------+---------------+---------------+------*/    
 WString        StandaloneECRelationshipInstance::_ToString (WCharCP indent) const
     {
-    return InstanceDataToString (indent, GetClassLayout());
+    return InstanceDataToString (indent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,7 +227,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
         }
 
     BeAssert(false && "Invalid source instance");
-    ECObjectsLogger::Log()->warningv (L"Invalid source instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    LOG.warningv (L"Invalid source instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -290,7 +281,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
         }
 
     BeAssert(false && "Invalid target instance");
-    ECObjectsLogger::Log()->warningv (L"Invalid target instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    LOG.warningv (L"Invalid target instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -361,7 +352,6 @@ WCharCP           StandaloneECRelationshipEnabler::_GetName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndex(UInt32& propertyIndex, WCharCP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
 ECObjectsStatus StandaloneECRelationshipEnabler::_GetAccessString(WCharCP& accessString, UInt32 propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
-UInt32          StandaloneECRelationshipEnabler::_GetPropertyCount() const    { return GetClassLayout().GetPropertyCount (); }
 UInt32          StandaloneECRelationshipEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 UInt32          StandaloneECRelationshipEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }

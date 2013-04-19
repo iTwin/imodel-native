@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/ECImageProvider.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -17,4 +17,12 @@ USING_NAMESPACE_EC
 IECNativeImagePtr ECPresentationImageProvider::GetImage (ECImageKeyCR imageKey, DPoint2dCR size)
     {
     return _GetImage(imageKey, size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECNativeImagePtr ECPresentationImageProvider::GetOverlayImage (IAUIDataContextCR context, DPoint2dCR size)
+    {
+    return _GetOverlayImage(context, size);
     }
