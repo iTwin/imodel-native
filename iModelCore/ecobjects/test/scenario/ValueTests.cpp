@@ -13,15 +13,17 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ValueTests : ECTestFixture
     {
-    void compareDateTimes(SystemTime dateTime1, SystemTime dateTime2)
+    void compareDateTimes(DateTimeCR dateTime1, DateTimeCR dateTime2)
         {
-        EXPECT_EQ (dateTime1.wYear, dateTime2.wYear);
-        EXPECT_EQ (dateTime1.wMonth, dateTime2.wMonth);
-        EXPECT_EQ (dateTime1.wDay, dateTime2.wDay);
-        EXPECT_EQ (dateTime1.wHour, dateTime2.wHour);
-        EXPECT_EQ (dateTime1.wMinute, dateTime2.wMinute);
-        EXPECT_EQ (dateTime1.wSecond, dateTime2.wSecond);
-        EXPECT_EQ (dateTime1.wMilliseconds, dateTime2.wMilliseconds);
+        EXPECT_TRUE (dateTime1.Compare (dateTime2, false));
+        EXPECT_EQ (dateTime1.GetYear(), dateTime2.GetYear());
+        EXPECT_EQ (dateTime1.GetMonth(), dateTime2.GetMonth());
+        EXPECT_EQ (dateTime1.GetDay(), dateTime2.GetDay());
+        EXPECT_EQ (dateTime1.GetHour(), dateTime2.GetHour());
+        EXPECT_EQ (dateTime1.GetMinute(), dateTime2.GetMinute());
+        EXPECT_EQ (dateTime1.GetSecond(), dateTime2.GetSecond());
+        EXPECT_EQ (dateTime1.GetMillisecond(), dateTime2.GetMillisecond());
+        EXPECT_EQ (dateTime1.GetHectoNanosecond(), dateTime2.GetHectoNanosecond());
         }
     };
     
@@ -53,7 +55,7 @@ TEST_F(ValueTests, DISABLED_IGeometrySetGet)
 TEST_F(ValueTests, ECValueToString)
     {
     const byte binary[] = {0x00, 0x01, 0x02, 0x03};
-    SystemTime dateTime = SystemTime(2013, 2, 14, 9, 58, 17, 456);
+    DateTime dateTime = DateTime(DateTime::DATETIMEKIND_Utc, 2013, 2, 14, 9, 58, 17, 4560000);
     DPoint2d point2d = {123.456, 456.789};
     DPoint3d point3d = {1.2, -3.4, 5.6};
     WChar *unichar = L"TestingTesting\x017D\x06C6\x0F3D\x132B\x25E7\x277C\x28BE";
@@ -71,7 +73,7 @@ TEST_F(ValueTests, ECValueToString)
     EXPECT_STREQ (value.ToString().c_str(), L"False");
     
     EXPECT_EQ (value.SetDateTime(dateTime), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.ToString().c_str(), L"#2013/2/14-9:58:17:456#");  //Fix if conversion is region specific
+    EXPECT_STREQ (value.ToString().c_str(), L"2013-02-14T09:58:17.456Z");  //Fix if conversion is region specific
     
     EXPECT_EQ (value.SetDouble(3.14159265359), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (value.ToString().c_str(), L"3.14159265359");
@@ -128,30 +130,13 @@ TEST_F(ValueTests, DISABLED_ValueReadOnly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ValueTests, DateTimeConversions)
     {
-    SystemTime dateTime = SystemTime(2013, 2, 14, 9, 58, 17, 456);
+    DateTime dateTime = DateTime(DateTime::DATETIMEKIND_Utc, 2013, 2, 14, 9, 58, 17, 4560000);
     ECValue value = ECValue(dateTime);
     
     EXPECT_TRUE (value.IsDateTime());
     compareDateTimes(value.GetDateTime(), dateTime);
     EXPECT_EQ (value.GetDateTimeTicks(), 634964326974560000LL);
     EXPECT_EQ (value.GetDateTimeUnixMillis(), 1360835897456L);
-    
-    dateTime.InitFromUnixMillis(1260835897957L);
-    value.SetDateTime(dateTime);
-    
-    compareDateTimes(value.GetDateTime(), dateTime);
-    EXPECT_EQ (value.GetDateTimeTicks(), 633964326979570000LL);
-    EXPECT_EQ (value.GetDateTimeUnixMillis(), 1260835897957L);
-
-    _FILETIME fileTime;
-    fileTime.dwLowDateTime  = (633974326929510000LL - 504911232000000000LL) & 0xffffffff; // = 1994575472L
-    fileTime.dwHighDateTime = (633974326929510000LL - 504911232000000000LL) >> 32;        // = 30049843L
-    dateTime.InitFromFileTime(fileTime);
-    value.SetDateTime(dateTime);
-    
-    compareDateTimes(value.GetDateTime(), dateTime);
-    EXPECT_EQ (value.GetDateTimeTicks(), 633974326929510000LL);
-    EXPECT_EQ (value.GetDateTimeUnixMillis(), 1261835892951);
     }
     
 END_BENTLEY_ECOBJECT_NAMESPACE

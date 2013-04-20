@@ -98,10 +98,10 @@ public:
     //! Enumeration defining the result of a validation check
     enum ValidationResult
         {
-        RESULT_Valid = 0, //!< The name is valid
-        RESULT_NullOrEmpty, //!< The string to check was NULL or empty
-        RESULT_BeginsWithDigit, //!< The string begins with a digit
-        RESULT_IncludesInvalidCharacters //!< The string contains invalid characters
+        RESULT_Valid = 0,                   //!< The name is valid
+        RESULT_NullOrEmpty,                 //!< The string to check was NULL or empty
+        RESULT_BeginsWithDigit,             //!< The string begins with a digit
+        RESULT_IncludesInvalidCharacters    //!< The string contains invalid characters
         };
 
     //! Encodes special characters in a possibly invalid name to produce a valid name
@@ -152,8 +152,10 @@ public:
     //! @returns An ECTypeDescriptor describing an array of the given primitiveType
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreatePrimitiveArrayTypeDescriptor (PrimitiveType primitiveType);
 
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();    //!< Creates a TypeDescriptor for a struct array type
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor (); //!< Creates a TypeDescriptor for a struct
+    //! Creates a TypeDescriptor for a struct array type
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructArrayTypeDescriptor ();
+    //! Creates a TypeDescriptor for a struct
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
     //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
@@ -1487,7 +1489,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
     {
-    SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType)
+    SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType) const
         {
         switch (matchType)
             {

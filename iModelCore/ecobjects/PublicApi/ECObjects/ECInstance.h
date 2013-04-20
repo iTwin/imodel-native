@@ -9,6 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "ECObjects.h"
+#include <Bentley/DateTime.h>
 #include <Geom/GeomApi.h>
 
 BENTLEY_TYPEDEFS (BeXmlDom)
@@ -106,22 +107,46 @@ public:
 };
 
 typedef RefCountedPtr<IECInstance> IECInstancePtr;
-//=======================================================================================    
-//! @ingroup ECObjectsGroup
-//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
-//! Unlike IECInstance, it is not a pure interface, but is a concrete struct.
-//! Whereas in .NET, one might implement IECInstance, or use the "Lightweight" system
-//! in Bentley.ECObjects.Lightweight, in native "ECObjects" you write a class that implements
-//! the DgnElementECInstanceEnabler interface and one or more related interfaces to supply functionality 
-//! to the ECN::IECInstance.
-//! We could call these "enabled" instances as opposed to "lightweight".
+//=======================================================================================
+//! An IECInstance represents an instance of an ECClass.
+//!
+//! IECInstance is not a pure interface. Functionality is supplied to an IECInstance through
+//! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
+//!
+//! @cond BENTLEY_SDK_Desktop
+//! ### Comparison to .NET ECObjects
+//! ECN::IECInstance is the native equivalent of a .NET IECInstance.
+//! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
+//! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
+//! Native IECInstances could be called "enabled" as opposed to "lightweight".
+//! @endcond BENTLEY_SDK_Desktop
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct IECInstance : RefCountedBase
     {
 private:
+    ECObjectsStatus ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
+    ECObjectsStatus GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const;
+
     bool                        GetInstanceLabelPropertyName (WString& propertyName) const;
+
+    //! If the property is a DateTime property looks up the DateTimeInfo custom attribute and, if present,
+    //! validates whether the DateTime metadata of the input ECValue matches the DateTimeInfo custom attribute
+    //! information.
+    //! @param[in] propertyIndex Index of property to validate against (index is 1-based)
+    //! @param[in] v ECValue to validate
+    //! @return ECOBJECT_STATUS_Success if the validation was successful. ECOBJECTS_STATUS_DataTypeMismatch otherwise
+    ECObjectsStatus ValidateDateTimeMetadata (UInt32 propertyIndex, ECValueCR v) const;
+    //! If the property is a DateTime property looks up the DateTimeInfo custom attribute and, if present,
+    //! applies the DateTime metadata to the given ECValue.
+    //! @remarks The metadata is used to build the DateTime object when the client calls ECValue::GetDateTime.
+    //! @param[in] v ECValue to apply metadata to
+    //! @param[in] propertyIndex Index of property to retrieve metadata from (index is 1-based)
+    //! @return ECOBJECT_STATUS_Success if successful. ECOBJECTS_STATUS_DataTypeMismatch if the 
+    ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const;
+    bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const;
 
 protected:    
     ECOBJECTS_EXPORT IECInstance(); 
@@ -129,7 +154,7 @@ protected:
 
     //! Gets the unique ID for this instance
     virtual WString             _GetInstanceId() const = 0; // Virtual and returning WString because a subclass may want to calculate it on demand
-    //! Gets the value stored in the specified ECProperty
+    //! Gets the value stored in the ECProperty referred to by the specified property index
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (property index is 1-based)
     //! @param[in]  useArrayIndex   true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
@@ -137,7 +162,8 @@ protected:
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (array index is 0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const = 0;
-    //! Sets the value for the specified property
+
+    //! Sets the value for the property referred to by the specified property index
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (property index is 1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  useArrayIndex   true, if the respective property is an array property. false otherwise. If true, \p arrayIndex
@@ -381,9 +407,9 @@ public:
     //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (UInt32 propertyIndex) const;
 
-    // Contract:
-    // - For all of the methods, the propertyAccessString shall not contain brackets.
-    //   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
+    //! Contract:
+    //! - For all of the methods, the propertyAccessString shall not contain brackets.
+    //!   e.g. "Aliases", not "Aliases[]" or "Aliases[0]"
     //! Given an access string, will inserting size number of empty array elements at the given index
     //! @param[in] propertyAccessString     The access string to the array property (shall not contain brackets)
     //! @param[in] index                    The starting index of the array at which to insert the new elements
@@ -445,8 +471,10 @@ public:
     //! @returns SUCCESS if the display label was set, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (WCharCP displayLabel);    
     
-    ECOBJECTS_EXPORT ECDBuffer*            GetECDBuffer() const; //!< Returns the underlying ECDBuffer for this instance
-    ECOBJECTS_EXPORT MemoryECInstanceBase* GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance
+    ECOBJECTS_EXPORT ECDBuffer const*               GetECDBuffer() const; //!< Returns the underlying ECDBuffer for this instance.
+    ECOBJECTS_EXPORT ECDBuffer*                     GetECDBufferP(); //!< Returns the underlying ECDBuffer for this instance.
+    ECOBJECTS_EXPORT MemoryECInstanceBase const*    GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance.
+    ECOBJECTS_EXPORT MemoryECInstanceBase*          GetAsMemoryECInstanceP(); //!< Returns the instance as a MemoryECInstance.
     ECOBJECTS_EXPORT size_t                GetOffsetToIECInstance () const; //!< Returns the offset to the IECInstance
 
     //! Returns a dump of the instance
@@ -532,11 +560,12 @@ public:
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
     };
-    
-//=======================================================================================    
-//! @ingroup ECObjectsGroup
-//! ECN::IECRelationshipInstance is the native equivalent of a .NET IECRelationshipInstance.
+
+//=======================================================================================
+//! ECN::IECRelationshipInstance is an instance of an ECRelationshipClass and represents
+//! the relationship between two \ref IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
+//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct IECRelationshipInstance : virtual IECInstance
@@ -592,7 +621,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         WCharCP managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,       WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, DateTimeR value,       WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,           WCharCP managedPropertyAccessor);
 
     ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, WCharCP managedPropertyAccessor, ECValueCR value);
@@ -603,7 +632,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, WCharCP managedPropertyAccessor, bool value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, WCharCP managedPropertyAccessor, DPoint2dCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, WCharCP managedPropertyAccessor, DPoint3dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, WCharCP managedPropertyAccessor, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, WCharCP managedPropertyAccessor, DateTimeCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, WCharCP managedPropertyAccessor, Int64 value);
 
     ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,        ECValueAccessorCR accessor);
@@ -613,7 +642,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,       ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,    ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,    ECValueAccessorCR accessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, SystemTimeR value,  ECValueAccessorCR accessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, DateTimeR value,    ECValueAccessorCR accessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, Int64 & value,      ECValueAccessorCR accessor);
 
     ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, ECValueAccessorCR accessor, ECValueCR value);
@@ -624,7 +653,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus SetBooleanValue  (IECInstanceR, ECValueAccessorCR accessor, bool value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetPoint2DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint2dCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetPoint3DValue  (IECInstanceR, ECValueAccessorCR accessor, DPoint3dCR value);
-    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, ECValueAccessorCR accessor, SystemTimeR value);
+    ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeValue (IECInstanceR, ECValueAccessorCR accessor, DateTimeCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus SetDateTimeTicks (IECInstanceR, ECValueAccessorCR accessor, Int64 value);
 
     ECOBJECTS_EXPORT static bool            IsNull (IECInstanceR, ECValueAccessorCR);

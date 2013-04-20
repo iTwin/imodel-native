@@ -8,12 +8,14 @@
 #pragma once
 
 #include <Bentley/Bentley.h>
+#include <Bentley/DateTime.h>
 #include <Bentley/CatchNonPortable.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <assert.h>
 #include <boost/foreach.hpp>
 #include <Bentley/BeStringUtilities.h>
 #include "ecxml.h"
+#include "DateTimeInfoAccessor.h"
 #include "ECObjectsNativeLog.h"
 #include "FileUtilities.h"
 #include <Bentley/BeTimeUtilities.h>

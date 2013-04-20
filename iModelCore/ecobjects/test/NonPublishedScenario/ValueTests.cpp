@@ -12,16 +12,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct ValueTests : ECTestFixture
     {
-    void compareDateTimes(SystemTime dateTime1, SystemTime dateTime2)
-        {
-        EXPECT_EQ (dateTime1.wYear, dateTime2.wYear);
-        EXPECT_EQ (dateTime1.wMonth, dateTime2.wMonth);
-        EXPECT_EQ (dateTime1.wDay, dateTime2.wDay);
-        EXPECT_EQ (dateTime1.wHour, dateTime2.wHour);
-        EXPECT_EQ (dateTime1.wMinute, dateTime2.wMinute);
-        EXPECT_EQ (dateTime1.wSecond, dateTime2.wSecond);
-        EXPECT_EQ (dateTime1.wMilliseconds, dateTime2.wMilliseconds);
-        }
+
     };
     
 void checkBinary(WCharCP text, ECValue &value)
@@ -72,13 +63,13 @@ TEST_F(ValueTests, StringToECValue)
     EXPECT_EQ (value.SetString(L"634964326974560000"), ECOBJECTS_STATUS_Success);  //Human readable string is not handled
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_DateTime));
     EXPECT_TRUE (value.IsDateTime());
-    EXPECT_EQ (value.GetDateTime().wYear, 2013);
-    EXPECT_EQ (value.GetDateTime().wMonth, 2);
-    EXPECT_EQ (value.GetDateTime().wDay, 14);
-    EXPECT_EQ (value.GetDateTime().wHour, 9);
-    EXPECT_EQ (value.GetDateTime().wMinute, 58);
-    EXPECT_EQ (value.GetDateTime().wSecond, 17);
-    EXPECT_EQ (value.GetDateTime().wMilliseconds, 456);
+    EXPECT_EQ (value.GetDateTime().GetYear(), 2013);
+    EXPECT_EQ (value.GetDateTime().GetMonth(), 2);
+    EXPECT_EQ (value.GetDateTime().GetDay(), 14);
+    EXPECT_EQ (value.GetDateTime().GetHour(), 9);
+    EXPECT_EQ (value.GetDateTime().GetMinute(), 58);
+    EXPECT_EQ (value.GetDateTime().GetSecond(), 17);
+    EXPECT_EQ (value.GetDateTime().GetMillisecond(), 456);
     
     EXPECT_EQ (value.SetString(L"-3.14159265359"), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Double));

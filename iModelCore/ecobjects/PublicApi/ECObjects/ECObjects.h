@@ -51,6 +51,7 @@ EC_TYPEDEFS (SchemaKey);
 EC_TYPEDEFS(ECSchemaReadContext);
 EC_TYPEDEFS(ECProperty);
 EC_TYPEDEFS(PrimitiveECProperty);
+EC_TYPEDEFS(DateTimeInfo);
 EC_TYPEDEFS(StructECProperty);
 EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
@@ -80,7 +81,6 @@ EC_TYPEDEFS(StandaloneECInstance);
 EC_TYPEDEFS(MemoryECInstanceBase);
 EC_TYPEDEFS(ECDBuffer);
 EC_TYPEDEFS(ClassLayoutHolder);
-EC_TYPEDEFS(SystemTime);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);
@@ -99,10 +99,10 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! Error code categories
 typedef enum ECErrorCategories
     {
-    ECOBJECTS_ERROR_BASE                    = 0x31000,
-    SCHEMA_READ_STATUS_BASE      = 0x32000,
+    ECOBJECTS_ERROR_BASE            = 0x31000,
+    SCHEMA_READ_STATUS_BASE         = 0x32000,
     SCHEMA_WRITE_STATUS_BASE        = 0x33000,
-    INSTANCE_READ_STATUS_BASE    = 0x34000,
+    INSTANCE_READ_STATUS_BASE       = 0x34000,
     INSTANCE_WRITE_STATUS_BASE      = 0x35000,
     SUPPLEMENTED_SCHEMA_STATUS_BASE = 0x36000,
     } ECErrorCategories;
@@ -291,6 +291,9 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
     PRIMITIVETYPE_Binary                    = 0x101,
     PRIMITIVETYPE_Boolean                   = 0x201,
+    //!Additional date time metadata can be specified on an ECProperty of this type via
+    //!the custom attribute \b %DateTimeInfo defined in the schema \b Bentley_Standard_CustomAttributes.
+    //!@see DateTimeInfo
     PRIMITIVETYPE_DateTime                  = 0x301,
     PRIMITIVETYPE_Double                    = 0x401,
     PRIMITIVETYPE_Integer                   = 0x501,

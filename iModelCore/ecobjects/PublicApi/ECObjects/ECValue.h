@@ -9,10 +9,11 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley/VirtualCollectionIterator.h>
+#include <Bentley/DateTime.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
+#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Geom/GeomApi.h>
-struct _FILETIME;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -20,47 +21,8 @@ typedef RefCountedPtr<ECPropertyValue> ECPropertyValuePtr;
 typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
 //=======================================================================================    
-//! SystemTime structure is used to set and get time data from ECValue objects.
-//! @see ECValue
-//=======================================================================================    
-struct SystemTime
-{
-public:
-    unsigned short wYear; //!< The year component
-    unsigned short wMonth; //!< The month component (1-12; January = 1) 
-    unsigned short wDayOfWeek; //!< The day of the week (0-6; Sunday = 0)
-    unsigned short wDay; //!< Day of month (1-31)
-    unsigned short wHour; //!< The hour component 
-    unsigned short wMinute; //!< The minute component
-    unsigned short wSecond; //!< The second component
-    unsigned short wMilliseconds; //!< The milliseconds component
-
-    //! Creates a new SystemTime instance to the specified year, month, day, hour, minute, second, and millisecond
-    //! @param[in] year         The year component (1 through 9999)
-    //! @param[in] month        The month component (1-12)
-    //! @param[in] day          The day (1 through the number of days in month)
-    //! @param[in] hour         The hours (0-23)
-    //! @param[in] minute       The minutes (0-59)
-    //! @param[in] second       The seconds (0-59)
-    //! @param[in] milliseconds The milliseconds (0-999)
-    ECOBJECTS_EXPORT SystemTime(unsigned short year=1601, unsigned short month=1, unsigned short day=1, unsigned short hour=0, unsigned short minute=0, unsigned short second=0, unsigned short milliseconds=0);
-
-    ECOBJECTS_EXPORT static SystemTime GetLocalTime(); //!< Returns a SystemTime instance representing the current Local Time.
-    ECOBJECTS_EXPORT static SystemTime GetSystemTime(); //!< Returns a SystemTime instance representing the current system time expressed in Coordinated Univeral Time (UTC)
-    ECOBJECTS_EXPORT WString      ToString (); //!< Returns the time as a string: M/D/Y-H:M:S:MS
-    ECOBJECTS_EXPORT bool          operator== (const SystemTime&) const; //!< Compares two SystemTime instances for equality
-
-    //! Given a FileTime object, creates the equivalent SystemTime object
-    //! @param[in] fileTime The _FILETIME object containing the specified time
-    ECOBJECTS_EXPORT BentleyStatus  InitFromFileTime (_FILETIME const& fileTime);
-
-    //! Initializes this SystemTime object from unix milliseconds
-    //! @param[in] unixMillis   The unix millisecond representation of the specified time
-    ECOBJECTS_EXPORT BentleyStatus  InitFromUnixMillis (UInt64 unixMillis);
-    };
-
-//=======================================================================================    
-//! Information about an array in an IECInstance. Does not contain the actual elements.
+//! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
+//! @ingroup ECObjectsGroup
 //! @see ECValue
 //=======================================================================================    
 struct ArrayInfo
@@ -86,18 +48,27 @@ public:
     //! @param[in] isFixedCount         Indicates whether the array can grow or not
     void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
-    ECOBJECTS_EXPORT UInt32          GetCount() const;                  //!< Returns the number of entries in this array
-    ECOBJECTS_EXPORT bool            IsFixedCount() const;              //!< Returns whether this is a fixed size array or not
-    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;          //!< Returns whether this is a primitive array
-    ECOBJECTS_EXPORT bool            IsStructArray() const;             //!< Returns whether this is a struct array
-    ECOBJECTS_EXPORT ValueKind       GetKind() const;                   //!< Returns the kind of array this is (primitive or struct)
-    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;   //!< Returns the primitive type that this array was initialized with
+    //! Returns the number of entries in this array
+    ECOBJECTS_EXPORT UInt32          GetCount() const;
+    //! Returns whether this is a fixed size array or not
+    ECOBJECTS_EXPORT bool            IsFixedCount() const;
+    //! Returns whether this is a primitive array
+    ECOBJECTS_EXPORT bool            IsPrimitiveArray() const;
+    //! Returns whether this is a struct array
+    ECOBJECTS_EXPORT bool            IsStructArray() const;
+    //! Returns the kind of array this is (primitive or struct)
+    ECOBJECTS_EXPORT ValueKind       GetKind() const;
+    //! Returns the primitive type that this array was initialized with
+    ECOBJECTS_EXPORT PrimitiveType   GetElementPrimitiveType() const;
     };
 
-//! Variant-like object representing the value of an ECPropertyValue. 
-//! It does not represent a "live" reference into the underlying IECInstance 
-//! (or the object that the IECInstance represents). Changing the ECValue will not affect
-//! the IECInstance unless you subsequently call SetValue() with it.
+//=======================================================================================
+//! Variant-like object used to set and retrieve property values in \ref ECN::IECInstance "ECInstances".
+//! @remarks It does not represent a "live" reference into the underlying ECN::IECInstance
+//! (or the object that the ECN::IECInstance represents). Changing the ECValue will not affect
+//! the IECInstance unless you subsequently call IECInstance::SetValue with it.
+//! @ingroup ECObjectsGroup
+//=======================================================================================
 struct ECValue
     {
 public:
@@ -142,6 +113,7 @@ protected:
         void                ConvertToUtf8 (UInt8& flags);
         void                ConvertToUtf16 (UInt8& flags);
     public:
+        bool                IsUtf8 () const;
         // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
         // If we stored the flags on StringInfo, we would increase the size of the union.
 
@@ -191,6 +163,30 @@ protected:
         bool                Equals (StringInfo const& rhs, UInt8& flags);
         };
 
+    struct DateTimeInfo
+        {
+    private:
+        ::Int64             m_ceTicks;
+        DateTime::Kind      m_kind;
+        DateTime::Component m_component;
+        bool                m_isMetadataSet;
+
+    public:
+        void Set (::Int64 ceTicks);
+        BentleyStatus Set (DateTimeCR dateTime);
+        ::Int64 GetCETicks () const;
+        BentleyStatus GetDateTime (DateTimeR dateTime) const;
+
+        bool IsMetadataSet () const {return m_isMetadataSet;}
+        bool TryGetMetadata (DateTime::Info& metadata) const;
+        BentleyStatus SetMetadata (DateTime::Info const& metadata);
+        BentleyStatus SetMetadata (DateTimeInfoCR dateTimeInfo);
+
+        bool MetadataMatches (DateTimeInfoCR dateTimeInfo) const;
+
+        WString MetadataToString () const;
+        };
+
     //! The union storing the actual data of this ECValue
     union
         {
@@ -200,27 +196,31 @@ protected:
         double              m_double;       //!< If a double primitive type, holds the double value
         //! If a String primitive type, holds the StringInfo struct defining the string
         mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
-        ::Int64             m_dateTime;     //!< If a DateTime primitive, holds the DateTime value as an Int64 representation
         DPoint2d            m_dPoint2d;     //!< If a DPoint2d primitive, holds the DPoint2d value
+        DateTimeInfo        m_dateTimeInfo; //!< If a DateTime primitive, holds the DateTime value
         DPoint3d            m_dPoint3d;     //!< If a DPoint3d primitive, holds the DPoint3d value
         ArrayInfo           m_arrayInfo;    //!< If an array value, holds the ArrayInfo struct defining the array
         BinaryInfo          m_binaryInfo;   //!< If a binary value, holds the BinaryInfo struct defining the binary data
         IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
         };
 
-    void ConstructUninitialized(); //!< Constructs an uninitialized ECValue object
-    inline void FreeMemory (); //!< If appropriate for the value type, frees the memory used to store the value
+    //! Constructs an uninitialized ECValue object
+    void ConstructUninitialized();
+    //! If appropriate for the value type, frees the memory used to store the value
+    inline void FreeMemory ();
          
 public:
-    ECOBJECTS_EXPORT void            Clear(); //!< Clears memory, if necessary, and sets the value back to an uninitialized state
-    ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs); //!< Compares two ECValues for equality
-    
-    ECOBJECTS_EXPORT ~ECValue(); //!< Destructor
-    
-    ECOBJECTS_EXPORT ECValue (); //!< Default Constructor.  Construct an uninitialized value
-    
-    //! Constructs a new ECValue based on the passed in ECValue
-    //! @param[in] v    The ECValue to initialize the new ECValue from
+    //! Clears memory, if necessary, and sets the value back to an uninitialized state
+    ECOBJECTS_EXPORT void            Clear();
+    //! Compares two ECValues for equality
+    ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs);    
+    //! Destructor
+    ECOBJECTS_EXPORT ~ECValue();
+
+    //! Initializes a new instance of the ECValue type.
+    ECOBJECTS_EXPORT ECValue ();
+    //! Initializes a new instance of the ECValue type from the given ECValue.
+    //! @param[in] v ECValue to initialize this object from
     ECOBJECTS_EXPORT ECValue (ECValueCR v);
 
     //! Constructs an uninitialized ECValue of the specified ValueKind
@@ -231,15 +231,15 @@ public:
     //! @param[in] primitiveType The type to set this new ECValue to
     ECOBJECTS_EXPORT explicit ECValue (PrimitiveType primitiveType);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Integer
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Integer
     //! @param[in] integer32 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int32 integer32);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Long
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Long
     //! @param[in] long64 Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (::Int64 long64);
 
-    //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Double
+    //! Initializes a new instance of ECValue from the given value. Type is set to ::PRIMITIVETYPE_Double
     //! @param[in] doubleVal Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (double doubleVal);
 
@@ -280,9 +280,10 @@ public:
     //! @param[in] value Value to initialize this ECValue from
     ECOBJECTS_EXPORT explicit ECValue (bool value);
 
-    //! Constructs a new SystemTime ECValue
-    //! @param[in] time The SystemTime value to store
-    ECOBJECTS_EXPORT explicit ECValue (SystemTime const& time);
+    //! Initializes a new instance of the ECValue type.
+    //! @param[in] dateTime Date time value to set.
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
+    ECOBJECTS_EXPORT explicit ECValue (DateTimeCR dateTime);
 
     //! Sets whether this ECValue is read-only
     //! @param[in] isReadOnly Sets the read-only status of the ECValue
@@ -323,6 +324,28 @@ public:
     //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_String (regardless of encoding).
     //! @return true if the ECValue content is of type ::PRIMITIVETYPE_String. false otherwise.
     ECOBJECTS_EXPORT bool           IsString () const;
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_String and
+    //! is encoded in UTF-8.
+    //! @remarks Use this method to pick the appropriate Get method to avoid unnecessary
+    //!          string conversions.
+    //!          \code
+    //!             
+    //!          ECValue v = ...;
+    //!          if (v.IsUtf8 ())
+    //!             {
+    //!             Utf8CP string = v.GetUtf8CP ();
+    //!             ...
+    //!             }
+    //!          else
+    //!             {
+    //!             WCharCP string = v.GetString ();
+    //!             ...
+    //!             }
+    //!
+    //!            \endcode
+    //!
+    //! @return true if the ECValue content is encoded in UTF-8. false otherwise.
+    ECOBJECTS_EXPORT bool           IsUtf8 () const;
     //! Indicates whether the content of this ECValue is of type #PRIMITIVETYPE_Integer.
     //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Integer. false otherwise.
     ECOBJECTS_EXPORT bool           IsInteger () const;
@@ -486,13 +509,17 @@ public:
     //! @param[in] structInstance   The value to set
     //!@return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
-        
-    //! Returns the SystemTime value, if this ECValue holds a SystemTime
-    ECOBJECTS_EXPORT SystemTime     GetDateTime() const;
-    //! Sets the value of this ECValue to the given SystemTime
-    //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a DateTime primitive
-    //! @param[in] systemTime   The value to set
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (SystemTime const& systemTime); 
+
+    //! Gets the DateTime value.
+    //! @return DateTime value
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
+    ECOBJECTS_EXPORT DateTime       GetDateTime () const;
+
+    //! Sets the DateTime value.
+    //! @param[in] dateTime DateTime value to set
+    //! @return SUCCESS or ERROR
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTime (DateTimeCR dateTime);
 
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
@@ -506,9 +533,17 @@ public:
     //! DateTimes before the Unix epoch are negative.
     //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime as milliseconds since the beginning of the Unix epoch.
+    ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
 
-    //! Returns the SystemTime value as Unix milliseconds, if this ECValue holds a SystemTime
-    ECOBJECTS_EXPORT UInt64         GetDateTimeUnixMillis() const;
+    //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @param[out] hasMetadata true, if this ECValue objects contains date time metadata. false otherwise
+    //! @param[out] metadata if \p hasMetadata is true, contains the metadata available in this ECValue.
+    //! @return DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
+    ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
+
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
@@ -518,6 +553,22 @@ public:
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks);
 
+    //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
+    //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
+    //! epoch begins at 0001-01-01 00:00:00 UTC.
+    //! @param[in] ceTicks DateTime Common Era ticks to set
+    //! @param[in] dateTimeMetadata DateTime metadata to set along with the ticks.
+    //! @return SUCCESS or ERROR
+    //! @see \ref ECInstancesDateTimePropertiesHowTos
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
+
+//__PUBLISH_SECTION_END__
+    BentleyStatus SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
+    bool IsDateTimeMetadataSet () const;
+    bool DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
+    WString DateTimeMetadataToString () const;
+//__PUBLISH_SECTION_START__
+//
     //! Returns the DPoint2d value, if this ECValue holds a Point2d
     ECOBJECTS_EXPORT DPoint2d       GetPoint2D() const;
     //! Sets the value of this ECValue to the given DPoint2d
