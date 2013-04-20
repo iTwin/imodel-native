@@ -1494,7 +1494,7 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         // Must escape quotes...
         WString s (GetString());
         boost::replace_all (s, L"\"", L"\"\"");
-        expr.Sprintf (L"\"%ls\"", s);
+        expr.Sprintf (L"\"%ls\"", s.c_str());
         }
         return true;
     case PRIMITIVETYPE_Binary:
