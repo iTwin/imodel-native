@@ -8,7 +8,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 /// @cond BENTLEY_SDK_Desktop
-#include <Bentley/VirtualCollectionIterator.h>
+//#include <ECObjects/VirtualCollectionIterator.h>
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 
