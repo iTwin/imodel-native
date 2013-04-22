@@ -3612,5 +3612,67 @@ void ECDBuffer::GetBufferData (byte* dest) const
     memcpy (dest, _GetData(), nBytes);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::IsEmpty() const
+    {
+    ScopedDataAccessor dataAccessor (*this);
+    if (!dataAccessor.IsValid())
+        { BeAssert (false); return false; }
+
+    ClassLayoutCR classLayout = GetClassLayout();
+    byte const* propertyData = GetPropertyData();
+
+    // Prereq: no variable-sized storage used
+    if (classLayout.GetSizeOfFixedSection() != classLayout.CalculateBytesUsed (propertyData))
+        return false;
+
+    // Easiest case - has no properties
+    UInt32 nonStructPropCount = classLayout.GetPropertyCountExcludingEmbeddedStructs();
+    if (0 == nonStructPropCount)
+        return true;
+
+    // Easy case - all null flag bits are turned on
+    bool allNullflagsOn = true;
+    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nonStructPropCount);
+    NullflagsBitmask const* pMask = (NullflagsBitmask const*)propertyData;
+    NullflagsBitmask const* pMaskEnd = pMask + nNullflagsBitmasks;
+
+    while (pMask < pMaskEnd)
+        {
+        if (NULLFLAGS_BITMASK_AllOn != *pMask++)
+            {
+            allNullflagsOn = false;
+            break;
+            }
+        }
+
+    if (allNullflagsOn)
+        return true;
+
+    // Annoying case: one or more null flags are turned off.
+    // This should never happen for struct properties (they are always null)
+    // It is valid for an empty array
+    // So we need to check null flags are turned on for all primitive properties
+    FOR_EACH (PropertyLayout const* propLayout, classLayout.m_propertyLayouts)
+        {
+        if (propLayout->GetTypeDescriptor().IsPrimitive())
+            {
+            if (!IsPropertyValueNull (*propLayout, false, 0))
+                return false;
+            }
+#ifdef ECD_SUPPORTS_FIXED_SIZED_ARRAYS
+        // NOTE: ECD does not currently support fixed-sized arrays. So we don't need to check for them. And we already know all variable-sized arrays are empty.
+        else if (IsArrayOfFixedSizeElements (*propLayout))
+            {
+            // ... make sure all elements of array are null ...
+            }
+#endif
+        }
+
+    return true;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
