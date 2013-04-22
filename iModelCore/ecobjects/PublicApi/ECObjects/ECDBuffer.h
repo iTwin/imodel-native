@@ -733,9 +733,12 @@ public:
     ECOBJECTS_EXPORT void                   GetBufferData (byte* dest) const;
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Returns true if the buffer is empty (all values are null and all arrays are empty)
+    ECOBJECTS_EXPORT bool                   IsEmpty() const;
     //! Sets all values to null
     ECOBJECTS_EXPORT void                   ClearValues();
     //! Copies property values from source instance
+    //! @param[in] sourceInstance   The instance from which to copy property values
     ECOBJECTS_EXPORT ECObjectsStatus        CopyInstanceProperties (IECInstanceCR sourceInstance);
     };
 
