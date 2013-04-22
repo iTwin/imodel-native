@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CustomNodeSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,16 +29,23 @@ struct CustomNodeSpecification : public ChildNodeSpecification
 
     protected:
     /*__PUBLISH_SECTION_START__*/
+        //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode);
+
+        //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
     public:
+        //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT CustomNodeSpecification ()
             : ChildNodeSpecification (), m_type (L""), m_label (L""), m_description (L""), m_imageId (L"")
             {
             }
 
+        //! Constructor.
         ECOBJECTS_EXPORT CustomNodeSpecification (int priority, bool hideIfNoChildren, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId)
             : ChildNodeSpecification (priority, true, false, hideIfNoChildren), 
             m_type (type), m_label (label), m_description (description), m_imageId (imageId)

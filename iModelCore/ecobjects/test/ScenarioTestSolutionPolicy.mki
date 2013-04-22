@@ -2,14 +2,15 @@
 #
 #  $Source: test/ScenarioTestSolutionPolicy.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 # WE_NEED_TO_FIX_OUR_COMPILER_WARNINGS = 1
 
-compileRulesPath=$(baseDir)scenarioCompileRules.mki
+nameToDefine = COMPILING_PUBLISHED_TESTS
+%include cdefapnd.mki
 
-nameToDefine = COMPILING_NONPUBLISHED_TESTS
+nameToDefine = USE_PUBLISHED_HEADERS
 %include cdefapnd.mki
 
 #-----------------------------------------------------------------------
@@ -23,4 +24,7 @@ nameToDefine = COMPILING_NONPUBLISHED_TESTS
     %include cdefapnd.mki
 %endif
 
-
+# When the published tests build they will set USE_PUBLIC_PUBLISHED_HEADERS which should make sure they
+# compile with the published headers and not the internal headers.  All other portions of the build will use
+# internal headers.
+PublicApiIncludes = -I$(BuildContext)SubParts/PublishedAPI/ -I${BuildContext}/VendorAPI/

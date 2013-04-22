@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 
 #include <ECObjects/ECObjectsAPI.h>
 
+EC_TYPEDEFS (SubCondition);
 EC_TYPEDEFS (ChildNodeRule);
 EC_TYPEDEFS (ContentRule);
 EC_TYPEDEFS (ImageIdOverride);
@@ -21,12 +22,18 @@ EC_TYPEDEFS (RootNodeRule);
 EC_TYPEDEFS (LabelOverride);
 EC_TYPEDEFS (StyleOverride);
 EC_TYPEDEFS (CheckBoxRule);
+EC_TYPEDEFS (RenameNodeRule);
+EC_TYPEDEFS (SortingRule);
+EC_TYPEDEFS (DisplayRelatedItemsSpecification);
 EC_TYPEDEFS (GroupingRule);
 EC_TYPEDEFS (GroupSpecification);
+EC_TYPEDEFS (SameLabelInstanceGroup);
 EC_TYPEDEFS (ClassGroup);
 EC_TYPEDEFS (PropertyGroup);
 EC_TYPEDEFS (PropertyRangeGroupSpecification);
 EC_TYPEDEFS (LocalizationResourceKeyDefinition);
+EC_TYPEDEFS (UserSettingsGroup);
+EC_TYPEDEFS (UserSettingsItem);
 EC_TYPEDEFS (ChildNodeSpecification);
 EC_TYPEDEFS (AllInstanceNodesSpecification);
 EC_TYPEDEFS (AllRelatedInstanceNodesSpecification);
@@ -53,7 +60,11 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 #include <ECPresentationRules/LabelOverride.h>
 #include <ECPresentationRules/StyleOverride.h>
 #include <ECPresentationRules/LocalizationResourceKeyDefinition.h>
+#include <ECPresentationRules/UserSettingsGroup.h>
 #include <ECPresentationRules/CheckBoxRule.h>
+#include <ECPresentationRules/RenameNodeRule.h>
+#include <ECPresentationRules/SortingRule.h>
+#include <ECPresentationRules/DisplayRelatedItemsSpecification.h>
 #include <ECPresentationRules/GroupingRule.h>
 #include <ECPresentationRules/AllInstanceNodesSpecification.h>
 #include <ECPresentationRules/AllRelatedInstanceNodesSpecification.h>

@@ -27,9 +27,6 @@
     <ClCompile Include="Published\SchemaTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\StopWatch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\InstanceXMLTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -54,9 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\StopWatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\TestFixture.h">

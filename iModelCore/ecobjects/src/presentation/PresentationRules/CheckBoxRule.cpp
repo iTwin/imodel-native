@@ -25,7 +25,7 @@ CharCP CheckBoxRule::_GetXmlElementName ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
     {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue  (m_propertyName, CHECKBOX_RULE_XML_ATTRIBUTE_PROPERTYNAME))
+    if (BEXML_Success != xmlNode->GetAttributeStringValue  (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
         m_propertyName = L"";
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_useInversedPropertyValue, CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE))
@@ -42,7 +42,7 @@ bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode)
     {
-    xmlNode->AddAttributeStringValue  (CHECKBOX_RULE_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str ());
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str ());
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE, m_useInversedPropertyValue);
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE, m_defaultValue);
 

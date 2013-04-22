@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleSet.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -26,7 +26,10 @@ PresentationRuleSet::~PresentationRuleSet ()
     CommonTools::FreePresentationRules (m_styleOverrides);
     CommonTools::FreePresentationRules (m_groupingRules);
     CommonTools::FreePresentationRules (m_localizationResourceKeyDefinitions);
+    CommonTools::FreePresentationRules (m_userSettings);
     CommonTools::FreePresentationRules (m_checkBoxRules);
+    CommonTools::FreePresentationRules (m_renameNodeRules);
+    CommonTools::FreePresentationRules (m_sortingRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -35,13 +38,16 @@ PresentationRuleSet::~PresentationRuleSet ()
 PresentationRuleSetPtr PresentationRuleSet::CreateInstance
 (
 WStringCR ruleSetId,
-WStringCR supportedSchemas,
+int       versionMajor,
+int       versionMinor,
 bool      isSupplemental,
-int       version,
-WStringCR preferredImage
+WStringCR supplementationPurpose,
+WStringCR supportedSchemas,
+WStringCR preferredImage,
+bool      isSearchEnabled
 )
     {
-    return new PresentationRuleSet (ruleSetId, supportedSchemas, isSupplemental, version, preferredImage);
+    return new PresentationRuleSet (ruleSetId, versionMajor, versionMinor, isSupplemental, supplementationPurpose, supportedSchemas, preferredImage, isSearchEnabled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,9 +58,9 @@ WString PresentationRuleSet::GetFullRuleSetId (void) const
     wchar_t fullId[255];
 
     if (GetIsSupplemental ())
-        BeStringUtilities::Snwprintf (fullId, L"%ls_supplemental.%02d", GetRuleSetId ().c_str(), GetVersion ());
+        BeStringUtilities::Snwprintf (fullId, L"%ls_supplemental_%ls.%02d.%02d", GetRuleSetId ().c_str(), GetSupplementationPurpose ().c_str(), GetVersionMajor (), GetVersionMinor ());
     else
-        BeStringUtilities::Snwprintf (fullId, L"%ls.%02d", GetRuleSetId ().c_str(), GetVersion ());
+        BeStringUtilities::Snwprintf (fullId, L"%ls.%02d.%02d", GetRuleSetId ().c_str(), GetVersionMajor (), GetVersionMinor ());
 
     return fullId;
     }
@@ -67,14 +73,14 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     BeXmlNodeP ruleSetNode;
     if ( (BEXML_Success != xmlDom.SelectNode (ruleSetNode, "/" PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == ruleSetNode) )
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid PresentationRuleSetXML: Missing a top-level %hs node", PRESENTATION_RULE_SET_XML_NODE_NAME);
+        LOG.errorv (L"Invalid PresentationRuleSetXML: Missing a top-level %hs node", PRESENTATION_RULE_SET_XML_NODE_NAME);
         return false;
         }
     
     //Required:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
         {
-        ECObjectsLogger::Log()->errorv (L"Invalid PresentationRuleSetXML: %hs element must contain a %hs attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
+        LOG.errorv (L"Invalid PresentationRuleSetXML: %hs element must contain a %hs attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
         return false;
         }
 
@@ -85,21 +91,33 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSupplemental, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL))
         m_isSupplemental = false;
 
-    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_version, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSION))
-        m_version = 1;
+    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supplementationPurpose, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE))
+        m_supplementationPurpose = L"";
+
+    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_versionMajor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR))
+        m_versionMajor = 1;
+
+    if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_versionMinor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR))
+        m_versionMinor = 0;
 
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_preferredImage, PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE))
         m_preferredImage = L"";
 
-    CommonTools::LoadRulesFromXmlNode <RootNodeRule,    RootNodeRuleList>    (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ChildNodeRule,   ChildNodeRuleList>   (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ContentRule,     ContentRuleList>     (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <ImageIdOverride, ImageIdOverrideList> (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <LabelOverride,   LabelOverrideList>   (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <StyleOverride,   StyleOverrideList>   (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <GroupingRule,    GroupingRuleList>    (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME);
+    if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSearchEnabled, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED))
+        m_isSearchEnabled = true;
+
+    CommonTools::LoadRulesFromXmlNode <RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <ContentRule,       ContentRuleList>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <ImageIdOverride,   ImageIdOverrideList>   (ruleSetNode, m_imageIdRules,     IMAGE_ID_OVERRIDE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <LabelOverride,     LabelOverrideList>     (ruleSetNode, m_labelOverrides,   LABEL_OVERRIDE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <StyleOverride,     StyleOverrideList>     (ruleSetNode, m_styleOverrides,   STYLE_OVERRIDE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <GroupingRule,      GroupingRuleList>      (ruleSetNode, m_groupingRules,    GROUPING_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions, LOCALIZATION_DEFINITION_XML_NODE_NAME);
-    CommonTools::LoadRulesFromXmlNode <CheckBoxRule,    CheckBoxRuleList>    (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <UserSettingsGroup, UserSettingsGroupList> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <CheckBoxRule,      CheckBoxRuleList>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <RenameNodeRule,    RenameNodeRuleList>    (ruleSetNode, m_renameNodeRules,  RENAMENODE_RULE_XML_NODE_NAME);
+    CommonTools::LoadRulesFromXmlNode <SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME);
 
     return true;
     }
@@ -111,21 +129,27 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     {
     BeXmlNodeP ruleSetNode = xmlDom.AddNewElement (PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, NULL);
 
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID,      m_ruleSetId.c_str ());
-    ruleSetNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS,              m_supportedSchemas.c_str ());
-    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL, m_isSupplemental);
-    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSION,        m_version);
-    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE, m_preferredImage.c_str ());
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID,              m_ruleSetId.c_str ());
+    ruleSetNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS,                      m_supportedSchemas.c_str ());
+    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL,         m_isSupplemental);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE, m_supplementationPurpose.c_str ());
+    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR,           m_versionMajor);
+    ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR,           m_versionMinor);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE,         m_preferredImage.c_str ());
+    ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED,        m_isSearchEnabled);
 
-    CommonTools::WriteRulesToXmlNode<RootNodeRule,    RootNodeRuleList>    (ruleSetNode, m_rootNodesRules);
-    CommonTools::WriteRulesToXmlNode<ChildNodeRule,   ChildNodeRuleList>   (ruleSetNode, m_childNodesRules);
-    CommonTools::WriteRulesToXmlNode<ContentRule,     ContentRuleList>     (ruleSetNode, m_contentRules);
-    CommonTools::WriteRulesToXmlNode<ImageIdOverride, ImageIdOverrideList> (ruleSetNode, m_imageIdRules);
-    CommonTools::WriteRulesToXmlNode<LabelOverride,   LabelOverrideList>   (ruleSetNode, m_labelOverrides);
-    CommonTools::WriteRulesToXmlNode<StyleOverride,   StyleOverrideList>   (ruleSetNode, m_styleOverrides);
-    CommonTools::WriteRulesToXmlNode<GroupingRule,    GroupingRuleList>    (ruleSetNode, m_groupingRules);
+    CommonTools::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
+    CommonTools::WriteRulesToXmlNode<ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules);
+    CommonTools::WriteRulesToXmlNode<ContentRule,       ContentRuleList>       (ruleSetNode, m_contentRules);
+    CommonTools::WriteRulesToXmlNode<ImageIdOverride,   ImageIdOverrideList>   (ruleSetNode, m_imageIdRules);
+    CommonTools::WriteRulesToXmlNode<LabelOverride,     LabelOverrideList>     (ruleSetNode, m_labelOverrides);
+    CommonTools::WriteRulesToXmlNode<StyleOverride,     StyleOverrideList>     (ruleSetNode, m_styleOverrides);
+    CommonTools::WriteRulesToXmlNode<GroupingRule,      GroupingRuleList>      (ruleSetNode, m_groupingRules);
     CommonTools::WriteRulesToXmlNode<LocalizationResourceKeyDefinition, LocalizationResourceKeyDefinitionList> (ruleSetNode, m_localizationResourceKeyDefinitions);
-    CommonTools::WriteRulesToXmlNode<CheckBoxRule,    CheckBoxRuleList>    (ruleSetNode, m_checkBoxRules);
+    CommonTools::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (ruleSetNode, m_userSettings);
+    CommonTools::WriteRulesToXmlNode<CheckBoxRule,      CheckBoxRuleList>      (ruleSetNode, m_checkBoxRules);
+    CommonTools::WriteRulesToXmlNode<RenameNodeRule,    RenameNodeRuleList>    (ruleSetNode, m_renameNodeRules);
+    CommonTools::WriteRulesToXmlNode<SortingRule,       SortingRuleList>       (ruleSetNode, m_sortingRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,7 +157,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString)
     {
-    ECObjectsLogger::Log()->debugv (L"About to read PrsentationRuleSet from string.");
+    LOG.debugv (L"About to read PrsentationRuleSet from string.");
 
     BeXmlStatus xmlStatus;
     size_t stringSize = wcslen (xmlString) * sizeof(WChar);
@@ -141,7 +165,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
     
     if (BEXML_Success != xmlStatus)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to load PrsentationRuleSet from xml string.");
+        LOG.errorv (L"Failed to load PrsentationRuleSet from xml string.");
         return NULL;
         }
     
@@ -149,7 +173,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
 
-    ECObjectsLogger::Log()->errorv (L"Failed to load PrsentationRuleSet from xml string.");
+    LOG.errorv (L"Failed to load PrsentationRuleSet from xml string.");
     return NULL;
     }
 
@@ -158,13 +182,13 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath)
     {
-    ECObjectsLogger::Log()->debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath);
+    LOG.debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath);
         
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, xmlFilePath);
     if (xmlStatus != BEXML_Success || !xmlDom.IsValid ())
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
+        LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
         return NULL;
         }
     
@@ -172,7 +196,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
 
-    ECObjectsLogger::Log()->errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
+    LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath);
     return NULL;
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auipresentationmgr.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,22 +11,32 @@
 
 USING_NAMESPACE_EC
 
+template <typename ProviderType>
+struct RefPtrComparer
+    {
+    bool operator () (RefCountedPtr<ProviderType> const& rhs, RefCountedPtr<ProviderType> const& lhs)
+        {
+        return rhs.get() <lhs.get();
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename ProviderType, typename ContainerType>
-void            ECPresentationManager::CheckAndAddProviderFromList (ProviderType & provider, ContainerType& providerList)
+bool            ECPresentationManager::CheckAndAddProviderFromList (ProviderType & provider, ContainerType& providerList)
     {
     if (providerList.empty())
         {
         providerList.push_back(&provider);
-        return;
+        return false;
         }
-
-    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
-    if (*iter == &provider)
-        return;
+    RefCountedPtr <ProviderType> providerPtr (&provider);
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
+    if (iter != providerList.end() && iter->get() == &provider)
+        return false;
     providerList.insert (iter, &provider);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -38,8 +48,9 @@ void            ECPresentationManager::RemoveProviderFromList (ProviderType & pr
     if (providerList.empty())
         return;
 
-    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
-    if (*iter != &provider)
+    RefCountedPtr <ProviderType> providerPtr (&provider);
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
+    if (iter == providerList.end() || iter->get() != &provider)
         return;
 
     providerList.erase(iter);
@@ -105,7 +116,7 @@ void            ECPresentationManager::RemoveProvider (IAUIContentServiceProvide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::AddProvider (ECPresentationCommandProviderCR provider)
+void            ECPresentationManager::AddProvider (ECPresentationCommandProviderR provider)
     {
     CheckAndAddProviderFromList (provider, m_cmdProviders);
     }
@@ -113,9 +124,20 @@ void            ECPresentationManager::AddProvider (ECPresentationCommandProvide
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECPresentationManager::RemoveProvider (ECPresentationCommandProviderCR provider)
+void            ECPresentationManager::RemoveProvider (ECPresentationCommandProviderR provider)
     {
     RemoveProviderFromList (provider, m_cmdProviders);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (UInt16 providerId)
+    {
+    for (T_CmdProviderSet::iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
+        if ((*iter)->GetProviderId () == providerId)
+            return iter->get();
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -151,50 +173,30 @@ void            ECPresentationManager::RemoveProvider (ECPresentationLocalizatio
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    dmitrijus.tiazlovas             09/2012
+* @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance) const
+void    ECPresentationManager::GetCommands (bvector<IUICommandPtr>& commands, IAUIDataContextCR instance, int purpose)
     {
-    return this->GetCommands (instance, ECPresentationManager::GENERAL_PURPOSE_QUERY);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>    ECPresentationManager::GetCommands (IAUIDataContextCR instance, int purpose) const
-    {
-    bvector<UICommandPtr> commands;
     for (T_CmdProviderSet::const_iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
-        {
-        bvector<UICommandPtr> commandList = (*iter)->GetCommand(instance, purpose);
-        std::copy (commandList.begin(), commandList.end(), std::back_inserter(commands));
-        }
-
-    return commands;
+        (*iter)->GetCommand(commands, instance, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <typename ProviderType>
-class ProviderSingletonPattern : public NonCopyableClass
+struct LoggingJournalProvider : public IJournalProvider
     {
-    public:
-    static ProviderType& GetProvider ()
-        {
-        ProviderType* provider = new ProviderType();
-        return *provider;
-        }
-    };
+    virtual WCharCP _GetProviderName(void) const override {return L"LoggingJournalProvider";}
+    virtual ProviderType _GetProviderType(void) const override {return JournalService;}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct LoggingJournalProvider : public IJournalProvider, public ProviderSingletonPattern<LoggingJournalProvider>
-    {
     virtual void    _JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) override
         {
         
+        }
+    static LoggingJournalProvider& GetProvider ()
+        {
+        LoggingJournalProvider* provider = new LoggingJournalProvider();
+        return *provider;
         }
     };
 
@@ -304,11 +306,47 @@ WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tabl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IAUIDataContextCP ECPresentationManager::GetSelection (void const* eventHub, bool subSelection)
+    {
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        {
+        if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
+            {
+            IAUIDataContextCP dataContext = (*iter)->_GetSelection (subSelection);
+            if (NULL == dataContext)
+                continue;
+
+            ECInstanceIterableCP iterable = dataContext->GetInstanceIterable();
+            if (NULL == iterable || iterable->begin() == iterable->end())
+                {
+                delete dataContext;
+                continue;
+                }
+
+            return dataContext;
+            }
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool sortECSelectionListenersByPriority (RefCountedPtr<ECSelectionListener> x, RefCountedPtr<ECSelectionListener> y)
+    {
+    return (x->GetPriority () > y->GetPriority ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RegisterSelectionHook (ECSelectionListener& listener)
     {
-    CheckAndAddProviderFromList (listener, m_selecitonListeners);
+    if (CheckAndAddProviderFromList (listener, m_selecitonListeners))
+        std::sort (m_selecitonListeners.begin(), m_selecitonListeners.end(), sortECSelectionListenersByPriority);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -327,7 +365,7 @@ void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR
     void const* eventHub = selectionEvent.GetEventHub();
     for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
         {
-        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+        if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             (*iter)->_OnSelection(selectionEvent);
         }
     }
@@ -340,7 +378,36 @@ void            ECPresentationManager::TriggerSubSelectionEvent (ECSelectionEven
     void const* eventHub = selectionEvent.GetEventHub();
     for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
         {
-        if (NULL == eventHub || (*iter)->GeteventHub() == eventHub)
+        if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             (*iter)->_OnSubSelection(selectionEvent);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECNativeImagePtr ECPresentationManager::GetOverlayImage (IAUIDataContextCR context, DPoint2dCR size)
+    {
+    for (T_ImageProviderSet::const_iterator iter = m_imageProviders.begin(); iter != m_imageProviders.end(); ++iter)
+        {
+        IECNativeImagePtr nativeImage = (*iter)->GetOverlayImage(context, size);
+        if (nativeImage.IsNull())
+            continue;
+
+        return nativeImage;
+        }
+    return NULL;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+int             ECPresentationManager::GetSelectionQueryScope()
+    {
+    int mask = 0;
+    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+        mask |= (*iter)->_GetSelectionQueryScope();
+    
+    return mask;
     }

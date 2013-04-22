@@ -2,13 +2,14 @@
 |
 |     $Source: PublicApi/EcPresentation/ecimagekey.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
-#include <Bentley/WString.h>
+/*__PUBLISH_SECTION_START__*/
 
+#pragma once
+#include <Bentley/WString.h>
+#include <ECObjects/ECObjects.h>
 typedef struct mdlDesc MdlDesc;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -61,3 +62,5 @@ struct ECImageKey
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/*__PUBLISH_SECTION_END__*/

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -370,6 +370,13 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 return ExprStatus_UnknownError;
                 }
 
+            IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
+            if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecValue, *IECTypeAdapterContext::Create (*primProp, *instance)))
+                {
+                evalResult.Clear();
+                return ExprStatus_UnknownError;
+                }
+
             evalResult = ecValue;
             return ExprStatus_Success;
             }
@@ -499,6 +506,13 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                     return ExprStatus_UnknownError;
                     }
 
+                IECTypeAdapter* typeAdapter = arrayProp->GetMemberTypeAdapter();
+                if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecValue, *IECTypeAdapterContext::Create (*arrayProp, *instance)))
+                    {
+                    evalResult.Clear();
+                    return ExprStatus_UnknownError;
+                    }
+
                 evalResult = ecValue;
                 return ExprStatus_Success;
                 }
@@ -576,7 +590,7 @@ void            InstanceExpressionContext::SetInstance(ECN::IECInstanceCR instan
 ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
     {
     if (NULL == m_staticMethod)
-        return ExprStatus_InstanceMethodRequired;
+        return ExprStatus_StaticMethodRequired;
 
     return (*m_staticMethod)(evalResult, arguments);
     }
@@ -587,7 +601,7 @@ ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR
 ExpressionStatus MethodReferenceStandard::_InvokeInstanceMethod (EvaluationResultR evalResult, EvaluationResultCR instanceData, EvaluationResultVector& arguments)
     {
     if (NULL == m_instanceMethod)
-        return ExprStatus_StaticMethodRequired;
+        return ExprStatus_InstanceMethodRequired;
 
     return (*m_instanceMethod)(evalResult, instanceData, arguments);
     }
@@ -849,6 +863,121 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> con
         }
     
     return context;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceListExpressionContext::InstanceListExpressionContext()
+  : ExpressionContext (NULL), m_initialized (false)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceListExpressionContext::InstanceListExpressionContext (bvector<IECInstancePtr> const& instances)
+  : ExpressionContext(NULL), m_initialized(false)
+    {
+    Initialize (instances);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceListExpressionContext::Initialize()
+    {
+    if (!m_initialized)
+        {
+        bvector<IECInstancePtr> instances;
+        _GetInstances (instances);
+        Initialize (instances);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceListExpressionContext::Initialize (bvector<IECInstancePtr> const& instances)
+    {
+    if (!m_initialized)
+        {
+        FOR_EACH (IECInstancePtr const& instance, instances)
+            {
+            // ###TODO: handle multiple instances of a single ECClass
+            InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create (NULL);
+            instanceContext->SetInstance (*instance);
+            m_instances.push_back (instanceContext.get());
+            }
+
+        m_initialized = true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus InstanceListExpressionContext::_ResolveMethod (MethodReferencePtr& result, wchar_t const* ident, bool)
+    {
+    return ExprStatus_UnknownSymbol;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus InstanceListExpressionContext::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, UInt32 startIndex)
+    {
+    WCharCP name = primaryList.GetName (startIndex);
+
+#if SUPPORT_INSTANCE_LIST_METHODS
+    // InstanceList method?
+    MethodReferencePtr method;
+    if (primaryList.GetOperation (startIndex) == TOKEN_LParen && ExprStatus_Success == ResolveMethod (method, name, false))
+        {
+        CallNodeP callNode = static_cast<CallNodeP> (primaryList.GetOperatorNode (startIndex));
+        return callNode->InvokeStaticMethod (evalResult, *method, globalContext);
+        }
+#endif
+
+    Initialize();
+
+    ExpressionStatus status = ExprStatus_UnknownSymbol;
+    if (NULL != name)
+        {
+        FOR_EACH (ExpressionContextPtr const& instance, m_instances)
+            if (ExprStatus_Success == (status = instance->GetValue (evalResult, primaryList, globalContext, startIndex)))
+                break;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, UInt32 startIndex)
+    {
+    Initialize();
+
+    ExpressionStatus status = ExprStatus_UnknownSymbol;
+    WCharCP name = primaryList.GetName (startIndex);
+    if (NULL != name)
+        {
+        FOR_EACH (ExpressionContextPtr const& instance, m_instances)
+            if (ExprStatus_Success == (status = instance->GetReference (evalResult, refResult, primaryList, globalContext, startIndex)))
+                break;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceListExpressionContextPtr InstanceListExpressionContext::Create (bvector<IECInstancePtr> const& instances)
+    {
+    return new InstanceListExpressionContext (instances);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

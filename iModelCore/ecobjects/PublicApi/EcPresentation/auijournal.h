@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auijournal.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ struct IJournalItem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct  IJournalProvider
+struct  IJournalProvider :  public IECPresentationProvider
     {
     protected:
         virtual void    _JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData) = 0;

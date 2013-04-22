@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1341,6 +1341,14 @@ NodePtr         Node::CreateBooleanLiteral(bool literalValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+NodePtr         Node::CreateNullLiteral()                   { return new NullLiteralNode(); }
+NodePtr         Node::CreatePoint2DLiteral (DPoint2dCR pt)  { return new Point2DLiteralNode (pt); }
+NodePtr         Node::CreatePoint3DLiteral (DPoint3dCR pt)  { return new Point3DLiteralNode (pt); }
+NodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return new DateTimeLiteralNode (ticks); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr         Node::CreateStringLiteral (wchar_t const* value)
@@ -2013,28 +2021,44 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
-    ExpressionStatus    status = GetOperandValues(leftResult, rightResult, context);
+    ExpressionStatus    status = ExprStatus_UnknownError;
 
-    if (ExprStatus_Success != status)
-        return status;
-
-    switch(m_operatorCode)
+    switch (m_operatorCode)
         {
-        case TOKEN_And:
-        case TOKEN_Or:
-        case TOKEN_Xor:
-            return Operations::PerformJunctionOperator(evalResult, _GetOperation(), leftResult, rightResult);
+    case TOKEN_And:
+    case TOKEN_Or:
+    case TOKEN_Xor:
+        status = GetOperandValues(leftResult, rightResult, context);
+        if (ExprStatus_Success == status)
+            status = Operations::PerformJunctionOperator(evalResult, _GetOperation(), leftResult, rightResult);
+        break;
+    case TOKEN_AndAlso:
+    case TOKEN_OrElse:
+        {
+        // Short-circuit operators do not evaluate righthand expression unless required.
+        status = GetLeftP()->GetValue (leftResult, context, false, true);
+        bool leftBool;
+        if (ExprStatus_Success == status && ExprStatus_Success == (status = leftResult.GetBoolean (leftBool, false)))
+            {
+            if (leftBool == (TOKEN_AndAlso == m_operatorCode))
+                {
+                // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
+                status = GetRightP()->GetValue (rightResult, context, false, true);
+                }
+            }
 
-        case TOKEN_AndAlso:
-            return Operations::PerformLogicalAnd(evalResult, leftResult, rightResult);
-
-        case TOKEN_OrElse:
-            return Operations::PerformLogicalOr(evalResult, leftResult, rightResult);
+        if (ExprStatus_Success == status)
+            {
+            leftResult.GetECValueR().SetBoolean (leftBool);
+            status = (TOKEN_AndAlso == m_operatorCode) ? Operations::PerformLogicalAnd (evalResult, leftResult, rightResult) : Operations::PerformLogicalOr (evalResult, leftResult, rightResult);
+            }
+        }
+        break;
+    default:
+        BeAssert(false && L"bad LogicalNode operator");
         }
 
-    BeAssert(false && L"bad LogicalNode operator");
-
-    return ExprStatus_UnknownError;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2354,7 +2378,7 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
         {
         wchar_t const*  leftString   = ecLeft.GetString();
         wchar_t const*  rightString  = ecRight.GetString();
-        int             intResult = !wcscmp(leftString, rightString);
+        int             intResult = wcscmp(leftString, rightString);
         bool            boolResult = false;
         
         switch (m_operatorCode)

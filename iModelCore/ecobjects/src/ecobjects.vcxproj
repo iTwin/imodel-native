@@ -70,7 +70,6 @@
     <ClCompile Include="ExpressionContext.cpp" />
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
-    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="persistence\IECSchemaManager.cpp" />
@@ -101,11 +100,13 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECInstanceIterable.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\auicommand.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\auievent.h" />
@@ -123,13 +124,12 @@
     <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h" />
     <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h" />
     <ClInclude Include="DateTimeInfoAccessor.h" />
+    <ClInclude Include="ecobjectsnativelog.h" />
     <ClInclude Include="ECObjectsPch.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="ecxml.h" />
-    <ClInclude Include="Logger.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
-    <ClInclude Include="StopWatch.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

@@ -2,7 +2,7 @@
 |
 |     $Source: src/DesignByContract.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -53,7 +53,7 @@ void LogFailureMessage (WCharCP message, ...)
     WString msg;
     va_start (arguments, message);              
     WString::VSprintf (msg, message, arguments);
-    Bentley::ECN::ECObjectsLogger::Log()->warning(msg.c_str());
+    LOG.warning(msg.c_str());
     }
 
 

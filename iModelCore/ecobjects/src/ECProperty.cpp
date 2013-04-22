@@ -1,10 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/ECProperty.cpp $
-|    $RCSfile: file.tpl,v $
-|   $Revision: 1.10 $
-|       $Date: 2005/11/07 15:38:45 $
-|     $Author: EarlinLutz $
 |
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -162,7 +158,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (WCharCP isReadOnly)
     bool bReadOnly;
     ECObjectsStatus status = ECXml::ParseBooleanString (bReadOnly, isReadOnly);
     if (ECOBJECTS_STATUS_Success != status)
-        ECObjectsLogger::Log()->errorv (L"Failed to parse the isReadOnly string '%ls' for ECProperty '%ls'.", isReadOnly, this->GetName().c_str());
+        LOG.errorv (L"Failed to parse the isReadOnly string '%ls' for ECProperty '%ls'.", isReadOnly, this->GetName().c_str());
     else
         SetIsReadOnly (bReadOnly);
         
@@ -204,27 +200,30 @@ bool ECProperty::GetIsPrimitive () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveECPropertyP ECProperty::GetAsPrimitiveProperty () const
-    {
-    // virtual get method is significantly faster than dynamic_cast
-    BeAssert (dynamic_cast<PrimitiveECPropertyP>(const_cast<ECPropertyP>(this)) == const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty());
-    return const_cast<ECPropertyP>(this)->_GetAsPrimitiveECProperty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::GetIsStruct () const
     {
     return this->_IsStruct();
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
+* @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StructECPropertyP ECProperty::GetAsStructProperty () const
+PrimitiveECPropertyCP   ECProperty::GetAsPrimitiveProperty() const  { return GetIsPrimitive() ? static_cast<PrimitiveECPropertyCP>(this) : NULL; }
+PrimitiveECPropertyP    ECProperty::GetAsPrimitivePropertyP()       { return const_cast<PrimitiveECPropertyP>(GetAsPrimitiveProperty()); }
+ArrayECPropertyCP       ECProperty::GetAsArrayProperty() const      { return GetIsArray() ? static_cast<ArrayECPropertyCP>(this) : NULL; }
+ArrayECPropertyP        ECProperty::GetAsArrayPropertyP()           { return const_cast<ArrayECPropertyP>(GetAsArrayProperty()); }
+StructECPropertyCP      ECProperty::GetAsStructProperty() const     { return GetIsStruct() ? static_cast<StructECPropertyCP>(this) : NULL; }
+StructECPropertyP       ECProperty::GetAsStructPropertyP()          { return const_cast<StructECPropertyP>(GetAsStructProperty()); }
+CalculatedPropertySpecificationCP ECProperty::GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
+bool                    ECProperty::IsCalculated() const            { return _IsCalculated(); }
+bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     {
-    return GetIsStruct() ? static_cast<StructECPropertyP>((ECPropertyP)this) : NULL;
+    bool wasCalculated = IsCalculated();
+    bool set = _SetCalculatedPropertySpecification (spec);
+    if (set && wasCalculated != IsCalculated())
+        m_class.InvalidateDefaultStandaloneEnabler();  // PropertyLayout has flag indicating property is calculated
+    
+    return set;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -233,14 +232,6 @@ StructECPropertyP ECProperty::GetAsStructProperty () const
 bool ECProperty::GetIsArray () const
     {
     return this->_IsArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ArrayECPropertyP ECProperty::GetAsArrayProperty () const
-    {
-    return GetIsArray() ? static_cast<ArrayECPropertyP>((ECPropertyP)this) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -334,11 +325,11 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        ECObjectsLogger::Log()->errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
+        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
+        LOG.warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
     return SCHEMA_READ_STATUS_Success;
     }
 
@@ -362,7 +353,7 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
     // we allow it to be overridden.
     if (baseProperty.GetIsArray())
         {
-        ArrayECPropertyP arrayProperty = baseProperty.GetAsArrayProperty();
+        ArrayECPropertyCP arrayProperty = baseProperty.GetAsArrayProperty();
         if (ARRAYKIND_Struct == arrayProperty->GetKind())
             return false;
         basePrimitiveType = arrayProperty->GetPrimitiveElementType();
@@ -395,13 +386,15 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (WStringCR typeName)
     if (ECOBJECTS_STATUS_Success != status)
         {            
         m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
-        ECObjectsLogger::Log()->warningv (L"Unrecognized primitive typeName '%ls' found in '%ls:%ls.%ls'. A type of 'string' will be used.",
+        LOG.warningv (L"Unrecognized primitive typeName '%ls' found in '%ls:%ls.%ls'. A type of 'string' will be used.",
                                 typeName.c_str(),
                                 this->GetClass().GetSchema().GetName().c_str(),
                                 this->GetClass().GetName().c_str(),
                                 this->GetName().c_str() );
         return status;
         }
+    else if (PRIMITIVETYPE_IGeometry == primitiveType)
+        m_originalTypeName = typeName; // Internally we treat everything as the common Bentley.Geometry.Common.IGeometry, but we need to preserve the actual type
 
     return SetType (primitiveType);
     }
@@ -420,25 +413,102 @@ PrimitiveType PrimitiveECProperty::GetType () const
 ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     {        
     m_primitiveType = primitiveType;        
+    SetCachedTypeAdapter (NULL);
     return ECOBJECTS_STATUS_Success;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveECProperty::IsCalculated() const
+bool PrimitiveECProperty::_IsCalculated() const
     {
-    return GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CalculatedPropertySpecificationCP PrimitiveECProperty::GetCalculatedPropertySpecification() const
+CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpecification() const
     {
+    // It's possible in pathological cases where schema specifies an invalid CalculatedECPropertySpecification we will attempt to evaluate
+    // it every time this method is called, but do we need to cater to such cases by avoiding doing so?
     if (m_calculatedSpec.IsNull())
-        m_calculatedSpec = CalculatedPropertySpecification::Create (*this);
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetType());
 
     return m_calculatedSpec.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::_IsCalculated() const
+    {
+    if (ARRAYKIND_Primitive == GetKind())
+        return m_calculatedSpec.IsValid() || GetCustomAttribute (L"CalculatedECPropertySpecification").IsValid();
+    else
+        return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationPtr& spec, IECInstanceP attr, ECPropertyR ecprop, PrimitiveType primitiveType)
+    {
+    if (NULL == attr)
+        {
+        spec = NULL;
+        return true;
+        }
+    else
+        {
+        IECInstancePtr oldAttr = ecprop.GetCustomAttribute (L"CalculatedECPropertySpecification");
+        ecprop.SetCustomAttribute (*attr);
+        CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
+        if (newSpec.IsValid())
+            {
+            spec = newSpec;
+            return true;
+            }
+        else
+            {
+            // retain old specification
+            if (oldAttr.IsValid())
+                ecprop.SetCustomAttribute (*oldAttr);
+            else
+                ecprop.RemoveCustomAttribute (L"CalculatedECPropertySpecification");
+
+            return false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
+    {
+    return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetType());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CalculatedPropertySpecificationCP ArrayECProperty::_GetCalculatedPropertySpecification() const
+    {
+    if (ARRAYKIND_Primitive == GetKind() && m_calculatedSpec.IsNull())
+        m_calculatedSpec = CalculatedPropertySpecification::Create (*this, GetPrimitiveElementType());
+
+    return m_calculatedSpec.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
+    {
+    if (ARRAYKIND_Primitive == GetKind())
+        return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
+    else
+        return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -474,7 +544,7 @@ bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
         
     if (baseProperty.GetIsArray())
         {
-        ArrayECPropertyP arrayProp = baseProperty.GetAsArrayProperty();
+        ArrayECPropertyCP arrayProp = baseProperty.GetAsArrayProperty();
         if (ARRAYKIND_Struct != arrayProp->GetKind())
             return false;
         }
@@ -507,14 +577,14 @@ ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, E
     ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because the typeName could not be parsed.", typeName.c_str());
+        LOG.warningv (L"Cannot resolve the type name '%ls' as a struct type because the typeName could not be parsed.", typeName.c_str());
         return status;
         }
     
     ECSchemaCP resolvedSchema = ecProperty.GetClass().GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because the namespacePrefix '%ls' can not be resolved to the primary or a referenced schema.", 
+        LOG.warningv (L"Cannot resolve the type name '%ls' as a struct type because the namespacePrefix '%ls' can not be resolved to the primary or a referenced schema.", 
             typeName.c_str(), namespacePrefix.c_str());
         return ECOBJECTS_STATUS_SchemaNotFound;
         }
@@ -522,7 +592,7 @@ ECObjectsStatus ResolveStructType (ECClassCP& structClass, WStringCR typeName, E
     structClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == structClass)
         {
-        ECObjectsLogger::Log()->warningv (L"Cannot resolve the type name '%ls' as a struct type because ECClass '%ls' does not exist in the schema '%ls'.", 
+        LOG.warningv (L"Cannot resolve the type name '%ls' as a struct type because ECClass '%ls' does not exist in the schema '%ls'.", 
             typeName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECOBJECTS_STATUS_ClassNotFound;
         }
@@ -539,7 +609,7 @@ ECObjectsStatus StructECProperty::_SetTypeName (WStringCR typeName)
     ECObjectsStatus status = ResolveStructType (structClass, typeName, *this);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to set the type name of ECStructProperty '%ls' to '%ls' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
+        LOG.errorv (L"Failed to set the type name of ECStructProperty '%ls' to '%ls' because the typeName could not be parsed into a resolvable ECClass.", this->GetName().c_str(), typeName.c_str());        
         return status;
         }
     else
@@ -569,6 +639,7 @@ ECObjectsStatus StructECProperty::SetType (ECClassCR structType)
         }
     
     m_structType = &structType;
+    SetCachedTypeAdapter (NULL);
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -593,7 +664,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 
     if (SCHEMA_READ_STATUS_FailedToParseXml == setterStatus)
         {
-        ECObjectsLogger::Log()->warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
+        LOG.warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_READ_STATUS_Success;
         }
 
@@ -681,7 +752,7 @@ ECObjectsStatus ArrayECProperty::_SetTypeName (WStringCR typeName)
         return SetStructElementType (structClass);
 
     m_originalTypeName = typeName;
-    ECObjectsLogger::Log()->warningv (L"TypeName '%ls' of '%ls.%ls.%ls' was not recognized. We will use 'string' intead.",
+    LOG.warningv (L"TypeName '%ls' of '%ls.%ls.%ls' was not recognized. We will use 'string' intead.",
                                     typeName.c_str(),
                                     this->GetClass().GetSchema().GetName().c_str(),
                                     this->GetClass().GetName().c_str(),
@@ -712,6 +783,10 @@ ECObjectsStatus ArrayECProperty::SetPrimitiveElementType (PrimitiveType primitiv
     {        
     m_arrayKind = ARRAYKIND_Primitive;
     m_primitiveType = primitiveType;
+
+    SetCachedTypeAdapter (NULL);
+    SetCachedMemberTypeAdapter (NULL);
+ 
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -734,7 +809,7 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
     PRECONDITION (NULL != structType, ECOBJECTS_STATUS_PreconditionViolated);
     if (!structType->GetIsStruct())
         {
-        ECObjectsLogger::Log()->errorv (L"ECArrayProperty '%ls' uses ECClass '%ls', but isStructClass='false' on '%ls'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
+        LOG.errorv (L"ECArrayProperty '%ls' uses ECClass '%ls', but isStructClass='false' on '%ls'", GetName().c_str(), structType->GetName().c_str(), structType->GetName().c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
 
@@ -746,6 +821,10 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
 
     m_arrayKind = ARRAYKIND_Struct;
     m_structType = structType;
+ 
+    SetCachedTypeAdapter (NULL);
+    SetCachedMemberTypeAdapter (NULL);
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -776,7 +855,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
     int count = BeStringUtilities::Swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
-        ECObjectsLogger::Log()->errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
+        LOG.errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
                  this->GetName().c_str(), minOccurs.c_str());        
         return ECOBJECTS_STATUS_ParseError;
         }    
@@ -820,7 +899,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
             iMaxOccurs = UINT_MAX;
         else
             {
-            ECObjectsLogger::Log()->errorv (L"Failed to set MaxOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
+            LOG.errorv (L"Failed to set MaxOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer or the string 'unbounded'.",
                      this->GetName().c_str(), maxOccurs.c_str());        
             return ECOBJECTS_STATUS_ParseError;
             }
@@ -840,5 +919,56 @@ bool IECTypeAdapter::IsTreatedAsString() const                                  
 IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
 IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
+bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) { return _ConvertToString (str, v, context, opts); }
+bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context)                    { return _ConvertFromString (v, str, context); }
+bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context)                           { return _ConvertToExpressionType (v, context); }
+bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context)                         { return _ConvertFromExpressionType (v, context); }
+bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                                        { return _RequiresExpressionTypeConversion(); }
+
+ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
+UInt32              IECTypeAdapterContext::GetComponentIndex() const     { return _GetComponentIndex(); }
+bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
+IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
+ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const
+    {
+    IECInstanceCP instance = GetECInstance();
+    if (NULL != instance)
+        return -1 != arrayIndex ? instance->GetValue (v, accessor, arrayIndex) : instance->GetValue (v, accessor);
+    else
+        return ECOBJECTS_STATUS_OperationNotSupported;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static IECTypeAdapter::Factory const* s_typeAdapterFactory;
+void IECTypeAdapter::SetFactory (Factory const& factory)                { s_typeAdapterFactory = &factory; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECTypeAdapter* ECProperty::GetTypeAdapter() const
+    {
+    if (NULL != GetCachedTypeAdapter())
+        return GetCachedTypeAdapter();
+    
+    return NULL != s_typeAdapterFactory ? &s_typeAdapterFactory->GetForProperty (*this) : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECTypeAdapter* ArrayECProperty::GetMemberTypeAdapter() const
+    {
+    if (NULL != GetCachedMemberTypeAdapter())
+        return GetCachedMemberTypeAdapter();
+
+    return NULL != s_typeAdapterFactory ? &s_typeAdapterFactory->GetForArrayMember (*this) : NULL;
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

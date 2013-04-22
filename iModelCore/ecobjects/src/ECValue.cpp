@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <Bentley/IStorage.h>   // for _FILETIME
 #include <Bentley/BeAssert.h>
+#include <Bentley/ValueFormat.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
@@ -204,7 +204,13 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
         else
             return NULL;
 
-        m_wchar = BeStringUtilities::Wcsdup(buf.c_str());
+        if (!buf.empty())
+            {
+            size_t size = buf.size() * sizeof(WChar);
+            m_wchar = BeStringUtilities::Wcsdup(buf.c_str());
+            memcpy (const_cast<WCharP>(m_wchar), &buf[0], size);
+            }
+
         setDataOwned (flags, ECVALUE_DATA_WChar, true);
         }
             
@@ -367,7 +373,7 @@ BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata
     //impossible to do time zone conversions right in a generic and portable way.
     if (metadata.GetKind () == DateTime::DATETIMEKIND_Local)
         {
-        ECObjectsLogger::Log ()->error (L"DateTime kind 'Local' not supported.");
+        LOG.error (L"DateTime kind 'Local' not supported.");
         BeAssert (false && L"DateTime kind 'Local' not supported.");
         return ERROR;
         }
@@ -605,7 +611,6 @@ bool            ECValue::IsPrimitive () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Copies this value, including all strings and array values held by this value.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::ConstructUninitialized()
@@ -657,23 +662,22 @@ void            ECValue::ShallowCopy (ECValueCR v)
 
         case PRIMITIVETYPE_String:
             {
-            // Only make a copy of the string if the original object had a copy.
-            if (0 != m_ownershipFlags)
-                {
-                // ###TODO: only copy the preferred encoding? Copy all encodings contained in other StringInfo?
-                m_ownershipFlags = 0; // prevent FreeAndClear() from attempting to free the strings that were temporarily copied by memset
-                m_stringInfo.FreeAndClear (m_ownershipFlags);
-                if (NULL != v.m_stringInfo.m_utf8)
-                    SetUtf8CP (v.m_stringInfo.m_utf8);
-                else if (NULL != v.m_stringInfo.m_utf16)
-                    SetUtf16CP (v.m_stringInfo.m_utf16);
+            // NB: Original comment: "Only make a copy of the string if the original object had a copy."
+            // ^ We don't know the lifetime of the original object vs. that of 'this', so we must always copy.
+
+            // ###TODO: only copy the preferred encoding? Copy all encodings contained in other StringInfo?
+            m_ownershipFlags = 0; // prevent FreeAndClear() from attempting to free the strings that were temporarily copied by memset
+            m_stringInfo.FreeAndClear (m_ownershipFlags);
+            if (NULL != v.m_stringInfo.m_utf8)
+                SetUtf8CP (v.m_stringInfo.m_utf8);
+            else if (NULL != v.m_stringInfo.m_utf16)
+                SetUtf16CP (v.m_stringInfo.m_utf16);
 #if !defined (_WIN32)
-                else if (NULL != v.m_stringInfo.m_wchar)
-                    SetString (v.m_stringInfo.m_wchar);
+            else if (NULL != v.m_stringInfo.m_wchar)
+                SetString (v.m_stringInfo.m_wchar);
 #endif
-                else
-                    SetString (NULL);
-                }
+            else
+                SetString (NULL);
 
             break;
             }
@@ -1222,7 +1226,7 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 WCharCP ECValue::GetString() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an ECN::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
-    return m_stringInfo.GetWChar (m_ownershipFlags);
+    return IsNull() ? NULL : m_stringInfo.GetWChar (m_ownershipFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1236,7 +1240,7 @@ Utf8CP  ECValue::GetUtf8CP() const
         return NULL;
         }
 
-    return m_stringInfo.GetUtf8 (m_ownershipFlags);
+    return IsNull() ? NULL : m_stringInfo.GetUtf8 (m_ownershipFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1250,7 +1254,7 @@ Utf16CP ECValue::GetUtf16CP() const
         return NULL;
         }
 
-    return m_stringInfo.GetUtf16 (m_ownershipFlags);
+    return IsNull() ? NULL : m_stringInfo.GetUtf16 (m_ownershipFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1295,6 +1299,14 @@ BentleyStatus ECValue::SetUtf16CP (Utf16CP string, bool holdADuplicate)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+const byte * ECValue::GetIGeometry(size_t& size) const
+    {
+    return GetBinary(size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 const byte * ECValue::GetBinary(size_t& size) const
@@ -1305,6 +1317,17 @@ const byte * ECValue::GetBinary(size_t& size) const
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::SetIGeometry(const byte * data, size_t size, bool holdADuplicate)
+    {
+    Clear();
+
+    m_primitiveType = PRIMITIVETYPE_IGeometry;
+    return SetBinaryInternal(data, size, holdADuplicate);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADuplicate)
@@ -1312,6 +1335,11 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
+    return SetBinaryInternal(data, size, holdADuplicate);
+    }
+
+BentleyStatus ECValue::SetBinaryInternal(const byte * data, size_t size, bool holdADuplicate)
+    {
     setDataOwned (m_ownershipFlags, ECVALUE_DATA_Binary, holdADuplicate);
     
     if (NULL == data)
@@ -1369,6 +1397,213 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     return SUCCESS;
     }    
 
+extern void convertByteArrayToString (WStringR outString, const byte *byteData, size_t numBytes);
+extern bool convertStringToByteArray (bvector<byte>& byteData, WCharCP stringData);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ECValue::ConvertPrimitiveToString (WStringR str) const
+    {
+    PRECONDITION (IsPrimitive() && "ECValue::ConvertPrimitiveToString() requires a primitive value", false);    
+    if (!IsPrimitive())
+        return false;
+    
+    str.clear();
+    if (IsNull())
+        return true;
+
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Binary:
+        {
+        size_t nBytes;
+        byte const* bytes = GetBinary (nBytes);
+        if (NULL != bytes)
+            convertByteArrayToString (str, bytes, nBytes);
+        }
+        break;
+    case PRIMITIVETYPE_Boolean:
+        str = GetBoolean() ? L"True" : L"False";
+        break;
+    case PRIMITIVETYPE_DateTime:
+        str.Sprintf (L"%I64d", GetDateTimeTicks());
+        break;
+    case PRIMITIVETYPE_Double:
+        str.Sprintf (L"%.13g", GetDouble());
+        break;
+    case PRIMITIVETYPE_Integer:
+        str.Sprintf (L"%d", GetInteger());
+        break;
+    case PRIMITIVETYPE_Long:
+        str.Sprintf (L"%I64d", GetLong());
+        break;
+    case PRIMITIVETYPE_Point2D:
+        {
+        DPoint2d pt = GetPoint2D();
+        str.Sprintf (L"%.13g,%.13g", pt.x, pt.y);
+        }
+        break;
+    case PRIMITIVETYPE_Point3D:
+        {
+        DPoint3d pt = GetPoint3D();
+        str.Sprintf (L"%.13g,%.13g,%.13g", pt.x, pt.y, pt.z);
+        }
+        break;
+    case PRIMITIVETYPE_String:
+        str = GetString();
+        break;
+    default:
+        BeAssert (false);
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
+    {
+    if (IsNull())
+        {
+        expr = L"Null";
+        return true;
+        }
+
+    PRECONDITION (IsPrimitive() && "ECValue::ConvertPrimitiveToECExpressionLiteral requires a primitive value", false);
+    
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
+    case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%I64d", GetDateTimeTicks()); return true;
+    case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13g", GetDouble()); return true;
+    case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
+    case PRIMITIVETYPE_Long:        expr.Sprintf (L"%I64d", GetLong()); return true;
+    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13g,%.13g}", GetPoint2D().x, GetPoint2D().y); return true;
+    case PRIMITIVETYPE_Point3D:
+        {
+        DPoint3d pt = GetPoint3D();
+        expr.Sprintf (L"{%.13g,%.13g,%.13g}", pt.x, pt.y, pt.z);
+        }
+        return true;
+    case PRIMITIVETYPE_String:
+        {
+        // Must escape quotes...
+        WString s (GetString());
+        s.ReplaceAll (L"\"", L"\"\"");
+        expr.Sprintf (L"\"%ls\"", s.c_str());
+        }
+        return true;
+    case PRIMITIVETYPE_Binary:
+    case PRIMITIVETYPE_IGeometry:
+        return false;
+    default:
+        BeAssert (false && L"Unsupported PrimitiveType");
+        return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
+    {
+    if (!IsString())
+        {
+        BeAssert (false);   // It's a private method, ought to have checked preconditions...
+        return false;
+        }
+    else if (PRIMITIVETYPE_String == primitiveType)
+        return true;
+    else if (IsNull())
+        {
+        SetPrimitiveType (primitiveType);
+        return true;
+        }
+            
+    WCharCP str = GetString();
+    switch (primitiveType)
+        {
+    case PRIMITIVETYPE_Binary:
+        {
+        bvector<byte> bytes;
+        if (!convertStringToByteArray (bytes, str))
+            return false;
+
+        SetBinary (&bytes.front(), bytes.size(), true);
+        }
+        break;
+    case PRIMITIVETYPE_Boolean:
+        if (0 == BeStringUtilities::Wcsicmp (L"true", str) || 0 == wcscmp (L"1", str))
+            SetBoolean (true);
+        else if (0 == BeStringUtilities::Wcsicmp (L"false", str) || 0 == wcscmp (L"0", str))
+            SetBoolean (false);
+        else
+            return false;
+        break;
+    case PRIMITIVETYPE_DateTime:
+    case PRIMITIVETYPE_Long:
+        {
+        Int64 i;
+        if (1 != BeStringUtilities::Swscanf (str, L"%lld", &i))
+            return false;
+        else if (PRIMITIVETYPE_Long == primitiveType)
+            SetLong (i);
+        else
+            SetDateTimeTicks (i);
+        }
+        break;
+    case PRIMITIVETYPE_Double:
+        {
+        double d;
+        if (1 == BeStringUtilities::Swscanf (str, L"%lg", &d))
+            SetDouble (d);
+        else
+            return false;
+        }
+        break;
+    case PRIMITIVETYPE_Integer:
+        {
+        Int64 i;
+        if (1 == BeStringUtilities::Swscanf (str, L"%lld", &i))
+            {
+            if (INT_MAX >= i && INT_MIN <= i)
+                SetInteger ((Int32)i);
+            else
+                return false;
+            }
+        else
+            return false;
+        }
+        break;
+    case PRIMITIVETYPE_Point2D:
+        {
+        DPoint2d pt;
+        if (2 == BeStringUtilities::Swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
+            SetPoint2D (pt);
+        else
+            return false;
+        }
+        break;
+    case PRIMITIVETYPE_Point3D:
+        {
+        DPoint3d pt;
+        if (3 == BeStringUtilities::Swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+            SetPoint3D (pt);
+        else
+            return false;
+        }
+        break;
+    default:
+        BeAssert (false);
+        return false;
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -1388,71 +1623,10 @@ WString    ECValue::ToString () const
         {
         return L"IECInstance containing struct value";
         }
-    else
-        {
-        UShort  valueKind = m_valueKind;
-        switch (valueKind)
-            {
-            case PRIMITIVETYPE_Integer:
-                {
-                str.Sprintf (L"%d", GetInteger());
-                break;
-                }
-            case PRIMITIVETYPE_Long:
-                {
-                str.Sprintf (L"%lld", GetLong());
-                break;
-                }            
-            case PRIMITIVETYPE_Double:
-                {
-                str.Sprintf (L"%lf", GetDouble());
-                break;
-                }            
-            case PRIMITIVETYPE_String:
-                {
-                return GetString();
-                }            
-            case PRIMITIVETYPE_Boolean:
-                {
-                return GetBoolean() ? L"true" : L"false";
-                }
-            case PRIMITIVETYPE_Point2D:
-                {
-                DPoint2d point = GetPoint2D();
-                str.Sprintf (L"{%lg,%lg}", point.x, point.y);
-                break;          
-                }
-            case PRIMITIVETYPE_Point3D:
-                {
-                DPoint3d point = GetPoint3D();
-                str.Sprintf (L"{%lg,%lg,%lg}", point.x, point.y, point.z);
-                break;          
-                }
-            case PRIMITIVETYPE_DateTime:
-                {
-                DateTime dateTime = GetDateTime();
-                if (!m_dateTimeInfo.IsMetadataSet ())
-                    {
-                    return dateTime.ToString ();
-                    }
-
-                str.Sprintf (L"%ls [%ls]", dateTime.ToString ().c_str (), m_dateTimeInfo.MetadataToString ().c_str ());
-                break;
-                }
-            case PRIMITIVETYPE_Binary:
-                {
-                size_t size;
-                GetBinary(size);
-                str.Sprintf (L"Blob(%d)", size);
-                break;
-                }
-                
-            default:
-                {
-                return L"ECN::ECValue::ToString needs work... unsupported data type";
-                }            
-            }
-        }
+    else if (PRIMITIVETYPE_DateTime == m_valueKind)
+        str = GetDateTime().ToString(); // want something more readable than the ticks
+    else if (!ConvertPrimitiveToString (str))
+        str = L"<error>";
         
     return str;
     }
@@ -1477,6 +1651,8 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         SetString (strVal.c_str());
         return true;
         }
+    else if (IsString())
+        return ConvertToPrimitiveFromString (newType);
 
     PrimitiveType curType = GetPrimitiveType();
     switch (newType)
@@ -1489,10 +1665,37 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
             double roundingTerm = DoubleOps::AlmostEqual (GetDouble(), 0.0) ? 0.0 : GetDouble() > 0.0 ? 0.5 : -0.5;
             i = (Int32)(GetDouble() + roundingTerm);
             }
-        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%d", &i))
+        else if (PRIMITIVETYPE_Boolean == curType)
+            i = GetBoolean() ? 1 : 0;
+        else if (PRIMITIVETYPE_Long == curType)
+            {
+            if (INT_MAX >= GetLong() && INT_MIN <= GetLong())
+                i = (Int32)GetLong();
+            else
+                return false;
+            }
+        else
             return false;
 
         SetInteger (i);
+        }
+        return true;
+    case PRIMITIVETYPE_Long:
+        {
+        Int64 i;
+        if (PRIMITIVETYPE_Double == curType)
+            {
+            double roundingTerm = DoubleOps::AlmostEqual (GetDouble(), 0.0) ? 0.0 : GetDouble() > 0.0 ? 0.5 : -0.5;
+            i = (Int64)(GetDouble() + roundingTerm);
+            }
+        else if (PRIMITIVETYPE_Boolean == curType)
+            i = GetBoolean() ? 1 : 0;
+        else if (PRIMITIVETYPE_Integer == curType)
+            i = (Int64)GetInteger();
+        else
+            return false;
+
+        SetLong (i);
         }
         return true;
     case PRIMITIVETYPE_Double:
@@ -1500,15 +1703,48 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         double d;
         if (PRIMITIVETYPE_Integer == curType)
             d = GetInteger();
-        else if (PRIMITIVETYPE_String != curType || 1 != BeStringUtilities::Swscanf (GetString(), L"%lf", &d))
+        else if (PRIMITIVETYPE_Long == curType)
+            d = static_cast<double>(GetLong());     // warning C4244: '=' : conversion from 'Int64' to 'double', possible loss of data
+        else if (PRIMITIVETYPE_Boolean == curType)
+            d = GetBoolean() ? 1.0 : 0.0;
+        else
             return false;
 
         SetDouble (d);
         }
         return true;
-        }
+    case PRIMITIVETYPE_Boolean:
+        {
+        bool b;
+        if (PRIMITIVETYPE_Integer == curType)
+            b = GetInteger() != 0;
+        else if (PRIMITIVETYPE_Long == curType)
+            b = GetLong() != 0;
+        else if (PRIMITIVETYPE_Double == curType)
+            b = !DoubleOps::AlmostEqual (GetDouble(), 0.0);
+        else
+            return false;
 
-    return false;
+        SetBoolean (b);
+        }
+        return true;
+    case PRIMITIVETYPE_Point3D:
+        if (PRIMITIVETYPE_Point2D == curType)
+            {
+            SetPoint3D (DPoint3d::FromXYZ (GetPoint2D().x, GetPoint2D().y, 0.0));
+            return true;
+            }
+        return false;
+    case PRIMITIVETYPE_Point2D:
+        if (PRIMITIVETYPE_Point3D == curType)
+            {
+            SetPoint2D (DPoint2d::From (GetPoint3D().x, GetPoint3D().y));
+            return true;
+            }
+        return false;
+    default:
+        return false;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2216,6 +2452,19 @@ ECValueAccessorCR   ECPropertyValue::GetValueAccessor ()    const    { return m_
 ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_accessor; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyValuePtr     ECPropertyValue::GetPropertyValue (IECInstanceCR instance, WCharCP propertyAccessor)
+    {
+    ECValueAccessor va;
+
+    if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor (va, instance, propertyAccessor))
+        return NULL;
+
+    return  new ECPropertyValue (instance, va);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                ECPropertyValue::ResetValue()
@@ -2295,8 +2544,10 @@ bool                ECPropertyValue::HasChildValues () const
         return false;       // null array (should not happen) or null struct array instance
     else if (m_ecValue.IsStruct())
         return true;        // struct array entry
+#ifdef EMPTY_ARRAYS_DONT_HAVE_CHILD_VALUES
     else if (m_ecValue.IsArray() && 0 == m_ecValue.GetArrayInfo().GetCount())
         return false;       // empty array
+#endif
     else
         {
         BeAssert (m_ecValue.IsArray());
@@ -2320,15 +2571,12 @@ ECValuesCollectionPtr  ECPropertyValue::GetChildValues () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyValue ECValuesCollectionIterator::GetFirstPropertyValue (IECInstanceCR instance)
     {
-    ECValueAccessor firstPropertyAccessor;
-
     ECEnablerCR enabler = instance.GetEnabler();
-
-    if (1 == enabler.GetPropertyCount())
+    if (0 == enabler.GetClass().GetPropertyCount())
         return ECPropertyValue ();
 
     UInt32  firstIndex = enabler.GetFirstPropertyIndex (0);
-
+    ECValueAccessor firstPropertyAccessor;
     if (0 != firstIndex)
         firstPropertyAccessor.PushLocation (enabler, firstIndex, -1);    
 
@@ -2593,7 +2841,495 @@ ECValuesCollectionIterator::ECValuesCollectionIterator() : m_arrayCount(-1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValuesCollection::const_iterator ECValuesCollection::end () const
     {
-    return const_iterator (*new ECValuesCollectionIterator());
+    // WIP_FUSION: can we reduce the amount of dynamic allocation associated with iterating an ECValuesCollection?
+    if (m_end.IsNull())
+        m_end = new ECValuesCollectionIterator();
+
+    return const_iterator (*m_end);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::SupportsDotNetFormatting() const
+    {
+    if (IsNull() || !IsPrimitive())
+        return false;
+    
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Long:
+    case PRIMITIVETYPE_Integer:
+    case PRIMITIVETYPE_Double:
+        return true;
+    default:
+        return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct NumericFormat
+    {
+private:
+    static const UInt32 MAX_PRECISION = 97;         // A limit imposed by Snwprintf(); values above this will produce an exception
+
+    bool            insertThousandsSeparator;
+    PrecisionType   precisionType;
+    UInt8           widthBeforeDecimal;         // pad with leading zeros to meet this width
+    UInt8           minDecimalPrecision;        // pad with trailing zeros to meet this precision
+    UInt8           maxDecimalPrecision;        // remove trailing zeros between minDecimalPrecision and this
+    double          multiplier;
+    size_t          insertPos;
+
+    NumericFormat () : insertThousandsSeparator(false), precisionType(PRECISION_TYPE_Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
+
+    DoubleFormatterPtr ToFormatter() const
+        {
+        DoubleFormatterPtr fmtr = DoubleFormatter::Create();
+        fmtr->SetLeadingZero (widthBeforeDecimal > 0);
+        fmtr->SetTrailingZeros (maxDecimalPrecision > 0);
+        fmtr->SetPrecision (precisionType, maxDecimalPrecision);
+        fmtr->SetInsertThousandsSeparator (insertThousandsSeparator);
+        return fmtr;
+        }
+
+    static bool     ExtractStandardFormatPrecision (WCharCP fmt, UInt32& precision);
+    static bool     ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d);
+    static WCharCP  ParseNumberFormat (NumericFormat& numFormat, WCharCP start);
+    static WCharCP  SkipLiteralString (WCharCP start);
+public:
+    static bool                 FormatDouble (WStringR formatted, WCharCP formatString, double d);
+    static bool                 FormatInteger (WStringR formatted, WCharCP formatString, Int64 i);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::ExtractStandardFormatPrecision (WCharCP fmt, UInt32& precision)
+    {
+    // Expect 0-2 digits specifying a precision or width from 0-99
+    // Don't overwrite value of precision unless one is explicitly specified or cannot be extracted
+    bool isValidFormat = true;
+    BeAssert (NULL != fmt);
+    if (*fmt)
+        {
+        precision = 0;
+        if (iswdigit (*fmt))
+            {
+            precision = (UInt32)(*fmt - '0');
+            if (*++fmt)
+                {
+                if (iswdigit (*fmt))
+                    {
+                    precision *= 10;
+                    precision += (UInt32)(*fmt - '0');
+                    if (precision > MAX_PRECISION)
+                        precision = MAX_PRECISION;
+
+                    if (*++fmt)   // trailing characters
+                        isValidFormat = false;
+                    }
+                else
+                    isValidFormat = false;
+                }
+            }
+        else
+            isValidFormat = false;
+        }
+
+    return isValidFormat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
+    {
+    // Check for a couple of standard formats specific to integers
+    if (NULL != fmt)
+        {
+        WChar spec = *fmt;
+        WChar lspec = towlower (spec);
+        if ('d' == lspec || 'x' == lspec)
+            {
+            UInt32 precision = 0;
+            if (ExtractStandardFormatPrecision (fmt + 1, precision))
+                {
+                WChar buf[100]; // because max width is 99
+                switch (lspec)
+                    {
+                    case 'x':       // hexadecimal
+                        {
+                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HEXFORMAT_LeadingZeros;
+                        if ('X' == spec)
+                            opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
+
+                        BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
+                        }
+                        break;
+                    case 'd':       // decimal
+                        {
+                        BeStringUtilities::Snwprintf (buf, _countof(buf), L"%0*lld", precision, i);
+                        }
+                        break;
+                    }
+
+                formatted = buf;
+                return true;
+                }
+            }
+        }
+
+    // Treat as double
+    return FormatDouble (formatted, fmt, (double)i);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d)
+    {
+    // Limited support for following standard .NET specifiers. All can be upper- or lower-case, all take an optional width/precision from 0-99
+    //  E: scientific notation. Default precision 6.
+    //  C: Currency. Treated as F
+    //  F: Fixed-point. Default precision 2.
+    //  N: Includes group separators
+    //  R: Round-trippable. Treated as F with maximum precision.
+    //  P: Multiply input by 100, append '%'
+    //  G: Treated as fixed-point.
+
+    BeAssert (NULL != fmt && 0 != *fmt);
+
+    WChar spec = *fmt,
+          lspec = towlower (spec);
+
+    PrecisionType precisionType = PRECISION_TYPE_Decimal;
+    bool groupSeparators = false,
+         appendPercent = false,
+         ignoreExtractedPrecision = false;
+    switch (lspec)
+        {
+    case 'e':
+        precisionType = PRECISION_TYPE_Scientific;
+        break;
+    case 'p':
+        d *= 100.0;
+        appendPercent = true;
+        spec = lspec = 'f';
+        break;
+    case 'r':
+        ignoreExtractedPrecision = true;
+        spec = lspec = 'f';
+        break;
+    case 'n':
+        groupSeparators = true;
+        // fall-through intentional
+    case 'c':
+    case 'g':
+        spec = lspec = 'f';
+        break;
+    case 'f':
+        break;
+    default:
+        return false;
+        }
+
+    UInt32 precision = 'f' == lspec ? 2 : 6;
+    if (!ExtractStandardFormatPrecision (fmt + 1, precision))
+        return false;
+
+    DoubleFormatterPtr fmtr = DoubleFormatter::Create();
+
+    if (ignoreExtractedPrecision)
+        precision = MAX_PRECISION;
+    else
+        fmtr->SetTrailingZeros (true);
+
+    fmtr->SetLeadingZero (true);
+    fmtr->SetInsertThousandsSeparator (groupSeparators);
+    fmtr->SetPrecision (precisionType, (byte)precision);
+
+    formatted = fmtr->ToString (d);
+
+    if (appendPercent)
+        formatted.append (1, L'%');
+    else if (ignoreExtractedPrecision && formatted.length() > 1)
+        {
+        // DoubleFormatter is going to give us trailing zeros. Strip them off
+        size_t endPos = formatted.length() - 1,
+               startPos = formatted.find ('.');
+
+        while (formatted[endPos] == '0')
+            --endPos;
+
+        if (endPos == startPos)
+            --endPos;   // only zeros follow the decimal point, so remove it.
+
+        formatted.erase (endPos + 1);
+        }
+        
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
+    {
+    if (ApplyStandardNumericFormat (formatted, fmt, d))
+        return true;
+
+    // Custom formatting.
+    // Limitations:
+    //  -Expects a single contiguous number format like '###,##0.00#' consisting of only those four characters, with optional prefix and suffix.
+    //      i.e. "xxx ##,#00.0## xxx" is valid, "## xxx 000.0 xx 00" is not - only the "##" will be replaced with digits.
+    //  -Does not support custom exponent sign/width
+    //  -Does not support specifying varying formats for positive/negative/zero values
+    //  -Probably misc differences. Note that Microsoft's implementation does not match their documentation in all cases either, so we are not going to bend over backwards...
+
+    NumericFormat numFormat;
+    while (0 != *fmt)
+        {
+        switch (*fmt)
+            {
+            case '\'':
+            case '"':       // literal string
+                {
+                WCharCP endQuote = SkipLiteralString (fmt);
+                if (endQuote - fmt > 2)
+                    formatted.append (fmt + 1, endQuote - fmt - 1);
+
+                fmt = (0 != *endQuote) ? endQuote : endQuote - 1;   // in case of unclosed quote.
+                }
+                break;
+            case '\\':      // escaped character
+                if (0 != *++fmt)
+                    formatted.append (1, *fmt);
+
+                break;
+            case '%':
+                numFormat.multiplier *= 100.0;
+                formatted.append (1, '%');
+                break;
+            case ',':
+                if (numFormat.insertPos != -1)  // a comma anywhere after the number format acts as a scaling factor, IF no decimal precision specified
+                    {
+                    if (numFormat.maxDecimalPrecision == 0)
+                        numFormat.multiplier /= 1000.0;
+                    }
+                else
+                    formatted.append (1, ',');
+                break;
+            case 'e':
+            case 'E':
+                numFormat.precisionType = PRECISION_TYPE_Scientific;
+                // ignore exponent sign
+                fmt++;
+                if ('+' == *fmt || '-' == *fmt)
+                    fmt++;
+
+                // ignore exponent width
+                while ('0' == *fmt)
+                    fmt++;
+                
+                continue;   // we've already moved to next token
+            case '.':
+            case '0':
+            case '#':
+                if (numFormat.insertPos == -1)
+                    {
+                    numFormat.insertPos = formatted.length();
+                    fmt = ParseNumberFormat (numFormat, fmt);
+                    }
+                else
+                    formatted.append (1, *fmt++);
+                continue;   // we've already moved to next token
+            default:
+                formatted.append (1, *fmt);
+                break;
+            }
+
+        fmt++;
+        }
+
+    // It's possible the format string did not actually contain any placeholders for the digits, in which case we have no formatting to do
+    if (WString::npos != numFormat.insertPos)
+        {
+        DoubleFormatterPtr fmtr = numFormat.ToFormatter();
+        WString formattedDouble = fmtr->ToString (d * numFormat.multiplier);
+
+        // We have to pad width with leading zeros, DoubleFormatter doesn't support it.
+        if (numFormat.widthBeforeDecimal > 0)
+            {
+            size_t endPos = formattedDouble.find ('.');
+            if (WString::npos == endPos)
+                endPos = formattedDouble.length();
+
+            if ((UInt32)endPos < numFormat.widthBeforeDecimal)
+                formattedDouble.insert ((size_t)0, numFormat.widthBeforeDecimal - (UInt32)endPos, '0');
+            }
+        else if (formattedDouble.length() > 0 && formattedDouble[0] == '0')
+            {
+            // DoubleFormatter ignores our leading zero setting if the value of the double is zero
+            formattedDouble.erase (0, 1);
+            }
+
+        // And we have to remove trailing zeros
+        if (numFormat.minDecimalPrecision < numFormat.maxDecimalPrecision)
+            {
+            size_t decimalPos = (UInt32)formattedDouble.find ('.');
+            if (WString::npos != decimalPos)
+                {
+                UInt32 minPos = (UInt32)decimalPos + 1 + numFormat.minDecimalPrecision, // the minimum number of decimal digits to keep, regardless of whether or not they are zero
+                       maxPos = (UInt32)decimalPos + 1 + numFormat.maxDecimalPrecision;
+
+                if (maxPos >= (UInt32)formattedDouble.length())
+                    maxPos = (UInt32)formattedDouble.length()-1;
+
+                while (maxPos >= minPos && '0' == formattedDouble[maxPos])
+                    formattedDouble.erase (maxPos--);
+
+                // trailing decimal point?
+                if ((UInt32)decimalPos == maxPos)
+                    formattedDouble.erase (decimalPos);
+                }
+            }
+
+            if (numFormat.insertPos == formatted.length())
+                formatted.append (formattedDouble);
+            else if (numFormat.insertPos < formatted.length())
+                formatted.insert (numFormat.insertPos, formattedDouble);
+            else
+                { BeAssert (false); return false; }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP NumericFormat::SkipLiteralString (WCharCP start)
+    {
+    WCharCP end = start + 1;
+    WChar quoteChar = *start;
+
+    while (*end)
+        {
+        if (quoteChar == *end)
+            break;
+
+        ++end;
+        }
+
+    return end;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, WCharCP start)
+    {
+    bool foundZero = false;
+    bool stopProcessing = false;
+    WCharCP cur = start;
+    while (0 != *cur)
+        {
+        switch (*cur)
+            {
+            case '0':
+                foundZero = true;
+                numFormat.widthBeforeDecimal++;
+                break;
+            case '#':
+                if (foundZero)
+                    numFormat.widthBeforeDecimal++;
+                break;
+            case ',':
+                // check if this is a trailing comma, in which case we treat it as a scaling factor, not a group separator
+                if (*(cur+1) == '.' || *(cur+1) == ',')
+                    {
+                    // Is a scaling factor if immediately precedes decimal point
+                    numFormat.multiplier /= 1000.0;
+                    break;
+                    }
+                else if (*(cur+1) != '0' && *(cur+1) != '#')
+                    {
+                    // Is a scaling factor, will be processed by calling code
+/*<==*/             return cur;
+                    }
+                else
+                    {
+                    // Is a group separator
+                    numFormat.insertThousandsSeparator = true;
+                    break;
+                    }
+            case '.':
+            default:
+                stopProcessing = true;
+                break;
+            }
+        
+        if (stopProcessing)
+            break;
+        else
+            ++cur;
+        }
+
+    if ('.' == *cur)
+        {
+        UInt32 numPlaceholders = 0;
+        cur++;
+        stopProcessing = false;
+        while (0 != *cur)
+            {
+            switch (*cur)
+                {
+                case '0':
+                    numPlaceholders++;
+                    numFormat.minDecimalPrecision = numFormat.maxDecimalPrecision = numPlaceholders;
+                    break;
+                case '#':
+                    numPlaceholders++;
+                    numFormat.maxDecimalPrecision = numPlaceholders;
+                    break;
+                default:
+                    stopProcessing = true;
+                    break;
+                }
+
+            if (stopProcessing)
+                break;
+            else
+                ++cur;
+            }
+        }
+
+    return cur;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
+    {
+    if (IsNull())
+        return false;
+
+    switch (GetPrimitiveType())
+        {
+    case PRIMITIVETYPE_Integer:
+        return NumericFormat::FormatInteger (out, fmt, GetInteger());
+    case PRIMITIVETYPE_Long:
+        return NumericFormat::FormatInteger (out, fmt, GetLong());
+    case PRIMITIVETYPE_Double:
+        return NumericFormat::FormatDouble (out, fmt, GetDouble());
+    default:
+        BeAssert (false && L"Call ECValue::SupportsDotNetFormatting() to determine if this ECValue can be formatted");
+        return false;
+        }
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

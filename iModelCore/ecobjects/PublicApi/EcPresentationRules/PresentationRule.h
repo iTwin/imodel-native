@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRule.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,14 +12,14 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_START__*/
 
-//This enumerator contains trees for which the rule can be applied.
+//! This enumerator contains trees for which the rule can be applied.
 enum RuleTargetTree
     {
-    //Apply rule for main tree. (default)
+    //! Apply rule for main tree. (default)
     TargetTree_MainTree,
-    //Apply rule for selection tree.
+    //! Apply rule for selection tree.
     TargetTree_SelectionTree,
-    //Apply rule for both trees.
+    //! Apply rule for both trees.
     TargetTree_Both
     };
 
@@ -36,18 +36,25 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
+    //! Constructor. It is used to initialize the rule with default settings.
     ECOBJECTS_EXPORT PresentationKey ()
         : m_priority (1000)
         {
         }
 
+    //! Constructor.
     ECOBJECTS_EXPORT PresentationKey (int priority) 
         : m_priority (priority)
         {
         }
 
+    //! Returns XmlElement name that is used to read/save this rule information.
     ECOBJECTS_EXPORT virtual CharCP         _GetXmlElementName () = 0;
+
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode) = 0;
+
+    //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
 
 public:
@@ -77,17 +84,22 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
+    //! Constructor. It is used to initialize the rule with default settings.
     ECOBJECTS_EXPORT PresentationRule ()
         : PresentationKey (), m_condition (L""), m_onlyIfNotHandled (false)
         {
         }
 
+    //! Constructor.
     ECOBJECTS_EXPORT PresentationRule (WStringCR condition, int priority, bool onlyIfNotHandled)
         : PresentationKey (priority), m_condition (condition), m_onlyIfNotHandled (onlyIfNotHandled)
         {
         }
 
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode);
+
+    //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode);
 
 public:

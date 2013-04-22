@@ -6,12 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
 #include <ECObjects\ECValue.h>
+#include <Bentley/BeTimeUtilities.h>
+
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -821,7 +822,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
     WCharCP stringValueP = NULL;
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[1].Name", testString.c_str()));
-    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name));
+    EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, L"ManufacturerArray[1].Name"));
     EXPECT_STREQ (testString.c_str(), stringValueP);
 
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetStringValue (*instance, L"ManufacturerArray[0].Name", testString2.c_str()));
@@ -879,7 +880,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v2.SetBoolean (true);
     EXPECT_FALSE  (v1.Equals (v2));
 
-    DateTime timeInput  = DateTime::GetCurrentTimeUtc ();
+    DateTime timeInput = DateTime::GetCurrentTimeUtc ();
     v1.SetDateTime(timeInput);
     v2.SetDateTime(timeInput);
     EXPECT_TRUE   (v1.Equals (v2));
@@ -944,9 +945,10 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 
     const int expectedPropertyCount = 19;
 
-    UInt32 propertyCount = enabler->GetPropertyCount();
-
+/** -- Can't test this method via published API -- tested indirectly below
+    UInt32 propertyCount = enabler->GetClassLayout().GetPropertyCount();
     EXPECT_EQ (expectedPropertyCount, propertyCount);
+**/
 
     wchar_t* expectedProperties [expectedPropertyCount] = 
         {
@@ -1123,11 +1125,6 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
 
     StandaloneECEnablerPtr enabler = schema->GetClassP(L"EmptyClass")->GetDefaultStandaloneEnabler ();
 
-    //The class has zero properties?
-    //EXPECT_TRUE (0 == enabler->GetPropertyCount());
-
-    EXPECT_TRUE (1 == enabler->GetPropertyCount());
-
     ASSERT_TRUE (enabler.IsValid());
 
     /*--------------------------------------------------------------------------
@@ -1278,7 +1275,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
-    ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstance()->CopyInstanceProperties (*instance);
+    ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstanceP()->CopyInstanceProperties (*instance);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
 
     collection = ECValuesCollection::Create (*duplicateInstance);
@@ -1323,7 +1320,7 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     mergeFromInstance->SetValue(L"Field_Tested", nullBool);
     mergeFromInstance->SetValue (L"Size",        ECValue (tstSize));
 
-    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstance ();
+    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*mergeFromInstance);
 
     bvector <AccessStringValuePair> expectedValues;
@@ -1773,7 +1770,7 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
 
     ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
-    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*instance);
 
     collection = ECValuesCollection::Create (*toInstance);
@@ -1809,7 +1806,7 @@ TEST_F(MemoryLayoutTests, MergeStruct)
 
     ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
-    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstance ();
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP ();
     mbInstance->MergePropertiesFromInstance (*employeeInstance);
 
     collection = ECValuesCollection::Create (*toInstance);
@@ -2196,7 +2193,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (pntVal3.IsPoint3D());
     EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
     WString point3Str = pntVal3.ToString();
-    EXPECT_TRUE (0 == point3Str.compare (L"{10,100,1000}"));
+    EXPECT_TRUE (0 == point3Str.compare (L"10,100,1000"));
 
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
@@ -2205,7 +2202,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     DPoint2d outPoint2 = pntVal2.GetPoint2D ();
     EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
     WString point2Str = pntVal2.ToString();
-    EXPECT_TRUE (0 == point2Str.compare (L"{10,100}"));
+    EXPECT_TRUE (0 == point2Str.compare (L"10,100"));
 
     // DateTime
     DateTime nowUtc = DateTime::GetCurrentTimeUtc ();
@@ -2592,11 +2589,16 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
         timer.Stop();
         
         elapsedSeconds += timer.GetElapsedSeconds();
-        instance->GetAsMemoryECInstance()->ClearValues();
+        instance->GetAsMemoryECInstanceP()->ClearValues();
         }
     
     //wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     };
     
+
+TEST_F (MemoryLayoutTests, TestValueAccessor)
+    {
+    ECValueAccessor m_accessor;
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

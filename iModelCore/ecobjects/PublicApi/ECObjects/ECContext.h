@@ -65,7 +65,7 @@ friend struct SearchPathSchemaFileLocater;
         };
 private:
     IStandaloneEnablerLocaterP                              m_standaloneEnablerLocater;
-    ECSchemaCache                                           m_knownSchemas;
+    ECSchemaCachePtr                                        m_knownSchemas;
     bvector<bool>                                           m_knownSchemaDirtyStack;
     typedef bset<SchemaLocatorKey>                          SchemaLocatorSet;
     SchemaLocatorSet                                        m_locators;
@@ -87,10 +87,9 @@ protected:
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
     IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
-    void                AddSchema(ECSchemaR schema);
+    ECObjectsStatus     AddSchema(ECSchemaR schema);
     void                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
-    ECSchemaCacheR      GetCache()  { return m_knownSchemas; }
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
 
@@ -132,7 +131,11 @@ public:
     //! @param[in] key  The SchemaKey that defines the schema (name and version information) that is being looked for
     //! @param[in] matchType    The match type criteria used to locate the requested schema
     //! @returns An ECSchemaPtr.  This ptr will return false for IsValid() if the schema could not be located.
-    ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+    ECOBJECTS_EXPORT ECSchemaPtr LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+
+    //! Gets the schemas cached by this context.
+    //! @returns Schemas cached by this context
+    ECOBJECTS_EXPORT ECSchemaCacheR GetCache ();
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
@@ -142,14 +145,27 @@ typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
 //=======================================================================================
 struct ECInstanceReadContext : RefCountedBase
 {
+    // InstanceXml does not contain primitive type information. An IPrimitiveTypeResolver can assist the
+    // ECInstanceReadContext in determining the type of a serialized primitive value.
+    // If no IPrimitiveTypeResolver is supplied, the primitive type defined for the ECProperty is used.
+    struct IPrimitiveTypeResolver
+        {
+/*__PUBLISH_SECTION_END__*/
+        virtual PrimitiveType       _ResolvePrimitiveType (PrimitiveECPropertyCR ecproperty) const = 0;
+        virtual PrimitiveType       _ResolvePrimitiveArrayType (ArrayECPropertyCR ecproperty) const = 0;
+/*__PUBLISH_SECTION_START__*/
+        };
+
 /*__PUBLISH_SECTION_END__*/
 private:
     IStandaloneEnablerLocaterP          m_standaloneEnablerLocater;
     StandaloneECInstancePtr             m_dummy;
     ECSchemaCR                          m_fallBackSchema;
+    IPrimitiveTypeResolver const*       m_typeResolver;
+
 protected:
-    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema)
-        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema)
+    ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
+        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver)
         {
         }
 
@@ -160,6 +176,8 @@ protected:
     virtual ECSchemaCP  _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
 
 public:
+    PrimitiveType           GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const  { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType(); }
+    PrimitiveType           GetSerializedPrimitiveArrayType (ArrayECPropertyCR ecprop) const { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveArrayType (ecprop) : ecprop.GetPrimitiveElementType(); }
 
     ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 
@@ -172,7 +190,7 @@ public:
 public:
 
     //! - For use when the caller knows the schema of the instance he is deserializing.
-    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL);
+    ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaCR, IStandaloneEnablerLocaterP = NULL, IPrimitiveTypeResolver const* typeResolver = NULL);
 
     //! - For use when the caller does not know the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
