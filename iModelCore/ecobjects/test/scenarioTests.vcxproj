@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{BBE7BE41-3763-40D1-BB1B-34EB81E4636B}</ProjectGuid>
+    <ProjectGuid>{D602B019-D582-4049-8184-82C7ED1041F0}</ProjectGuid>
     <RootNamespace>ScenatioTests</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
     <ProjectName>ECObjectsScenarioTests</ProjectName>
@@ -62,12 +62,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ECObjectsTestPCH.cpp" />
+    <ClCompile Include="scenario\ValueTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="scenario\CompressInstanceTests.cpp" />
+    <ClCompile Include="scenario\AccessorTests.cpp" />
+    <ClCompile Include="scenario\ECRelationshipTests.cpp" />
+    <ClCompile Include="scenario\InstanceTests.cpp" />
     <ClCompile Include="scenario\schematests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
