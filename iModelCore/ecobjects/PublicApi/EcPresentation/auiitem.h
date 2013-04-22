@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <ECObjects\ECObjectsAPI.h>
+#include <ECObjects/ECObjectsAPI.h>
 #include "ecpresentationtypedefs.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
