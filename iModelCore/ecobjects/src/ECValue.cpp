@@ -8,7 +8,6 @@
 #include "ECObjectsPch.h"
 #include <Bentley/BeAssert.h>
 #include <Bentley/ValueFormat.h>
-#include <boost/algorithm/string/replace.hpp>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
@@ -1493,7 +1492,7 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         {
         // Must escape quotes...
         WString s (GetString());
-        boost::replace_all (s, L"\"", L"\"\"");
+        s.ReplaceAll (L"\"", L"\"\"");
         expr.Sprintf (L"\"%ls\"", s.c_str());
         }
         return true;

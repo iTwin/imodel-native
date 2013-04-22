@@ -16,7 +16,6 @@
 #include <Bentley/BeFileListIterator.h>
 
 #include <ECObjects/StronglyConnectedGraph.h>
-#include <boost/iterator/iterator_adaptor.hpp>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
