@@ -660,5 +660,5 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 
 /// @endcond BENTLEY_SDK_All
 /*__PUBLISH_SECTION_END__*/
-#pragma make_public (Bentley::ECN::IECInstance)
+//#pragma make_public (Bentley::ECN::IECInstance)
 /*__PUBLISH_SECTION_START__*/

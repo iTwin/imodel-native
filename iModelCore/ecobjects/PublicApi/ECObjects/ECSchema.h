@@ -2164,7 +2164,7 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 
 /// @endcond BENTLEY_SDK_All
 
-#pragma make_public (Bentley::ECN::ECClass)
-#pragma make_public (Bentley::ECN::ECSchema)
+//#pragma make_public (Bentley::ECN::ECClass)
+//#pragma make_public (Bentley::ECN::ECSchema)
 
 

@@ -856,4 +856,4 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 
 /// @endcond BENTLEY_SDK_All
 
-#pragma make_public (Bentley::ECN::ECValuesCollection)
+//#pragma make_public (Bentley::ECN::ECValuesCollection)

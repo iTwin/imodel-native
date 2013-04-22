@@ -246,4 +246,4 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 /// @endcond BENTLEY_SDK_Desktop
 
 /*__PUBLISH_SECTION_END__*/
-#pragma make_public (Bentley::ECN::ECInstanceIterable)
+//#pragma make_public (Bentley::ECN::ECInstanceIterable)
