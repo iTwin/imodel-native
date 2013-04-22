@@ -2271,7 +2271,7 @@ ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
     if (!GetClass().GetName().Equals (source.GetClass().GetName()))
         return ECOBJECTS_STATUS_Error;
 
-    ECDBuffer* buffer = this->GetECDBuffer();
+    ECDBuffer* buffer = const_cast <ECDBuffer*> (this->GetECDBuffer());
     if (NULL != buffer)
         return buffer->CopyInstanceProperties(source);
     
