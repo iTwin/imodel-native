@@ -1,12 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/StopWatch.h $
+|     $Source: src/ECObjectsNativeLog.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
-| Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <Logging/BentleyLogging.h>
 
-/*__BENTLEY_INTERNAL_ONLY__*/
-#include <Bentley/BeTimeUtilities.h>
+#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"ECObjectsNative"))
+
+

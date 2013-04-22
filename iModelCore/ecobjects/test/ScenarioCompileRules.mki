@@ -2,19 +2,21 @@
 #
 #  $Source: test/ScenarioCompileRules.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 #########################################################################################
 # Compile the list of tests. 
 #########################################################################################
-$(o)StopWatch$(oext)          : $(baseDir)scenario/StopWatch.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)TestFixture$(oext)            : $(baseDir)scenario/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)TestFixture$(oext)        : $(baseDir)NonPublished/TestFixture.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)SchemaTests$(oext)    : $(baseDir)scenario/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
-#$(o)MemoryLayoutTests$(oext)  : $(baseDir)NonPublished/MemoryLayoutTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)InstanceTests$(oext)          : $(baseDir)scenario/InstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)ScenarioSchemaTests$(oext)  : $(baseDir)scenario/SchemaTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)ValueTests$(oext)             : $(baseDir)scenario/ValueTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
-$(o)CompressInstanceTests$(oext)  : $(baseDir)scenario/CompressInstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)AccessorTests$(oext)          : $(baseDir)scenario/AccessorTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)ECRelationshipTests$(oext)    : $(baseDir)scenario/ECRelationshipTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

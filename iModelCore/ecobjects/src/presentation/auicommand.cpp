@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auicommand.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -21,11 +21,19 @@ BentleyStatus   IUICommand::ExecuteCmd (IAUIDataContextCP instance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas             02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void IUICommand::GetChildren (bvector<IUICommandPtr>& children)
+    {
+    return _GetChildren (children);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<UICommandPtr>   ECPresentationCommandProvider::GetCommand (IAUIDataContextCR instance, int purpose) const
+void   ECPresentationCommandProvider::GetCommand (bvector<IUICommandPtr>& commands, IAUIDataContextCR instance, int purpose)
     {
-    return _GetCommand(instance, purpose);
+    return _GetCommand(commands, instance, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,7 +63,7 @@ WString         IUICommand::GetLabel ()  const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IUICommand::SetLabel (WStringCR label)
+void            IUICommand::SetLabel (WCharCP label)
     {
     _SetLabel(label);
     }
@@ -63,7 +71,7 @@ void            IUICommand::SetLabel (WStringCR label)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         IUICommand::GetDescription ()  const
+WString         IUICommand::GetDescription ()  const
     {
     return _GetDescription();
     }
@@ -71,7 +79,7 @@ WCharCP         IUICommand::GetDescription ()  const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IUICommand::SetDescription (WStringCR description)
+void            IUICommand::SetDescription (WCharCP description)
     {
     _SetDescription(description);
     }
@@ -135,7 +143,7 @@ void            IUICommand::SetIsEnabled (bool enabled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UICommand*      IUICommand::GetParent() const
+IUICommand* IUICommand::GetParent() const
     {
     return _GetParent();
     }

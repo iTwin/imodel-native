@@ -2,15 +2,15 @@
 |
 |  $Source: src/BeXmlCGWriter.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-static double s_nearZero = 9.0e-16;
-static size_t s_maxIndexPerLine = 5;
-static wchar_t const *sNamespaceAttribute = L"xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"";
+static const double s_nearZero = 9.0e-16;
+static const size_t s_maxIndexPerLine = 5;
+static const wchar_t *sNamespaceAttribute = L"xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"";
 
 static double SuppressNearZeroCoordinate (double x, double refValue)
     {
@@ -265,7 +265,7 @@ void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
 
 void BeXmlCGWriter::WritePolyface (BeXmlWriterR dest, PolyfaceHeader &mesh)
     {
-    static int s_coordinatePhase = 2;
+    static const int s_coordinatePhase = 2;
     dest.WriteElementStart ("IndexedMesh");
     WriteList (dest, mesh.Point (), "ListOfCoord", "xyz");
 
@@ -654,7 +654,7 @@ TransformCR worldToLocal,
 double sweepAngle
 )
     {
-    static double s_defaultRadius = 1000.0;
+    static const double s_defaultRadius = 1000.0;
     bvector<DPoint3d>strokes;
     IFacetOptionsPtr options = IFacetOptions::Create ();
     options->SetAngleTolerance (Angle::Pi () / 6.0);

@@ -2,12 +2,12 @@
 |
 |     $Source: test/Performance/ECXmlPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
-#include "StopWatch.h"
+#include <Bentley/BeTimeUtilities.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

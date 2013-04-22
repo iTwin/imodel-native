@@ -2401,7 +2401,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
     MergeStatus status;
     if (property->GetIsPrimitive())
         {
-        PrimitiveECPropertyP srcProperty = property->GetAsPrimitiveProperty();
+        PrimitiveECPropertyCP srcProperty = property->GetAsPrimitiveProperty();
         PrimitiveECPropertyP newProperty;
         if (mergeClass.CreatePrimitiveProperty (newProperty, srcProperty->GetName(), srcProperty->GetType()) != ECOBJECTS_STATUS_Success)
             return MERGESTATUS_Failed;
@@ -2409,7 +2409,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         }
     else if (property->GetIsStruct())
         {
-        StructECPropertyP srcProperty = property->GetAsStructProperty();
+        StructECPropertyCP srcProperty = property->GetAsStructProperty();
         StructECPropertyP newProperty;
         ECClassCP resolvedStructType = &srcProperty->GetType();
         if (IsPartOfMergeSchema(*resolvedStructType))
@@ -2427,7 +2427,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         }
     else if (property->GetIsArray())
         {
-        ArrayECPropertyP srcProperty = property->GetAsArrayProperty();
+        ArrayECPropertyCP srcProperty = property->GetAsArrayProperty();
         ArrayECPropertyP newProperty;
         if (srcProperty->GetKind() == ARRAYKIND_Struct)
             {

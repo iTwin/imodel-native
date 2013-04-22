@@ -13,8 +13,8 @@
 #include <Bentley/BeStringUtilities.h>
 #include "ecxml.h"
 #include "DateTimeInfoAccessor.h"
-#include "Logger.h"
-#include "StopWatch.h"
+#include "ECObjectsNativeLog.h"
+#include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeFileName.h>
 #include <ECObjects/BeXmlCommonGeometry.h>
 #include <Logging/bentleylogging.h>

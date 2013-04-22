@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeSpecification.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,7 @@ private:
     bool               m_alwaysReturnsChildren;
     bool               m_hideNodesInHierarchy;
     bool               m_hideIfNoChildren;
+    WString            m_extendedData;
     ChildNodeRuleList  m_nestedRules;
 
     static int GetNewSpecificationId ();
@@ -34,11 +35,19 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 protected:
+    //! Constructor. It is used to initialize the rule with default settings.
     ECOBJECTS_EXPORT ChildNodeSpecification ();
+
+    //! Constructor.
     ECOBJECTS_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
 
+    //! Returns XmlElement name that is used to read/save this rule information.
     ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName () = 0;
+
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) = 0;
+
+    //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) = 0;
 
 public:
@@ -52,24 +61,30 @@ public:
     ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode);
 
     //! Priority of the specification, defines the order in which specifications are evaluated and executed.
-    ECOBJECTS_EXPORT int                          GetPriority (void) const               { return m_priority; }
+    ECOBJECTS_EXPORT int                          GetPriority (void) const                  { return m_priority; }
 
     //! ID of the specification.
-    ECOBJECTS_EXPORT int                          GetId (void) const                     { return m_id; }
+    ECOBJECTS_EXPORT int                          GetId (void) const                        { return m_id; }
 
     //! Returns true if specification always returns nodes. This allows to optimize node expand performance.
-    ECOBJECTS_EXPORT bool                         GetAlwaysReturnsChildren (void) const  { return m_alwaysReturnsChildren; }
+    ECOBJECTS_EXPORT bool                         GetAlwaysReturnsChildren (void) const     { return m_alwaysReturnsChildren; }
 
     //! f this property is set it will not show nodes of this specification in the hierarchy, instead it will 
     //! use those nodes to get children that will be actually returned.
-    ECOBJECTS_EXPORT bool                         GetHideNodesInHierarchy (void) const   { return m_hideNodesInHierarchy; }
+    ECOBJECTS_EXPORT bool                         GetHideNodesInHierarchy (void) const      { return m_hideNodesInHierarchy; }
 
     //! If this property is set, it will not show nodes in the hierarchy that doesn't contain children.
     //! Important: Setting this to true may affect tree performance.
-    ECOBJECTS_EXPORT bool                         GetHideIfNoChildren (void)             { return m_hideIfNoChildren; }
+    ECOBJECTS_EXPORT bool                         GetHideIfNoChildren (void)                { return m_hideIfNoChildren; }
+
+    //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
+    ECOBJECTS_EXPORT WStringCR                    GetExtendedData (void)                    { return m_extendedData; }
+
+    //! Sets a string that represents extended data that will be passed to ECQuery for this particular specification.
+    ECOBJECTS_EXPORT void                         SetExtendedData (WStringCR extendedData)  { m_extendedData = extendedData; }
 
     //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-    ECOBJECTS_EXPORT ChildNodeRuleList&           GetNestedRules (void)                  { return m_nestedRules; }
+    ECOBJECTS_EXPORT ChildNodeRuleList&           GetNestedRules (void)                     { return m_nestedRules; }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

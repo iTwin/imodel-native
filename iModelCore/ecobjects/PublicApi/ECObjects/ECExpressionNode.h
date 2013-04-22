@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressionNode.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -214,142 +214,67 @@ public:
 
 }; // End of struct IntegerLiteralNode
 
-/*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
-* @bsiclass                                                     John.Gooding    02/2011
-+===============+===============+===============+===============+===============+======*/
-struct          IntegerLiteralNode : Node
-{
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T, ExpressionToken TOKEN>
+struct          LiteralNode : Node
+    {
 private:
-    int         m_value;
+    T           m_value;
 
-protected:
-    virtual WString     _ToString() const override
+    virtual WString             _ToString() const override      { return GetECValue().ToString(); }
+    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
         {
-        wchar_t     buffer [256];
-        BeStringUtilities::Snwprintf(buffer, _countof (buffer), L"%d", m_value);
-        return buffer;
-        }
-
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
-                                        bool allowUnknown, bool allowOverrides) override
-        {
-        evalResult = ECN::ECValue(m_value);
-
+        evalResult = GetECValue();
         return ExprStatus_Success;
         }
-
-    virtual ExpressionToken _GetOperation () const override { return TOKEN_IntegerConstant; }
-
-public:
-    int         GetInternalValue () { return m_value; }
-                IntegerLiteralNode (int literalValue) : m_value (literalValue) {}
-
-}; // End of struct IntegerLiteralNode
-
-/*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
-* @bsiclass                                                     John.Gooding    02/2011
-+===============+===============+===============+===============+===============+======*/
-struct          Int64LiteralNode : Node
-{
-private:
-    Int64     m_value;
-
+    virtual ExpressionToken     _GetOperation() const override  { return TOKEN; }
 protected:
-    virtual WString     _ToString() const override
-        {
-        wchar_t     buffer [256];
-        BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%I64d", m_value);
-        return buffer;
-        }
+    virtual ECValue             GetECValue() const { return ECValue (m_value); }
+public:
+    LiteralNode (T const& value) : m_value(value) { }
+    
+    T           GetInternalValue() const { return m_value; }
+    };
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
-                                        bool allowUnknown, bool allowOverrides) override
-        {
-        evalResult = ECN::ECValue(m_value);
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef LiteralNode<Int32, TOKEN_IntegerConstant>   IntegerLiteralNode;
+typedef LiteralNode<Int64, TOKEN_IntegerConstant>   Int64LiteralNode;
+typedef LiteralNode<double, TOKEN_FloatConst>       DoubleLiteralNode;
+typedef LiteralNode<bool, TOKEN_True>               BooleanLiteralNode;
+typedef LiteralNode<DPoint2d, TOKEN_PointConst>     Point2DLiteralNode;
+typedef LiteralNode<DPoint3d, TOKEN_PointConst>     Point3DLiteralNode;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DateTimeLiteralNode : LiteralNode<Int64, TOKEN_DateTimeConst>
+    {
+protected:
+    virtual ECValue         GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
+public:
+    DateTimeLiteralNode (Int64 ticks) : LiteralNode<Int64, TOKEN_DateTimeConst>(ticks) { }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          NullLiteralNode : Node
+    {
+protected:
+    virtual WString             _ToString() const override { return L"Null"; }
+    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool)
+        {
+        evalResult = ECN::ECValue (/*null*/);
         return ExprStatus_Success;
         }
-
-    //  We use the same operation type for 32 and 64 bit integers
-    virtual ExpressionToken _GetOperation () const override { return TOKEN_IntegerConstant; }
-
+    virtual ExpressionToken     _GetOperation () const override { return TOKEN_Null; }
 public:
-                Int64LiteralNode (Int64 literalValue) : m_value(literalValue) {}
-    Int64     GetInternalValue () {return m_value;}
-
-}; // End of struct Int64LiteralNode
-
-/*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
-* @bsiclass                                                     John.Gooding    02/2011
-+===============+===============+===============+===============+===============+======*/
-struct          DoubleLiteralNode : Node
-{
-private:
-    double      m_value;
-
-protected:
-    virtual WString     _ToString() const override
-        {
-        wchar_t     buffer [256];
-        BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%f", m_value);
-        return buffer;
-        }
-
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
-                                        bool allowUnknown, bool allowOverrides) override
-        {
-        evalResult = ECN::ECValue(m_value);
-
-        return ExprStatus_Success;
-        }
-
-    //  We use the same operation type for 32 and 64 bit integers
-    virtual ExpressionToken _GetOperation () const override { return TOKEN_FloatConst; }
-
-public:
-    double      GetInternalValue () { return m_value; }
-                DoubleLiteralNode (double literalValue) : m_value(literalValue) {}
-}; // End of struct DoubleLiteralNode
-
-/*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
-* @bsiclass                                                     John.Gooding    02/2011
-+===============+===============+===============+===============+===============+======*/
-struct          BooleanLiteralNode : Node
-{
-private:
-    bool        m_value;
-
-protected:
-    virtual WString     _ToString() const override { return m_value ? L"True" : L"False"; }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
-                                        bool allowUnknown, bool allowOverrides) override
-        {
-        evalResult = ECN::ECValue(m_value);
-
-        return ExprStatus_Success;
-        }
-
-    //  Use True as the category for all Booleans
-    virtual ExpressionToken _GetOperation () const override { return TOKEN_True; }
-
-
-public:
-    bool        GetInternalValue () { return m_value; }
-                BooleanLiteralNode (bool literalValue) : m_value(literalValue) {}
-
-}; // End of struct BooleanLiteralNode
+    NullLiteralNode() { }
+    };
 
 /*=================================================================================**//**
 *
@@ -395,10 +320,10 @@ protected:
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
-    wchar_t const*          GetName(size_t index) const;
-    size_t                  GetNumberOfOperators() const;
-    NodeP                   GetOperatorNode(size_t index) const;
-    ExpressionToken    GetOperation(size_t index) const;
+    ECOBJECTS_EXPORT wchar_t const*     GetName(size_t index) const;
+    ECOBJECTS_EXPORT size_t             GetNumberOfOperators() const;
+    NodeP                               GetOperatorNode(size_t index) const;
+    ECOBJECTS_EXPORT ExpressionToken    GetOperation(size_t index) const;
 
     static PrimaryListNodePtr Create() { return new PrimaryListNode(); }
     void                    AppendCallNode(CallNodeR  callNode);

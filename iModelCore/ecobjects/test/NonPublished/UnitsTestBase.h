@@ -2,11 +2,10 @@
 |
 |     $Source: test/NonPublished/UnitsTestBase.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "ECObjectsTestPCH.h"
-#include "StopWatch.h"
 #include "TestFixture.h"
 #include <ECUnits/Units.h>
 
@@ -28,7 +27,7 @@ ECSchemaPtr m_supplementedSchema;
 /// <summary>The schema supplemental modification to test</summary>
 ECSchemaPtr m_supplementalSchemaMod;
 /// <summary>The list of supplemental schemas to test</summary>
-bvector< ECSchemaP > m_supplementalSchemas;
+bvector< ECSchemaPtr > m_supplementalSchemas;
 /// <summary>The second schema to test</summary>
 ECSchemaPtr  m_testSchema2;
 /// <summary>The schema referenced by the schema to test</summary>
@@ -53,7 +52,7 @@ ECPropertyP m_AreaProp;//                = null;
 ///// <summary>Wheel Property</summary>
 //IECProperty m_weightProp              = null;
 ///// <summary>Wheel Property</summary>
-//IECProperty m_hubStructProp           = null;
+ECPropertyP m_hubStructProp;
 
 /// <summary>Bike Class</summary>
 ECClassP m_BikeClass;
@@ -188,7 +187,6 @@ public: void SetUp
 public: void InitializeUnits
 (
 WString testSchemaName,
-ECSchemaPtr testSchema,
 bvector< ECSchemaP > & testSupplementalSchemas
 );
 

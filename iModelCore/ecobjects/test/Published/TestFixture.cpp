@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/TestFixture.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
@@ -145,6 +145,17 @@ WString ECTestFixture::GetTestDataPath(WCharCP dataFile)
     return testData;
     } 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
+    {
+    WString testData = WString(getenv("TEMP"), false);
+    testData.append(L"\\");
+    testData.append(dataFile);
+    return testData;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

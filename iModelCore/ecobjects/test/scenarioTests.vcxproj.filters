@@ -21,12 +21,27 @@
     <ClCompile Include="scenario\schematests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scenario\CompressInstanceTests.cpp">
+    <ClCompile Include="scenario\AccessorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\ECRelationshipTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\InstanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\ValueTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scenario\TestFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

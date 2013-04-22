@@ -2,7 +2,7 @@
 |
 |  $Source: src/PresentationMetadataHelper.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -34,6 +34,7 @@ static WCharCP ARRAY_BEHAVIOR_CLASSNAME          = L"ArrayBehaviorAttributes";
 static WCharCP FILEPICKER_INFO_CLASSNAME         = L"FilePickerAttributes";
 static WCharCP STRIKE_THRU_CLASSNAME             = L"StrikethroughSpecification";
 static WCharCP MEMBER_NAME_FROM_VALUE_CLASSNAME  = L"ArrayMemberNameFromValue";
+static WCharCP STORES_UNITS_AS_UORS_CLASSNAME    = L"StoresUnitsAsUors";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   07/12
@@ -66,7 +67,7 @@ PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaReadContextR sch
         {
         // If we can't find the custom attributes schema, all methods will return ECOBJECTS_STATUS_SchemaNotFound
         BeAssert (false);
-        ECObjectsLogger::Log()->error (L"Unable to locate EditorCustomAttributes schema");
+        LOG.error (L"Unable to locate EditorCustomAttributes schema");
         }
     }
 
@@ -88,12 +89,12 @@ IECInstancePtr PresentationMetadataHelper::CreateInstance (WCharCP className) co
     if (NULL == ecClass)
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->errorv (L"Failed to locate ECClass %ls in EditorCustomAttributes schema", className);
+        LOG.errorv (L"Failed to locate ECClass %ls in EditorCustomAttributes schema", className);
         }
     else if ((instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance()).IsNull())
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->errorv (L"Failed to create instance of ECClass %ls", className);
+        LOG.errorv (L"Failed to create instance of ECClass %ls", className);
         }
 
     return instance;
@@ -205,6 +206,14 @@ ECObjectsStatus PresentationMetadataHelper::SetHideNullProperties (ECClassR eccl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PresentationMetadataHelper::SetStoresUnitsAsUORs (ECSchemaR schema) const
+    {
+    return CreateCustomAttribute (schema, STORES_UNITS_AS_UORS_CLASSNAME);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PresentationMetadataHelper::SetMembersIndependent (ECPropertyR ecproperty) const
@@ -212,7 +221,7 @@ ECObjectsStatus PresentationMetadataHelper::SetMembersIndependent (ECPropertyR e
     if (NULL != ecproperty.GetAsPrimitiveProperty())
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->error (L"MembersIndependent custom attribute not permitted on primitive properties");
+        LOG.error (L"MembersIndependent custom attribute not permitted on primitive properties");
         return ECOBJECTS_STATUS_Error;
         }
 
@@ -226,7 +235,7 @@ ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecprope
     if (NULL != ecproperty.GetAsPrimitiveProperty() && PRIMITIVETYPE_Point3D != ecproperty.GetAsPrimitiveProperty()->GetType())
         {
         BeAssert (false);
-        ECObjectsLogger::Log()->error (L"AlwaysExpand custom attribute only valid for complex properties");
+        LOG.error (L"AlwaysExpand custom attribute only valid for complex properties");
         return ECOBJECTS_STATUS_Error;
         }
     else if (NULL != ecproperty.GetAsArrayProperty() && andArrayMembers)
@@ -235,4 +244,11 @@ ECObjectsStatus PresentationMetadataHelper::SetAlwaysExpand (ECPropertyR ecprope
         return CreateCustomAttribute (ecproperty, ALWAYS_EXPAND_CLASSNAME); // "ArrayMembers" defaults to false, and ignored for non-array properties
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PresentationMetadataHelper::SetRequiresReload (ECPropertyR ecproperty) const
+    {
+    return CreateCustomAttribute (ecproperty, REQUIRES_RELOAD_CLASSNAME);
+    }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/VirtualCollectionIterator.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,12 +10,6 @@
 /// @cond BENTLEY_SDK_Desktop
 
 #include <Bentley/Bentley.h>
-
-#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
-
-#define END_BENTLEY_ECOBJECT_NAMESPACE    }}
-
-#define USING_NAMESPACE_EC  using namespace Bentley::ECN;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*=================================================================================**//**

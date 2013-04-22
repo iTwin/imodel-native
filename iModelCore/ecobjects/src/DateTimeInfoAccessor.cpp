@@ -49,7 +49,7 @@ WCharCP const DateTimeInfoAccessor::DATETIMECOMPONENT_DATE_WSTR = L"Date";
 //static
 bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
-    ArrayECPropertyP arrayDateTimeProp = NULL;
+    ArrayECPropertyCP arrayDateTimeProp = NULL;
     PRECONDITION ((dateTimeProperty.GetIsPrimitive () && dateTimeProperty.GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) || 
                   ((arrayDateTimeProp = dateTimeProperty.GetAsArrayProperty ()) != NULL && arrayDateTimeProp->GetKind () == ARRAYKIND_Primitive && arrayDateTimeProp->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime), false);
 
@@ -287,7 +287,7 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
 //static
 void DateTimeInfoAccessor::LogPropertyNotFoundError (WCharCP propertyName)
     {
-    ECObjectsLogger::Log ()->errorv (L"Property '%ls' not found in custom attribute class '%ls'.", propertyName, DATETIMEINFO_CLASSNAME);
+    LOG.errorv (L"Property '%ls' not found in custom attribute class '%ls'.", propertyName, DATETIMEINFO_CLASSNAME);
     BeAssert (false);
     }
 END_BENTLEY_ECOBJECT_NAMESPACE

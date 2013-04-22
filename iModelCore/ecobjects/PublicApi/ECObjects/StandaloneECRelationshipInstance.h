@@ -63,10 +63,10 @@ protected:
     virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
-    virtual ECObjectsStatus     _InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size) override;
-    virtual ECObjectsStatus     _AddArrayElements (WCharCP propertyAccessString, UInt32 size) override;
-    virtual ECObjectsStatus     _RemoveArrayElement (WCharCP propertyAccessString, UInt32 index) override;
-    virtual ECObjectsStatus     _ClearArray (WCharCP propertyAccessString) override;
+    virtual ECObjectsStatus     _InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size) override;
+    virtual ECObjectsStatus     _AddArrayElements (UInt32 propIdx, UInt32 size) override;
+    virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propIdx, UInt32 index) override;
+    virtual ECObjectsStatus     _ClearArray (UInt32 propIdx) override;    
     virtual WString             _ToString (WCharCP indent) const override;
     virtual ClassLayoutCR       _GetClassLayout () const;
     virtual ECEnablerCR         _GetEnabler() const override;
@@ -75,7 +75,7 @@ protected:
     virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
-    virtual IECInstancePtr      _GetAsIECInstance () const;
+    virtual IECInstanceP        _GetAsIECInstance () const;
     virtual size_t              _LoadObjectDataIntoManagedInstance (byte* managedBuffer) const;
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -95,9 +95,8 @@ public:
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler
+struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public ECEnabler
 //__PUBLISH_SECTION_END__
-    ,public ECEnabler
     ,public ClassLayoutHolder
 //__PUBLISH_SECTION_START__
    {
@@ -112,7 +111,6 @@ protected:
     virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
-    virtual UInt32                      _GetPropertyCount () const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
