@@ -8,10 +8,9 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/ECSchema.h>
 
+DEFINE_KEY_METHOD(Bentley::ECN::IECRelationshipInstance)
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-
-DEFINE_DUMMY_VIRTUAL_IN_INTERFACE(IECRelationshipInstance)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2010

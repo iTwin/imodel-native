@@ -529,7 +529,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
         virtual void            _SetTarget (IECInstanceP instance)= 0;
         virtual IECInstancePtr  _GetTarget () const = 0;
         virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const = 0;
-        DECLARE_DUMMY_VIRTUAL_IN_INTERFACE
+        DECLARE_KEY_METHOD
 
     public:
 
