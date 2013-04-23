@@ -47,6 +47,7 @@
 #define PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION                                     "Condition"
 
 #define ROOT_NODE_RULE_XML_NODE_NAME                                                  "RootNodeRule"
+#define ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND                                       "AutoExpand"
 
 #define SUB_CONDITION_XML_NODE_NAME                                                   "SubCondition"
 

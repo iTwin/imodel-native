@@ -123,6 +123,7 @@ struct RootNodeRule : public ChildNodeRule
     /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
+        bool m_autoExpand;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
@@ -132,10 +133,19 @@ struct RootNodeRule : public ChildNodeRule
             }
 
         //! Constructor.
-        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
-            : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree)
+        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
+            : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree), m_autoExpand (autoExpand)
             {
             }
+
+        //! Reads rule information from XmlNode, returns true if it can read it successfully.
+        ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Writes rule information to given XmlNode.
+        ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
+
+        //! Returns flag which determines if nodes have to be automatically expanded.
+        ECOBJECTS_EXPORT bool                           GetAutoExpand (void)        { return m_autoExpand; }
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
