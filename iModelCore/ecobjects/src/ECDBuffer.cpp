@@ -1900,7 +1900,9 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
     // adjust the offsets in the fixed section beyond the one we just modified
     while (pNextProperty <= pLast)
         {
-        *pNextProperty -= totalBytesAdjusted;
+        if (0 != *pNextProperty)
+            *pNextProperty -= totalBytesAdjusted;
+
         pNextProperty++;
         }
 
@@ -3647,39 +3649,17 @@ bool ECDBuffer::IsEmpty() const
         { BeAssert (false); return false; }
 
     ClassLayoutCR classLayout = GetClassLayout();
-    byte const* propertyData = GetPropertyData();
 
-    // Prereq: no variable-sized storage used
-    if (classLayout.GetSizeOfFixedSection() != classLayout.CalculateBytesUsed (propertyData))
-        return false;
+    // A few notes about this method:
+    // 1. We'd like to be able to test if classLayout.GetSizeOfFixedSection() != classLayout.CalculateBytesUsed() => variable-sized properties exist => some non-null properties exist
+    //    But that's not true, because when setting a variable-sized property to null we don't deallocate its storage.
+    // 2. We'd like to be able to test all our null flags bitmasks against 0xFFFFFFFF => all properties are null
+    //    This doesn't work because we don't un-set null flags for array properties even when adding elements to them - they are always set.
+    // So we are left having to simply check each property individually. Oh well.
 
-    // Easiest case - has no properties
-    UInt32 nonStructPropCount = classLayout.GetPropertyCountExcludingEmbeddedStructs();
-    if (0 == nonStructPropCount)
-        return true;
-
-    // Easy case - all null flag bits are turned on
-    bool allNullflagsOn = true;
-    UInt32 nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nonStructPropCount);
-    NullflagsBitmask const* pMask = (NullflagsBitmask const*)propertyData;
-    NullflagsBitmask const* pMaskEnd = pMask + nNullflagsBitmasks;
-
-    while (pMask < pMaskEnd)
-        {
-        if (NULLFLAGS_BITMASK_AllOn != *pMask++)
-            {
-            allNullflagsOn = false;
-            break;
-            }
-        }
-
-    if (allNullflagsOn)
-        return true;
-
-    // Annoying case: one or more null flags are turned off.
-    // This should never happen for struct properties (they are always null)
-    // It is valid for an empty array
-    // So we need to check null flags are turned on for all primitive properties
+    // structs are always null
+    // primitive properties use null flags to indicate null-ness
+    // array properties' null flags are always "on". check array count.
     FOR_EACH (PropertyLayout const* propLayout, classLayout.m_propertyLayouts)
         {
         if (propLayout->GetTypeDescriptor().IsPrimitive())
@@ -3687,13 +3667,21 @@ bool ECDBuffer::IsEmpty() const
             if (!IsPropertyValueNull (*propLayout, false, 0))
                 return false;
             }
-#ifdef ECD_SUPPORTS_FIXED_SIZED_ARRAYS
-        // NOTE: ECD does not currently support fixed-sized arrays. So we don't need to check for them. And we already know all variable-sized arrays are empty.
-        else if (IsArrayOfFixedSizeElements (*propLayout))
+        else if (propLayout->GetTypeDescriptor().IsArray())
             {
-            // ... make sure all elements of array are null ...
+            if (propLayout->IsFixedSized())
+                {
+                // ECD does not currently support fixed-sized arrays - they always are allocated in the variable-sized portion of the buffer.
+                // If it does in the future, we need to check each element to determine if it's null - the space will be allocated in fixed-size portion of buffer.
+                BeAssert (false);
+                return false;
+                }
+            else if (0 < GetReservedArrayCount (*propLayout))
+                {
+                // a non-empty array, even if it contains only null elements, is still a non-empty array => buffer is non-empty
+                return false;
+                }
             }
-#endif
         }
 
     return true;
