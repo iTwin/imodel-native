@@ -8,7 +8,6 @@
 #include "ECObjectsPch.h"
 #include <Bentley/BeAssert.h>
 #include <Bentley/ValueFormat.h>
-#include <boost/algorithm/string/replace.hpp>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -1493,8 +1492,8 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         {
         // Must escape quotes...
         WString s (GetString());
-        boost::replace_all (s, L"\"", L"\"\"");
-        expr.Sprintf (L"\"%ls\"", s);
+        s.ReplaceAll(L"\"", L"\"\"");
+        expr.Sprintf (L"\"%ls\"", s.c_str());
         }
         return true;
     case PRIMITIVETYPE_Binary:
