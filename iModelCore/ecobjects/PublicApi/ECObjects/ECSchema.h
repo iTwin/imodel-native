@@ -1607,11 +1607,14 @@ public:
 //=======================================================================================
 struct IStandaloneEnablerLocater
 {
-/*__PUBLISH_CLASS_VIRTUAL__*/
+private:
+    DECLARE_KEY_METHOD
+
 /*__PUBLISH_SECTION_END__*/
 protected:
     virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className) = 0;
 
+/*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
 
 public:
