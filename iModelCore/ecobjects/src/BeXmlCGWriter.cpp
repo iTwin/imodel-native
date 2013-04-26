@@ -243,19 +243,21 @@ void BeXmlCGWriter::WriteArc (BeXmlWriterR dest, DEllipse3dCR arc)
 
 void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
     {
+    double direction = arc.sweep > 0.0 ? 1.0 : -1.0;
+    DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
+    DVec3d yVector;
+    yVector.Scale (majorMinorArc.vector90, direction);
     if (arc.IsCircular ())
         {
-        DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
         dest.WriteElementStart ("CircularDisk");
-        WritePlacementXY (dest, majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
+        WritePlacementXY (dest, majorMinorArc.center, majorMinorArc.vector0, yVector);
         WriteDouble (dest, "radius",     majorMinorArc.vector0.Magnitude ());
         dest.WriteElementEnd ();
         }
     else
         {
-        DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
         dest.WriteElementStart ("EllipticDisk");
-        WritePlacementXY (dest, majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
+        WritePlacementXY (dest, majorMinorArc.center, majorMinorArc.vector0, yVector);
         WriteDouble (dest, "radiusA",     majorMinorArc.vector0.Magnitude ());
         WriteDouble (dest, "radiusB",     majorMinorArc.vector90.Magnitude ());
         dest.WriteElementEnd ();
