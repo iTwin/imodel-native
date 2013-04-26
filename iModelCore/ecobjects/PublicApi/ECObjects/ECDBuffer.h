@@ -69,6 +69,7 @@ public:
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset),
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     PropertyLayout (){}
@@ -217,6 +218,7 @@ public:
     ECOBJECTS_EXPORT ~ClassLayout();
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     //ClassLayout (){}
@@ -312,6 +314,7 @@ private:
 public:
     SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     SchemaLayout (){}
