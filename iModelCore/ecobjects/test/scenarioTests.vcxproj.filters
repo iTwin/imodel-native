@@ -21,7 +21,16 @@
     <ClCompile Include="scenario\schematests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scenario\CompressInstanceTests.cpp">
+    <ClCompile Include="scenario\AccessorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\ECRelationshipTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\InstanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scenario\ValueTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1672,4 +1672,125 @@ TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
     EXPECT_EQ (0, wcscmp (v.GetString(), L"Hooray!"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECDBufferTests : MemoryLayoutTests
+    {
+    template<typename T> void TestIsEmpty (IECInstanceR instance, WCharCP accessor, T const& value)
+        {
+        ECDBuffer* buf = instance.GetECDBufferP();
+        EXPECT_TRUE (buf->IsEmpty());
+        
+        ECValue v (value);
+        EXPECT_EQ (0, instance.SetValue (accessor, v));
+
+        EXPECT_FALSE (buf->IsEmpty());
+        
+        v.Clear();
+        EXPECT_EQ (0, instance.SetValue (accessor, v));
+
+        bool isNull;
+        EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor));
+        EXPECT_TRUE (isNull);
+        EXPECT_TRUE (buf->IsEmpty()) << accessor;
+
+        buf->ClearValues();
+        EXPECT_TRUE (buf->IsEmpty());
+        }
+
+    template<typename T> void TestIsEmptyArray (IECInstanceR instance, WCharCP accessor, T const& value)
+        {
+        ECDBuffer& buf = *instance.GetECDBufferP();
+        EXPECT_TRUE (buf.IsEmpty());
+
+        EXPECT_EQ (0, instance.AddArrayElements (accessor, 1));
+        bool isNull;
+        EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor, 0));
+        EXPECT_TRUE (isNull);
+        EXPECT_FALSE (buf.IsEmpty());   // a non-empty array containing null elements => a non-empty IECInstance
+
+        ECValue v (value);
+        EXPECT_EQ (0, instance.SetValue (accessor, v, 0));
+        EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor, 0));
+        EXPECT_FALSE (isNull);
+        EXPECT_FALSE (buf.IsEmpty());
+
+        // Clearing out the array will not reset the null flag for the array property. But an empty array => empty IECInstance
+        EXPECT_EQ (0, instance.ClearArray (accessor));
+        EXPECT_EQ (0, instance.GetValue (v, accessor));
+        EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+        EXPECT_TRUE (buf.IsEmpty()) << accessor;
+
+        buf.ClearValues();
+        EXPECT_TRUE (buf.IsEmpty());
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Test the ECDBuffer::IsEmpty() method. Should return true if all values are null and
+* all arrays are empty.
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, IsEmpty)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+
+    IECInstancePtr instance = schema->GetClassP (L"Manufacturer")->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestIsEmpty (*instance, L"AccountNo", 12345);   // fixed-sized property
+    TestIsEmpty (*instance, L"Name", L"Ed");        // variable-sized property
+
+    instance = schema->GetClassP (L"AllPrimitives")->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestIsEmptyArray (*instance, L"SomeInts", 54321);
+    TestIsEmptyArray (*instance, L"SomeStrings", L"abcdefg");
+
+    instance = schema->GetClassP (L"ClassWithStructArray")->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestIsEmpty (*instance, L"StructMember.AnInt", 12345);
+    TestIsEmpty (*instance, L"StructMember.AString", L"bbbbb");
+    TestIsEmptyArray (*instance, L"StructMember.SomeInts", 54321);
+    TestIsEmptyArray (*instance, L"StructMember.SomeStrings", L"lalalalala");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Simplification of above test to isolate some memory corruption when clearing the array.
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ClearArray)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"ArrayTest", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"TestClass");
+    PrimitiveECPropertyP primProp;
+    ecClass->CreatePrimitiveProperty (primProp, L"Int", PRIMITIVETYPE_Integer);
+    ecClass->CreatePrimitiveProperty (primProp, L"String");
+
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, L"Ints", PRIMITIVETYPE_Integer);
+    ecClass->CreateArrayProperty (arrayProp, L"Strings", PRIMITIVETYPE_String);
+    ecClass->CreateArrayProperty (arrayProp, L"MoreInts", PRIMITIVETYPE_Integer);
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    
+    ECValue v;
+    EXPECT_EQ (0, instance->GetValue (v, L"Ints"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+
+    EXPECT_EQ (0, instance->AddArrayElements (L"Ints", 1));
+    EXPECT_EQ (0, instance->GetValue (v, L"Ints"));
+    EXPECT_EQ (1, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+
+    // The problem was here:
+    // After ClearArray() we fix up secondary offsets of other variable-sized properties by subtracting the number of bytes removed from the buffer
+    // The Strings array had a secondary offset of zero; subtraction produced a negative offset, interpreted as positive offset into memory outside the buffer
+    EXPECT_EQ (0, instance->ClearArray (L"Ints"));
+    EXPECT_EQ (0, instance->GetValue (v, L"Ints"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

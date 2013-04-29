@@ -133,3 +133,23 @@ CharCP RootNodeRule::_GetXmlElementName ()
     {
     return ROOT_NODE_RULE_XML_NODE_NAME;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas             04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootNodeRule::_ReadXml (BeXmlNodeP xmlNode)
+    {
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_autoExpand, ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND))
+        m_autoExpand = false;
+
+    return ChildNodeRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas             04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootNodeRule::_WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->AddAttributeBooleanValue (ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
+    ChildNodeRule::_WriteXml (xmlNode);
+    }

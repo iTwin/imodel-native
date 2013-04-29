@@ -1892,7 +1892,9 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
     // adjust the offsets in the fixed section beyond the one we just modified
     while (pNextProperty <= pLast)
         {
-        *pNextProperty -= totalBytesAdjusted;
+        if (0 != *pNextProperty)
+            *pNextProperty -= totalBytesAdjusted;
+
         pNextProperty++;
         }
 
@@ -2245,19 +2247,38 @@ ClassLayoutCR ECDBuffer::GetClassLayout() const                             { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static void     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
     {
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
         {
         ECPropertyValue const& prop = *it;
         if (prop.HasChildValues())
             {
-            duplicateProperties (target, *prop.GetChildValues());
+            if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues())))
+                return status;
             continue;
             }
-        else if (prop.GetValueAccessor().GetECProperty()->GetIsPrimitive())
-            target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue());
+        else if (prop.GetValueAccessor().GetECProperty()->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            return status;
         }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
+    {
+    if (!GetClass().GetName().Equals (source.GetClass().GetName()))
+        return ECOBJECTS_STATUS_Error;
+
+    ECDBuffer* buffer = const_cast <ECDBuffer*> (this->GetECDBuffer());
+    if (NULL != buffer)
+        return buffer->CopyInstanceProperties(source);
+    
+    ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
+    return duplicateProperties (*this, *srcValues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3610,6 +3631,54 @@ void ECDBuffer::GetBufferData (byte* dest) const
 
     size_t nBytes = GetBufferSize();
     memcpy (dest, _GetData(), nBytes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::IsEmpty() const
+    {
+    ScopedDataAccessor dataAccessor (*this);
+    if (!dataAccessor.IsValid())
+        { BeAssert (false); return false; }
+
+    ClassLayoutCR classLayout = GetClassLayout();
+
+    // A few notes about this method:
+    // 1. We'd like to be able to test if classLayout.GetSizeOfFixedSection() != classLayout.CalculateBytesUsed() => variable-sized properties exist => some non-null properties exist
+    //    But that's not true, because when setting a variable-sized property to null we don't deallocate its storage.
+    // 2. We'd like to be able to test all our null flags bitmasks against 0xFFFFFFFF => all properties are null
+    //    This doesn't work because we don't un-set null flags for array properties even when adding elements to them - they are always set.
+    // So we are left having to simply check each property individually. Oh well.
+
+    // structs are always null
+    // primitive properties use null flags to indicate null-ness
+    // array properties' null flags are always "on". check array count.
+    FOR_EACH (PropertyLayout const* propLayout, classLayout.m_propertyLayouts)
+        {
+        if (propLayout->GetTypeDescriptor().IsPrimitive())
+            {
+            if (!IsPropertyValueNull (*propLayout, false, 0))
+                return false;
+            }
+        else if (propLayout->GetTypeDescriptor().IsArray())
+            {
+            if (propLayout->IsFixedSized())
+                {
+                // ECD does not currently support fixed-sized arrays - they always are allocated in the variable-sized portion of the buffer.
+                // If it does in the future, we need to check each element to determine if it's null - the space will be allocated in fixed-size portion of buffer.
+                BeAssert (false);
+                return false;
+                }
+            else if (0 < GetReservedArrayCount (*propLayout))
+                {
+                // a non-empty array, even if it contains only null elements, is still a non-empty array => buffer is non-empty
+                return false;
+                }
+            }
+        }
+
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

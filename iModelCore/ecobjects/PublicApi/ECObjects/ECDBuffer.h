@@ -50,14 +50,17 @@ struct PropertyLayout
 /*__PUBLISH_SECTION_END__*/
 friend struct ClassLayout;    
 private:
-    WString                 m_accessString;        
+    WString                 m_accessString;
     UInt32                  m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
 
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
-    UInt32              m_offset; //!< An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
-    UInt32              m_modifierFlags; //!< Can be used to indicate that a string should be treated as fixed size, with a max length, or that a longer fixed size type should be treated as an optional variable-sized type, or that for a string that only an entry to a StringTable is Stored, or that a default value should be used.
-    UInt32              m_modifierData;  //!< Data used with the modifier flag, like the length of a fixed-sized string.
+    //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
+    UInt32              m_offset;
+    //! Indicates some special handling for the ECProperty, e.g. PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly, PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated, etc.
+    UInt32              m_modifierFlags;
+    //! Data used with the modifier flag, like the length of a fixed-sized string.
+    UInt32              m_modifierData;
     UInt32              m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
 public:
@@ -70,12 +73,12 @@ private:
     PropertyLayout (){}
 
 public:
-    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const; //!< Returns the access string for retrieving this property
-    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const; //!< Returns the property index of the struct parent of this property. If this is a root property an index of zero is returned.
-    ECOBJECTS_EXPORT UInt32                      GetOffset() const; //!< Returns the offset to either the data holding this property's value (for fixed-size values) or to the offset at which the property's value can be found
-    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const; //!< Returns the offset to Null flags bit mask.
-    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const; //!< Returns a bit mask that has the a single bit set. It can be used to AND with the bitmask at the offset returned by GetNullflagsOffset() to determine if the property is NULL.
-    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const; //!< Returns an ECTypeDescriptor that defines this property
+    ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;       //!< Returns the access string for retrieving this property
+    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;  //!< Returns the property index of the struct parent of this property. If this is a root property an index of zero is returned.
+    ECOBJECTS_EXPORT UInt32                      GetOffset() const;             //!< Returns the offset to either the data holding this property's value (for fixed-size values) or to the offset at which the property's value can be found
+    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const;    //!< Returns the offset to Null flags bit mask.
+    ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const;   //!< Returns a bit mask that has the a single bit set. It can be used to AND with the bitmask at the offset returned by GetNullflagsOffset() to determine if the property is NULL.
+    ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const;     //!< Returns an ECTypeDescriptor that defines this property
 
     //! Returns the modifier flags that describe this property, which can indicate
     //! @li that a string should be treated as fixed size
@@ -84,8 +87,8 @@ public:
     //! @li that for a string, only an entry to the string table is stored
     //! @li a default value should be used
     ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const; 
-    ECOBJECTS_EXPORT UInt32                      GetModifierData() const; //!< Returns the data used with the modifier flag, like the length of a fixed-sized string.
-    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const; //!< Returns whether this is a read-only property
+    ECOBJECTS_EXPORT UInt32                      GetModifierData() const;       //!< Returns the data used with the modifier flag, like the length of a fixed-sized string.
+    ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;   //!< Returns whether this is a read-only property
 
     //! Sets the readonly flag for this property
     //! @param[in] readOnly Flag indicating whether this property is read-only or not
@@ -725,9 +728,12 @@ public:
     ECOBJECTS_EXPORT void                   GetBufferData (byte* dest) const;
 /*__PUBLISH_SECTION_START__*/  
 public:
+    //! Returns true if the buffer is empty (all values are null and all arrays are empty)
+    ECOBJECTS_EXPORT bool                   IsEmpty() const;
     //! Sets all values to null
     ECOBJECTS_EXPORT void                   ClearValues();
     //! Copies property values from source instance
+    //! @param[in] sourceInstance   The instance from which to copy property values
     ECOBJECTS_EXPORT ECObjectsStatus        CopyInstanceProperties (IECInstanceCR sourceInstance);
     };   
 
