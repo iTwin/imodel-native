@@ -250,6 +250,8 @@ public:
 
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 
+// constructors are hidden from published API -> make it abstract in the published API
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 }; // End of class ExpressionContext
 
@@ -788,6 +790,8 @@ public:
     ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides);
 
+// constructors are hidden from published API -> make it abstract in the published API
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the value of this expression node using the supplied context
