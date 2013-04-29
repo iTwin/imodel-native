@@ -96,6 +96,8 @@ public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (WCharCP accessString) const;
     ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (UInt32 propertyIndex) const;
 
+// constructors are hidden from published API -> make it abstract in the published API
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
