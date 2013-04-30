@@ -1306,9 +1306,9 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->SetStrength(STRENGTHTYPE_Embedding);
     EXPECT_TRUE(STRENGTHTYPE_Embedding == relationshipClass->GetStrength());
     
-    EXPECT_TRUE(STRENGTHDIRECTION_Forward == relationshipClass->GetStrengthDirection());
-    relationshipClass->SetStrengthDirection(STRENGTHDIRECTION_Backward);
-    EXPECT_TRUE(STRENGTHDIRECTION_Backward == relationshipClass->GetStrengthDirection());
+    EXPECT_TRUE(ECRelatedInstanceDirection::Forward == relationshipClass->GetStrengthDirection());
+    relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Backward);
+    EXPECT_TRUE(ECRelatedInstanceDirection::Backward == relationshipClass->GetStrengthDirection());
     
     EXPECT_FALSE(relationshipClass->GetSource().GetIsMultiple());
     EXPECT_TRUE(relationshipClass->GetTarget().GetIsMultiple());
