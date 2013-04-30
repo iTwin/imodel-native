@@ -140,9 +140,9 @@ WStringCR ECXml::DirectionToString (ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
-        case STRENGTHDIRECTION_Forward :
+        case ECRelatedInstanceDirection::Forward :
             return ECXML_DIRECTION_FORWARD;
-        case STRENGTHDIRECTION_Backward:
+        case ECRelatedInstanceDirection::Backward:
             return ECXML_DIRECTION_BACKWARD;
         default:
             return EMPTY_STRING;
@@ -157,9 +157,9 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
     if (0 == directionString.length())
         return ECOBJECTS_STATUS_ParseError;
     if (0 == directionString.compare(ECXML_DIRECTION_BACKWARD))
-        direction = STRENGTHDIRECTION_Backward;
+        direction = ECRelatedInstanceDirection::Backward;
     else if (0 == directionString.compare(ECXML_DIRECTION_FORWARD))
-        direction = STRENGTHDIRECTION_Forward;
+        direction = ECRelatedInstanceDirection::Forward;
     else
         return ECOBJECTS_STATUS_ParseError;
         

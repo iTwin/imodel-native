@@ -1102,12 +1102,12 @@ enum ECRelationshipEnd
 //! Used to describe the direction of a related instance within the context
 //! of an IECRelationshipInstance
 //! @ingroup ECObjectsGroup
-enum ECRelatedInstanceDirection
+enum class ECRelatedInstanceDirection
     {
     //! Related instance is the target in the relationship instance
-    STRENGTHDIRECTION_Forward = 1,
+    Forward = 1,
     //! Related instance is the source in the relationship instance
-    STRENGTHDIRECTION_Backward = 2
+    Backward = 2
     };
 
 //! The various strengths supported on a relationship class.

@@ -1968,7 +1968,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);
