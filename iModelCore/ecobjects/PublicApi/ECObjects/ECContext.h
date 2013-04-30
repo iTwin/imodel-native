@@ -98,8 +98,11 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    //! Host should call to establish standard search paths.
-    ECOBJECTS_EXPORT static void Initialize (BeFileNameCR rootDirectory);
+    //! Host should call to establish search paths for standard ECSchemas.
+    //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,
+    //!            e.g. standard ECSchemas.
+    //!            In the assets directory the standard ECSchemas have to be located in @b ECSchemas/Standard/.
+    ECOBJECTS_EXPORT static void Initialize (BeFileNameCR hostAssetsDirectory);
 
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema

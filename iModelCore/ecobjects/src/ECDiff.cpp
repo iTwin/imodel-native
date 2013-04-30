@@ -1167,9 +1167,9 @@ WCharCP ECSchemaDiffTool::ToString(ECRelatedInstanceDirection direction)
     {
     switch(direction)
         {
-        case STRENGTHDIRECTION_Backward:
+        case ECRelatedInstanceDirection::Backward:
             return ID_STRENGTH_DIRECTION_BACKWARD;
-        case STRENGTHDIRECTION_Forward:
+        case ECRelatedInstanceDirection::Forward:
             return ID_STRENGTH_DIRECTION_FORWARD;
         }
     return NULL;
@@ -1518,13 +1518,13 @@ bool  ECSchemaMergeTool::ParseStrengthDirection(ECRelatedInstanceDirection& dire
     {
     if (directionStr.CompareToI(ID_STRENGTH_DIRECTION_BACKWARD) == 0)
         {
-        direction = STRENGTHDIRECTION_Backward;
+        direction = ECRelatedInstanceDirection::Backward;
         return true;
         }
 
     if (directionStr.CompareToI(ID_STRENGTH_DIRECTION_FORWARD) == 0)
         {
-        direction = STRENGTHDIRECTION_Forward;
+        direction = ECRelatedInstanceDirection::Forward;
         return true;
         }
     BeAssert (false && "Unknown strength direction value");
