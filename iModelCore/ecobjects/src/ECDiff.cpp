@@ -145,8 +145,9 @@ ECDiffValue::ECDiffValue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDiffValue::SetValue (WCharCP v) 
     {
+    m_valueString.clear();
     if (v == NULL)
-        m_valueString = L"<nil>";
+       SetNil();
     else
         m_valueString = v ; 
     m_type = VALUETYPE_String; 
@@ -301,7 +302,7 @@ WString ECDiffValue::ToString() const
     case VALUETYPE_String:
         WString::Sprintf (out, L"\"%ls\"", m_valueString.c_str()); break;
     case VALUETYPE_Nil:
-        out = L""; break;
+        out = L"<nil>"; break;
         }
     return out;
     }
