@@ -2896,6 +2896,21 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
             ixwStatus = WriteArrayPropertyValue (*arrayProperty, ecInstance, baseAccessString, rootNode);
         else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
             {
+            // if this is a memory-based instance we can check to set if the value's "IsLoaded" bit and skip any values that have not been specifically set
+            if (NULL != ecInstance.GetAsMemoryECInstance())
+                {
+                WString    accessString;
+                if (NULL == baseAccessString)
+                    accessString = structProperty->GetName();    
+                else
+                    AppendAccessString (accessString, *baseAccessString, structProperty->GetName());
+
+                // no members, don't write anything.
+                ECValue         ecValue;
+                if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || !ecValue.IsLoaded())
+                    continue;
+                }
+
             ICustomECStructSerializerP customECStructSerializerP;
             if (NULL != (customECStructSerializerP = customStructSerializerMgr.GetCustomSerializer (structProperty, ecInstance)))
                 {
