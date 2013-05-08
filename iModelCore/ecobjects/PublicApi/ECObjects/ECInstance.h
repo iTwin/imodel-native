@@ -247,6 +247,9 @@ protected:
 
     //! Convenience method for DgnPlatform to return this instance as a DgnECInstance
     virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
+
+    //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
+    virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
 public:
 
     //! Returns the base address for this instance
@@ -559,6 +562,10 @@ public:
     //! @param[in] xmlNode The node to write to
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
+
+    //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML.  If the instance
+    //! returns true then the instance insures the ECValue returned for a property will properly set the "IsLoaded" flag in the ECValue.
+    ECOBJECTS_EXPORT bool                       SaveOnlyLoadedPropertiesToXml() const;
     };
 
 //=======================================================================================
