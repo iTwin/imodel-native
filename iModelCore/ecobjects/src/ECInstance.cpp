@@ -2873,9 +2873,9 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
             ixwStatus = WriteArrayPropertyValue (*arrayProperty, ecInstance, baseAccessString, rootNode);
         else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
             {
-            // if this is a memory-based instance we can check to set if the value's "IsLoaded" bit and skip any values that have not been specifically set
-            if (NULL != ecInstance.GetAsMemoryECInstance())
+            if (ecInstance.SaveOnlyLoadedPropertiesToXml())
                 {
+                // if the above flag is set then the instance sets "IsLoaded" flags for loaded properties and that "IsLoaded" flag is set in the ECValue for the property
                 WString    accessString;
                 if (NULL == baseAccessString)
                     accessString = structProperty->GetName();    
@@ -3312,6 +3312,14 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
     return writer.WriteInstance (*this, isStandAlone, writeInstanceId);
     }
 #endif //defined (NEEDSWORK_XML)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
+    {
+    return _SaveOnlyLoadedPropertiesToXml();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
