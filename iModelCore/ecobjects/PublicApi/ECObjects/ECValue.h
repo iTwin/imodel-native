@@ -282,7 +282,6 @@ public:
 
     //! Initializes a new instance of the ECValue type.
     //! @param[in] dateTime Date time value to set.
-    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT explicit ECValue (DateTimeCR dateTime);
 
     //! Sets whether this ECValue is read-only
@@ -512,13 +511,11 @@ public:
 
     //! Gets the DateTime value.
     //! @return DateTime value
-    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT DateTime       GetDateTime () const;
 
     //! Sets the DateTime value.
     //! @param[in] dateTime DateTime value to set
     //! @return SUCCESS or ERROR
-    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT BentleyStatus  SetDateTime (DateTimeCR dateTime);
 
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
@@ -541,7 +538,6 @@ public:
     //! @param[out] hasMetadata true, if this ECValue objects contains date time metadata. false otherwise
     //! @param[out] metadata if \p hasMetadata is true, contains the metadata available in this ECValue.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
-    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
 
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
@@ -559,7 +555,6 @@ public:
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @param[in] dateTimeMetadata DateTime metadata to set along with the ticks.
     //! @return SUCCESS or ERROR
-    //! @see \ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
 //__PUBLISH_SECTION_END__

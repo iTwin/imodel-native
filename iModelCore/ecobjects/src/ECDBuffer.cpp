@@ -2632,7 +2632,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
 
     if (!alreadyCalculated && propertyLayout.HoldsCalculatedProperty())
         {
-        ECObjectsStatus calcStatus = SetCalculatedProperty (v, propertyLayout);
+        ECObjectsStatus calcStatus = _UpdateCalculatedPropertyDependents (v, propertyLayout);
         switch (calcStatus)
             {
         case ECOBJECTS_STATUS_Success:
@@ -2904,19 +2904,8 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
         return SetPrimitiveValueToMemory (v, propertyLayout, true, index);
     else if (typeDescriptor.IsStructArray() && (v.IsNull() || v.IsStruct()))
         {
-        if (v.GetStruct().IsValid())
-            {
-            UInt32 propertyIndex;
-            IECInstanceP instance = this->GetAsIECInstanceP();
-            if (NULL != instance && ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propertyIndex, propertyLayout))
-                {
-                // Determine if the struct is valid to add to this array
-                ECPropertyCP ecprop = instance->GetEnabler().LookupECProperty (propertyIndex);
-                ArrayECPropertyCP structArrayProp = ecprop != NULL ? ecprop->GetAsArrayProperty() : NULL;
-                if (NULL != structArrayProp && !v.GetStruct()->GetEnabler().GetClass().Is (structArrayProp->GetStructElementType()))
-                    return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
-                }
-            }
+        if (v.GetStruct().IsValid() && !_IsStructValidForArray (*v.GetStruct(), propertyLayout))
+            return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
 
         return _SetStructArrayValueToMemory (v, propertyLayout, index);       
         }
@@ -2975,8 +2964,9 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (UInt32 propertyIndex, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (IECInstanceCR instance, ClassLayoutCR classLayout, PropertyLayoutCR propLayout)
+CalculatedPropertySpecificationCP ECDBuffer::LookupCalculatedPropertySpecification (IECInstanceCR instance, PropertyLayoutCR propLayout) const
     {
+    ClassLayoutCR classLayout = GetClassLayout();
     UInt32 propertyIndex;
     ECPropertyCP ecprop;
     if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
@@ -2997,43 +2987,19 @@ static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLayout, ECValueR existingValue, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    IECInstanceCP iecInstance = this->GetAsIECInstance();
-    if (NULL == iecInstance)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
-
-    CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, GetClassLayout(), propLayout);
-    if (NULL == spec)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
-
     ECValue updatedValue;
-    ECObjectsStatus evalStatus = spec->Evaluate (updatedValue, existingValue, *iecInstance);
+    ECObjectsStatus evalStatus = _EvaluateCalculatedProperty (updatedValue, existingValue, propLayout);
     
     if (ECOBJECTS_STATUS_Success != evalStatus || updatedValue.Equals (existingValue))
         return evalStatus;
 
-    // ###TODO: I don't like this cast either. Calculated properties require that we modify the instance in order to store the calculated value
+    // ###TODO: I don't like this cast. Calculated properties require that we modify the instance in order to store the calculated value
     ECDBuffer& memInst = const_cast<ECDBuffer&> (*this);
     evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex, true);
     if (ECOBJECTS_STATUS_Success == evalStatus)
         existingValue = updatedValue;
 
     return evalStatus;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECDBuffer::SetCalculatedProperty (ECValueCR v, PropertyLayoutCR propertyLayout)
-    {
-    IECInstanceP iecInstance = this->GetAsIECInstanceP();
-    if (NULL == iecInstance)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
-
-    CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, GetClassLayout(), propertyLayout);
-    if (NULL == spec)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
-    else
-        return spec->UpdateDependentProperties (v, *iecInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**

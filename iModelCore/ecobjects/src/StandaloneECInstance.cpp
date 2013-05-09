@@ -869,6 +869,52 @@ ECN::IECInstanceCR     fromNativeInstance
     return CopyInstancePropertiesToBuffer (fromNativeInstance);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_EvaluateCalculatedProperty (ECValueR calcedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const
+    {
+    IECInstanceCR thisInstance = *GetAsIECInstance();
+    CalculatedPropertySpecificationCP spec = LookupCalculatedPropertySpecification (thisInstance, propLayout);
+    if (NULL != spec)
+        {
+        UInt32 propIdx;
+        if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
+            (const_cast<MemoryECInstanceBase&> (*this)).SetIsLoadedBit (propIdx);
+
+        return spec->Evaluate (calcedValue, existingValue, thisInstance);
+        }
+    else
+        return ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_UpdateCalculatedPropertyDependents (ECValueCR calcedValue, PropertyLayoutCR propLayout)
+    {
+    IECInstanceR thisInstance = *GetAsIECInstanceP();
+    CalculatedPropertySpecificationCP spec = LookupCalculatedPropertySpecification (thisInstance, propLayout);
+    return NULL != spec ? spec->UpdateDependentProperties (calcedValue, thisInstance) : ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MemoryECInstanceBase::_IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const
+    {
+    UInt32 propIdx;
+    if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
+        {
+        ECPropertyCP ecprop = GetAsIECInstance()->GetEnabler().LookupECProperty (propIdx);
+        ArrayECPropertyCP arrayProp = ecprop ? ecprop->GetAsArrayProperty() : NULL;
+        if (NULL != arrayProp)
+            return structInstance.GetEnabler().GetClass().Is (arrayProp->GetStructElementType());
+        }
+
+    return false;
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
 ///////////////////////////////////////////////////////////////////////////////////////////

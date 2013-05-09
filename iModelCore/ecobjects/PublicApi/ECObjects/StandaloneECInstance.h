@@ -95,29 +95,33 @@ protected:
     ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
-    ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength);
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ShrinkAllocation ();
-    ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);        
+    ECOBJECTS_EXPORT virtual bool               _IsMemoryInitialized () const;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ShrinkAllocation ();
+    ECOBJECTS_EXPORT virtual void               _FreeAllocation ();
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GrowAllocation (UInt32 bytesNeeded);        
 
-    ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
-    ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) override;    
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
+    ECOBJECTS_EXPORT virtual byte const *       _GetData () const override;
+    ECOBJECTS_EXPORT virtual UInt32             _GetBytesAllocated () const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;  
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
     ECOBJECTS_EXPORT virtual ECN::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
    
-    ECOBJECTS_EXPORT virtual void             _ClearValues () override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance) override;
+    ECOBJECTS_EXPORT virtual void               _ClearValues () override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance) override;
 
-                     virtual bool             _AcquireData() const override { return true; }
-                     virtual bool             _ReleaseData() const override { return true; }
+                     virtual bool               _AcquireData() const override { return true; }
+                     virtual bool               _ReleaseData() const override { return true; }
 
-    ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) override;
+    ECOBJECTS_EXPORT virtual bool               _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const override;
+
+    ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
-    ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+    ECOBJECTS_EXPORT  ECObjectsStatus           SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

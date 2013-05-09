@@ -21,7 +21,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! contain metadata about the actual date time value (see DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
-//! @see \ref ECInstancesDateTimePropertiesHowTos
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
@@ -115,7 +114,6 @@ public:
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
     //! @return true if @p dateTimeProperty contains the %DateTimeInfo custom attribute, false if @p dateTimeProperty 
     //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
-    //! @see @ref ECInstancesDateTimePropertiesHowTos
     ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Indicates whether the specified schema is a @b system schema (in contrast to a user-supplied schema) by
