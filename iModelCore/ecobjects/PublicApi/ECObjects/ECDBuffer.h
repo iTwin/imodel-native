@@ -631,7 +631,7 @@ protected:
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
 
-    ECOBJECTS_EXPORT ECObjectsStatus  CopyInstancePropertiesToBuffer (IECInstanceCR srcInstance);
+    ECOBJECTS_EXPORT ECObjectsStatus  CopyPropertiesFromBuffer (ECDBufferCR src);
 
     virtual ~ECDBuffer () {}
 
@@ -674,10 +674,8 @@ protected:
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
 
     virtual void                _ClearValues() = 0;
-    virtual ECObjectsStatus     _CopyInstanceProperties (IECInstanceCR source) = 0;
+    virtual ECObjectsStatus     _CopyFromBuffer (ECDBufferCR source) = 0;
 
-    virtual IECInstanceP        _GetAsIECInstance () const = 0;
- 
     virtual ClassLayoutCR       _GetClassLayout() const = 0;
 
     virtual ECObjectsStatus     _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const = 0;
@@ -690,8 +688,6 @@ protected:
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 public:
     ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
-    ECOBJECTS_EXPORT IECInstanceCP          GetAsIECInstance () const;
-    ECOBJECTS_EXPORT IECInstanceP           GetAsIECInstanceP();
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
     ECOBJECTS_EXPORT ECN::PrimitiveType     GetStructArrayPrimitiveType () const;
@@ -741,9 +737,9 @@ public:
     ECOBJECTS_EXPORT bool                   IsEmpty() const;
     //! Sets all values to null
     ECOBJECTS_EXPORT void                   ClearValues();
-    //! Copies property values from source instance
-    //! @param[in] sourceInstance   The instance from which to copy property values
-    ECOBJECTS_EXPORT ECObjectsStatus        CopyInstanceProperties (IECInstanceCR sourceInstance);
+    //! Attempts to copy property values from source buffer. Expects source to have a compatible class layout.
+    //! @param[in] source The ECDBuffer to copy values from
+    ECOBJECTS_EXPORT ECObjectsStatus        CopyFromBuffer (ECDBufferCR source);
     };   
 
 END_BENTLEY_ECOBJECT_NAMESPACE

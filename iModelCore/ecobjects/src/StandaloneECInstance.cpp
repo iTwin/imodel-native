@@ -429,7 +429,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         if (pTo.IsNull() || pTo->IsSupportingInstance())
             {
             pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
-            ECObjectsStatus copyStatus = pTo->CopyInstanceProperties (*pFrom);
+            ECObjectsStatus copyStatus = pTo->CopyValues (*pFrom);
             if (ECOBJECTS_STATUS_Success != copyStatus)
                 return copyStatus;
             }
@@ -854,19 +854,16 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::_CopyInstanceProperties
-(
-ECN::IECInstanceCR     fromNativeInstance
-)
+ECObjectsStatus MemoryECInstanceBase::_CopyFromBuffer (ECDBufferCR src)
     {
-    MemoryECInstanceBase const* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance();
+    MemoryECInstanceBase const* fromMemoryInstance = dynamic_cast<MemoryECInstanceBase const*> (&src);
     if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
         {
         SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
         memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
         }
 
-    return CopyInstancePropertiesToBuffer (fromNativeInstance);
+    return CopyPropertiesFromBuffer (src);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -914,6 +911,12 @@ bool MemoryECInstanceBase::_IsStructValidForArray (IECInstanceCR structInstance,
 
     return false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceP MemoryECInstanceBase::GetAsIECInstanceP()                                 { return _GetAsIECInstance(); }
+IECInstanceCP MemoryECInstanceBase::GetAsIECInstance() const                           { return _GetAsIECInstance(); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
@@ -967,7 +970,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
         return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
-    if (ECOBJECTS_STATUS_Success != newInstance->CopyInstanceProperties (instance))
+    if (ECOBJECTS_STATUS_Success != newInstance->CopyValues (instance))
         return NULL;
 
     return newInstance;
@@ -1241,7 +1244,6 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
 StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     StandaloneECInstancePtr instance = new StandaloneECInstance (*this, minimumBufferSize);
-    instance->InitializeDefaultValues();
     return instance;
     }    
     
