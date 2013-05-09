@@ -3681,5 +3681,45 @@ bool ECDBuffer::IsEmpty() const
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::EvaluateAllCalculatedProperties()
+    {
+    ScopedDataAccessor scopedDataAccessor (*this);
+    if (!scopedDataAccessor.IsValid())
+        { BeAssert (false); return false; }
+
+    FOR_EACH (PropertyLayout const* propLayout, GetClassLayout().m_propertyLayouts)
+        {
+        if (propLayout->HoldsCalculatedProperty())
+            {
+            ECValue v;
+            if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout) && v.IsArray())
+                {
+                // an array of calculated primitive values
+                UInt32 arrayCount = v.GetArrayInfo().GetCount();
+                for (UInt32 i = 0; i < arrayCount; i++)
+                    GetValueFromMemory (v, *propLayout, i);
+                }
+            }
+        else if (propLayout->GetTypeDescriptor().IsStructArray())
+            {
+            ECValue v;
+            if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout))
+                {
+                UInt32 arrayCount = v.GetArrayInfo().GetCount();
+                for (UInt32 i = 0; i < arrayCount; i++)
+                    {
+                    if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout, i) && !v.IsNull() && NULL != v.GetStruct()->GetECDBuffer())
+                        v.GetStruct()->GetECDBufferP()->EvaluateAllCalculatedProperties();
+                    }
+                }
+            }
+        }
+
+    return true;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
