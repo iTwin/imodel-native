@@ -100,7 +100,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
-//! @endcond BENTLEY_SDK_Desktop
+//! @endcond
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
