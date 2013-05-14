@@ -92,7 +92,8 @@ private:
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
     ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
-    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, ECClassCR ecClass, MemoryECInstanceBase const * parentInstance=NULL);
+
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
     ECOBJECTS_EXPORT virtual bool               _IsMemoryInitialized () const;

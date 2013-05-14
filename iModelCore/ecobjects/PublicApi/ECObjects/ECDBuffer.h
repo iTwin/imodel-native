@@ -485,8 +485,11 @@ protected:
     UInt8           m_flags;
     // Additional data can be appended here in future versions by creating a subclass of ECDHeader_v0
 public:
-    // Construct header with default values and size
+    // Construct header with default string encoding
     ECOBJECTS_EXPORT ECDHeader_v0();
+    // Construct header with specified string encoding
+    ECOBJECTS_EXPORT ECDHeader_v0 (bool useUtf8Encoding);
+
     // Read header from persisted ECData. Returns false if no ECDHeader could be extracted.
     ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader_v0& header, byte const* data);
 
@@ -696,8 +699,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
     // Calculate how many bytes are required for an empty buffer using the specified classLayout
     ECOBJECTS_EXPORT static UInt32          CalculateInitialAllocation (ClassLayoutCR classLayout);
-    // Initialize a block of memory for a new ECDBuffer.
-    ECOBJECTS_EXPORT static void            InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated);
+    // Initialize a block of memory for a new ECDBuffer. If forceUtf8 is true, all strings in the buffer will be stored as Utf8; otherwise the default string encoding will be used.
+    ECOBJECTS_EXPORT static void            InitializeMemory(ClassLayoutCR classLayout, byte* data, UInt32 bytesAllocated, bool forceUtf8 = false);
 
     //! Given a persisted ECD buffer, returns true if the data is compatible with ECDFormat_Current.
     //! This method must be called before attempting to instantiate an ECD-based instance from a block of persistent memory.

@@ -34,7 +34,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, ECClassCR ecClass, MemoryECInstanceBase const* parentInstance) :
         ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0)
     {
@@ -48,7 +48,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
 
-    InitializeMemory (classLayout, m_data, m_bytesAllocated);
+    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined (L"PersistStringsAsUtf8"));
     
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
@@ -946,7 +946,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte *
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize) :
-        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
+        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true, enabler.GetClass()),
         m_sharedWipEnabler(&enabler), m_isSupportingInstance (false)
     {
     }
