@@ -18,6 +18,7 @@ using namespace std;
 
 wchar_t s_schemaXml[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                L"    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.06\" prefix=\"besc\" />"
                 L"    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
                 L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
                 L"    </ECClass>"
@@ -26,6 +27,12 @@ wchar_t s_schemaXml[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 L"        <ECProperty propertyName=\"String\" typeName=\"string\" />"
                 L"        <ECStructProperty propertyName=\"Struct\" typeName=\"Manufacturer\" />"
                 L"        <ECArrayProperty propertyName=\"StructArray\" typeName=\"Manufacturer\" isStruct=\"True\" />"
+                L"    </ECClass>"
+                L"    <ECClass typeName=\"TestUtf8Class\" isDomainClass=\"True\">"
+                L"        <ECCustomAttributes>"
+                L"            <PersistStringsAsUtf8 xmlns=\"Bentley_Standard_CustomAttributes.01.00\" />"
+                L"        </ECCustomAttributes>"
+                L"        <ECProperty propertyName=\"String\" typeName=\"string\" />"
                 L"    </ECClass>"
                 L"</ECSchema>";
 
@@ -119,7 +126,7 @@ struct StringEncodingTests : ECTestFixture
         return instance;
         }
 
-    bool                    CompareInstances (ECValuesCollectionCR aVals, StandaloneECInstancePtr b)
+    bool                    CompareInstances (ECValuesCollectionCR aVals, StandaloneECInstancePtr b, bool outputDifferences = false)
         {
         FOR_EACH (ECPropertyValueCR aVal, aVals)
             {
@@ -132,7 +139,12 @@ struct StringEncodingTests : ECTestFixture
                     return false;
                 }
             else if (!bV.Equals (aV))
+                {
+                if (outputDifferences)
+                    wprintf (L"%ls differs: %ls vs. %ls\n", aVal.GetValueAccessor().GetAccessString(), aV.ToString().c_str(), bV.ToString().c_str());
+
                 return false;
+                }
             }
             
         return true;
@@ -142,7 +154,7 @@ struct StringEncodingTests : ECTestFixture
     void                    CompareInstances (StandaloneECInstancePtr a, StandaloneECInstancePtr b)
         {
         ECValuesCollectionPtr aVals = ECValuesCollection::Create (*a);
-        EXPECT_EQ (expectMatch, CompareInstances (*aVals, b));
+        EXPECT_EQ (expectMatch, CompareInstances (*aVals, b, expectMatch));
         }
     };
 
@@ -231,6 +243,24 @@ TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
 
     b->SetValue (L"Struct.Name", ECValue (L"finnegan"));
     CompareInstances<false> (a, b);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* If the ECClass has the custom attribute "PersistStringsAsUtf8", instances will always
+* use Utf-8 encoding.
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (StringEncodingTests, ForceUtf8)
+    {
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
+    StandaloneECInstancePtr a = m_schema->GetClassP (L"TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, a->GetStringEncoding());
+
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf8);
+    StandaloneECInstancePtr b = m_schema->GetClassP (L"TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, b->GetStringEncoding());
+
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

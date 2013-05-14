@@ -483,7 +483,7 @@ bool ECValue::AllowsPointersIntoInstanceMemory() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECValue::SetAllowsPointersIntoInstanceMemory (bool allow) const
+void ECValue::SetAllowsPointersIntoInstanceMemory (bool allow)
     {
     if (allow)
         m_stateFlags |= ((UInt8)ECVALUE_STATE_AllowPointersIntoInstanceMemory);
@@ -760,21 +760,23 @@ void            ECValue::SetToNull()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::Clear()
     {
+    UInt8 newStateFlags = AllowsPointersIntoInstanceMemory() ? (ECVALUE_STATE_IsNull | ECVALUE_STATE_AllowPointersIntoInstanceMemory) : ECVALUE_STATE_IsNull;
+
     if (IsNull())
         {
         m_valueKind = VALUEKIND_Uninitialized;
-        m_stateFlags = ECVALUE_STATE_IsNull;
+        m_stateFlags = newStateFlags;
         return;
         }
         
     if (IsUninitialized())
         {
-        m_stateFlags = ECVALUE_STATE_IsNull;
+        m_stateFlags = newStateFlags;
         return;
         }
 
     FreeMemory ();
-    m_stateFlags = ECVALUE_STATE_IsNull;
+    m_stateFlags = newStateFlags;
     m_valueKind = VALUEKIND_Uninitialized;
     }
 

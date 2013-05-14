@@ -1793,4 +1793,47 @@ TEST_F (ECDBufferTests, ClearArray)
     EXPECT_EQ (0, v.GetArrayInfo().GetCount());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Test the ECValue flag that returns strings as pointers into instance data rather than
+* making a copy.
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, PointersIntoInstanceMemory)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"InstancePointers", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"InstancePointers");
+    PrimitiveECPropertyP ecprop;
+    ecClass->CreatePrimitiveProperty (ecprop, L"String", PRIMITIVETYPE_String);
+
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    instance->SetValue (L"String", ECValue (L"string", false));
+
+    ECValue v;
+    instance->GetValue (v, L"String");
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"string"));
+    
+    // To test whether or not we got back a pointer into instance memory, we'll modify the memory. Real code would never do this of course.
+    WChar newStr[] = L"STRING";
+    WCharP pStr = const_cast<WCharP> (v.GetString());
+    memcpy (pStr, newStr, _countof(newStr)*sizeof(WChar));
+
+    instance->GetValue (v, L"String");
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"string"));   // did not modify instance data
+
+    v.SetAllowsPointersIntoInstanceMemory (true);
+    instance->GetValue (v, L"String");
+
+    pStr = const_cast<WCharP> (v.GetString());
+    memcpy (pStr, newStr, _countof(newStr)*sizeof(WChar));
+
+    // The flag should not be reset when the ECValue was assigned a value
+    EXPECT_EQ (true, v.AllowsPointersIntoInstanceMemory());
+
+    instance->GetValue (v, L"String");
+    EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
+    EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
