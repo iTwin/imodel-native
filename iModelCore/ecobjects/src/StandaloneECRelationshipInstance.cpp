@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECRelationshipInstance::StandaloneECRelationshipInstance (StandaloneECRelationshipEnablerCR relationshipEnabler) :
-        MemoryECInstanceBase (relationshipEnabler.GetClassLayout(), 0, true)
+        MemoryECInstanceBase (relationshipEnabler.GetClassLayout(), 0, true, relationshipEnabler.GetClass())
     {
     m_relationshipEnabler = &relationshipEnabler;
     m_relationshipEnabler->AddRef();   // make sure relationship enabler stays around

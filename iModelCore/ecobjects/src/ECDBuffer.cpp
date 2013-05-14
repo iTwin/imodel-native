@@ -2483,8 +2483,8 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 // cannot know his ECValue is about to evaporate, we have to make the copy.
                 // The exception is if the caller passed us an ECValue with a flag explicitly requesting we avoid making the copy.
                 bool makeACopy = !v.AllowsPointersIntoInstanceMemory();
-                if (StringEncoding_Utf16 == GetStringEncoding(), makeACopy)
-                    v.SetUtf16CP ((Utf16CP)pValue);
+                if (StringEncoding_Utf16 == GetStringEncoding())
+                    v.SetUtf16CP ((Utf16CP)pValue, makeACopy);
                 else
                     v.SetUtf8CP ((Utf8CP)pValue, makeACopy);
                 break;            
