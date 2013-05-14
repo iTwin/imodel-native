@@ -2223,13 +2223,13 @@ ECObjectsStatus       ECDBuffer::ShiftArrayIndexValueData(PropertyLayoutCR prope
         
     return ModifyData ((byte const*)pCurrent, shiftedSecondaryOffsets.GetData(), sizeOfSecondaryOffsetsToShift);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     12/09
+* @bsimethod                                                    Paul.Connelly   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte * data, UInt32 bytesAllocated)
+void            ECDBuffer::InitializeMemory(ClassLayoutCR classLayout, byte* data, UInt32 bytesAllocated, bool forceUtf8)
     {
-    ECDHeader hdr;
+    ECDHeader hdr (forceUtf8 ? true : StringEncoding_Utf8 == GetDefaultStringEncoding());
     memcpy (data, &hdr, hdr.GetSize());
 
     classLayout.InitializeMemoryForInstance (data + hdr.GetSize(), bytesAllocated - hdr.GetSize());
@@ -2489,10 +2489,12 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 // but the pointer will become invalid as soon as the instance does.
                 // Since there are situations in which the returned ECValue outlasts the instance (e.g. evaluating ECExpressions), and the caller
                 // cannot know his ECValue is about to evaporate, we have to make the copy.
-                if (StringEncoding_Utf16 == GetStringEncoding())
+                // The exception is if the caller passed us an ECValue with a flag explicitly requesting we avoid making the copy.
+                bool makeACopy = !v.AllowsPointersIntoInstanceMemory();
+                if (StringEncoding_Utf16 == GetStringEncoding(), makeACopy)
                     v.SetUtf16CP ((Utf16CP)pValue);
                 else
-                    v.SetUtf8CP ((Utf8CP)pValue);
+                    v.SetUtf8CP ((Utf8CP)pValue, makeACopy);
                 break;            
                 }
             default:
@@ -3506,6 +3508,16 @@ ECDHeader_v0::ECDHeader_v0()
         SetFlag (ECDFLAG_Utf8Encoding, true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDHeader_v0::ECDHeader_v0 (bool useUtf8Encoding)
+  : m_formatVersion(ECDFormat_Current), m_readableByVersion(ECDFormat_MinimumReadable), m_writableByVersion(ECDFormat_MinimumWritable), m_headerSize(sizeof(ECDHeader)), m_flags(0)
+    {
+    if (useUtf8Encoding)
+        SetFlag (ECDFLAG_Utf8Encoding, true);
+    }
+   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -418,6 +418,15 @@ public:
     // Use DgnPlatform::IECInteropStringFormatter() for more full-featured formatting.
     ECOBJECTS_EXPORT bool           ApplyDotNetFormatting (WStringR formatted, WCharCP formatString) const;
     ECOBJECTS_EXPORT bool           SupportsDotNetFormatting() const;
+
+    // Get/set a flag indicating whether to copy data from an ECDBuffer into this ECValue or to allow this ECValue to store direct pointers into the ECDBuffer's data.
+    // Off by default, indicating data will be copied from the ECDBuffer.
+    // By setting this flag the caller indicates the pointers exposed by this ECValue will not be used after the contents of the ECDBuffer have been
+    // released, modified, or moved.
+    // Don't set this flag in ECValues to be returned to external callers who may not expect it to be set.
+    ECOBJECTS_EXPORT bool           AllowsPointersIntoInstanceMemory() const;
+    ECOBJECTS_EXPORT void           SetAllowsPointersIntoInstanceMemory (bool allow);
+
 /*__PUBLISH_SECTION_START__*/
 
     //! Defines the StructArray for this ECValue

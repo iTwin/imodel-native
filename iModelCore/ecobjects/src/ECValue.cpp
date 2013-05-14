@@ -12,10 +12,11 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     {
-    ECVALUE_STATE_None         = 0x00,
-    ECVALUE_STATE_IsNull       = 0x01,
-    ECVALUE_STATE_IsReadOnly   = 0x02,      // Really indicates that the property from which this came is readonly... not the value itself.
-    ECVALUE_STATE_IsLoaded     = 0x04
+    ECVALUE_STATE_None                              = 0x00,
+    ECVALUE_STATE_IsNull                            = 0x01,
+    ECVALUE_STATE_IsReadOnly                        = 0x02,      // Really indicates that the property from which this came is readonly... not the value itself.
+    ECVALUE_STATE_IsLoaded                          = 0x04,
+    ECVALUE_STATE_AllowPointersIntoInstanceMemory   = 0x08
     };
 
 enum ECValueOwnedDataFlags ENUM_UNDERLYING_TYPE(unsigned char)
@@ -469,6 +470,25 @@ void            ECValue::SetIsLoaded(bool isLoaded)
         m_stateFlags |= ((UInt8)ECVALUE_STATE_IsLoaded); 
     else
         m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsLoaded); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::AllowsPointersIntoInstanceMemory() const
+    {
+    return 0 != (m_stateFlags & ECVALUE_STATE_AllowPointersIntoInstanceMemory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::SetAllowsPointersIntoInstanceMemory (bool allow) const
+    {
+    if (allow)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_AllowPointersIntoInstanceMemory);
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_AllowPointersIntoInstanceMemory);
     }
 
 /*---------------------------------------------------------------------------------**//**
