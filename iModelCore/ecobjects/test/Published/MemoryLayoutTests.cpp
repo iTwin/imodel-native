@@ -1275,7 +1275,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
-    ECObjectsStatus copyStatus = duplicateInstance->GetAsMemoryECInstanceP()->CopyInstanceProperties (*instance);
+    ECObjectsStatus copyStatus = duplicateInstance->CopyValues (*instance);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == copyStatus);
 
     collection = ECValuesCollection::Create (*duplicateInstance);

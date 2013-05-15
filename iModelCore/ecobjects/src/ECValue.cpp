@@ -13,10 +13,11 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     {
-    ECVALUE_STATE_None         = 0x00,
-    ECVALUE_STATE_IsNull       = 0x01,
-    ECVALUE_STATE_IsReadOnly   = 0x02,      // Really indicates that the property from which this came is readonly... not the value itself.
-    ECVALUE_STATE_IsLoaded     = 0x04
+    ECVALUE_STATE_None                              = 0x00,
+    ECVALUE_STATE_IsNull                            = 0x01,
+    ECVALUE_STATE_IsReadOnly                        = 0x02,      // Really indicates that the property from which this came is readonly... not the value itself.
+    ECVALUE_STATE_IsLoaded                          = 0x04,
+    ECVALUE_STATE_AllowPointersIntoInstanceMemory   = 0x08
     };
 
 enum ECValueOwnedDataFlags ENUM_UNDERLYING_TYPE(unsigned char)
@@ -472,6 +473,25 @@ void            ECValue::SetIsLoaded(bool isLoaded)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::AllowsPointersIntoInstanceMemory() const
+    {
+    return 0 != (m_stateFlags & ECVALUE_STATE_AllowPointersIntoInstanceMemory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECValue::SetAllowsPointersIntoInstanceMemory (bool allow)
+    {
+    if (allow)
+        m_stateFlags |= ((UInt8)ECVALUE_STATE_AllowPointersIntoInstanceMemory);
+    else
+        m_stateFlags &= ~((UInt8)ECVALUE_STATE_AllowPointersIntoInstanceMemory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * It is up to the instance implementation to set this flag. For MemoryBased instances
 * this bit is set in the _GetValue method when it checks the IsLoaded flag for the 
 * property.
@@ -740,21 +760,23 @@ void            ECValue::SetToNull()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECValue::Clear()
     {
+    UInt8 newStateFlags = AllowsPointersIntoInstanceMemory() ? (ECVALUE_STATE_IsNull | ECVALUE_STATE_AllowPointersIntoInstanceMemory) : ECVALUE_STATE_IsNull;
+
     if (IsNull())
         {
         m_valueKind = VALUEKIND_Uninitialized;
-        m_stateFlags = ECVALUE_STATE_IsNull;
+        m_stateFlags = newStateFlags;
         return;
         }
         
     if (IsUninitialized())
         {
-        m_stateFlags = ECVALUE_STATE_IsNull;
+        m_stateFlags = newStateFlags;
         return;
         }
 
     FreeMemory ();
-    m_stateFlags = ECVALUE_STATE_IsNull;
+    m_stateFlags = newStateFlags;
     m_valueKind = VALUEKIND_Uninitialized;
     }
 
