@@ -580,7 +580,7 @@ private:
 
     // These methods are for internal use by ECDBuffer only. They should be used within a single scope and *must* be paired. ScopedDataAccessor helps ensure this.
     friend struct ScopedDataAccessor;
-    virtual bool                      _AcquireData() const = 0;
+    virtual bool                      _AcquireData (bool forWrite) const = 0;
     virtual bool                      _ReleaseData() const = 0;
 protected:
     //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
@@ -689,7 +689,11 @@ protected:
 
     // Get a pointer to the first byte of the ECDBuffer's property data. This is the first byte beyond the ECDHeader.
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
+
 public:
+    // Copies the data from the specified ECDBuffer into this ECDBuffer, converting to match this buffer's ClassLayout if necessary.
+    // Does not copy struct array instances, only their identifiers. In general CopyFromBuffer() should be used instead.
+    ECOBJECTS_EXPORT ECObjectsStatus        CopyDataBuffer (ECDBufferCR src, bool allowClassLayoutConversion);
     ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);

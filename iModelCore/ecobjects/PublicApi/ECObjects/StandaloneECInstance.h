@@ -113,7 +113,7 @@ protected:
     ECOBJECTS_EXPORT virtual void               _ClearValues () override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _CopyFromBuffer (ECDBufferCR src) override;
 
-                     virtual bool               _AcquireData() const override { return true; }
+                     virtual bool               _AcquireData (bool forWrite) const override { return true; }
                      virtual bool               _ReleaseData() const override { return true; }
 
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const override;

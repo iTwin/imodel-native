@@ -2295,7 +2295,7 @@ struct ScopedDataAccessor
 private:
     ECDBuffer const*            m_buffer;
 public:
-    ScopedDataAccessor (ECDBuffer const& buffer) : m_buffer(buffer._AcquireData() ? &buffer : NULL) { }
+    ScopedDataAccessor (ECDBuffer const& buffer, bool forWrite = false) : m_buffer(buffer._AcquireData (forWrite) ? &buffer : NULL) { }
     ~ScopedDataAccessor ()
         {
         if (IsValid())
@@ -3692,6 +3692,89 @@ bool ECDBuffer::EvaluateAllCalculatedProperties()
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayoutConversion)
+    {
+    // Do we really support this? Currently everybody uses integers for this...
+    if (GetStructArrayPrimitiveType() != src.GetStructArrayPrimitiveType())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    // Note this method does not do anything about per-property flags, etc, which are relevant to MemoryECInstanceBase-derived classes...
+    ScopedDataAccessor srcAccessor (src), dstAccessor (*this, true);
+    if (!srcAccessor.IsValid() || !dstAccessor.IsValid())
+        return ECOBJECTS_STATUS_Error;
+
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ClearValues();
+
+    ClassLayoutCR srcLayout = src.GetClassLayout();
+    ClassLayoutCR dstLayout = GetClassLayout();
+    if (srcLayout.Equals (dstLayout))
+        {
+        // we can copy directly
+        UInt32 bytesUsed = CalculateBytesUsed();
+        UInt32 bytesNeeded = src.CalculateBytesUsed();
+        if (bytesNeeded <= bytesUsed || ECOBJECTS_STATUS_Success == (status = _GrowAllocation (bytesNeeded - bytesUsed)))
+            status = ModifyData (_GetData(), src._GetData(), bytesNeeded);
+        }
+    else if (!allowClassLayoutConversion)
+        status = ECOBJECTS_STATUS_ECClassNotSupported;
+    else
+        {
+        // The ClassLayouts differ - we need to set properties one-by-one
+        // We may need to convert primitive property values from one type to another, skip properties not present in one buffer or the other, etc
+        ECValue v;
+        v.SetAllowsPointersIntoInstanceMemory (true);
+        FOR_EACH (PropertyLayoutCP srcPropLayout, srcLayout.m_propertyLayouts)
+            {
+            PropertyLayoutCP dstPropLayout;
+            if (ECOBJECTS_STATUS_Success == dstLayout.GetPropertyLayout (dstPropLayout, srcPropLayout->GetAccessString()))
+                {
+                ECTypeDescriptor dstType = dstPropLayout->GetTypeDescriptor(),
+                                 srcType = srcPropLayout->GetTypeDescriptor();
+
+                if (dstType.GetTypeKind() != srcType.GetTypeKind())
+                    continue;
+                else if (dstType.IsStruct())
+                    continue;   // embedded structs always null
+                else if (dstType.IsPrimitive())
+                    {
+                    if (ECOBJECTS_STATUS_Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, false, 0) && v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
+                        SetPrimitiveValueToMemory (v, *dstPropLayout, false, 0, true /* set calculated property directly */);
+                    }
+                else // array
+                    {
+                    // ###TODO? If the primitive types match, we could conceivably copy the entire array as one big chunk of memory, which would save us some behind-the-scenes
+                    // memory swapping/allocation for arrays of variable-sized properties (principally strings). Worth it?
+
+                    // Note for struct arrays this copies the struct value identifiers directly, does not copy or create struct array instances or fix up identifiers
+                    if (ECOBJECTS_STATUS_Success == src.GetValueFromMemory (v, *srcPropLayout) && v.IsArray() && v.GetArrayInfo().GetCount() > 0)
+                        {
+                        UInt32 propertyIndex;
+                        if (ECOBJECTS_STATUS_Success != dstLayout.GetPropertyLayoutIndex (propertyIndex, *dstPropLayout))
+                            { BeAssert(false); continue; }
+
+                        UInt32 count = v.GetArrayInfo().GetCount();
+                        status = AddNullArrayElementsAt (propertyIndex, count);
+                        if (ECOBJECTS_STATUS_Success != status)
+                            return status;
+
+                        for (UInt32 i = 0; i < count; i++)
+                            {
+                            if (ECOBJECTS_STATUS_Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, true, i) && v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
+                                SetPrimitiveValueToMemory (v, *dstPropLayout, true, i, true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    return status;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
