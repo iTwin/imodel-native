@@ -177,6 +177,8 @@ public:
     //! Return right value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
     //! @return ECValue for current node left value from right schema
     ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueRight() const = 0;
+
+    virtual ~IECDiffNode(){};
     };
 
 //======================================================================================
