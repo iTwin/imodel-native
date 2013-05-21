@@ -43,7 +43,15 @@ using namespace std;
 #define ID_MINOCCURS L"MinOccurs"
 #define ID_CUSTOMATTRIBUTES L"CustomAttributes"
 #define ID_NAMESPACEPREFIX L"NamespacePrefix"
+    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECDiffNodeCP ECDiff::GetRootNode () const
+    {
+    return const_cast<ECDiff*>(this)->GetRoot();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
@@ -291,25 +299,47 @@ WString ECDiffValue::ToString() const
     WString out;
     switch (m_type)
         {
-    case VALUETYPE_Boolean:
-        WString::Sprintf (out, L"%ls", m_valueBool?L"true" :L"false"); break;
-    case VALUETYPE_Double:
-        WString::Sprintf (out, L"%f", m_valueDouble); break;
-    case VALUETYPE_Int32:
-        WString::Sprintf (out, L"%d", m_valueInt32); break;
-    case VALUETYPE_Int64:
-        WString::Sprintf (out, L"%ld", m_valueInt64); break;
-    case VALUETYPE_String:
-        WString::Sprintf (out, L"\"%ls\"", m_valueString.c_str()); break;
-    case VALUETYPE_Nil:
-        out = L"<nil>"; break;
+        case VALUETYPE_Boolean:
+            WString::Sprintf (out, L"%ls", m_valueBool?L"true" :L"false"); break;
+        case VALUETYPE_Double:
+            WString::Sprintf (out, L"%f", m_valueDouble); break;
+        case VALUETYPE_Int32:
+            WString::Sprintf (out, L"%d", m_valueInt32); break;
+        case VALUETYPE_Int64:
+            WString::Sprintf (out, L"%ld", m_valueInt64); break;
+        case VALUETYPE_String:
+            WString::Sprintf (out, L"\"%ls\"", m_valueString.c_str()); break;
+        case VALUETYPE_Nil:
+            out = L"<nil>"; break;
         }
     return out;
     }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Affan.Khan      02/2013
-    +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue ECDiffValue::GetValueAsECValue() const
+    {
+    switch (m_type)
+        {
+        case VALUETYPE_Boolean:
+            return ECValue(GetValueBool());
+        case VALUETYPE_Double:
+            return ECValue(GetValueDouble());
+        case VALUETYPE_Int32:
+            return ECValue(GetValueInt32());
+        case VALUETYPE_Int64:
+            return ECValue(GetValueInt64());
+        case VALUETYPE_String:
+            return ECValue(GetValueString().c_str());
+        case VALUETYPE_Nil:
+            return ECValue();
+        }
+    BeAssert( false && "Case not handled");
+    return ECValue();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDiffNode::_Write (WStringR out, int indent, WStringCR tab) const
     {
     WString prefix;
@@ -443,7 +473,7 @@ void ECDiffNode::_GetNodeState (bmap<WString, DiffNodeState>& nodes, stack<WStri
     bool wildCard = (accessors.top() == L"*");
     if (wildCard && accessors.size() == 1)
         {
-        nodes [GetAccessString()] = ConvertToDiffNodeState (GetDiffType (bAccumlativeState));
+        nodes [GetAccessString()] = ConvertToDiffNodeState (ImplGetDiffType (bAccumlativeState));
         for (const_iterator itor = begin(); itor != end(); ++itor)
             (*itor)->_GetNodeState (nodes, accessors, bAccumlativeState);
         return;
@@ -456,7 +486,7 @@ void ECDiffNode::_GetNodeState (bmap<WString, DiffNodeState>& nodes, stack<WStri
         {
         accessors.pop();
         if (accessors.empty())
-            nodes [GetAccessString()] = ConvertToDiffNodeState (GetDiffType (bAccumlativeState));
+            nodes [GetAccessString()] = ConvertToDiffNodeState (ImplGetDiffType (bAccumlativeState));
         else
             for (const_iterator itor = begin(); itor != end(); ++itor)
                 (*itor)->_GetNodeState (nodes, accessors, bAccumlativeState);
@@ -491,15 +521,15 @@ WString ECDiffNode::GetAccessString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffValue& ECDiffNode::GetValueLeft() {return m_valueLeft; }
+ECDiffValue& ECDiffNode::ImplGetValueLeft() {return m_valueLeft; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffValue& ECDiffNode::GetValueRight() {return m_valueRight; }
+ECDiffValue& ECDiffNode::ImplGetValueRight() {return m_valueRight; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffValue& ECDiffNode::GetValue (ValueDirection direction) { return direction== DIRECTION_Left ? GetValueLeft() : GetValueRight();}
+ECDiffValue& ECDiffNode::GetValue (ValueDirection direction) { return direction== DIRECTION_Left ? ImplGetValueLeft() : ImplGetValueRight();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -596,7 +626,7 @@ ECDiffNodeP ECDiffNode::AddWithIndex (int index, DiffNodeId type)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DiffType ECDiffNode::GetDiffType (bool bRecursively) 
+DiffType ECDiffNode::ImplGetDiffType (bool bRecursively) 
     {
     if (m_cachedAccumlativeType != DIFFTYPE_Empty)
         return m_cachedAccumlativeType;
@@ -610,11 +640,11 @@ DiffType ECDiffNode::GetDiffType (bool bRecursively)
 DiffType ECDiffNode::_GetDiffType (bool bRecursively) 
     {
     DiffType type;
-    if (GetValueLeft().IsValueNill() && GetValueRight().IsValueNill())
+    if (ImplGetValueLeft().IsValueNill() && ImplGetValueRight().IsValueNill())
         type = DIFFTYPE_Empty;
-    else if (!GetValueLeft().IsValueNill() && GetValueRight().IsValueNill())
+    else if (!ImplGetValueLeft().IsValueNill() && ImplGetValueRight().IsValueNill())
         type = DIFFTYPE_Left;
-    else if (!GetValueRight().IsValueNill() && GetValueLeft().IsValueNill())
+    else if (!ImplGetValueRight().IsValueNill() && ImplGetValueLeft().IsValueNill())
         type = DIFFTYPE_Right;
     else
         type = DIFFTYPE_Conflict;
@@ -624,7 +654,7 @@ DiffType ECDiffNode::_GetDiffType (bool bRecursively)
 
     for(const_iterator itor = begin(); itor != end(); ++itor)
         {
-        DiffType childType = (*itor)->GetDiffType (bRecursively);
+        DiffType childType = (*itor)->ImplGetDiffType (bRecursively);
         if (type == DIFFTYPE_Empty)
             if (childType != DIFFTYPE_Empty)
                 type = childType;
@@ -657,9 +687,9 @@ ECDiffNodeP ECDiffNode::GetChild (WStringCR accessString, bool bCreate)
             return itor->second->GetChild (rest, bCreate);
     if (bCreate)
         if (rest.empty())
-            return Add (cur.c_str(), DIFFNODEID_None);
+            return Add (cur.c_str(), DiffNodeId::None);
         else
-            return Add (cur.c_str(), DIFFNODEID_None)->GetChild (rest, bCreate);
+            return Add (cur.c_str(), DiffNodeId::None)->GetChild (rest, bCreate);
     return NULL;
     }
 
@@ -726,57 +756,57 @@ ECDiffNode::~ECDiffNode()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDiffNode::IsEmpty()
     {
-    return size() == 0 && GetValueLeft().IsValueNill() && GetValueRight().IsValueNill();
+    return size() == 0 && ImplGetValueLeft().IsValueNill() && ImplGetValueRight().IsValueNill();
     }
 
 WCharCP  ECDiffNode::IdToString (DiffNodeId id)
     {
     switch (id)
     {
-       case DIFFNODEID_Schema:
-       case DIFFNODEID_Reference: 
-       case DIFFNODEID_Class:
-       case DIFFNODEID_Property: 
-       case DIFFNODEID_None:
-       case DIFFNODEID_CustomAttribute:
-        case DIFFNODEID_ConstraintClass:
+       case DiffNodeId::Schema:
+       case DiffNodeId::Reference: 
+       case DiffNodeId::Class:
+       case DiffNodeId::Property: 
+       case DiffNodeId::None:
+       case DiffNodeId::CustomAttribute:
+        case DiffNodeId::ConstraintClass:
            return NULL;
 
-        case DIFFNODEID_Root: return ID_ROOT;
-        case DIFFNODEID_Name: return ID_NAME;
-        case DIFFNODEID_DisplayLabel: return ID_DISPLAY_LABEL;
-        case DIFFNODEID_Description: return ID_DESCRIPTION;
-        case DIFFNODEID_VersionMajor: return ID_VERSION_MAJOR;
-        case DIFFNODEID_VersionMinor:return ID_VERSION_MINOR;
-        case DIFFNODEID_ConstraintClasses: 
-        case DIFFNODEID_Classes: 
+        case DiffNodeId::Root: return ID_ROOT;
+        case DiffNodeId::Name: return ID_NAME;
+        case DiffNodeId::DisplayLabel: return ID_DISPLAY_LABEL;
+        case DiffNodeId::Description: return ID_DESCRIPTION;
+        case DiffNodeId::VersionMajor: return ID_VERSION_MAJOR;
+        case DiffNodeId::VersionMinor:return ID_VERSION_MINOR;
+        case DiffNodeId::ConstraintClasses: 
+        case DiffNodeId::Classes: 
             return ID_CLASSES;
-        case DIFFNODEID_References: return ID_REFERENCES;
-        case DIFFNODEID_IsCustomAttributeClass: return ID_IS_CUSTOMATTRIBUTE_CLASS;
-        case DIFFNODEID_IsDomainClass: return ID_IS_DOMAIN_CLASS;
-        case DIFFNODEID_IsStruct: return ID_IS_STRUCT;
-        case DIFFNODEID_BaseClass: return ID_BASECLASSES;
-        case DIFFNODEID_IsRelationshipClass: return ID_IS_RELATIONSHIP_CLASS;
-        case DIFFNODEID_BaseClasses: return ID_BASECLASSES;
-        case DIFFNODEID_IsArray: return ID_IS_ARRAY;
-        case DIFFNODEID_Properties: return ID_PROPERTIES;
-        case DIFFNODEID_ArrayInfo: return ID_ARRAYINFO;
-        case DIFFNODEID_IsReadOnly: return ID_IS_READONLY;
-        case DIFFNODEID_IsPrimitive: return ID_IS_PRIMITIVE;
-        case DIFFNODEID_RelationshipInfo: return ID_RELATIONSHIP_INFO;
-        case DIFFNODEID_IsOverriden: return ID_IS_OVERRIDEN;
-        case DIFFNODEID_TypeName: return ID_TYPENAME;
-        case DIFFNODEID_Strength: return ID_STRENGTH;
-        case DIFFNODEID_StrengthDirection:return ID_STRENGTH_DIRECTION;
-        case DIFFNODEID_Source: return ID_SOURCE;
-        case DIFFNODEID_Target:return ID_TARGET;
-        case DIFFNODEID_Cardinality: return ID_CARDINALITY;
-        case DIFFNODEID_IsPolymorphic: return ID_IS_POLYMORPHIC;
-        case DIFFNODEID_RoleLabel: return ID_ROLE_LABEL;
-        case DIFFNODEID_MaxOccurs: return ID_MAXOCCURS;
-        case DIFFNODEID_MinOccurs: return ID_MINOCCURS;
-        case DIFFNODEID_CustomAttributes: return ID_CUSTOMATTRIBUTES;
-        case DIFFNODEID_NamespacePrefix: return ID_NAMESPACEPREFIX;
+        case DiffNodeId::References: return ID_REFERENCES;
+        case DiffNodeId::IsCustomAttributeClass: return ID_IS_CUSTOMATTRIBUTE_CLASS;
+        case DiffNodeId::IsDomainClass: return ID_IS_DOMAIN_CLASS;
+        case DiffNodeId::IsStruct: return ID_IS_STRUCT;
+        case DiffNodeId::BaseClass: return ID_BASECLASSES;
+        case DiffNodeId::IsRelationshipClass: return ID_IS_RELATIONSHIP_CLASS;
+        case DiffNodeId::BaseClasses: return ID_BASECLASSES;
+        case DiffNodeId::IsArray: return ID_IS_ARRAY;
+        case DiffNodeId::Properties: return ID_PROPERTIES;
+        case DiffNodeId::ArrayInfo: return ID_ARRAYINFO;
+        case DiffNodeId::IsReadOnly: return ID_IS_READONLY;
+        case DiffNodeId::IsPrimitive: return ID_IS_PRIMITIVE;
+        case DiffNodeId::RelationshipInfo: return ID_RELATIONSHIP_INFO;
+        case DiffNodeId::IsOverriden: return ID_IS_OVERRIDEN;
+        case DiffNodeId::TypeName: return ID_TYPENAME;
+        case DiffNodeId::Strength: return ID_STRENGTH;
+        case DiffNodeId::StrengthDirection:return ID_STRENGTH_DIRECTION;
+        case DiffNodeId::Source: return ID_SOURCE;
+        case DiffNodeId::Target:return ID_TARGET;
+        case DiffNodeId::Cardinality: return ID_CARDINALITY;
+        case DiffNodeId::IsPolymorphic: return ID_IS_POLYMORPHIC;
+        case DiffNodeId::RoleLabel: return ID_ROLE_LABEL;
+        case DiffNodeId::MaxOccurs: return ID_MAXOCCURS;
+        case DiffNodeId::MinOccurs: return ID_MINOCCURS;
+        case DiffNodeId::CustomAttributes: return ID_CUSTOMATTRIBUTES;
+        case DiffNodeId::NamespacePrefix: return ID_NAMESPACEPREFIX;
         }
     return NULL;
     }
@@ -786,25 +816,25 @@ WCharCP  ECDiffNode::IdToString (DiffNodeId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     {
-    ECDiffNodeP diff = new ECDiffNode (ID_ROOT, NULL, DIFFNODEID_Root);
+    ECDiffNodeP diff = new ECDiffNode (ID_ROOT, NULL, DiffNodeId::Root);
 
     if (left.GetName() != right.GetName())
-        diff->Add (DIFFNODEID_Name)->SetValue (left.GetName().c_str(), right.GetName().c_str());
+        diff->Add (DiffNodeId::Name)->SetValue (left.GetName().c_str(), right.GetName().c_str());
 
     if (left.GetVersionMajor() != right.GetVersionMajor())
-        diff->Add (DIFFNODEID_VersionMajor)->SetValue (left.GetVersionMajor(), right.GetVersionMajor());
+        diff->Add (DiffNodeId::VersionMajor)->SetValue (left.GetVersionMajor(), right.GetVersionMajor());
 
     if (left.GetVersionMinor() != right.GetVersionMinor())
-        diff->Add (DIFFNODEID_VersionMinor)->SetValue (left.GetVersionMinor(), right.GetVersionMinor());
+        diff->Add (DiffNodeId::VersionMinor)->SetValue (left.GetVersionMinor(), right.GetVersionMinor());
 
     if (left.GetDisplayLabel() != right.GetDisplayLabel())
-        diff->Add (DIFFNODEID_DisplayLabel)->SetValue (left.GetIsDisplayLabelDefined()? left.GetDisplayLabel().c_str() : NULL, right.GetIsDisplayLabelDefined()? right.GetDisplayLabel().c_str(): NULL);
+        diff->Add (DiffNodeId::DisplayLabel)->SetValue (left.GetIsDisplayLabelDefined()? left.GetDisplayLabel().c_str() : NULL, right.GetIsDisplayLabelDefined()? right.GetDisplayLabel().c_str(): NULL);
 
     if (left.GetDescription() != right.GetDescription())
-        diff->Add (DIFFNODEID_Description)->SetValue (left.GetDescription().c_str(), right.GetDescription().c_str());
+        diff->Add (DiffNodeId::Description)->SetValue (left.GetDescription().c_str(), right.GetDescription().c_str());
 
     if (left.GetNamespacePrefix() != right.GetNamespacePrefix())
-        diff->Add (DIFFNODEID_NamespacePrefix)->SetValue (left.GetNamespacePrefix().c_str(), right.GetNamespacePrefix().c_str());
+        diff->Add (DiffNodeId::NamespacePrefix)->SetValue (left.GetNamespacePrefix().c_str(), right.GetNamespacePrefix().c_str());
 
     DiffReferences (*diff, left, right);
     DiffCustomAttributes (*diff, left, right);
@@ -819,7 +849,7 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
         if (classes.find ((*itor)->GetName().c_str()) == classes.end())
             classes.insert ((*itor)->GetName().c_str());
 
-    ECDiffNodeP diffClasses = diff->Add (DIFFNODEID_Classes);
+    ECDiffNodeP diffClasses = diff->Add (DiffNodeId::Classes);
     for (std::set<WCharCP,  DiffNameComparer>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffClass ((*itor), left, right, *diffClasses);
 
@@ -850,18 +880,18 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
 
         if (referenceSchemas.empty())
             return NULL;
-    ECDiffNodeP diff= parentDiff.Add (DIFFNODEID_References);
+    ECDiffNodeP diff= parentDiff.Add (DiffNodeId::References);
         for(set<WString>::const_iterator itor = referenceSchemas.begin(); itor != referenceSchemas.end(); ++itor)
             {
             ECSchemaCP leftR =  schemaLeft.GetSchemaByNamespacePrefixP (*itor);
             ECSchemaCP rightR =  schemaRight.GetSchemaByNamespacePrefixP (*itor);
             if (leftR && !rightR)
-                diff->Add ((*itor).c_str(), DIFFNODEID_Reference)->GetValueLeft().SetValue (leftR->GetFullSchemaName().c_str());
+                diff->Add ((*itor).c_str(), DiffNodeId::Reference)->ImplGetValueLeft().SetValue (leftR->GetFullSchemaName().c_str());
             else if (!leftR && rightR)
-                diff->Add ((*itor).c_str(), DIFFNODEID_Reference)->GetValueRight().SetValue (rightR->GetFullSchemaName().c_str());
+                diff->Add ((*itor).c_str(), DiffNodeId::Reference)->ImplGetValueRight().SetValue (rightR->GetFullSchemaName().c_str());
             else
                 if (leftR->GetSchemaKey() != rightR->GetSchemaKey())
-                    diff->Add ((*itor).c_str(), DIFFNODEID_Reference)->SetValue (leftR->GetFullSchemaName().c_str(), rightR->GetFullSchemaName().c_str());
+                    diff->Add ((*itor).c_str(), DiffNodeId::Reference)->SetValue (leftR->GetFullSchemaName().c_str(), rightR->GetFullSchemaName().c_str());
             }
         return parentDiff.RemoveIfEmpty (diff);
         }
@@ -878,27 +908,27 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (WCharCP className, ECSchemaCR schemaLef
     if (right && !left)
         return AppendClass (parentDiff, *right, ECDiffNode::DIRECTION_Right);
 
-    ECDiffNodeP diff = parentDiff.Add (className, DIFFNODEID_Class);
+    ECDiffNodeP diff = parentDiff.Add (className, DiffNodeId::Class);
     //if (left->GetName() != right->GetName())
     //    diff->Add (ID_NAME)->SetValue (left->GetName().c_str(), right->GetName().c_str());
 
     if (left->GetDisplayLabel() != right->GetDisplayLabel())
-        diff->Add (DIFFNODEID_DisplayLabel)->SetValue (left->GetIsDisplayLabelDefined()? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined()? right->GetDisplayLabel().c_str(): NULL);
+        diff->Add (DiffNodeId::DisplayLabel)->SetValue (left->GetIsDisplayLabelDefined()? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined()? right->GetDisplayLabel().c_str(): NULL);
 
     if (left->GetDescription() != right->GetDescription())
-        diff->Add (DIFFNODEID_Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());
+        diff->Add (DiffNodeId::Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());
 
     if (left->GetIsCustomAttributeClass() != right->GetIsCustomAttributeClass())
-        diff->Add (DIFFNODEID_IsCustomAttributeClass)->SetValue (left->GetIsCustomAttributeClass(), right->GetIsCustomAttributeClass());
+        diff->Add (DiffNodeId::IsCustomAttributeClass)->SetValue (left->GetIsCustomAttributeClass(), right->GetIsCustomAttributeClass());
 
     if (left->GetIsStruct() != right->GetIsStruct())
-        diff->Add (DIFFNODEID_IsStruct)->SetValue (left->GetIsStruct(), right->GetIsStruct());
+        diff->Add (DiffNodeId::IsStruct)->SetValue (left->GetIsStruct(), right->GetIsStruct());
 
     if (left->GetIsDomainClass() != right->GetIsDomainClass())
-        diff->Add (DIFFNODEID_IsDomainClass)->SetValue (left->GetIsDomainClass(), right->GetIsDomainClass());
+        diff->Add (DiffNodeId::IsDomainClass)->SetValue (left->GetIsDomainClass(), right->GetIsDomainClass());
 
     if (( (left->GetRelationshipClassCP() != NULL))!= (right->GetRelationshipClassCP() != NULL))
-        diff->Add (DIFFNODEID_IsRelationshipClass)->SetValue (left->GetRelationshipClassCP() != NULL, right->GetRelationshipClassCP() != NULL );
+        diff->Add (DiffNodeId::IsRelationshipClass)->SetValue (left->GetRelationshipClassCP() != NULL, right->GetRelationshipClassCP() != NULL );
 
     DiffCustomAttributes (*diff, *left, *right);
     AlignedClasses classes; 
@@ -917,7 +947,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (WCharCP className, ECSchemaCR schemaLef
         if (properties.find ((*itor)->GetName().c_str()) == properties.end())
             properties.insert ((*itor)->GetName().c_str());
 
-    ECDiffNodeP diffProperties = diff->Add (DIFFNODEID_Properties);
+    ECDiffNodeP diffProperties = diff->Add (DiffNodeId::Properties);
     for (std::set<WCharCP,  DiffNameComparer>::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
         DiffProperty ((*itor), *left, *right, *diffProperties);
     diff->RemoveIfEmpty (diffProperties);
@@ -963,19 +993,19 @@ ECDiffNodeP ECSchemaDiffTool::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedCl
     if (baseClassOrderedList.empty())
         return NULL;
 
-    ECDiffNodeP baseClasses = parentDiff.Add (DIFFNODEID_BaseClasses);
+    ECDiffNodeP baseClasses = parentDiff.Add (DiffNodeId::BaseClasses);
     int index = 0;
     for (bvector<WCharCP>::iterator itor = baseClassOrderedList.begin(); itor != baseClassOrderedList.end(); ++itor, index++)
         {
         ECClassCP left = baseClassMap[*itor][0];
         ECClassCP right = baseClassMap[*itor][1];
         if (left && !right)
-            baseClasses->AddWithIndex (index, DIFFNODEID_BaseClass)->GetValueLeft().SetValue(left->GetFullName());
+            baseClasses->AddWithIndex (index, DiffNodeId::BaseClass)->ImplGetValueLeft().SetValue(left->GetFullName());
         else if(!left && right)
-            baseClasses->AddWithIndex (index, DIFFNODEID_BaseClass)->GetValueRight().SetValue(right->GetFullName());
+            baseClasses->AddWithIndex (index, DiffNodeId::BaseClass)->ImplGetValueRight().SetValue(right->GetFullName());
         else
             if (wcscmp (left->GetFullName(), right->GetFullName()) != 0)
-                baseClasses->AddWithIndex (index, DIFFNODEID_BaseClass)->SetValue(left->GetFullName(), right->GetFullName());
+                baseClasses->AddWithIndex (index, DiffNodeId::BaseClass)->SetValue(left->GetFullName(), right->GetFullName());
         }
     return parentDiff.RemoveIfEmpty (baseClasses);
     }
@@ -991,36 +1021,36 @@ ECDiffNodeP ECSchemaDiffTool::DiffProperty (WCharCP propertyName, ECClassCR clas
         return AppendProperty (parentDiff, *left, ECDiffNode::DIRECTION_Left);
     if (right && !left)
         return AppendProperty (parentDiff, *right, ECDiffNode::DIRECTION_Right);
-    ECDiffNodeP diff = parentDiff.Add (propertyName, DIFFNODEID_Property);
+    ECDiffNodeP diff = parentDiff.Add (propertyName, DiffNodeId::Property);
 
     //if (left->GetName() != right->GetName())
     //    diff->Add (ID_NAME)->SetValue (left->GetName().c_str(), right->GetName().c_str());
 
     if (left->GetDisplayLabel() != right->GetDisplayLabel())
-        diff->Add (DIFFNODEID_DisplayLabel)->SetValue (left->GetIsDisplayLabelDefined()? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined()? right->GetDisplayLabel().c_str(): NULL);
+        diff->Add (DiffNodeId::DisplayLabel)->SetValue (left->GetIsDisplayLabelDefined()? left->GetDisplayLabel().c_str() : NULL, right->GetIsDisplayLabelDefined()? right->GetDisplayLabel().c_str(): NULL);
 
     if (left->GetDescription() != right->GetDescription())
-        diff->Add (DIFFNODEID_Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());
+        diff->Add (DiffNodeId::Description)->SetValue (left->GetDescription().c_str(), right->GetDescription().c_str());
 
     if (left->GetIsArray() != right->GetIsArray())
-        diff->Add (DIFFNODEID_IsArray)->SetValue (left->GetIsArray(), right->GetIsArray());
+        diff->Add (DiffNodeId::IsArray)->SetValue (left->GetIsArray(), right->GetIsArray());
 
     if (left->GetIsStruct() != right->GetIsStruct())
-        diff->Add (DIFFNODEID_IsStruct)->SetValue (left->GetIsStruct(), right->GetIsStruct());
+        diff->Add (DiffNodeId::IsStruct)->SetValue (left->GetIsStruct(), right->GetIsStruct());
 
     if (left->GetTypeName() != right->GetTypeName())
-        diff->Add (DIFFNODEID_TypeName)->SetValue (left->GetTypeName().c_str(), right->GetTypeName().c_str());
+        diff->Add (DiffNodeId::TypeName)->SetValue (left->GetTypeName().c_str(), right->GetTypeName().c_str());
 
     if (left->GetIsReadOnly() != right->GetIsReadOnly())
-        diff->Add (DIFFNODEID_IsReadOnly)->SetValue (left->GetIsReadOnly(), right->GetIsReadOnly());
+        diff->Add (DiffNodeId::IsReadOnly)->SetValue (left->GetIsReadOnly(), right->GetIsReadOnly());
 
     if (left->GetIsPrimitive() != right->GetIsPrimitive())
-        diff->Add (DIFFNODEID_IsPrimitive)->SetValue (left->GetIsPrimitive(), right->GetIsPrimitive());
+        diff->Add (DiffNodeId::IsPrimitive)->SetValue (left->GetIsPrimitive(), right->GetIsPrimitive());
 
     bool leftOverriden = left->GetBaseProperty() != NULL;
     bool rightOverriden = right->GetBaseProperty() != NULL;
     if (leftOverriden != rightOverriden)
-        diff->Add (DIFFNODEID_IsOverriden)->SetValue (leftOverriden, rightOverriden);
+        diff->Add (DiffNodeId::IsOverriden)->SetValue (leftOverriden, rightOverriden);
 
     DiffArrayBounds(*diff, *left, *right);
     DiffCustomAttributes (*diff, *left, *right);
@@ -1040,13 +1070,13 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationship (ECClassCR classLeft, ECClassCR c
     else if (!left && right)
         return AppendRelationship(parentDiff, *right, ECDiffNode::DIRECTION_Right );
         
-    ECDiffNodeP diff = parentDiff.Add (DIFFNODEID_RelationshipInfo);
+    ECDiffNodeP diff = parentDiff.Add (DiffNodeId::RelationshipInfo);
 
     if (left->GetStrength() != right->GetStrength())
-        diff->Add (DIFFNODEID_Strength)->SetValue (ToString (left->GetStrength()), ToString (right->GetStrength()));
+        diff->Add (DiffNodeId::Strength)->SetValue (ToString (left->GetStrength()), ToString (right->GetStrength()));
 
     if (left->GetStrengthDirection() != right->GetStrengthDirection())
-        diff->Add (DIFFNODEID_StrengthDirection)->SetValue (ToString (left->GetStrengthDirection()), ToString (right->GetStrengthDirection()));
+        diff->Add (DiffNodeId::StrengthDirection)->SetValue (ToString (left->GetStrengthDirection()), ToString (right->GetStrengthDirection()));
 
     DiffRelationshipConstraint(*diff, left->GetSource(), right->GetSource(), ECRelationshipEnd_Source);
     DiffRelationshipConstraint(*diff, left->GetTarget(), right->GetTarget(), ECRelationshipEnd_Target);
@@ -1057,16 +1087,16 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationship (ECClassCR classLeft, ECClassCR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECRelationshipConstraintCR  left, ECRelationshipConstraintCR  right, ECRelationshipEnd endPoint)
     {
-    ECDiffNodeP diff = endPoint == ECRelationshipEnd_Source ? parent.Add (DIFFNODEID_Source) : parent.Add (DIFFNODEID_Target);
+    ECDiffNodeP diff = endPoint == ECRelationshipEnd_Source ? parent.Add (DiffNodeId::Source) : parent.Add (DiffNodeId::Target);
 
     if (left.GetCardinality().ToString() != right.GetCardinality().ToString())
-        diff->Add (DIFFNODEID_Cardinality)->SetValue (left.GetCardinality().ToString().c_str(), right.GetCardinality().ToString().c_str());
+        diff->Add (DiffNodeId::Cardinality)->SetValue (left.GetCardinality().ToString().c_str(), right.GetCardinality().ToString().c_str());
 
     if (left.GetIsPolymorphic() != right.GetIsPolymorphic())
-        diff->Add (DIFFNODEID_IsPolymorphic)->SetValue (left.GetIsPolymorphic(), right.GetIsPolymorphic());
+        diff->Add (DiffNodeId::IsPolymorphic)->SetValue (left.GetIsPolymorphic(), right.GetIsPolymorphic());
 
     if (left.GetRoleLabel() != right.GetRoleLabel())
-        diff->Add (DIFFNODEID_RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
+        diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
     DiffCustomAttributes (*diff, left, right);
     bvector<ECRelationshipConstraintCP> constraints;
@@ -1112,19 +1142,19 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
     if (constraintClassOrderedList.empty())
         return NULL;
 
-    ECDiffNodeP constraintClasses = parentDiff.Add (DIFFNODEID_Classes);
+    ECDiffNodeP constraintClasses = parentDiff.Add (DiffNodeId::Classes);
     int index =0;
     for (bvector<WCharCP>::iterator itor = constraintClassOrderedList.begin(); itor != constraintClassOrderedList.end(); ++itor, index++)
         {
         ECClassCP left = constraintClassMap[*itor][0];
         ECClassCP right = constraintClassMap[*itor][1];
         if (left && !right)
-            constraintClasses->AddWithIndex (index, DIFFNODEID_ConstraintClasses)->GetValueLeft().SetValue(left->GetFullName());
+            constraintClasses->AddWithIndex (index, DiffNodeId::ConstraintClasses)->ImplGetValueLeft().SetValue(left->GetFullName());
         else if (!left && right)
-            constraintClasses->AddWithIndex (index, DIFFNODEID_ConstraintClass)->GetValueRight().SetValue(right->GetFullName());
+            constraintClasses->AddWithIndex (index, DiffNodeId::ConstraintClass)->ImplGetValueRight().SetValue(right->GetFullName());
         else
             if (wcscmp (left->GetFullName(), right->GetFullName()) != 0)
-                constraintClasses->AddWithIndex (index, DIFFNODEID_ConstraintClass)->SetValue(left->GetFullName(), right->GetFullName());
+                constraintClasses->AddWithIndex (index, DiffNodeId::ConstraintClass)->SetValue(left->GetFullName(), right->GetFullName());
         }
     return parentDiff.RemoveIfEmpty (constraintClasses);
     }
@@ -1133,9 +1163,9 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::AppendRelationship(ECDiffNodeR parent, ECRelationshipClassCR relationship, ECDiffNode::ValueDirection direction)
     {
-    ECDiffNodeP diff = parent.Add (DIFFNODEID_RelationshipInfo);
-    diff->Add (DIFFNODEID_Strength)->GetValue(direction).SetValue (ToString(relationship.GetStrength()));
-    diff->Add (DIFFNODEID_StrengthDirection)->GetValue(direction).SetValue (ToString(relationship.GetStrengthDirection()));
+    ECDiffNodeP diff = parent.Add (DiffNodeId::RelationshipInfo);
+    diff->Add (DiffNodeId::Strength)->GetValue(direction).SetValue (ToString(relationship.GetStrength()));
+    diff->Add (DiffNodeId::StrengthDirection)->GetValue(direction).SetValue (ToString(relationship.GetStrengthDirection()));
     AppendRelationshipConstraint (*diff, relationship.GetSource(), ECRelationshipEnd_Source, direction);
     AppendRelationshipConstraint (*diff, relationship.GetTarget(), ECRelationshipEnd_Target, direction);
     return diff;
@@ -1145,19 +1175,19 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationship(ECDiffNodeR parent, ECRelations
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, ECRelationshipConstraintCR  relationshipConstraint,ECRelationshipEnd endPoint, ECDiffNode::ValueDirection direction)
     {
-    ECDiffNodeP diff = endPoint == ECRelationshipEnd_Source ? parent.Add (DIFFNODEID_Source) : parent.Add (DIFFNODEID_Target);
-    diff->Add (DIFFNODEID_Cardinality)->GetValue(direction).SetValue (relationshipConstraint.GetCardinality().ToString());
-    diff->Add (DIFFNODEID_IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
-    diff->Add (DIFFNODEID_RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
+    ECDiffNodeP diff = endPoint == ECRelationshipEnd_Source ? parent.Add (DiffNodeId::Source) : parent.Add (DiffNodeId::Target);
+    diff->Add (DiffNodeId::Cardinality)->GetValue(direction).SetValue (relationshipConstraint.GetCardinality().ToString());
+    diff->Add (DiffNodeId::IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
+    diff->Add (DiffNodeId::RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
 
     if (!relationshipConstraint.GetClasses().empty())
         {
-        ECDiffNodeP constraintClasses = diff->Add (DIFFNODEID_ConstraintClasses);
+        ECDiffNodeP constraintClasses = diff->Add (DiffNodeId::ConstraintClasses);
         ECConstraintClassesList classes = relationshipConstraint.GetClasses();
         int index = 0;
         for(ECConstraintClassesList::const_iterator itor = classes.begin(); itor != classes.end(); ++itor, index++)
-            constraintClasses->AddWithIndex (index, DIFFNODEID_ConstraintClass)->GetValue(direction).SetValue ((*itor)->GetFullName());
+            constraintClasses->AddWithIndex (index, DiffNodeId::ConstraintClass)->GetValue(direction).SetValue ((*itor)->GetFullName());
         }
     return diff;
     }
@@ -1202,11 +1232,11 @@ ECDiffNodeP ECSchemaDiffTool::DiffArrayBounds (ECDiffNodeR parent , ECPropertyCR
         return AppendArrayBounds(parent, right, ECDiffNode::DIRECTION_Right);
     else if (left.GetIsArray() && right.GetIsArray())
         {
-        ECDiffNodeP arrayBounds = parent.Add (DIFFNODEID_ArrayInfo);
+        ECDiffNodeP arrayBounds = parent.Add (DiffNodeId::ArrayInfo);
         if (left.GetAsArrayProperty()->GetMaxOccurs() != right.GetAsArrayProperty()->GetMaxOccurs())
-            arrayBounds->Add(DIFFNODEID_MaxOccurs)->SetValue (left.GetAsArrayProperty()->GetMaxOccurs(), right.GetAsArrayProperty()->GetMaxOccurs());
+            arrayBounds->Add(DiffNodeId::MaxOccurs)->SetValue (left.GetAsArrayProperty()->GetMaxOccurs(), right.GetAsArrayProperty()->GetMaxOccurs());
         if (left.GetAsArrayProperty()->GetMinOccurs() != right.GetAsArrayProperty()->GetMinOccurs())
-            arrayBounds->Add(DIFFNODEID_MinOccurs)->SetValue (left.GetAsArrayProperty()->GetMinOccurs(), right.GetAsArrayProperty()->GetMinOccurs());
+            arrayBounds->Add(DiffNodeId::MinOccurs)->SetValue (left.GetAsArrayProperty()->GetMinOccurs(), right.GetAsArrayProperty()->GetMinOccurs());
         if (arrayBounds->IsEmpty())
             parent.Remove(arrayBounds);
         }
@@ -1217,26 +1247,26 @@ ECDiffNodeP ECSchemaDiffTool::DiffArrayBounds (ECDiffNodeR parent , ECPropertyCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::AppendClass (ECDiffNodeR parent , ECClassCR ecClass, ECDiffNode::ValueDirection direction)
     {
-    ECDiffNodeP diff = parent.Add (ecClass.GetName().c_str(), DIFFNODEID_Class);
+    ECDiffNodeP diff = parent.Add (ecClass.GetName().c_str(), DiffNodeId::Class);
     //diff->Add (ID_NAME)->GetValue(direction).SetValue (ecClass.GetName().c_str());
     if (ecClass.GetIsDisplayLabelDefined())
-        diff->Add (DIFFNODEID_DisplayLabel)->GetValue(direction).SetValue (ecClass.GetDisplayLabel().c_str());
-    diff->Add (DIFFNODEID_Description)->GetValue(direction).SetValue (ecClass.GetDescription().c_str());
-    diff->Add (DIFFNODEID_IsCustomAttributeClass)->GetValue(direction).SetValue (ecClass.GetIsCustomAttributeClass());
-    diff->Add (DIFFNODEID_IsStruct)->GetValue(direction).SetValue (ecClass.GetIsStruct());
-    diff->Add (DIFFNODEID_IsDomainClass)->GetValue(direction).SetValue (ecClass.GetIsDomainClass());
-    diff->Add (DIFFNODEID_IsRelationshipClass)->GetValue(direction).SetValue (ecClass.GetRelationshipClassCP() != NULL);
+        diff->Add (DiffNodeId::DisplayLabel)->GetValue(direction).SetValue (ecClass.GetDisplayLabel().c_str());
+    diff->Add (DiffNodeId::Description)->GetValue(direction).SetValue (ecClass.GetDescription().c_str());
+    diff->Add (DiffNodeId::IsCustomAttributeClass)->GetValue(direction).SetValue (ecClass.GetIsCustomAttributeClass());
+    diff->Add (DiffNodeId::IsStruct)->GetValue(direction).SetValue (ecClass.GetIsStruct());
+    diff->Add (DiffNodeId::IsDomainClass)->GetValue(direction).SetValue (ecClass.GetIsDomainClass());
+    diff->Add (DiffNodeId::IsRelationshipClass)->GetValue(direction).SetValue (ecClass.GetRelationshipClassCP() != NULL);
     AppendCustomAttributes (*diff, ecClass, direction);
     if (!ecClass.GetBaseClasses().empty())
         {
-        ECDiffNodeP baseClassesNode = diff->Add (DIFFNODEID_BaseClasses);
+        ECDiffNodeP baseClassesNode = diff->Add (DiffNodeId::BaseClasses);
         ECBaseClassesList baseClasses = ecClass.GetBaseClasses();
         int index = 0;
         for(ECBaseClassesList::const_iterator itor = baseClasses.begin(); itor != baseClasses.end(); ++itor, index++)
-            baseClassesNode->AddWithIndex (index, DIFFNODEID_BaseClass)->GetValue(direction).SetValue ((*itor)->GetFullName());
+            baseClassesNode->AddWithIndex (index, DiffNodeId::BaseClass)->GetValue(direction).SetValue ((*itor)->GetFullName());
         }
 
-    ECDiffNodeP propertiesNode = diff->Add (DIFFNODEID_Properties);
+    ECDiffNodeP propertiesNode = diff->Add (DiffNodeId::Properties);
     ECPropertyIterable properties = ecClass.GetProperties(false);
     for (ECPropertyIterable::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
         AppendProperty (*propertiesNode, **itor, direction);
@@ -1248,17 +1278,17 @@ ECDiffNodeP ECSchemaDiffTool::AppendClass (ECDiffNodeR parent , ECClassCR ecClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::AppendProperty (ECDiffNodeR parent , ECPropertyCR ecProperty, ECDiffNode::ValueDirection direction)
     {
-    ECDiffNodeP diff = parent.Add (ecProperty.GetName().c_str(), DIFFNODEID_Property);
+    ECDiffNodeP diff = parent.Add (ecProperty.GetName().c_str(), DiffNodeId::Property);
     //diff->Add (ID_NAME)->GetValue(direction).SetValue (ecProperty.GetName().c_str());
     if (ecProperty.GetIsDisplayLabelDefined())
-        diff->Add (DIFFNODEID_DisplayLabel)->GetValue(direction).SetValue (ecProperty.GetDisplayLabel().c_str());
+        diff->Add (DiffNodeId::DisplayLabel)->GetValue(direction).SetValue (ecProperty.GetDisplayLabel().c_str());
 
-    diff->Add (DIFFNODEID_Description)->GetValue(direction).SetValue (ecProperty.GetDescription().c_str());
-    diff->Add (DIFFNODEID_IsArray)->GetValue(direction).SetValue (ecProperty.GetIsArray());
-    diff->Add (DIFFNODEID_IsStruct)->GetValue(direction).SetValue (ecProperty.GetIsStruct());
-    diff->Add (DIFFNODEID_TypeName)->GetValue(direction).SetValue (ecProperty.GetTypeName().c_str());
-    diff->Add (DIFFNODEID_IsOverriden)->GetValue(direction).SetValue (ecProperty.GetBaseProperty()!= NULL);
-    diff->Add (DIFFNODEID_IsPrimitive)->GetValue(direction).SetValue (ecProperty.GetIsPrimitive());
+    diff->Add (DiffNodeId::Description)->GetValue(direction).SetValue (ecProperty.GetDescription().c_str());
+    diff->Add (DiffNodeId::IsArray)->GetValue(direction).SetValue (ecProperty.GetIsArray());
+    diff->Add (DiffNodeId::IsStruct)->GetValue(direction).SetValue (ecProperty.GetIsStruct());
+    diff->Add (DiffNodeId::TypeName)->GetValue(direction).SetValue (ecProperty.GetTypeName().c_str());
+    diff->Add (DiffNodeId::IsOverriden)->GetValue(direction).SetValue (ecProperty.GetBaseProperty()!= NULL);
+    diff->Add (DiffNodeId::IsPrimitive)->GetValue(direction).SetValue (ecProperty.GetIsPrimitive());
 
     AppendArrayBounds(*diff, ecProperty, direction);
     AppendCustomAttributes (*diff, ecProperty, direction);
@@ -1271,9 +1301,9 @@ ECDiffNodeP ECSchemaDiffTool::AppendArrayBounds (ECDiffNodeR parent , ECProperty
     {
     if (ecProperty.GetIsArray())
         {
-        ECDiffNodeP arrayBounds = parent.Add (DIFFNODEID_ArrayInfo);
-        arrayBounds->Add (DIFFNODEID_MaxOccurs)->GetValue(direction).SetValue ((Int32)ecProperty.GetAsArrayProperty()->GetMaxOccurs());
-        arrayBounds->Add (DIFFNODEID_MinOccurs)->GetValue(direction).SetValue ((Int32)ecProperty.GetAsArrayProperty()->GetMinOccurs());
+        ECDiffNodeP arrayBounds = parent.Add (DiffNodeId::ArrayInfo);
+        arrayBounds->Add (DiffNodeId::MaxOccurs)->GetValue(direction).SetValue ((Int32)ecProperty.GetAsArrayProperty()->GetMaxOccurs());
+        arrayBounds->Add (DiffNodeId::MinOccurs)->GetValue(direction).SetValue ((Int32)ecProperty.GetAsArrayProperty()->GetMinOccurs());
         return arrayBounds;
         }
     return NULL;
@@ -1345,7 +1375,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffCustomAttributes
     if (classes.empty())
         return NULL;
 
-    ECDiffNodeP diff = parentDiff.Add (DIFFNODEID_CustomAttributes);
+    ECDiffNodeP diff = parentDiff.Add (DiffNodeId::CustomAttributes);
     for (bmap<WCharCP, ECClassCP>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffInstance(*diff, *(itor->second), leftContainer, rightContainer);
     return parentDiff.RemoveIfEmpty (diff);
@@ -1378,7 +1408,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffInstance
 
     if (!accessStrings.empty())
         {
-        ECDiffNodeP diff = parentDiff.Add (customAttributeClass.GetFullName(), DIFFNODEID_CustomAttribute);
+        ECDiffNodeP diff = parentDiff.Add (customAttributeClass.GetFullName(), DiffNodeId::CustomAttribute);
         for (set<WString> ::const_iterator itor = accessStrings.begin(); itor != accessStrings.end(); ++itor)
             {
             bmap<WString,ECValue>::const_iterator lItor = leftValues.find (*itor);
@@ -1414,7 +1444,7 @@ ECDiffNodeP  ECSchemaDiffTool::AppendCustomAttributes
     ECDiffNode::ValueDirection direction
     )
     {
-    ECDiffNodeP diff = parentDiff.Add (DIFFNODEID_CustomAttributes);
+    ECDiffNodeP diff = parentDiff.Add (DiffNodeId::CustomAttributes);
     ECCustomAttributeInstanceIterable customAttributes =  container.GetPrimaryCustomAttributes(false);
     for (ECCustomAttributeInstanceIterable::const_iterator itor = customAttributes.begin(); itor != customAttributes.end(); ++itor)
         AppendInstance (*diff, *(*itor), direction);
@@ -1426,7 +1456,7 @@ ECDiffNodeP  ECSchemaDiffTool::AppendCustomAttributes
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECSchemaDiffTool::AppendInstance (ECDiffNodeR parentDiff, IECInstanceCR instance, ECDiffNode::ValueDirection direction)
     {
-    ECDiffNodeP diff = parentDiff.Add (instance.GetClass().GetFullName(), DIFFNODEID_CustomAttribute);
+    ECDiffNodeP diff = parentDiff.Add (instance.GetClass().GetFullName(), DiffNodeId::CustomAttribute);
     ECValuesCollectionPtr propertyValues = ECValuesCollection::Create (instance);
     if (propertyValues.IsNull()) 
         return NULL;
@@ -1441,7 +1471,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendPropertyValues (ECDiffNodeR parentDiff, ECVa
         {
         ECValueAccessorCR valueAccessor = (*itor).GetValueAccessor ();
         const WString propertyName = valueAccessor.GetPropertyName ();
-        ECDiffNodeP diff = parentDiff.Add (propertyName.c_str(), DIFFNODEID_Property);
+        ECDiffNodeP diff = parentDiff.Add (propertyName.c_str(), DiffNodeId::Property);
         if ((*itor).HasChildValues())
             AppendPropertyValues (*diff, *(*itor).GetChildValues(), direction);
         else
@@ -1492,15 +1522,15 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
             n.GetValue (direction).SetValue (v.GetLong()); break;
         case PRIMITIVETYPE_Point2D:
             {              
-            n.Add (L"x", DIFFNODEID_None)->GetValue (direction).SetValue (v.GetPoint2D().x); 
-            n.Add (L"y", DIFFNODEID_None)->GetValue (direction).SetValue (v.GetPoint2D().y); 
+            n.Add (L"x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().x); 
+            n.Add (L"y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().y); 
             break;
             }
         case PRIMITIVETYPE_Point3D:
             {
-            n.Add (L"x", DIFFNODEID_None)->GetValue (direction).SetValue (v.GetPoint3D().x); 
-            n.Add (L"y", DIFFNODEID_None)->GetValue (direction).SetValue (v.GetPoint3D().y); 
-            n.Add (L"z", DIFFNODEID_None)->GetValue (direction).SetValue (v.GetPoint3D().z); 
+            n.Add (L"x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().x); 
+            n.Add (L"y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().y); 
+            n.Add (L"z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().z); 
             break;
             }
         case PRIMITIVETYPE_String:
@@ -1601,18 +1631,18 @@ ECDiffValueP ECSchemaMergeTool::GetMergeValue (ECDiffNodeR n, WCharCP id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffValueP ECSchemaMergeTool::GetMergeValue (ECDiffNodeR v)
     {
-    DiffType type = v.GetDiffType (false) ;
+    DiffType type = v.ImplGetDiffType (false) ;
     if (type == DIFFTYPE_Conflict)
         {
         if (m_defaultConflictRule ==  CONFLICTRULE_TakeLeft)
-            return &v.GetValueLeft();
+            return &v.ImplGetValueLeft();
         else
-            return &v.GetValueRight();
+            return &v.ImplGetValueRight();
         }
     else if ( type == DIFFTYPE_Left)
-        return &v.GetValueLeft();
+        return &v.ImplGetValueLeft();
     else
-        return &v.GetValueRight();
+        return &v.ImplGetValueRight();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
@@ -1656,7 +1686,7 @@ void ECSchemaMergeTool::ComputeMergeActions(ClassMergeInfoMap& actions, ECDiffNo
         if (actions.find (className.c_str()) != actions.end())
             continue;
         if (diffClasses && ((diffClass = diffClasses->GetChild (className)) != NULL))
-            actions[className.c_str()] = ClassMergeInfo (diffClass->GetDiffType (true), diffClass);
+            actions[className.c_str()] = ClassMergeInfo (diffClass->ImplGetDiffType (true), diffClass);
         else
             actions[className.c_str()] = ClassMergeInfo (DIFFTYPE_Equal, NULL);
         }
@@ -1674,7 +1704,7 @@ void ECSchemaMergeTool::ComputeMergeActions(PropertyMergeInfoMap& actions, ECDif
         if (actions.find (propertyName.c_str()) != actions.end())
             continue;
         if (diffProperties && ((diffProperty = diffProperties->GetChild (propertyName)) != NULL))
-            actions[propertyName.c_str()] = diffProperty->GetDiffType (true);
+            actions[propertyName.c_str()] = diffProperty->ImplGetDiffType (true);
         else
             actions[propertyName.c_str()] = DIFFTYPE_Equal;
         }
@@ -1715,17 +1745,17 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
 
     ECDiffValueP v;
     ECDiffNodeR r = *m_diff.GetRoot();
-    if ((v = GetMergeValue (r, DIFFNODEID_Name)) != NULL)
+    if ((v = GetMergeValue (r, DiffNodeId::Name)) != NULL)
         schemaName = v->GetValueString();
     else
         schemaName = GetDefault().GetName();
 
-    if ((v = GetMergeValue (r, DIFFNODEID_VersionMajor)) != NULL)
+    if ((v = GetMergeValue (r, DiffNodeId::VersionMajor)) != NULL)
         versionMajor = (UInt32)v->GetValueInt32();
     else
         versionMajor = GetDefault().GetVersionMajor();;
 
-    if ((v = GetMergeValue (r, DIFFNODEID_VersionMinor)) != NULL)
+    if ((v = GetMergeValue (r, DiffNodeId::VersionMinor)) != NULL)
         versionMinor = (UInt32)v->GetValueInt32();
     else
         versionMinor = GetDefault().GetVersionMinor();
@@ -1733,7 +1763,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     if (ECSchema::CreateSchema (m_mergeSchema, schemaName, versionMajor, versionMinor) != ECOBJECTS_STATUS_Success)
         return MERGESTATUS_ErrorCreatingMergeSchema;
 
-    if ((v = GetMergeValue (r, DIFFNODEID_DisplayLabel)) == NULL)
+    if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
         {
         if (GetDefault().GetIsDisplayLabelDefined())
             GetMerged().SetDisplayLabel(GetDefault().GetDescription());
@@ -1741,17 +1771,17 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         GetMerged().SetDisplayLabel (v->GetValueString());
 
-    if ((v = GetMergeValue (r, DIFFNODEID_Description)) == NULL)
+    if ((v = GetMergeValue (r, DiffNodeId::Description)) == NULL)
         GetMerged().SetDescription(GetDefault().GetDescription());
     else
         GetMerged().SetDescription (v->GetValueString());
 
-    if ((v = GetMergeValue (r, DIFFNODEID_NamespacePrefix)) == NULL)
+    if ((v = GetMergeValue (r, DiffNodeId::NamespacePrefix)) == NULL)
         GetMerged().SetNamespacePrefix (GetDefault().GetNamespacePrefix());
     else
         GetMerged().SetDescription (v->GetValueString());
 
-    ECDiffNodeP diffClasses = r.GetChildById (DIFFNODEID_Classes); 
+    ECDiffNodeP diffClasses = r.ImplGetChildById (DiffNodeId::Classes); 
     ComputeMergeActions (m_classMergeTasks, diffClasses, GetLeft());
     ComputeMergeActions (m_classMergeTasks, diffClasses, GetRight());
     ECClassCP mergedClass;
@@ -1764,7 +1794,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
             return classMergeStatus;
         }
 
-    ECDiffNodeP customAttributes = r.GetChildById (DIFFNODEID_CustomAttributes);
+    ECDiffNodeP customAttributes = r.ImplGetChildById (DiffNodeId::CustomAttributes);
     if (customAttributes == NULL)
         {
         MergeStatus status = AppendCustomAttributesToMerge(GetMerged(), GetDefault());
@@ -1846,7 +1876,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
         return MERGESTATUS_ErrorClassNotFound;
     bool isRelationshipClass = defaultClass->GetRelationshipClassCP() != NULL;
     ECDiffValueP v = NULL;
-    if ((v = GetMergeValue (diff, DIFFNODEID_IsRelationshipClass)) != NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::IsRelationshipClass)) != NULL)
         isRelationshipClass = v->GetValueBool();
     ECClassP mergeClass;
     if(isRelationshipClass)
@@ -1854,7 +1884,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
         ECRelationshipClassP newClass;
         if (GetMerged().CreateRelationshipClass(newClass, defaultClass->GetName()) != ECOBJECTS_STATUS_Success)
             return MERGESTATUS_ErrorMergeClassAlreadyExist;
-        ECDiffNodeP relationshipInfo = diff.GetChildById (DIFFNODEID_RelationshipInfo);
+        ECDiffNodeP relationshipInfo = diff.ImplGetChildById (DiffNodeId::RelationshipInfo);
         if (relationshipInfo)
             {
             if ((status = MergeRelationship(relationshipInfo, *newClass, *defaultClass)) != MERGESTATUS_Success)
@@ -1873,7 +1903,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
     //Make sure it doest process again
     info.SetClass (*mergeClass);
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_DisplayLabel)) == NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::DisplayLabel)) == NULL)
         {
         if (mergeClass->GetIsDisplayLabelDefined())
             mergeClass->SetDisplayLabel(defaultClass->GetDescription());
@@ -1881,27 +1911,27 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
     else
         mergeClass->SetDisplayLabel (v->GetValueString());
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_Description)) == NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::Description)) == NULL)
         mergeClass->SetDescription (defaultClass->GetDescription());
     else
         mergeClass->SetDescription (v->GetValueString());
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_IsCustomAttributeClass)) == NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::IsCustomAttributeClass)) == NULL)
         mergeClass->SetIsCustomAttributeClass(defaultClass->GetIsCustomAttributeClass());
     else
         mergeClass->SetIsCustomAttributeClass (v->GetValueBool());
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_IsStruct)) == NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::IsStruct)) == NULL)
         mergeClass->SetIsStruct(defaultClass->GetIsStruct());
     else
         mergeClass->SetIsStruct (v->GetValueBool());
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_IsDomainClass)) == NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::IsDomainClass)) == NULL)
         mergeClass->SetIsDomainClass(defaultClass->GetIsDomainClass());
     else
         mergeClass->SetIsDomainClass (v->GetValueBool());
     //Process base classes
-    ECDiffNodeP baseClasses = diff.GetChildById (DIFFNODEID_BaseClasses);
+    ECDiffNodeP baseClasses = diff.ImplGetChildById (DiffNodeId::BaseClasses);
     if (baseClasses)
         {
         if ((status = MergeBaseClasses(*baseClasses, *mergeClass, *defaultClass)) != MERGESTATUS_Success)
@@ -1912,7 +1942,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
             return status;
 
     //process properties
-    ECDiffNodeP properties = diff.GetChildById (DIFFNODEID_Properties);
+    ECDiffNodeP properties = diff.ImplGetChildById (DiffNodeId::Properties);
     if (properties)
         {
         if ((status = MergeProperties (*properties, *mergeClass, *defaultClass)) != MERGESTATUS_Success)
@@ -1922,7 +1952,7 @@ MergeStatus ECSchemaMergeTool::MergeClass (ECDiffNodeR diff, ECClassCP defaultCl
         if ((status = AppendPropertiesToMerge(*mergeClass, *defaultClass)) != MERGESTATUS_Success)
             return status;
 
-    ECDiffNodeP customAttributes = diff.GetChildById (DIFFNODEID_CustomAttributes);
+    ECDiffNodeP customAttributes = diff.ImplGetChildById (DiffNodeId::CustomAttributes);
     if (customAttributes == NULL)
         {
         if ((status = AppendCustomAttributesToMerge (GetMerged(), GetDefault()))!= MERGESTATUS_Success)
@@ -1964,7 +1994,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
     MergeStatus status;
 
     ECRelationshipClassCP defaultRelationshipClass = defaultClass.GetRelationshipClassCP();
-    if ((v = GetMergeValue (*diff, DIFFNODEID_Strength)) != NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::Strength)) != NULL)
         {
         StrengthType strengthType;
         if (!ParseStrength (strengthType, v->GetValueString()))
@@ -1976,7 +2006,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
             mergedClass.SetStrength (defaultRelationshipClass->GetStrength());
 
 
-    if ((v = GetMergeValue (*diff, DIFFNODEID_StrengthDirection)) == NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::StrengthDirection)) == NULL)
         {
         ECRelatedInstanceDirection strengthDirection;
         if (!ParseStrengthDirection (strengthDirection, v->GetValueString()))
@@ -1987,7 +2017,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
         if (defaultRelationshipClass)
             mergedClass.SetStrengthDirection (defaultRelationshipClass->GetStrengthDirection());
 
-    ECDiffNodeP sourceConstraint = diff->GetChildById( DIFFNODEID_Source);
+    ECDiffNodeP sourceConstraint = diff->ImplGetChildById( DiffNodeId::Source);
     if (sourceConstraint)
         {
         if ((status = MergeRelationshipConstraint (
@@ -2000,7 +2030,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
             if ((status = AppendRelationshipContstraintToMerge(mergedClass.GetSource(), defaultRelationshipClass->GetSource())) != MERGESTATUS_Success)
                 return status;
 
-    ECDiffNodeP targetConstraint = diff->GetChildById( DIFFNODEID_Target);
+    ECDiffNodeP targetConstraint = diff->ImplGetChildById( DiffNodeId::Target);
     if (targetConstraint)
         {
         if ((status = MergeRelationshipConstraint (
@@ -2023,7 +2053,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
     BeAssert (!diff.IsEmpty());
     MergeStatus status;
     ECDiffValueP v  = NULL;
-    if ((v = GetMergeValue (diff, DIFFNODEID_Cardinality)) != NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::Cardinality)) != NULL)
         {
         if (mergedConstraint.SetCardinality (v->GetValueString().c_str()) != ECOBJECTS_STATUS_Success)
             return MERGESTATUS_ErrorParsingCardinality;
@@ -2032,13 +2062,13 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         if (defaultContraint)
             mergedConstraint.SetCardinality(defaultContraint->GetCardinality());
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_RoleLabel)) != NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::RoleLabel)) != NULL)
         mergedConstraint.SetRoleLabel (v->GetValueString()); 
     else
         if (defaultContraint)
             mergedConstraint.SetRoleLabel (defaultContraint->GetRoleLabel());
 
-    if ((v = GetMergeValue (diff, DIFFNODEID_IsPolymorphic)) != NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::IsPolymorphic)) != NULL)
         mergedConstraint.SetIsPolymorphic (v->GetValueBool()); 
     else
         if (defaultContraint)
@@ -2049,7 +2079,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         FOR_EACH (ECClassCP constraintClass, defaultContraint->GetClasses())
         constraintClasses.insert(constraintClass->GetFullName());
 
-    ECDiffNodeP constraintClassDiffNode = diff.GetChildById (DIFFNODEID_ConstraintClasses);
+    ECDiffNodeP constraintClassDiffNode = diff.ImplGetChildById (DiffNodeId::ConstraintClasses);
     if (constraintClassDiffNode)
         for (ECDiffNode::const_iterator itor = constraintClassDiffNode->begin(); itor != constraintClassDiffNode->end(); ++itor)
             if ((v = GetMergeValue (**itor)) != NULL)
@@ -2063,7 +2093,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         mergedConstraint.AddClass (*resolvedConstraintClass);
         }
 
-    ECDiffNodeP customAttributesDiffNode = diff.GetChildById (DIFFNODEID_CustomAttributes);
+    ECDiffNodeP customAttributesDiffNode = diff.ImplGetChildById (DiffNodeId::CustomAttributes);
     if (customAttributesDiffNode == NULL)
         {
         if (defaultContraint)
@@ -2084,8 +2114,8 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
 bool ECSchemaMergeTool::TryGetECClass (ECClassCP& ecClass,  ECDiffNodeCR classNode, ECSchemaCR schema)
     {
     ecClass = NULL;
-    BeAssert (classNode.GetId() == DIFFNODEID_Class);
-    if (classNode.GetId() != DIFFNODEID_Class)
+    BeAssert (classNode.GetId() == DiffNodeId::Class);
+    if (classNode.GetId() != DiffNodeId::Class)
         return false;
     ecClass = schema.GetClassCP (classNode.GetName().c_str());
     return ecClass != NULL;
@@ -2097,8 +2127,8 @@ bool ECSchemaMergeTool::TryGetECClass (ECClassCP& ecClass,  ECDiffNodeCR classNo
 bool ECSchemaMergeTool::TryGetECProperty (ECPropertyCP& ecProperty,  ECDiffNodeCR propertyNode, ECSchemaCR schema, bool includeBaseClass)
     {
     ecProperty = NULL;
-    BeAssert (propertyNode.GetId() == DIFFNODEID_Property);
-    if (propertyNode.GetId() != DIFFNODEID_Property)
+    BeAssert (propertyNode.GetId() == DiffNodeId::Property);
+    if (propertyNode.GetId() != DiffNodeId::Property)
         return false;
     ECDiffNodeCP properties = propertyNode.GetParent();
     BeAssert(properties != NULL);
@@ -2117,8 +2147,8 @@ bool ECSchemaMergeTool::TryGetECProperty (ECPropertyCP& ecProperty,  ECDiffNodeC
 bool ECSchemaMergeTool::TryGetECRelationshipConstraint (ECRelationshipConstraintCP & relationshipConstraint,  ECDiffNodeCR relationshipConstraintNode, ECSchemaCR schema)
     {
     relationshipConstraint = NULL;
-    BeAssert (relationshipConstraintNode.GetId() == DIFFNODEID_Source || relationshipConstraintNode.GetId() == DIFFNODEID_Target);
-    if (relationshipConstraintNode.GetId() == DIFFNODEID_Source || relationshipConstraintNode.GetId() == DIFFNODEID_Target)
+    BeAssert (relationshipConstraintNode.GetId() == DiffNodeId::Source || relationshipConstraintNode.GetId() == DiffNodeId::Target);
+    if (relationshipConstraintNode.GetId() == DiffNodeId::Source || relationshipConstraintNode.GetId() == DiffNodeId::Target)
         return false;
     
     ECDiffNodeCP relationshipInfo = relationshipConstraintNode.GetParent();
@@ -2132,7 +2162,7 @@ bool ECSchemaMergeTool::TryGetECRelationshipConstraint (ECRelationshipConstraint
         ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP();
         if (relationshipClass)
             {
-            if (relationshipInfo->GetId() == DIFFNODEID_Source)
+            if (relationshipInfo->GetId() == DiffNodeId::Source)
                 relationshipConstraint = &relationshipClass->GetSource();
             else
                 relationshipConstraint = &relationshipClass->GetTarget();
@@ -2150,21 +2180,21 @@ MergeStatus ECSchemaMergeTool::MergeCustomAttributes (ECDiffNodeR diff, IECCusto
     ECSchemaCR otherSchema = &GetDefault() == &GetLeft() ? GetRight() : GetLeft();
     IECCustomAttributeContainerCP otherContainer = NULL;
     ECDiffNodeCP parent = diff.GetParent();
-    if (parent->GetId() == DIFFNODEID_Root)
+    if (parent->GetId() == DiffNodeId::Root)
         otherContainer = &otherSchema;
-    else if (parent->GetId() == DIFFNODEID_Class)
+    else if (parent->GetId() == DiffNodeId::Class)
         {
         ECClassCP ecClass;
         if (TryGetECClass(ecClass, *parent, otherSchema))
             otherContainer = ecClass;
         }
-    else if (parent->GetId() == DIFFNODEID_Property)
+    else if (parent->GetId() == DiffNodeId::Property)
         {
         ECPropertyCP ecProperty;
         if (TryGetECProperty(ecProperty, *parent, otherSchema, false))
             otherContainer = ecProperty;
         }
-    else if (parent->GetId() == DIFFNODEID_Source || parent->GetId() == DIFFNODEID_Target)
+    else if (parent->GetId() == DiffNodeId::Source || parent->GetId() == DiffNodeId::Target)
         {
         ECRelationshipConstraintCP ecRelationshipConstraint;
         if (TryGetECRelationshipConstraint(ecRelationshipConstraint, *parent, otherSchema))
@@ -2238,7 +2268,7 @@ MergeStatus ECSchemaMergeTool::MergeProperties(ECDiffNodeR diff, ECClassR merged
             }
         else if (diffType == DIFFTYPE_Conflict)
             {
-            diffType  = diff.GetChild(propertyName)->GetDiffType(true);
+            diffType  = diff.GetChild(propertyName)->ImplGetDiffType(true);
             if ((status = MergeProperty (diff.GetChild(propertyName), mergedClass, defaultClass)) != MERGESTATUS_Success)
                 return status;
             }
@@ -2265,13 +2295,13 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         return MERGESTATUS_Failed;
 
     bool isArray = defaultProperty->GetIsArray();
-    if ((v = GetMergeValue (*diff, DIFFNODEID_IsArray)) != NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::IsArray)) != NULL)
         isArray = v->GetValueBool();
     bool isStruct = defaultProperty->GetIsStruct();
-    if ((v = GetMergeValue (*diff, DIFFNODEID_IsStruct)) != NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::IsStruct)) != NULL)
         isStruct = v->GetValueBool();
     WString typeName = defaultProperty->GetTypeName();
-    if ((v = GetMergeValue (*diff, DIFFNODEID_TypeName)) != NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::TypeName)) != NULL)
         typeName = v->GetValueString();
 
     ECPropertyP mergedProperty = NULL;
@@ -2305,14 +2335,14 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
                 return MERGESTATUS_Failed;
             }
 
-        ECDiffNodeP arrayInfo = diff->GetChildById (DIFFNODEID_ArrayInfo);
-        if ( arrayInfo && (v = GetMergeValue (*arrayInfo, DIFFNODEID_MaxOccurs)) != NULL)
+        ECDiffNodeP arrayInfo = diff->ImplGetChildById (DiffNodeId::ArrayInfo);
+        if ( arrayInfo && (v = GetMergeValue (*arrayInfo, DiffNodeId::MaxOccurs)) != NULL)
             newProperty->SetMaxOccurs (v->GetValueInt32());
         else
             if (defaultProperty->GetIsArray())
                 newProperty->SetMaxOccurs (defaultProperty->GetAsArrayProperty()->GetMaxOccurs());
 
-        if (arrayInfo && (v = GetMergeValue (*arrayInfo, DIFFNODEID_MinOccurs)) != NULL)
+        if (arrayInfo && (v = GetMergeValue (*arrayInfo, DiffNodeId::MinOccurs)) != NULL)
             newProperty->SetMinOccurs (v->GetValueInt32());
         else
             if (defaultProperty->GetIsArray())
@@ -2329,7 +2359,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         mergedProperty = newProperty;
         }
 
-    if ((v = GetMergeValue (*diff, DIFFNODEID_DisplayLabel)) == NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::DisplayLabel)) == NULL)
         {
         if (mergedProperty->GetIsDisplayLabelDefined())
             mergedProperty->SetDisplayLabel(defaultProperty->GetDescription());
@@ -2337,17 +2367,17 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     else
         mergedProperty->SetDisplayLabel (v->GetValueString());
 
-    if ((v = GetMergeValue (*diff, DIFFNODEID_Description)) == NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::Description)) == NULL)
         mergedProperty->SetDescription (defaultProperty->GetDescription());
     else
         mergedProperty->SetDescription (v->GetValueString());
 
-    if ((v = GetMergeValue (*diff, DIFFNODEID_IsReadOnly)) == NULL)
+    if ((v = GetMergeValue (*diff, DiffNodeId::IsReadOnly)) == NULL)
         mergedProperty->SetIsReadOnly (defaultProperty->GetIsReadOnly());
     else
         mergedProperty->SetIsReadOnly (v->GetValueBool());
 
-    ECDiffNodeP customAttributes = diff->GetChildById (DIFFNODEID_CustomAttributes);
+    ECDiffNodeP customAttributes = diff->ImplGetChildById (DiffNodeId::CustomAttributes);
     if (customAttributes == NULL)
         {
         if ((status = AppendCustomAttributesToMerge(GetMerged(), GetDefault()))!= MERGESTATUS_Success)

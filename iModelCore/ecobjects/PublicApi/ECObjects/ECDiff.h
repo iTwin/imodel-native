@@ -20,6 +20,7 @@
 //__PUBLISH_SECTION_END__
 #include <stack>
 #include <set>
+#include <memory>
 //__PUBLISH_SECTION_START__
 
 
@@ -27,12 +28,15 @@
 //__PUBLISH_SECTION_END__
 EC_TYPEDEFS(ECDiffNode);
 EC_TYPEDEFS(ECDiffValue);
+
+
 //__PUBLISH_SECTION_START__
 EC_TYPEDEFS(ECDiff);
-
+EC_TYPEDEFS(IECDiffNode);
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ECDiff> ECDiffPtr;
+typedef bvector<IECDiffNodeCP> DiffNodeList; 
 
 //======================================================================================
 //! Status return by diff operations
@@ -72,6 +76,112 @@ enum ConflictRule
     };
 
 //======================================================================================
+//! DiffType represent if a node has Conflicting value or left schema have a value that right doesnt or vice versa
+//! Equal and Empty are special values and will not be returned currently.
+//! @ingroup ECObjectsGroup
+//! @bsiclass                                                     Affan.Khan      02/2013
+//+===============+===============+===============+===============+===============+=====
+enum DiffType
+    {
+    DIFFTYPE_Conflict,
+    DIFFTYPE_Left,
+    DIFFTYPE_Right,
+    DIFFTYPE_Equal,
+    DIFFTYPE_Empty
+    };
+
+//======================================================================================
+//! DiffNodeId represent meta schema node id for diff nodes.
+//! @ingroup ECObjectsGroup
+//! @bsiclass                                                     Affan.Khan      02/2013
+//+===============+===============+===============+===============+===============+=====
+enum class DiffNodeId
+    {
+    None = 0,
+    Root = 1,
+    Schema = 2,
+    Name = 3,
+    DisplayLabel = 4,
+    Description = 5,
+    VersionMajor = 6,
+    VersionMinor = 7,
+    Classes = 8,
+    Class = 9,
+    References = 10,
+    IsCustomAttributeClass = 11,
+    IsDomainClass = 12,
+    IsStruct = 13,
+    BaseClass = 14,
+    Reference = 15,
+    IsRelationshipClass = 16,
+    BaseClasses = 17,
+    IsArray = 18,
+    Properties = 19,
+    Property = 20,
+    ArrayInfo = 21,
+    IsReadOnly = 22,
+    IsPrimitive = 23,
+    RelationshipInfo = 24,
+    IsOverriden = 25,
+    TypeName = 26,
+    Strength = 27,
+    StrengthDirection = 28,
+    Source = 29,
+    Target = 30,
+    Cardinality =31,
+    IsPolymorphic = 32,
+    RoleLabel = 33,
+    MaxOccurs = 34,
+    MinOccurs = 35,
+    CustomAttributes = 36,
+    CustomAttribute = 37,
+    ConstraintClasses = 38,
+    ConstraintClass = 39,
+    NamespacePrefix = 40,
+    };
+
+//======================================================================================
+//! Represent a node in diff tree
+//! @ingroup ECObjectsGroup
+//! @bsiclass                                                     Affan.Khan      05/2013
+//+===============+===============+===============+===============+===============+======
+struct IECDiffNode 
+    {
+public:
+    //! Return diff node type. It represent a meta schema id for facet that represent current diff node.
+    //! @return return diff node type
+    ECOBJECTS_EXPORT virtual DiffNodeId                  GetId() const = 0;
+    //! Return access string for the current node. Access string is a meta schema path for current diff node.
+    //! @return access string for current node
+    ECOBJECTS_EXPORT virtual WString                     GetAccessString() const =0;
+    //! Return constant string representation of current diff node.
+    //! @return name of current node.
+    ECOBJECTS_EXPORT virtual WStringCR                   GetName() const = 0;
+    //! If current node is a array element e.g. BaseClasses it will also have a index
+    //! @return index of current node if its array. Return -1 if if its not.
+    ECOBJECTS_EXPORT virtual int                         GetIndex() const = 0;
+    //! Return list of childe node pointers for current diff node. This method computes child nodes so it would nice idea to keep it value in local variable for performance reasons.
+    //! @return list of child node pointers
+    ECOBJECTS_EXPORT virtual DiffNodeList                GetChildren() const = 0;
+   //! Return child by knownDiffNodeId
+    //! @param[in] id The id of child diff node.
+    //! @return if successfully will return child node otherwise ::nullptr
+    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
+   //! Returns diff type for current diff node
+    //! @param[in] bRecursively If true it will compute accumulative diff type of sub tree.
+    //! @return DiffType for current node or accumulative one if bRecursively was true.
+    ECOBJECTS_EXPORT virtual DiffType                    GetDiffType(bool bRecursively =false) const = 0;
+    //! Return left value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
+    //! @return ECValue for current node left value from left schema
+    ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueLeft() const = 0;
+    //! Return right value for current diff node. GetDiffType() can be use to determine type of diff to see which one (Left or Right) need to be called.
+    //! @return ECValue for current node left value from right schema
+    ECOBJECTS_EXPORT virtual ECN::ECValue                GetValueRight() const = 0;
+
+    virtual ~IECDiffNode(){};
+    };
+
+//======================================================================================
 //! Provide status of merge operations
 //! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
@@ -90,6 +200,7 @@ enum MergeStatus
     };
 
 #define ECDIFF_DEFAULT_TABSIZE 3
+
 
 //======================================================================================
 //! ECDiff can be use to take a difference of two ECSchemas and if required merge them together.
@@ -147,6 +258,10 @@ public:
     //! @param[in] bAccumlativeState Accumulative state mean if user need just the state of specific node or all its children.
     //! @return if successfully it will return ::DIFFSTATUS_Success.
     ECOBJECTS_EXPORT DiffStatus GetNodesState (bmap<WString, DiffNodeState>& nodes, WStringCR accessString, bool bAccumlativeState = true);
+    //! Return top level diff node
+    //! @return IECDiffNode that represent a difference between two schemas. nullptr if difference was not found.
+    ECOBJECTS_EXPORT IECDiffNodeCP GetRootNode () const;
+
     };
 
 //__PUBLISH_SECTION_END__
@@ -159,50 +274,7 @@ struct DiffNameComparer
     bool operator()(WCharCP s1, WCharCP s2) const { return (wcscmp(s1, s2) < 0);}
     };
 
-enum DiffNodeId
-    {
-    DIFFNODEID_None = 0,
-    DIFFNODEID_Root = 1,
-    DIFFNODEID_Schema = 2,
-    DIFFNODEID_Name = 3,
-    DIFFNODEID_DisplayLabel = 4,
-    DIFFNODEID_Description = 5,
-    DIFFNODEID_VersionMajor = 6,
-    DIFFNODEID_VersionMinor = 7,
-    DIFFNODEID_Classes = 8,
-    DIFFNODEID_Class = 9,
-    DIFFNODEID_References = 10,
-    DIFFNODEID_IsCustomAttributeClass = 11,
-    DIFFNODEID_IsDomainClass = 12,
-    DIFFNODEID_IsStruct = 13,
-    DIFFNODEID_BaseClass = 14,
-    DIFFNODEID_Reference = 15,
-    DIFFNODEID_IsRelationshipClass = 16,
-    DIFFNODEID_BaseClasses = 17,
-    DIFFNODEID_IsArray = 18,
-    DIFFNODEID_Properties = 19,
-    DIFFNODEID_Property = 20,
-    DIFFNODEID_ArrayInfo = 21,
-    DIFFNODEID_IsReadOnly = 22,
-    DIFFNODEID_IsPrimitive = 23,
-    DIFFNODEID_RelationshipInfo = 24,
-    DIFFNODEID_IsOverriden = 25,
-    DIFFNODEID_TypeName = 26,
-    DIFFNODEID_Strength = 27,
-    DIFFNODEID_StrengthDirection = 28,
-    DIFFNODEID_Source = 29,
-    DIFFNODEID_Target = 30,
-    DIFFNODEID_Cardinality =31,
-    DIFFNODEID_IsPolymorphic = 32,
-    DIFFNODEID_RoleLabel = 33,
-    DIFFNODEID_MaxOccurs = 34,
-    DIFFNODEID_MinOccurs = 35,
-    DIFFNODEID_CustomAttributes = 36,
-    DIFFNODEID_CustomAttribute = 37,
-    DIFFNODEID_ConstraintClasses = 38,
-    DIFFNODEID_ConstraintClass = 39,
-    DIFFNODEID_NamespacePrefix = 40,
-    };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      01/2013
@@ -262,24 +334,14 @@ public:
     void Clear();
     bool IsEqual(ECDiffValue const& value);
     WString ToString() const;
+    ECValue GetValueAsECValue() const; 
     };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-enum DiffType
-    {
-    DIFFTYPE_Conflict,
-    DIFFTYPE_Left,
-    DIFFTYPE_Right,
-    DIFFTYPE_Equal,
-    DIFFTYPE_Empty
-    };
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDiffNode 
+struct ECDiffNode : IECDiffNode
     {
     typedef bvector<ECDiffNodeP> ECDiffNodeList;
     typedef bmap<WCharCP, ECDiffNodeP, DiffNameComparer> ECDiffNodeMap;
@@ -310,29 +372,52 @@ public:
         };
     static WCharCP IdToString (DiffNodeId id);
 public:
-    DiffType GetDiffType (bool bRecursively =false);
-
-    DiffNodeId GetId() const { return m_id;}
+    DiffType GetDiffType (bool bRecursively) const override
+        {
+        return const_cast<ECDiffNode*>(this)->ImplGetDiffType(bRecursively);
+        }
+    DiffNodeId GetId() const override { return m_id;}
+    WString GetAccessString() const override;
+    WStringCR GetName() const override { return m_name;}
+    int GetIndex() const override {return m_index;}
+    DiffNodeList GetChildren() const override 
+        {
+        DiffNodeList list;
+        for(auto& n : m_childNodeList)
+            list.push_back(n);
+        return list;
+        }
+    IECDiffNodeCP GetChildById (DiffNodeId id) const override
+        {
+        return const_cast<ECDiffNode*>(this)->ImplGetChildById (id);
+        }
+    ECN::ECValue              GetValueRight() const override
+        {
+        return const_cast<ECDiffNode*>(this)->ImplGetValueRight().GetValueAsECValue();
+        }
+    ECN::ECValue              GetValueLeft() const override
+        {
+        return const_cast<ECDiffNode*>(this)->ImplGetValueLeft().GetValueAsECValue();
+        }
+    DiffType ImplGetDiffType (bool bRecursively =false);
     ECDiffNodeP Find (WCharCP name);
-    ECDiffNode (WCharCP name, ECDiffNodeP parent = NULL, DiffNodeId id = DIFFNODEID_None, int index = -1) ;
-    WString GetAccessString() const;
-    ECDiffValue& GetValueLeft();
-    ECDiffValue& GetValueRight();
+    ECDiffNode (WCharCP name, ECDiffNodeP parent = NULL, DiffNodeId id = DiffNodeId::None, int index = -1) ;
+    ECDiffValue& ImplGetValueLeft();
+    ECDiffValue& ImplGetValueRight();
     ECDiffValue& GetValue (ValueDirection direction);
     bool SetValue (WCharCP left, WCharCP right);
     bool SetValue (bool left, bool right);
     bool SetValue (UInt32 left, UInt32 right);
-    int GetIndex() const {return m_index;}
     const_iterator begin();
     const_iterator end();
     ECDiffNodeList::size_type size ();
     ECDiffNodeCP GetParent() const;
-    WStringCR GetName() const { return m_name;}
+
     ECDiffNodeP Add (DiffNodeId type);
     ECDiffNodeP Add (WCharCP name, DiffNodeId type);
     ECDiffNodeP AddWithIndex (int index, DiffNodeId type);
     ECDiffNodeP GetChild (WStringCR accessString, bool bCreate = false);
-    ECDiffNodeP GetChildById (DiffNodeId id)
+    ECDiffNodeP ImplGetChildById (DiffNodeId id)
         {
         WCharCP c = IdToString(id);
         BeAssert (c != NULL);

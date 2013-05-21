@@ -253,6 +253,8 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsMissingNodes)
     {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling (true, false);
+    DISABLE_ASSERTS
+    
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
@@ -268,6 +270,7 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenXmlFileIsIllFormed)
     {
     // show error messages but do not assert.
     ECSchema::SetErrorHandling (true, false);
+    DISABLE_ASSERTS
 
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
