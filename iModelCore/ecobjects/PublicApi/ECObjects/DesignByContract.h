@@ -154,6 +154,18 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
 
+//! An inverted form of EXPECTED_CONDITION if you prefer checking for the positive of an expression when writing your code.
+//! @see EXPECTED_CONDITION
+//! @code
+//!     if (UNEXPECTED_CONDITION(x >= 3))
+//!         {
+//!         // free something I malloced
+//!         // set outputs to 0
+//!         return MyStatus::ERROR_ItFailed;
+//!         }
+//! @endcode
+#define UNEXPECTED_CONDITION(_Expression) !EXPECTED_CONDITION(!(_Expression))
+
 #ifdef NDEBUG
     #define DEBUG_EXPECT(_Expression) (void)0
     #define DEBUG_FAIL(_Message) (void)0

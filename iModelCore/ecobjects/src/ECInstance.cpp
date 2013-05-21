@@ -1809,7 +1809,7 @@ ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC_INLINE ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
     UInt32 propIdx;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
