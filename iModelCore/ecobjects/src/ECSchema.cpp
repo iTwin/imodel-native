@@ -1937,7 +1937,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
     {
     UInt32 checkSum = 0;
     BeFile file;
-    if (BE_FILE_STATUS_Success != file.Open (schemaFile, BE_FILE_ACCESS_Read, BE_FILE_SHARE_ReadWrite))
+    if (BE_FILE_STATUS_Success != file.Open (schemaFile, BE_FILE_ACCESS_Read))
         {
         BeAssert(false);
         return checkSum;
