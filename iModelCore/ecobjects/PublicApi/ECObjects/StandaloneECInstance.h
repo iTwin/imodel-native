@@ -12,7 +12,7 @@
 #include <ECObjects/ECObjects.h>
 /// @cond BENTLEY_SDK_Desktop
 #include <ECObjects/ECDBuffer.h>
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond
 
 EC_TYPEDEFS(StandaloneECEnabler);
 
@@ -171,7 +171,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
     ECOBJECTS_EXPORT bool                     IsHiddenInstance () const;
 };
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond
 
 //=================================================================================
 //! ECN::StandaloneECInstance is an implementation of IECInstance which is not tied
@@ -262,7 +262,7 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
     };
 
-/// @endcond BENTLEY_SDK_Desktop
+/// @endcond
 
 //=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
@@ -303,3 +303,4 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 //#pragma make_public (Bentley::ECN::StandaloneECEnabler)
 //#pragma make_public (Bentley::ECN::StandaloneECInstance)
 //#pragma make_public (Bentley::ECN::MemoryECInstanceBase)
+/// @endcond
