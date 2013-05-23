@@ -567,10 +567,11 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
 
 //__PUBLISH_SECTION_END__
-    BentleyStatus SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
-    bool IsDateTimeMetadataSet () const;
-    bool DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
-    WString DateTimeMetadataToString () const;
+    BentleyStatus                   SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
+    bool                            IsDateTimeMetadataSet () const;
+    bool                            DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
+    WString                         DateTimeMetadataToString () const;
+    ECOBJECTS_EXPORT BentleyStatus  SetLocalDateTimeFromUnixMillis (Int64 unixMillis);
 //__PUBLISH_SECTION_START__
 //
     //! Returns the DPoint2d value, if this ECValue holds a Point2d

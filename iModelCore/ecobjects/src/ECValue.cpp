@@ -1154,6 +1154,36 @@ BentleyStatus          ECValue::SetDateTime (DateTimeCR dateTime)
     return stat;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus           ECValue::SetLocalDateTimeFromUnixMillis (Int64 millis)
+    {
+    // Old PropertyEnablers would convert properties like file create date or element modified time to local time
+    // We reluctantly reproduce that behavior to avoid regressions. Incoming time is UTC
+    DateTime utc;
+    if (SUCCESS == DateTime::FromUnixMilliseconds (utc, millis))
+        {
+        DateTime local;
+        if (SUCCESS != utc.ToLocalTime (local))
+            local = utc;
+        else
+            {
+            // Uhh...we don't actually support local DateTime values? Yet we produce them? See assertion in ECValue::SetDateTime()
+            // So convert the value back to "unspecified" DateTime.
+            local = DateTime (DateTime::DATETIMEKIND_Unspecified, local.GetYear(), local.GetMonth(), local.GetDay(), local.GetHour(), local.GetMinute(), local.GetSecond(), local.GetHectoNanosecond());
+            }
+
+        return SetDateTime (local);
+        }
+    else
+        {
+        Clear();
+        m_primitiveType = PRIMITIVETYPE_DateTime;
+        return ERROR;
+        }
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
