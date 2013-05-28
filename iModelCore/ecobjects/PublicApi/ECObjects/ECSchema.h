@@ -1768,7 +1768,7 @@ private:
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
 
-    bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
+    bmap<ECSchemaP, WString> m_referencedSchemaNamespaceMap;
 
     ECSchema ();
     virtual ~ECSchema();

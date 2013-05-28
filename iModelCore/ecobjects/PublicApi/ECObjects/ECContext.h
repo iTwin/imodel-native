@@ -51,6 +51,7 @@ friend struct SearchPathSchemaFileLocater;
             return m_locator < rhs.m_locator;
             }
 
+        SchemaLocatorKey() {}
         SchemaLocatorKey (IECSchemaLocaterP locator, int priority)
             :m_locator(locator), m_priority(priority)
             {}

@@ -1376,8 +1376,9 @@ ECDiffNodeP ECSchemaDiffTool::DiffCustomAttributes
         return NULL;
 
     ECDiffNodeP diff = parentDiff.Add (DiffNodeId::CustomAttributes);
-    for (bmap<WCharCP, ECClassCP>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
+    for (bmap<WCharCP, ECClassCP, DiffNameComparer>::iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffInstance(*diff, *(itor->second), leftContainer, rightContainer);
+
     return parentDiff.RemoveIfEmpty (diff);
     }
 /*---------------------------------------------------------------------------------**//**
