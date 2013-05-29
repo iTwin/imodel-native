@@ -587,14 +587,6 @@ protected:
     ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
 
-    //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
-    //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
-    //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
-    //! This value is always >= the value returned by GetAllocatedArrayCount.
-    //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
-    //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
-    ECOBJECTS_EXPORT ArrayCount          GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
-
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
     //! See the description of GetReservedArrayCount for explanation about the differences between the two.
     ECOBJECTS_EXPORT ArrayCount          GetAllocatedArrayCount (PropertyLayoutCR propertyLayout) const;
@@ -691,6 +683,16 @@ protected:
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 
 public:
+    ECOBJECTS_EXPORT ECObjectsStatus        GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index, int* structValueIdentifier = NULL) const;
+
+    //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
+    //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
+    //! the first value is set.  If an array does not have a minimum element count then GetReservedArrayCount will always equal GetAllocatedArrayCount
+    //! This value is always >= the value returned by GetAllocatedArrayCount.
+    //! This is the value used to set the count on an ArrayInfo value object that will be returned to a caller via GetValueFromMemory.  It is an implementation detail
+    //! of memory based instances as to whether or not the physical memory to back that array count has actually been allocated.
+    ECOBJECTS_EXPORT ArrayCount             GetReservedArrayCount (PropertyLayoutCR propertyLayout) const;
+
     // Copies the data from the specified ECDBuffer into this ECDBuffer, converting to match this buffer's ClassLayout if necessary.
     // Does not copy struct array instances, only their identifiers. In general CopyFromBuffer() should be used instead.
     ECOBJECTS_EXPORT ECObjectsStatus        CopyDataBuffer (ECDBufferCR src, bool allowClassLayoutConversion);
@@ -748,5 +750,27 @@ public:
     //! @param[in] source The ECDBuffer to copy values from
     ECOBJECTS_EXPORT ECObjectsStatus        CopyFromBuffer (ECDBufferCR source);
     };   
+
+/*__PUBLISH_SECTION_END__*/
+
+/*---------------------------------------------------------------------------------**//**
+* Exposed here solely for interop with managed code...
+* @bsistruct                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ScopedDataAccessor
+    {
+private:
+    ECDBuffer const*            m_buffer;
+public:
+    ScopedDataAccessor (ECDBuffer const& buffer, bool forWrite = false) : m_buffer(buffer._AcquireData (forWrite) ? &buffer : NULL) { }
+    ~ScopedDataAccessor ()
+        {
+        if (IsValid())
+            m_buffer->_ReleaseData();
+        }
+    bool    IsValid() const { return NULL != m_buffer; }
+    };
+
+/*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
