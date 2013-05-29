@@ -2296,21 +2296,21 @@ ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   11/12
+* @bsimethod                                                    Paul.Connelly   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ScopedDataAccessor
+ECObjectsStatus ECDBuffer::GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index, int * structValueIdP) const
     {
-private:
-    ECDBuffer const*            m_buffer;
-public:
-    ScopedDataAccessor (ECDBuffer const& buffer, bool forWrite = false) : m_buffer(buffer._AcquireData (forWrite) ? &buffer : NULL) { }
-    ~ScopedDataAccessor ()
+    ECObjectsStatus status = _GetStructArrayValueFromMemory (v, propertyLayout, index);
+    if (NULL != structValueIdP && ECOBJECTS_STATUS_Success == status)
         {
-        if (IsValid())
-            m_buffer->_ReleaseData();
+        ECValue idVal;
+        status = GetPrimitiveValueFromMemory (idVal, propertyLayout, true, index);
+        if (ECOBJECTS_STATUS_Success == status)
+            *structValueIdP = v.GetInteger();
         }
-    bool    IsValid() const { return NULL != m_buffer; }
-    };
+
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
