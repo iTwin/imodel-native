@@ -2306,7 +2306,12 @@ ECObjectsStatus ECDBuffer::GetStructArrayValueFromMemory (ECValueR v, PropertyLa
         ECValue idVal;
         status = GetPrimitiveValueFromMemory (idVal, propertyLayout, true, index);
         if (ECOBJECTS_STATUS_Success == status)
-            *structValueIdP = v.GetInteger();
+            {
+            if (idVal.IsInteger() && !idVal.IsNull())
+                *structValueIdP = idVal.GetInteger();
+            else
+                status = ECOBJECTS_STATUS_Error;
+            }
         }
 
     return status;
