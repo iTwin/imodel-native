@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <Logging/BentleyLogging.h>
+#include <Logging/bentleylogging.h>
 
 #define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"ECObjectsNative"))
 
