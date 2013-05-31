@@ -274,8 +274,6 @@ struct DiffNameComparer
     bool operator()(WCharCP s1, WCharCP s2) const { return (wcscmp(s1, s2) < 0);}
     };
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -476,7 +474,7 @@ private:
     ConflictRule m_defaultConflictRule;
     ClassMergeInfoMap m_classMergeTasks;
     ClassByNameMap m_classByNameMap;
-    std::set<WString> m_doneList;
+    bset<WString> m_doneList;
 
     ECSchemaCR GetLeft() const;
     ECSchemaCR GetRight() const;

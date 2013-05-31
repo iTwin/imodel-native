@@ -1396,9 +1396,9 @@ ECDiffNodeP ECSchemaDiffTool::DiffInstance
     IECInstanceCP right = rightContainer.GetPrimaryCustomAttribute (customAttributeClass).get();
     if (!left && !right)
         return NULL;
-    else if (left && !right)
+    if (left && !right)
         return AppendInstance (parentDiff, *left, ECDiffNode::DIRECTION_Left);
-    else if (!left && right)
+    if (!left && right)
         return AppendInstance (parentDiff, *right, ECDiffNode::DIRECTION_Right);
 
     bmap<WString,ECValue> leftValues;
