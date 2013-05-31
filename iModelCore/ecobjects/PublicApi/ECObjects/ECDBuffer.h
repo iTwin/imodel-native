@@ -773,7 +773,8 @@ public:
         if (IsValid())
             m_buffer->_ReleaseData();
         }
-    bool    IsValid() const { return NULL != m_buffer; }
+    bool            IsValid() const { return NULL != m_buffer; }
+    byte const*     GetData() const { return NULL != m_buffer ? m_buffer->_GetData() : NULL; }
     };
 
 /*__PUBLISH_SECTION_START__*/
