@@ -165,7 +165,7 @@ public:
     ECOBJECTS_EXPORT virtual DiffNodeList                GetChildren() const = 0;
    //! Return child by knownDiffNodeId
     //! @param[in] id The id of child diff node.
-    //! @return if successfully will return child node otherwise ::nullptr
+    //! @return if successfully will return child node otherwise nullptr
     ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
    //! Returns diff type for current diff node
     //! @param[in] bRecursively If true it will compute accumulative diff type of sub tree.
