@@ -1078,10 +1078,12 @@ UInt32           parentStructIndex,
 ECTypeDescriptor typeDescriptor,
 UInt32           offset,
 UInt32           nullflagsOffset,
-UInt32           nullflagsBitmask
+UInt32           nullflagsBitmask,
+UInt32           modifierFlags,
+UInt32           modifierData
 )
     {
-    PropertyLayoutP propertyLayout = new PropertyLayout (accessString, parentStructIndex, typeDescriptor, offset, nullflagsOffset, nullflagsBitmask);
+    PropertyLayoutP propertyLayout = new PropertyLayout (accessString, parentStructIndex, typeDescriptor, offset, nullflagsOffset, nullflagsBitmask, modifierFlags, modifierData);
 
     AddPropertyLayout (accessString, *propertyLayout); 
     }
