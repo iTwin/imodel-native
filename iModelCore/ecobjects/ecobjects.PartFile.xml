@@ -47,8 +47,7 @@
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />
             <PublicAPI Domain="ECPresentationRules" />
-	    <PublicAPI Domain="ECPersistence" /> 
-	    <PublicAPI Domain="ECUnits" />
+            <PublicAPI Domain="ECUnits" />
         </Bindings>
     </Part>
 
