@@ -100,11 +100,6 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ECPresentationHeaders)
 
 
-ECPersistenceHeaders =  $(ecpersistencePublicAPISrc)ECPersistence.h \
-                        $(ecpersistencePublicAPISrc)IECConnection.h \
-                        $(ecpersistencePublicAPISrc)IECSchemaManager.h \
-                        $(ecpersistencePublicAPISrc)IECStatement.h 
-
 ECUnitsHeaders = $(ecunitsPublicAPISrc)Units.h
 
 # ECObjects
@@ -244,14 +239,6 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 # ECUnits
 
 $(o)units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
-
-
-# ECPersistence
-$(o)IECConnection$(oext)      : $(baseDir)persistence/IECConnection.cpp $(ECPersistenceHeaders) ${MultiCompileDepends} 
-
-$(o)IECSchemaManager$(oext)     : $(baseDir)persistence/IECSchemaManager.cpp $(ECPersistenceHeaders) ${MultiCompileDepends} 
-
-$(o)IECStatement$(oext)      : $(baseDir)persistence/IECStatement.cpp $(ECPersistenceHeaders) ${MultiCompileDepends} 
 
 
 %include MultiCppCompileGo.mki

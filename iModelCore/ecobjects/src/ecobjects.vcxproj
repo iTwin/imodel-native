@@ -72,7 +72,6 @@
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
-    <ClCompile Include="persistence\IECSchemaManager.cpp" />
     <ClCompile Include="presentation\auicommand.cpp" />
     <ClCompile Include="presentation\auievent.cpp" />
     <ClCompile Include="presentation\auiitem.cpp" />
@@ -87,8 +86,6 @@
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
-    <ClCompile Include="persistence\IECConnection.cpp" />
-    <ClCompile Include="persistence\IECStatement.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
@@ -118,11 +115,6 @@
     <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ECResourceProvider.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h" />
-    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistence.h" />
-    <ClInclude Include="..\PublicApi\ECPersistence\ECPersistenceAPI.h" />
-    <ClInclude Include="..\PublicApi\ECPersistence\IECConnection.h" />
-    <ClInclude Include="..\PublicApi\ECPersistence\IECSchemaManager.h" />
-    <ClInclude Include="..\PublicApi\ECPersistence\IECStatement.h" />
     <ClInclude Include="DateTimeInfoAccessor.h" />
     <ClInclude Include="ecobjectsnativelog.h" />
     <ClInclude Include="ECObjectsPch.h" />
