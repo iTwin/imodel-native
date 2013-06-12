@@ -52,7 +52,7 @@ ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
 void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
     {
     WChar buf[5];
-    BeStringUtilities::HexFormatOptions opts = (BeStringUtilities::HexFormatOptions)(BeStringUtilities::HEXFORMAT_LeadingZeros | BeStringUtilities::HEXFORMAT_Uppercase);
+    BeStringUtilities::HexFormatOptions opts = (BeStringUtilities::HexFormatOptions)(static_cast<int>(BeStringUtilities::HexFormatOptions::LeadingZeros) | static_cast<int>(BeStringUtilities::HexFormatOptions::Uppercase));
     BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)c, opts, 4);
     encoded.append (L"__x");
     encoded.append (buf);
@@ -1904,7 +1904,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
     {
     UInt32 checkSum = 0;
     BeFile file;
-    if (BE_FILE_STATUS_Success != file.Open (schemaFile, BE_FILE_ACCESS_Read, BE_FILE_SHARE_ReadWrite))
+    if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read, BeFileSharing::ReadWrite))
         {
         BeAssert(false);
         return checkSum;

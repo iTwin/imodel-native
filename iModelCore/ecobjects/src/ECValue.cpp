@@ -3014,9 +3014,9 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                     {
                     case 'x':       // hexadecimal
                         {
-                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HEXFORMAT_LeadingZeros;
+                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HexFormatOptions::LeadingZeros;
                         if ('X' == spec)
-                            opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
+                            opts = (BeStringUtilities::HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(BeStringUtilities::HexFormatOptions::Uppercase));
 
                         BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
                         }
