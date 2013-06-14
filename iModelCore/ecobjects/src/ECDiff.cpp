@@ -2304,10 +2304,6 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     if ((v = GetMergeValue (*diff, DiffNodeId::TypeName)) != NULL)
         typeName = v->GetValueString();
 
-    if (isArray && !isStruct && typeName ==L"point3d")
-        {
-        printf("");
-        }
     ECPropertyP mergedProperty = NULL;
     if (isStruct)
         {
@@ -2413,7 +2409,7 @@ bool ECSchemaMergeTool::ParsePrimitiveType (PrimitiveType& primitiveType, WStrin
         primitiveType = PRIMITIVETYPE_Double;
     else if (primitiveTypeString.CompareToI (L"IGeometry") == 0)
         primitiveType = PRIMITIVETYPE_IGeometry;
-    else if (primitiveTypeString.CompareToI (L"Integer") == 0)
+    else if (primitiveTypeString.CompareToI (L"Integer") == 0 || primitiveTypeString.CompareToI (L"Int") == 0)
         primitiveType = PRIMITIVETYPE_Integer;
     else if (primitiveTypeString.CompareToI (L"Long") == 0)
         primitiveType = PRIMITIVETYPE_Long;
