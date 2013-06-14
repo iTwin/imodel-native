@@ -128,6 +128,7 @@ struct IUICommand : public RefCountedBase
         virtual void                _GetChildren(bvector<IUICommandPtr>& children) {}
 
 //__PUBLISH_SECTION_START__
+//__PUBLISH_CLASS_VIRTUAL__
     public:
         //!virtual destructor.
         virtual ~IUICommand ()
