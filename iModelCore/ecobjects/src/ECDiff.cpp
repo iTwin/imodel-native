@@ -2304,6 +2304,10 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     if ((v = GetMergeValue (*diff, DiffNodeId::TypeName)) != NULL)
         typeName = v->GetValueString();
 
+    if (isArray && !isStruct && typeName ==L"point3d")
+        {
+        printf("");
+        }
     ECPropertyP mergedProperty = NULL;
     if (isStruct)
         {
@@ -2347,6 +2351,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         else
             if (defaultProperty->GetIsArray())
                 newProperty->SetMinOccurs (defaultProperty->GetAsArrayProperty()->GetMinOccurs());
+        mergedProperty = newProperty;
         }
     else 
         {
@@ -2358,7 +2363,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
             return MERGESTATUS_Failed;
         mergedProperty = newProperty;
         }
-
+    PRECONDITION(mergedProperty != nullptr, MERGESTATUS_Failed);
     if ((v = GetMergeValue (*diff, DiffNodeId::DisplayLabel)) == NULL)
         {
         if (mergedProperty->GetIsDisplayLabelDefined())
