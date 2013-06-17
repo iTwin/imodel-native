@@ -1547,7 +1547,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Long:
         {
         Int64 i;
-        if (1 != BeStringUtilities::Swscanf (str, L"%lld", &i))
+        if (1 != BE_STRING_UTILITIES_SWSCANF (str, L"%lld", &i))
             return false;
         else if (PRIMITIVETYPE_Long == primitiveType)
             SetLong (i);
@@ -1558,7 +1558,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Double:
         {
         double d;
-        if (1 == BeStringUtilities::Swscanf (str, L"%lg", &d))
+        if (1 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg", &d))
             SetDouble (d);
         else
             return false;
@@ -1567,7 +1567,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Integer:
         {
         Int64 i;
-        if (1 == BeStringUtilities::Swscanf (str, L"%lld", &i))
+        if (1 == BE_STRING_UTILITIES_SWSCANF (str, L"%lld", &i))
             {
             if (INT_MAX >= i && INT_MIN <= i)
                 SetInteger ((Int32)i);
@@ -1581,7 +1581,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt;
-        if (2 == BeStringUtilities::Swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
+        if (2 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg,%lg", &pt.x, &pt.y))
             SetPoint2D (pt);
         else
             return false;
@@ -1590,7 +1590,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt;
-        if (3 == BeStringUtilities::Swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+        if (3 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
             SetPoint3D (pt);
         else
             return false;
@@ -2357,7 +2357,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
+    BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue);
 
     ECValue  arrayVal;
 
