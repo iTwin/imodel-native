@@ -1270,6 +1270,10 @@ ECDiffNodeP ECSchemaDiffTool::AppendClass (ECDiffNodeR parent , ECClassCR ecClas
     ECPropertyIterable properties = ecClass.GetProperties(false);
     for (ECPropertyIterable::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
         AppendProperty (*propertiesNode, **itor, direction);
+
+    if (ECRelationshipClassCP relationshipClass = ecClass.GetRelationshipClassCP())   
+        AppendRelationship(*diff, *relationshipClass, direction);
+
     diff->RemoveIfEmpty (propertiesNode);
     return diff;
     }
@@ -2622,11 +2626,11 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipToMerge(ECRelationshipClassR me
     mergedRelationshipClass.SetStrength (defaultRelationshipClass.GetStrength());
     mergedRelationshipClass.SetStrengthDirection (defaultRelationshipClass.GetStrengthDirection());
 
-    status = AppendRelationshipContstraintToMerge (defaultRelationshipClass.GetSource(), defaultRelationshipClass.GetSource());
+    status = AppendRelationshipContstraintToMerge (mergedRelationshipClass.GetSource(), defaultRelationshipClass.GetSource());
     if (status != MERGESTATUS_Success)
         return status;
 
-    status = AppendRelationshipContstraintToMerge (defaultRelationshipClass.GetTarget(), defaultRelationshipClass.GetTarget());
+    status = AppendRelationshipContstraintToMerge (mergedRelationshipClass.GetTarget(), defaultRelationshipClass.GetTarget());
     if (status != MERGESTATUS_Success)
         return status;
 
