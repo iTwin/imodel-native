@@ -2156,7 +2156,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
+    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return SCHEMA_WRITE_STATUS_Success;
     }
@@ -2174,7 +2174,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
     if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
         return status;
 
-    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
+    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return SCHEMA_WRITE_STATUS_Success;
     }

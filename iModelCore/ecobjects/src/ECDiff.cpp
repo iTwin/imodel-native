@@ -2348,6 +2348,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         else
             if (defaultProperty->GetIsArray())
                 newProperty->SetMinOccurs (defaultProperty->GetAsArrayProperty()->GetMinOccurs());
+        mergedProperty = newProperty;
         }
     else 
         {
@@ -2359,7 +2360,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
             return MERGESTATUS_Failed;
         mergedProperty = newProperty;
         }
-
+    PRECONDITION(mergedProperty != nullptr, MERGESTATUS_Failed);
     if ((v = GetMergeValue (*diff, DiffNodeId::DisplayLabel)) == NULL)
         {
         if (mergedProperty->GetIsDisplayLabelDefined())
@@ -2409,7 +2410,7 @@ bool ECSchemaMergeTool::ParsePrimitiveType (PrimitiveType& primitiveType, WStrin
         primitiveType = PRIMITIVETYPE_Double;
     else if (primitiveTypeString.CompareToI (L"IGeometry") == 0)
         primitiveType = PRIMITIVETYPE_IGeometry;
-    else if (primitiveTypeString.CompareToI (L"Integer") == 0)
+    else if (primitiveTypeString.CompareToI (L"Integer") == 0 || primitiveTypeString.CompareToI (L"Int") == 0)
         primitiveType = PRIMITIVETYPE_Integer;
     else if (primitiveTypeString.CompareToI (L"Long") == 0)
         primitiveType = PRIMITIVETYPE_Long;

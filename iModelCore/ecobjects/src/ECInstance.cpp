@@ -3269,7 +3269,7 @@ template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ec
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (instance, writeInstanceId)))
         return status;
 
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_Default;
     if ( ! isStandAlone)
         opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
 

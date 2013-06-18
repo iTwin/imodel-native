@@ -389,6 +389,7 @@ public:
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
     static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance);
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
     };
 

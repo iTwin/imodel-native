@@ -154,10 +154,8 @@ struct ECInstanceReadContext : RefCountedBase
     // If no IPrimitiveTypeResolver is supplied, the primitive type defined for the ECProperty is used.
     struct IPrimitiveTypeResolver
         {
-/*__PUBLISH_SECTION_END__*/
         virtual PrimitiveType       _ResolvePrimitiveType (PrimitiveECPropertyCR ecproperty) const = 0;
         virtual PrimitiveType       _ResolvePrimitiveArrayType (ArrayECPropertyCR ecproperty) const = 0;
-/*__PUBLISH_SECTION_START__*/
         };
 
 /*__PUBLISH_SECTION_END__*/
