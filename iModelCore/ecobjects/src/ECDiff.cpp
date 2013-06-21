@@ -586,11 +586,11 @@ ECDiffNodeP ECDiffNode::Add (WCharCP name, DiffNodeId type)
     if (name == NULL)
         name = IdToString (type);
     BeAssert (name != NULL);
-    if (m_childNodeMap.find (name) != m_childNodeMap.end())
-        {
-        BeAssert(false && "ECDiffNode with same name already exist");
-        return NULL;
-        }
+    //if (m_childNodeMap.find (name) != m_childNodeMap.end())
+    //    {
+    //    BeAssert(false && "ECDiffNode with same name already exist");
+    //    return NULL;
+    //    }
 
     ECDiffNodeP node = new ECDiffNode (name, this, type, -1);
     m_childNodeMap [node->GetName().c_str()] = node;
