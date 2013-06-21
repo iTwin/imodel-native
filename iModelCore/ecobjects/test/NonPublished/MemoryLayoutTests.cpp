@@ -892,8 +892,8 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
 
     ECClassP ecClass = schema->GetClassP (L"AllPrimitives");
     ASSERT_TRUE (ecClass != NULL);
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, NULL, true);
+    ClassLayoutPtr classLayout = ClassLayout::BuildFromClass (*ecClass);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, NULL);
 
     ECN::StandaloneECInstancePtr wipInstance = enabler->CreateInstance();
     // Previously there was a bug which prevented changing the size of a binary value once it had been set. This has since been fixed.
@@ -1530,14 +1530,12 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
     ECClassP ecClass = schema->GetClassP (L"BracketTestClass");
     ASSERT_TRUE (NULL != ecClass);
 
-    ClassLayoutP layout = ClassLayout::BuildFromClass (*ecClass);
-    ASSERT_TRUE (NULL != layout);
+    ClassLayoutPtr layout = ClassLayout::BuildFromClass (*ecClass);
+    ASSERT_TRUE (layout.IsValid());
 
     PropertyLayoutCP propLayout;
     EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B"));   // would have failed prior to bug fix
     EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B0"));
-
-    delete layout;
     }
 
 TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)

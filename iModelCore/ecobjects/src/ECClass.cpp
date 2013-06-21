@@ -243,8 +243,8 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     {
     if (!m_defaultStandaloneEnabler.IsValid())
         {
-        ClassLayoutP classLayout   = ClassLayout::BuildFromClass (*this);
-        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL, true);
+        ClassLayoutPtr classLayout   = ClassLayout::BuildFromClass (*this);
+        m_defaultStandaloneEnabler = StandaloneECEnabler::CreateEnabler (*this, *classLayout, NULL);
         }
 
     BeAssert(m_defaultStandaloneEnabler.IsValid());

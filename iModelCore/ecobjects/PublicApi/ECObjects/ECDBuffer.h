@@ -23,6 +23,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef UInt32 NullflagsBitmask;
 typedef UInt16 ClassIndex;
 typedef UInt16 SchemaIndex;
+typedef RefCountedPtr<ClassLayout> ClassLayoutPtr;
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -121,7 +122,7 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 * values.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/      
-struct ClassLayout
+struct ClassLayout : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
     friend struct ECDBuffer;
@@ -174,7 +175,7 @@ private:
         UInt32          m_offset;
         UInt32          m_nullflagsOffset;
         UInt32          m_nonStructPropertyCount;
-        ClassLayoutR    m_underConstruction;
+        ClassLayoutPtr  m_underConstruction;
 
         UInt32      GetParentStructIndex (WCharCP accessString) const;
 
@@ -187,10 +188,11 @@ private:
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
         Factory (ECClassCR ecClass);
-        ClassLayoutP DoBuildClassLayout ();
+        ClassLayoutPtr DoBuildClassLayout ();
     };
 
     ClassLayout();
+    virtual ~ClassLayout();
 
     WString                GetShortDescription() const;
     WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
@@ -213,7 +215,6 @@ public:
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
     ECOBJECTS_EXPORT bool                    Equals (ClassLayoutCR other) const;
 
-    ECOBJECTS_EXPORT ~ClassLayout();
     ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags, UInt32 modifierData);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 /*__PUBLISH_SECTION_START__*/
@@ -225,11 +226,11 @@ public:
     //! Given a class, will create the ClassLayout that manages that class
     //! @param[in] ecClass  The ECClass to build the ClassLayout from
     //! @returns ClassLayout pointer managing this ECClass
-    ECOBJECTS_EXPORT static ClassLayoutP BuildFromClass (ECClassCR ecClass);
+    ECOBJECTS_EXPORT static ClassLayoutPtr BuildFromClass (ECClassCR ecClass);
 
     //! Creates an empty ClassLayout for a class with the given name
     //! @param[in] className    The name of the class that this ClassLayout will define
-    ECOBJECTS_EXPORT static ClassLayoutP CreateEmpty    (WCharCP  className);
+    ECOBJECTS_EXPORT static ClassLayoutPtr CreateEmpty    (WCharCP  className);
 
     //! Returns the name of the ECClass that this ClassLayout manages
     ECOBJECTS_EXPORT WString const & GetECClassName() const; 
@@ -295,7 +296,8 @@ public:
     ECOBJECTS_EXPORT WString       ToString() const;
     };
 
-typedef bvector<ClassLayoutCP>  ClassLayoutVector;
+typedef RefCountedPtr<ClassLayout>  ClassLayoutPtr;
+typedef bvector<ClassLayoutPtr>     ClassLayoutVector;
 
 /*=================================================================================**//**
 * @ingroup ECObjectsGroup
@@ -311,6 +313,8 @@ private:
 public:
     SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
+    ClassLayoutP            GetClassLayoutP (ClassIndex classIndex) { return const_cast<ClassLayoutP>(GetClassLayout(classIndex)); }
+
 /*__PUBLISH_SECTION_START__*/
 private:
     SchemaLayout (){}
@@ -324,17 +328,17 @@ public:
     //! @param[in]  classLayout The ClassLayout to add
     //! @param[in]  classIndex  The index where to add the ClassLayout
     //! @returns SUCCESS
-    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutCR classLayout, ClassIndex classIndex);
+    ECOBJECTS_EXPORT BentleyStatus          AddClassLayout (ClassLayoutR classLayout, ClassIndex classIndex);
 
     //! Returns the ClassLayout at the given index
     //! @param[in]  classIndex  The index of the desired ClassLayout
     //! @returns A pointer to the requested ClassLayout if the index is valid, NULL otherwise
-    ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex);
+    ECOBJECTS_EXPORT ClassLayoutCP          GetClassLayout (ClassIndex classIndex) const;
 
     //! Given a classname, tries to find the corresponding ClassLayout
     //! @param[in]  className   The name of the class to find
     //! @returns A pointer to the corresponding ClassLayout if found, NULL otherwise
-    ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className);
+    ECOBJECTS_EXPORT ClassLayoutCP          FindClassLayout (WCharCP className) const;
 
     //! Given a classname, tries to find the index of the corresponding ClassLayout
     //! @param[out] classIndex  The index of the corresponding ClassLayout, if found
@@ -345,13 +349,13 @@ public:
     //! Finds the first available index for adding a class layout
     //! @param[out] classIndex  The first available index in the layout.  This is not necessarily the size of the layout because there can be gaps.
     //! @returns SUCCESS if the index is found, ERROR otherwise
-    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex& classIndex);
+    ECOBJECTS_EXPORT BentleyStatus          FindAvailableClassIndex (ClassIndex& classIndex) const;
    
     //! Returns the max index in the ClassLayout
     //! @remarks This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
     //!          so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
     //! @remarks NOTE: Check IsEmpty() before GetMaxIndex() to ensure there is at least one ClassLayout, otherwise the return value of GetMaxIndex() is undefined
-    ECOBJECTS_EXPORT UInt32                 GetMaxIndex ();
+    ECOBJECTS_EXPORT UInt32                 GetMaxIndex () const;
 
     //! Returns whether or not this SchemaLayout has any ClassLayouts defined.
     ECOBJECTS_EXPORT bool                   IsEmpty() const;
@@ -363,22 +367,6 @@ public:
 };
 
 /*__PUBLISH_SECTION_END__*/
-
-//=======================================================================================
-//! Holds a ClassLayoutCR and provides a public method by which to access it.
-//! Used by StandaloneECEnabler and ECXInstanceEnabler
-//=======================================================================================
-struct ClassLayoutHolder
-    {
-private:
-    ClassLayoutCR                   m_classLayout;
-
-protected:
-    ECOBJECTS_EXPORT                ClassLayoutHolder (ClassLayoutCR classLayout);
-
-public:
-    ECOBJECTS_EXPORT ClassLayoutCR  GetClassLayout() const;
-    };
 
 //! An internal helper used by ECDBuffer to resize (add/remove elements) array property values
 struct      ArrayResizer

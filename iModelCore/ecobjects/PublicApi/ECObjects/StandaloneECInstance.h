@@ -63,7 +63,7 @@ struct PerPropertyFlagsHolder
 * ECN::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates. 
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
 * subclass this class.
-* @see ClassLayoutHolder, IECInstance
+* @see IECInstance
 * @ingroup ECObjectsGroup
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
@@ -267,15 +267,12 @@ struct IECWipRelationshipInstance : StandaloneECInstance
 //! @ingroup ECObjectsGroup
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
-//__PUBLISH_SECTION_END__
-    ,public ClassLayoutHolder
-//__PUBLISH_SECTION_START__
    {
 //__PUBLISH_SECTION_END__
 private:
-    bool    m_ownsClassLayout;
+    ClassLayoutPtr          m_classLayout;
 
-    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
 protected:
@@ -291,9 +288,11 @@ protected:
 //__PUBLISH_SECTION_START__
 public: 
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
-    ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
-    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr  CreateEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
+    ECOBJECTS_EXPORT StandaloneECInstanceP          CreateSharedInstance (byte * data, UInt32 size);
+    ECOBJECTS_EXPORT StandaloneECInstancePtr        CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT ClassLayoutCR                  GetClassLayout() const;
+    ECOBJECTS_EXPORT ClassLayoutR                   GetClassLayout();
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
