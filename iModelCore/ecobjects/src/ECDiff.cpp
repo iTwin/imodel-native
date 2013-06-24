@@ -586,11 +586,11 @@ ECDiffNodeP ECDiffNode::Add (WCharCP name, DiffNodeId type)
     if (name == NULL)
         name = IdToString (type);
     BeAssert (name != NULL);
-    if (m_childNodeMap.find (name) != m_childNodeMap.end())
-        {
-        BeAssert(false && "ECDiffNode with same name already exist");
-        return NULL;
-        }
+    //if (m_childNodeMap.find (name) != m_childNodeMap.end())
+    //    {
+    //    BeAssert(false && "ECDiffNode with same name already exist");
+    //    return NULL;
+    //    }
 
     ECDiffNodeP node = new ECDiffNode (name, this, type, -1);
     m_childNodeMap [node->GetName().c_str()] = node;
@@ -1270,6 +1270,10 @@ ECDiffNodeP ECSchemaDiffTool::AppendClass (ECDiffNodeR parent , ECClassCR ecClas
     ECPropertyIterable properties = ecClass.GetProperties(false);
     for (ECPropertyIterable::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
         AppendProperty (*propertiesNode, **itor, direction);
+
+    if (ECRelationshipClassCP relationshipClass = ecClass.GetRelationshipClassCP())   
+        AppendRelationship(*diff, *relationshipClass, direction);
+
     diff->RemoveIfEmpty (propertiesNode);
     return diff;
     }
@@ -2623,11 +2627,11 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipToMerge(ECRelationshipClassR me
     mergedRelationshipClass.SetStrength (defaultRelationshipClass.GetStrength());
     mergedRelationshipClass.SetStrengthDirection (defaultRelationshipClass.GetStrengthDirection());
 
-    status = AppendRelationshipContstraintToMerge (defaultRelationshipClass.GetSource(), defaultRelationshipClass.GetSource());
+    status = AppendRelationshipContstraintToMerge (mergedRelationshipClass.GetSource(), defaultRelationshipClass.GetSource());
     if (status != MERGESTATUS_Success)
         return status;
 
-    status = AppendRelationshipContstraintToMerge (defaultRelationshipClass.GetTarget(), defaultRelationshipClass.GetTarget());
+    status = AppendRelationshipContstraintToMerge (mergedRelationshipClass.GetTarget(), defaultRelationshipClass.GetTarget());
     if (status != MERGESTATUS_Success)
         return status;
 
