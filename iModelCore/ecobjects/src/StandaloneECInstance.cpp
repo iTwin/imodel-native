@@ -1155,10 +1155,9 @@ WString        StandaloneECInstance::_ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout) :
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater) :
     ECEnabler (ecClass, structStandaloneEnablerLocater),
-    ClassLayoutHolder (classLayout),
-    m_ownsClassLayout (ownsClassLayout)
+    m_classLayout (&classLayout)
     {
     BeAssert (NULL != &ecClass);
     }
@@ -1168,19 +1167,15 @@ StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR class
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StandaloneECEnabler::~StandaloneECEnabler ()
     {
-    if (m_ownsClassLayout)
-        {
-        ClassLayoutP classLayoutP = (ClassLayoutP)&GetClassLayout();
-        delete classLayoutP;
-        }
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)
     {
-    return new StandaloneECEnabler (ecClass, classLayout, structStandaloneEnablerLocater, ownsClassLayout);
+    return new StandaloneECEnabler (ecClass, classLayout, structStandaloneEnablerLocater);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1199,6 +1194,8 @@ ECObjectsStatus StandaloneECEnabler::_GetAccessString(WCharCP& accessString, UIn
 UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
+ClassLayoutCR   StandaloneECEnabler::GetClassLayout() const { return *m_classLayout; }
+ClassLayoutR    StandaloneECEnabler::GetClassLayout() { return *m_classLayout; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Paul.Connelly                   12/11

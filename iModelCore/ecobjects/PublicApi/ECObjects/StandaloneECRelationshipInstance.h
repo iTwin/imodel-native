@@ -95,13 +95,10 @@ public:
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public ECEnabler
-//__PUBLISH_SECTION_END__
-    ,public ClassLayoutHolder
-//__PUBLISH_SECTION_START__
    {
 //__PUBLISH_SECTION_END__
 private:
-    ECN::ECRelationshipClassCR     m_relationshipClass;
+    ECN::ECRelationshipClassCR      m_relationshipClass;
 
     StandaloneECRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
     ~StandaloneECRelationshipEnabler ();
@@ -116,7 +113,7 @@ protected:
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
 
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
-    virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const;
+    virtual ECN::ECRelationshipClassCR    _GetRelationshipClass() const;
 
 public:
 //__PUBLISH_CLASS_VIRTUAL__
@@ -125,11 +122,13 @@ public:
     //! Given an ECRelationshipClass, will create an enabler for that class
     //! @param[in]  ecClass The relationship class which to create an enabler for
     //! @returns The StandaloneECRelationshipEnabler for the given class.
-    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
+    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr  CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
     //! Creates an instance of the supported ECRelationshipClass
-    ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr       CreateRelationshipInstance () const;
+    ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr        CreateRelationshipInstance () const;
     //! Returns this enabler as a base ECEnabler
-    ECOBJECTS_EXPORT ECEnablerCR                               GetECEnabler() const;
+    ECOBJECTS_EXPORT ECEnablerCR                                GetECEnabler() const;
+    //! Get the ClassLayout for this enabler
+    ECOBJECTS_EXPORT ClassLayoutCR                              GetClassLayout() const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
