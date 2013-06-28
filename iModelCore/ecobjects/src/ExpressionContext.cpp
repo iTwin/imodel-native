@@ -370,11 +370,14 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 return ExprStatus_UnknownError;
                 }
 
-            IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
-            if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecValue, *IECTypeAdapterContext::Create (*primProp, *instance)))
+            if (AllowsTypeConversion())
                 {
-                evalResult.Clear();
-                return ExprStatus_UnknownError;
+                IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
+                if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecValue, *IECTypeAdapterContext::Create (*primProp, *instance)))
+                    {
+                    evalResult.Clear();
+                    return ExprStatus_UnknownError;
+                    }
                 }
 
             evalResult = ecValue;
@@ -908,6 +911,7 @@ void InstanceListExpressionContext::Initialize (bvector<IECInstancePtr> const& i
             // ###TODO: handle multiple instances of a single ECClass
             InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create (NULL);
             instanceContext->SetInstance (*instance);
+            instanceContext->SetAllowsTypeConversion (AllowsTypeConversion());
             m_instances.push_back (instanceContext.get());
             }
 
@@ -978,6 +982,22 @@ ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR
 InstanceListExpressionContextPtr InstanceListExpressionContext::Create (bvector<IECInstancePtr> const& instances)
     {
     return new InstanceListExpressionContext (instances);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionContext::AllowsTypeConversion() const
+    {
+    return NULL != GetOuterP() ? GetOuterP()->AllowsTypeConversion() : m_allowsTypeConversion;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpressionContext::SetAllowsTypeConversion (bool allow)
+    {
+    m_allowsTypeConversion = allow;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

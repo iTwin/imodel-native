@@ -223,11 +223,12 @@ struct          ExpressionContext : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 private:
     ExpressionContextPtr                m_outer;
+    bool                                m_allowsTypeConversion;
 
 protected:
 
     virtual                     ~ExpressionContext () {}
-                                ExpressionContext(ExpressionContextP outer) : m_outer(outer) {}
+                                ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_allowsTypeConversion (true) { }
     virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) { return ExprStatus_UnknownSymbol; }
     virtual bool                _IsNamespace() const { return false; }
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
@@ -251,6 +252,15 @@ public:
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 
 /*__PUBLISH_SECTION_START__*/
+    //! By default, property values obtained from IECInstances are subject to type conversion. The ConvertToExpressionType() method of
+    //! the IECTypeAdapter associated with the ECProperty will be called to perform conversion.
+    //! If this ExpressionContext has an outer context, it inherits the value of the outermost context.
+    ECOBJECTS_EXPORT bool       AllowsTypeConversion() const;
+
+    //! Enable or disable type conversion of ECProperty values.
+    //! Has no effect if this context has an outer context.
+    //! If this context serves as an outer context and has no outer context of its own, all of its inner contexts inherit the value.
+    ECOBJECTS_EXPORT void       SetAllowsTypeConversion (bool allows);
 }; // End of class ExpressionContext
 
 /*=================================================================================**//**
