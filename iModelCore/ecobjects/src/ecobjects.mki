@@ -2,11 +2,9 @@
 #
 #     $Source: src/ecobjects.mki $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-OPTIMIZE_FOR_SPEED=1
-
 appName = ECObjects
 CCompPDBName = $(appName)
 
