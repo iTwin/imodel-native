@@ -536,7 +536,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
+    swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue         arrayVal;
     ECObjectsStatus status;
@@ -1103,7 +1103,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = 0;
-    if (1 != BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue))
+    if (1 != swscanf (indexBuffer, L"%ud", &indexValue))
         return ECOBJECTS_STATUS_Error;
 
     ECValue         arrayVal;

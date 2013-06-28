@@ -195,7 +195,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {
-        if (0 == BeStringUtilities::Swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
+        if (0 == swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
             return ECOBJECTS_STATUS_ParseError;
         LOG.debugv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
@@ -208,7 +208,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
         return ECOBJECTS_STATUS_ParseError;
         }
      
-    int scanned = BeStringUtilities::Swscanf(cardinalityWithoutSpaces.c_str(), L"(%d,%d)", &lowerLimit, &upperLimit);
+    int scanned = swscanf(cardinalityWithoutSpaces.c_str(), L"(%d,%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECOBJECTS_STATUS_Success;
         

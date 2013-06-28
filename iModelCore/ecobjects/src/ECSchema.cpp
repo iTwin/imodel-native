@@ -83,7 +83,7 @@ bool ECNameValidation::DecodeFromValidName (WStringR decoded, WStringCR name)
         if ('_' == decoded[pos+7] && '_' == decoded[pos+8])
             {
             UInt32 charCode;
-            if (1 == BeStringUtilities::Swscanf (decoded.c_str() + pos + 3, L"%x", &charCode))
+            if (1 == swscanf (decoded.c_str() + pos + 3, L"%x", &charCode))
                 {
                 decoded[pos] = (WChar)charCode;
                 decoded.erase (pos+1, 8);
