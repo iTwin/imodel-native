@@ -160,8 +160,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
     LOG.debugv (L"About to read PrsentationRuleSet from string.");
 
     BeXmlStatus xmlStatus;
-    size_t stringSize = wcslen (xmlString) * sizeof(WChar);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString);
     
     if (BEXML_Success != xmlStatus)
         {

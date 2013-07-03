@@ -25,7 +25,8 @@ extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVe
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
 // Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
-static  bool        s_noAssert = false;
+static  bool        s_noAssert      = false;
+static  bool        s_showMessages  = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
@@ -214,7 +215,9 @@ ECSchema::~ECSchema ()
 void            ECSchema::SetErrorHandling (bool showMessages, bool doAssert) 
     { 
     s_noAssert = !doAssert; 
-    BeXmlDom::SetErrorHandling (showMessages, doAssert);
+    s_showMessages = showMessages;
+    // I removed BeXmlDom::SetErrorHandling and made it easier to get the XML errors while reading the XML
+    // BeXmlDom::SetErrorHandling (showMessages, doAssert);
     ECClass::SetErrorHandling(doAssert);
     }
 
@@ -1935,8 +1938,9 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
+    WString     errorMsg;
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecSchemaXmlFile);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, ecSchemaXmlFile, &errorMsg, s_noAssert ? BeXmlDom::XMLPARSE_OPTION_None : BeXmlDom::XMLPARSE_OPTION_AssertOnParseError);
     if ((xmlStatus != BEXML_Success) || !xmlDom.IsValid())
         {
         BeAssert (s_noAssert);
@@ -2026,8 +2030,8 @@ ECSchemaReadContextR schemaContext
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
 
     BeXmlStatus xmlStatus;
-    size_t stringSize = wcslen (ecSchemaXml) * sizeof(WChar);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecSchemaXml, stringSize);
+    size_t stringChars = wcslen (ecSchemaXml);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecSchemaXml, stringChars);
     
     if (BEXML_Success != xmlStatus)
         {
@@ -2036,7 +2040,7 @@ ECSchemaReadContextR schemaContext
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
     
-    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
+    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringChars * sizeof(WChar));
     status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
