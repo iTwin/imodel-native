@@ -2311,13 +2311,10 @@ ECObjectsStatus ECDBuffer::CopyPropertiesFromBuffer (ECDBufferCR srcBuffer)
         return ECOBJECTS_STATUS_Error;
 
     // Make sure we have enough room for the data
-    UInt32 bytesUsed = CalculateBytesUsed ();
-    UInt32 bytesNeeded = srcBuffer.CalculateBytesUsed ();
-    if (bytesNeeded > bytesUsed)
-        {
-        if (ECOBJECTS_STATUS_Success != _GrowAllocation (bytesNeeded - bytesUsed))
+    UInt32 bytesAvailable = _GetBytesAllocated();
+    UInt32 bytesNeeded = srcBuffer.CalculateBytesUsed();
+    if (bytesAvailable < bytesNeeded && ECOBJECTS_STATUS_Success != _GrowAllocation (bytesNeeded - bytesAvailable))
             return ECOBJECTS_STATUS_UnableToAllocateMemory;
-        }
 
     // copy ecd buffer
     if (ECOBJECTS_STATUS_Success != ModifyData (_GetData(), srcBuffer._GetData(), bytesNeeded))
@@ -3708,9 +3705,9 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
     if (srcLayout.Equals (dstLayout))
         {
         // we can copy directly
-        UInt32 bytesUsed = CalculateBytesUsed();
+        UInt32 bytesAvailable = _GetBytesAllocated();
         UInt32 bytesNeeded = src.CalculateBytesUsed();
-        if (bytesNeeded <= bytesUsed || ECOBJECTS_STATUS_Success == (status = _GrowAllocation (bytesNeeded - bytesUsed)))
+        if (bytesNeeded <= bytesAvailable || ECOBJECTS_STATUS_Success == (status = _GrowAllocation (bytesNeeded - bytesAvailable)))
             status = ModifyData (_GetData(), src._GetData(), bytesNeeded);
         }
     else if (!allowClassLayoutConversion)
