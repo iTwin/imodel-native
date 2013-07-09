@@ -3036,7 +3036,7 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
         return false;
         }
 
-    UInt32 precision = 'f' == lspec ? 2 : 6;
+    UInt32 precision = 16;
     if (!ExtractStandardFormatPrecision (fmt + 1, precision))
         return false;
 
@@ -3045,7 +3045,7 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
     if (ignoreExtractedPrecision)
         precision = MAX_PRECISION;
     else
-        fmtr->SetTrailingZeros (true);
+        fmtr->SetTrailingZeros (false);
 
     fmtr->SetLeadingZero (true);
     fmtr->SetInsertThousandsSeparator (groupSeparators);
