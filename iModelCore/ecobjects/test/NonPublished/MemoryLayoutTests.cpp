@@ -2032,4 +2032,26 @@ TEST_F (ECDBufferTests, ConvertDataBuffer_StructArrays)
     TestValue (*instance2, L"StructArray", null, 1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ArraysAreNotNull)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"Test", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"Test");
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, L"Array", PRIMITIVETYPE_String);
+
+    StandaloneECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    bool isNull;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->IsPropertyNull (isNull, L"Array"));
+    EXPECT_FALSE (isNull);
+
+    ECValue v;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->GetValue (v, L"Array"));
+    EXPECT_FALSE (v.IsNull());
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

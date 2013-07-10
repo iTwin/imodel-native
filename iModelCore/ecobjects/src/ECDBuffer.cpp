@@ -1590,6 +1590,8 @@ bool            ECDBuffer::IsPropertyValueNull (PropertyLayoutCR propertyLayout,
     {
     if (propertyLayout.GetTypeDescriptor().IsStruct())
         return true;    // embedded structs always null
+    else if (!useIndex && propertyLayout.GetTypeDescriptor().IsArray())
+        return false;   // arrays are never null
 
     UInt32 nullflagsOffset;
     UInt32 nullflagsBitmask;
