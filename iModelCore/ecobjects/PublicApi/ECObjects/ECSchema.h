@@ -345,8 +345,9 @@ public:
             bool m_isEnd;
 /*__PUBLISH_SECTION_END__*/
             const_iterator (IECCustomAttributeContainerCR container, bool includeBase, bool includeSupplementalAttributes);
-            const_iterator () : m_isEnd(true) {};
+            const_iterator () : m_isEnd(true) {;}
 /*__PUBLISH_SECTION_START__*/
+            const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increment the iterator
@@ -805,6 +806,7 @@ public:
             const_iterator (ECClassCR ecClass, bool includeBaseProperties);
             const_iterator () : m_isEnd(true) {};
 /*__PUBLISH_SECTION_START__*/
+            const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
         public:
             ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increments the iterator
@@ -1586,6 +1588,7 @@ public:
 /*__PUBLISH_SECTION_END__*/
         const_iterator (ClassMap::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
 /*__PUBLISH_SECTION_START__*/
+        const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
     public:
         ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increments the iterator
