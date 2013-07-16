@@ -43,7 +43,12 @@ ECClass::~ECClass ()
         delete entry->second;
     
     m_propertyMap.clear();
-    
+
+    for (ECBaseClassesList::iterator iter = m_baseClasses.begin(); iter != m_baseClasses.end(); ++iter)
+        (*iter)->RemoveDerivedClass (*this);
+
+    m_baseClasses.clear();
+
     m_defaultStandaloneEnabler = NULL;
     }
 
