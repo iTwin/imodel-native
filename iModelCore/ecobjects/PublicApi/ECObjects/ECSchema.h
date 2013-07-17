@@ -868,6 +868,8 @@ private:
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
+    void            RemoveDerivedClasses ();
+    void            RemoveBaseClasses ();
     static void     SetErrorHandling (bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
