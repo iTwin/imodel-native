@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RelatedPropertiesSpecification.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,6 +12,30 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
+    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L""), m_propertyNames (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPropertiesSpecification::RelatedPropertiesSpecification 
+(
+RequiredRelationDirection  requiredDirection,
+WString                    relationshipClassNames,
+WString                    relatedClassNames,
+WString                    propertyNames
+) : m_requiredDirection (requiredDirection), 
+    m_relationshipClassNames (relationshipClassNames),
+    m_relatedClassNames (relatedClassNames),
+    m_propertyNames (propertyNames)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -60,3 +84,28 @@ void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode)
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (relatedPropertiesNode, m_nestedRelatedPropertiesSpecification);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RequiredRelationDirection RelatedPropertiesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR RelatedPropertiesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR RelatedPropertiesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR RelatedPropertiesSpecification::GetPropertyNames (void) const { return m_propertyNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedPropertiesSpecificationList& RelatedPropertiesSpecification::GetNestedRelatedProperties (void) { return m_nestedRelatedPropertiesSpecification; }

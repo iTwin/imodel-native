@@ -15,6 +15,34 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification ()
+    : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_skipRelatedLevel (0), m_supportedSchemas (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification
+(
+int       priority,
+bool      alwaysReturnsChildren,
+bool      hideNodesInHierarchy,
+bool      hideIfNoChildren,
+bool      groupByClass,
+bool      groupByRelationship,
+bool      groupByLabel,
+int       skipRelatedLevel,
+WStringCR supportedSchemas
+) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
+    m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel),
+    m_skipRelatedLevel (skipRelatedLevel), m_supportedSchemas (supportedSchemas)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 CharCP AllRelatedInstanceNodesSpecification::_GetXmlElementName ()
     {
     return ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME;
@@ -55,3 +83,28 @@ void AllRelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllRelatedInstanceNodesSpecification::GetGroupByClass (void) const { return m_groupByClass; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllRelatedInstanceNodesSpecification::GetGroupByRelationship (void) const { return m_groupByRelationship; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllRelatedInstanceNodesSpecification::GetGroupByLabel (void) const { return m_groupByLabel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int AllRelatedInstanceNodesSpecification::GetSkipRelatedLevel (void) const { return m_skipRelatedLevel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR AllRelatedInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }

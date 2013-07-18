@@ -10,7 +10,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 ImageId override rule implementation. This rule is used to override default ImageId
 generation algorithm.
@@ -18,12 +17,10 @@ generation algorithm.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ImageIdOverride : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString m_imageIdExpression;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP   _GetXmlElementName ();
 
@@ -35,19 +32,13 @@ struct ImageIdOverride : public PresentationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ImageIdOverride ()
-            : PresentationRule (), m_imageIdExpression (L"")
-            {
-            }
+        ECOBJECTS_EXPORT ImageIdOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ImageIdOverride (WStringCR condition, int priority, WStringCR imageIdExpression)
-            : PresentationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
-            {
-            }
+        ECOBJECTS_EXPORT ImageIdOverride (WStringCR condition, int priority, WStringCR imageIdExpression);
 
         //! Returns ImageId override ECExpression string.
-        ECOBJECTS_EXPORT WStringCR        GetImageId (void) const    { return m_imageIdExpression; }
+        ECOBJECTS_EXPORT WStringCR        GetImageId (void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

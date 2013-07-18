@@ -12,15 +12,12 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 /*---------------------------------------------------------------------------------**//**
 This specification returns customly defined nodes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CustomNodeSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_type;
         WString  m_label;
@@ -28,7 +25,6 @@ struct CustomNodeSpecification : public ChildNodeSpecification
         WString  m_imageId;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 
@@ -40,29 +36,22 @@ struct CustomNodeSpecification : public ChildNodeSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT CustomNodeSpecification ()
-            : ChildNodeSpecification (), m_type (L""), m_label (L""), m_description (L""), m_imageId (L"")
-            {
-            }
+        ECOBJECTS_EXPORT CustomNodeSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT CustomNodeSpecification (int priority, bool hideIfNoChildren, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId)
-            : ChildNodeSpecification (priority, true, false, hideIfNoChildren), 
-            m_type (type), m_label (label), m_description (description), m_imageId (imageId)
-            {
-            }
+        ECOBJECTS_EXPORT CustomNodeSpecification (int priority, bool hideIfNoChildren, WStringCR type, WStringCR label, WStringCR description, WStringCR imageId);
 
         //! Returns type of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetNodeType (void) const      { return m_type; }
+        ECOBJECTS_EXPORT WStringCR                    GetNodeType (void) const;
 
         //! Returns label of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetLabel (void) const         { return m_label; }
+        ECOBJECTS_EXPORT WStringCR                    GetLabel (void) const;
 
         //! Returns description of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetDescription (void) const   { return m_description; }
+        ECOBJECTS_EXPORT WStringCR                    GetDescription (void) const;
 
         //! Returns ImageId of the custom node.
-        ECOBJECTS_EXPORT WStringCR                    GetImageId (void) const       { return m_imageId; }
+        ECOBJECTS_EXPORT WStringCR                    GetImageId (void) const;
 
     };
 

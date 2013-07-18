@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RenameNodeRule.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,21 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              dmitrijus.tiazlovas                   11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RenameNodeRule::RenameNodeRule () : PresentationRule ()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                              dmitrijus.tiazlovas                   11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RenameNodeRule::RenameNodeRule (WStringCR condition, int priority)
+    : PresentationRule (condition, priority, false)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012

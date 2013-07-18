@@ -10,21 +10,18 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 Specification for including related items into display commands.
 * @bsiclass                                    dmitrijus.tiazlovas                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DisplayRelatedItemsSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool                    m_logicalChildren;
         int                     m_nestingDepth;
         WString                 m_relationshipClasses;
 
     public:
-    /*__PUBLISH_SECTION_START__*/
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT bool        ReadXml (BeXmlNodeP xmlNode);
 
@@ -32,25 +29,19 @@ struct DisplayRelatedItemsSpecification
         ECOBJECTS_EXPORT void        WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT DisplayRelatedItemsSpecification ()
-            : m_logicalChildren (false), m_nestingDepth (0), m_relationshipClasses (L"")
-            {
-            }
+        ECOBJECTS_EXPORT DisplayRelatedItemsSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, WStringCR relationshipClasses)
-            : m_logicalChildren (logicalChildren), m_nestingDepth (nestingDepth), m_relationshipClasses (relationshipClasses)
-            {
-            }
+        ECOBJECTS_EXPORT DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, WStringCR relationshipClasses);
 
         //! Only include logical children of selected items.
-        ECOBJECTS_EXPORT bool           GetLogicalChildren (void) const         { return m_logicalChildren; }
+        ECOBJECTS_EXPORT bool           GetLogicalChildren (void) const;
 
         //! Nesting depth of relationships.
-        ECOBJECTS_EXPORT int            GetNestingDepth (void) const            { return m_nestingDepth; }
+        ECOBJECTS_EXPORT int            GetNestingDepth (void) const;
 
         //! Supported relationsip classes.
-        ECOBJECTS_EXPORT WStringCR      GetRelationshipClasses (void) const     { return m_relationshipClasses; }
+        ECOBJECTS_EXPORT WStringCR      GetRelationshipClasses (void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

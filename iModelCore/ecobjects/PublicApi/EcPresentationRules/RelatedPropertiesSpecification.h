@@ -12,8 +12,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 /*---------------------------------------------------------------------------------**//**
 Related properties specification. It allow to extend a content ECQuery to include 
 properties of related classes.
@@ -21,7 +19,6 @@ properties of related classes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RelatedPropertiesSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         RequiredRelationDirection          m_requiredDirection;
         WString                            m_relationshipClassNames;
@@ -30,12 +27,8 @@ struct RelatedPropertiesSpecification
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
 
     public:
-    /*__PUBLISH_SECTION_START__*/
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT RelatedPropertiesSpecification ()
-            : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L""), m_propertyNames (L"")
-            {
-            }
+        ECOBJECTS_EXPORT RelatedPropertiesSpecification ();
 
         //! Constructor.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification 
@@ -44,13 +37,7 @@ struct RelatedPropertiesSpecification
                                         WString                    relationshipClassNames,
                                         WString                    relatedClassNames,
                                         WString                    propertyNames
-                                       )
-            : m_requiredDirection (requiredDirection), 
-              m_relationshipClassNames (relationshipClassNames),
-              m_relatedClassNames (relatedClassNames),
-              m_propertyNames (propertyNames)
-            {
-            }
+                                       );
 
         //! Destructor.
         ECOBJECTS_EXPORT                              ~RelatedPropertiesSpecification (void);
@@ -62,21 +49,21 @@ struct RelatedPropertiesSpecification
         ECOBJECTS_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Returns direction of relationship that should be selected in the query.
-        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const  { return m_requiredDirection; }
+        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const     { return m_relationshipClassNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const;
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const          { return m_relatedClassNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const;
 
         //! Property names separated by comma. RelatedClasses are required if related properties are specified.
         //! These properties of RelatedClasses will be selected in the ECQuery and shown next to the parent ECInstance (the same row).
         //! If PropertyNames are not specified ALL visible properties will be selected. "_none_" keyword can be used to suppress all properties.
-        ECOBJECTS_EXPORT WStringCR                    GetPropertyNames (void) const              { return m_propertyNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetPropertyNames (void) const;
 
         //! Nested related properties, that will be shown next to ECInstance proerties (the same row for example).
-        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedProperties (void)   { return m_nestedRelatedPropertiesSpecification; }
+        ECOBJECTS_EXPORT RelatedPropertiesSpecificationList& GetNestedRelatedProperties (void);
 
     };
 

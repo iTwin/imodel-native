@@ -12,22 +12,18 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 /*---------------------------------------------------------------------------------**//**
 This specification returns all instance nodes available in the repository.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AllInstanceNodesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool     m_groupByClass;
         bool     m_groupByLabel;
         WString  m_supportedSchemas;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 
@@ -39,27 +35,20 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT AllInstanceNodesSpecification ()
-            : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_supportedSchemas (L"")
-            {
-            }
+        ECOBJECTS_EXPORT AllInstanceNodesSpecification ();
 
         //! Constructor.
         ECOBJECTS_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                       bool groupByClass, bool groupByLabel, WStringCR supportedSchemas)
-            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-            m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_supportedSchemas (supportedSchemas)
-            {
-            }
+                                                        bool groupByClass, bool groupByLabel, WStringCR supportedSchemas);
 
         //! Returns true if grouping by class should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const       { return m_groupByClass; }
+        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
         //! Returns true if grouping by label should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const       { return m_groupByLabel; }
+        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
         //! Returns supported schemas that should be used by this specification.
-        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const   { return m_supportedSchemas; }
+        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
 
     };
 

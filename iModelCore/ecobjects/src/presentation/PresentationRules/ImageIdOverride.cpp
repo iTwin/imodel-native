@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ImageIdOverride.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,22 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageIdOverride::ImageIdOverride ()
+    : PresentationRule (), m_imageIdExpression (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageIdOverride::ImageIdOverride (WStringCR condition, int priority, WStringCR imageIdExpression)
+    : PresentationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -40,3 +56,8 @@ void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode)
 
     PresentationRule::_WriteXml (xmlNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ImageIdOverride::GetImageId (void) const { return m_imageIdExpression; }
