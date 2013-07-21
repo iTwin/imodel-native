@@ -1518,8 +1518,8 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     baseClass1->CreateArrayProperty(baseStringArrayProperty, L"StringArrayProperty", PRIMITIVETYPE_String);
     baseClass1->CreateArrayProperty(baseStructProperty, L"StructArrayProperty", structClass);
     
-    PrimitiveECPropertyP longProperty;
-    PrimitiveECPropertyP stringProperty;
+    PrimitiveECPropertyP longProperty = NULL;
+    PrimitiveECPropertyP stringProperty = NULL;
     
     DISABLE_ASSERTS;
     // Primitives overriding primitives
