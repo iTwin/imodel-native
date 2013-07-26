@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SortingRule.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,23 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SortingRule::SortingRule ()
+    : PresentationRule (), m_schemaName (L""), m_className (L""), m_propertyName (L""), m_sortAscending (true), m_doNotSort (false)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SortingRule::SortingRule (WStringCR condition, int priority, WStringCR schemaName, WStringCR className, WStringCR propertyName, bool sortAscending, bool doNotSort)
+    : PresentationRule (condition, priority, false), 
+      m_schemaName (schemaName), m_className (className), m_propertyName (propertyName), m_sortAscending (sortAscending), m_doNotSort (doNotSort)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
@@ -57,3 +74,28 @@ void SortingRule::_WriteXml (BeXmlNodeP xmlNode)
 
     PresentationRule::_WriteXml (xmlNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR SortingRule::GetSchemaName (void) const { return m_schemaName; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR SortingRule::GetClassName (void) const { return m_className; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR SortingRule::GetPropertyName (void) const { return m_propertyName; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SortingRule::GetSortAscending (void) const { return m_sortAscending; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SortingRule::GetDoNotSort (void) const { return m_doNotSort; }

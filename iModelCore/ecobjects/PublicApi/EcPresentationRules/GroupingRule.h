@@ -15,8 +15,6 @@ struct ClassGroup;
 struct PropertyGroup;
 struct PropertyRangeGroupSpecification;
 
-/*__PUBLISH_SECTION_START__*/
-
 typedef bvector<GroupSpecificationP>              GroupList;
 typedef bvector<PropertyRangeGroupSpecificationP> PropertyRangeGroupList;
 
@@ -26,7 +24,6 @@ Presentation rule for child nodes advanced grouping in the hierarchy.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupingRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString               m_schemaName;
         WString               m_className;
@@ -36,7 +33,6 @@ struct GroupingRule : public PresentationRule
         GroupList             m_groups;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
 
@@ -48,41 +44,34 @@ struct GroupingRule : public PresentationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT GroupingRule ()
-            : PresentationRule (), m_schemaName (L""), m_className (L""), m_contextMenuCondition (L""), m_contextMenuLabel (L""), m_settingsId (L"")
-            {
-            }
+        ECOBJECTS_EXPORT GroupingRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel, WStringCR settingsId)
-            : PresentationRule (condition, priority, onlyIfNotHandled), 
-              m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
-            {
-            }
+        ECOBJECTS_EXPORT GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel, WStringCR settingsId);
 
         //! Desctructor.
         ECOBJECTS_EXPORT                     ~GroupingRule (void);
 
         //! Acceptable schema name of ECInstances on which this grouping rule will be applied.
-        ECOBJECTS_EXPORT WStringCR           GetSchemaName (void) const              { return m_schemaName; }
+        ECOBJECTS_EXPORT WStringCR           GetSchemaName (void) const;
 
         //! Acceptable class name of ECInstances on which this grouping rule will be applied.
-        ECOBJECTS_EXPORT WStringCR           GetClassName (void) const               { return m_className; }
+        ECOBJECTS_EXPORT WStringCR           GetClassName (void) const;
 
         //! ECExpression condition that is used in order to define the node on which "Group By" context menu will be shown.
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-        ECOBJECTS_EXPORT WStringCR           GetContextMenuCondition (void) const    { return m_contextMenuCondition; }
+        ECOBJECTS_EXPORT WStringCR           GetContextMenuCondition (void) const;
 
         //! Label of the parent context menu for choosing one of the predefined ProeprtyGroups.
         //! If this parameters is not set, the default name will be used - "Group By". 
         //! Menu will be shown only if there are more than 2 PropertyGroups defined in the rule.
-        ECOBJECTS_EXPORT WStringCR           GetContextMenuLabel (void) const        { return m_contextMenuLabel; }
+        ECOBJECTS_EXPORT WStringCR           GetContextMenuLabel (void) const;
 
         //! Id that is used to store current active group. This is used only if there are more than one Group available.
-        ECOBJECTS_EXPORT WStringCR           GetSettingsId (void) const              { return m_settingsId; }
+        ECOBJECTS_EXPORT WStringCR           GetSettingsId (void) const;
 
         //! Returns a list of GroupSpecifications.
-        ECOBJECTS_EXPORT GroupList&          GetGroups (void)                        { return m_groups; }
+        ECOBJECTS_EXPORT GroupList&          GetGroups (void);
 
     };
 
@@ -92,24 +81,15 @@ GroupSpecification that identifies parameters on how to group ECInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupSpecification
     {
-//__PUBLISH_SECTION_END__
     private:
         WString  m_contextMenuLabel;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
-    ECOBJECTS_EXPORT GroupSpecification ()
-        : m_contextMenuLabel (L"")
-        {
-        }
+    ECOBJECTS_EXPORT GroupSpecification ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT GroupSpecification (WStringCR contextMenuLabel)
-        : m_contextMenuLabel (contextMenuLabel)
-        {
-        }
+    ECOBJECTS_EXPORT GroupSpecification (WStringCR contextMenuLabel);
 
     //! Returns XmlElement name that is used to read/save this rule information.
     ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () = 0;
@@ -128,7 +108,7 @@ public:
     ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
-    ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const            { return m_contextMenuLabel; }
+    ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -138,9 +118,7 @@ of the same label.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SameLabelInstanceGroup : public GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
 
@@ -152,16 +130,10 @@ struct SameLabelInstanceGroup : public GroupSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT SameLabelInstanceGroup ()
-            : GroupSpecification ()
-            {
-            }
+        ECOBJECTS_EXPORT SameLabelInstanceGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SameLabelInstanceGroup (WStringCR contextMenuLabel)
-            : GroupSpecification (contextMenuLabel)
-            {
-            }
+        ECOBJECTS_EXPORT SameLabelInstanceGroup (WStringCR contextMenuLabel);
 
     };
 
@@ -171,14 +143,12 @@ ClassGroup that identifies parameters on how to group ECInstances.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ClassGroup : public GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool      m_createGroupForSingleItem;
         WString   m_schemaName;
         WString   m_baseClassName;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
 
@@ -190,25 +160,19 @@ struct ClassGroup : public GroupSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ClassGroup ()
-            : GroupSpecification (), m_createGroupForSingleItem (false), m_schemaName (L""), m_baseClassName (L"")
-            {
-            }
+        ECOBJECTS_EXPORT ClassGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ClassGroup (WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName)
-            : GroupSpecification (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
-            {
-            }
+        ECOBJECTS_EXPORT ClassGroup (WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName);
 
         //! Idendifies whether a group should be created even if there is only single of particular group.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
 
         //! ECSchema name of base class.
-        ECOBJECTS_EXPORT WStringCR                GetSchemaName (void) const                  { return m_schemaName; }
+        ECOBJECTS_EXPORT WStringCR                GetSchemaName (void) const;
 
         //! Base ECClass name to group ECInstances by.
-        ECOBJECTS_EXPORT WStringCR                GetBaseClassName (void) const               { return m_baseClassName; }
+        ECOBJECTS_EXPORT WStringCR                GetBaseClassName (void) const;
 
     };
 
@@ -219,7 +183,6 @@ by a specific property.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyGroup : public GroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString                 m_imageId;
         bool                    m_createGroupForSingleItem;
@@ -227,7 +190,6 @@ struct PropertyGroup : public GroupSpecification
         PropertyRangeGroupList  m_ranges;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
 
@@ -239,31 +201,25 @@ struct PropertyGroup : public GroupSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT PropertyGroup ()
-            : GroupSpecification (), m_imageId (L""), m_createGroupForSingleItem (false), m_propertyName (L"")
-            {
-            }
+        ECOBJECTS_EXPORT PropertyGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName)
-            : GroupSpecification (contextMenuLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_propertyName (propertyName)
-            {
-            }
+        ECOBJECTS_EXPORT PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName);
 
         //! Destructor.
         ECOBJECTS_EXPORT                          ~PropertyGroup (void);
 
         //! ImageId of the grouping node. Can be ECExpression. If not set ECClass or ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
+        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const;
 
         //! Idendifies whether a group should be created even if there is only single of particular group.
-        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
+        ECOBJECTS_EXPORT bool                     GetCreateGroupForSingleItem (void) const;
 
         //! ECProperty name to group ECInstances by.
-        ECOBJECTS_EXPORT WStringCR                GetPropertyName (void) const                { return m_propertyName; }
+        ECOBJECTS_EXPORT WStringCR                GetPropertyName (void) const;
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
-        ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRanges (void)                            { return m_ranges;    }
+        ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRanges (void);
 
     };
 
@@ -275,7 +231,6 @@ by a specific property.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyRangeGroupSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_label;
         WString  m_imageId;
@@ -283,18 +238,11 @@ struct PropertyRangeGroupSpecification
         WString  m_toValue;
 
     public:
-    /*__PUBLISH_SECTION_START__*/
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT PropertyRangeGroupSpecification ()
-            : m_label (L""), m_imageId (L""), m_fromValue (L""), m_toValue (L"")
-            {
-            }
+        ECOBJECTS_EXPORT PropertyRangeGroupSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT PropertyRangeGroupSpecification (WStringCR label, WStringCR imageId, WStringCR fromValue, WStringCR toValue)
-            : m_label (label), m_imageId (imageId), m_fromValue (fromValue), m_toValue (toValue)
-            {
-            }
+        ECOBJECTS_EXPORT PropertyRangeGroupSpecification (WStringCR label, WStringCR imageId, WStringCR fromValue, WStringCR toValue);
 
         //! Reads specification from xml.
         ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
@@ -303,16 +251,16 @@ struct PropertyRangeGroupSpecification
         ECOBJECTS_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode);
 
         //! ImageId of the grouping range node. If not set ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT WStringCR                GetLabel (void) const                       { return m_label; }
+        ECOBJECTS_EXPORT WStringCR                GetLabel (void) const;
 
         //! ImageId of the grouping node. Can be ECExpression. If not set ECProperty ImageId will be used.
-        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const                     { return m_imageId; }
+        ECOBJECTS_EXPORT WStringCR                GetImageId (void) const;
 
         //! Property that defines the range starting point. It is string for being able to define Units.
-        ECOBJECTS_EXPORT WStringCR                GetFromValue (void) const                   { return m_fromValue; }
+        ECOBJECTS_EXPORT WStringCR                GetFromValue (void) const;
 
         //! Property that defines the range end point. It is string for being able to define Units.
-        ECOBJECTS_EXPORT WStringCR                GetToValue (void) const                     { return m_toValue; }
+        ECOBJECTS_EXPORT WStringCR                GetToValue (void) const;
 
     };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRule.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,6 +12,21 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRule::ContentRule () : PresentationRule ()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRule::ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled)
+    : PresentationRule (condition, priority, onlyIfNotHandled)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -56,3 +71,8 @@ void ContentRule::_WriteXml (BeXmlNodeP xmlNode)
 
     PresentationRule::_WriteXml (xmlNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentSpecificationList& ContentRule::GetSpecifications (void) { return m_specifications; }

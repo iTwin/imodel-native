@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,6 +12,32 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification () 
+    : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (L""), 
+    m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification 
+(
+int                        priority,
+int                        skipRelatedLevel,
+WString                    instanceFilter,
+RequiredRelationDirection  requiredDirection,
+WString                    relationshipClassNames,
+WString                    relatedClassNames
+) : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), 
+    m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
+    m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -58,3 +84,28 @@ void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES, m_relatedClassNames.c_str ());
     xmlNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int ContentRelatedInstancesSpecification::GetSkipRelatedLevel (void) const { return m_skipRelatedLevel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RequiredRelationDirection ContentRelatedInstancesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ContentRelatedInstancesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }

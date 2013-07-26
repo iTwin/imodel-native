@@ -12,8 +12,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 /*---------------------------------------------------------------------------------**//**
 This specification returns search results instance nodes. Nodes are returned only if 
 parent node is SearchNodes.
@@ -21,13 +19,11 @@ parent node is SearchNodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool     m_groupByClass;
         bool     m_groupByLabel;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 
@@ -39,24 +35,17 @@ struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification ()
-            : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true)
-            {
-            }
+        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                                bool groupByClass, bool groupByLabel)
-            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-              m_groupByClass (groupByClass), m_groupByLabel (groupByLabel)
-            {
-            }
+        ECOBJECTS_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+                                                                 bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
 
         //! Returns true if grouping by class should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const       { return m_groupByClass; }
+        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
         //! Returns true if grouping by label should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const       { return m_groupByLabel; }
+        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
     };
 

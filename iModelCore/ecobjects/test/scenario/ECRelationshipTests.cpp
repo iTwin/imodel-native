@@ -107,7 +107,7 @@ TEST_F(ECRelationshipTests, InheritedEnablerIterator)
     
     while (tempIndex != 0)
         {
-        WCharCP tempName;
+        WCharCP tempName = NULL;
         EXPECT_EQ (relationshipEnabler->GetAccessString(tempName, tempIndex), ECOBJECTS_STATUS_Success);
         EXPECT_FALSE (relationshipEnabler->HasChildProperties(tempIndex));
         
@@ -146,7 +146,7 @@ TEST_F(ECRelationshipTests, InheritedEnablerIndices)
     
     for (UInt32 i=0; i<indices.size(); i++)
         {
-        WCharCP tempName;
+        WCharCP tempName = NULL;
         EXPECT_EQ (relationshipEnabler->GetAccessString(tempName, indices[i]), ECOBJECTS_STATUS_Success);
         EXPECT_FALSE (relationshipEnabler->HasChildProperties(indices[i]));
         

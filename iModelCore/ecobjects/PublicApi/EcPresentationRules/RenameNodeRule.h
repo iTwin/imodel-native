@@ -10,17 +10,13 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 Presentation rule for configuring node rename functionality.
 * @bsiclass                                    dmitrijus.tiazlovas                11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RenameNodeRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
-
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
 
@@ -32,16 +28,10 @@ struct RenameNodeRule : public PresentationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT RenameNodeRule ()
-            : PresentationRule ()
-            {
-            }
+        ECOBJECTS_EXPORT RenameNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT RenameNodeRule (WStringCR condition, int priority)
-            : PresentationRule (condition, priority, false)
-            {
-            }
+        ECOBJECTS_EXPORT RenameNodeRule (WStringCR condition, int priority);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -43,7 +43,10 @@ ECClass::~ECClass ()
         delete entry->second;
     
     m_propertyMap.clear();
-    
+
+    RemoveBaseClasses ();
+    RemoveDerivedClasses ();
+
     m_defaultStandaloneEnabler = NULL;
     }
 
@@ -851,6 +854,17 @@ void    ECClass::RemoveDerivedClass (ECClassCR derivedClass) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECClass::RemoveDerivedClasses ()
+    {
+    for (ECDerivedClassesList::iterator iter = m_derivedClasses.end(); iter != m_derivedClasses.begin(); )
+        (*--iter)->RemoveBaseClass (*this);
+
+    m_derivedClasses.clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 const ECDerivedClassesList& ECClass::GetDerivedClasses () const
@@ -955,6 +969,17 @@ ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
     baseClass.RemoveDerivedClass(*this);
 
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ECClass::RemoveBaseClasses ()
+    {
+    for (ECBaseClassesList::iterator iter = m_baseClasses.begin(); iter != m_baseClasses.end(); iter++)
+        (*iter)->RemoveDerivedClass (*this);
+
+    m_baseClasses.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -868,6 +868,8 @@ private:
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
+    void            RemoveDerivedClasses ();
+    void            RemoveBaseClasses ();
     static void     SetErrorHandling (bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
@@ -1736,7 +1738,7 @@ private:
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
 
-    bmap<ECSchemaP, const WString> m_referencedSchemaNamespaceMap;
+    bmap<ECSchemaP, WString> m_referencedSchemaNamespaceMap;
 
     ECSchema ();
     virtual ~ECSchema();

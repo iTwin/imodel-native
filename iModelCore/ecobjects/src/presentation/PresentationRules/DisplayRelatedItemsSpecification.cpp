@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/DisplayRelatedItemsSpecification.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,22 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification ()
+    : m_logicalChildren (false), m_nestingDepth (0), m_relationshipClasses (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification (bool logicalChildren, int nestingDepth, WStringCR relationshipClasses)
+    : m_logicalChildren (logicalChildren), m_nestingDepth (nestingDepth), m_relationshipClasses (relationshipClasses)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
@@ -40,3 +56,18 @@ void DisplayRelatedItemsSpecification::WriteXml (BeXmlNodeP parentXmlNode)
     displayRelatedItemsNode->AddAttributeBooleanValue (DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_LOGICALCHILDREN, m_logicalChildren);
     displayRelatedItemsNode->AddAttributeStringValue (DISPLAYRELATEDITEMS_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPCLASSES, m_relationshipClasses.c_str ());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayRelatedItemsSpecification::GetLogicalChildren (void) const { return m_logicalChildren; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int DisplayRelatedItemsSpecification::GetNestingDepth (void) const { return m_nestingDepth; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas              11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR DisplayRelatedItemsSpecification::GetRelationshipClasses (void) const { return m_relationshipClasses; }

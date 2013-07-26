@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/AllInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,31 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+AllInstanceNodesSpecification::AllInstanceNodesSpecification ()
+    : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_supportedSchemas (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+AllInstanceNodesSpecification::AllInstanceNodesSpecification 
+(
+int       priority,
+bool      alwaysReturnsChildren,
+bool      hideNodesInHierarchy,
+bool      hideIfNoChildren,
+bool      groupByClass,
+bool      groupByLabel,
+WStringCR supportedSchemas
+) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
+    m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_supportedSchemas (supportedSchemas)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -47,3 +72,18 @@ void AllInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllInstanceNodesSpecification::GetGroupByClass (void) const { return m_groupByClass; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllInstanceNodesSpecification::GetGroupByLabel (void) const { return m_groupByLabel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR AllInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }

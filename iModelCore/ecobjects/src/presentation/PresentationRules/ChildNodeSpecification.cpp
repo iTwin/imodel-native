@@ -92,3 +92,43 @@ void ChildNodeSpecification::WriteXml (BeXmlNodeP parentXmlNode)
     //Make sure we call protected override
     _WriteXml (specificationNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int ChildNodeSpecification::GetPriority (void) const { return m_priority; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int ChildNodeSpecification::GetId (void) const { return m_id; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const { return m_alwaysReturnsChildren; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeSpecification::GetHideNodesInHierarchy (void) const { return m_hideNodesInHierarchy; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeSpecification::GetHideIfNoChildren (void)  { return m_hideIfNoChildren; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ChildNodeSpecification::GetExtendedData (void) { return m_extendedData; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::SetExtendedData (WStringCR extendedData) { m_extendedData = extendedData; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeRuleList& ChildNodeSpecification::GetNestedRules (void) { return m_nestedRules; }

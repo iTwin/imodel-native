@@ -16,6 +16,22 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroup::UserSettingsGroup ()
+    : PresentationKey (), m_categoryLabel (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroup::UserSettingsGroup (WStringCR categoryLabel)
+    : PresentationKey (1000), m_categoryLabel (categoryLabel)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsGroup::~UserSettingsGroup (void)
     {
     CommonTools::FreePresentationRules (m_nestedSettings);
@@ -55,7 +71,38 @@ void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode)
     CommonTools::WriteRulesToXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categoryLabel; }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsItemList& UserSettingsGroup::GetSettingsItems (void) { return m_settingsItems; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroupList& UserSettingsGroup::GetNestedSettings (void) { return m_nestedSettings; }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsItem::UserSettingsItem ()
+    : m_id (L""), m_label (L""), m_options (L""), m_defaultValue (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsItem::UserSettingsItem (WStringCR id, WStringCR label, WStringCR options, WStringCR defaultValue)
+    : m_id (id), m_label (label), m_options (options), m_defaultValue (defaultValue)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
@@ -97,3 +144,23 @@ void UserSettingsItem::WriteXml (BeXmlNodeP parentXmlNode)
     xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_OPTIONS,       m_options.c_str ());
     xmlNode->AddAttributeStringValue (USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE, m_defaultValue.c_str ());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR UserSettingsItem::GetId (void) const               { return m_id; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR UserSettingsItem::GetLabel (void) const            { return m_label; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR UserSettingsItem::GetOptions (void) const          { return m_options; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR UserSettingsItem::GetDefaultValue (void) const     { return m_defaultValue; }

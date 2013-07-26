@@ -10,8 +10,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 typedef bvector<ContentSpecificationP> ContentSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
@@ -20,12 +18,10 @@ ContentRule defines rules for generating content for selected items.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         ContentSpecificationList  m_specifications;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
 
@@ -37,22 +33,16 @@ struct ContentRule : public PresentationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ContentRule ()
-            : PresentationRule ()
-            {
-            }
+        ECOBJECTS_EXPORT ContentRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled)
-            : PresentationRule (condition, priority, onlyIfNotHandled)
-            {
-            }
+        ECOBJECTS_EXPORT ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~ContentRule (void);
 
         //! Collection ContentSpecifications that will be used to provide content.
-        ECOBJECTS_EXPORT ContentSpecificationList&      GetSpecifications (void)    { return m_specifications; }
+        ECOBJECTS_EXPORT ContentSpecificationList&      GetSpecifications (void);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

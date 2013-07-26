@@ -16,6 +16,23 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+GroupingRule::GroupingRule ()
+    : PresentationRule (), m_schemaName (L""), m_className (L""), m_contextMenuCondition (L""), m_contextMenuLabel (L""), m_settingsId (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupingRule::GroupingRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR schemaName, WStringCR className, WStringCR contextMenuCondition, WStringCR contextMenuLabel, WStringCR settingsId)
+    : PresentationRule (condition, priority, onlyIfNotHandled), 
+      m_schemaName (schemaName), m_className (className), m_contextMenuCondition (contextMenuCondition), m_contextMenuLabel (contextMenuLabel), m_settingsId (settingsId)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 GroupingRule::~GroupingRule (void)
     {
     CommonTools::FreePresentationRules (m_groups);
@@ -88,6 +105,51 @@ void GroupingRule::_WriteXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR GroupingRule::GetSchemaName (void) const              { return m_schemaName; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR GroupingRule::GetClassName (void) const               { return m_className; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR GroupingRule::GetContextMenuCondition (void) const    { return m_contextMenuCondition; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR GroupingRule::GetContextMenuLabel (void) const        { return m_contextMenuLabel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR GroupingRule::GetSettingsId (void) const              { return m_settingsId; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupList& GroupingRule::GetGroups (void)                       { return m_groups; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupSpecification::GroupSpecification () : m_contextMenuLabel (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupSpecification::GroupSpecification (WStringCR contextMenuLabel) : m_contextMenuLabel (contextMenuLabel)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GroupSpecification::ReadXml (BeXmlNodeP xmlNode)
@@ -114,6 +176,26 @@ void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR GroupSpecification::GetContextMenuLabel (void) const  { return m_contextMenuLabel; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SameLabelInstanceGroup::SameLabelInstanceGroup () : GroupSpecification ()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               11/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SameLabelInstanceGroup::SameLabelInstanceGroup (WStringCR contextMenuLabel) : GroupSpecification (contextMenuLabel)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 CharCP SameLabelInstanceGroup::_GetXmlElementName ()
@@ -135,6 +217,23 @@ bool SameLabelInstanceGroup::_ReadXml (BeXmlNodeP xmlNode)
 void SameLabelInstanceGroup::_WriteXml (BeXmlNodeP xmlNode)
     {
     //there are no additioanl options
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassGroup::ClassGroup ()
+    : GroupSpecification (), m_createGroupForSingleItem (false), m_schemaName (L""), m_baseClassName (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassGroup::ClassGroup (WStringCR contextMenuLabel, bool createGroupForSingleItem, WStringCR schemaName, WStringCR baseClassName)
+    : GroupSpecification (contextMenuLabel), m_createGroupForSingleItem (createGroupForSingleItem), m_schemaName (schemaName), m_baseClassName (baseClassName)
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,6 +270,38 @@ void ClassGroup::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeBooleanValue (GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM, m_createGroupForSingleItem);
     xmlNode->AddAttributeStringValue  (CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME,         m_schemaName.c_str ());
     xmlNode->AddAttributeStringValue  (CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME,      m_baseClassName.c_str ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClassGroup::GetCreateGroupForSingleItem (void) const       { return m_createGroupForSingleItem; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ClassGroup::GetSchemaName (void) const                { return m_schemaName; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ClassGroup::GetBaseClassName (void) const             { return m_baseClassName; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyGroup::PropertyGroup ()
+    : GroupSpecification (), m_imageId (L""), m_createGroupForSingleItem (false), m_propertyName (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyGroup::PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName)
+    : GroupSpecification (contextMenuLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_propertyName (propertyName)
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,6 +359,43 @@ void PropertyGroup::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PropertyGroup::GetImageId (void) const                { return m_imageId; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyGroup::GetCreateGroupForSingleItem (void) const    { return m_createGroupForSingleItem; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PropertyGroup::GetPropertyName (void) const           { return m_propertyName; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyRangeGroupList& PropertyGroup::GetRanges (void)         { return m_ranges;    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyRangeGroupSpecification::PropertyRangeGroupSpecification ()
+    : m_label (L""), m_imageId (L""), m_fromValue (L""), m_toValue (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyRangeGroupSpecification::PropertyRangeGroupSpecification (WStringCR label, WStringCR imageId, WStringCR fromValue, WStringCR toValue)
+    : m_label (label), m_imageId (imageId), m_fromValue (fromValue), m_toValue (toValue)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
     {
     //Required:
@@ -265,3 +433,23 @@ void PropertyRangeGroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
     specificationNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL, m_label.c_str ());
     specificationNode->AddAttributeStringValue (PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_IMAGEID, m_imageId.c_str ());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PropertyRangeGroupSpecification::GetLabel (void) const     { return m_label; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PropertyRangeGroupSpecification::GetImageId (void) const   { return m_imageId; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PropertyRangeGroupSpecification::GetFromValue (void) const { return m_fromValue; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PropertyRangeGroupSpecification::GetToValue (void) const   { return m_toValue; }

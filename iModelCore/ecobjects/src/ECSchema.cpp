@@ -194,9 +194,8 @@ ECSchema::ECSchema ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::~ECSchema ()
     {
-    ClassMap::iterator          classIterator = m_classMap.begin();
-    ClassMap::const_iterator    classEnd = m_classMap.end();        
-    while (classIterator != classEnd)
+    ClassMap::iterator  classIterator = m_classMap.begin();
+    while (classIterator != m_classMap.end())
         {
         ECClassP ecClass = classIterator->second;
         classIterator = m_classMap.erase(classIterator);
@@ -501,7 +500,7 @@ void ECSchema::DebugDump()const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
     {
-    ClassMap::const_iterator iter = m_classMap.find (ecClass.GetName().c_str());
+    ClassMap::iterator iter = m_classMap.find (ecClass.GetName().c_str());
     if (iter == m_classMap.end() || iter->second != &ecClass)
         return ECOBJECTS_STATUS_ClassNotFound;
 
@@ -515,7 +514,7 @@ ECObjectsStatus ECSchema::DeleteClass (ECClassR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::RenameClass (ECClassR ecClass, WCharCP newName)
     {
-    ClassMap::const_iterator iter = m_classMap.find (ecClass.GetName().c_str());
+    ClassMap::iterator iter = m_classMap.find (ecClass.GetName().c_str());
     if (iter == m_classMap.end() || iter->second != &ecClass)
         return ECOBJECTS_STATUS_ClassNotFound;
 
@@ -880,7 +879,7 @@ ECSchemaCP ECSchema::GetSchemaByNamespacePrefixP (WStringCR namespacePrefix) con
         return this;
 
     // lookup referenced schema by prefix
-    bmap<ECSchemaP, WString const>::const_iterator schemaIterator;
+    bmap<ECSchemaP, WString >::const_iterator schemaIterator;
     for (schemaIterator = m_referencedSchemaNamespaceMap.begin(); schemaIterator != m_referencedSchemaNamespaceMap.end(); schemaIterator++)
         {
         if (0 == namespacePrefix.compare (schemaIterator->second))
@@ -899,7 +898,7 @@ ECObjectsStatus ECSchema::ResolveNamespacePrefix (ECSchemaCR schema, WStringR na
     if (&schema == this)
         return ECOBJECTS_STATUS_Success;
 
-    bmap<ECSchemaP, WString const>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
+    bmap<ECSchemaP, WString >::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
     if (schemaIterator != m_referencedSchemaNamespaceMap.end())
         {
         namespacePrefix = schemaIterator->second;
@@ -966,7 +965,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, WStringCR na
         prefix = L"s";
 
     // Make sure prefix is unique within this schema
-    bmap<ECSchemaP, WString const>::const_iterator namespaceIterator;
+    bmap<ECSchemaP, WString >::const_iterator namespaceIterator;
     for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
         {
         if (0 == prefix.compare (namespaceIterator->second))
@@ -1081,7 +1080,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
         }
 
     m_refSchemaList.erase(schemaIterator); 
-    bmap<ECSchemaP, const WString>::iterator iterator = m_referencedSchemaNamespaceMap.find(&refSchema);
+    bmap<ECSchemaP, WString>::iterator iterator = m_referencedSchemaNamespaceMap.find(&refSchema);
     if (iterator != m_referencedSchemaNamespaceMap.end())
         m_referencedSchemaNamespaceMap.erase(iterator);
 
@@ -1605,7 +1604,7 @@ static bool ClassNameComparer (ECClassP class1, ECClassP class2)
 SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlNodeR parentNode) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
-    bmap<ECSchemaP, const WString>::const_iterator iterator;
+    bmap<ECSchemaP, WString>::const_iterator iterator;
     for (iterator = m_referencedSchemaNamespaceMap.begin(); iterator != m_referencedSchemaNamespaceMap.end(); iterator++)
         {
         bpair<ECSchemaP, const WString> mapPair = *(iterator);
