@@ -2249,9 +2249,13 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
 
             continue;
             }
-        else if (prop.GetValueAccessor().GetECProperty()->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
-            if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
-                return status;
+        else 
+            {
+            ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
+            if (NULL != ecProp && ecProp->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+                if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+                    return status;
+            }
         }
 
     return ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status ? ECOBJECTS_STATUS_Success : status;
