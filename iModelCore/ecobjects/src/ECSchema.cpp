@@ -1465,11 +1465,48 @@ bvector<WString>&               searchPaths
             continue;
 
         LOG.debugv (L"Located %ls...", fullFileName.c_str());
+        // Now check this same path for supplemental schemas
+        bvector<ECSchemaP> supplementalSchemas;
+        TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), schemaPathStr, schemaContext, supplementalSchemas);
+        if (supplementalSchemas.size() > 0)
+            {
+            Bentley::ECN::SupplementedSchemaBuilder builder;
+            builder.UpdateSchema(*schemaOut, supplementalSchemas);
+            }
 
         return schemaOut;
         }
 
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchPathSchemaFileLocater::TryLoadingSupplementalSchemas
+(
+WStringCR schemaName, 
+WStringCR schemaFilePath, 
+ECSchemaReadContextR schemaContext,
+bvector<ECSchemaP>& supplementalSchemas
+)
+    {
+    BeFileName schemaPath (schemaFilePath.c_str());
+    WString filter = schemaName + L"_Supplemental_*.*.*.ecschema.xml";
+    schemaPath.AppendToPath(filter.c_str());
+    BeFileListIterator fileList(schemaPath.GetName(), false);
+    BeFileName filePath;
+    while (SUCCESS == fileList.GetNextFileName (filePath))
+        {
+        WCharCP     fileName = filePath.GetName();
+        ECSchemaPtr schemaOut = NULL;
+
+        if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlFile (schemaOut, fileName, schemaContext))
+            continue;
+        supplementalSchemas.push_back(schemaOut.get());
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
