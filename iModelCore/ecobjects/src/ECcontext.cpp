@@ -29,6 +29,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
+#if defined (LEGACY_ECSCHEMAS_FOLDER_STRUCTURE)
     BeFileName generalPath = standardPath;
     generalPath.AppendToPath (L"General");
     generalPath.AppendSeparator();
@@ -38,6 +39,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     libraryPath.AppendToPath (L"LibraryUnits");
     libraryPath.AppendSeparator();
     searchPaths.push_back (libraryPath.GetName());
+#endif
 
     return true;
     }
