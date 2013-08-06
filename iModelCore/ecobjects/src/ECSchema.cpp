@@ -201,6 +201,23 @@ ECSchema::ECSchema ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::~ECSchema ()
     {
+    for (auto entry : m_classMap)
+        {
+        ECClassP ecClass = entry.second;
+        //==========================================================
+        //Bug #23511: Publisher crash related to a NULL ECClass name
+        //We need to cleanup any derived class link in other schema.
+        //If schema fail later during loading it is possiable that is
+        //had created dervied class links in reference ECSchemas. Since
+        //This schema would be deleted we need to remove those dead links.
+        for(auto baseClass : ecClass->GetBaseClasses())
+            {
+            if (&baseClass->GetSchema() != this)
+                baseClass->RemoveDerivedClass(*ecClass);
+            }
+        //==========================================================
+        }
+
     ClassMap::iterator  classIterator = m_classMap.begin();
     while (classIterator != m_classMap.end())
         {
@@ -208,7 +225,6 @@ ECSchema::~ECSchema ()
         classIterator = m_classMap.erase(classIterator);
         delete ecClass;
         }
-
     BeAssert (m_classMap.empty());
 
     m_refSchemaList.clear();
