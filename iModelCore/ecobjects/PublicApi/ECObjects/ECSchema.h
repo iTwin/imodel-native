@@ -517,7 +517,6 @@ private:
     WString                 m_description;
     ECValidatedName         m_validatedName;
     bool                    m_readOnly;
-    bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;
     mutable IECTypeAdapter* m_cachedTypeAdapter;
@@ -525,6 +524,7 @@ private:
     static void     SetErrorHandling (bool doAssert);
 protected:
     WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
+    bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     ECProperty (ECClassCR ecClass);
     virtual ~ECProperty();
 
