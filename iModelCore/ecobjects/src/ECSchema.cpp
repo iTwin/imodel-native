@@ -201,11 +201,9 @@ ECSchema::ECSchema ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::~ECSchema ()
     {
-    ClassMap::iterator          classIterator = m_classMap.begin();
-    ClassMap::const_iterator    classEnd = m_classMap.end();        
-    while (classIterator != classEnd)
+    for (auto entry : m_classMap)
         {
-        ECClassP ecClass = classIterator->second;
+        ECClassP ecClass = entry.second;
         //==========================================================
         //Bug #23511: Publisher crash related to a NULL ECClass name
         //We need to cleanup any derived class link in other schema.
@@ -218,10 +216,16 @@ ECSchema::~ECSchema ()
                 baseClass->RemoveDerivedClass(*ecClass);
             }
         //==========================================================
+        }
+
+    ClassMap::iterator          classIterator = m_classMap.begin();
+    ClassMap::const_iterator    classEnd = m_classMap.end();        
+    while (classIterator != classEnd)
+        {
+        ECClassP ecClass = classIterator->second;
         classIterator = m_classMap.erase(classIterator);
         delete ecClass;
         }
-
     BeAssert (m_classMap.empty());
 
     m_refSchemaList.clear();
