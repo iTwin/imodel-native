@@ -2,7 +2,7 @@
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -1946,7 +1946,8 @@ ECObjectsStatus       MemoryInstanceSupport::AddNullArrayElementsAt (ClassLayout
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
     PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_PreconditionViolated);
     
-    PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
+    if (0 == count)
+        return ECOBJECTS_STATUS_Success;
     
     return ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, GetAllocatedArrayCount (propertyLayout), count, memoryReallocationCallbackP);
     }         
