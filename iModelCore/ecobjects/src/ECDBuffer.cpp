@@ -2643,7 +2643,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
 
     if (!alreadyCalculated && propertyLayout.HoldsCalculatedProperty())
         {
-        ECObjectsStatus calcStatus = SetCalculatedProperty (v, propertyLayout);
+        ECObjectsStatus calcStatus = _UpdateCalculatedPropertyDependents (v, propertyLayout);
         switch (calcStatus)
             {//needswork: if it failed to parse the value with a regexp, maybe we still allow them to set it... just not propagate to dependents?
             case ECOBJECTS_STATUS_Success:
@@ -2913,19 +2913,8 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (ECValueCR v, PropertyLayoutCR
         return SetPrimitiveValueToMemory (v, propertyLayout, true, index);
     else if (typeDescriptor.IsStructArray() && (v.IsNull() || v.IsStruct()))
         {
-        if (v.GetStruct().IsValid())
-            {
-            UInt32 propertyIndex;
-            IECInstanceP instance = this->GetAsIECInstanceP();
-            if (NULL != instance && ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propertyIndex, propertyLayout))
-                {
-                // Determine if the struct is valid to add to this array
-                ECPropertyCP ecprop = instance->GetEnabler().LookupECProperty (propertyIndex);
-                ArrayECPropertyCP structArrayProp = ecprop != NULL ? ecprop->GetAsArrayProperty() : NULL;
-                if (NULL != structArrayProp && !v.GetStruct()->GetEnabler().GetClass().Is (structArrayProp->GetStructElementType()))
-                    return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
-                }
-            }
+        if (v.GetStruct().IsValid() && !_IsStructValidForArray (*v.GetStruct(), propertyLayout))
+            return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
 
         return _SetStructArrayValueToMemory (v, propertyLayout, index);       
         }
@@ -2984,8 +2973,9 @@ ECObjectsStatus       ECDBuffer::SetValueToMemory (UInt32 propertyIndex, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (IECInstanceCR instance, ClassLayoutCR classLayout, PropertyLayoutCR propLayout)
+CalculatedPropertySpecificationCP ECDBuffer::LookupCalculatedPropertySpecification (IECInstanceCR instance, PropertyLayoutCR propLayout) const
     {
+    ClassLayoutCR classLayout = GetClassLayout();
     UInt32 propertyIndex;
     ECPropertyCP ecprop;
     if (ECOBJECTS_STATUS_Success == classLayout.GetPropertyLayoutIndex (propertyIndex, propLayout) && NULL != (ecprop = instance.GetEnabler().LookupECProperty (propertyIndex)))
@@ -3006,21 +2996,8 @@ static CalculatedPropertySpecificationCP lookupCalculatedPropertySpecification (
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLayout, ECValueR existingValue, bool useArrayIndex, UInt32 arrayIndex) const
     {
-    IECInstanceCP iecInstance = this->GetAsIECInstance();
-    if (NULL == iecInstance)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
-
-    CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, GetClassLayout(), propLayout);
-    if (NULL == spec)
-        { 
-        // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
-        // BeAssert (false);
-        LOG.errorv(L"Calculated properties are ignored on Graphite");
-        return ECOBJECTS_STATUS_Success; 
-        }
-
     ECValue updatedValue;
-    ECObjectsStatus evalStatus = spec->Evaluate (updatedValue, existingValue, *iecInstance);
+    ECObjectsStatus evalStatus = _EvaluateCalculatedProperty (updatedValue, existingValue, propLayout);
     
     if (ECOBJECTS_STATUS_Success != evalStatus || updatedValue.Equals (existingValue))
         return evalStatus;
@@ -3032,33 +3009,6 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
         existingValue = updatedValue;
 
     return evalStatus;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECDBuffer::SetCalculatedProperty (ECValueCR v, PropertyLayoutCR propertyLayout)
-    {
-    IECInstanceP iecInstance = this->GetAsIECInstanceP();
-    if (NULL == iecInstance)
-        { BeAssert (false); return ECOBJECTS_STATUS_Error; }
-
-    CalculatedPropertySpecificationCP spec = lookupCalculatedPropertySpecification (*iecInstance, GetClassLayout(), propertyLayout);
-    if (NULL == spec)
-        { 
-        // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
-        // BeAssert (false);
-        LOG.errorv(L"Calculated properties are ignored on Graphite");
-        return ECOBJECTS_STATUS_Success; 
-        }
-    else
-        {
-        ECObjectsStatus status = spec->UpdateDependentProperties (v, *iecInstance);
-        if (ECOBJECTS_STATUS_Success != status)
-            LOG.infov(L"Failed to update dependent ECPropertyValues when setting CalculatedECProperty '%ls'", propertyLayout.GetAccessString());
-
-        return status;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

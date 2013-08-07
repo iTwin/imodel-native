@@ -572,8 +572,7 @@ private:
     ECObjectsStatus                   GrowPropertyValue (PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
     // Updates the calculated value in memory and returns the updated value in existingValue
     ECObjectsStatus                   EvaluateCalculatedProperty (PropertyLayoutCR propertyLayout, ECValueR existingValue, bool useArrayIndex, UInt32 arrayIndex) const;
-    // Updates the dependent properties of the calculated property
-    ECObjectsStatus                   SetCalculatedProperty (ECValueCR v, PropertyLayoutCR propertyLayout);
+
     ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
 
     ECObjectsStatus                   ModifyData (byte const* data, void const* newData, size_t dataLength);
@@ -647,27 +646,28 @@ protected:
     //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
     //! externally.
     //! If isInitializing is true, we are in the process of copying ECD memory buffer from another ECDBuffer, in which case this buffer's struct value ID entries are not valid.
-    virtual ECObjectsStatus           _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
-    virtual ECObjectsStatus           _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
-    virtual ECN::PrimitiveType         _GetStructArrayPrimitiveType () const = 0;
+    virtual ECObjectsStatus         _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
+    virtual ECObjectsStatus         _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
+    virtual ECN::PrimitiveType      _GetStructArrayPrimitiveType () const = 0;
 
-    virtual ECObjectsStatus           _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
+    virtual ECObjectsStatus         _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
+    virtual bool                    _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const = 0;
 
     //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
-    virtual void                      _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
+    virtual void                    _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
 
-    virtual bool                _IsMemoryInitialized () const = 0;
+    virtual bool                   _IsMemoryInitialized () const = 0;
 
     //! Get a pointer to the first byte of the ECDBuffer's data. This points to the first byte of the ECDHeader
-    virtual byte const *        _GetData () const = 0;
-    virtual ECObjectsStatus     _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
-    virtual ECObjectsStatus     _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
-    virtual UInt32              _GetBytesAllocated () const = 0;
+    virtual byte const *          _GetData () const = 0;
+    virtual ECObjectsStatus       _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
+    virtual ECObjectsStatus       _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
+    virtual UInt32                _GetBytesAllocated () const = 0;
 
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual ECObjectsStatus    _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    virtual ECObjectsStatus      _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
 
     //! Shrinks the allocated IECInstance data to be as small as possible
     virtual ECObjectsStatus    _ShrinkAllocation () = 0;
@@ -683,6 +683,12 @@ protected:
     virtual IECInstanceP        _GetAsIECInstance () const = 0;
  
     virtual ClassLayoutCR       _GetClassLayout() const = 0;
+
+    virtual ECObjectsStatus     _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const = 0;
+    virtual ECObjectsStatus     _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) = 0;
+
+    // Helper for implementations of calculated property methods above
+    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;
 
     // Get a pointer to the first byte of the ECDBuffer's property data. This is the first byte beyond the ECDHeader.
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
