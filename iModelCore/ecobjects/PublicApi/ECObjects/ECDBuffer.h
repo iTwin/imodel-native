@@ -731,6 +731,9 @@ public:
     // Copies the ECD memory buffer (including the header) to the specified block of memory. Caller is responsible for allocating a block of memory of sufficient size.
     // (Call GetBufferSize() to determine the required size of the allocation).
     ECOBJECTS_EXPORT void                   GetBufferData (byte* dest) const;
+
+    // Evaluates all calculated property values in the buffer. Recurses into struct array members.
+    ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties ();
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns true if the buffer is empty (all values are null and all arrays are empty)
