@@ -117,7 +117,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECN::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
 
     ECOBJECTS_EXPORT virtual void               _ClearValues () override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _CopyFromBuffer (ECDBufferCR src) override;
 
                      virtual bool               _AcquireData() const override { return true; }
                      virtual bool               _ReleaseData() const override { return true; }
@@ -126,9 +126,13 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) override;
     ECOBJECTS_EXPORT virtual bool               _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const override;
 
+                     virtual IECInstanceP       _GetAsIECInstance () const = 0;
+
     ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
     ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+    ECOBJECTS_EXPORT IECInstanceCP              GetAsIECInstance () const;
+    ECOBJECTS_EXPORT IECInstanceP               GetAsIECInstanceP();
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -223,7 +227,7 @@ protected:
     ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
-    ECOBJECTS_EXPORT virtual IECInstanceP        _GetAsIECInstance () const;
+    ECOBJECTS_EXPORT virtual IECInstanceP        _GetAsIECInstance () const override;
 
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 

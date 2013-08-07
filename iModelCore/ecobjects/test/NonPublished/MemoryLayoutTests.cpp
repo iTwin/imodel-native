@@ -1652,7 +1652,7 @@ TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
 
     // make a copy
     StandaloneECInstancePtr outerCopy = outer->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
-    outerCopy->CopyInstanceProperties (*outer);
+    outerCopy->CopyValues (*outer);
 
     // confirm the nested struct array instances have been copied as well
     outerCopy->GetValue (structVal, L"ComplicatedStructArray", 0);

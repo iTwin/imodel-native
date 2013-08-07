@@ -222,7 +222,7 @@ TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf16, b->GetStringEncoding());
 
     // Copying instances copies the entire buffer - including the encoding flag and the strings in their original encodings.
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, b->CopyInstanceProperties (*a));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, b->CopyValues (*a));
 
     // a and b should now have the same encoding
     EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, b->GetStringEncoding());
