@@ -1737,11 +1737,13 @@ ECObjectsStatus MemoryInstanceSupport::RemoveArrayElementsFromMemory (ClassLayou
         bytesToMove = bytesAllocated - endIndexValueOffset;
         }
 
-    if (bytesToMove <= 0)
+    if (bytesToMove < 0)
         return ECOBJECTS_STATUS_Error;
 
-    // remove the array values
-    memmove (destination, source, bytesToMove);
+    // remove the array values - bytesToMove may be equal to zero if allocated size has no padding and we are deleting the last member of the array.
+    if (bytesToMove > 0)
+        memmove (destination, source, bytesToMove);
+
     totalBytesAdjusted += (UInt32)(source - destination);
 
     UInt32           preNullFlagBitmasksCount = CalculateNumberNullFlagsBitmasks (preArrayCount);   
