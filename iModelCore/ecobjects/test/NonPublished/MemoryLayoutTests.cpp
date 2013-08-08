@@ -1652,7 +1652,7 @@ TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
 
     // make a copy
     StandaloneECInstancePtr outerCopy = outer->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
-    outerCopy->CopyInstanceProperties (*outer);
+    outerCopy->CopyValues (*outer);
 
     // confirm the nested struct array instances have been copied as well
     outerCopy->GetValue (structVal, L"ComplicatedStructArray", 0);
@@ -1670,6 +1670,366 @@ TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
     // confirm our copy of the deepest supporting instance remains intact
     innerCopy->GetValue (v, L"Name");
     EXPECT_EQ (0, wcscmp (v.GetString(), L"Hooray!"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECDBufferTests : MemoryLayoutTests
+    {
+    template<typename T> void TestIsEmpty (IECInstanceR instance, WCharCP accessor, T const& value)
+        {
+        ECDBuffer* buf = instance.GetECDBufferP();
+        EXPECT_TRUE (buf->IsEmpty());
+        
+        ECValue v (value);
+        EXPECT_EQ (0, instance.SetValue (accessor, v));
+
+        EXPECT_FALSE (buf->IsEmpty());
+        
+        v.Clear();
+        EXPECT_EQ (0, instance.SetValue (accessor, v));
+
+        bool isNull;
+        EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor));
+        EXPECT_TRUE (isNull);
+        EXPECT_TRUE (buf->IsEmpty()) << accessor;
+
+        buf->ClearValues();
+        EXPECT_TRUE (buf->IsEmpty());
+        }
+
+    template<typename T> void TestIsEmptyArray (IECInstanceR instance, WCharCP accessor, T const& value)
+        {
+        ECDBuffer& buf = *instance.GetECDBufferP();
+        EXPECT_TRUE (buf.IsEmpty());
+
+        EXPECT_EQ (0, instance.AddArrayElements (accessor, 1));
+        bool isNull;
+        EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor, 0));
+        EXPECT_TRUE (isNull);
+        EXPECT_FALSE (buf.IsEmpty());   // a non-empty array containing null elements => a non-empty IECInstance
+
+        ECValue v (value);
+        EXPECT_EQ (0, instance.SetValue (accessor, v, 0));
+        EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor, 0));
+        EXPECT_FALSE (isNull);
+        EXPECT_FALSE (buf.IsEmpty());
+
+        // Clearing out the array will not reset the null flag for the array property. But an empty array => empty IECInstance
+        EXPECT_EQ (0, instance.ClearArray (accessor));
+        EXPECT_EQ (0, instance.GetValue (v, accessor));
+        EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+        EXPECT_TRUE (buf.IsEmpty()) << accessor;
+
+        buf.ClearValues();
+        EXPECT_TRUE (buf.IsEmpty());
+        }
+
+    struct ExpectedValue
+        {
+        ECValue         m_value;
+        bool            m_expectExists;
+
+        template<typename T> ExpectedValue (T const& val) : m_value (val), m_expectExists (true) { }
+        ExpectedValue() : m_expectExists (false) { }
+        };
+
+    void TestValue (IECInstanceCR instance, WCharCP accessor, ExpectedValue const& val, UInt32 arrayIndex = -1)
+        {
+        ECValue v;
+        ECObjectsStatus status = -1 != arrayIndex ? instance.GetValue (v, accessor, arrayIndex) : instance.GetValue (v, accessor);
+        EXPECT_EQ ((ECOBJECTS_STATUS_Success == status), val.m_expectExists) << " for property " << accessor;
+
+        if (ECOBJECTS_STATUS_Success == status)
+            {
+            if (val.m_expectExists)
+                EXPECT_TRUE (val.m_value.Equals (v)) << "Expected: " << val.m_value.ToString().c_str() << " Actual: " << v.ToString().c_str() << " for property " << accessor;
+            else
+                wprintf (L"Expected: non-existent Actual: %ls for property %ls\n", v.ToString().c_str(), accessor);
+            }
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Test the ECDBuffer::IsEmpty() method. Should return true if all values are null and
+* all arrays are empty.
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, IsEmpty)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+
+    IECInstancePtr instance = schema->GetClassP (L"Manufacturer")->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestIsEmpty (*instance, L"AccountNo", 12345);   // fixed-sized property
+    TestIsEmpty (*instance, L"Name", L"Ed");        // variable-sized property
+
+    instance = schema->GetClassP (L"AllPrimitives")->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestIsEmptyArray (*instance, L"SomeInts", 54321);
+    TestIsEmptyArray (*instance, L"SomeStrings", L"abcdefg");
+
+    instance = schema->GetClassP (L"ClassWithStructArray")->GetDefaultStandaloneEnabler()->CreateInstance();
+    TestIsEmpty (*instance, L"StructMember.AnInt", 12345);
+    TestIsEmpty (*instance, L"StructMember.AString", L"bbbbb");
+    TestIsEmptyArray (*instance, L"StructMember.SomeInts", 54321);
+    TestIsEmptyArray (*instance, L"StructMember.SomeStrings", L"lalalalala");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Simplification of above test to isolate some memory corruption when clearing the array.
+* @bsimethod                                                    Paul.Connelly   04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ClearArray)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"ArrayTest", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"TestClass");
+    PrimitiveECPropertyP primProp;
+    ecClass->CreatePrimitiveProperty (primProp, L"Int", PRIMITIVETYPE_Integer);
+    ecClass->CreatePrimitiveProperty (primProp, L"String");
+
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, L"Ints", PRIMITIVETYPE_Integer);
+    ecClass->CreateArrayProperty (arrayProp, L"Strings", PRIMITIVETYPE_String);
+    ecClass->CreateArrayProperty (arrayProp, L"MoreInts", PRIMITIVETYPE_Integer);
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    
+    ECValue v;
+    EXPECT_EQ (0, instance->GetValue (v, L"Ints"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+
+    EXPECT_EQ (0, instance->AddArrayElements (L"Ints", 1));
+    EXPECT_EQ (0, instance->GetValue (v, L"Ints"));
+    EXPECT_EQ (1, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+
+    // The problem was here:
+    // After ClearArray() we fix up secondary offsets of other variable-sized properties by subtracting the number of bytes removed from the buffer
+    // The Strings array had a secondary offset of zero; subtraction produced a negative offset, interpreted as positive offset into memory outside the buffer
+    EXPECT_EQ (0, instance->ClearArray (L"Ints"));
+    EXPECT_EQ (0, instance->GetValue (v, L"Ints"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
+    EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test the ECValue flag that returns strings as pointers into instance data rather than
+* making a copy.
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, PointersIntoInstanceMemory)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"InstancePointers", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"InstancePointers");
+    PrimitiveECPropertyP ecprop;
+    ecClass->CreatePrimitiveProperty (ecprop, L"String", PRIMITIVETYPE_String);
+
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    instance->SetValue (L"String", ECValue (L"string", false));
+
+    ECValue v;
+    instance->GetValue (v, L"String");
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"string"));
+    
+    // To test whether or not we got back a pointer into instance memory, we'll modify the memory. Real code would never do this of course.
+    WChar newStr[] = L"STRING";
+    WCharP pStr = const_cast<WCharP> (v.GetString());
+    memcpy (pStr, newStr, _countof(newStr)*sizeof(WChar));
+
+    instance->GetValue (v, L"String");
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"string"));   // did not modify instance data
+
+    v.SetAllowsPointersIntoInstanceMemory (true);
+    instance->GetValue (v, L"String");
+
+    pStr = const_cast<WCharP> (v.GetString());
+    memcpy (pStr, newStr, _countof(newStr)*sizeof(WChar));
+
+    // The flag should not be reset when the ECValue was assigned a value
+    EXPECT_EQ (true, v.AllowsPointersIntoInstanceMemory());
+
+    instance->GetValue (v, L"String");
+    EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
+    //EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test using ECDBuffer::CopyDataBuffer() to populate an ECDBuffer from another ECDBuffer
+* created for a different ClassLayout.
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ConvertDataBuffer)
+    {
+    // Create initial version of class
+    ECSchemaPtr schemaA;
+    ECSchema::CreateSchema (schemaA, L"SchemaA", 1, 0);
+    ECClassP classA;
+    schemaA->CreateClass (classA, L"ClassA");
+
+    PrimitiveECPropertyP prim;
+    classA->CreatePrimitiveProperty (prim, L"String", PRIMITIVETYPE_String);
+    classA->CreatePrimitiveProperty (prim, L"Int", PRIMITIVETYPE_Integer);
+    classA->CreatePrimitiveProperty (prim, L"Bool", PRIMITIVETYPE_Boolean);
+    classA->CreatePrimitiveProperty (prim, L"RemoveThisProperty", PRIMITIVETYPE_String);
+
+    // initialize instance of initial class layout
+    StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    instanceA->SetValue (L"String", ECValue (L"ABC", false));
+    instanceA->SetValue (L"Int", ECValue (123));
+    instanceA->SetValue (L"Bool", ECValue (true));
+    instanceA->SetValue (L"RemoveThisProperty", ECValue (L"stuff", false));
+
+    // test we can copy the data buffer using the same class layout
+    StandaloneECInstancePtr instanceA2 = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instanceA2->CopyDataBuffer (*instanceA, true));
+
+    TestValue (*instanceA2, L"String", L"ABC");
+    TestValue (*instanceA2, L"Int", 123);
+    TestValue (*instanceA2, L"Bool", true);
+    TestValue (*instanceA2, L"RemoveThisProperty", L"stuff");
+
+    // Create a new version of the class with different layout
+    ECSchemaPtr schemaA2;
+    ECSchema::CreateSchema (schemaA2, L"SchemaA", 2, 0);
+    ECClassP classA2;
+    schemaA2->CreateClass (classA2, L"ClassA");
+
+    classA2->CreatePrimitiveProperty (prim, L"String", PRIMITIVETYPE_Integer);
+    classA2->CreatePrimitiveProperty (prim, L"Int", PRIMITIVETYPE_String);
+    classA2->CreatePrimitiveProperty (prim, L"AddedThisProperty", PRIMITIVETYPE_Double);
+    classA2->CreatePrimitiveProperty (prim, L"Bool", PRIMITIVETYPE_Boolean);
+
+    // Create instance of new class layout and initialize from old layout
+    instanceA2 = classA2->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instanceA2->CopyDataBuffer (*instanceA, true));
+
+    TestValue (*instanceA2, L"Int", L"123"); // int->string converted
+    TestValue (*instanceA2, L"String", ECValue()); // string->int conversion failed
+    TestValue (*instanceA2, L"AddedThisProperty", ECValue());   // not present in old class, uninitialized
+    TestValue (*instanceA2, L"RemovedThisProperty", ExpectedValue());   // not present in new class
+    TestValue (*instanceA2, L"Bool", true); // no change, value preserved
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ConvertDataBuffer_Arrays)
+    {
+    ECSchemaPtr schemaA;
+    ECSchema::CreateSchema (schemaA, L"SchemaA", 1, 0);
+    ECClassP classA;
+    schemaA->CreateClass (classA, L"ClassA");
+
+    ArrayECPropertyP prop;
+    classA->CreateArrayProperty (prop, L"IntArray", PRIMITIVETYPE_Integer);
+    classA->CreateArrayProperty (prop, L"StringArray", PRIMITIVETYPE_String);
+    classA->CreateArrayProperty (prop, L"BoolArray", PRIMITIVETYPE_Boolean);
+    classA->CreateArrayProperty (prop, L"Removed", PRIMITIVETYPE_String);
+    
+    StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    instanceA->AddArrayElements (L"IntArray", 2);
+    instanceA->SetValue (L"IntArray", ECValue (0), 0);
+    instanceA->SetValue (L"IntArray", ECValue (1), 1);
+
+    instanceA->AddArrayElements (L"StringArray", 2);
+    instanceA->SetValue (L"StringArray", ECValue (L"abc"), 0);
+    instanceA->SetValue (L"StringArray", ECValue (L"123"), 1);
+
+    instanceA->AddArrayElements (L"BoolArray", 2);
+    instanceA->SetValue (L"BoolArray", ECValue (false), 0);
+    instanceA->SetValue (L"BoolArray", ECValue (true), 1);
+
+    instanceA->AddArrayElements (L"Removed", 1);
+    instanceA->SetValue (L"Removed", ECValue (L"stuff"), 0);
+
+    ECSchemaPtr schemaA2;
+    ECSchema::CreateSchema (schemaA2, L"SchemaA", 2, 0);
+    ECClassP classA2;
+    schemaA2->CreateClass (classA2, L"ClassA");
+    classA2->CreateArrayProperty (prop, L"IntArray", PRIMITIVETYPE_String);
+    classA2->CreateArrayProperty (prop, L"StringArray", PRIMITIVETYPE_Integer);
+    classA2->CreateArrayProperty (prop, L"BoolArray", PRIMITIVETYPE_Boolean);
+    classA2->CreateArrayProperty (prop, L"Added", PRIMITIVETYPE_String);
+
+    StandaloneECInstancePtr instanceA2 = classA2->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instanceA2->CopyDataBuffer (*instanceA, true));
+
+    TestValue (*instanceA2, L"IntArray", L"0", 0);
+    TestValue (*instanceA2, L"IntArray", L"1", 1);
+
+    ECValue null;
+    TestValue (*instanceA2, L"StringArray", null, 0);
+    TestValue (*instanceA2, L"StringArray", ECValue (123), 1);
+
+    TestValue (*instanceA2, L"BoolArray", false, 0);
+    TestValue (*instanceA2, L"BoolArray", true, 1);
+
+    TestValue (*instanceA2, L"Removed", ExpectedValue(), 0);
+    TestValue (*instanceA2, L"Removed", ExpectedValue(), 1);
+
+    ECValue emptyArray;
+    emptyArray.SetPrimitiveArrayInfo (PRIMITIVETYPE_String, 0, false);
+    TestValue (*instanceA2, L"Added", emptyArray);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Copying a data buffer containing struct arrays should copy the struct identifiers
+* intact, but should not copy the struct array instances themselves.
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ConvertDataBuffer_StructArrays)
+    {
+    ECSchemaPtr schema1;
+    ECSchema::CreateSchema (schema1, L"Schema", 1, 0);
+    ECClassP struct1;
+    schema1->CreateClass (struct1, L"Struct");
+    struct1->SetIsStruct (true);
+    PrimitiveECPropertyP primProp;
+    struct1->CreatePrimitiveProperty (primProp, L"String", PRIMITIVETYPE_String);
+
+    ECClassP class1;
+    schema1->CreateClass (class1, L"Class");
+    ArrayECPropertyP arrayProp;
+    class1->CreateArrayProperty (arrayProp, L"StructArray", struct1);
+
+    StandaloneECInstancePtr instance1 = class1->GetDefaultStandaloneEnabler()->CreateInstance();
+    instance1->AddArrayElements (L"StructArray", 2);
+    IECInstancePtr structInstance = struct1->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue structVal;
+    structVal.SetStruct (structInstance.get());
+    instance1->SetValue (L"StructArray", structVal, 0);
+    structInstance = struct1->GetDefaultStandaloneEnabler()->CreateInstance();
+    structVal.SetStruct (structInstance.get());
+    instance1->SetValue (L"StructArray", structVal, 1);
+
+    ECSchemaPtr schema2;
+    ECSchema::CreateSchema (schema2, L"Schema", 2, 0);
+    ECClassP struct2;
+    schema2->CreateClass (struct2, L"Struct");
+    struct2->SetIsStruct (true);
+    struct2->CreatePrimitiveProperty (primProp, L"String", PRIMITIVETYPE_Integer);
+
+    ECClassP class2;
+    schema2->CreateClass (class2, L"Class");
+    class2->CreatePrimitiveProperty (primProp, L"Stuff", PRIMITIVETYPE_String);
+    class2->CreateArrayProperty (arrayProp, L"StructArray", struct2);
+
+    StandaloneECInstancePtr instance2 = class2->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instance2->CopyDataBuffer (*instance1, true));
+
+    ECValue null;
+    ECValue arrayVal;
+    arrayVal.SetStructArrayInfo (2, false);
+    TestValue (*instance2, L"StructArray", arrayVal);
+    TestValue (*instance2, L"StructArray", null, 0);
+    TestValue (*instance2, L"StructArray", null, 1);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -456,31 +456,31 @@ ExpressionToken Lexer::GetIdentifier ()
 
     wchar_t const*  identifier = getTokenStringCP ();
 
-    if (wcscmp (L"True", identifier) == 0)
+    if (BeStringUtilities::Wcsicmp (L"True", identifier) == 0)
         return TOKEN_True;
-    else if (wcscmp (L"False", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"False", identifier) == 0)
         return TOKEN_False;
-    else if (wcscmp (L"And", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"And", identifier) == 0)
         return TOKEN_And;
-    else if (wcscmp (L"AndAlso", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"AndAlso", identifier) == 0)
         return TOKEN_AndAlso;
-    else if (wcscmp (L"Or", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Or", identifier) == 0)
         return TOKEN_Or;
-    else if (wcscmp (L"OrElse", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"OrElse", identifier) == 0)
         return TOKEN_OrElse;
-    else if (wcscmp (L"Mod", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Mod", identifier) == 0)
         return TOKEN_Mod;
-    else if (wcscmp (L"Xor", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Xor", identifier) == 0)
         return TOKEN_Xor;
-    else if (wcscmp (L"Not", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Not", identifier) == 0)
         return TOKEN_Not;
-    else if (wcscmp (L"Like", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Like", identifier) == 0)
         return TOKEN_Like;
-    else if (wcscmp (L"Is", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Is", identifier) == 0)
         return TOKEN_Is;
-    else if (wcscmp (L"IIf", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"IIf", identifier) == 0)
         return TOKEN_IIf;
-    else if (wcscmp (L"Null", identifier) == 0)
+    else if (BeStringUtilities::Wcsicmp (L"Null", identifier) == 0)
         return TOKEN_Null;
 
     return TOKEN_Ident;
