@@ -219,7 +219,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
 
     FOR_EACH (ECClassCP source, GetRelationshipClass().GetSource().GetClasses())
         {
-        if (instance->GetClass().Is(source))
+        if (source->GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(source))
             {
             m_source = instance;
             return;
@@ -273,7 +273,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
 
     FOR_EACH (ECClassCP target, this->GetRelationshipClass().GetTarget().GetClasses())
         {
-        if (instance->GetClass().Is(target))
+        if (target->GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(target))
             {
             m_target = instance;
             return;

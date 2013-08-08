@@ -884,7 +884,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v1.SetDateTime(timeInput);
     v2.SetDateTime(timeInput);
     EXPECT_TRUE   (v1.Equals (v2));
-    DateTime timeInput2 (timeInput.GetInfo().GetKind(), timeInput.GetYear()+1, timeInput.GetMonth(), timeInput.GetDay(), timeInput.GetHour(), timeInput.GetMinute(), timeInput.GetSecond(), timeInput.GetHectoNanosecond());
+    DateTime timeInput2 (timeInput.GetInfo ().GetKind (), timeInput.GetYear () + 1, timeInput.GetMonth (), timeInput.GetDay (), timeInput.GetHour (), timeInput.GetMinute (), timeInput.GetSecond (), timeInput.GetHectoNanosecond ());
     v2.SetDateTime(timeInput2);
     EXPECT_FALSE  (v1.Equals (v2));
 
@@ -2005,6 +2005,9 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"EndPoint"));
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
+    //in absence of the DateTimeInfo custom attribute on Service_Date the retrieved
+    //date time will always be of kind Unspecified, i.e. the original kind (here Utc)
+    //gets lost
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
     EXPECT_TRUE (inTimeUtc.Compare (sysTime, true));

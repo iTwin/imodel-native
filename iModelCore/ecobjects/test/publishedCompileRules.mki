@@ -27,4 +27,6 @@ $(o)BuildInstanceAndSerializeToXML$(oext)  : $(baseDir)Published/BuildInstanceAn
 
 $(o)SupplementalSchemaTests$(oext)  : $(baseDir)Published/SupplementalSchemaTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)DateTimeInfoCustomAttributeTests$(oext)  : $(baseDir)Published/DateTimeInfoCustomAttributeTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+
 $(o)InstanceTests$(oext)            : $(baseDir)Published/InstanceTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}

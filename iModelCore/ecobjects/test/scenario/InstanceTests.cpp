@@ -287,6 +287,7 @@ TEST_F (InstanceTests, TestIsNullPrimitive)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* The array property value itself is *never* null.
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (InstanceTests, TestIsNullArray)
@@ -298,18 +299,18 @@ TEST_F (InstanceTests, TestIsNullArray)
     bool isNull;
     
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (isNull);
+    EXPECT_FALSE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (isNull);
+    EXPECT_FALSE (isNull);
     
     EXPECT_EQ (m_instance->AddArrayElements (L"PropertyArray", 15), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (m_instance->SetValue (L"PropertyArray", ECValue(L"Some value"), 3), ECOBJECTS_STATUS_Success);
     
     //Strangelly array property doesn't exist as PrimitiveProperty
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (isNull);
+    EXPECT_FALSE (isNull);
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, propIndex), ECOBJECTS_STATUS_Success);
-    EXPECT_TRUE (isNull);
+    EXPECT_FALSE (isNull);
     //-------------------------------------------------------------
     
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray", 3), ECOBJECTS_STATUS_Success);

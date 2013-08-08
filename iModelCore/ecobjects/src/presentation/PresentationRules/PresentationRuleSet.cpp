@@ -209,7 +209,7 @@ WString PresentationRuleSet::WriteToXmlString ()
     WriteXml (*xmlDom.get());
 
     WString presentationRuleSetXml = L"";
-    xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
+    xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return presentationRuleSetXml;
     }

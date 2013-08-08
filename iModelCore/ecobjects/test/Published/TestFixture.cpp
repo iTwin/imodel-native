@@ -9,6 +9,7 @@
 
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
+#include <Bentley/BeFileName.h>
 
 #if defined (COMPILING_PUBLISHED_TESTS)
    // Need to reach in and grab this header since it won't be part of the published API yet we still
@@ -92,6 +93,8 @@ ECTestFixture::ECTestFixture()
         LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
         s_isLoggerInitialized = true;
         }
+
+    ECN::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,7 +150,7 @@ WString ECTestFixture::GetTestDataPath(WCharCP dataFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
     {
-    WString testData = WString(getenv("TEMP"));
+    WString testData = WString(getenv("TEMP"), false);
     testData.append(L"\\");
     testData.append(dataFile);
     return testData;

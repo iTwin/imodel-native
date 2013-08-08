@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+/// @cond BENTLEY_SDK_All
 
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/DateTime.h>
@@ -143,5 +144,7 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_All
 
 //__PUBLISH_SECTION_END__

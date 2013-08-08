@@ -36,7 +36,7 @@ public:
     template<typename T>
     static void                        FreePresentationRules (T& set)
         {
-        for (T::const_iterator iter = set.begin (); iter != set.end (); ++iter)
+        for (typename T::const_iterator iter = set.begin (); iter != set.end (); ++iter)
             delete *iter;
         set.clear ();
         }
