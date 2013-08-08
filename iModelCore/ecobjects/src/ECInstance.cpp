@@ -3337,6 +3337,14 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
 
 #ifdef DGN_IMPORTER_REORG_WIP
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
+    {
+    return _SaveOnlyLoadedPropertiesToXml();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const

@@ -84,9 +84,9 @@ static void ValidateLocalizationResourceKeyDefinition (LocalizationResourceKeyDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRulesTests, TestPresentationRuleSetCreation)
     {
-    RootNodeRuleP rootNodeRule1 = new RootNodeRule (L"TestCondition1", 1, false, TargetTree_MainTree);
-    RootNodeRuleP rootNodeRule2 = new RootNodeRule (L"TestCondition2", 3, true, TargetTree_MainTree);
-    RootNodeRuleP rootNodeRule3 = new RootNodeRule (L"TestCondition3", 2, false, TargetTree_MainTree);
+    RootNodeRuleP rootNodeRule1 = new RootNodeRule (L"TestCondition1", 1, false, TargetTree_MainTree, false);
+    RootNodeRuleP rootNodeRule2 = new RootNodeRule (L"TestCondition2", 3, true, TargetTree_MainTree, false);
+    RootNodeRuleP rootNodeRule3 = new RootNodeRule (L"TestCondition3", 2, false, TargetTree_MainTree, false);
     ValidateChildNodeRule (*rootNodeRule1, L"TestCondition1", 1, false, TargetTree_MainTree);
     ValidateChildNodeRule (*rootNodeRule2, L"TestCondition2", 3, true, TargetTree_MainTree);
     ValidateChildNodeRule (*rootNodeRule3, L"TestCondition3", 2, false, TargetTree_MainTree);
@@ -237,7 +237,7 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance (L"TestRuleSet", 2, 1, true, L"Supplemental", L"DummySchemaName", L"MyImage", true);
     
-    RootNodeRuleP rootNodeRule = new RootNodeRule (L"TestCondition1", 1, true, TargetTree_Both);
+    RootNodeRuleP rootNodeRule = new RootNodeRule (L"TestCondition1", 1, true, TargetTree_Both, false);
     ruleSet->GetRootNodesRules ().push_back (rootNodeRule);
 
     ChildNodeRuleP childNodeRule = new ChildNodeRule (L"TestCondition2", 2, true, TargetTree_Both);

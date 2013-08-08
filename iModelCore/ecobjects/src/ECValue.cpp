@@ -1544,7 +1544,7 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         {
         // Must escape quotes...
         WString s (GetString());
-        s.ReplaceAll (L"\"", L"\"\"");
+        s.ReplaceAll(L"\"", L"\"\"");
         expr.Sprintf (L"\"%ls\"", s.c_str());
         }
         return true;

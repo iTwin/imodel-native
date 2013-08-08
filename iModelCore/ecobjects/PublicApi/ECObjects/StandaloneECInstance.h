@@ -129,9 +129,10 @@ protected:
 
                      virtual IECInstanceP       _GetAsIECInstance () const = 0;
 
-    ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
+    ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
-    ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+    ECOBJECTS_EXPORT  ECObjectsStatus           SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+
     ECOBJECTS_EXPORT IECInstanceCP              GetAsIECInstance () const;
     ECOBJECTS_EXPORT IECInstanceP               GetAsIECInstanceP();
 

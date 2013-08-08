@@ -3013,7 +3013,7 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
     if (ECOBJECTS_STATUS_Success != evalStatus || updatedValue.Equals (existingValue))
         return evalStatus;
 
-    // ###TODO: I don't like this cast either. Calculated properties require that we modify the instance in order to store the calculated value
+    // ###TODO: I don't like this cast. Calculated properties require that we modify the instance in order to store the calculated value
     ECDBuffer& memInst = const_cast<ECDBuffer&> (*this);
     evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex, true);
     if (ECOBJECTS_STATUS_Success == evalStatus)
