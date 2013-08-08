@@ -1,4 +1,4 @@
-P*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
@@ -110,9 +110,9 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::SetData (const byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+void MemoryECInstanceBase::SetData (const byte * data, UInt32 size, bool freeExisitingDataAndCreateCopyOfNewData) //The MemoryECInstanceBase will take ownership of the memory
     {
-    if (freeExisitingData)
+    if (freeExisitingDataAndCreateCopyOfNewData)
         {
         if (m_data)
             {

@@ -7,10 +7,10 @@
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 baseDir         = $(_MakeFilePath)
+
 SolutionPolicyMki=$(baseDir)ecobjects.mki
 
-appName = ECObjects
-
+programName = ECObjects
 %include    mdl.mki
 
 #----------------------------------------------------------------------
@@ -52,11 +52,14 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)ECDBuffer.h \
                     $(ecobjectsPublicAPISrc)SupplementalSchema.h \
                     $(ecobjectsPublicAPISrc)ECEvent.h \
+                    $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
                     $(baseDir)ecxml.h \
                     $(baseDir)FileUtilities.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                     $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
-                    $(baseDir)DateTimeInfoAccessor.h
+                    $(baseDir)DateTimeInfoAccessor.h \
+                    $(ecobjectsPublicAPISrc)ECDiff.h 			
+
                     
 
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
@@ -97,7 +100,7 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ECPresentationHeaders)
 
 
-ECUnitsHeaders =    $(ecunitsPublicAPISrc)Units.h
+ECUnitsHeaders = $(ecunitsPublicAPISrc)Units.h
 
 # ECObjects
 
@@ -153,7 +156,7 @@ $(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardC
 
 $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)SchemaDiff$(oext)                                      : $(baseDir)SchemaDiff.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SchemaDiff.h ${MultiCompileDepends}
+$(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 
@@ -235,7 +238,7 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 
 # ECUnits
 
-$(o)units$(oext)                                           : $(baseDir)units/units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+$(o)units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -266,11 +269,11 @@ DLM_NOINITFUNC              = 1
 DLM_NOMSBUILTINS            = 1
 DLM_NOENTRY                 = 1
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-LINKER_LIBRARIES            = xmllite$(libext)
+LINKER_LIBRARIES           = xmllite$(libext)
 %endif
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
@@ -279,4 +282,3 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #   NEEDSWORK : Temporary settings
 #----------------------------------------------------------------------
 %include $(sharedMki)linkLibrary.mki
-

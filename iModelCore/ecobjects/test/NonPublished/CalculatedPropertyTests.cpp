@@ -166,7 +166,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     EXPECT_EQ (SUCCESS, ECSchema::CreateSchema (schema, schemaName, 1, 0));  
     EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->AddReferencedSchema (*customAttrSchema, L"besc"));
 
-    ECClassP ecClass;
+    ECClassP ecClass = NULL;
     EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->CreateClass (ecClass, L"TestClass"));
     PrimitiveECPropertyP ecProp;
     ArrayECPropertyP arrayProp;

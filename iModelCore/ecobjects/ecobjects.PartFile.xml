@@ -8,12 +8,13 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="Logging" ExcludeLibType="Static"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
-        <SubPart PartName="LoggingSDK"          PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
+        <SubPart PartName="LoggingNative"   PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
     </Part>
 
-    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="6">
-        <SubPart PartName="BoostHeaders"    PartFile="BoostHeaders"   Repository="BoostHeaders" />
-        <SubPart PartName="HeaderFiles" />
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="G">
+        <SubPart PartName="BoostHeaders"    PartFile="BoostHeaders" Repository="BoostHeaders" />
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
@@ -26,7 +27,7 @@
     </Part>
 
     <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
-        <SubPart PartName="HeaderFiles" />
+        <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SubPartDirectory="PublishedAPI" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
@@ -38,9 +39,10 @@
         <Bindings>
             <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/ECObjectsAPI.chm</Files>
         </Bindings>
-    </Part>   
+    </Part>
 
-    <Part Name="HeaderFiles" BentleyBuildMakeFile="ecobjects.prewire.mke">
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />

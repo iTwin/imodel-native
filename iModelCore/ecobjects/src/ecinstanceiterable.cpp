@@ -2,13 +2,12 @@
 |
 |     $Source: src/ecinstanceiterable.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\ECObjectsAPI.h>
+#include <ECObjects/ECObjectsAPI.h>
 USING_NAMESPACE_EC
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2012

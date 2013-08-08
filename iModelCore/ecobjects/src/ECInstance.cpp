@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects/ecschema.h>
+#include <ECObjects/ECSchema.h>
+
+DEFINE_KEY_METHOD(Bentley::ECN::IECRelationshipInstance)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -253,7 +255,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return _GetValue (v, propertyIndex, false, 0); 
+    return GetValue (v, propertyIndex, false, 0); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,24 +269,43 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return _GetValue (v, propertyIndex, true, arrayIndex); 
+    return GetValue (v, propertyIndex, true, arrayIndex); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const { return _GetValue (v, propertyIndex, false, 0); }
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const 
+    { 
+    return GetValue (v, propertyIndex, false, 0); 
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const
     {
-    ECObjectsStatus stat = _GetValue (v, propertyIndex, true, arrayIndex);
-    if (ECOBJECTS_STATUS_Success == stat && v.IsDateTime())
-        stat = SetDateTimeMetadataInECValue (v, propertyIndex);
+    return GetValue (v, propertyIndex, true, arrayIndex); 
+    }
 
-    return stat;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    02/13
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const 
+    {
+    ECObjectsStatus stat = _GetValue (v, propertyIndex, useArrayIndex, arrayIndex); 
+    if (stat != ECOBJECTS_STATUS_Success)
+        {
+        return stat;
+        }
+
+    if (!v.IsDateTime ())
+        {
+        return stat;
+        }
+
+    return SetDateTimeMetadataInECValue (v, propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -380,14 +401,6 @@ ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v) 
-    {
-    return ChangeValue (propertyIndex, v, false, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
     {
     ECObjectsStatus status = ChangeValue (propertyIndex, v);
@@ -403,6 +416,7 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     { 
+
     return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
     }
 
@@ -421,6 +435,14 @@ ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR 
 ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
     {
     return ChangeValue (propertyIndex, v, true, arrayIndex);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                    CaseyMullen     09/09
+//+---------------+---------------+---------------+---------------+---------------+-----
+ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v) 
+    {
+    return ChangeValue (propertyIndex, v, false, 0);
     }
 
 //--------------------------------------------------------------------------------------
@@ -450,6 +472,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
 
     return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex); 
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2012
@@ -536,7 +559,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
+    BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue);
 
     ECValue         arrayVal;
     ECObjectsStatus status;
@@ -1047,7 +1070,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, DateTime & value, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, DateTimeR value, WCharCP managedPropertyAccessor)
     {
     ECValue v;
 
@@ -1103,7 +1126,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = 0;
-    if (1 != BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue))
+    if (1 != BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue))
         return ECOBJECTS_STATUS_Error;
 
     ECValue         arrayVal;
@@ -1383,7 +1406,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetPoint3D (IECInstanceCR instance, DPo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, DateTime & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, DateTimeR value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
@@ -1786,7 +1809,7 @@ ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC_INLINE ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
     {
     UInt32 propIdx;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
@@ -3158,6 +3181,22 @@ InstanceReadStatus   IECInstance::ReadFromXmlFile (IECInstancePtr& ecInstance, W
     return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                12/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP ecInstanceXml, ECInstanceReadContextR context)
+    {
+    ecInstance = NULL;
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml);
+    if (!xmlDom.IsValid())
+        {
+        BeAssert (false);
+        LogXmlLoadError ();
+        return INSTANCE_READ_STATUS_XmlParseError;
+        }
+    return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2010
@@ -3176,23 +3215,6 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
         return INSTANCE_READ_STATUS_XmlParseError;
         }
 
-    return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                12/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance, Utf8CP ecInstanceXml, ECInstanceReadContextR context)
-    {
-    ecInstance = NULL;
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml, strlen (ecInstanceXml) * sizeof(Utf8Char));
-    if (!xmlDom.IsValid())
-        {
-        BeAssert (false);
-        LogXmlLoadError ();
-        return INSTANCE_READ_STATUS_XmlParseError;
-        }
     return ReadFromBeXmlDom (ecInstance, *xmlDom.get(), context);
     }
 
@@ -3250,9 +3272,9 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool writ
             ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Paul.Connelly   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
 template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance)
     {
     ecInstanceXml.clear();
@@ -3262,7 +3284,7 @@ template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ec
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (instance, writeInstanceId)))
         return status;
 
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark;
+    UInt64  opts = BeXmlDom::TO_STRING_OPTION_Default;
     if ( ! isStandAlone)
         opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
 
@@ -3313,6 +3335,7 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
     }
 #endif //defined (NEEDSWORK_XML)
 
+#ifdef DGN_IMPORTER_REORG_WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3336,6 +3359,16 @@ Bentley::DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
     {
     return const_cast<Bentley::DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
     }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
+    {
+    return _SaveOnlyLoadedPropertiesToXml();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012

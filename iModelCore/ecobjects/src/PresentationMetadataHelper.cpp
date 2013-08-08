@@ -2,11 +2,11 @@
 |
 |  $Source: src/PresentationMetadataHelper.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\PresentationMetadataHelper.h>
+#include <ECObjects/PresentationMetadataHelper.h>
 
 USING_NAMESPACE_EC
 
