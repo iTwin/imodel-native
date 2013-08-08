@@ -1751,13 +1751,13 @@ TEST_F (UnitsTest, TestUnitSpecifications)
 TEST_F (UnitsTest, Formatting)
     {
     // Storage: cm Display: none
-    TestUnitFormatting (L"FromKOQ", 123.456, L"123.46 cm");
+    TestUnitFormatting (L"FromKOQ", 123.456, L"123.456 cm");
 
     // Storage: cm Display: decimetre
-    TestUnitFormatting (L"FromParentKOQ", 123.456, L"12.35 dm");
+    TestUnitFormatting (L"FromParentKOQ", 123.456, L"12.345600000000001 dm");
 
     // Storage: km Display: none
-    TestUnitFormatting (L"FromKOQDimension", 123.456, L"123.46 km");
+    TestUnitFormatting (L"FromKOQDimension", 123.456, L"123.456 km");
 
     // Storage: km Display: miles Format: 0000.###### \"ignored\"
     TestUnitFormatting (L"FromDimension", 123.456, L"0076.712002 ignored mi");

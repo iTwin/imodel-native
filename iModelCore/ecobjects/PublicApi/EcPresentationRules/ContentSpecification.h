@@ -74,4 +74,4 @@ public:
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
-#pragma make_public (Bentley::ECN::ContentSpecification)
+//#pragma make_public (Bentley::ECN::ContentSpecification)

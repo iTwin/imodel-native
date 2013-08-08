@@ -9,6 +9,7 @@
 
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
+#include <Bentley/BeFileName.h>
 
 #include <Logging\bentleylogging.h>
 
@@ -78,19 +79,24 @@ bool CreateDirectoryRecursive (WCharCP path, bool failIfExists)
     return (DirExists (path));
     }
 
- 
+bool ECTestFixture::s_isLoggerInitialized = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECTestFixture::ECTestFixture()
     {
-    LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
+    //LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
 
-    // Eventually this will switch to the Log4cxx Provider
-    // LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
-     //LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
+    if (!s_isLoggerInitialized)
+        {
+        LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
+        LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
 
-    //LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_TRACE);
+        LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
+        s_isLoggerInitialized = true;
+        }
+
+    ECN::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**

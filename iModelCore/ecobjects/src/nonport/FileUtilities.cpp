@@ -29,7 +29,7 @@ WString ECFileUtilities::GetDllPath()
     if (s_dllPath.empty())
         {
         BeFileName filePath;
-        BeGetModuleFileName (filePath, (void*)&GetDllPath);
+        //BeGetModuleFileName (filePath, (void*)&GetDllPath);
 
         BeFileName dd (BeFileName::DevAndDir, filePath);
         s_dllPath.assign (dd);
@@ -39,7 +39,9 @@ WString ECFileUtilities::GetDllPath()
 
 #elif defined (__unix__)
 // *** WIP_NONPORT -- we need to ask some kind of host for the "home directory"
-WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirectory"));}
+WString ECFileUtilities::GetDllPath() {return WString(getenv("BeGTest_HomeDirectory"), true);}
 
 #endif    
 
+#if WIP_DEAD_DGNEC_CODE
+#endif

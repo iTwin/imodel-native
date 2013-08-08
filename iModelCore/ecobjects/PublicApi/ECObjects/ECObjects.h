@@ -6,22 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-
-#define NO_USING_NAMESPACE_BENTLEY 1
-
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley/Bentley.h>
+/// @cond BENTLEY_SDK_All
 
-// In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
-// are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
-// ONLY support cpp callers and therefore do not repeat this pattern.
+#include <Bentley/Bentley.h>
+#include <Bentley/BeAssert.h>
 
 #ifdef __ECOBJECTS_BUILD__
-#define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
+    #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
 #else
-#define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
+    #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
@@ -122,7 +117,7 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_EnablerNotFound                                    = ECOBJECTS_ERROR_BASE + 0x09,
     ECOBJECTS_STATUS_OperationNotSupported                              = ECOBJECTS_ERROR_BASE + 0x0A,
     ECOBJECTS_STATUS_ParseError                                         = ECOBJECTS_ERROR_BASE + 0x0B,
-    ECOBJECTS_STATUS_NamedItemAlreadyExists                             = ECOBJECTS_ERROR_BASE + 0x0C, 
+    ECOBJECTS_STATUS_NamedItemAlreadyExists                             = ECOBJECTS_ERROR_BASE + 0x0C,
     ECOBJECTS_STATUS_PreconditionViolated                               = ECOBJECTS_ERROR_BASE + 0x0D,
     ECOBJECTS_STATUS_SchemaNotFound                                     = ECOBJECTS_ERROR_BASE + 0x0E,
     ECOBJECTS_STATUS_ClassNotFound                                      = ECOBJECTS_ERROR_BASE + 0x0F,
@@ -151,8 +146,9 @@ enum ECObjectsStatus
     ECOBJECTS_STATUS_UnableToQueryForNullPropertyFlag                   = ECOBJECTS_ERROR_BASE + 0x26,
     ECOBJECTS_STATUS_UnableToResizeFixedSizedArray                      = ECOBJECTS_ERROR_BASE + 0x27,
     ECOBJECTS_STATUS_SchemaIsImmutable                                  = ECOBJECTS_ERROR_BASE + 0x28,
+    ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound            = ECOBJECTS_ERROR_BASE + 0x29,
     ECOBJECTS_STATUS_Error                                              = ECOBJECTS_ERROR_BASE + 0xFFF,
-    }; 
+    };
 
 //! Result status for deserializing an ECSchema from Xml
 enum SchemaReadStatus
@@ -209,7 +205,7 @@ enum InstanceReadStatus
     INSTANCE_READ_STATUS_CommentOnly                         = INSTANCE_READ_STATUS_BASE + 45,
     INSTANCE_READ_STATUS_PropertyNotFound                    = INSTANCE_READ_STATUS_BASE + 46,
     };
-    
+
 //! Result status of writing an IECInstance to Xml
 enum InstanceWriteStatus
     {
@@ -223,7 +219,7 @@ enum InstanceWriteStatus
 
     INSTANCE_WRITE_STATUS_BadPrimitivePropertyType              = INSTANCE_WRITE_STATUS_BASE + 30,
     };
-    
+
 //! Result status of trying to supplement an ECSchema
 enum SupplementedSchemaStatus
     {
@@ -238,16 +234,18 @@ enum SupplementedSchemaStatus
 
 /*__PUBLISH_SECTION_END__*/
 
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+//=======================================================================================
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ValueKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
-//=======================================================================================    
-
+//=======================================================================================
 /*__PUBLISH_SECTION_START__*/
-//! Represents the classification of the data type of an ECValue.  The classification is not the data type itself, but a category of type
+//=======================================================================================
+//! Represents the classification of the data type of an ECValue. The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
+//! @ingroup ECObjectsGroup
+//=======================================================================================
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     VALUEKIND_Uninitialized                  = 0x00, //!< The ECValue has not be initialized yet
@@ -257,16 +255,18 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     };
 
 /*__PUBLISH_SECTION_END__*/
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+//=======================================================================================
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the ArrayKind enum please be sure to note that these are bit flags and not incremental values.  Also be sure the value does not
 // exceed a single byte.
-//=======================================================================================    
+//=======================================================================================
 /*__PUBLISH_SECTION_START__*/
-
+//=======================================================================================
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
+//! @ingroup ECObjectsGroup
+//=======================================================================================
 enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
     ARRAYKIND_Primitive       = 0x01,
@@ -274,19 +274,21 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     };
 
 /*__PUBLISH_SECTION_END__*/
-//=======================================================================================    
-// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when 
+//=======================================================================================
+// ValueKind, ArrayKind & Primitivetype enums are 16-bit types but the intention is that the values are defined in such a way so that when
 // ValueKind or ArrayKind is necessary, we can union PrimitiveType in the same 16-bit memory location and get some synergy between the two.
 // If you add more values to the PrimitiveType enum please be sure to note that the lower order byte must stay fixed as '1' and the upper order byte can be incremented.
-// If you add any additional types you must update 
+// If you add any additional types you must update
 //    - ECXML_TYPENAME_X constants
 //    - PrimitiveECProperty::_GetTypeName
 // NEEDSWORK types: common geometry, installed primitives
-//=======================================================================================    
+//=======================================================================================
 /*__PUBLISH_SECTION_START__*/
 
-//! Enumeration of primitive datatypes supported by native "ECObjects" implementation.
-//! These should correspond to all of the datatypes supported in .NET ECObjects
+//=======================================================================================
+//! Enumeration of primitive data types for ECProperties
+//! @ingroup ECObjectsGroup
+//=======================================================================================
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
     PRIMITIVETYPE_Binary                    = 0x101,
@@ -307,3 +309,5 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 USING_NAMESPACE_BENTLEY
+
+/// @endcond BENTLEY_SDK_All

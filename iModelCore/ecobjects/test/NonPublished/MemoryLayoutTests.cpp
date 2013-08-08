@@ -794,7 +794,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetPoint3D      (*instance, point3dOutput, L"SomePoint3ds[0]"));
     EXPECT_TRUE (point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
 
-    DateTime timeInput = DateTime::GetCurrentTimeUtc ();
+    DateTime timeInput  = DateTime::GetCurrentTimeUtc ();
     Int64      ticksInput = 634027121070910000;
     DateTime timeOutput;
     Int64      ticksOutput;
@@ -1129,7 +1129,7 @@ static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECI
     EXPECT_TRUE (SUCCESS  == instance->SetValue (propertyIndex, value));
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
-    EXPECT_TRUE (true  == isSet);
+    EXPECT_TRUE (true  == isSet) << L"IECInstance::IsPerPropertyBitSet for property " << accessString;
     EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex, 0==propertyIndex%2));
     }
 
@@ -1857,7 +1857,7 @@ TEST_F (ECDBufferTests, PointersIntoInstanceMemory)
 
     instance->GetValue (v, L"String");
     EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
-    EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
+    //EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2030,6 +2030,28 @@ TEST_F (ECDBufferTests, ConvertDataBuffer_StructArrays)
     TestValue (*instance2, L"StructArray", arrayVal);
     TestValue (*instance2, L"StructArray", null, 0);
     TestValue (*instance2, L"StructArray", null, 1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, ArraysAreNotNull)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"Test", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"Test");
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, L"Array", PRIMITIVETYPE_String);
+
+    StandaloneECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    bool isNull;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->IsPropertyNull (isNull, L"Array"));
+    EXPECT_FALSE (isNull);
+
+    ECValue v;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->GetValue (v, L"Array"));
+    EXPECT_FALSE (v.IsNull());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
