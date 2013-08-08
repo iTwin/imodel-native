@@ -879,6 +879,8 @@ private:
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
+    void            RemoveDerivedClasses ();
+    void            RemoveBaseClasses ();
     static void     SetErrorHandling (bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
@@ -1718,6 +1720,8 @@ private:
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
+    static bool TryLoadingSupplementalSchemas(WStringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
+
     static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context, SchemaMatchType matchType, bvector<WString>& searchPaths);
 
     static ECSchemaPtr                  FindMatchingSchema (WStringCR schemaMatchExpression, SchemaKeyR key, ECSchemaReadContextR schemaContext, SchemaMatchType matchType, bvector<WString>& searchPaths);

@@ -327,9 +327,16 @@ void     StandaloneECRelationshipInstance::SetName (WCharCP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationshipClassCR ecClass) :
     ECEnabler (ecClass, NULL),
-    ClassLayoutHolder (ecClass.GetDefaultStandaloneEnabler()->GetClassLayout()),
     m_relationshipClass (ecClass)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCR StandaloneECRelationshipEnabler::GetClassLayout() const
+    {
+    return GetClass().GetDefaultStandaloneEnabler()->GetClassLayout();
     }
 
 /*---------------------------------------------------------------------------------**//**
