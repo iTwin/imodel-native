@@ -2002,6 +2002,9 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (UInt32 propIdx, UInt32 ins
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (UInt32 propIdx, UInt32 count)
     {        
+    if (0 == count)
+        return ECOBJECTS_STATUS_Success;    // it's a no-op. Used to be treated as error, but it's bound to happen.
+
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
@@ -2011,8 +2014,6 @@ ECObjectsStatus       ECDBuffer::AddNullArrayElementsAt (UInt32 propIdx, UInt32 
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
     bool isFixedCount = (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount);
     PRECONDITION (!isFixedCount && propertyLayout.GetTypeDescriptor().IsArray() && "A variable size array property is required to grow an array", ECOBJECTS_STATUS_UnableToResizeFixedSizedArray);
-    
-    PRECONDITION (count > 0, ECOBJECTS_STATUS_IndexOutOfRange)        
     
     ArrayCount index = GetAllocatedArrayCount (propertyLayout);
     status = ArrayResizer::CreateNullArrayElementsAt (classLayout, propertyLayout, *this, index, count);
