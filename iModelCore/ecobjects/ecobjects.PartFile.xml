@@ -22,7 +22,7 @@
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
-            <Files ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Files>
+            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
