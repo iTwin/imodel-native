@@ -2,12 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-#include <Bentley/VirtualCollectionIterator.h>
+/// @cond BENTLEY_SDK_Desktop
+//#include <ECObjects/VirtualCollectionIterator.h>
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 
@@ -31,7 +32,7 @@ struct CollectionTransformIteratble
     {
     private:
     CollectionType const* m_collection;
-    
+
     public:
     CollectionTransformIteratble (CollectionType const& collection)
         :m_collection (&collection)
@@ -77,7 +78,7 @@ A container collection which allows you to expose different kinds of collection 
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
-struct IInstanceCollectionAdapter : public Bentley::RefCountedBase
+struct IInstanceCollectionAdapterEx : public Bentley::RefCountedBase
     {
 private:
 
@@ -87,14 +88,14 @@ public:
     virtual const_iterator end() const = 0; //!< returns the end of the collection
     };
 
-typedef ECN::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
+typedef ECN::IInstanceCollectionAdapterEx<IECInstanceP const>              IECInstanceCollectionAdapter;
 typedef RefCountedPtr<IECInstanceCollectionAdapter>                     IECInstanceCollectionAdapterPtr;
 typedef ECN::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
 
 /*__PUBLISH_SECTION_END__*/
 
 /*---------------------------------------------------------------------------------**//**
-//Utility class to wrap ones own collection iterator as exposes a DgnECInstanceP 
+//Utility class to wrap ones own collection iterator as exposes a DgnECInstanceP
 * @bsimethod                                    Abeesh.Basheer                  03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename CollectionType, typename value_type>
@@ -109,21 +110,21 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
             {
             if (!begin)
                 return;
-            
+
             if (m_adapteriterator == m_adapterParentcollection->end())
                 return;
-            
+
             if (NULL == *m_adapteriterator)
                 MoveToNext();
             }
 
     public:
-    
+
         /*---------------------------------------------------------------------------------**//**
         // IInstanceCollectionIteratorAdapter implementation
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
-        virtual void    MoveToNext  () override                         
+        virtual void    MoveToNext  () override
             {
             do
                 {
@@ -143,7 +144,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
         static IInstanceCollectionIteratorAdapter<value_type>* Create (CollectionType const& collection, bool begin) {
             return new InstanceCollectionAdapterIteratorImpl(collection, begin);
             }
-        
+
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Abeesh.Basheer                  03/2011
         +---------------+---------------+---------------+---------------+---------------+------*/
@@ -162,7 +163,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
 * @bsimethod                                    Abeesh.Basheer                  03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename CollectionType, typename value_type>
-struct InstanceCollectionAdapterImpl : public IInstanceCollectionAdapter<value_type>
+struct InstanceCollectionAdapterImpl : public IInstanceCollectionAdapterEx<value_type>
     {
 private:
     boost::shared_ptr<CollectionType>   m_adaptedcollection;
@@ -172,20 +173,20 @@ protected:
         {
         }
 public:
-    
+
     static InstanceCollectionAdapterImpl* Create (CollectionType& collection)
         {
         return new InstanceCollectionAdapterImpl(collection);
         }
-    
-    virtual typename IInstanceCollectionAdapter<value_type>::const_iterator begin() const override
+
+    virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator begin() const override
         {
-        return typename IInstanceCollectionAdapter<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
+        return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, true));
         }
 
-    virtual typename IInstanceCollectionAdapter<value_type>::const_iterator end() const override
+    virtual typename IInstanceCollectionAdapterEx<value_type>::const_iterator end() const override
         {
-        return typename IInstanceCollectionAdapter<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
+        return typename IInstanceCollectionAdapterEx<value_type>::const_iterator (*InstanceCollectionAdapterIteratorImpl <CollectionType, value_type>::Create(*m_adaptedcollection, false));
         }
 
     virtual ~InstanceCollectionAdapterImpl ()
@@ -194,7 +195,7 @@ public:
     };
 
 template <typename CollectionType>
-struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const> 
+struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterImpl<CollectionType, IECInstanceP const>
     {
     };
 
@@ -210,7 +211,7 @@ struct ECInstancePVector : public ECN::CollectionTransformIteratble< bvector<Ref
 
 /*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
-typical usage 
+typical usage
 for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != collection.end(); ++iter)
     {
     IECInstanceP instance = *iter;
@@ -232,7 +233,7 @@ struct ECInstanceIterable
         //! Constructor that takes another collection
         //! @param[in] collection   The collection to make an ECInstanceIterable out of
         ECOBJECTS_EXPORT ECInstanceIterable (IECInstanceCollectionAdapter* collection);
-    
+
         typedef IECInstanceCollectionAdapter::const_iterator  const_iterator;
         ECOBJECTS_EXPORT const_iterator begin () const; //!< returns the beginning of this collection
         ECOBJECTS_EXPORT const_iterator end   () const; //!< returns the end of the collection
@@ -242,5 +243,7 @@ struct ECInstanceIterable
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
+/// @endcond BENTLEY_SDK_Desktop
+
 /*__PUBLISH_SECTION_END__*/
-#pragma make_public (Bentley::ECN::ECInstanceIterable)
+//#pragma make_public (Bentley::ECN::ECInstanceIterable)

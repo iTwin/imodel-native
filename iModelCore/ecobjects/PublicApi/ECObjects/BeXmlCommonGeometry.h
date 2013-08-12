@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: PublicApi/ECObjects/BeXmlCommonGeometry.h $
+|     $Source: PublicApi/ECObjects/BeXmlCommonGeometry.h $
 |
 |  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |

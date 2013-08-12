@@ -878,9 +878,9 @@ WCharCP ECSchemaDiff::ToString(ECRelatedInstanceDirection direction)
     {
     switch(direction)
         {
-        case STRENGTHDIRECTION_Backward:
+        case ECRelatedInstanceDirection::Backward:
             return SchemaDiffType::STRENGTH_DIRECTION_BACKWARD;
-        case STRENGTHDIRECTION_Forward:
+        case ECRelatedInstanceDirection::Forward:
             return SchemaDiffType::STRENGTH_DIRECTION_FORWARD;
         }
     return NULL;

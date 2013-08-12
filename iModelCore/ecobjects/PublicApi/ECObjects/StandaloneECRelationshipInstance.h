@@ -2,11 +2,12 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
 #pragma once
+//__PUBLISH_SECTION_START__
+/// @cond BENTLEY_SDK_Desktop
 
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECDBuffer.h>
@@ -22,7 +23,7 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //=======================================================================================
 //! @ingroup ECObjectsGroup
 //! StandaloneECRelationshipInstance is used to represent a relationship between
-//! two IECInstances 
+//! two IECInstances
 //=======================================================================================
 struct StandaloneECRelationshipInstance : IECRelationshipInstance
 //__PUBLISH_SECTION_END__
@@ -38,13 +39,13 @@ private:
     Int64                             m_sourceOrderId;
     Int64                             m_targetOrderId;
     WString                           m_name;
-    StandaloneECRelationshipEnablerCP m_relationshipEnabler; 
+    StandaloneECRelationshipEnablerCP m_relationshipEnabler;
     WString                           m_instanceId;
 
     StandaloneECRelationshipInstance (StandaloneECRelationshipEnablerCR relationshipEnabler);
     ~StandaloneECRelationshipInstance();
 
-protected:  
+protected:
     // IECRelationshipInstance
     virtual void            _SetSource (IECInstanceP instance);
     virtual IECInstancePtr  _GetSource () const;
@@ -56,9 +57,9 @@ protected:
     // IECInstance
     virtual WString             _GetInstanceId() const override;
     virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
-    virtual bool                _IsReadOnly() const override;        
+    virtual bool                _IsReadOnly() const override;
     virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
+    virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
     virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
@@ -132,4 +133,6 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop
 
