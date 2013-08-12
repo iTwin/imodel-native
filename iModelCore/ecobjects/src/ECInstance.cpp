@@ -3206,7 +3206,7 @@ InstanceReadStatus   IECInstance::ReadFromXmlString (IECInstancePtr& ecInstance,
     ecInstance = NULL;
 
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecInstanceXml, wcslen (ecInstanceXml) * sizeof(WChar));
 
     if (!xmlDom.IsValid())
         {
