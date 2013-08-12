@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <ECObjects\ECInstanceIterable.h>
+#include <ECObjects/ECObjectsAPI.h>
 #include "ecpresentationtypedefs.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -26,6 +26,7 @@ struct IAUIItem : public RefCountedBase // Content Service Element
         virtual IAUIDataContextCP   _GetDataInstance() const = 0;
         virtual IAUIItemInfoCR      _GetUIItemInfo () const = 0;
 /*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
 
     public:
         //! Get the data instance bind with this ui instance.
@@ -65,6 +66,7 @@ struct  IAUIItemInfo
         virtual ItemType    _GetItemType() const = 0;
 
 /*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
     public:
     //Constructor that initializes an item from a primitive type.
     virtual ~IAUIItemInfo ()
@@ -194,5 +196,5 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
-#pragma make_public (Bentley::ECN::IAUIDataContext)
-#pragma make_public (Bentley::ECN::IUICommand)
+//#pragma make_public (Bentley::ECN::IAUIDataContext)
+//#pragma make_public (Bentley::ECN::IUICommand)

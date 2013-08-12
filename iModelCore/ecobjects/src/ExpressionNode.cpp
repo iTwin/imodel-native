@@ -1355,7 +1355,7 @@ NodePtr         Node::CreateStringLiteral (wchar_t const* value)
     {
     size_t      origLen = wcslen(value);
     BeAssert(origLen > 1);
-    wchar_t*    buffer = (wchar_t*)_alloca(2 *(origLen+1));
+    wchar_t*    buffer = (wchar_t*)_alloca(sizeof(wchar_t) * (origLen + 1));
 
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
@@ -1639,7 +1639,7 @@ ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, Ev
     EvaluationResultVector  argsVector;
 
     ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, context);
-    if (NULL != status)
+    if (ExprStatus_Success != status)
         return status;
 
     return methodReference->InvokeInstanceMethod(evalResult, instanceData, argsVector);
@@ -1653,7 +1653,7 @@ ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, Meth
     EvaluationResultVector  argsVector;
 
     ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, context);
-    if (NULL != status)
+    if (ExprStatus_Success != status)
         return status;
 
     return methodReference.InvokeStaticMethod(evalResult, argsVector);

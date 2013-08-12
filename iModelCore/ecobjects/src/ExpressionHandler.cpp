@@ -773,7 +773,7 @@ if (m_lexer->GetTokenType() == TOKEN_Minus)     \
 else     \
     fac = 1.0;     \
  \
-if (1 != BeStringUtilities::Swscanf (m_lexer->GetTokenStringCP(), L"%lg", &COORD))     \
+if (1 != BE_STRING_UTILITIES_SWSCANF (m_lexer->GetTokenStringCP(), L"%lg", &COORD))     \
     return GetErrorNode (L"PointLiteralExpected");     \
 else     \
     {   \
@@ -928,7 +928,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 Int64     value;
                 
-                BeStringUtilities::Swscanf(m_lexer->GetTokenStringCP (), L"%lld", &value);
+                BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP (), L"%lld", &value);
 
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
@@ -945,7 +945,7 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_FloatConst:
                 {
                 double d;
-                BeStringUtilities::Swscanf(m_lexer->GetTokenStringCP (), L"%lg", &d);
+                BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP (), L"%lg", &d);
                 result = Node::CreateFloatLiteral (d);
                 m_lexer->Advance ();
                 }
@@ -993,7 +993,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 m_lexer->Advance();
                 Int64 ticks;
-                if (1 != BeStringUtilities::Swscanf (m_lexer->GetTokenStringCP(), L"%lld", &ticks))
+                if (1 != BE_STRING_UTILITIES_SWSCANF (m_lexer->GetTokenStringCP(), L"%lld", &ticks))
                     return GetErrorNode (L"DateTimeLiteralExpected");
 
                 result = Node::CreateDateTimeLiteral (ticks);
