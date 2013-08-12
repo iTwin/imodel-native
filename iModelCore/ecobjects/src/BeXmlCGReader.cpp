@@ -516,7 +516,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             {
             DSegment3d segment;
             DEllipse3d arc;
-            if (NULL != railCurve->TryGetLine (segment))
+            if (0 != railCurve->TryGetLine (segment))
                 {
                 DVec3d vector = DVec3d::FromStartEnd (segment.point[0], segment.point[1]);
                 result = ISolidPrimitive::CreateDgnExtrusion (DgnExtrusionDetail (
@@ -524,7 +524,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
                                 vector, false));
                 return true;
                 }
-            else if (NULL != railCurve->TryGetArc (arc))
+            else if (0 != railCurve->TryGetArc (arc))
                 {
                 DVec3d normal = DVec3d::FromNormalizedCrossProduct (arc.vector0, arc.vector90);
                 result = ISolidPrimitive::CreateDgnRotationalSweep (DgnRotationalSweepDetail (

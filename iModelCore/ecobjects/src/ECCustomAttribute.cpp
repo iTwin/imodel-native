@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#if defined (_WIN32) // WIP_NONPORT
-#include <objbase.h>
-#include <comdef.h>
-#endif //defined (_WIN32) // WIP_NONPORT
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
@@ -106,7 +102,10 @@ ECCustomAttributeCollection& returnList
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::IsDefined (WStringCR className) const
+bool IECCustomAttributeContainer::IsDefined
+(
+WStringCR className
+) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -130,7 +129,10 @@ bool IECCustomAttributeContainer::IsDefined (WStringCR className) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::IsDefined (ECClassCR classDefinition) const
+bool IECCustomAttributeContainer::IsDefined
+(
+ECClassCR classDefinition
+) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -374,6 +376,10 @@ bool requireSchemaReference
             {
             if (requireSchemaReference)
                 {
+                LOG.errorv(L"%ls (used in ECSchema %ls) requires a (missing) reference to ECSchema %ls", 
+                    classDefinition.GetFullName(), 
+                    containerSchema->GetName().c_str(), 
+                    classDefinition.GetSchema().GetFullSchemaName().c_str());
                 BeAssert (false);
                 return ECOBJECTS_STATUS_SchemaNotFound;
                 }
@@ -484,9 +490,9 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
         {
         if (0 != strcmp (customAttributeNode->GetName (), EC_CUSTOM_ATTRIBUTES_ELEMENT))
             continue;
+
         for (BeXmlNodeP customAttributeClassNode = customAttributeNode->GetFirstChild(); NULL != customAttributeClassNode; customAttributeClassNode = customAttributeClassNode->GetNextSibling())
             {
-            
             ECInstanceReadContextPtr context = ECInstanceReadContext::CreateContext (schemaContext, fallBackSchema, NULL);
 
             IECInstancePtr  customAttributeInstance;

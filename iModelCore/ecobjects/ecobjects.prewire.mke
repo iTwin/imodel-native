@@ -2,7 +2,7 @@
 #
 #     $Source: ecobjects.prewire.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -10,8 +10,8 @@ PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 
 # Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecPublicAPISrc)ECObjects"   
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentation=$(ecPublicAPISrc)ECPresentation"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentationRules=$(ecPublicAPISrc)ECPresentationRules"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECUnits=$(ecPublicAPISrc)ECUnits"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECObjects=$(ecobjectsPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentation=$(ecpresentationPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECPresentationRules=$(ecpresentationRulesPublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)ECUnits=$(ecunitsPublicAPISrc)"
 

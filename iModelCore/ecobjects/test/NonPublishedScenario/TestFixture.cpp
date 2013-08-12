@@ -9,6 +9,11 @@
 
 #include "ECObjectsTestPCH.h"
 #include "TestFixture.h"
+#include <Bentley/BeFileName.h>
+
+#include <Logging\bentleylogging.h>
+
+USING_NAMESPACE_BENTLEY_LOGGING
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
@@ -69,11 +74,23 @@ bool CreateDirectoryRecursive (WCharCP path, bool failIfExists)
     }
 
  
+bool ECTestFixture::s_isLoggerInitialized = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECTestFixture::ECTestFixture()
     {
+
+    if (!s_isLoggerInitialized)
+        {
+        LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
+        LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, GetLogConfigurationFilename().c_str());
+
+        LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
+        s_isLoggerInitialized = true;
+        }
+
+    ECN::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -129,7 +146,7 @@ WString ECTestFixture::GetTestDataPath(WCharCP dataFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
     {
-    WString testData = WString(getenv("TEMP"));
+    WString testData = WString(getenv("TEMP"), false);
     testData.append(L"\\");
     testData.append(dataFile);
     return testData;
