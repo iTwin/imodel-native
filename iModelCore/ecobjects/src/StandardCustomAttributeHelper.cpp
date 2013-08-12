@@ -179,7 +179,7 @@ ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema (ECSchemaR sch
         ECClassP dynamicSchemaClass = schema.GetReferencedSchemas().FindClassP (dynamicSchemaClassId);
         //BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.6");
         if (dynamicSchemaClass == NULL)
-            return /* ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound; */ ECOBJECTS_STATUS_Error;
+            return ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound;
 
         IECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
         return schema.SetCustomAttribute (*dynamicSchemaInstance);

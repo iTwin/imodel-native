@@ -794,7 +794,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetPoint3D      (*instance, point3dOutput, L"SomePoint3ds[0]"));
     EXPECT_TRUE (point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
 
-    DateTime timeInput = DateTime::GetCurrentTimeUtc ();
+    DateTime timeInput  = DateTime::GetCurrentTimeUtc ();
     Int64      ticksInput = 634027121070910000;
     DateTime timeOutput;
     Int64      ticksOutput;
@@ -1129,7 +1129,7 @@ static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECI
     EXPECT_TRUE (SUCCESS  == instance->SetValue (propertyIndex, value));
 
     EXPECT_TRUE (SUCCESS  == instance->IsPerPropertyBitSet (isSet, (UInt8) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
-    EXPECT_TRUE (true  == isSet);
+    EXPECT_TRUE (true  == isSet) << L"IECInstance::IsPerPropertyBitSet for property " << accessString;
     EXPECT_TRUE (SUCCESS  == instance->SetPerPropertyBit ((UInt8) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex, 0==propertyIndex%2));
     }
 
@@ -1813,7 +1813,7 @@ TEST_F (ECDBufferTests, ClearArray)
     EXPECT_EQ (0, v.GetArrayInfo().GetCount());
     EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
     EXPECT_EQ (0, v.GetArrayInfo().GetCount());
-    }
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * Test the ECValue flag that returns strings as pointers into instance data rather than
@@ -1854,8 +1854,8 @@ TEST_F (ECDBufferTests, PointersIntoInstanceMemory)
     EXPECT_EQ (true, v.AllowsPointersIntoInstanceMemory());
 
     instance->GetValue (v, L"String");
-    EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
-    EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
+    //EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data
+    //EXPECT_EQ (0, wcscmp (v.GetString(), newStr));  // modified instance memory directly through returned pointer
     }
 
 /*---------------------------------------------------------------------------------**//**

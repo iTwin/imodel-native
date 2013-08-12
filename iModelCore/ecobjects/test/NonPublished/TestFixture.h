@@ -15,6 +15,7 @@ struct ECTestFixture : public ::testing::Test
 private:
     static WString s_dllPath;
     static WString GetDllPath();
+    static bool s_isLoggerInitialized;
     WString GetLogConfigurationFilename();
     BentleyStatus CheckProcessDirectory(WCharP filepath, DWORD bufferSize);
 
