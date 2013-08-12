@@ -2,11 +2,12 @@
 |
 |     $Source: PublicApi/ECObjects/ecprovider.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Desktop
 
 #include "ECObjects.h"
 
@@ -17,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct IECProvider
     {
     protected:
-        //!Get the provider id 
+        //!Get the provider id
         virtual UInt16      _GetProviderId () const = 0;
 
         //!Get the provider name
@@ -36,3 +37,5 @@ struct IECProvider
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/// @endcond BENTLEY_SDK_Desktop
