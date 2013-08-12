@@ -6,29 +6,42 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-#include <ECObjects\ECContext.h>
+#include <ECObjects/ECContext.h>
 
 USING_NAMESPACE_EC
+
+static BeFileName s_rootDirectory;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    ShaunSewall     06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ECSchemaReadContext::Initialize (BeFileNameCR rootDirectory)
+    {
+    s_rootDirectory = rootDirectory;
+    s_rootDirectory.AppendSeparator();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchPaths)
     {
-    BeFileName dllPath (ECFileUtilities::GetDllPath().c_str());
-    if (0 == *dllPath.GetName())
+    BeFileName rootDir (s_rootDirectory);
+    if (0 == *rootDir.GetName())
         return false;
     
-    dllPath.AppendSeparator();
-    searchPaths.push_back (dllPath.GetName());
+    rootDir.AppendSeparator();
+    searchPaths.push_back (rootDir.GetName());
     
-    dllPath.AppendToPath (L"ECSchemas");
+    rootDir.AppendToPath (L"ECSchemas");
 
-    BeFileName standardPath = dllPath;
+    BeFileName standardPath = rootDir;
     standardPath.AppendToPath (L"Standard");
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
 
+#if defined (LEGACY_ECSCHEMAS_FOLDER_STRUCTURE)
+    // For Graphite, there are no subfolders under "Standard"
     BeFileName generalPath = standardPath;
     generalPath.AppendToPath (L"General");
     generalPath.AppendSeparator();
@@ -38,6 +51,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     libraryPath.AppendToPath (L"LibraryUnits");
     libraryPath.AppendSeparator();
     searchPaths.push_back (libraryPath.GetName());
+#endif
 
     return true;
     }
@@ -71,7 +85,9 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)   
-                                                                                        { return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); }
+    { 
+    return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch); 
+    }
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch) 
     { 
     return CreateContext (NULL, acceptLegacyImperfectLatestCompatibleMatch); 
@@ -245,6 +261,15 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCacheR ECSchemaReadContext::GetCache ()
+    {
+    return *m_knownSchemas;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ECSchemaBackedInstanceReadContext: public ECInstanceReadContext
     {
     private:
@@ -338,7 +363,7 @@ ECSchemaCR      ECInstanceReadContext::GetFallBackSchema ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyR key, SchemaMatchType matchType)
+ECSchemaPtr     ECSchemaReadContext::GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType)
     {
     return m_knownSchemas->GetSchema(key, matchType);
     }
@@ -373,12 +398,4 @@ void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
 void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
     m_knownSchemas->DropAllReferencesOfSchema(schema.GetSchemaKey());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCacheR  ECSchemaReadContext::GetFoundSchemas ()
-    {
-    return *m_knownSchemas;
     }

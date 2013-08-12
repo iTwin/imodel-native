@@ -1103,6 +1103,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementCustomAttributesOnRelationshipC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if 0
 TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     {
     ECSchemaPtr inheritPrimarySchema;
@@ -1153,5 +1154,5 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     EXPECT_TRUE(NULL != bc2Prop1DerivedClass4);
     ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
     }
-
+#endif
 END_BENTLEY_ECOBJECT_NAMESPACE
