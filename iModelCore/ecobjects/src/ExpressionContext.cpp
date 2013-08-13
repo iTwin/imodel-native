@@ -443,6 +443,11 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
             appendDot = false;
             accessString.clear();
             instance = evalResult.GetECValue().GetStruct().get();
+            if (!instance.IsValid())
+                {
+                evalResult.Clear();
+                return ExprStatus_StructRequired;
+                }
             enabler = &instance->GetEnabler();
             ecClass = &enabler->GetClass();
             evalResult.GetECValueR().SetStruct(instance.get());
