@@ -12,15 +12,12 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 /*---------------------------------------------------------------------------------**//**
 This specification returns instance nodes of defined classes.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool     m_groupByClass;
         bool     m_groupByLabel;
@@ -30,7 +27,6 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
         WString  m_classNames;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 
@@ -42,41 +38,32 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT InstanceNodesOfSpecificClassesSpecification ()
-            : ChildNodeSpecification (), m_groupByClass (true), m_groupByLabel (true), m_showEmptyGroups (false),
-            m_instanceFilter (L""), m_classNames (L""), m_arePolymorphic (false)
-            {
-            }
+        ECOBJECTS_EXPORT InstanceNodesOfSpecificClassesSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                                     bool groupByClass, bool groupByLabel, bool showEmptyGroups,
-                                                     WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic)
-            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-            m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
-            m_instanceFilter (instanceFilter), m_classNames (classNames), m_arePolymorphic (arePolymorphic)
-            {
-            }
+        ECOBJECTS_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
+                                                                      bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups,
+                                                                      WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic);
 
         //! Returns true if grouping by class should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const       { return m_groupByClass; }
+        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
         //! Returns true if grouping by label should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const       { return m_groupByLabel; }
+        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
         //! Returns true if class grouping nodes should be shown even if there are no 
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
-        ECOBJECTS_EXPORT bool                         GetShowEmptyGroups (void) const    { return m_showEmptyGroups; }
+        ECOBJECTS_EXPORT bool                         GetShowEmptyGroups (void) const;
 
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const         { return m_classNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const;
 
         //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
-        ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const     { return m_arePolymorphic; }
+        ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const;
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results (ChildNodes).
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const     { return m_instanceFilter; }
+        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
 
     };
 

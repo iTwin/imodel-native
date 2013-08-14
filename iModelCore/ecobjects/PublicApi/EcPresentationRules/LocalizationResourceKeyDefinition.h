@@ -10,7 +10,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 Implementation of localization resource key definition. This rule is used to define 
 additional settings for the resource key.
@@ -18,14 +17,12 @@ additional settings for the resource key.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LocalizationResourceKeyDefinition : public PresentationKey
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString m_id;
         WString m_key;
         WString m_defaultValue;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP  _GetXmlElementName ();
 
@@ -37,25 +34,19 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT LocalizationResourceKeyDefinition ()
-            : PresentationKey (), m_id (L""), m_key (L""), m_defaultValue (L"")
-            {
-            }
+        ECOBJECTS_EXPORT LocalizationResourceKeyDefinition ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT LocalizationResourceKeyDefinition (int priority, WStringCR id, WStringCR key, WStringCR defaultValue)
-            : PresentationKey (priority), m_id (id), m_key (key), m_defaultValue (defaultValue)
-            {
-            }
+        ECOBJECTS_EXPORT LocalizationResourceKeyDefinition (int priority, WStringCR id, WStringCR key, WStringCR defaultValue);
 
         //! Id of the resource to localize.
-        ECOBJECTS_EXPORT WStringCR       GetId (void) const             { return m_id; }
+        ECOBJECTS_EXPORT WStringCR       GetId (void) const;
 
         //! New key of the resource.
-        ECOBJECTS_EXPORT WStringCR       GetKey (void) const            { return m_key; }
+        ECOBJECTS_EXPORT WStringCR       GetKey (void) const;
 
         //! Default value which is used if the resource is not found.
-        ECOBJECTS_EXPORT WStringCR       GetDefaultValue (void) const   { return m_defaultValue; }
+        ECOBJECTS_EXPORT WStringCR       GetDefaultValue (void) const;
 
     };
 

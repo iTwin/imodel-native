@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/LabelOverride.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,22 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+LabelOverride::LabelOverride ()
+    : PresentationRule (), m_label (L""), m_description (L"")
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+LabelOverride::LabelOverride (WStringCR condition, int priority, WStringCR label, WStringCR description)
+    : PresentationRule (condition, priority, false), m_label (label), m_description (description)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -44,3 +60,13 @@ void LabelOverride::_WriteXml (BeXmlNodeP xmlNode)
 
     PresentationRule::_WriteXml (xmlNode);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR LabelOverride::GetLabel (void) const { return m_label; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR LabelOverride::GetDescription (void) const { return m_description; }

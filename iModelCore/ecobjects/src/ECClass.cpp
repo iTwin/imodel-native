@@ -932,7 +932,10 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
             if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+                {
+                LOG.errorv (L"Attempt to override a %ls property of class %ls with a different type property in derived class %ls", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
                 return status;
+                }        
             }
         }
 

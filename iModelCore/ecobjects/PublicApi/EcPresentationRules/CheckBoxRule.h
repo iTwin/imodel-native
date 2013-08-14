@@ -10,21 +10,18 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
 /*---------------------------------------------------------------------------------**//**
 Presentation rule for adding and configuring check boxes.
 * @bsiclass                                     Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CheckBoxRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString                 m_propertyName;
         bool                    m_useInversedPropertyValue;
         bool                    m_defaultValue;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP      _GetXmlElementName ();
 
@@ -36,25 +33,19 @@ struct CheckBoxRule : public PresentationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT CheckBoxRule ()
-            : PresentationRule (), m_propertyName (L""), m_useInversedPropertyValue (false), m_defaultValue (false)
-            {
-            }
+        ECOBJECTS_EXPORT CheckBoxRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT CheckBoxRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR propertyName, bool useInversedPropertyValue, bool defaultValue)
-            : PresentationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), m_useInversedPropertyValue (useInversedPropertyValue), m_defaultValue (defaultValue)
-            {
-            }
+        ECOBJECTS_EXPORT CheckBoxRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR propertyName, bool useInversedPropertyValue, bool defaultValue);
 
         //! ECProperty name to bind check box state.
-        ECOBJECTS_EXPORT WStringCR           GetPropertyName (void) const                { return m_propertyName; }
+        ECOBJECTS_EXPORT WStringCR           GetPropertyName (void) const;
 
         //! Defines if inversed property value should be used for check box state.
-        ECOBJECTS_EXPORT bool                GetUseInversedPropertyValue (void) const    { return m_useInversedPropertyValue; }
+        ECOBJECTS_EXPORT bool                GetUseInversedPropertyValue (void) const;
 
         //! Default check box value.
-        ECOBJECTS_EXPORT bool                GetDefaultValue (void) const                { return m_defaultValue; }
+        ECOBJECTS_EXPORT bool                GetDefaultValue (void) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

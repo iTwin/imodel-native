@@ -12,8 +12,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 //! This enumerator allows to chose which direction should be honored
 //! when selecting relationships in the query.
 enum RequiredRelationDirection
@@ -34,7 +32,6 @@ not ECInstance node!
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         bool                       m_groupByClass;
         bool                       m_groupByRelationship;
@@ -49,7 +46,6 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
 
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 
@@ -61,12 +57,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT RelatedInstanceNodesSpecification ()
-            : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_showEmptyGroups (false),
-            m_skipRelatedLevel (0), m_instanceFilter (L""), m_requiredDirection (RequiredRelationDirection_Both),
-            m_supportedSchemas (L""), m_relationshipClassNames (L""), m_relatedClassNames (L"")
-            {
-            }
+        ECOBJECTS_EXPORT RelatedInstanceNodesSpecification ();
 
         //! Constructor.
         ECOBJECTS_EXPORT RelatedInstanceNodesSpecification 
@@ -85,45 +76,39 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
                                            WString                    supportedSchemas,
                                            WString                    relationshipClassNames,
                                            WString                    relatedClassNames
-                                          )
-            : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-              m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
-              m_skipRelatedLevel (skipRelatedLevel), m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
-              m_supportedSchemas (supportedSchemas), m_relationshipClassNames (relationshipClassNames),  m_relatedClassNames (relatedClassNames)
-            {
-            }
+                                          );
 
         //! Returns true if grouping by class should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const               { return m_groupByClass; }
+        ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
         //! Returns true if grouping by relationship should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByRelationship (void) const        { return m_groupByRelationship; }
+        ECOBJECTS_EXPORT bool                         GetGroupByRelationship (void) const;
 
         //! Returns true if grouping by label should be applied.
-        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const               { return m_groupByLabel; }
+        ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
         //! Returns true if class grouping nodes should be shown even if there are no 
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
-        ECOBJECTS_EXPORT bool                         GetShowEmptyGroups (void) const            { return m_showEmptyGroups; }
+        ECOBJECTS_EXPORT bool                         GetShowEmptyGroups (void) const;
 
         //! Returns level of related instances to skip.
-        ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const           { return m_skipRelatedLevel; }
+        ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results (ChildNodes).
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const             { return m_instanceFilter; }
+        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
 
         //! Returns direction of relationship that should be selected in the query.
-        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const  { return m_requiredDirection; }
+        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
 
         //! Returns supported schemas that should be used by this specification.
-        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const           { return m_supportedSchemas; }
+        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const     { return m_relationshipClassNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const;
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const          { return m_relatedClassNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const;
 
     };
 

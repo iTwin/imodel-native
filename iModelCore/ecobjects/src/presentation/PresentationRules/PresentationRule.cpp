@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRule.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,6 +11,20 @@
 #include <ECPresentationRules/PresentationRules.h>
 
 USING_NAMESPACE_EC
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationKey::PresentationKey () : m_priority (1000)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationKey::PresentationKey (int priority) : m_priority (priority)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -41,6 +55,28 @@ void PresentationKey::WriteXml (BeXmlNodeP parentXmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+int PresentationKey::GetPriority (void) const { return m_priority; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRule::PresentationRule ()
+    : PresentationKey (), m_condition (L""), m_onlyIfNotHandled (false)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRule::PresentationRule (WStringCR condition, int priority, bool onlyIfNotHandled)
+    : PresentationKey (priority), m_condition (condition), m_onlyIfNotHandled (onlyIfNotHandled)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Optional:
@@ -61,3 +97,13 @@ void PresentationRule::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeStringValue (PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str ());
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR PresentationRule::GetCondition (void) const       { return m_condition; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRule::GetOnlyIfNotHandled (void) const     { return m_onlyIfNotHandled; }

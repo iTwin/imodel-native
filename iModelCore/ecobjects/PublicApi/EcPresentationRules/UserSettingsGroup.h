@@ -10,8 +10,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 typedef bvector<UserSettingsItemP>    UserSettingsItemList;
 
 /*---------------------------------------------------------------------------------**//**
@@ -21,14 +19,12 @@ that can affect behavior of the hierarchy. These settings will be shown in UserS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UserSettingsGroup : public PresentationKey
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString               m_categoryLabel;
         UserSettingsGroupList m_nestedSettings;
         UserSettingsItemList  m_settingsItems;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP  _GetXmlElementName ();
 
@@ -40,28 +36,22 @@ struct UserSettingsGroup : public PresentationKey
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT UserSettingsGroup ()
-            : PresentationKey (), m_categoryLabel (L"")
-            {
-            }
+        ECOBJECTS_EXPORT UserSettingsGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT UserSettingsGroup (WStringCR categoryLabel)
-            : PresentationKey (1000), m_categoryLabel (categoryLabel)
-            {
-            }
+        ECOBJECTS_EXPORT UserSettingsGroup (WStringCR categoryLabel);
 
         //! Desctructor.
         ECOBJECTS_EXPORT                             ~UserSettingsGroup (void);
 
         //! Label of category that is used to group all the settings. If it is null, no category will be created.
-        ECOBJECTS_EXPORT WStringCR                   GetCategoryLabel (void) const            { return m_categoryLabel; }
+        ECOBJECTS_EXPORT WStringCR                   GetCategoryLabel (void) const;
 
         //! Returns a list of UserSettingsItems.
-        ECOBJECTS_EXPORT UserSettingsItemList&       GetSettingsItems (void)                  { return m_settingsItems; }
+        ECOBJECTS_EXPORT UserSettingsItemList&       GetSettingsItems (void);
 
         //! Returns a list of nested UserSettingsGroup. This allows to create sub-categories.
-        ECOBJECTS_EXPORT UserSettingsGroupList&      GetNestedSettings (void)                 { return m_nestedSettings; }
+        ECOBJECTS_EXPORT UserSettingsGroupList&      GetNestedSettings (void);
 
     };
 
@@ -72,7 +62,6 @@ UserSettingsGroup.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UserSettingsItem
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_id;
         WString  m_label;
@@ -81,16 +70,10 @@ struct UserSettingsItem
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT UserSettingsItem ()
-            : m_id (L""), m_label (L""), m_options (L""), m_defaultValue (L"")
-            {
-            }
+        ECOBJECTS_EXPORT UserSettingsItem ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT UserSettingsItem (WStringCR id, WStringCR label, WStringCR options, WStringCR defaultValue)
-            : m_id (id), m_label (label), m_options (options), m_defaultValue (defaultValue)
-            {
-            }
+        ECOBJECTS_EXPORT UserSettingsItem (WStringCR id, WStringCR label, WStringCR options, WStringCR defaultValue);
 
         //! Reads specification from xml.
         ECOBJECTS_EXPORT bool            ReadXml (BeXmlNodeP xmlNode);
@@ -99,16 +82,16 @@ struct UserSettingsItem
         ECOBJECTS_EXPORT void            WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Id of the user setting that will be used to save and access settings value.
-        ECOBJECTS_EXPORT WStringCR       GetId (void) const               { return m_id; }
+        ECOBJECTS_EXPORT WStringCR       GetId (void) const;
 
         //! Label of the user settings that will be shown for the user in UserSettingsDialog.
-        ECOBJECTS_EXPORT WStringCR       GetLabel (void) const            { return m_label; }
+        ECOBJECTS_EXPORT WStringCR       GetLabel (void) const;
 
         //! Options for the user setting value.
-        ECOBJECTS_EXPORT WStringCR       GetOptions (void) const          { return m_options; }
+        ECOBJECTS_EXPORT WStringCR       GetOptions (void) const;
 
         //! Default user settings value.
-        ECOBJECTS_EXPORT WStringCR       GetDefaultValue (void) const     { return m_defaultValue; }
+        ECOBJECTS_EXPORT WStringCR       GetDefaultValue (void) const;
 
     };
 

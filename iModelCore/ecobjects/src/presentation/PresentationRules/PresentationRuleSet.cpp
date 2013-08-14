@@ -16,6 +16,32 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSet::PresentationRuleSet (void)
+    : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_supplementationPurpose (L""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSet::PresentationRuleSet
+(
+WStringCR ruleSetId,
+int       versionMajor,
+int       versionMinor,
+bool      isSupplemental,
+WStringCR supplementationPurpose,
+WStringCR supportedSchemas,
+WStringCR preferredImage,
+bool      isSearchEnabled
+) : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), m_supplementationPurpose (supplementationPurpose),
+    m_versionMajor (versionMajor), m_versionMinor (versionMinor), m_preferredImage (preferredImage), m_isSearchEnabled (isSearchEnabled)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::~PresentationRuleSet ()
     {
     CommonTools::FreePresentationRules (m_rootNodesRules);
@@ -224,3 +250,103 @@ bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
 
     return BEXML_Success == xmlDom->ToFile (xmlFilePath, BeXmlDom::TO_STRING_OPTION_Indent, BeXmlDom::FILE_ENCODING_Utf8);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR              PresentationRuleSet::GetRuleSetId (void) const         { return m_ruleSetId;        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int                    PresentationRuleSet::GetVersionMajor (void) const      { return m_versionMajor;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+int                    PresentationRuleSet::GetVersionMinor (void) const      { return m_versionMinor;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                   PresentationRuleSet::GetIsSupplemental (void) const    { return m_isSupplemental;   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR              PresentationRuleSet::GetSupplementationPurpose (void) const { return m_supplementationPurpose; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR              PresentationRuleSet::GetSupportedSchemas (void) const  { return m_supportedSchemas; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR              PresentationRuleSet::GetPreferredImage (void) const    { return m_preferredImage;   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                   PresentationRuleSet::GetIsSearchEnabled (void) const   { return m_isSearchEnabled;   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RootNodeRuleList&      PresentationRuleSet::GetRootNodesRules (void)          { return m_rootNodesRules;   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ChildNodeRuleList&     PresentationRuleSet::GetChildNodesRules (void)         { return m_childNodesRules;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRuleList&       PresentationRuleSet::GetContentRules (void)            { return m_contentRules;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ImageIdOverrideList&   PresentationRuleSet::GetImageIdOverrides (void)        { return m_imageIdRules;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+LabelOverrideList&     PresentationRuleSet::GetLabelOverrides (void)          { return m_labelOverrides;   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StyleOverrideList&     PresentationRuleSet::GetStyleOverrides (void)          { return m_styleOverrides;   }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+GroupingRuleList&      PresentationRuleSet::GetGroupingRules (void)           { return m_groupingRules;    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+LocalizationResourceKeyDefinitionList&  PresentationRuleSet::GetLocalizationResourceKeyDefinitions (void) { return m_localizationResourceKeyDefinitions; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroupList& PresentationRuleSet::GetUserSettings (void)            { return m_userSettings;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+CheckBoxRuleList&      PresentationRuleSet::GetCheckBoxRules (void)           { return m_checkBoxRules;    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+RenameNodeRuleList&    PresentationRuleSet::GetRenameNodeRules (void)         { return m_renameNodeRules;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SortingRuleList&       PresentationRuleSet::GetSortingRules (void)            { return m_sortingRules;     }

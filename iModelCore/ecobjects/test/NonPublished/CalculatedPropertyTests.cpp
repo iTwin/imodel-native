@@ -168,8 +168,8 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
 
     ECClassP ecClass = NULL;
     EXPECT_EQ (ECOBJECTS_STATUS_Success, schema->CreateClass (ecClass, L"TestClass"));
-    PrimitiveECPropertyP ecProp;
-    ArrayECPropertyP arrayProp;
+    PrimitiveECPropertyP ecProp = NULL;
+    ArrayECPropertyP arrayProp = NULL;
     ecClass->CreatePrimitiveProperty (ecProp, L"S", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"S1", PRIMITIVETYPE_String);
     ecClass->CreatePrimitiveProperty (ecProp, L"S2", PRIMITIVETYPE_String);

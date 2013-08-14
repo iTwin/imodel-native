@@ -12,8 +12,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 /*---------------------------------------------------------------------------------**//**
 Specification that creates content ECQueries for predefined relationships and/or 
 related ECClasses of the selected node.
@@ -21,7 +19,6 @@ related ECClasses of the selected node.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentRelatedInstancesSpecification : public ContentSpecification
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         int                        m_skipRelatedLevel;
         WString                    m_instanceFilter;
@@ -30,7 +27,6 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         WString                    m_relatedClassNames;
 
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
 
@@ -42,11 +38,7 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ContentRelatedInstancesSpecification () 
-            : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (L""), 
-            m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L"")
-            {
-            }
+        ECOBJECTS_EXPORT ContentRelatedInstancesSpecification ();
 
         //! Constructor.
         ECOBJECTS_EXPORT ContentRelatedInstancesSpecification 
@@ -57,28 +49,23 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
                                               RequiredRelationDirection  requiredDirection,
                                               WString                    relationshipClassNames,
                                               WString                    relatedClassNames
-                                             ) 
-            : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), 
-              m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
-              m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
-            {
-            }
+                                             );
 
         //! Returns level of related instances to skip.
-        ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const           { return m_skipRelatedLevel; }
+        ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const             { return m_instanceFilter; }
+        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
 
         //! Returns direction of relationship that should be selected in the query.
-        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const  { return m_requiredDirection; }
+        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const     { return m_relationshipClassNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const;
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const          { return m_relatedClassNames; }
+        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const;
 
     };
 

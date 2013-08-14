@@ -10,8 +10,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*__PUBLISH_SECTION_START__*/
-
 typedef bvector<ChildNodeSpecificationP> ChildNodeSpecificationList;
 typedef bvector<SubConditionP>           SubConditionList;
 
@@ -22,25 +20,17 @@ specifications by using sub-conditions.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SubCondition
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         WString                    m_condition;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
 
     public:
-        /*__PUBLISH_SECTION_START__*/
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT SubCondition ()
-            : m_condition (L"")
-            {
-            }
+        ECOBJECTS_EXPORT SubCondition ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SubCondition (WStringCR condition)
-            : m_condition (condition)
-            {
-            }
+        ECOBJECTS_EXPORT SubCondition (WStringCR condition);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~SubCondition (void);
@@ -52,13 +42,13 @@ struct SubCondition
         ECOBJECTS_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode);
 
         //! Returns sub-condition string.
-        ECOBJECTS_EXPORT WStringCR                      GetCondition (void)         { return m_condition;  }
+        ECOBJECTS_EXPORT WStringCR                      GetCondition (void);
 
         //! Collection of sub-conditions that can be used to separate specifications.
-        ECOBJECTS_EXPORT SubConditionList&              GetSubConditions (void)     { return m_subConditions;  }
+        ECOBJECTS_EXPORT SubConditionList&              GetSubConditions (void);
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void)    { return m_specifications; }
+        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void);
 
     };
 
@@ -68,14 +58,12 @@ ChildNodeRule defines rules for generating child nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ChildNodeRule : public PresentationRule
     {
-    /*__PUBLISH_SECTION_END__*/
     private:
         RuleTargetTree             m_targetTree;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
 
     protected:
-        /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName ();
 
@@ -87,28 +75,22 @@ struct ChildNodeRule : public PresentationRule
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT ChildNodeRule ()
-            : PresentationRule ()
-            {
-            }
+        ECOBJECTS_EXPORT ChildNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
-            : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree)
-            {
-            }
+        ECOBJECTS_EXPORT ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~ChildNodeRule (void);
 
         //! Returns target tree for which rule should be applied.
-        ECOBJECTS_EXPORT RuleTargetTree                 GetTargetTree (void)        { return m_targetTree; }
+        ECOBJECTS_EXPORT RuleTargetTree                 GetTargetTree (void);
 
         //! Collection of sub-conditions that can be used to separate specifications.
-        ECOBJECTS_EXPORT SubConditionList&              GetSubConditions (void)     { return m_subConditions;  }
+        ECOBJECTS_EXPORT SubConditionList&              GetSubConditions (void);
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void)    { return m_specifications; }
+        ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void);
 
     };
 
@@ -118,25 +100,17 @@ RootNodeRule defines rules for generating root nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RootNodeRule : public ChildNodeRule
     {
-    /*__PUBLISH_SECTION_END__*/
     protected:
-    /*__PUBLISH_SECTION_START__*/
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
         bool m_autoExpand;
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT RootNodeRule ()
-            : ChildNodeRule ()
-            {
-            }
+        ECOBJECTS_EXPORT RootNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
-            : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree), m_autoExpand (autoExpand)
-            {
-            }
+        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
@@ -145,7 +119,7 @@ struct RootNodeRule : public ChildNodeRule
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
         //! Returns flag which determines if nodes have to be automatically expanded.
-        ECOBJECTS_EXPORT bool                           GetAutoExpand (void)        { return m_autoExpand; }
+        ECOBJECTS_EXPORT bool                           GetAutoExpand (void);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

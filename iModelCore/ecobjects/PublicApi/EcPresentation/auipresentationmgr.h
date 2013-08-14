@@ -59,7 +59,7 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderR provider);
 
     //! Obtain command provider by id
-    ECOBJECTS_EXPORT ECPresentationCommandProviderCP GetCommandProviderById (UInt16 providerId);
+    ECOBJECTS_EXPORT ECPresentationCommandProviderCP GetCommandProviderById (size_t providerId);
 
     //! Add or remove the view definition provider
     ECOBJECTS_EXPORT void                           AddProvider (IECPresentationViewProviderR provider);
