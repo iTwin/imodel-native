@@ -43,6 +43,7 @@
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR                              "VersionMinor"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE                            "PreferredImage"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED                           "IsSearchEnabled"
+#define PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA                              "ExtendedData"
 
 #define PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION                                     "Condition"
 

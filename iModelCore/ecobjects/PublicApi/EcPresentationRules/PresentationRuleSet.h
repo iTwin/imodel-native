@@ -39,6 +39,7 @@ struct PresentationRuleSet : public RefCountedBase
         int                                    m_versionMinor;
         WString                                m_preferredImage;
         bool                                   m_isSearchEnabled;
+        WString                                m_extendedData;
 
         RootNodeRuleList                       m_rootNodesRules;
         ChildNodeRuleList                      m_childNodesRules;
@@ -130,6 +131,12 @@ struct PresentationRuleSet : public RefCountedBase
 
         //! Returns true if search should be enabled for the tree that uses this presentation rule set.
         ECOBJECTS_EXPORT bool                           GetIsSearchEnabled (void) const;
+
+        //! Extended data of a rule set.
+        ECOBJECTS_EXPORT WStringCR                      GetExtendedData (void) const;
+
+        //! Set extended data of a rule set.
+        ECOBJECTS_EXPORT void                           SetExtendedData (WStringCR extendedData);
 
         //! Collection of rules, which should be used when root nodes needs to be populated.
         ECOBJECTS_EXPORT RootNodeRuleList&              GetRootNodesRules (void);
