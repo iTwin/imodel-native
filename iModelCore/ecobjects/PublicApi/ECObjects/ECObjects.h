@@ -75,7 +75,6 @@ EC_TYPEDEFS(PropertyLayout);
 EC_TYPEDEFS(StandaloneECInstance);
 EC_TYPEDEFS(MemoryECInstanceBase);
 EC_TYPEDEFS(ECDBuffer);
-EC_TYPEDEFS(ClassLayoutHolder);
 
 EC_TYPEDEFS(ICustomECStructSerializer);
 EC_TYPEDEFS(CustomStructSerializerManager);

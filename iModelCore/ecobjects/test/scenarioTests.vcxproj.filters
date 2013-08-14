@@ -33,6 +33,9 @@
     <ClCompile Include="scenario\ValueTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scenario\ValueTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="scenario\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

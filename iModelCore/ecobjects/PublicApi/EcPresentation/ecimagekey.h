@@ -10,7 +10,10 @@
 #pragma once
 #include <Bentley/WString.h>
 #include <ECObjects/ECObjects.h>
-typedef struct mdlDesc MdlDesc;
+
+typedef struct mdlDesc  MdlDesc;
+typedef UInt32          RscType;            /* Resource Type */
+typedef Int32           RscId;              /* Resource Id */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -30,8 +33,8 @@ struct ECImageKey
     private:
         WString     m_name;
         ImageType   m_type;
-        long        m_iconId;
-        UInt32      m_iconType;
+        RscId       m_iconId;
+        RscType     m_iconType;
         MdlDesc*    m_mdlDesc;
 
     public:
@@ -51,11 +54,11 @@ struct ECImageKey
         WStringCR   GetImageName() const {return m_name;}
         void        SetImageName (WStringCR name) {m_name = name;}
 
-        long    GetIconId () const {return m_iconId;}
-        void    SetIconId (long iconId) {m_iconId = iconId;}
+        RscId       GetIconId () const {return m_iconId;}
+        void        SetIconId (RscId iconId) {m_iconId = iconId;}
 
-        UInt32  GetIconType() const {return m_iconType;}
-        void    SetIconType (UInt32 type) {m_iconType = type;}
+        RscType     GetIconType() const {return m_iconType;}
+        void        SetIconType (RscType type) {m_iconType = type;}
 
         MdlDesc*    GetMdlDesc() const {return m_mdlDesc;}
         void        SetMdlDesc(MdlDesc* desc) {m_mdlDesc = desc;}

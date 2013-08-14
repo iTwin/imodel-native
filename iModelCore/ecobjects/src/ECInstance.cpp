@@ -2896,6 +2896,21 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
             ixwStatus = WriteArrayPropertyValue (*arrayProperty, ecInstance, baseAccessString, rootNode);
         else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
             {
+            if (ecInstance.SaveOnlyLoadedPropertiesToXml())
+                {
+                // if the above flag is set then the instance sets "IsLoaded" flags for loaded properties and that "IsLoaded" flag is set in the ECValue for the property
+                WString    accessString;
+                if (NULL == baseAccessString)
+                    accessString = structProperty->GetName();    
+                else
+                    AppendAccessString (accessString, *baseAccessString, structProperty->GetName());
+
+                // no members, don't write anything.
+                ECValue         ecValue;
+                if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || !ecValue.IsLoaded())
+                    continue;
+                }
+
             ICustomECStructSerializerP customECStructSerializerP;
             if (NULL != (customECStructSerializerP = customStructSerializerMgr.GetCustomSerializer (structProperty, ecInstance)))
                 {
@@ -3322,6 +3337,14 @@ InstanceWriteStatus     IECInstance::WriteToXmlStream (IStreamP stream, bool isC
 
 #ifdef DGN_IMPORTER_REORG_WIP
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
+    {
+    return _SaveOnlyLoadedPropertiesToXml();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const
@@ -3339,6 +3362,15 @@ Bentley::DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
+    {
+    return _SaveOnlyLoadedPropertiesToXml();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const
@@ -3348,64 +3380,6 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
         return schema;
 
     return &m_fallBackSchema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool initializeDefaultValues (IECInstanceR instance, ECClassCR ecClass, WCharCP accessStringPrefix)
-    {
-    ECValue defaultValue;
-    IECInstancePtr custAttr;
-    bool setAllPropertiesSuccessfully = true;
-    FOR_EACH (ECPropertyCP ecprop, ecClass.GetProperties(true))
-        {
-        PrimitiveECPropertyCP primProp = ecprop->GetAsPrimitiveProperty();
-        StructECPropertyCP structProp;
-
-        if (NULL != primProp && (custAttr = primProp->GetCustomAttribute (L"UserDefinedPropertySpecification")).IsValid()
-            && ECOBJECTS_STATUS_Success == custAttr->GetValue (defaultValue, L"DefaultValue") && defaultValue.ConvertToPrimitiveType (primProp->GetType())
-           )
-            {
-            WString localAccessString;
-            if (NULL != accessStringPrefix)
-                {
-                localAccessString.append (accessStringPrefix);
-                localAccessString.append (1, '.');
-                localAccessString.append (primProp->GetName());
-                }
-
-            if (ECOBJECTS_STATUS_Success != instance.SetValue (!localAccessString.empty() ? localAccessString.c_str() : primProp->GetName().c_str(), defaultValue))
-                setAllPropertiesSuccessfully = false;
-            }
-        else if (NULL != (structProp = ecprop->GetAsStructProperty()))
-            {
-            WString localAccessString;
-            if (NULL != accessStringPrefix)
-                {
-                localAccessString.append (accessStringPrefix);
-                localAccessString.append (1, '.');
-                localAccessString.append (structProp->GetName());
-                }
-
-            localAccessString.append (ecprop->GetName());
-            if (!initializeDefaultValues (instance, structProp->GetType(), !localAccessString.empty() ? localAccessString.c_str() : structProp->GetName().c_str()))
-                setAllPropertiesSuccessfully = false;
-            }
-        }
-
-    return setAllPropertiesSuccessfully;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IECInstance::InitializeDefaultValues()
-    {
-    if (!GetClass().GetSchema().IsDefined (L"IsUserDefinedSchema"))
-        return true;
-    else
-        return initializeDefaultValues (*this, GetClass(), NULL);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -70,7 +70,7 @@ struct PerPropertyFlagsHolder
 * ECN::MemoryECInstanceBase is base class for ECInstances that holds its values in memory that it allocates.
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that
 * subclass this class.
-* @see ClassLayoutHolder, IECInstance
+* @see IECInstance
 * @ingroup ECObjectsGroup
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -99,32 +99,42 @@ private:
 protected:
     //! The MemoryECInstanceBase will take ownership of the memory
     ECOBJECTS_EXPORT MemoryECInstanceBase (byte * data, UInt32 size, ClassLayoutCR classLayout, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
-    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const * parentInstance=NULL);
+    ECOBJECTS_EXPORT MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, ECClassCR ecClass, MemoryECInstanceBase const * parentInstance=NULL);
+
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
-    ECOBJECTS_EXPORT virtual bool             _IsMemoryInitialized () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength);
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _ShrinkAllocation ();
-    ECOBJECTS_EXPORT virtual void             _FreeAllocation ();
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GrowAllocation (UInt32 bytesNeeded);
+    ECOBJECTS_EXPORT virtual bool               _IsMemoryInitialized () const;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _ShrinkAllocation ();
+    ECOBJECTS_EXPORT virtual void               _FreeAllocation ();
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GrowAllocation (UInt32 bytesNeeded);
 
-    ECOBJECTS_EXPORT virtual byte const *     _GetData () const override;
-    ECOBJECTS_EXPORT virtual UInt32           _GetBytesAllocated () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) override;    
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
+    ECOBJECTS_EXPORT virtual byte const *       _GetData () const override;
+    ECOBJECTS_EXPORT virtual UInt32             _GetBytesAllocated () const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) override;    
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) override;
     ECOBJECTS_EXPORT virtual ECN::PrimitiveType _GetStructArrayPrimitiveType () const {return PRIMITIVETYPE_Integer;}
 
-    ECOBJECTS_EXPORT virtual void             _ClearValues () override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus  _CopyInstanceProperties (ECN::IECInstanceCR fromNativeInstance) override;
+    ECOBJECTS_EXPORT virtual void               _ClearValues () override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _CopyFromBuffer (ECDBufferCR src) override;
 
-                     virtual bool             _AcquireData() const override { return true; }
-                     virtual bool             _ReleaseData() const override { return true; }
+                     virtual bool               _AcquireData (bool forWrite) const override { return true; }
+                     virtual bool               _ReleaseData() const override { return true; }
 
-    ECOBJECTS_EXPORT  ECObjectsStatus          SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) override;
+    ECOBJECTS_EXPORT virtual bool               _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const override;
+
+                     virtual IECInstanceP       _GetAsIECInstance () const = 0;
+
+    ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
-    ECOBJECTS_EXPORT  ECObjectsStatus          SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+    ECOBJECTS_EXPORT  ECObjectsStatus           SetInstancePerPropertyFlagsData (byte const* perPropertyFlagsDataAddress, int numBitsPerProperty, int numPerPropertyFlagsEntries);
+
+    ECOBJECTS_EXPORT IECInstanceCP              GetAsIECInstance () const;
+    ECOBJECTS_EXPORT IECInstanceP               GetAsIECInstanceP();
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -219,7 +229,7 @@ protected:
     ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
 
     // MemoryECInstanceBase
-    ECOBJECTS_EXPORT virtual IECInstanceP        _GetAsIECInstance () const;
+    ECOBJECTS_EXPORT virtual IECInstanceP        _GetAsIECInstance () const override;
 
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
@@ -270,15 +280,12 @@ struct IECWipRelationshipInstance : StandaloneECInstance
 //! @ingroup ECObjectsGroup
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
-//__PUBLISH_SECTION_END__
-    ,public ClassLayoutHolder
-//__PUBLISH_SECTION_START__
    {
 //__PUBLISH_SECTION_END__
 private:
-    bool    m_ownsClassLayout;
+    ClassLayoutPtr          m_classLayout;
 
-    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
+    StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
 protected:
@@ -294,9 +301,11 @@ protected:
 //__PUBLISH_SECTION_START__
 public:
     //! if structStandaloneEnablerLocater is NULL, we'll use GetDefaultStandaloneEnabler for embedded structs
-    ECOBJECTS_EXPORT static StandaloneECEnablerPtr CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout);
-    ECOBJECTS_EXPORT StandaloneECInstanceP         CreateSharedInstance (byte * data, UInt32 size);
-    ECOBJECTS_EXPORT StandaloneECInstancePtr       CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT static StandaloneECEnablerPtr  CreateEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
+    ECOBJECTS_EXPORT StandaloneECInstanceP          CreateSharedInstance (byte * data, UInt32 size);
+    ECOBJECTS_EXPORT StandaloneECInstancePtr        CreateInstance (UInt32 minimumInitialSize = 0);
+    ECOBJECTS_EXPORT ClassLayoutCR                  GetClassLayout() const;
+    ECOBJECTS_EXPORT ClassLayoutR                   GetClassLayout();
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 

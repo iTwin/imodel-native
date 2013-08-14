@@ -34,7 +34,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (byte * data, UInt32 size, ClassLayou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, MemoryECInstanceBase const* parentInstance) :
+MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 minimumBufferSize, bool allowWritingDirectlyToInstanceMemory, ECClassCR ecClass, MemoryECInstanceBase const* parentInstance) :
         ECDBuffer (allowWritingDirectlyToInstanceMemory),
         m_bytesAllocated(0)
     {
@@ -48,7 +48,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, UInt32 mi
     m_data = (byte*)malloc (size);
     m_bytesAllocated = size;
 
-    InitializeMemory (classLayout, m_data, m_bytesAllocated);
+    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined (L"PersistStringsAsUtf8"));
     
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
@@ -429,7 +429,7 @@ ECObjectsStatus     MemoryECInstanceBase::_SetStructArrayValueToMemory (ECValueC
         if (pTo.IsNull() || pTo->IsSupportingInstance())
             {
             pTo = pFrom->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
-            ECObjectsStatus copyStatus = pTo->CopyInstanceProperties (*pFrom);
+            ECObjectsStatus copyStatus = pTo->CopyValues (*pFrom);
             if (ECOBJECTS_STATUS_Success != copyStatus)
                 return copyStatus;
             }
@@ -854,20 +854,69 @@ ECObjectsStatus MemoryECInstanceBase::SetValueInternal (UInt32 propertyIndex, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::_CopyInstanceProperties
-(
-ECN::IECInstanceCR     fromNativeInstance
-)
+ECObjectsStatus MemoryECInstanceBase::_CopyFromBuffer (ECDBufferCR src)
     {
-    MemoryECInstanceBase const* fromMemoryInstance = fromNativeInstance.GetAsMemoryECInstance();
+    MemoryECInstanceBase const* fromMemoryInstance = dynamic_cast<MemoryECInstanceBase const*> (&src);
     if (NULL != fromMemoryInstance && GetClassLayout().Equals (fromMemoryInstance->GetClassLayout()))
         {
         SetUsageBitmask (fromMemoryInstance->GetUsageBitmask());
         memcpy (m_perPropertyFlagsHolder.perPropertyFlags, fromMemoryInstance->GetPerPropertyFlagsData(), m_perPropertyFlagsHolder.numPerPropertyFlagsEntries * sizeof(UInt32));
         }
 
-    return CopyInstancePropertiesToBuffer (fromNativeInstance);
+    return CopyPropertiesFromBuffer (src);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_EvaluateCalculatedProperty (ECValueR calcedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const
+    {
+    IECInstanceCR thisInstance = *GetAsIECInstance();
+    CalculatedPropertySpecificationCP spec = LookupCalculatedPropertySpecification (thisInstance, propLayout);
+    if (NULL != spec)
+        {
+        UInt32 propIdx;
+        if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
+            (const_cast<MemoryECInstanceBase&> (*this)).SetIsLoadedBit (propIdx);
+
+        return spec->Evaluate (calcedValue, existingValue, thisInstance);
+        }
+    else
+        return ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_UpdateCalculatedPropertyDependents (ECValueCR calcedValue, PropertyLayoutCR propLayout)
+    {
+    IECInstanceR thisInstance = *GetAsIECInstanceP();
+    CalculatedPropertySpecificationCP spec = LookupCalculatedPropertySpecification (thisInstance, propLayout);
+    return NULL != spec ? spec->UpdateDependentProperties (calcedValue, thisInstance) : ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MemoryECInstanceBase::_IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const
+    {
+    UInt32 propIdx;
+    if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
+        {
+        ECPropertyCP ecprop = GetAsIECInstance()->GetEnabler().LookupECProperty (propIdx);
+        ArrayECPropertyCP arrayProp = ecprop ? ecprop->GetAsArrayProperty() : NULL;
+        if (NULL != arrayProp)
+            return structInstance.GetEnabler().GetClass().Is (arrayProp->GetStructElementType());
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceP MemoryECInstanceBase::GetAsIECInstanceP()                                 { return _GetAsIECInstance(); }
+IECInstanceCP MemoryECInstanceBase::GetAsIECInstance() const                           { return _GetAsIECInstance(); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  StandaloneECInstance
@@ -897,7 +946,7 @@ StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, byte *
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECInstance::StandaloneECInstance (StandaloneECEnablerR enabler, UInt32 minimumBufferSize) :
-        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true),
+        MemoryECInstanceBase (enabler.GetClassLayout(), minimumBufferSize, true, enabler.GetClass()),
         m_sharedWipEnabler(&enabler), m_isSupportingInstance (false)
     {
     }
@@ -921,7 +970,7 @@ StandaloneECInstancePtr         StandaloneECInstance::Duplicate(IECInstanceCR in
         return NULL;
 
     StandaloneECInstancePtr newInstance = standaloneEnabler->CreateInstance();
-    if (ECOBJECTS_STATUS_Success != newInstance->CopyInstanceProperties (instance))
+    if (ECOBJECTS_STATUS_Success != newInstance->CopyValues (instance))
         return NULL;
 
     return newInstance;
@@ -1106,10 +1155,9 @@ WString        StandaloneECInstance::_ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout) :
+StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater) :
     ECEnabler (ecClass, structStandaloneEnablerLocater),
-    ClassLayoutHolder (classLayout),
-    m_ownsClassLayout (ownsClassLayout)
+    m_classLayout (&classLayout)
     {
     BeAssert (NULL != &ecClass);
     }
@@ -1119,19 +1167,15 @@ StandaloneECEnabler::StandaloneECEnabler (ECClassCR ecClass, ClassLayoutCR class
 +---------------+---------------+---------------+---------------+---------------+------*/    
 StandaloneECEnabler::~StandaloneECEnabler ()
     {
-    if (m_ownsClassLayout)
-        {
-        ClassLayoutP classLayoutP = (ClassLayoutP)&GetClassLayout();
-        delete classLayoutP;
-        }
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutCR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater, bool ownsClassLayout)
+StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)
     {
-    return new StandaloneECEnabler (ecClass, classLayout, structStandaloneEnablerLocater, ownsClassLayout);
+    return new StandaloneECEnabler (ecClass, classLayout, structStandaloneEnablerLocater);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1150,6 +1194,8 @@ ECObjectsStatus StandaloneECEnabler::_GetAccessString(WCharCP& accessString, UIn
 UInt32          StandaloneECEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 UInt32          StandaloneECEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
+ClassLayoutCR   StandaloneECEnabler::GetClassLayout() const { return *m_classLayout; }
+ClassLayoutR    StandaloneECEnabler::GetClassLayout() { return *m_classLayout; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Paul.Connelly                   12/11
@@ -1195,7 +1241,6 @@ StandaloneECInstanceP   StandaloneECEnabler::CreateSharedInstance (byte * data, 
 StandaloneECInstancePtr   StandaloneECEnabler::CreateInstance (UInt32 minimumBufferSize)
     {
     StandaloneECInstancePtr instance = new StandaloneECInstance (*this, minimumBufferSize);
-    instance->InitializeDefaultValues();
     return instance;
     }    
     

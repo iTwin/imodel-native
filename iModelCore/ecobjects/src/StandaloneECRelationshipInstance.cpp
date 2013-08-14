@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/        
 StandaloneECRelationshipInstance::StandaloneECRelationshipInstance (StandaloneECRelationshipEnablerCR relationshipEnabler) :
-        MemoryECInstanceBase (relationshipEnabler.GetClassLayout(), 0, true)
+        MemoryECInstanceBase (relationshipEnabler.GetClassLayout(), 0, true, relationshipEnabler.GetClass())
     {
     m_relationshipEnabler = &relationshipEnabler;
     m_relationshipEnabler->AddRef();   // make sure relationship enabler stays around
@@ -327,9 +327,16 @@ void     StandaloneECRelationshipInstance::SetName (WCharCP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationshipClassCR ecClass) :
     ECEnabler (ecClass, NULL),
-    ClassLayoutHolder (ecClass.GetDefaultStandaloneEnabler()->GetClassLayout()),
     m_relationshipClass (ecClass)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCR StandaloneECRelationshipEnabler::GetClassLayout() const
+    {
+    return GetClass().GetDefaultStandaloneEnabler()->GetClassLayout();
     }
 
 /*---------------------------------------------------------------------------------**//**

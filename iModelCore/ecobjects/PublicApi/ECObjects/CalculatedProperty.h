@@ -35,14 +35,14 @@ private:
     ~CalculatedPropertySpecification();
 public:
     // Attempts to evaluate the property value. Regardless of the return value, newValue will contain the proper result based on flags like UseLastValidOnFailure, FailureValue, and IsDefaultValueOnly
-    ECObjectsStatus         Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance) const;
 
     // Attempts to apply the ParserRegularExpression attribute to dependent properties when setting the calculated property to a new value
-    ECObjectsStatus         UpdateDependentProperties (ECValueCR calculatedValue, IECInstanceR instance) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    UpdateDependentProperties (ECValueCR calculatedValue, IECInstanceR instance) const;
 
     bool                    IsReadOnly() const { return NULL == m_parserRegex && !m_isDefaultOnly; }
 
-    static RefCountedPtr<CalculatedPropertySpecification> Create (ECPropertyCR hostProperty, PrimitiveType propertyType);
+    ECOBJECTS_EXPORT static RefCountedPtr<CalculatedPropertySpecification> Create (ECPropertyCR hostProperty, PrimitiveType propertyType);
     };
 
 typedef RefCountedPtr<CalculatedPropertySpecification> CalculatedPropertySpecificationPtr;

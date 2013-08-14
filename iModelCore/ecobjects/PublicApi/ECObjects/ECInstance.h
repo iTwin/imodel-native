@@ -231,6 +231,8 @@ protected:
     virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
 #endif
 /*__PUBLISH_SECTION_START__*/
+    //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
+    virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
 public:
 
     //! Returns the base address for this instance
@@ -371,9 +373,12 @@ public:
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 #endif
-    ECOBJECTS_EXPORT bool               InitializeDefaultValues();
-
-/*__PUBLISH_SECTION_START__*/
+    /*__PUBLISH_SECTION_START__*/
+    //! Attempts to copy all property values from one instance to this instance.
+    //! It is expected that the source instance is of the same class as this instance.
+    //! @param[in] source   Instance to copy values from.
+    //! @returns ECOBJECTS_STATUS_Success if values were successfully copied.
+    ECOBJECTS_EXPORT ECObjectsStatus    CopyValues(ECN::IECInstanceCR source);
 
     //! Check property to see it is a fixed size array and optionally return the fixed size.
     //! @param[in]  instance Instance to process
@@ -543,6 +548,10 @@ public:
     //! @param[in] xmlNode The node to write to
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
+
+    //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML.  If the instance
+    //! returns true then the instance insures the ECValue returned for a property will properly set the "IsLoaded" flag in the ECValue.
+    ECOBJECTS_EXPORT bool                       SaveOnlyLoadedPropertiesToXml() const;
     };
 
 //=======================================================================================
