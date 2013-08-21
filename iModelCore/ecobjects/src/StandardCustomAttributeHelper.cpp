@@ -34,6 +34,22 @@ DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isCompone
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 08/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::operator== (DateTimeInfo const& rhs) const
+    {
+    return m_isKindNull == rhs.m_isKindNull && m_isComponentNull == rhs.m_isComponentNull && m_info == rhs.m_info;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 08/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::operator!= (DateTimeInfo const& rhs) const
+    {
+    return !(*this == rhs);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 DateTime::Info DateTimeInfo::GetInfo (bool useDefaultIfUnset) const
@@ -126,6 +142,7 @@ WString DateTimeInfo::ToString () const
 
     return str;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2013
