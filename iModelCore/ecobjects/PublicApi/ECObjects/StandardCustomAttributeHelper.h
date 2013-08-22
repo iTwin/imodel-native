@@ -48,6 +48,16 @@ public:
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
     //__PUBLISH_SECTION_START__
 
+    //! Compares this DateTimeInfo to @p rhs.
+    //! @param [in] rhs DateTimeInfo to compare this against
+    //! @return true if both objects are equal, false otherwise
+    ECOBJECTS_EXPORT bool operator== (DateTimeInfo const& rhs) const;
+
+    //! Compares this DateTimeInfo to @p rhs for inequality.
+    //! @param [in] rhs DateTimeInfo to compare this against
+    //! @return true if the objects are not equal, false otherwise
+    ECOBJECTS_EXPORT bool operator!= (DateTimeInfo const& rhs) const;
+
     //! Indicates whether the DateTime::Kind is unset or not.
     //! @return true, if the DateTime::Kind is unset. false, otherwise
     ECOBJECTS_EXPORT bool IsKindNull () const;
