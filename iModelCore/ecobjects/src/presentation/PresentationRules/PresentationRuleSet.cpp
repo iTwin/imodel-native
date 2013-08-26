@@ -132,6 +132,9 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSearchEnabled, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED))
         m_isSearchEnabled = true;
 
+    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_extendedData, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA))
+        m_extendedData = L"";
+
     CommonTools::LoadRulesFromXmlNode <RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <ContentRule,       ContentRuleList>       (ruleSetNode, m_contentRules,     CONTENT_RULE_XML_NODE_NAME);
@@ -163,6 +166,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR,           m_versionMinor);
     ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE,         m_preferredImage.c_str ());
     ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED,        m_isSearchEnabled);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA,           m_extendedData.c_str ());
 
     CommonTools::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
     CommonTools::WriteRulesToXmlNode<ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules);
@@ -289,7 +293,17 @@ WStringCR              PresentationRuleSet::GetPreferredImage (void) const    { 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                   PresentationRuleSet::GetIsSearchEnabled (void) const   { return m_isSearchEnabled;   }
+bool                   PresentationRuleSet::GetIsSearchEnabled (void) const   { return m_isSearchEnabled;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   08/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR              PresentationRuleSet::GetExtendedData (void) const      { return m_extendedData;     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   08/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void                   PresentationRuleSet::SetExtendedData (WStringCR extendedData) { m_extendedData = extendedData; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
