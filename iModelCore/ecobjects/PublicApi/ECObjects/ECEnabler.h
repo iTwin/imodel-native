@@ -23,7 +23,19 @@ typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 #define INVALID_PROPERTY_INDEX  0;
 
 //=======================================================================================    
-//! base class ensuring that all enablers are refcounted
+//! An ECEnabler is the interface between an ECClass and an ECInstance. Every ECInstance
+//! has an associated ECEnabler, typically shared among all ECInstances of that ECClass.
+//!
+//! The ECEnabler's primary job is to convert access strings (based on property names defined
+//! in the ECClass) into integer property indices understood by the ECInstance.
+//! Property indices are opaque integers, each of which uniquely identify a single property
+//! of the ECClass. A property index of zero means "no such property index".
+//! In the case of struct properties, each property of the struct is assigned a property
+//! index unique among all property indices; the struct itself has its own property index which
+//! serves as the "parent" property index for its own properties.
+//!
+//! Operations involving property indices are significantly more efficient than those involving
+//! access strings and should be preferred where possible.
 //! @ingroup ECObjectsGroup
 //=======================================================================================    
 struct ECEnabler : RefCountedBase
@@ -98,37 +110,56 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
+    //! @return An enabler name for debugging/logging purposes.
     ECOBJECTS_EXPORT WCharCP                    GetName() const;
 
     //! Get the ECClass that this enabler 'enables'
+    //! @return the ECClass associated with this ECEnabler.
     ECOBJECTS_EXPORT ECClassCR                  GetClass() const;
 
     //! Obtain a propertyIndex given an access string. The propertyIndex can be used with ECInstances enabled by this enabler for more efficient property value access
+    //! @param[out]     propertyIndex           Will be set to the corresponding property index
+    //! @param[in]      propertyAccessString    Access string for which to obtain the property index
+    //! @return ECOBJECTS_STATUS_Success if access string successfully converted, or an error code.
     ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;
 
     //! Given a propertyIndex, find the corresponding property access string
+    //! @param[out]     propertyAccessString    Will be set to the corresponding access string
+    //! @param[in]      propertyIndex           Property index for which to obtain an access string
+    //! @return ECOBJECTS_STATUS_Success if property index successfully converted, or an error code.
     ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, UInt32 propertyIndex) const;
 
-    //! Get the first propertyIndex (used in conjunction with GetNextPropertyIndex for efficiently looping over property values.)
+    //! Obtain the property index of the first property of this enabler's ECClass (if parentIndex == 0), or the first child property
+    //! of the struct property indicated by parentIndex.
+    //! @param[in]      parentIndex     The property index of the parent struct property, or 0 if not a member of a struct.
+    //! @return The first property index, or 0 if no such property exists.
     ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
 
     //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetFirstPropertyIndex for efficiently looping over property values.)
-    //! @return 0 if there are no more
+    //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
+    //! @param[in]      inputIndex      Index of the preceding property.
+    //! @return The index of the property following inputIndex, or 0 if no such property exists.
     ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
 
     //! Return true if the property associated with parentIndex has child properties
+    //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
+    //! @return True if the specified property has child properties (i.e., is a struct property)
     ECOBJECTS_EXPORT bool                       HasChildProperties (UInt32 parentIndex) const;
 
-    //! Get vector of all property indices for property defined by parent index. An index of 0 means root properties.
+    //! Get vector of all property indices for property defined by parent index.
+    //! @param[out]     indices         Vector to hold the property indices.
+    //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
+    //! @return ECOBJECTS_STATUS_Success if vector of indices populated, or an error code.
     ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const;
 
     //! Get the IStandaloneEnablerLocater for this enabler
+    //! @return an IStandaloneEnablerLocater
     ECOBJECTS_EXPORT IStandaloneEnablerLocaterR GetStandaloneEnablerLocater();
 
     //! Returns an enabler for the given class from the given schema.
     //! @param[in] schemaKey    The SchemaKey defining the schema (schema name and version info) that the className ECClass comes from
     //! @param[in] className    The name of the ECClass to retrieve the enabler for
-    //! @returns A StandaloneECEnabler that enables the requested class
+    //! @return A StandaloneECEnabler that enables the requested class
     ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
     
 #if defined (EXPERIMENTAL_TEXT_FILTER)
