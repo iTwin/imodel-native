@@ -677,6 +677,10 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static ECObjectsStatus SetValueByIndex         (IECInstanceR instance, int propertyIndex, int arrayIndex, ECValueCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus GetValueByIndex         (ECValueR value, IECInstanceCR instance, int propertyIndex, int arrayIndex);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus ClearArray (IECInstanceR instance, WCharCP accessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus RemoveArrayElement (IECInstanceR instance, WCharCP accessString, UInt32 index);
+    ECOBJECTS_EXPORT static ECObjectsStatus AddArrayElements (IECInstanceR instance, WCharCP accessString, UInt32 count);
     };
 
 /*__PUBLISH_SECTION_START__*/
