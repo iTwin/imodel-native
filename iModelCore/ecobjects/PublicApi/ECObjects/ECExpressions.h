@@ -550,22 +550,32 @@ enum            ExpressionToken
     TOKEN_IIf                 = 72,               //      IFF
     TOKEN_LCurly              = 73,               //      {
     TOKEN_RCurly              = 74,               //      }
-    TOKEN_Error               = 81,
-    TOKEN_Ident               = 82,
-    TOKEN_StringConst         = 83,
-    TOKEN_PointConst          = 84,
-    TOKEN_DateTimeConst       = 85,               //      @
-    TOKEN_IntegerConstant     = 87,
-    TOKEN_HexConstant         = 88,
-    TOKEN_FloatConst          = 89,
-    TOKEN_UnitsConst          = 90,
-    TOKEN_Unrecognized        = 100,
-    TOKEN_BadNumber           = 101,
-    TOKEN_BadOctalNumber      = 102,
-    TOKEN_BadHexNumber        = 103,
-    TOKEN_BadFloatingPointNumber = 104,
-    TOKEN_UnterminatedString   = 105,
-    TOKEN_PrimaryList         = 106,
+
+    TOKEN_If                  = 75,
+    TOKEN_Else                = 76,
+    TOKEN_ElseIf              = 77,
+    TOKEN_Select              = 78,
+    TOKEN_End                 = 79,
+    TOKEN_EndIf               = 80,
+
+    TOKEN_DoubleColon         = 100,
+
+    TOKEN_Error               = 181,
+    TOKEN_Ident               = 182,
+    TOKEN_StringConst         = 183,
+    TOKEN_PointConst          = 184,
+    TOKEN_DateTimeConst       = 185,               //      @
+    TOKEN_IntegerConstant     = 187,
+    TOKEN_HexConstant         = 188,
+    TOKEN_FloatConst          = 189,
+    TOKEN_UnitsConst          = 190,
+    TOKEN_Unrecognized        = 200,
+    TOKEN_BadNumber           = 201,
+    TOKEN_BadOctalNumber      = 202,
+    TOKEN_BadHexNumber        = 203,
+    TOKEN_BadFloatingPointNumber = 204,
+    TOKEN_UnterminatedString   = 205,
+    TOKEN_PrimaryList         = 206,
     };
 
 /*__PUBLISH_SECTION_END__*/

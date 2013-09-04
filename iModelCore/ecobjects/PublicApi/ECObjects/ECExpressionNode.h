@@ -144,13 +144,24 @@ public:
         }
     };
 
+//=======================================================================================
+//! A node with the data type fully determined.  A ResolvedTypeNode can be the child of a 
+//! Node, but a Node that is not a ResolvedTypeNode cannot be the child of a ResolvedTypeNode. 
+//! If anything in a tree's subtrees has a type that is not resolved, then the type itself
+//! is not resolved.
+// @bsiclass                                                    John.Gooding    09/2013
+//=======================================================================================
+struct ResolvedTypeNode : Node
+    {
+    };
+
 /*=================================================================================**//**
 *
 * !!!Describe Class Here!!!
 *
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
-struct          StringLiteralNode : Node
+struct          StringLiteralNode : ResolvedTypeNode
 {
 private:
     WString     m_value;
@@ -218,7 +229,7 @@ public:
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T, ExpressionToken TOKEN>
-struct          LiteralNode : Node
+struct          LiteralNode : ResolvedTypeNode
     {
 private:
     T           m_value;
@@ -262,7 +273,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          NullLiteralNode : Node
+struct          NullLiteralNode : ResolvedTypeNode
     {
 protected:
     virtual WString             _ToString() const override { return L"Null"; }
@@ -279,7 +290,7 @@ public:
 /*=================================================================================**//**
 *
 * Holds a list of nodes forming a primary.  Every dotted expression, method call
-* or array access expression must start with an identifier.  That identifier is represesented
+* or array access expression must start with an identifier.  That identifier is represented
 * by the member m_identName.  All subsequent operations are represented by entries in 
 * m_operators.
 *
@@ -341,6 +352,7 @@ struct          IdentNode : Node
 {
 private:
     WString     m_value;
+    bvector<WString> m_qualifiers;
 
                 IdentNode(wchar_t const* name) : m_value(name) {}
     friend      struct DotNode;
@@ -355,6 +367,7 @@ protected:
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
+    void                    PushQualifier(WCharCP rightName);
     wchar_t const*          GetName() const { return m_value.c_str(); }
     static IdentNodePtr     Create(wchar_t const*name) { return new IdentNode(name); }
 
