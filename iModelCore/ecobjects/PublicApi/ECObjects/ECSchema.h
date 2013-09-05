@@ -1671,6 +1671,7 @@ public:
     ECOBJECTS_EXPORT int     GetCount(); //!< Returns the number of schemas currently in the cache
     ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
+    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
 };
 
 

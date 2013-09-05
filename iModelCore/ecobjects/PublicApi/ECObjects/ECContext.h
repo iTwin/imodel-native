@@ -129,6 +129,10 @@ public:
     //! @param[in] matchType    The match type criteria used to locate the requested schema
     //! @returns An ECSchemaPtr.  This ptr will return false for IsValid() if the schema could not be located.
     ECOBJECTS_EXPORT ECSchemaPtr         LocateSchema (SchemaKeyR key, SchemaMatchType matchType);
+
+    //! Gets the schemas cached by this context.
+    //! @returns Schemas cached by this context
+    ECOBJECTS_EXPORT ECSchemaCacheR GetCache ();
 };
 
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
