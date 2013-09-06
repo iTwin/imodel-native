@@ -11,106 +11,6 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass
-* Helper class to hold the schema
-*                                     Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct StandardCustomAttributesSchemaHolder;
-typedef RefCountedPtr<StandardCustomAttributesSchemaHolder> StandardCustomAttributesSchemaHolderPtr;
-
-struct StandardCustomAttributesSchemaHolder : RefCountedBase
-{
-private:
-    ECSchemaPtr            m_schema;
-    ECClassP               m_supplementalSchemaMetaDataClass;
-    StandaloneECEnablerPtr m_enabler;
-
-    static StandardCustomAttributesSchemaHolderPtr s_schemaHolder;
-
-    StandardCustomAttributesSchemaHolder();
-
-    ECSchemaPtr _GetSchema();
-
-    IECInstancePtr _CreateSupplementalSchemaMetaDataInstance();
-
-public:
-
-/*__PUBLISH_SECTION_START__*/
-    static StandardCustomAttributesSchemaHolderPtr GetHolder();
-
-    static ECSchemaPtr GetSchema();
-
-    static IECInstancePtr CreateSupplementalSchemaMetaDataInstance();
-};
-
-StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::s_schemaHolder;
-
-static WCharCP s_customAttributeAccessor = L"SupplementalSchemaMetaData";
-static const UInt32 s_bscaVersionMajor = 1;
-static const UInt32 s_bscaVersionMinor = 5;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaKey key (L"Bentley_Standard_CustomAttributes", s_bscaVersionMajor, s_bscaVersionMinor);
-
-    m_schema = ECSchema::LocateSchema(key, *schemaContext);
-    m_supplementalSchemaMetaDataClass = m_schema->GetClassP(s_customAttributeAccessor);
-
-    m_enabler = m_supplementalSchemaMetaDataClass->GetDefaultStandaloneEnabler();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::GetHolder()
-    {
-    if (s_schemaHolder.IsNull())
-        s_schemaHolder = new StandardCustomAttributesSchemaHolder();
-
-    return s_schemaHolder;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr StandardCustomAttributesSchemaHolder::_GetSchema()
-    {
-    return m_schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr StandardCustomAttributesSchemaHolder::GetSchema()
-    {
-    return GetHolder()->_GetSchema();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateSupplementalSchemaMetaDataInstance()
-    {
-    if (!m_schema.IsValid())
-        _GetSchema();
-
-    StandaloneECInstancePtr standaloneInstance = m_enabler->CreateInstance();
-    return IECInstancePtr(standaloneInstance.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr StandardCustomAttributesSchemaHolder::CreateSupplementalSchemaMetaDataInstance()
-    {
-    return GetHolder()->_CreateSupplementalSchemaMetaDataInstance();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementalSchemaMetaData::SupplementalSchemaMetaData
@@ -130,6 +30,8 @@ bool isUserSpecific
     m_supplementalSchemaPurpose    = supplementalSchemaPurpose;
     m_isUserSpecific               = isUserSpecific;
     }
+
+WCharCP SupplementalSchemaMetaData::s_customAttributeAccessor = L"SupplementalSchemaMetaData";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
@@ -296,7 +198,7 @@ ECSchemaP supplementalSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
     {
-    IECInstancePtr instance = StandardCustomAttributesSchemaHolder::CreateSupplementalSchemaMetaDataInstance();
+    IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
     instance->SetValue(GetPrimarySchemaMajorVersionPropertyAccessor(), ECValue((::Int32)GetPrimarySchemaMajorVersion()));
     instance->SetValue(GetPrimarySchemaMinorVersionPropertyAccessor(), ECValue((::Int32)GetPrimarySchemaMinorVersion()));
@@ -468,7 +370,8 @@ bool createCopyOfSupplementalCustomAttribute
     
     status = MergeSchemasIntoSupplementedSchema(primarySchema, schemasByPrecedence);
     primarySchema.SetIsSupplemented(true);
-    primarySchema.SetSupplementalSchemaInfo(SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes).get());
+    SupplementalSchemaInfoPtr info = SupplementalSchemaInfo::Create(primarySchema.GetFullSchemaName().c_str(), m_supplementalSchemaNamesAndPurposes);
+    primarySchema.SetSupplementalSchemaInfo(info.get());
 
     timer.Stop();
     WString primarySchemaName = primarySchema.GetFullSchemaName();
@@ -1119,6 +1022,8 @@ SchemaPrecedence precedence
     return ECOBJECTS_STATUS_Success == SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *attributeToStore, precedence) ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
 
+WCharCP SupplementalSchemaInfo::s_customAttributeAccessor = L"SupplementalProvenance";
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1252,6 +1157,50 @@ WStringCR purpose
             return false;
         }
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP SupplementalSchemaInfo::GetCustomAttributeAccessor()
+    {
+    return s_customAttributeAccessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
+    {
+    IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(GetCustomAttributeAccessor());
+
+    ECClassCP schemaNameAndPurpose = StandardCustomAttributeHelper::GetCustomAttributeClass(L"SchemaNameAndPurpose");
+    if (NULL == schemaNameAndPurpose)
+        return instance;
+
+    StandaloneECEnablerPtr classEnabler = schemaNameAndPurpose->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr memberEnabler = classEnabler->GetEnablerForStructArrayMember (schemaNameAndPurpose->GetSchema().GetSchemaKey(), schemaNameAndPurpose->GetName().c_str()); 
+
+    SchemaNamePurposeMap::const_iterator iter;
+    int arrayIndex = 0;
+    for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
+        {
+        bpair<WString, WString>const& entry = *iter;
+        WString storedPurpose = entry.second;
+        StandaloneECInstancePtr memberInst = memberEnabler->CreateInstance().get();
+
+        ECValue v1(entry.first.c_str());
+        memberInst->SetValue(L"SchemaName", v1);
+        ECValue v2(entry.second.c_str());
+        memberInst->SetValue(L"Purpose", v2);
+
+        ECValue v;
+        v.SetStruct (memberInst.get());
+        instance->SetValue (L"SupplementalSchemaNamesAndPurposes", v, arrayIndex++);
+
+        }
+
+    return instance;
     }
 END_BENTLEY_ECOBJECT_NAMESPACE
 

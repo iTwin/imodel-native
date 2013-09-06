@@ -12,6 +12,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/DateTime.h>
 #include <ECObjects/ECObjects.h>
+#include <ECObjects/ECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
@@ -151,6 +152,16 @@ public:
     //! @param[in] isDynamicSchema true, if this schema should be marked as dynamic schema. false, otherwise.
     //! @return A status code indicating success or error
     ECOBJECTS_EXPORT static ECObjectsStatus SetIsDynamicSchema (ECSchemaR schema, bool isDynamicSchema);
+
+    //! Returns the specified CustomAttribute ECClass
+    //! @param[in] attributeName The name of the CustomAttribute ECClass
+    //! @return An ECClassCP, if the attribute is found.  NULL otherwise.
+    ECOBJECTS_EXPORT static ECClassCP GetCustomAttributeClass(WCharCP attributeName);
+
+    //! Creates a custom attribute instance for the given attribute
+    //! @param[in] attributeName The name of the custom attribute to create
+    //! @return An instance of the given custom attribute
+    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(WCharCP attributeName);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

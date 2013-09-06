@@ -45,6 +45,7 @@ private:
     WString m_supplementalSchemaPurpose;
     bool   m_isUserSpecific;
 
+    static WCharCP s_customAttributeAccessor;
 
 public:
     //! Constructor for SupplementalSchemaMetaData
@@ -371,6 +372,7 @@ private:
     WString     m_primarySchemaFullName;
     WString     m_supplementedKey;
     SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
+    static WCharCP s_customAttributeAccessor;
 
 public:
     //! Constructs an instance of the SupplementalSchemaInfo class
@@ -406,6 +408,14 @@ public:
     //! @param[in]  purpose         Schemas with this purpose will be compared
     //! @returns    True    If the input schema has the same supplemental schemas as the current schema for the given purpose, or if neither schema is supplemented.
     ECOBJECTS_EXPORT bool HasSameSupplementalSchemasForPurpose(ECSchemaCR secondSchema, WStringCR purpose) const;
+
+    //__PUBLISH_SECTION_END__
+    //! Creates a custom attribute defining the supplemental schema names and their purposes
+    IECInstancePtr CreateCustomAttribute();
+
+    //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
+    static WCharCP GetCustomAttributeAccessor();
+    //__PUBLISH_SECTION_START__
 
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
