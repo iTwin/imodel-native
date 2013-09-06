@@ -11,7 +11,6 @@
 
 #include <Bentley/DateTime.h>
 #include "ECObjects.h"
-#include <ECObjects/StandardCustomAttributeHelper.h>
 #include <Geom/GeomApi.h>
 
 BENTLEY_TYPEDEFS (BeXmlDom)
