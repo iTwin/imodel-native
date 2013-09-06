@@ -1184,6 +1184,10 @@ bool isSupplemented
 void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     {
     m_supplementalSchemaInfo = info;
+    if (NULL == info)
+        this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeAccessor());
+    else
+        this->SetConsolidatedCustomAttribute(info->CreateCustomAttribute());
     }
 
 /*---------------------------------------------------------------------------------**//**
