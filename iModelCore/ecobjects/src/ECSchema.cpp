@@ -1231,7 +1231,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     if (NULL == info)
         this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
-        this->SetConsolidatedCustomAttribute(info->CreateCustomAttribute());
+        this->SetConsolidatedCustomAttribute(*info->CreateCustomAttribute());
     }
 
 /*---------------------------------------------------------------------------------**//**
