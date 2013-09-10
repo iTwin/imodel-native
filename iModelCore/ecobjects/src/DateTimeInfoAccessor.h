@@ -53,10 +53,10 @@ public:
     //! Retrieves the content of the \b %DateTimeInfo custom attribute from the specified date time ECProperty.
     //! @remarks The \b %DateTimeInfo custom attribute is defined in the standard schema \b Bentley_Standard_CustomAttributes.
     //!          See also DateTimeInfo.
-    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute
+    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
+    //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return true if \p dateTimeProperty contains the %DateTimeInfo custom attribute, false if \p dateTimeProperty 
-    //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
+    //! @return true in case of success, false in case of parsing errors. 
     static bool TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
     };
 

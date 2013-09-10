@@ -55,7 +55,11 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
 
     IECInstancePtr caInstance = dateTimeProperty.GetCustomAttribute (DATETIMEINFO_CLASSNAME);
     if (caInstance.IsNull())
-        return false;
+        {
+        //no CA found -> return a DateTimeInfo for which both Kind and Component are set to unset
+        dateTimeInfo = DateTimeInfo ();
+        return true;
+        }
 
     //Retrieve DateTimeKind
     ECValue caVal;
@@ -91,12 +95,6 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
         return false;
         }
         
-    //if both meta data items are unset, consider this as if the CA wasn't specified
-    if (isKindNull && isComponentNull)
-        {
-        return false;
-        }
-
     dateTimeInfo = DateTimeInfo (isKindNull, kind, isComponentNull, component);
     return true;
     }

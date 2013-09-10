@@ -907,8 +907,14 @@ ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECV
     if (v.IsDateTime () && !v.IsNull ())
         {
         DateTimeInfo dateTimeInfo;
-        const bool found = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
-        if (found && !v.DateTimeInfoMatches (dateTimeInfo))
+        const bool success = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
+        if (!success)
+            {
+            LOG.error (L"Error retrieving the DateTimeInfo custom attribute from the respective ECProperty.");
+            return ECOBJECTS_STATUS_Error;
+            }
+
+        if (!v.DateTimeInfoMatches (dateTimeInfo))
             {
             LOG.errorv (L"Setting a DateTime ECValue in ECInstance failed. DateTime metadata in ECValue mismatches the DateTimeInfo custom attribute on the respective ECProperty. Actual: %ls. Expected: %ls.",
                 v.DateTimeMetadataToString ().c_str (), dateTimeInfo.ToString ().c_str ());

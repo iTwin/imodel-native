@@ -45,6 +45,11 @@ public:
 
     //! Initializes a new instance of the DateTimeInfo type.
     ECOBJECTS_EXPORT DateTimeInfo ();
+    
+    //! Initializes a new instance of the DateTimeInfo type.
+    //! @param[in] metadata object from which the DateTimeInfo will be initialized.
+    ECOBJECTS_EXPORT explicit DateTimeInfo (DateTime::Info const& metadata);
+    
     //__PUBLISH_SECTION_END__
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
     //__PUBLISH_SECTION_START__
@@ -58,6 +63,10 @@ public:
     //! @param [in] rhs DateTimeInfo to compare this against
     //! @return true if the objects are not equal, false otherwise
     ECOBJECTS_EXPORT bool operator!= (DateTimeInfo const& rhs) const;
+
+    //! Indicates whether the DateTime::Kind and DateTime::Component are both unset or not.
+    //! @return true, if both DateTime::Kind and DateTime::Component are unset. false, if at least one of the two are not unset.
+    ECOBJECTS_EXPORT bool IsNull () const;
 
     //! Indicates whether the DateTime::Kind is unset or not.
     //! @return true, if the DateTime::Kind is unset. false, otherwise
@@ -119,13 +128,13 @@ private:
     //__PUBLISH_SECTION_START__
 
 public:
-    //! Retrieves the content of the @b %DateTimeInfo custom attribute from the specified date time ECProperty.
-    //! @remarks The @b %DateTimeInfo custom attribute is defined in the standard schema @b Bentley_Standard_CustomAttributes.
+    //! Retrieves the content of the \b %DateTimeInfo custom attribute from the specified date time ECProperty.
+    //! @remarks The \b %DateTimeInfo custom attribute is defined in the standard schema \b Bentley_Standard_CustomAttributes.
     //!          See also DateTimeInfo.
-    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute
+    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
+    //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return true if @p dateTimeProperty contains the %DateTimeInfo custom attribute, false if @p dateTimeProperty 
-    //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
+    //! @return true in case of success, false in case of parsing errors. 
     ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Indicates whether the specified schema is a @b system schema (in contrast to a user-supplied schema) by

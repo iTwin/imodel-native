@@ -360,6 +360,11 @@ bool ECValue::DateTimeInfo::TryGetMetadata (DateTime::Info& metadata) const
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTimeInfoCR caMetadata)
     {
+    //DateTimeInfo::IsNull indicates whether the metadata is unset or not. Only if it is not unset, store anything
+    //in the ECValue
+    if (caMetadata.IsNull ())
+        return SUCCESS;
+
     DateTime::Info metadata = caMetadata.GetInfo (true);
     return SetMetadata (metadata);
     }

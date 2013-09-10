@@ -26,12 +26,21 @@ DateTimeInfo::DateTimeInfo ()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+DateTimeInfo::DateTimeInfo (DateTime::Info const& metadata)
+    : m_isKindNull (false), m_isComponentNull (false), m_info (metadata)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component)
     : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component)
     {
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 08/2013
@@ -63,6 +72,14 @@ DateTime::Info DateTimeInfo::GetInfo (bool useDefaultIfUnset) const
     const DateTime::Component component = IsComponentNull () ? DEFAULT_COMPONENT : m_info.GetComponent ();
 
     return DateTime::Info (kind, component);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::IsNull () const
+    {
+    return IsKindNull () && IsComponentNull ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -142,6 +159,9 @@ WString DateTimeInfo::ToString () const
 
     return str;
     }
+
+
+//*********************** StandardCustomAttributesSchemaHolder *************************************
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
@@ -252,6 +272,7 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstan
     return GetHolder()->_CreateCustomAttributeInstance(attribute);
     }
 
+//*********************** StandardCustomAttributeHelper *************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2013
