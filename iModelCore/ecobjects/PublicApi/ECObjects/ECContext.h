@@ -155,10 +155,11 @@ private:
     StandaloneECInstancePtr             m_dummy;
     ECSchemaCR                          m_fallBackSchema;
     IPrimitiveTypeResolver const*       m_typeResolver;
+    IECSchemaRemapperCP                 m_schemaRemapper;
 
 protected:
     ECInstanceReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, ECSchemaCR fallBackSchema, IPrimitiveTypeResolver const* typeResolver) 
-        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver)
+        : m_standaloneEnablerLocater (standaloneEnablerLocater), m_fallBackSchema (fallBackSchema), m_typeResolver (typeResolver), m_schemaRemapper (NULL)
         {
         }
 
@@ -171,6 +172,10 @@ protected:
 public:
     PrimitiveType           GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const  { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType(); }
     PrimitiveType           GetSerializedPrimitiveArrayType (ArrayECPropertyCR ecprop) const { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveArrayType (ecprop) : ecprop.GetPrimitiveElementType(); }
+
+    void                    SetSchemaRemapper (IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
+    void                    ResolveSerializedPropertyName (WStringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
+    void                    ResolveSerializedClassName (WStringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
 
     ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 
