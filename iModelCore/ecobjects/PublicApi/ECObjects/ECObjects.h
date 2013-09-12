@@ -90,6 +90,7 @@ EC_TYPEDEFS (PresentationMetadataHelper);
 EC_TYPEDEFS (CalculatedPropertySpecification);
 EC_TYPEDEFS (ParserRegex);
 EC_TYPEDEFS(IECTypeAdapterContext);
+EC_TYPEDEFS(IECSchemaRemapper);
 
 typedef struct IStream* IStreamP;
 
