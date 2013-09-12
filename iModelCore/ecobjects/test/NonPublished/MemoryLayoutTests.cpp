@@ -1102,8 +1102,8 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void  checkValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECInstancePtr& instance)
     {
-    UInt32  propertyIndex;
-    bool isSet;
+    UInt32  propertyIndex=0;
+    bool isSet=true;
 
     ECValue ecValue;
 
@@ -1122,8 +1122,8 @@ static void  checkValue (WCharCP accessString, ECValueCR value, ECN::StandaloneE
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECInstancePtr& instance)
     {
-    UInt32  propertyIndex;
-    bool isSet;
+    UInt32  propertyIndex=0;
+    bool isSet=true;
 
     EXPECT_TRUE (SUCCESS  == instance->GetEnabler().GetPropertyIndex (propertyIndex, accessString));
     EXPECT_TRUE (SUCCESS  == instance->SetValue (propertyIndex, value));
@@ -1231,7 +1231,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     instance->SetValue  (accessString, ECValue (stringValue));
 
     ECValue value;    
-    UInt32  propertyIndex;
+    UInt32  propertyIndex=0;
     
     EXPECT_TRUE (SUCCESS  == enabler->GetPropertyIndex (propertyIndex, accessString));
     EXPECT_TRUE (SUCCESS  == instance->GetValue (value, propertyIndex));
@@ -1688,7 +1688,7 @@ struct ECDBufferTests : MemoryLayoutTests
         v.Clear();
         EXPECT_EQ (0, instance.SetValue (accessor, v));
 
-        bool isNull;
+        bool isNull=false;
         EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor));
         EXPECT_TRUE (isNull);
         EXPECT_TRUE (buf->IsEmpty()) << accessor;
@@ -1703,7 +1703,7 @@ struct ECDBufferTests : MemoryLayoutTests
         EXPECT_TRUE (buf.IsEmpty());
 
         EXPECT_EQ (0, instance.AddArrayElements (accessor, 1));
-        bool isNull;
+        bool isNull=true;
         EXPECT_EQ (0, instance.IsPropertyNull (isNull, accessor, 0));
         EXPECT_TRUE (isNull);
         EXPECT_FALSE (buf.IsEmpty());   // a non-empty array containing null elements => a non-empty IECInstance
@@ -2043,7 +2043,7 @@ TEST_F (ECDBufferTests, ArraysAreNotNull)
     ecClass->CreateArrayProperty (arrayProp, L"Array", PRIMITIVETYPE_String);
 
     StandaloneECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    bool isNull;
+    bool isNull = true;
     EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->IsPropertyNull (isNull, L"Array"));
     EXPECT_FALSE (isNull);
 

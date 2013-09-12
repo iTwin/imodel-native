@@ -666,7 +666,7 @@ double sweepAngle
     DPoint3d xyz0 = DPoint3d::From (s_defaultRadius, 0, 0);
     if (strokes.size () > 0)
         {
-        DPoint3d xyzMax;
+        DPoint3d xyzMax = DPoint3d::FromZero();
         double r2Max = 0.0;
         for (size_t i = 1; i < strokes.size (); i++)
             {
