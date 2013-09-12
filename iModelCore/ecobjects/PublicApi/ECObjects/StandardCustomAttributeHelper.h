@@ -134,7 +134,7 @@ public:
     //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
     //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return true in case of success, false in case of parsing errors. 
+    //! @return true in case of success, false in case of parsing errors or if @p dateTimeProperty is not of type date time. 
     ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Indicates whether the specified schema is a @b system schema (in contrast to a user-supplied schema) by
