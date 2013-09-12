@@ -286,9 +286,9 @@ WCharCP const StandardCustomAttributeHelper::DYNAMICSCHEMA_CA_NAME = L"DynamicSc
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
+ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
-    return DateTimeInfoAccessor::TryGetFrom (dateTimeInfo, dateTimeProperty);
+    return DateTimeInfoAccessor::GetFrom (dateTimeInfo, dateTimeProperty);
     }
 
 

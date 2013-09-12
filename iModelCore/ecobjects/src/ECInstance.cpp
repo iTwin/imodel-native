@@ -907,11 +907,11 @@ ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECV
     if (v.IsDateTime () && !v.IsNull ())
         {
         DateTimeInfo dateTimeInfo;
-        const bool success = TryGetDateTimeInfo (dateTimeInfo, propertyIndex);
-        if (!success)
+        const ECObjectsStatus stat = GetDateTimeInfo (dateTimeInfo, propertyIndex);
+        if (stat != ECOBJECTS_STATUS_Success)
             {
             LOG.error (L"Error retrieving the DateTimeInfo custom attribute from the respective ECProperty.");
-            return ECOBJECTS_STATUS_Error;
+            return stat;
             }
 
         if (!v.DateTimeInfoMatches (dateTimeInfo))
@@ -934,7 +934,7 @@ ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 pr
     if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
         {
         DateTimeInfo caDateTimeMetadata;
-        if (TryGetDateTimeInfo (caDateTimeMetadata, propertyIndex))
+        if (GetDateTimeInfo (caDateTimeMetadata, propertyIndex) == ECOBJECTS_STATUS_Success)
             {
             //fails if caDateTimeMetadata specified local DateTimeKind which is not supported
             if (SUCCESS != v.SetDateTimeMetadata (caDateTimeMetadata))
@@ -950,7 +950,7 @@ ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECInstance::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const
+ECObjectsStatus IECInstance::GetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const
     {
     //TODO: Need to profile this. The implementation does look up the access string from the prop index
     //and then parses to access string (to check whether it might refer to a struct member) before
@@ -958,10 +958,10 @@ bool IECInstance::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propert
     ECPropertyCP ecProperty = GetEnabler ().LookupECProperty (propertyIndex);
     if (ecProperty == NULL)
         {
-        return false;
+        return ECOBJECTS_STATUS_PropertyNotFound;
         }
 
-    return StandardCustomAttributeHelper::TryGetDateTimeInfo (dateTimeInfo, *ecProperty);
+    return StandardCustomAttributeHelper::GetDateTimeInfo (dateTimeInfo, *ecProperty);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////

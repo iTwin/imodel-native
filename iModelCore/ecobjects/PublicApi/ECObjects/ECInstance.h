@@ -126,7 +126,7 @@ private:
     //! @param[in] propertyIndex Index of property to retrieve metadata from (index is 1-based)
     //! @return ECOBJECT_STATUS_Success if successful. ECOBJECTS_STATUS_DataTypeMismatch if the 
     ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const;
-    bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const;
+    ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const;
 
 protected:
     ECOBJECTS_EXPORT IECInstance();

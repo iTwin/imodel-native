@@ -165,9 +165,9 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
         static void Assert (ECPropertyCR dateTimeProperty, ExpectedResult const& expected)
             {
             DateTimeInfo actual;
-            const bool success = StandardCustomAttributeHelper::TryGetDateTimeInfo (actual, dateTimeProperty);
+            const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (actual, dateTimeProperty);
             //if retrieval failed, m_HasDateTimeInfo should be false, too.
-            if (!success)
+            if (stat != ECOBJECTS_STATUS_Success)
                 ASSERT_FALSE (expected.m_HasDateTimeInfo);
                 
             EXPECT_EQ (expected.m_HasDateTimeInfo, !actual.IsNull ());
@@ -317,7 +317,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/13                               
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfo)
+TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfo)
     {
     ExpectedResults expectedResults;
     ECSchemaReadContextPtr context = NULL;
@@ -337,7 +337,7 @@ TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfo)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/13                               
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfoInSchemaNotReferencingBSCA)
+TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfoInSchemaNotReferencingBSCA)
     {
     ECSchemaReadContextPtr context = NULL;
     ECSchemaPtr testSchema = CreateTestSchemaNotReferencingBSCA (context);
@@ -347,14 +347,14 @@ TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfoInSchemaNotRe
 
     ECPropertyP prop = testClass->GetPropertyP (L"prop1");
     DateTimeInfo dti;
-    bool success = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
-    EXPECT_TRUE (success && dti.IsNull ()) << "No DateTimeInfo CA expected on property that doesn't have the DateTimeInfo CA";
+    const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
+    EXPECT_TRUE (stat == ECOBJECTS_STATUS_Success && dti.IsNull ()) << "No DateTimeInfo CA expected on property that doesn't have the DateTimeInfo CA";
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/13                               
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeForNonDateTimeProperties)
+TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeForNonDateTimeProperties)
     {
     ExpectedResults expectedResults;
     ECSchemaReadContextPtr context = NULL;
@@ -368,19 +368,19 @@ TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeForNonDateTimePro
     DISABLE_ASSERTS
 
     DateTimeInfo dti;
-    bool success = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
-    ASSERT_FALSE (success);
+    ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
+    ASSERT_NE (ECOBJECTS_STATUS_Success, stat);
 
     prop = testClass->GetPropertyP (L"intArrayProp");
     ASSERT_TRUE (prop != NULL);
-    success = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
-    ASSERT_FALSE (success);
+    stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
+    ASSERT_NE (ECOBJECTS_STATUS_Success, stat);
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/13                               
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfoWithCorruptCADefinition)
+TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfoWithCorruptCADefinition)
     {
     ECSchemaReadContextPtr context = NULL;
     ECSchemaPtr testSchema = CreateTestSchemaWithCorruptDateTimeInfoCA (context);
@@ -391,8 +391,8 @@ TEST_F(StandardCustomAttributeHelperTestFixture, TryGetDateTimeInfoWithCorruptCA
     DISABLE_ASSERTS
     ECPropertyP prop = testClass->GetPropertyP (L"prop");
     DateTimeInfo dti;
-    bool success = StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *prop);
-    EXPECT_FALSE (success);
+    const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
+    ASSERT_NE (ECOBJECTS_STATUS_Success, stat);
     };
 
 //---------------------------------------------------------------------------------------
@@ -413,55 +413,55 @@ TEST_F(StandardCustomAttributeHelperTestFixture, DateTimeInfoToString)
 
     ECPropertyP ecproperty = testClass->GetPropertyP (L"nodatetimeinfo");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_TRUE (str.empty ()) << L"DateTimeInfo::ToString () is expected to return an empty string for an ECProperty not having the DateTimeInfo custom attribute.";
 
     ecproperty = testClass->GetPropertyP (L"emptydatetimeinfo");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_TRUE (str.empty ()) << L"DateTimeInfo::ToString () is expected to return an empty string for an ECProperty having an empty DateTimeInfo custom attribute.";
 
     ecproperty = testClass->GetPropertyP (L"utc");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_STREQ (L"Kind: Utc", str.c_str ()) << L"DateTimeInfo::ToString ()";
 
     ecproperty = testClass->GetPropertyP (L"unspecified");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_STREQ (L"Kind: Unspecified", str.c_str ()) << L"DateTimeInfo::ToString ()";
 
     ecproperty = testClass->GetPropertyP (L"local");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_STREQ (L"Kind: Local", str.c_str ()) << L"DateTimeInfo::ToString ()";
 
     ecproperty = testClass->GetPropertyP (L"dateonly");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_STREQ (L"Component: Date", str.c_str ()) << L"DateTimeInfo::ToString ()";
 
     ecproperty = testClass->GetPropertyP (L"garbagekind");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_TRUE (str.empty ()) << L"DateTimeInfo::ToString () is expected to return an empty string for an ECProperty having an DateTimeInfo custom attribute with garbage content.";
 
     ecproperty = testClass->GetPropertyP (L"garbagecomponent");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_TRUE (str.empty ()) << L"DateTimeInfo::ToString () is expected to return an empty string for an ECProperty having an DateTimeInfo custom attribute with garbage content.";
 
     ecproperty = testClass->GetPropertyP (L"garbagekindgarbagecomponent");
     dti = DateTimeInfo ();
-    StandardCustomAttributeHelper::TryGetDateTimeInfo (dti, *ecproperty);
+    StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecproperty);
     str = dti.ToString ();
     EXPECT_TRUE (str.empty ()) << L"DateTimeInfo::ToString () is expected to return an empty string for an ECProperty having an DateTimeInfo custom attribute with garbage content.";
     };
