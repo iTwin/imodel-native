@@ -532,10 +532,10 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks): Expected to never mismatch with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue (L"garbagekind", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_Error, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
+    EXPECT_EQ (ECOBJECTS_STATUS_ParseError, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
 
     stat = instance->SetValue (L"garbagekindgarbagecomponent", ticksOnlyValue);
-    EXPECT_EQ (ECOBJECTS_STATUS_Error, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
+    EXPECT_EQ (ECOBJECTS_STATUS_ParseError, stat) << "IECInstance::SetValue> ECValue::SetDateTimeTicks (ticks) is expected to fail because of invalid DateTimeInfo CA";
 
 
     stat = instance->SetValue (L"nodatetimeinfo", ticksWithUtc);
