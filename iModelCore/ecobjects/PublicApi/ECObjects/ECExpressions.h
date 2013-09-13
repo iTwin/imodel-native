@@ -754,6 +754,8 @@ protected:
     virtual bool            _HasError () { return false; }
     virtual NodeP           _GetLeftP () const { return NULL; }
     virtual NodeP           _GetRightP () const { return NULL; }
+    virtual bool            _SetLeft (NodeR node) { return false; }
+    virtual bool            _SetRight (NodeR node) { return false; }
     virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType)  {}
 
@@ -769,10 +771,12 @@ public:
     void                    DetermineKnownUnits(UnitsTypeR unitsType) { _DetermineKnownUnits(unitsType);  }
     ExpressionToken    GetOperation () const { return _GetOperation(); }
 
-    NodeP                   GetLeftP () const { return _GetLeftP(); }
-    NodeP                   GetRightP () const { return _GetRightP(); }
+    NodeP                   GetLeftP () { return _GetLeftP(); }
+    NodeP                   GetRightP () { return _GetRightP(); }
     NodeCP                  GetLeftCP () const { return _GetLeftP(); }
     NodeCP                  GetRightCP () const { return _GetRightP(); }
+    bool                    SetLeft (NodeR node) { return _SetLeft (node); }
+    bool                    SetRight (NodeR node) { return _SetRight (node); }
 
     static NodePtr          CreateBooleanLiteral(bool literalValue);
     static NodePtr          CreateStringLiteral (wchar_t const* value);

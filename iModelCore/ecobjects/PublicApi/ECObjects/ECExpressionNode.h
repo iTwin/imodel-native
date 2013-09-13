@@ -465,6 +465,7 @@ protected:
 
     virtual bool            _IsUnary () const override { return true; }
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
+    virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
     virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
@@ -530,6 +531,8 @@ protected:
 
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
     virtual NodeP           _GetRightP () const override { return m_right.get(); }
+    virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
+    virtual bool            _SetRight (NodeR node) override { m_right = &node; return true; }
     virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
