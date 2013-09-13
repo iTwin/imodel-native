@@ -296,7 +296,7 @@ TEST_F (InstanceTests, TestIsNullArray)
     CreateArrayProperty(L"PropertyArray");
     CreateInstance();
     
-    bool isNull;
+    bool isNull = false;
     
     EXPECT_EQ (m_instance->IsPropertyNull(isNull, L"PropertyArray"), ECOBJECTS_STATUS_Success);
     EXPECT_FALSE (isNull);

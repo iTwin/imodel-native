@@ -3023,7 +3023,7 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                         if ('X' == spec)
                             opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
 
-                        BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
+                        BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, static_cast <UInt8> (precision));
                         }
                         break;
                     case 'd':       // decimal
@@ -3337,7 +3337,7 @@ WCharCP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, WCharCP star
 
     if ('.' == *cur)
         {
-        UInt32 numPlaceholders = 0;
+        UInt8 numPlaceholders = 0;
         cur++;
         stopProcessing = false;
         while (0 != *cur)

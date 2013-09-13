@@ -2040,9 +2040,9 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     //instance->SetValue  (accessString, ECValue (intValue));
     instance->SetValue  (accessString, ECValue (stringValue));
 
-    ECValue value;    
-    UInt32  propertyIndex;
-    
+    ECValue value;
+    UInt32  propertyIndex = 0;
+
     EXPECT_TRUE (SUCCESS  == enabler->GetPropertyIndex (propertyIndex, accessString));
     EXPECT_TRUE (SUCCESS  == instance->GetValue (value, propertyIndex));
     //EXPECT_TRUE (intValue == value.GetInteger());

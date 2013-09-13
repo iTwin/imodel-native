@@ -2045,12 +2045,12 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
                 // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
                 status = GetRightP()->GetValue (rightResult, context, false, true);
                 }
-            }
 
-        if (ExprStatus_Success == status)
-            {
-            leftResult.GetECValueR().SetBoolean (leftBool);
-            status = (TOKEN_AndAlso == m_operatorCode) ? Operations::PerformLogicalAnd (evalResult, leftResult, rightResult) : Operations::PerformLogicalOr (evalResult, leftResult, rightResult);
+            if (ExprStatus_Success == status)
+                {
+                leftResult.GetECValueR().SetBoolean (leftBool);
+                status = (TOKEN_AndAlso == m_operatorCode) ? Operations::PerformLogicalAnd (evalResult, leftResult, rightResult) : Operations::PerformLogicalOr (evalResult, leftResult, rightResult);
+                }
             }
         }
         break;
