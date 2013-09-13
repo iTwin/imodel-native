@@ -1774,6 +1774,109 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Expect some accessor ending in an array property. Want the last IECInstance in the
+* chain and the property index of the array property.
+* ex: "SomeStruct.SomeStructArray[0].SomeArray"
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECObjectsStatus  resolveArrayAccessString (IECInstancePtr& resolvedInstance, UInt32& resolvedPropertyIndex, IECInstanceR rootInstance, WCharCP fullAccessString)
+    {
+    ECValueAccessor accessor;
+    ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (accessor, rootInstance, fullAccessString);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+    else if (0 == accessor.GetDepth())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    resolvedInstance = const_cast<IECInstanceP> (&rootInstance);
+    resolvedPropertyIndex = 0;
+
+    UInt32 depth = 0;
+    for ( ; depth < accessor.GetDepth() - 1; depth++)
+        {
+        ECValue v;
+        bool compatible = (accessor[depth].GetEnabler() == &resolvedInstance->GetEnabler());
+        ECObjectsStatus status = getValueHelper (v, *resolvedInstance, accessor, depth, compatible);
+        if (ECOBJECTS_STATUS_Success != status)
+            {
+            ECPropertyCP ecprop = accessor[depth].GetECProperty();
+            if (NULL != ecprop && ecprop->GetIsStruct())
+                continue;
+            else
+                return status;
+            }
+
+        if (v.IsStruct() && accessor[depth].GetArrayIndex() >= 0)
+            {
+            resolvedInstance = v.GetStruct();
+            if (resolvedInstance.IsNull())
+                return ECOBJECTS_STATUS_Error;
+            }
+        }
+
+    if (accessor[depth].GetArrayIndex() >= 0)
+        return ECOBJECTS_STATUS_Error;
+
+    if (accessor[depth].GetEnabler() == &resolvedInstance->GetEnabler())
+        resolvedPropertyIndex = accessor[depth].GetPropertyIndex();
+    else
+        {
+        WCharCP accessString = accessor.GetAccessString (depth);
+        if (NULL == accessString)
+            return ECOBJECTS_STATUS_Error;
+
+        ECObjectsStatus status = resolvedInstance->GetEnabler().GetPropertyIndex (resolvedPropertyIndex, accessString);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+
+    ECPropertyCP ecprop = accessor[depth].GetECProperty();
+    return NULL != ecprop && ecprop->GetIsArray() ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::ClearArray (IECInstanceR rootInstance, WCharCP accessString)
+    {
+    IECInstancePtr resolvedInstance;
+    UInt32 propertyIndex;
+    ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = resolvedInstance->ClearArray (propertyIndex);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootInstance, WCharCP accessString, UInt32 arrayIndex)
+    {
+    IECInstancePtr resolvedInstance;
+    UInt32 propertyIndex;
+    ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = resolvedInstance->RemoveArrayElement (propertyIndex, arrayIndex);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count)
+    {
+    IECInstancePtr resolvedInstance;
+    UInt32 propertyIndex;
+    ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = resolvedInstance->AddArrayElements (propertyIndex, count);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
