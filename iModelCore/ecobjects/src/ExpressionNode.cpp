@@ -2046,7 +2046,7 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
         {
         // Short-circuit operators do not evaluate righthand expression unless required.
         status = GetLeftP()->GetValue (leftResult, context, false, true);
-        bool leftBool;
+        bool leftBool = false;
         if (ExprStatus_Success == status && ExprStatus_Success == (status = leftResult.GetBoolean (leftBool, false)))
             {
             if (leftBool == (TOKEN_AndAlso == m_operatorCode))

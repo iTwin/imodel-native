@@ -144,6 +144,115 @@ bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfoR dateTimeIn
     return DateTimeInfoAccessor::TryGetFrom (dateTimeInfo, dateTimeProperty);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass
+* Helper class to hold the schema
+*                                     Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct StandardCustomAttributesSchemaHolder;
+typedef RefCountedPtr<StandardCustomAttributesSchemaHolder> StandardCustomAttributesSchemaHolderPtr;
+
+struct StandardCustomAttributesSchemaHolder : RefCountedBase
+{
+private:
+    ECSchemaPtr            m_schema;
+    bmap<WCharCP, StandaloneECEnablerPtr> m_enablers;
+
+    static StandardCustomAttributesSchemaHolderPtr s_schemaHolder;
+
+    StandardCustomAttributesSchemaHolder();
+
+    ECSchemaPtr _GetSchema();
+
+    IECInstancePtr _CreateCustomAttributeInstance(WCharCP attribute);
+
+public:
+
+/*__PUBLISH_SECTION_START__*/
+    static StandardCustomAttributesSchemaHolderPtr GetHolder();
+
+    static ECSchemaPtr GetSchema();
+
+    static IECInstancePtr CreateCustomAttributeInstance(WCharCP attribute);
+};
+
+StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::s_schemaHolder;
+
+static WCharCP s_supplementalMetaDataAccessor = L"SupplementalSchemaMetaData";
+static WCharCP s_supplementalProvenanceAccessor = L"SupplementalProvenance";
+static const UInt32 s_bscaVersionMajor = 1;
+static const UInt32 s_bscaVersionMinor = 7;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaKey key (L"Bentley_Standard_CustomAttributes", s_bscaVersionMajor, s_bscaVersionMinor);
+
+    m_schema = ECSchema::LocateSchema(key, *schemaContext);
+
+    ECClassP metaDataClass = m_schema->GetClassP(s_supplementalMetaDataAccessor);
+    StandaloneECEnablerPtr enabler = metaDataClass->GetDefaultStandaloneEnabler();
+
+    m_enablers.Insert(s_supplementalMetaDataAccessor, enabler);
+
+    ECClassP provenanceClass = m_schema->GetClassP(s_supplementalProvenanceAccessor);
+    StandaloneECEnablerPtr provenanceEnabler = provenanceClass->GetDefaultStandaloneEnabler();
+    m_enablers.Insert(s_supplementalProvenanceAccessor, provenanceEnabler);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::GetHolder()
+    {
+    if (s_schemaHolder.IsNull())
+        s_schemaHolder = new StandardCustomAttributesSchemaHolder();
+
+    return s_schemaHolder;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr StandardCustomAttributesSchemaHolder::_GetSchema()
+    {
+    return m_schema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr StandardCustomAttributesSchemaHolder::GetSchema()
+    {
+    return GetHolder()->_GetSchema();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateCustomAttributeInstance(WCharCP attribute)
+    {
+    if (!m_schema.IsValid())
+        _GetSchema();
+
+    bmap<WCharCP, StandaloneECEnablerPtr>::const_iterator enablerIterator = m_enablers.find(attribute);
+    StandaloneECEnablerPtr enabler = enablerIterator->second;
+    StandaloneECInstancePtr standaloneInstance = enabler->CreateInstance();
+    return IECInstancePtr(standaloneInstance.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstance(WCharCP attribute)
+    {
+    return GetHolder()->_CreateCustomAttributeInstance(attribute);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2013
@@ -192,6 +301,22 @@ ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema (ECSchemaR sch
         return ECOBJECTS_STATUS_Success;
 
     return ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP StandardCustomAttributeHelper::GetCustomAttributeClass(WCharCP attributeName)
+    {
+    return StandardCustomAttributesSchemaHolder::GetSchema()->GetClassCP(attributeName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr StandardCustomAttributeHelper::CreateCustomAttributeInstance(WCharCP attributeName)
+    {
+    return StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstance(attributeName);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

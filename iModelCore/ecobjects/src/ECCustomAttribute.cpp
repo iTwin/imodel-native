@@ -473,6 +473,27 @@ ECClassCR classDefinition
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECCustomAttributeContainer::RemoveConsolidatedCustomAttribute
+(
+ECClassCR classDefinition
+)
+    {
+    ECCustomAttributeCollection::iterator iter;
+    for (iter = m_consolidatedCustomAttributes.begin(); iter != m_consolidatedCustomAttributes.end(); iter++)
+        {
+        ECClassCR currentClass = (*iter)->GetClass();
+        if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
+            {
+            m_consolidatedCustomAttributes.erase(iter);
+            return true;
+            }
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
