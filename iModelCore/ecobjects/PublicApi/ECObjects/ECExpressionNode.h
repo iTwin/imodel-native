@@ -108,9 +108,9 @@ private:
 protected:
 
 public:
-    static  void        GetAdditiveNodes(NodeVector& nodes, NodeR rightMost);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeVector& nodes);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeR rightMost);
+    static  void        GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost);
+    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCPVector& nodes);
+    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCR rightMost);
 
 }; // NodeHelpers
 
@@ -316,7 +316,7 @@ protected:
                                         bool allowUnknown, bool allowOverrides) override;
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -351,7 +351,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Ident; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -386,7 +386,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -430,7 +430,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_LeftBracket; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 public:
     NodePtr                 GetIndexNode() const { return m_index.get(); }
@@ -466,7 +466,7 @@ protected:
     virtual bool            _IsUnary () const override { return true; }
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
     virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -533,7 +533,7 @@ protected:
     virtual NodeP           _GetRightP () const override { return m_right.get(); }
     virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
     virtual bool            _SetRight (NodeR node) override { m_right = &node; return true; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
     ExpressionStatus        PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings);
@@ -555,7 +555,7 @@ public:
 struct          ArithmeticNode : BinaryNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override;
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override;
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -737,7 +737,17 @@ struct          LogicalNode : BinaryNode
 protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override;
-
+    virtual bool            _SetOperation (ExpressionToken operatorCode) override
+        {
+        switch (operatorCode)
+            {
+        case TOKEN_And: case TOKEN_AndAlso:
+        case TOKEN_Or: case TOKEN_OrElse: case TOKEN_Xor:
+            m_operatorCode = operatorCode; return true;
+        default:
+            return false;
+            }
+        }
 public:
                 LogicalNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
                                 : BinaryNode (operatorCode, left, right) {}

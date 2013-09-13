@@ -73,6 +73,7 @@ typedef RefCountedPtr<ValueResult>                  ValueResultPtr;
 typedef RefCountedPtr<ValueSymbol>                  ValueSymbolPtr;
 
 typedef bvector<NodeP>                              NodeVector;
+typedef bvector<NodeCP>                             NodeCPVector;
 typedef NodeVector::iterator                        NodeVectorIterator;
 
 typedef bvector<NodePtr>                            NodePtrVector;
@@ -746,6 +747,7 @@ protected:
         { return ExprStatus_NotImpl; }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_Unrecognized; }
+    virtual bool            _SetOperation (ExpressionToken token) { return false; }
 
     virtual bool            _IsAdditive () const { return false; }
     virtual bool            _IsUnary () const  { return false; }
@@ -756,7 +758,7 @@ protected:
     virtual NodeP           _GetRightP () const { return NULL; }
     virtual bool            _SetLeft (NodeR node) { return false; }
     virtual bool            _SetRight (NodeR node) { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType)  {}
 
 public:
@@ -768,8 +770,9 @@ public:
     bool                    IsConstant ()   const  { return _IsConstant (); }
 
     void                    ForceUnitsOrder(UnitsTypeCR  knownType)  { _ForceUnitsOrder(knownType); }
-    void                    DetermineKnownUnits(UnitsTypeR unitsType) { _DetermineKnownUnits(unitsType);  }
-    ExpressionToken    GetOperation () const { return _GetOperation(); }
+    void                    DetermineKnownUnits(UnitsTypeR unitsType) const { _DetermineKnownUnits(unitsType);  }
+    ExpressionToken         GetOperation () const { return _GetOperation(); }
+    bool                    SetOperation (ExpressionToken token) { return _SetOperation (token); }
 
     NodeP                   GetLeftP () { return _GetLeftP(); }
     NodeP                   GetRightP () { return _GetRightP(); }

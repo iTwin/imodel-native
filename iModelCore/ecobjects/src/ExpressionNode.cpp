@@ -1216,14 +1216,14 @@ ValueResultPtr  ValueResult::Create(EvaluationResultR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost)
+void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost)
     {
     BeAssert (rightMost.IsAdditive());
 
     BinaryNodeCP    current = dynamic_cast<BinaryNodeCP>(&rightMost);
     BeAssert(NULL != current);
 
-    NodeP   left = current->GetLeftP();
+    NodeCP  left = current->GetLeftCP();
     if (left->IsAdditive())
         GetAdditiveNodes(nodes, *left);
 
@@ -1233,11 +1233,11 @@ void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rightMost)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCR rightMost)
     {
-    NodeVector  nodes;
+    NodeCPVector  nodes;
 
-    nodes.push_back(rightMost.GetLeftP());
+    nodes.push_back(rightMost.GetLeftCP());
     nodes.push_back(&rightMost);
     NodeHelpers::DetermineKnownUnitsSame(units, nodes);
     }
@@ -1245,17 +1245,19 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVector& nodes)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCPVector& nodes)
     {
     UnitsType   leftUnits;
+#if defined (NOTNOW)
     bool        powerPromotionRequired = false;
+#endif
 
-    NodeVectorIterator  nodeIterator = nodes.begin();
-    (*nodeIterator)->GetLeftP()->DetermineKnownUnits(leftUnits);
+    NodeCPVector::const_iterator nodeIterator = nodes.begin();
+    (*nodeIterator)->GetLeftCP()->DetermineKnownUnits(leftUnits);
     for (; nodeIterator != nodes.end(); nodeIterator++)
         {
         UnitsType   rightUnits;
-        NodeP       right = (*nodeIterator)->GetRightP();
+        NodeCP       right = (*nodeIterator)->GetRightCP();
         right->DetermineKnownUnits(rightUnits);
         if (leftUnits.m_unitsOrder == rightUnits.m_unitsOrder)
             {
@@ -1293,16 +1295,18 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVecto
             }
         }
 
+#if defined (NOTNOW)
     if (powerPromotionRequired)
         {
         NodeVectorIterator  nodeIterator = nodes.begin();
         (*nodeIterator)->GetLeftP()->ForceUnitsOrder(leftUnits);
         for (; nodeIterator != nodes.end(); nodeIterator++)
             {
-            NodeP       right = (*nodeIterator)->GetRightP();
+            NodeCP       right = (*nodeIterator)->GetRightCP();
             right->ForceUnitsOrder(leftUnits);
             }
         }
+#endif
 
     units = leftUnits;
     }
@@ -1941,11 +1945,11 @@ UnitsTypeCR     requiredType
 void            ArithmeticNode::_DetermineKnownUnits
 (
 UnitsTypeR      unitsType
-)
+) const
     {
     if (IsAdditive())
         {
-        NodeVector  additiveNodes;
+        NodeCPVector  additiveNodes;
         //  Puts this node and all of the additive left children into the list.  The first node
         //  in the list 
         NodeHelpers::GetAdditiveNodes(additiveNodes, *this);
