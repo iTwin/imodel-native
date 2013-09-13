@@ -293,7 +293,7 @@ struct          PrimaryListNode : Node
 private:
     bvector<NodePtr>        m_operators;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         for (size_t i = 0; i < m_operators.size(); i++)
             {
@@ -371,7 +371,7 @@ struct          DotNode : IdentNode
 private:
     WString                 m_memberName;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         return visitor.ProcessNode(*this); 
         }
@@ -415,7 +415,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return L"["; }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool retval = visitor.StartArrayIndex(*this);
         if (retval)
@@ -452,7 +452,7 @@ private:
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(m_operator); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = visitor.ProcessNode(*this);
         if (retval)
@@ -509,7 +509,7 @@ protected:
 
     virtual WString     _ToString() const override { return Lexer::GetString(m_operatorCode); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = m_left->Traverse(visitor);
         if (retval)
@@ -776,12 +776,12 @@ private:
 protected:
     virtual WString     _ToString() const override { return L""; }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    announceComma = false;
         visitor.StartArguments(*this);
 
-        for (NodePtrVectorIterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
+        for (NodePtrVector::const_iterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
             {
             if (announceComma && !visitor.Comma())
                 return false;
@@ -818,7 +818,7 @@ private:
     WString             m_methodName;
     bool                m_dotted;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = visitor.ProcessNode(*this);;
         if (!retval)
@@ -870,7 +870,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(TOKEN_IIf); }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         if (!visitor.ProcessNode(*this))
             return false;

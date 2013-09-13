@@ -1318,7 +1318,7 @@ WString         Node::ToString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Node::Traverse(NodeVisitorR visitor)
+bool            Node::Traverse(NodeVisitorR visitor) const
     {
     if (this->GetHasParens() && !visitor.OpenParens())
         return false;
@@ -2455,6 +2455,99 @@ EvaluationResultR EvaluationResult::operator= (ECN::ECValueCR rhs)
 ExpressionStatus ValueResult::GetECValue (ECN::ECValueR ecValue)
     {
     return m_evalResult.GetECValue(ecValue);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    02/2011 
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          ParseTreeTraverser : NodeVisitor
+    {
+private:
+    WString     m_expression;
+    bool        m_lastRequiredSpace;
+
+protected:
+    virtual bool OpenParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool CloseParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool StartArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"[";
+        return true;
+        }
+
+    virtual bool EndArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"]";
+        return true;
+        }
+
+    virtual bool StartArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool EndArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool Comma() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L",";
+        return true;
+        }
+
+    virtual bool ProcessNode(NodeCR node) override
+        {
+        WString     curr = node.ToString();
+        if (m_lastRequiredSpace && 
+                (iswalnum(curr[0]) || curr[0] == '_'))
+            m_expression += L" ";
+
+        size_t  stringLen = curr.size();
+        if (stringLen > 0)
+            m_lastRequiredSpace = (iswalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
+
+        m_expression += curr;
+        return true;
+        }
+
+public:
+    ParseTreeTraverser () : m_lastRequiredSpace(false) {}
+    WString Traverse (NodeCR node)
+        {
+        m_lastRequiredSpace = false;
+        m_expression = L"";
+        node.Traverse(*this);
+        return m_expression;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+WString Node::ToExpressionString() const
+    {
+    ParseTreeTraverser traverser;
+    return traverser.Traverse (*this);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

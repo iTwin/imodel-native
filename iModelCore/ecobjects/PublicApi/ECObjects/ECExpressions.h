@@ -738,7 +738,7 @@ private:
     bool                m_inParens;  //  Only used for ToString    
 protected:
                         Node () { m_inParens = false; }
-    virtual bool        _Traverse(NodeVisitorR visitor) { return visitor.ProcessNode(*this); }
+    virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
     virtual WString     _ToString() const = 0;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -758,7 +758,7 @@ protected:
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType)  {}
 
 public:
-    bool                    GetHasParens() { return m_inParens; }
+    bool                    GetHasParens() const { return m_inParens; }
     void                    SetHasParens(bool hasParens) { m_inParens = hasParens; }
     bool                    IsAdditive ()   const  { return _IsAdditive(); }
     bool                    IsUnary ()      const  { return _IsUnary(); }
@@ -805,11 +805,13 @@ public:
                                         bool allowUnknown, bool allowOverrides);
 
     //!  Traverses in parse order
-    ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor);
+    ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor) const;
 
     //! Returns a string representation of the Node expression
     ECOBJECTS_EXPORT WString  ToString() const;
 
+    //! Converts the Node expression into an expression string
+    ECOBJECTS_EXPORT WString  ToExpressionString() const;
 };  //  End of struct Node
 
 
