@@ -1598,6 +1598,15 @@ void            PrimaryListNode::AppendArrayNode(LBracketNodeR lbracketNode)
     m_operators.push_back(&lbracketNode);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+void IdentNode::PushQualifier(WCharCP rightName)
+    {
+    m_qualifiers.push_back(WString(m_value));
+    m_value = WString(rightName);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

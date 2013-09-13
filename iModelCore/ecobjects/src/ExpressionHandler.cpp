@@ -532,7 +532,7 @@ ExpressionToken Lexer::ScanToken ()
 
             case '*':
                 t = TOKEN_Star;
-    modify:         if ((current = GetNextChar()) == '=')
+    modify:     if ((current = GetNextChar()) == '=')
                     {
                     m_tokenModifier = t;
                     t = TOKEN_Equal;
@@ -541,6 +541,14 @@ ExpressionToken Lexer::ScanToken ()
                     {
                     PushBack ();
                     }
+                return t;
+
+            case ':':
+                t = TOKEN_Colon;
+                if ((current = GetNextChar()) == ':')
+                    t = TOKEN_DoubleColon;
+                else
+                    PushBack ();
                 return t;
 
             case '^':
@@ -847,6 +855,15 @@ NodePtr         ECEvaluator::ParsePrimary
                 IdentNodePtr             identNode   = IdentNode::Create(m_lexer->GetTokenStringCP ());
                 m_lexer->Advance ();
 
+                while(m_lexer->GetTokenType () == TOKEN_DoubleColon)
+                    {
+                    m_lexer->Advance ();
+                    identNode->PushQualifier(m_lexer->GetTokenStringCP ());
+                    result = Must (TOKEN_Ident, *result);
+                    if (result->GetOperation() == TOKEN_Error)
+                        return result;
+                    }
+
                 for (;;)
                     {
                     switch (m_lexer->GetTokenType ())
@@ -904,6 +921,17 @@ NodePtr         ECEvaluator::ParsePrimary
                             DotNodePtr  dotNode = DotNode::Create(m_lexer->GetTokenStringCP ());
                             identNode = dotNode.get();
                             result = Must (TOKEN_Ident, *result);
+                            if (result->GetOperation() == TOKEN_Error)
+                                return result;
+                            while(m_lexer->GetTokenType () == TOKEN_DoubleColon)
+                                {
+                                m_lexer->Advance ();
+                                dotNode->PushQualifier(m_lexer->GetTokenStringCP ());
+                                result = Must (TOKEN_Ident, *result);
+                                if (result->GetOperation() == TOKEN_Error)
+                                    return result;
+                                }
+
                             dotted = true;
                             }
                             break;
