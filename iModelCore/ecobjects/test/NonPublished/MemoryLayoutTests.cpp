@@ -739,14 +739,14 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     
-    double    doubleVal;
+    double    doubleVal = 0.0;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDoubleValue (*instance, L"ADouble", (double)(1.0/3.0)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDouble      (*instance, doubleVal, L"ADouble"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDoubleValue (*instance, L"SomeDoubles[0]", (double)(7.0/3.0)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDouble      (*instance, doubleVal, L"SomeDoubles[0]"));
     EXPECT_TRUE ((double)(7.0/3.0) == doubleVal);
 
-    int       intVal;
+    int       intVal = 0;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"AnInt", (int)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, L"AnInt"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetIntegerValue (*instance, L"SomeInts[0]", (int)(50)));
@@ -764,14 +764,14 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetString      (*instance, stringVal, L"SomeStrings[0]"));
     EXPECT_TRUE (0 == wcscmp(L"TEST432", stringVal.c_str()));
 
-    Int64       longVal;
+    Int64       longVal = 0;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetLongValue (*instance, L"ALong", (Int64)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetLong      (*instance, longVal, L"ALong"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetLongValue (*instance, L"SomeLongs[0]", (Int64)(50)));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetLong      (*instance, longVal, L"SomeLongs[0]"));
     EXPECT_TRUE ((Int64)(50) == longVal);
 
-    bool       boolVal;
+    bool       boolVal = false;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetBooleanValue (*instance, L"ABoolean", false));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetBoolean      (*instance, boolVal, L"ABoolean"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetBooleanValue (*instance, L"SomeBooleans[0]", false));
@@ -779,7 +779,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (false == boolVal);
 
     DPoint2d   point2dInput = {1.0, 2.0};
-    DPoint2d   point2dOutput;
+    DPoint2d   point2dOutput = {0.0, 0.0};
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetPoint2DValue (*instance, L"APoint2d", point2dInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetPoint2D      (*instance, point2dOutput, L"APoint2d"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetPoint2DValue (*instance, L"SomePoint2ds[0]", point2dInput));
@@ -787,7 +787,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     EXPECT_TRUE (point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
 
     DPoint3d   point3dInput = {1.0, 2.0, 3.0};
-    DPoint3d   point3dOutput;
+    DPoint3d   point3dOutput = {0.0, 0.0};
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetPoint3DValue (*instance, L"APoint3d", point3dInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetPoint3D      (*instance, point3dOutput, L"APoint3d"));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetPoint3DValue (*instance, L"SomePoint3ds[0]", point3dInput));
@@ -797,7 +797,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     DateTime timeInput  = DateTime::GetCurrentTimeUtc ();
     Int64      ticksInput = 634027121070910000;
     DateTime timeOutput;
-    Int64      ticksOutput;
+    Int64      ticksOutput = 0;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDateTimeValue (*instance, L"ADateTime", timeInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDateTime      (*instance, timeOutput, L"ADateTime"));
     EXPECT_TRUE (timeInput.Compare (timeOutput, true));
