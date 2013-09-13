@@ -108,9 +108,9 @@ private:
 protected:
 
 public:
-    static  void        GetAdditiveNodes(NodeVector& nodes, NodeR rightMost);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeVector& nodes);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeR rightMost);
+    static  void        GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost);
+    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCPVector& nodes);
+    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCR rightMost);
 
 }; // NodeHelpers
 
@@ -304,7 +304,7 @@ struct          PrimaryListNode : Node
 private:
     bvector<NodePtr>        m_operators;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         for (size_t i = 0; i < m_operators.size(); i++)
             {
@@ -327,7 +327,7 @@ protected:
                                         bool allowUnknown, bool allowOverrides) override;
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -363,7 +363,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Ident; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -384,7 +384,7 @@ struct          DotNode : IdentNode
 private:
     WString                 m_memberName;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         return visitor.ProcessNode(*this); 
         }
@@ -399,7 +399,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -428,7 +428,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return L"["; }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool retval = visitor.StartArrayIndex(*this);
         if (retval)
@@ -443,7 +443,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_LeftBracket; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 public:
     NodePtr                 GetIndexNode() const { return m_index.get(); }
@@ -465,7 +465,7 @@ private:
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(m_operator); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = visitor.ProcessNode(*this);
         if (retval)
@@ -478,7 +478,8 @@ protected:
 
     virtual bool            _IsUnary () const override { return true; }
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -522,7 +523,7 @@ protected:
 
     virtual WString     _ToString() const override { return Lexer::GetString(m_operatorCode); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = m_left->Traverse(visitor);
         if (retval)
@@ -543,7 +544,9 @@ protected:
 
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
     virtual NodeP           _GetRightP () const override { return m_right.get(); }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
+    virtual bool            _SetRight (NodeR node) override { m_right = &node; return true; }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
     ExpressionStatus        PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings);
@@ -565,7 +568,7 @@ public:
 struct          ArithmeticNode : BinaryNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override;
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override;
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -747,7 +750,17 @@ struct          LogicalNode : BinaryNode
 protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override;
-
+    virtual bool            _SetOperation (ExpressionToken operatorCode) override
+        {
+        switch (operatorCode)
+            {
+        case TOKEN_And: case TOKEN_AndAlso:
+        case TOKEN_Or: case TOKEN_OrElse: case TOKEN_Xor:
+            m_operatorCode = operatorCode; return true;
+        default:
+            return false;
+            }
+        }
 public:
                 LogicalNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
                                 : BinaryNode (operatorCode, left, right) {}
@@ -789,12 +802,12 @@ private:
 protected:
     virtual WString     _ToString() const override { return L""; }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    announceComma = false;
         visitor.StartArguments(*this);
 
-        for (NodePtrVectorIterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
+        for (NodePtrVector::const_iterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
             {
             if (announceComma && !visitor.Comma())
                 return false;
@@ -831,7 +844,7 @@ private:
     WString             m_methodName;
     bool                m_dotted;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = visitor.ProcessNode(*this);;
         if (!retval)
@@ -883,7 +896,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(TOKEN_IIf); }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         if (!visitor.ProcessNode(*this))
             return false;

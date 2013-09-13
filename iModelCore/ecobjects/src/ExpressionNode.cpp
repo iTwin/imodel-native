@@ -1216,14 +1216,14 @@ ValueResultPtr  ValueResult::Create(EvaluationResultR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost)
+void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost)
     {
     BeAssert (rightMost.IsAdditive());
 
     BinaryNodeCP    current = dynamic_cast<BinaryNodeCP>(&rightMost);
     BeAssert(NULL != current);
 
-    NodeP   left = current->GetLeftP();
+    NodeCP  left = current->GetLeftCP();
     if (left->IsAdditive())
         GetAdditiveNodes(nodes, *left);
 
@@ -1233,11 +1233,11 @@ void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rightMost)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCR rightMost)
     {
-    NodeVector  nodes;
+    NodeCPVector  nodes;
 
-    nodes.push_back(rightMost.GetLeftP());
+    nodes.push_back(rightMost.GetLeftCP());
     nodes.push_back(&rightMost);
     NodeHelpers::DetermineKnownUnitsSame(units, nodes);
     }
@@ -1245,17 +1245,19 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVector& nodes)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCPVector& nodes)
     {
     UnitsType   leftUnits;
+#if defined (NOTNOW)
     bool        powerPromotionRequired = false;
+#endif
 
-    NodeVectorIterator  nodeIterator = nodes.begin();
-    (*nodeIterator)->GetLeftP()->DetermineKnownUnits(leftUnits);
+    NodeCPVector::const_iterator nodeIterator = nodes.begin();
+    (*nodeIterator)->GetLeftCP()->DetermineKnownUnits(leftUnits);
     for (; nodeIterator != nodes.end(); nodeIterator++)
         {
         UnitsType   rightUnits;
-        NodeP       right = (*nodeIterator)->GetRightP();
+        NodeCP       right = (*nodeIterator)->GetRightCP();
         right->DetermineKnownUnits(rightUnits);
         if (leftUnits.m_unitsOrder == rightUnits.m_unitsOrder)
             {
@@ -1293,16 +1295,18 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVecto
             }
         }
 
+#if defined (NOTNOW)
     if (powerPromotionRequired)
         {
         NodeVectorIterator  nodeIterator = nodes.begin();
         (*nodeIterator)->GetLeftP()->ForceUnitsOrder(leftUnits);
         for (; nodeIterator != nodes.end(); nodeIterator++)
             {
-            NodeP       right = (*nodeIterator)->GetRightP();
+            NodeCP       right = (*nodeIterator)->GetRightCP();
             right->ForceUnitsOrder(leftUnits);
             }
         }
+#endif
 
     units = leftUnits;
     }
@@ -1318,7 +1322,7 @@ WString         Node::ToString() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Node::Traverse(NodeVisitorR visitor)
+bool            Node::Traverse(NodeVisitorR visitor) const
     {
     if (this->GetHasParens() && !visitor.OpenParens())
         return false;
@@ -1950,11 +1954,11 @@ UnitsTypeCR     requiredType
 void            ArithmeticNode::_DetermineKnownUnits
 (
 UnitsTypeR      unitsType
-)
+) const
     {
     if (IsAdditive())
         {
-        NodeVector  additiveNodes;
+        NodeCPVector  additiveNodes;
         //  Puts this node and all of the additive left children into the list.  The first node
         //  in the list 
         NodeHelpers::GetAdditiveNodes(additiveNodes, *this);
@@ -2464,6 +2468,99 @@ EvaluationResultR EvaluationResult::operator= (ECN::ECValueCR rhs)
 ExpressionStatus ValueResult::GetECValue (ECN::ECValueR ecValue)
     {
     return m_evalResult.GetECValue(ecValue);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    02/2011 
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          ParseTreeTraverser : NodeVisitor
+    {
+private:
+    WString     m_expression;
+    bool        m_lastRequiredSpace;
+
+protected:
+    virtual bool OpenParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool CloseParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool StartArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"[";
+        return true;
+        }
+
+    virtual bool EndArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"]";
+        return true;
+        }
+
+    virtual bool StartArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool EndArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool Comma() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L",";
+        return true;
+        }
+
+    virtual bool ProcessNode(NodeCR node) override
+        {
+        WString     curr = node.ToString();
+        if (m_lastRequiredSpace && 
+                (iswalnum(curr[0]) || curr[0] == '_'))
+            m_expression += L" ";
+
+        size_t  stringLen = curr.size();
+        if (stringLen > 0)
+            m_lastRequiredSpace = (iswalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
+
+        m_expression += curr;
+        return true;
+        }
+
+public:
+    ParseTreeTraverser () : m_lastRequiredSpace(false) {}
+    WString Traverse (NodeCR node)
+        {
+        m_lastRequiredSpace = false;
+        m_expression = L"";
+        node.Traverse(*this);
+        return m_expression;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+WString Node::ToExpressionString() const
+    {
+    ParseTreeTraverser traverser;
+    return traverser.Traverse (*this);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
