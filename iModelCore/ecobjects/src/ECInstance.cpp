@@ -2119,6 +2119,22 @@ BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (In
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   IECWipRelationshipInstance::GetSourceOrderId (Int64& sourceOrderId)
+    {
+    return _GetSourceOrderId (sourceOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   IECWipRelationshipInstance::GetTargetOrderId (Int64& targetOrderId)
+    {
+    return _GetTargetOrderId (targetOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void              convertByteArrayToString (WStringR outString, const byte *byteData, size_t numBytes)
