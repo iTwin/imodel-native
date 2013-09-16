@@ -1940,56 +1940,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 
     return CopyCustomAttributesTo(toRelationshipConstraint);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (WString& propertyName)  const
-    {
-    // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"OrderedRelationshipsConstraint");
-    if (caInstance.IsValid())
-        {
-        ECN::ECValue value;
-        WCharCP propertyName=L"OrderIdProperty";
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
-            {
-            propertyName = value.GetString ();
-            return ECOBJECTS_STATUS_Success;
-            }
-        }
-    return ECOBJECTS_STATUS_Error;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECRelationshipConstraint::GetIsOrdered () const
-    {
-    // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"OrderedRelationshipsConstraint");
-    if (caInstance.IsValid())
-        return true;
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
-    {
-    // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute(L"OrderedRelationshipsConstraint");
-    if (caInstance.IsValid())
-        {
-        ECN::ECValue value;
-        WCharCP propertyName=L"OrderIdStorageMode";
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
-            return (OrderIdStorageMode)value.GetInteger ();
-        }
-    return ORDERIDSTORAGEMODE_None;
-    }
-
+       
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
