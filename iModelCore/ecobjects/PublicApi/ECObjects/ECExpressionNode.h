@@ -45,7 +45,7 @@ private:
                             Lexer (wchar_t const* inputString);
 public:
     static LexerPtr         Create(wchar_t const* inputString);
-    static WString          GetString(ExpressionToken tokenName);
+    ECOBJECTS_EXPORT static WString     GetString(ExpressionToken tokenName);
     void                    Advance ();
     ExpressionToken         GetTokenType ();
     ExpressionToken         GetTokenModifier ();
@@ -155,13 +155,31 @@ struct ResolvedTypeNode : Node
     {
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LiteralNode : ResolvedTypeNode
+    {
+private:
+    virtual WString             _ToString() const override      { return _GetECValue().ToString(); }
+    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
+        {
+        evalResult = _GetECValue();
+        return ExprStatus_Success;
+        }
+protected:
+    virtual ECValue             _GetECValue() const = 0;
+public:
+    ECValue                     GetECValue() const { return _GetECValue(); }
+    };
+
 /*=================================================================================**//**
 *
 * !!!Describe Class Here!!!
 *
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
-struct          StringLiteralNode : ResolvedTypeNode
+struct          StringLiteralNode : LiteralNode
 {
 private:
     WString     m_value;
@@ -184,9 +202,9 @@ protected:
         }
 
     virtual ExpressionToken _GetOperation () const override { return TOKEN_StringConst; }
-
+    virtual ECValue         _GetECValue() const override { return ECValue (m_value.c_str()); }
 public:
-    wchar_t const*   GetInternalValue () { return m_value.c_str(); }
+    wchar_t const*   GetInternalValue () const { return m_value.c_str(); }
 
                 StringLiteralNode (wchar_t const* literalValue)
         {
@@ -229,22 +247,16 @@ public:
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T, ExpressionToken TOKEN>
-struct          LiteralNode : ResolvedTypeNode
+struct          BaseLiteralNode : LiteralNode
     {
 private:
     T           m_value;
 
-    virtual WString             _ToString() const override      { return GetECValue().ToString(); }
-    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
-        {
-        evalResult = GetECValue();
-        return ExprStatus_Success;
-        }
     virtual ExpressionToken     _GetOperation() const override  { return TOKEN; }
 protected:
-    virtual ECValue             GetECValue() const { return ECValue (m_value); }
+    virtual ECValue             _GetECValue() const { return ECValue (m_value); }
 public:
-    LiteralNode (T const& value) : m_value(value) { }
+    BaseLiteralNode (T const& value) : m_value(value) { }
     
     T           GetInternalValue() const { return m_value; }
     };
@@ -252,28 +264,28 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef LiteralNode<Int32, TOKEN_IntegerConstant>   IntegerLiteralNode;
-typedef LiteralNode<Int64, TOKEN_IntegerConstant>   Int64LiteralNode;
-typedef LiteralNode<double, TOKEN_FloatConst>       DoubleLiteralNode;
-typedef LiteralNode<bool, TOKEN_True>               BooleanLiteralNode;
-typedef LiteralNode<DPoint2d, TOKEN_PointConst>     Point2DLiteralNode;
-typedef LiteralNode<DPoint3d, TOKEN_PointConst>     Point3DLiteralNode;
+typedef BaseLiteralNode<Int32, TOKEN_IntegerConstant>   IntegerLiteralNode;
+typedef BaseLiteralNode<Int64, TOKEN_IntegerConstant>   Int64LiteralNode;
+typedef BaseLiteralNode<double, TOKEN_FloatConst>       DoubleLiteralNode;
+typedef BaseLiteralNode<bool, TOKEN_True>               BooleanLiteralNode;
+typedef BaseLiteralNode<DPoint2d, TOKEN_PointConst>     Point2DLiteralNode;
+typedef BaseLiteralNode<DPoint3d, TOKEN_PointConst>     Point3DLiteralNode;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DateTimeLiteralNode : LiteralNode<Int64, TOKEN_DateTimeConst>
+struct DateTimeLiteralNode : BaseLiteralNode<Int64, TOKEN_DateTimeConst>
     {
 protected:
-    virtual ECValue         GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
+    virtual ECValue         _GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
 public:
-    DateTimeLiteralNode (Int64 ticks) : LiteralNode<Int64, TOKEN_DateTimeConst>(ticks) { }
+    DateTimeLiteralNode (Int64 ticks) : BaseLiteralNode<Int64, TOKEN_DateTimeConst>(ticks) { }
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          NullLiteralNode : ResolvedTypeNode
+struct          NullLiteralNode : LiteralNode
     {
 protected:
     virtual WString             _ToString() const override { return L"Null"; }
@@ -283,6 +295,7 @@ protected:
         return ExprStatus_Success;
         }
     virtual ExpressionToken     _GetOperation () const override { return TOKEN_Null; }
+    virtual ECValue             _GetECValue() const override { return ECValue (/*null*/); }
 public:
     NullLiteralNode() { }
     };
@@ -333,7 +346,7 @@ protected:
 public:
     ECOBJECTS_EXPORT wchar_t const*     GetName(size_t index) const;
     ECOBJECTS_EXPORT size_t             GetNumberOfOperators() const;
-    NodeP                               GetOperatorNode(size_t index) const;
+    ECOBJECTS_EXPORT NodeP              GetOperatorNode(size_t index) const;    // NEEDSWORK: const method returning member as non-const pointer...propagates to CallNode::InvokeXXXMethod()...
     ECOBJECTS_EXPORT ExpressionToken    GetOperation(size_t index) const;
 
     static PrimaryListNodePtr Create() { return new PrimaryListNode(); }
@@ -826,7 +839,8 @@ protected:
 
 public:
                 ArgumentTreeNode() {}
-    size_t      GetArgumentCount() { return m_arguments.size(); }
+    size_t      GetArgumentCount() const { return m_arguments.size(); }
+    NodeCP      GetArgument (size_t i) const { return i < m_arguments.size() ? m_arguments[i].get() : NULL; }
     void        PushArgument(NodeR node) { m_arguments.push_back(&node); }
     ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context);
 };  //  End of struct ArgumentTreeNode
@@ -871,8 +885,9 @@ protected:
 
 
 public:
-    wchar_t const*      GetMethodName() const { return m_methodName.c_str(); }
-    static CallNodePtr  Create(ArgumentTreeNodeR arguments, wchar_t const*methodName, bool dotted)
+    wchar_t const*          GetMethodName() const { return m_methodName.c_str(); }
+    ArgumentTreeNode const* GetArguments() const { return m_arguments.get(); }
+    static CallNodePtr      Create(ArgumentTreeNodeR arguments, wchar_t const*methodName, bool dotted)
                                     { return new CallNode(arguments, methodName, dotted); }
 
     ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, EvaluationResultCR instanceData, ExpressionContextR context);
