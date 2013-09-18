@@ -175,7 +175,7 @@ struct StandardCustomAttributesSchemaHolder : RefCountedBase
 {
 private:
     ECSchemaPtr            m_schema;
-    bmap<WCharCP, StandaloneECEnablerPtr> m_enablers;
+    bmap<WString, StandaloneECEnablerPtr> m_enablers;
 
     static StandardCustomAttributesSchemaHolderPtr s_schemaHolder;
 
@@ -262,14 +262,18 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateCustomAttributeInsta
     if (!m_schema.IsValid())
         _GetSchema();
 
-    bmap<WCharCP, StandaloneECEnablerPtr>::const_iterator enablerIterator = m_enablers.find(attribute);
-    StandaloneECEnablerPtr enabler = enablerIterator->second;
-    IECInstancePtr customAttributeInstance;
-    if (!enabler.IsValid())
-        return customAttributeInstance;
+    auto enablerIterator = m_enablers.find(attribute);
+    if (enablerIterator == m_enablers.end())
+        {
+        BeDataAssert (false && "Unknown supplemental schema custom attribute class name. Currently only SupplementalSchemaMetaData and SupplementalProvenance are supported.");
+        return nullptr;
+        }
 
-    StandaloneECInstancePtr standaloneInstance = enabler->CreateInstance();
-    return IECInstancePtr(standaloneInstance.get());
+    StandaloneECEnablerPtr enabler = enablerIterator->second;
+    if (!enabler.IsValid())
+        return nullptr;
+
+    return enabler->CreateInstance().get();
     }
 
 /*---------------------------------------------------------------------------------**//**
