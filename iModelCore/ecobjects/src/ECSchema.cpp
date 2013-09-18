@@ -1231,7 +1231,11 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     if (NULL == info)
         this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
-        this->SetConsolidatedCustomAttribute(*info->CreateCustomAttribute());
+        {
+        IECInstancePtr attribute = info->CreateCustomAttribute();
+        if (attribute.IsValid())
+            this->SetConsolidatedCustomAttribute(*attribute);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
