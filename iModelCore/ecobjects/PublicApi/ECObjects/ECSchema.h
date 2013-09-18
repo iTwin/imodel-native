@@ -1464,13 +1464,23 @@ struct SchemaKeyMatchPredicate
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaNameClassNamePair
-{
+    {
 public:
     WString m_schemaName;
     WString m_className;
 
     SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
     SchemaNameClassNamePair (WCharCP schemaName, WCharCP className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair (WStringCR schemaAndClassNameSeparatedByColon)
+        {
+        size_t pos = schemaAndClassNameSeparatedByColon.find (':');
+        if (WString::npos != pos)
+            {
+            m_schemaName = schemaAndClassNameSeparatedByColon.substr (0, pos);
+            m_className = schemaAndClassNameSeparatedByColon.substr (pos+1);
+            }
+        }
+
     SchemaNameClassNamePair () {};
 
     bool operator<(SchemaNameClassNamePair other) const
@@ -1488,7 +1498,14 @@ public:
         {
         return 0 == m_schemaName.CompareTo(rhs.m_schemaName) && 0 == m_className.CompareTo(rhs.m_className);
         }
-};
+
+    WString     ToColonSeparatedString() const
+        {
+        WString str;
+        str.Sprintf (L"%ls:%ls", m_schemaName.c_str(), m_className.c_str());
+        return str;
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
