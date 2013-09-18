@@ -9,6 +9,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <ECPresentationRules/PresentationRuleSet.h>
+#include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -19,11 +20,12 @@ This specification returns all instance nodes available in the repository.
 struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
     private:
-        bool     m_groupByClass;
-        bool     m_groupByRelationship;
-        bool     m_groupByLabel;
-        int      m_skipRelatedLevel;
-        WString  m_supportedSchemas;
+        bool                       m_groupByClass;
+        bool                       m_groupByRelationship;
+        bool                       m_groupByLabel;
+        int                        m_skipRelatedLevel;
+        WString                    m_supportedSchemas;
+        RequiredRelationDirection  m_requiredDirection;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -58,6 +60,12 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
 
         //! Returns supported schemas that should be used by this specification.
         ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
+
+        //! Returns direction of relationship that should be selected in the query.
+        ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
+
+        //! Sets direction of relationship that should be selected in the query.
+        ECOBJECTS_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection requiredDirection);
 
     };
 
