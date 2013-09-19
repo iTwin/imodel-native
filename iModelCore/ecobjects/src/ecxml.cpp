@@ -28,7 +28,7 @@ ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, WCharCP booleanS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
+WCharCP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
@@ -85,9 +85,9 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WString
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (0 == typeName.compare(0, ECXML_TYPENAME_IGEOMETRY_GENERIC.length(), ECXML_TYPENAME_IGEOMETRY_GENERIC))
+    else if (0 == typeName.compare(0, wcslen(ECXML_TYPENAME_IGEOMETRY_GENERIC), ECXML_TYPENAME_IGEOMETRY_GENERIC))
         primitiveType = PRIMITIVETYPE_IGeometry; 
-    else if (0 == typeName.compare(0, ECXML_TYPENAME_IGEOMETRY_LEGACY.length(), ECXML_TYPENAME_IGEOMETRY_LEGACY))
+    else if (0 == typeName.compare(0, wcslen(ECXML_TYPENAME_IGEOMETRY_LEGACY), ECXML_TYPENAME_IGEOMETRY_LEGACY))
         primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECOBJECTS_STATUS_ParseError;
@@ -98,7 +98,7 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECXml::StrengthToString (StrengthType strength)
+WCharCP ECXml::StrengthToString (StrengthType strength)
     {
     switch (strength)
         {
@@ -136,7 +136,7 @@ ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, WStringCR stre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ECXml::DirectionToString (ECRelatedInstanceDirection direction)
+WCharCP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
