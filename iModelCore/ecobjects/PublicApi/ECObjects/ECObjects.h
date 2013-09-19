@@ -92,6 +92,8 @@ EC_TYPEDEFS (ParserRegex);
 EC_TYPEDEFS(IECTypeAdapterContext);
 EC_TYPEDEFS(IECSchemaRemapper);
 
+EC_TYPEDEFS (SchemaNameClassNamePair);
+
 typedef struct IStream* IStreamP;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE

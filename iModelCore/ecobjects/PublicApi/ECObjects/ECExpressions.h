@@ -642,11 +642,11 @@ public:
     ExpressionStatus        GetBoolean(bool& result, bool requireBoolean = true);
 
     //  Constructors and destructors
-            EvaluationResult ();
-            ~EvaluationResult ();
-            EvaluationResult(EvaluationResultCR rhs);
+    ECOBJECTS_EXPORT        EvaluationResult ();
+    ECOBJECTS_EXPORT        ~EvaluationResult ();
+    ECOBJECTS_EXPORT        EvaluationResult(EvaluationResultCR rhs);
 
-    EvaluationResultR operator=(EvaluationResultCR rhs);
+    ECOBJECTS_EXPORT EvaluationResultR operator=(EvaluationResultCR rhs);
     void                    Clear();
 
     ECOBJECTS_EXPORT ECN::ECValueR            GetECValueR();
@@ -812,7 +812,7 @@ public:
 
     //  Add nodes for Where, Property, Relationship, ConstantSets, Filters
 
-    ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides);
 
 /*__PUBLISH_SECTION_START__*/

@@ -31,7 +31,8 @@ static void performConcatenation(EvaluationResultR evalResult, ECValueCR left, E
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -64,9 +65,7 @@ ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized());
-        
-    if (!ecValue.IsPrimitive() || ecValue.IsNull())
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
     if (ecValue.IsString())
@@ -104,7 +103,8 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -137,7 +137,8 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -241,10 +242,8 @@ ref EvaluationResultCR     ecValue
 ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResult)
     {
     ECValueR    ecValue = evalResult.GetECValueR();
-
-    BeAssert(!ecValue.IsUninitialized());
-    BeAssert(!ecValue.IsNull());
-    BeAssert(ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     if (ecValue.IsBoolean())
         return ExprStatus_Success;
@@ -423,7 +422,7 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
     ECN::ECValueR    left    = leftResult.GetECValueR();
     ECN::ECValueR    right   = rightResult.GetECValueR();
 
-    if (!left.IsPrimitive() || !right.IsPrimitive())
+    if (!left.IsPrimitive() || !right.IsPrimitive() || left.IsNull() || right.IsNull())
         return ExprStatus_PrimitiveRequired;
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
@@ -503,7 +502,7 @@ EvaluationResultR     left,
 EvaluationResultR     right
 )
     {
-    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive())
+    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive() || left.GetECValue().IsNull() || right.GetECValue().IsNull())
         return ExprStatus_WrongType;
 
     ExpressionStatus     status = ExprStatus_Success;
@@ -544,7 +543,7 @@ EvaluationResultR           left
     {
     ECN::ECValueR        ecLeft = left.GetECValueR();
 
-    if (!ecLeft.IsPrimitive())
+    if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
@@ -594,7 +593,7 @@ EvaluationResultR           left
     {
     ECN::ECValueR        ecLeft = left.GetECValueR();
 
-    if (!ecLeft.IsPrimitive())
+    if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
@@ -2114,7 +2113,17 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
     ECN::ECValueR    right   = rightResult.GetECValueR();
 
     if (!left.IsPrimitive() || !right.IsPrimitive())
-        return ExprStatus_PrimitiveRequired;
+        {
+        if (left.IsNull() && right.IsNull())
+            {
+            // Comparing null to null does not care about primitive type...just make sure neither value has a defined type.
+            left.Clear();
+            right.Clear();
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_PrimitiveRequired;
+        }
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
     ECN::PrimitiveType   rightCode   = right.GetPrimitiveType();
@@ -2381,8 +2390,17 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
     ECValueCR   ecRight     = rightResult.GetECValue();
     if (ecLeft.IsNull() || ecRight.IsNull())
         {
+        bool leftnull = ecLeft.IsNull(), rightnull = ecRight.IsNull();
+        bool boolResult = false;
+        switch (m_operatorCode)
+            {
+        case TOKEN_Equal:       boolResult = leftnull && rightnull; break;
+        case TOKEN_NotEqual:    boolResult = leftnull != rightnull; break;
+        default:                break;  // less/greater operators nonsensical for null values
+            }
+
         //  Maybe the not's should be true for this
-        evalResult.GetECValueR().SetBoolean(false);
+        evalResult.GetECValueR().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
