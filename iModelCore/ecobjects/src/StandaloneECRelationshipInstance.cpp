@@ -65,16 +65,6 @@ size_t                StandaloneECRelationshipInstance::_GetObjectSize () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t                StandaloneECRelationshipInstance::_LoadObjectDataIntoManagedInstance (byte* managedBuffer) const
-    {
-    size_t size = sizeof(*this);
-    memcpy (managedBuffer, this, size);
-    return size;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  12/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
 IECInstanceP      StandaloneECRelationshipInstance::_GetAsIECInstance () const
     {
     return const_cast<StandaloneECRelationshipInstance*>(this);

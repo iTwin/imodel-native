@@ -1680,7 +1680,7 @@ WString    ECValue::ToString () const
         {
         return L"IECInstance containing struct value";
         }
-    else if (PRIMITIVETYPE_DateTime == m_valueKind)
+    else if (PRIMITIVETYPE_DateTime == m_primitiveType)
         str = GetDateTime().ToString(); // want something more readable than the ticks
     else if (!ConvertPrimitiveToString (str))
         str = L"<error>";
@@ -1983,7 +1983,7 @@ PrimitiveType   ArrayInfo::GetElementPrimitiveType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ArrayInfo::IsPrimitiveArray() const
     {        
-    return GetKind() == ARRAYKIND_Primitive; 
+    return GetKind() == VALUEKIND_Primitive; 
     }  
 
 /*---------------------------------------------------------------------------------**//**
@@ -1991,8 +1991,15 @@ bool            ArrayInfo::IsPrimitiveArray() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ArrayInfo::IsStructArray() const
     {        
-    return GetKind() == ARRAYKIND_Struct; 
+    return GetKind() == VALUEKIND_Struct; 
     }  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnablerCP ECValueAccessor::Location::GetEnabler() const { return m_enabler; }
+int ECValueAccessor::Location::GetPropertyIndex() const { return m_propertyIndex; }
+int ECValueAccessor::Location::GetArrayIndex() const { return m_arrayIndex; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10

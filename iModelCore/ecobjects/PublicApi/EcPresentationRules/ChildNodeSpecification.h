@@ -47,7 +47,7 @@ struct ChildNodeSpecification
 
     public:
         //! Destructor.
-        ECOBJECTS_EXPORT                              ~ChildNodeSpecification (void);
+        ECOBJECTS_EXPORT virtual                      ~ChildNodeSpecification (void);
 
         //! Reads specification from XML.
         ECOBJECTS_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);

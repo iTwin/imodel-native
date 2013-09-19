@@ -625,12 +625,12 @@ public:
     const static int INDEX_ROOT = -1;
     struct Location
         {
+/*__PUBLISH_SECTION_END__*/
     private:
         ECEnablerCP             m_enabler;
         int                     m_propertyIndex;
         int                     m_arrayIndex;
         mutable ECPropertyCP    m_cachedProperty;
-/*__PUBLISH_SECTION_END__*/
     public:
 
         Location (ECEnablerCP enabler, int propIdx, int arrayIdx) : m_enabler(enabler), m_propertyIndex(propIdx), m_arrayIndex(arrayIdx), m_cachedProperty(NULL) { }
@@ -643,9 +643,9 @@ public:
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
-        ECEnablerCP             GetEnabler() const          { return m_enabler; }
-        int                     GetPropertyIndex() const    { return m_propertyIndex; }
-        int                     GetArrayIndex() const       { return m_arrayIndex; }
+        ECEnablerCP             GetEnabler() const;
+        int                     GetPropertyIndex() const;
+        int                     GetArrayIndex() const;
         };
 
     typedef bvector<Location> LocationVector;

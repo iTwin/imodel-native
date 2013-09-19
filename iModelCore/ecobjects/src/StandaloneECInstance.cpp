@@ -1124,7 +1124,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (UInt32 propIdx)
     {
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);

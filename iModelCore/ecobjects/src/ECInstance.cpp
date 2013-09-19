@@ -81,7 +81,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"SerializerName"))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"SerializerName"))
             {
             ICustomECStructSerializerP serializerP = GetCustomSerializer (value.GetString());
             if (serializerP)
@@ -1183,7 +1183,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
                 if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayEntryVal, asBuffer, size+i) || arrayEntryVal.IsNull ())
                     {
                     arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
-                    if (SUCCESS != instance.SetValue (asBuffer, arrayEntryVal, size+i))
+                    if (ECOBJECTS_STATUS_Success != instance.SetValue (asBuffer, arrayEntryVal, size+i))
                         return ECOBJECTS_STATUS_Error;
                     }
                 }
@@ -1697,7 +1697,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
         for (::UInt32 i=0; i<numToInsert; i++)
             {
             arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
-            if (SUCCESS != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, arrayCount+i))
+            if (ECOBJECTS_STATUS_Success != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, arrayCount+i))
                 return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
             }
         }
@@ -1726,7 +1726,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
                 return ECOBJECTS_STATUS_Error;
                 }
 
-            if (SUCCESS != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, index))
+            if (ECOBJECTS_STATUS_Success != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, index))
                 return ECOBJECTS_STATUS_UnableToSetStructArrayMemberInstance;
             }
         }
@@ -1867,7 +1867,7 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
             {
             propertyName = value.GetString();
             return true;
@@ -1923,7 +1923,7 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
         return ECOBJECTS_STATUS_Error;
 
     ECN::ECValue ecValue;
-    if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
         {
         displayLabel = ecValue.GetString();
         return ECOBJECTS_STATUS_Success;
@@ -1952,7 +1952,7 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLa
     ECN::ECValue ecValue;
     ecValue.SetString (displayLabel, false);
 
-    if (SUCCESS == SetValue (propertyName.c_str(), ecValue))
+    if (ECOBJECTS_STATUS_Success == SetValue (propertyName.c_str(), ecValue))
         return ECOBJECTS_STATUS_Success;
 
     return  ECOBJECTS_STATUS_Error;
@@ -2577,7 +2577,10 @@ InstanceReadStatus   ReadCustomSerializedStruct (StructECPropertyP structPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-#pragma warning(disable:4189) // setStatus unused if NDEBUG set.
+#if defined (_MSC_VER)
+    #pragma warning(disable:4189) // setStatus unused if NDEBUG set.
+#endif // defined (_MSC_VER)
+
 InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index, BeXmlNodeR arrayMemberValue)
     {
     // On entry, arrayMemberValue is an XML Node for the element that starts the struct.
@@ -2606,7 +2609,10 @@ InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP 
 
     return INSTANCE_READ_STATUS_Success;
     }
-#pragma warning(default:4189)
+
+#if defined (_MSC_VER)
+    #pragma warning(default:4189)
+#endif // defined (_MSC_VER)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2913,7 +2919,7 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
 
                 // no members, don't write anything.
                 ECValue         ecValue;
-                if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || !ecValue.IsLoaded())
+                if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str()) || !ecValue.IsLoaded())
                     continue;
                 }
 
@@ -3064,7 +3070,10 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-#pragma warning(disable:4189) // memberClass unused if NDEBUG set.
+#if defined (_MSC_VER)
+    #pragma warning(disable:4189) // memberClass unused if NDEBUG set.
+#endif // defined (_MSC_VER)
+
 InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, WString* baseAccessString, BeXmlNodeR propertyValueNode)
     {
     ArrayKind       arrayKind = arrayProperty.GetKind();
@@ -3077,7 +3086,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     // no members, don't write anything.
     ECValue         ecValue;
-    if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
+    if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
         return INSTANCE_WRITE_STATUS_Success;
 
     UInt32 nElements = ecValue.GetArrayInfo().GetCount();
@@ -3091,7 +3100,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         Utf8CP          typeString  = GetPrimitiveTypeString (memberType);
         for (UInt32 index=0; index < nElements ; index++)
             {
-            if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
+            if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
 
             BeXmlNodeP  memberNode = arrayNode->AddEmptyElement (typeString);
@@ -3108,7 +3117,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         {
         for (UInt32 index=0; index < nElements ; index++)
             {
-            if (SUCCESS != ecInstance.GetValue (ecValue, accessString.c_str(), index))
+            if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
 
             // the XML element tag is the struct type.
@@ -3143,7 +3152,10 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     return INSTANCE_WRITE_STATUS_Success;
     }
-#pragma warning(default:4189)
+
+#if defined (_MSC_VER)
+    #pragma warning(default:4189)
+#endif // defined (_MSC_VER)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10

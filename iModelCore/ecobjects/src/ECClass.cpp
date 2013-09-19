@@ -1418,7 +1418,7 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
             {
             WCharCP propertyName = value.GetString();
             instanceLabelProperty = this->GetPropertyP (propertyName);
@@ -2123,7 +2123,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
         if (end == ECRelationshipEnd_Source)
             propertyName = L"OrderIdSourceProperty";
 
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             {
             propertyName = value.GetString ();
             return ECOBJECTS_STATUS_Success;

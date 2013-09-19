@@ -376,7 +376,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
         PropertyLayoutCP    propertyLayout = NULL;
         ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propIndex);
 
-        if (SUCCESS != status || NULL == propertyLayout)
+        if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
             {
             oss += L"  *** ERROR finding PropertyLayout ***\n";
             continue;
@@ -1779,8 +1779,9 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         bytesToMove = bytesAllocated - endIndexValueOffset;
         }
 
-    if (bytesToMove < 0)
-        return ECOBJECTS_STATUS_Error;
+    // WIP: bytesToMove is UInt32, and therefore will always be positive.
+    // if (bytesToMove < 0)
+    //     return ECOBJECTS_STATUS_Error;
 
     // remove the array values - bytesToMove may be equal to zero if allocated size has no padding and we are deleting the last member of the array.
     if (bytesToMove > 0)
@@ -1975,7 +1976,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (UInt32 propIdx, UInt32 removeI
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     return RemoveArrayElements (*pPropertyLayout, removeIndex, removeCount);
@@ -1989,7 +1990,7 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (UInt32 propIdx, UInt32 ins
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
@@ -2256,7 +2257,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         if (prop.HasChildValues())
             {
             // Stupid PropertyValueMatchesNoChange return value is stupid.
-            if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues())))
+            if (ECOBJECTS_STATUS_Success != (status = duplicateProperties (target, *prop.GetChildValues())))
                 if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
 
@@ -2265,7 +2266,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         else 
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
-            if (NULL != ecProp && ecProp->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            if (NULL != ecProp && ecProp->GetIsPrimitive() && ECOBJECTS_STATUS_Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
                 if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
             }

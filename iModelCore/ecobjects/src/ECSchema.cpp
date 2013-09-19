@@ -228,7 +228,17 @@ ECSchema::~ECSchema ()
     BeAssert (m_classMap.empty());
 
     m_refSchemaList.clear();
+
+#if defined (__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wsizeof-pointer-memaccess"
+#endif // defined (__clang__)
+
     memset (this, 0xececdead, sizeof(this));
+
+#if defined (__clang__)
+    #pragma clang diagnostic pop
+#endif // defined (__clang__)
     }
 
 //---------------------------------------------------------------------------------------
@@ -871,9 +881,9 @@ ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schema
 
     ECObjectsStatus status;
 
-    if (SUCCESS != (status = schemaOut->SetName (schemaName)) ||
-        SUCCESS != (status = schemaOut->SetVersionMajor (versionMajor)) ||
-        SUCCESS != (status = schemaOut->SetVersionMinor (versionMinor)))
+    if (ECOBJECTS_STATUS_Success != (status = schemaOut->SetName (schemaName)) ||
+        ECOBJECTS_STATUS_Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
+        ECOBJECTS_STATUS_Success != (status = schemaOut->SetVersionMinor (versionMinor)))
         {
         schemaOut = NULL;
         return status;
@@ -1315,7 +1325,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
         if (referencedSchema.IsValid())
             {
             ECObjectsStatus status = AddReferencedSchema (*referencedSchema, prefix, schemaContext);
-            if (SUCCESS != status)
+            if (ECOBJECTS_STATUS_Success != status)
                 return ECOBJECTS_STATUS_SchemaHasReferenceCycle == status ? SCHEMA_READ_STATUS_HasReferenceCycle : static_cast<SchemaReadStatus> (status);
             }
         else
@@ -1433,7 +1443,7 @@ bvector<WString>&               searchPaths
 
         //Finds latest
         SchemaKey foundKey(key);
-        if (SUCCESS != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
+        if (ECOBJECTS_STATUS_Success != GetSchemaFileName (fullFileName, foundKey.m_versionMinor, schemaPath,  matchType == SCHEMAMATCHTYPE_LatestCompatible))
             continue;
 
         ECSchemaPtr schemaOut = NULL;
@@ -1595,7 +1605,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
     WString     versionString;
     if ( (BEXML_Success != schemaNode->GetAttributeStringValue (versionString, SCHEMA_VERSION_ATTRIBUTE)) ||
-         (SUCCESS != ParseVersionString (versionMajor, versionMinor, versionString.c_str())) )
+         (ECOBJECTS_STATUS_Success != ParseVersionString (versionMajor, versionMinor, versionString.c_str())) )
         {
         LOG.warningv (L"Invalid version attribute has been ignored while reading ECSchema '%ls'.  The default version number %02d.%02d has been applied.",
             schemaName.c_str(), versionMajor, versionMinor);
@@ -2040,7 +2050,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
 
-    if (ECOBJECTS_STATUS_Success != status)
+    if (SCHEMA_READ_STATUS_Success != status)
         LOG.errorv (L"Failed to read XML file: %ls", ecSchemaXmlFile);
     else
         {
@@ -2084,7 +2094,7 @@ ECSchemaReadContextR schemaContext
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
 
-    if (ECOBJECTS_STATUS_Success != status)
+    if (SCHEMA_READ_STATUS_Success != status)
         {
         Utf8Char first200Bytes[201];
 
@@ -2133,7 +2143,7 @@ ECSchemaReadContextR schemaContext
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
 
-    if (ECOBJECTS_STATUS_Success != status)
+    if (SCHEMA_READ_STATUS_Success != status)
         {
         WChar first200Characters[201];
         wcsncpy (first200Characters, ecSchemaXml, 200);

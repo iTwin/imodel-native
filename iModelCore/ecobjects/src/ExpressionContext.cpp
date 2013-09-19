@@ -405,7 +405,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                     return ExprStatus_UnknownError;
                     }
 
-                if (ecValue.GetKind () !=- ECN::VALUEKIND_Struct)
+                if (ecValue.GetKind () != ECN::VALUEKIND_Struct)
                     {
                     evalResult.Clear();
                     return ExprStatus_StructRequired;;
