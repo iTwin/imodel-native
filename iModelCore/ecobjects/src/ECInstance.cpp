@@ -2453,6 +2453,7 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     {
     // on entry, propertyValueNode is the XML node for the property value.
     WString     propertyName (propertyValueNode.GetName(), true);
+    m_context.ResolveSerializedPropertyName (propertyName, ecClass);
 
     // try to find the property in the class.
     ECPropertyP ecProperty;
@@ -2588,6 +2589,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             // For polymorphic arrays, the Name might also be the name of a class that has structMemberType as a BaseType.
             ECClassCP   thisMemberType;
             WString     arrayMemberType (arrayValueNode->GetName(), true);
+            m_context.ResolveSerializedClassName (arrayMemberType, structMemberType->GetSchema());
             if (NULL == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str(), structMemberType)))
                 continue;
 
@@ -3399,6 +3401,14 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlNodeR node)
     return instanceWriter.WriteInstance (*this, false);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus IECInstance::WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId)
+    {
+    InstanceXmlWriter writer (dom, rootNode);
+    return writer.WriteInstance (*this, writeInstanceId);
+    }
 
 #if defined (NEEDSWORK_LIBXML) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
@@ -3451,5 +3461,11 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 
     return &m_fallBackSchema;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
+void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

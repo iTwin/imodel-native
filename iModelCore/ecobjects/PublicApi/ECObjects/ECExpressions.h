@@ -73,6 +73,7 @@ typedef RefCountedPtr<ValueResult>                  ValueResultPtr;
 typedef RefCountedPtr<ValueSymbol>                  ValueSymbolPtr;
 
 typedef bvector<NodeP>                              NodeVector;
+typedef bvector<NodeCP>                             NodeCPVector;
 typedef NodeVector::iterator                        NodeVectorIterator;
 
 typedef bvector<NodePtr>                            NodePtrVector;
@@ -748,7 +749,7 @@ private:
     bool                m_inParens;  //  Only used for ToString    
 protected:
                         Node () { m_inParens = false; }
-    virtual bool        _Traverse(NodeVisitorR visitor) { return visitor.ProcessNode(*this); }
+    virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
     virtual WString     _ToString() const = 0;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -756,6 +757,7 @@ protected:
         { return ExprStatus_NotImpl; }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_Unrecognized; }
+    virtual bool            _SetOperation (ExpressionToken token) { return false; }
 
     virtual bool            _IsAdditive () const { return false; }
     virtual bool            _IsUnary () const  { return false; }
@@ -764,11 +766,13 @@ protected:
     virtual bool            _HasError () { return false; }
     virtual NodeP           _GetLeftP () const { return NULL; }
     virtual NodeP           _GetRightP () const { return NULL; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) { }
+    virtual bool            _SetLeft (NodeR node) { return false; }
+    virtual bool            _SetRight (NodeR node) { return false; }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType)  {}
 
 public:
-    bool                    GetHasParens() { return m_inParens; }
+    bool                    GetHasParens() const { return m_inParens; }
     void                    SetHasParens(bool hasParens) { m_inParens = hasParens; }
     bool                    IsAdditive ()   const  { return _IsAdditive(); }
     bool                    IsUnary ()      const  { return _IsUnary(); }
@@ -776,13 +780,16 @@ public:
     bool                    IsConstant ()   const  { return _IsConstant (); }
 
     void                    ForceUnitsOrder(UnitsTypeCR  knownType)  { _ForceUnitsOrder(knownType); }
-    void                    DetermineKnownUnits(UnitsTypeR unitsType) { _DetermineKnownUnits(unitsType);  }
-    ExpressionToken    GetOperation () const { return _GetOperation(); }
+    void                    DetermineKnownUnits(UnitsTypeR unitsType) const { _DetermineKnownUnits(unitsType);  }
+    ExpressionToken         GetOperation () const { return _GetOperation(); }
+    bool                    SetOperation (ExpressionToken token) { return _SetOperation (token); }
 
-    NodeP                   GetLeftP () const { return _GetLeftP(); }
-    NodeP                   GetRightP () const { return _GetRightP(); }
+    NodeP                   GetLeftP () { return _GetLeftP(); }
+    NodeP                   GetRightP () { return _GetRightP(); }
     NodeCP                  GetLeftCP () const { return _GetLeftP(); }
     NodeCP                  GetRightCP () const { return _GetRightP(); }
+    bool                    SetLeft (NodeR node) { return _SetLeft (node); }
+    bool                    SetRight (NodeR node) { return _SetRight (node); }
 
     static NodePtr          CreateBooleanLiteral(bool literalValue);
     static NodePtr          CreateStringLiteral (wchar_t const* value);
@@ -815,11 +822,13 @@ public:
                                         bool allowUnknown, bool allowOverrides);
 
     //!  Traverses in parse order
-    ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor);
+    ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor) const;
 
     //! Returns a string representation of the Node expression
     ECOBJECTS_EXPORT WString  ToString() const;
 
+    //! Converts the Node expression into an expression string
+    ECOBJECTS_EXPORT WString  ToExpressionString() const;
 };  //  End of struct Node
 
 

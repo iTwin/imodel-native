@@ -45,7 +45,7 @@ private:
                             Lexer (wchar_t const* inputString);
 public:
     static LexerPtr         Create(wchar_t const* inputString);
-    static WString          GetString(ExpressionToken tokenName);
+    ECOBJECTS_EXPORT static WString     GetString(ExpressionToken tokenName);
     void                    Advance ();
     ExpressionToken         GetTokenType ();
     ExpressionToken         GetTokenModifier ();
@@ -108,9 +108,9 @@ private:
 protected:
 
 public:
-    static  void        GetAdditiveNodes(NodeVector& nodes, NodeR rightMost);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeVector& nodes);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeR rightMost);
+    static  void        GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost);
+    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCPVector& nodes);
+    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCR rightMost);
 
 }; // NodeHelpers
 
@@ -155,13 +155,31 @@ struct ResolvedTypeNode : Node
     {
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LiteralNode : ResolvedTypeNode
+    {
+private:
+    virtual WString             _ToString() const override      { return _GetECValue().ToString(); }
+    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
+        {
+        evalResult = _GetECValue();
+        return ExprStatus_Success;
+        }
+protected:
+    virtual ECValue             _GetECValue() const = 0;
+public:
+    ECValue                     GetECValue() const { return _GetECValue(); }
+    };
+
 /*=================================================================================**//**
 *
 * !!!Describe Class Here!!!
 *
 * @bsiclass                                                     John.Gooding    02/2011
 +===============+===============+===============+===============+===============+======*/
-struct          StringLiteralNode : ResolvedTypeNode
+struct          StringLiteralNode : LiteralNode
 {
 private:
     WString     m_value;
@@ -184,9 +202,9 @@ protected:
         }
 
     virtual ExpressionToken _GetOperation () const override { return TOKEN_StringConst; }
-
+    virtual ECValue         _GetECValue() const override { return ECValue (m_value.c_str()); }
 public:
-    wchar_t const*   GetInternalValue () { return m_value.c_str(); }
+    wchar_t const*   GetInternalValue () const { return m_value.c_str(); }
 
                 StringLiteralNode (wchar_t const* literalValue)
         {
@@ -229,22 +247,16 @@ public:
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T, ExpressionToken TOKEN>
-struct          LiteralNode : ResolvedTypeNode
+struct          BaseLiteralNode : LiteralNode
     {
 private:
     T           m_value;
 
-    virtual WString             _ToString() const override      { return GetECValue().ToString(); }
-    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
-        {
-        evalResult = GetECValue();
-        return ExprStatus_Success;
-        }
     virtual ExpressionToken     _GetOperation() const override  { return TOKEN; }
 protected:
-    virtual ECValue             GetECValue() const { return ECValue (m_value); }
+    virtual ECValue             _GetECValue() const { return ECValue (m_value); }
 public:
-    LiteralNode (T const& value) : m_value(value) { }
+    BaseLiteralNode (T const& value) : m_value(value) { }
     
     T           GetInternalValue() const { return m_value; }
     };
@@ -252,28 +264,28 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef LiteralNode<Int32, TOKEN_IntegerConstant>   IntegerLiteralNode;
-typedef LiteralNode<Int64, TOKEN_IntegerConstant>   Int64LiteralNode;
-typedef LiteralNode<double, TOKEN_FloatConst>       DoubleLiteralNode;
-typedef LiteralNode<bool, TOKEN_True>               BooleanLiteralNode;
-typedef LiteralNode<DPoint2d, TOKEN_PointConst>     Point2DLiteralNode;
-typedef LiteralNode<DPoint3d, TOKEN_PointConst>     Point3DLiteralNode;
+typedef BaseLiteralNode<Int32, TOKEN_IntegerConstant>   IntegerLiteralNode;
+typedef BaseLiteralNode<Int64, TOKEN_IntegerConstant>   Int64LiteralNode;
+typedef BaseLiteralNode<double, TOKEN_FloatConst>       DoubleLiteralNode;
+typedef BaseLiteralNode<bool, TOKEN_True>               BooleanLiteralNode;
+typedef BaseLiteralNode<DPoint2d, TOKEN_PointConst>     Point2DLiteralNode;
+typedef BaseLiteralNode<DPoint3d, TOKEN_PointConst>     Point3DLiteralNode;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DateTimeLiteralNode : LiteralNode<Int64, TOKEN_DateTimeConst>
+struct DateTimeLiteralNode : BaseLiteralNode<Int64, TOKEN_DateTimeConst>
     {
 protected:
-    virtual ECValue         GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
+    virtual ECValue         _GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
 public:
-    DateTimeLiteralNode (Int64 ticks) : LiteralNode<Int64, TOKEN_DateTimeConst>(ticks) { }
+    DateTimeLiteralNode (Int64 ticks) : BaseLiteralNode<Int64, TOKEN_DateTimeConst>(ticks) { }
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct          NullLiteralNode : ResolvedTypeNode
+struct          NullLiteralNode : LiteralNode
     {
 protected:
     virtual WString             _ToString() const override { return L"Null"; }
@@ -283,6 +295,7 @@ protected:
         return ExprStatus_Success;
         }
     virtual ExpressionToken     _GetOperation () const override { return TOKEN_Null; }
+    virtual ECValue             _GetECValue() const override { return ECValue (/*null*/); }
 public:
     NullLiteralNode() { }
     };
@@ -304,7 +317,7 @@ struct          PrimaryListNode : Node
 private:
     bvector<NodePtr>        m_operators;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         for (size_t i = 0; i < m_operators.size(); i++)
             {
@@ -327,13 +340,13 @@ protected:
                                         bool allowUnknown, bool allowOverrides) override;
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
     ECOBJECTS_EXPORT wchar_t const*     GetName(size_t index) const;
     ECOBJECTS_EXPORT size_t             GetNumberOfOperators() const;
-    NodeP                               GetOperatorNode(size_t index) const;
+    ECOBJECTS_EXPORT NodeP              GetOperatorNode(size_t index) const;    // NEEDSWORK: const method returning member as non-const pointer...propagates to CallNode::InvokeXXXMethod()...
     ECOBJECTS_EXPORT ExpressionToken    GetOperation(size_t index) const;
 
     static PrimaryListNodePtr Create() { return new PrimaryListNode(); }
@@ -363,7 +376,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Ident; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -384,7 +397,7 @@ struct          DotNode : IdentNode
 private:
     WString                 m_memberName;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         return visitor.ProcessNode(*this); 
         }
@@ -399,7 +412,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -428,7 +441,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return L"["; }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool retval = visitor.StartArrayIndex(*this);
         if (retval)
@@ -443,7 +456,7 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_LeftBracket; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 public:
     NodePtr                 GetIndexNode() const { return m_index.get(); }
@@ -465,7 +478,7 @@ private:
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(m_operator); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = visitor.ProcessNode(*this);
         if (retval)
@@ -478,7 +491,8 @@ protected:
 
     virtual bool            _IsUnary () const override { return true; }
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
@@ -522,7 +536,7 @@ protected:
 
     virtual WString     _ToString() const override { return Lexer::GetString(m_operatorCode); }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = m_left->Traverse(visitor);
         if (retval)
@@ -543,7 +557,9 @@ protected:
 
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
     virtual NodeP           _GetRightP () const override { return m_right.get(); }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override { }
+    virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
+    virtual bool            _SetRight (NodeR node) override { m_right = &node; return true; }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
     ExpressionStatus        PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings);
@@ -565,7 +581,7 @@ public:
 struct          ArithmeticNode : BinaryNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) override;
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override;
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -747,7 +763,17 @@ struct          LogicalNode : BinaryNode
 protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides) override;
-
+    virtual bool            _SetOperation (ExpressionToken operatorCode) override
+        {
+        switch (operatorCode)
+            {
+        case TOKEN_And: case TOKEN_AndAlso:
+        case TOKEN_Or: case TOKEN_OrElse: case TOKEN_Xor:
+            m_operatorCode = operatorCode; return true;
+        default:
+            return false;
+            }
+        }
 public:
                 LogicalNode(ExpressionToken operatorCode, NodeR left, NodeR right) 
                                 : BinaryNode (operatorCode, left, right) {}
@@ -789,12 +815,12 @@ private:
 protected:
     virtual WString     _ToString() const override { return L""; }
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    announceComma = false;
         visitor.StartArguments(*this);
 
-        for (NodePtrVectorIterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
+        for (NodePtrVector::const_iterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
             {
             if (announceComma && !visitor.Comma())
                 return false;
@@ -813,7 +839,8 @@ protected:
 
 public:
                 ArgumentTreeNode() {}
-    size_t      GetArgumentCount() { return m_arguments.size(); }
+    size_t      GetArgumentCount() const { return m_arguments.size(); }
+    NodeCP      GetArgument (size_t i) const { return i < m_arguments.size() ? m_arguments[i].get() : NULL; }
     void        PushArgument(NodeR node) { m_arguments.push_back(&node); }
     ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context);
 };  //  End of struct ArgumentTreeNode
@@ -831,7 +858,7 @@ private:
     WString             m_methodName;
     bool                m_dotted;
 
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         bool    retval = visitor.ProcessNode(*this);;
         if (!retval)
@@ -858,8 +885,9 @@ protected:
 
 
 public:
-    wchar_t const*      GetMethodName() const { return m_methodName.c_str(); }
-    static CallNodePtr  Create(ArgumentTreeNodeR arguments, wchar_t const*methodName, bool dotted)
+    wchar_t const*          GetMethodName() const { return m_methodName.c_str(); }
+    ArgumentTreeNode const* GetArguments() const { return m_arguments.get(); }
+    static CallNodePtr      Create(ArgumentTreeNodeR arguments, wchar_t const*methodName, bool dotted)
                                     { return new CallNode(arguments, methodName, dotted); }
 
     ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, EvaluationResultCR instanceData, ExpressionContextR context);
@@ -883,7 +911,7 @@ private:
 
 protected:
     virtual WString     _ToString() const override { return Lexer::GetString(TOKEN_IIf); }
-    virtual bool        _Traverse(NodeVisitorR visitor) 
+    virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         if (!visitor.ProcessNode(*this))
             return false;
