@@ -1166,6 +1166,8 @@ WCharCP SupplementalSchemaInfo::GetCustomAttributeAccessor()
 IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     {
     IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(GetCustomAttributeAccessor());
+    if (!instance.IsValid())
+        return instance;
 
     ECClassCP schemaNameAndPurpose = StandardCustomAttributeHelper::GetCustomAttributeClass(L"SchemaNameAndPurpose");
     if (NULL == schemaNameAndPurpose)
