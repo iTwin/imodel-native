@@ -643,9 +643,9 @@ public:
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
-        ECEnablerCP             GetEnabler() const;
-        int                     GetPropertyIndex() const;
-        int                     GetArrayIndex() const;
+        ECOBJECTS_EXPORT ECEnablerCP             GetEnabler() const;
+        ECOBJECTS_EXPORT int                     GetPropertyIndex() const;
+        ECOBJECTS_EXPORT int                     GetArrayIndex() const;
         };
 
     typedef bvector<Location> LocationVector;
