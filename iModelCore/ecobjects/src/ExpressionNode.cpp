@@ -2287,7 +2287,11 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
-    return PromoteCommon(leftResult, rightResult, context, true);
+    ExpressionStatus status =  PromoteCommon(leftResult, rightResult, context, true);
+    if (ExprStatus_Success == status)
+        return !leftResult.GetECValue().IsNull() && !rightResult.GetECValue().IsNull() ? status : ExprStatus_PrimitiveRequired;
+    else
+        return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
