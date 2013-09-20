@@ -759,8 +759,8 @@ private:
     ExpressionContextPtr m_context;
 
 protected:
-    ExpressionStatus PerformArithmeticPromotion(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
-    ExpressionStatus PerformJunctionPromotion(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    ExpressionStatus PerformArithmeticPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    ExpressionStatus PerformJunctionPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
     ExpressionStatus PromoteToType(ResolvedTypeNodePtr& node, ECN::PrimitiveType targetType);
     ExpressionStatus PromoteToString(ResolvedTypeNodePtr& node);
     ExpressionResolver(ExpressionContextR context) { m_context = &context; }
@@ -918,7 +918,7 @@ public:
     virtual bool _SupportsGetLongValue() {return PRIMITIVETYPE_Long == m_primitiveType; }
     virtual bool _SupportsGetStringValue() {return PRIMITIVETYPE_String == m_primitiveType; }
 
-    ECN::PrimitiveType GetPrimitiveType() const { return m_primitiveType; }
+    ECN::PrimitiveType GetResolvedPrimitiveType() const { return m_primitiveType; }
     virtual bool _GetBooleanValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return false; }
     virtual ::Int64 _GetDateTimeValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
     virtual double _GetDoubleValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }

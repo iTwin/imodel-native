@@ -2666,7 +2666,7 @@ bool ResolvedCompareStringNode::_GetBooleanValue(ExpressionStatus& status, Expre
 //---------------------------------------------------------------------------------------
 ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, ECN::PrimitiveType  targetType)
     {
-    ECN::PrimitiveType  sourceType = node->GetPrimitiveType();
+    ECN::PrimitiveType  sourceType = node->GetResolvedPrimitiveType();
     if (sourceType == targetType)
         return ExprStatus_Success;
 
@@ -2674,11 +2674,11 @@ ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, EC
         {
         case PRIMITIVETYPE_Boolean:
             {
-            if (PRIMITIVETYPE_Integer != sourceType && PRIMITIVETYPE_Long != sourceType)
-                return ExprStatus_IncompatibleTypes;
-
-            if (node->IsConstant())  //  maybe this should be a test for IsLiteral or SupportsGetBoolean
+            if (node->_SupportsGetBooleanValue())
                 return ExprStatus_Success;
+
+            if (PRIMITIVETYPE_Integer != sourceType && PRIMITIVETYPE_Long != sourceType && PRIMITIVETYPE_Double != sourceType)
+                return ExprStatus_IncompatibleTypes;
 
             if (sourceType == PRIMITIVETYPE_Integer)
                 {
@@ -2701,18 +2701,19 @@ ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, EC
             break;
 
         case PRIMITIVETYPE_Integer:
+            BeAssert(false && L"asked to promote to integer");
             break;  //  Doesn't make sense. PRIMITIVETYPE_Integer is the smallest
 
         case PRIMITIVETYPE_Long:
             BeAssert(sourceType == PRIMITIVETYPE_Integer);
-            if (node->IsConstant())
+            if (node->_SupportsGetLongValue())
                 return ExprStatus_Success;
 
             node = ResolvedConvertIntegerToLong::Create(*node);
             return ExprStatus_Success;
 
         case PRIMITIVETYPE_Double:
-            if (node->IsConstant())
+            if (node->_SupportsGetDoubleValue())
                 return ExprStatus_Success;
             if (PRIMITIVETYPE_Integer == sourceType)
                 node = ResolvedConvertIntegerToDouble::Create(*node);
@@ -2733,7 +2734,7 @@ ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, EC
 //---------------------------------------------------------------------------------------
 ExpressionStatus ExpressionResolver::PromoteToString(ResolvedTypeNodePtr& node)
     {
-    ECN::PrimitiveType  sourceType = node->GetPrimitiveType();
+    ECN::PrimitiveType  sourceType = node->GetResolvedPrimitiveType();
     if (sourceType == PRIMITIVETYPE_String)
         return ExprStatus_Success;
 
@@ -2759,19 +2760,22 @@ ExpressionStatus ExpressionResolver::PromoteToString(ResolvedTypeNodePtr& node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right)
+ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right)
     {
     //  Check this here instead of making every caller verify that it successfully resolved both types.
     if (!left.IsValid() || !right.IsValid())
+        {
+        targetType = PRIMITIVETYPE_Binary;
         return ExprStatus_WrongType;
+        }
 
-    ECN::PrimitiveType   leftCode    = left->GetPrimitiveType();
-    ECN::PrimitiveType   rightCode   = right->GetPrimitiveType();
+    ECN::PrimitiveType   leftCode    = left->GetResolvedPrimitiveType();
+    ECN::PrimitiveType   rightCode   = right->GetResolvedPrimitiveType();
+    targetType = leftCode;
 
     if (leftCode == rightCode)
         return ExprStatus_Success;
 
-    ECN::PrimitiveType  targetType = PRIMITIVETYPE_Integer;
     if (PRIMITIVETYPE_Double == leftCode || PRIMITIVETYPE_Double == rightCode)
         targetType = PRIMITIVETYPE_Double;
     else if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
@@ -2779,6 +2783,9 @@ ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ResolvedTypeNode
     else if (PRIMITIVETYPE_Integer != leftCode && PRIMITIVETYPE_Integer != rightCode)
         return ExprStatus_IncompatibleTypes;
 
+    //  This calls one of the methods like _SupportsGetDoubleValue.  If the node returns true, then PromoteToType does
+    //  not create a new node. This results in a node that is used to get a value of a type that is different than the
+    //  nodes primary primitive type.
     if (ExprStatus_Success != PromoteToType(left, targetType) || ExprStatus_Success != PromoteToType(right, targetType))
         return ExprStatus_IncompatibleTypes;
 
@@ -2788,15 +2795,21 @@ ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ResolvedTypeNode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-ExpressionStatus ExpressionResolver::PerformJunctionPromotion(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right)
+ExpressionStatus ExpressionResolver::PerformJunctionPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right)
     {
-    ECN::PrimitiveType   leftCode    = left->GetPrimitiveType();
-    ECN::PrimitiveType   rightCode   = right->GetPrimitiveType();
+    if (!left.IsValid() || !right.IsValid())
+        {
+        targetType = PRIMITIVETYPE_Binary;
+        return ExprStatus_WrongType;
+        }
+
+    ECN::PrimitiveType   leftCode    = left->GetResolvedPrimitiveType();
+    ECN::PrimitiveType   rightCode   = right->GetResolvedPrimitiveType();
+    targetType = leftCode;
 
     if (leftCode == rightCode)
         return ExprStatus_Success;
 
-    ECN::PrimitiveType  targetType = PRIMITIVETYPE_Integer;
     if (PRIMITIVETYPE_Boolean == leftCode || PRIMITIVETYPE_Boolean == rightCode)
         targetType = PRIMITIVETYPE_Boolean;
     else if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
@@ -2813,7 +2826,7 @@ ExpressionStatus ExpressionResolver::PerformJunctionPromotion(ResolvedTypeNodePt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-static bool checkConstants(ResolvedTypeNodePtr left, ResolvedTypeNodePtr right, bool allowReorder)
+static bool checkConstants(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right, bool allowReorder)
     {
     if (right->IsConstant())
         return true;
@@ -2854,7 +2867,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveUnaryArithmeticNode (UnaryArithm
             ExpressionStatus status;
             if (left->IsConstant())
                 {
-                switch(left->GetPrimitiveType())
+                switch(left->GetResolvedPrimitiveType())
                     {
                     case PRIMITIVETYPE_Integer:
                         return Node::CreateIntegerLiteral(-left->_GetIntegerValue(status, *m_context));
@@ -2868,14 +2881,14 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveUnaryArithmeticNode (UnaryArithm
                 }
             }
 
-            return ResolvedUnaryMinusNode::Create(left->GetPrimitiveType(), *left);
+            return ResolvedUnaryMinusNode::Create(left->GetResolvedPrimitiveType(), *left);
 
         case TOKEN_Not:
             {
             ExpressionStatus status;
             if (left->IsConstant())
                 {
-                switch(left->GetPrimitiveType())
+                switch(left->GetResolvedPrimitiveType())
                     {
                     case PRIMITIVETYPE_Integer:
                         return Node::CreateIntegerLiteral(~left->_GetIntegerValue(status, *m_context));
@@ -2889,7 +2902,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveUnaryArithmeticNode (UnaryArithm
                 }
             }
 
-            return ResolvedUnaryNotNode::Create(left->GetPrimitiveType(), *left);
+            return ResolvedUnaryNotNode::Create(left->GetResolvedPrimitiveType(), *left);
         }
 
     return NULL;
@@ -2904,7 +2917,8 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveMultiplyNode (MultiplyNodeCR nod
     ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
 
     //  Returns an error if unsupported types or either operand was not resolved.
-    if (ExprStatus_Success != ExpressionResolver::PerformArithmeticPromotion(left, right))
+    ECN::PrimitiveType  resultType;
+    if (ExprStatus_Success != ExpressionResolver::PerformArithmeticPromotion(resultType, left, right))
         return NULL;
 
     if (checkConstants(left, right, true))
@@ -2915,7 +2929,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveMultiplyNode (MultiplyNodeCR nod
         if (left->IsConstant())
             {
             ExpressionStatus    status = ExprStatus_Success;
-            switch(left->GetPrimitiveType())
+            switch(resultType)
                 {
                 case PRIMITIVETYPE_Integer:
                     return Node::CreateIntegerLiteral(left->_GetIntegerValue(status, GetExpressionContextR()) * right->_GetIntegerValue(status, GetExpressionContextR()));
@@ -2927,7 +2941,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveMultiplyNode (MultiplyNodeCR nod
             }
 
         ExpressionStatus    status = ExprStatus_Success;
-        switch(right->GetPrimitiveType())
+        switch(resultType)
             {
             case PRIMITIVETYPE_Integer:
                 return ResolvedMultiplyConstantNode::CreateInteger(*left, right->_GetIntegerValue(status, GetExpressionContextR()));
@@ -2939,7 +2953,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveMultiplyNode (MultiplyNodeCR nod
         BeAssert(false && L"multiplication constant handling failed to generate nodes");
         }
 
-    return ResolvedMultiplyNode::Create(left->GetPrimitiveType(), *left, *right);
+    return ResolvedMultiplyNode::Create(resultType, *left, *right);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2948,35 +2962,78 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveMultiplyNode (MultiplyNodeCR nod
 ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR node)
     {
     ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
-    if (!left.IsValid())
-        return NULL;
-
     ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
-    if (!right.IsValid())
+
+    ECN::PrimitiveType  resultType;
+    if (ExprStatus_Success != ExpressionResolver::PerformArithmeticPromotion(resultType, left, right))
         return NULL;
 
-    ExpressionResolver::PerformArithmeticPromotion(left, right);
+    ExpressionStatus status = ExprStatus_Success;
+    ExpressionContextR  expContext = GetExpressionContextR();
     if (node.GetOperation() == TOKEN_Plus)
         {
         if (checkConstants(left, right, true))
             {
-            //  If both constant then do the work here. If just one constant then may want to create a 
-            //  new node type to hold the constant value along with a pointer to the left operand.
-            //  If either value is one just return the left node
+            if (left->IsConstant())
+                {
+                switch(resultType)
+                    {
+                    case PRIMITIVETYPE_Integer:
+                        return Node::CreateIntegerLiteral(left->_GetIntegerValue(status, expContext) + right->_GetIntegerValue(status, expContext));
+                    case PRIMITIVETYPE_Long:
+                        return Node::CreateInt64Literal(left->_GetLongValue(status, expContext) + right->_GetLongValue(status, expContext));
+                    case PRIMITIVETYPE_Double:
+                        return Node::CreateFloatLiteral(left->_GetDoubleValue(status, expContext) + right->_GetDoubleValue(status, expContext));
+                    }
+                }
+
+            EvaluationResult    evalResult;
+            right->GetValue(evalResult, expContext, false, false);
+            return ResolvedAddConstantNode::Create(resultType, *left, evalResult.GetECValue());
             }
 
-        return ResolvedAddNode::Create(left->GetPrimitiveType(), *left, *right);
+        return ResolvedAddNode::Create(resultType, *left, *right);
         }
 
-    if (checkConstants(left, right, false))
+    if (right->IsConstant())
         {
-        //  If both constant then do the work here. If just one constant then may want to create a 
-        //  new node type to hold the constant value along with a pointer to the left operand.
-        //  If either value is one just return the left node
+        if (left->IsConstant())
+            {
+            switch(resultType)
+                {
+                case PRIMITIVETYPE_Integer:
+                    return Node::CreateIntegerLiteral(left->_GetIntegerValue(status, expContext) - right->_GetIntegerValue(status, expContext));
+                case PRIMITIVETYPE_Long:
+                    return Node::CreateInt64Literal(left->_GetLongValue(status, expContext) - right->_GetLongValue(status, expContext));
+                case PRIMITIVETYPE_Double:
+                    return Node::CreateFloatLiteral(left->_GetDoubleValue(status, expContext) - right->_GetDoubleValue(status, expContext));
+                }
+            }
+
+        EvaluationResult    evalResult;
+        right->GetValue(evalResult, expContext, false, false);
+        ECValueR  ecValue = evalResult.GetECValueR();
+        switch(resultType)
+            {
+            case PRIMITIVETYPE_Integer:
+                ecValue.SetInteger(-1 * ecValue.GetInteger());
+                break;
+            case PRIMITIVETYPE_Long:
+                ecValue.SetLong(-1 * ecValue.GetLong());
+                break;
+            case PRIMITIVETYPE_Double:
+                ecValue.SetDouble(-1 * ecValue.GetDouble());
+                break;
+            default:
+                BeAssert(false && L"encountered invalid primitive when creating constant subtract node");
+                return NULL;
+            }
+
+        return ResolvedAddConstantNode::Create(resultType, *left, evalResult.GetECValue());
         }
 
     BeAssert(node.GetOperation() == TOKEN_Minus);
-    return ResolvedSubtractNode::Create(left->GetPrimitiveType(), *left, *right);
+    return ResolvedSubtractNode::Create(resultType, *left, *right);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3021,7 +3078,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveShiftNode (ShiftNodeCR node)
     if (ExprStatus_Success != PromoteToType(right, PRIMITIVETYPE_Integer))
         return NULL;
 
-    switch (left->GetPrimitiveType())
+    switch (left->GetResolvedPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
             return ResolvedShiftInteger::Create(node.GetOperation(), *left, *right);
@@ -3050,13 +3107,14 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveIIfNode (IIfNodeCR node)
         return NULL;
 
     //  Promote arguments.  If either is string, do string - else if either is bool do bool else do arithmetic
-    if (ExprStatus_Success != PerformArithmeticPromotion(trueNode, falseNode))
+    ECN::PrimitiveType  resultType;
+    if (ExprStatus_Success != PerformArithmeticPromotion(resultType, trueNode, falseNode))
         return NULL;
 
     if (ExprStatus_Success != PromoteToType(condition, PRIMITIVETYPE_Boolean))
         return NULL;
 
-    return ResolvedIIfNode::Create(*condition, *trueNode, *falseNode);
+    return ResolvedIIfNode::Create(resultType, *condition, *trueNode, *falseNode);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3096,7 +3154,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveComparisonNode (ComparisonNodeCR
         }
 
     ExpressionStatus    status = ExprStatus_Success;
-    if (left->GetPrimitiveType() == PRIMITIVETYPE_Boolean || right->GetPrimitiveType() == PRIMITIVETYPE_Boolean)
+    if (left->GetResolvedPrimitiveType() == PRIMITIVETYPE_Boolean || right->GetResolvedPrimitiveType() == PRIMITIVETYPE_Boolean)
         {
         if (ExprStatus_Success != PromoteToType(left, PRIMITIVETYPE_Boolean) || ExprStatus_Success != PromoteToType(right, PRIMITIVETYPE_Boolean))
             return NULL;
@@ -3117,16 +3175,17 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveComparisonNode (ComparisonNodeCR
         return ResolvedCompareBooleanNode::Create(operation, *left, *right);
         }
 
-    if (left->GetPrimitiveType() != PRIMITIVETYPE_String && right->GetPrimitiveType() != PRIMITIVETYPE_String)
+    if (left->GetResolvedPrimitiveType() != PRIMITIVETYPE_String && right->GetResolvedPrimitiveType() != PRIMITIVETYPE_String)
         {
-        ExpressionResolver::PerformArithmeticPromotion(left, right);
+        ECN::PrimitiveType  resultType;
+        ExpressionResolver::PerformArithmeticPromotion(resultType, left, right);
         if (right->IsConstant())
             {
             if (left->IsConstant())
                 {
                 bool computed = false;
                 bool result = false;
-                switch (left->GetPrimitiveType())
+                switch (resultType)
                     {
                     case PRIMITIVETYPE_Integer:
                         result = PerformCompare(left->_GetIntegerValue(status, GetExpressionContextR()), operation, right->_GetIntegerValue(status, GetExpressionContextR()));
@@ -3147,7 +3206,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveComparisonNode (ComparisonNodeCR
                 }
 
             //  Only the right operand is constant
-            switch(left->GetPrimitiveType())
+            switch(resultType)
                 {
                 case PRIMITIVETYPE_Integer:
                     return ResolvedCompareIntegerToConstantNode::Create(operation, *left, right->_GetIntegerValue(status, GetExpressionContextR()));
@@ -3158,7 +3217,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveComparisonNode (ComparisonNodeCR
                 }
             }
 
-        switch(left->GetPrimitiveType())
+        switch(resultType)
             {
             case PRIMITIVETYPE_Integer:
                 return ResolvedCompareIntegerNode::Create(operation, *left, *right);
@@ -3194,13 +3253,14 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveLogicalNode (LogicalNodeCR node)
             {
             //  Process bitwise operators.  If we knew the desired result was boolean we could 
             //  turn these into short circuiting operators that generate a boolean result
-            ExpressionResolver::PerformJunctionPromotion(left, right);
-            switch(left->GetPrimitiveType())
+            ECN::PrimitiveType      targetType;
+            ExpressionResolver::PerformJunctionPromotion(targetType, left, right);
+            switch(targetType)
                 {
                 case PRIMITIVETYPE_Boolean:
                 case PRIMITIVETYPE_Integer:
                 case PRIMITIVETYPE_Long:
-                    return ResolvedLogicalBitNode::Create(left->GetPrimitiveType(), node.GetOperation(), *left, *right);
+                    return ResolvedLogicalBitNode::Create(targetType, node.GetOperation(), *left, *right);
                 }
             }
             break;
@@ -3230,23 +3290,25 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 
     if (node.GetOperation() == TOKEN_Mod)
         {
-        if (ExprStatus_Success != PerformArithmeticPromotion(left, right))
+        ECN::PrimitiveType  resultType;
+        if (ExprStatus_Success != PerformArithmeticPromotion(resultType, left, right))
             return NULL;
-        if (left->GetPrimitiveType() != PRIMITIVETYPE_Integer && left->GetPrimitiveType() != PRIMITIVETYPE_Long)
+        if (resultType != PRIMITIVETYPE_Integer && resultType != PRIMITIVETYPE_Long)
             return NULL;
-        return ResolvedModNode::Create(left->GetPrimitiveType(), *left, *right);
+        return ResolvedModNode::Create(resultType, *left, *right);
         }
 
     if (node.GetOperation() == TOKEN_IntegerDivide)
         {
-        if (ExprStatus_Success != PerformArithmeticPromotion(left, right))
+        ECN::PrimitiveType  resultType;
+        if (ExprStatus_Success != PerformArithmeticPromotion(resultType, left, right))
             return NULL;
-        switch(left->GetPrimitiveType())
+        switch(resultType)
             {
             case PRIMITIVETYPE_Integer:
             case PRIMITIVETYPE_Long:
             case PRIMITIVETYPE_Double:
-                return ResolvedIntegerDivideNode::Create(*left, *right);
+                return ResolvedIntegerDivideNode::Create(resultType, *left, *right);
             default:
                 return NULL;
             }
@@ -3470,11 +3532,34 @@ ExpressionStatus ResolvedIIfNode::_GetStringValue(ECValueR result, ExpressionCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
+    ResolvedAddConstantNode::ResolvedAddConstantNode(ECN::PrimitiveType resultType, ResolvedTypeNodeR left, ECValueCR right) 
+            : ResolvedTypeNode(resultType), m_left(&left) 
+    {
+    switch(resultType)
+        {
+        case PRIMITIVETYPE_Integer:
+            m_right.m_i = right.GetInteger();
+            break;
+        case PRIMITIVETYPE_Long:
+            m_right.m_i64 = right.GetLong();
+            break;
+        case PRIMITIVETYPE_Double:
+            m_right.m_d = right.GetDouble();
+            break;
+        default:
+            BeAssert(false && L"adding unknown constant type");
+            m_right.m_i64 = 0;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
 ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, ExpressionContextR context)
     {
     ExpressionStatus status = ExprStatus_Success;
 
-    switch(m_left->GetPrimitiveType())
+    switch(m_left->GetResolvedPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
             {

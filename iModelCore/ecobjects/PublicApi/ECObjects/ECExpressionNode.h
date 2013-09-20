@@ -1087,7 +1087,7 @@ public:
 struct          ResolvedIntegerDivideNode : ResolvedBinaryNode
     {
 private:
-    ResolvedIntegerDivideNode(ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(left.GetPrimitiveType(), left, right) {}
+    ResolvedIntegerDivideNode(ECN::PrimitiveType primType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primType, left, right) {}
 public:
     ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override 
         {
@@ -1128,7 +1128,7 @@ public:
         return floor(m_left->_GetDoubleValue(status, context) / divisor); 
         }
 
-    static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedIntegerDivideNode(left, right); }
+    static ResolvedTypeNodePtr Create(ECN::PrimitiveType primType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedIntegerDivideNode(primType, left, right); }
     };
 
 /*=================================================================================**//**
@@ -1212,6 +1212,28 @@ public:
     double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) + m_right->_GetDoubleValue(status, context); }
 
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedAddNode(primitiveType, left, right); }
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                                      John.Gooding    09/2013
++===============+===============+===============+===============+===============+======*/
+struct          ResolvedAddConstantNode : ResolvedTypeNode
+    {
+private:
+    union
+        {
+        ::Int32     m_i;
+        ::Int64     m_i64;
+        double      m_d;
+        } m_right;
+    ResolvedTypeNodePtr m_left;
+    ResolvedAddConstantNode(ECN::PrimitiveType resultType, ResolvedTypeNodeR left, ECValueCR right);
+public:
+    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) + m_right.m_i; }
+    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) + m_right.m_i64; }
+    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) + m_right.m_d; }
+
+    static ResolvedTypeNodePtr Create(ECN::PrimitiveType resultType, ResolvedTypeNodeR left, ECValueCR right) { return new ResolvedAddConstantNode(resultType, left, right); }
     };
 
 /*=================================================================================**//**
@@ -1424,8 +1446,8 @@ struct          ResolvedIIfNode : ResolvedTypeNode
     ResolvedTypeNodePtr m_false;
 
     ExpressionToken m_operatorCode;
-    ResolvedIIfNode(ResolvedTypeNodeR condition, ResolvedTypeNodeR ifTrue, ResolvedTypeNodeR ifFalse) : 
-                                ResolvedTypeNode(ifTrue.GetPrimitiveType()), m_condition(&condition), m_true(&ifTrue), m_false(&ifFalse) {}
+    ResolvedIIfNode(ECN::PrimitiveType primType, ResolvedTypeNodeR condition, ResolvedTypeNodeR ifTrue, ResolvedTypeNodeR ifFalse) : 
+                                ResolvedTypeNode(primType), m_condition(&condition), m_true(&ifTrue), m_false(&ifFalse) {}
 
 public:
     ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
@@ -1433,8 +1455,8 @@ public:
     double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override;
     bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
-    static ResolvedTypeNodePtr Create(ResolvedTypeNodeR condition, ResolvedTypeNodeR ifTrue, ResolvedTypeNodeR ifFalse) 
-                    { return new ResolvedIIfNode(condition, ifTrue, ifFalse); }
+    static ResolvedTypeNodePtr Create(ECN::PrimitiveType primType, ResolvedTypeNodeR condition, ResolvedTypeNodeR ifTrue, ResolvedTypeNodeR ifFalse) 
+                    { return new ResolvedIIfNode(primType, condition, ifTrue, ifFalse); }
     };
 
 /*=================================================================================**//**
