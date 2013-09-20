@@ -24,30 +24,41 @@ EXPR_TYPEDEFS(ArgumentTreeNode)
 EXPR_TYPEDEFS(ArithmeticNode)
 EXPR_TYPEDEFS(BinaryNode)
 EXPR_TYPEDEFS(CallNode)
+EXPR_TYPEDEFS(ComparisonNode)
+EXPR_TYPEDEFS(ConcatenateNode)
 EXPR_TYPEDEFS(ContextSymbol)
 EXPR_TYPEDEFS(CustomSymbol)
+EXPR_TYPEDEFS(DivideNode)
 EXPR_TYPEDEFS(DotNode)
 EXPR_TYPEDEFS(ErrorNode)
 EXPR_TYPEDEFS(EvaluationResult)
 EXPR_TYPEDEFS(ExpressionContext)
+EXPR_TYPEDEFS(ExpressionResolver)
 EXPR_TYPEDEFS(ExpressionType)
 EXPR_TYPEDEFS(IdentNode)
+EXPR_TYPEDEFS(IIfNode)
 EXPR_TYPEDEFS(InstanceExpressionContext)
 EXPR_TYPEDEFS(InstanceListExpressionContext)
 EXPR_TYPEDEFS(LBracketNode)
 EXPR_TYPEDEFS(Lexer)
+EXPR_TYPEDEFS(LogicalNode)
 EXPR_TYPEDEFS(MethodReference)
 EXPR_TYPEDEFS(MethodSymbol)
+EXPR_TYPEDEFS(MultiplyNode)
 EXPR_TYPEDEFS(Node)
 EXPR_TYPEDEFS(NodeVisitor)
+EXPR_TYPEDEFS(PlusMinusNode)
 EXPR_TYPEDEFS(PrimaryListNode)
 EXPR_TYPEDEFS(ReferenceResult)
+EXPR_TYPEDEFS(ResolvedTypeNode)
+EXPR_TYPEDEFS(ShiftNode)
 EXPR_TYPEDEFS(Symbol)
 EXPR_TYPEDEFS(SymbolExpressionContext)
+EXPR_TYPEDEFS(UnaryArithmeticNode)
 EXPR_TYPEDEFS(UnitsType)
 EXPR_TYPEDEFS(ValueResult)
 EXPR_TYPEDEFS(ValueSymbol)
-EXPR_TYPEDEFS(IECSymbolProvider);
+EXPR_TYPEDEFS(IECSymbolProvider)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -67,6 +78,7 @@ typedef RefCountedPtr<MethodReference>              MethodReferencePtr;
 typedef RefCountedPtr<MethodSymbol>                 MethodSymbolPtr;
 typedef RefCountedPtr<Node>                         NodePtr;
 typedef RefCountedPtr<PrimaryListNode>              PrimaryListNodePtr;
+typedef RefCountedPtr<ResolvedTypeNode>             ResolvedTypeNodePtr;
 typedef RefCountedPtr<Symbol>                       SymbolPtr;
 typedef RefCountedPtr<SymbolExpressionContext>      SymbolExpressionContextPtr;
 typedef RefCountedPtr<ValueResult>                  ValueResultPtr;
@@ -641,9 +653,9 @@ public:
     ExpressionStatus        GetBoolean(bool& result, bool requireBoolean = true);
 
     //  Constructors and destructors
-            EvaluationResult ();
-            ~EvaluationResult ();
-            EvaluationResult(EvaluationResultCR rhs);
+    ECOBJECTS_EXPORT EvaluationResult ();
+    ECOBJECTS_EXPORT ~EvaluationResult ();
+    ECOBJECTS_EXPORT EvaluationResult(EvaluationResultCR rhs);
 
     EvaluationResultR operator=(EvaluationResultCR rhs);
     void                    Clear();
@@ -738,6 +750,38 @@ public:
 };
 
 /*=================================================================================**//**
+* 
+* @ingroup ECObjectsGroup
++===============+===============+===============+===============+===============+======*/
+struct          ExpressionResolver : RefCountedBase
+{
+private:
+    ExpressionContextPtr m_context;
+
+protected:
+    ExpressionStatus PerformArithmeticPromotion(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    ExpressionStatus PerformJunctionPromotion(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    ExpressionStatus PromoteToType(ResolvedTypeNodePtr& node, ECN::PrimitiveType targetType);
+    ExpressionStatus PromoteToString(ResolvedTypeNodePtr& node);
+    ExpressionResolver(ExpressionContextR context) { m_context = &context; }
+
+public:
+    ExpressionContextCR GetExpressionContext() const { return *m_context; }
+    ExpressionContextR GetExpressionContextR() const { return *m_context; }
+
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolvePrimaryList (PrimaryListNodeR primaryList);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveUnaryArithmeticNode (UnaryArithmeticNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveMultiplyNode (MultiplyNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveDivideNode (DivideNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolvePlusMinusNode (PlusMinusNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveConcatenateNode (ConcatenateNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveComparisonNode (ComparisonNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveLogicalNode (LogicalNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveShiftNode (ShiftNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveIIfNode (IIfNodeCR node);
+};
+
+/*=================================================================================**//**
 * Defines an expression tree for a parsed EC expression.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
@@ -756,6 +800,9 @@ protected:
         { return ExprStatus_NotImpl; }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_Unrecognized; }
+
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context);
+    virtual ResolvedTypeNodeP _GetAsResolvedTypeNodeP () { return NULL; }
 
     virtual bool            _IsAdditive () const { return false; }
     virtual bool            _IsUnary () const  { return false; }
@@ -777,22 +824,23 @@ public:
 
     void                    ForceUnitsOrder(UnitsTypeCR  knownType)  { _ForceUnitsOrder(knownType); }
     void                    DetermineKnownUnits(UnitsTypeR unitsType) { _DetermineKnownUnits(unitsType);  }
-    ExpressionToken    GetOperation () const { return _GetOperation(); }
+    ExpressionToken         GetOperation () const { return _GetOperation(); }
 
     NodeP                   GetLeftP () const { return _GetLeftP(); }
     NodeP                   GetRightP () const { return _GetRightP(); }
+
     NodeCP                  GetLeftCP () const { return _GetLeftP(); }
     NodeCP                  GetRightCP () const { return _GetRightP(); }
 
-    static NodePtr          CreateBooleanLiteral(bool literalValue);
-    static NodePtr          CreateStringLiteral (wchar_t const* value);
-    static NodePtr          CreateIntegerLiteral (int value);
-    static NodePtr          CreateInt64Literal(Int64 value);
-    static NodePtr          CreateFloatLiteral(double value);
-    static NodePtr          CreateNullLiteral();
-    static NodePtr          CreatePoint2DLiteral (DPoint2dCR value);
-    static NodePtr          CreatePoint3DLiteral (DPoint3dCR value);
-    static NodePtr          CreateDateTimeLiteral (Int64 ticks);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateBooleanLiteral(bool literalValue);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateStringLiteral (wchar_t const* value, bool quoted);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateIntegerLiteral (int value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(Int64 value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateFloatLiteral(double value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateNullLiteral();
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (Int64 ticks);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2DLiteral (DPoint2dCR value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3DLiteral (DPoint3dCR value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
     static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);
     static NodePtr          CreateShift (ExpressionToken tokenID, NodeR left, NodeR right);
@@ -810,6 +858,11 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Tries to generate a resolved tree.
+    //! @Returns a pointer to the root of the resolved tree, or NULL if unable to resolve any of the nodes in the subtree.
+    //! @remarks A resolved tree can be executed much more efficiently that a tree that has not been resolved.
+    ECOBJECTS_EXPORT ResolvedTypeNodePtr  GetResolvedTree(ExpressionResolverR context);
+
     //! Returns the value of this expression node using the supplied context
     ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides);
@@ -821,6 +874,58 @@ public:
     ECOBJECTS_EXPORT WString  ToString() const;
 
 };  //  End of struct Node
+
+//=======================================================================================
+//! A node with the data type fully determined.  A ResolvedTypeNode can be the child of a 
+//! Node, but a Node that is not a ResolvedTypeNode cannot be the child of a ResolvedTypeNode. 
+// @bsiclass                                                    John.Gooding    09/2013
+//=======================================================================================
+struct ResolvedTypeNode : Node
+    {
+private:
+    ECN::PrimitiveType       m_primitiveType;
+
+protected:
+    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
+    ResolvedTypeNode(ECN::PrimitiveType primitiveType) : m_primitiveType(primitiveType) {}
+    //!  Optimization provided as alternative to dynamic_cast
+    virtual ResolvedTypeNodeP _GetAsResolvedTypeNodeP () override { return this; }
+    //!  For classes that are not subclasses of ResolvedTypeNode try to create an instance of a subclass of ResolvedTypeNode.
+    ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return this; }
+    virtual WString     _ToString() const { return L"RESOLVED"; }
+
+    void CheckBoolean() {BeAssert(PRIMITIVETYPE_Boolean == m_primitiveType); }
+    void CheckDateTime() {BeAssert(PRIMITIVETYPE_DateTime == m_primitiveType); }
+    void CheckDouble() {BeAssert(PRIMITIVETYPE_Double == m_primitiveType); }
+    void CheckInteger() {BeAssert(PRIMITIVETYPE_Integer == m_primitiveType); }
+    void CheckLong() {BeAssert(PRIMITIVETYPE_Long == m_primitiveType); }
+    void CheckString() {BeAssert(PRIMITIVETYPE_String == m_primitiveType); }
+public:
+    enum SupportedGetTypes
+        {
+        GetBoolean      =  1,
+        GetDateTime     =  2,
+        GetInteger      =  4,
+        GetLong         =  8,
+        GetDouble       = 16,
+        GetString       = 32
+        };
+
+    virtual bool _SupportsGetBooleanValue() {return PRIMITIVETYPE_Boolean == m_primitiveType; }
+    virtual bool _SupportsGetDateTimeValue() {return PRIMITIVETYPE_DateTime == m_primitiveType; }
+    virtual bool _SupportsGetDoubleValue() {return PRIMITIVETYPE_Double == m_primitiveType; }
+    virtual bool _SupportsGetIntegerValue() {return PRIMITIVETYPE_Integer == m_primitiveType; }
+    virtual bool _SupportsGetLongValue() {return PRIMITIVETYPE_Long == m_primitiveType; }
+    virtual bool _SupportsGetStringValue() {return PRIMITIVETYPE_String == m_primitiveType; }
+
+    ECN::PrimitiveType GetPrimitiveType() const { return m_primitiveType; }
+    virtual bool _GetBooleanValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return false; }
+    virtual ::Int64 _GetDateTimeValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual double _GetDoubleValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual ExpressionStatus _GetStringValue(ECValueR expressionStatus, ExpressionContextR context) { return ExprStatus_WrongType; }
+    };
 
 
 END_BENTLEY_ECOBJECT_NAMESPACE
