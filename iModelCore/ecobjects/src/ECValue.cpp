@@ -204,12 +204,9 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
         else if (NULL != m_utf16)
             BeStringUtilities::Utf16ToWChar (buf, m_utf16);
 
-        if (!buf.empty())
-            {
-            size_t size = buf.size() * sizeof(WChar);
-            m_wchar = (WCharCP)malloc (size);
-            memcpy (const_cast<WCharP>(m_wchar), &buf[0], size);
-            }
+        size_t size = buf.size() * sizeof(WChar) + 1;
+        m_wchar = (WCharCP)malloc (size);
+        memcpy (const_cast<WCharP>(m_wchar), &buf[0], size);
 
         setDataOwned (flags, ECVALUE_DATA_WChar, NULL != m_wchar);
         }
