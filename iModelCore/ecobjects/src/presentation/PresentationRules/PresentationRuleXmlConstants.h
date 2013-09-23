@@ -56,6 +56,7 @@
 #define CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE                                      "TargetTree"
 
 #define CONTENT_RULE_XML_NODE_NAME                                                    "ContentRule"
+#define CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL                                      "CustomControl"
 
 #define IMAGE_ID_OVERRIDE_XML_NODE_NAME                                               "ImageIdOverride"
 #define IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID                                       "ImageId"
