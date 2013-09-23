@@ -160,7 +160,7 @@ private:
 protected:
     virtual ECValue             _GetECValue() const = 0;
     virtual bool                _IsConstant () const override { return true; }
-    
+    LiteralNode(ECN::PrimitiveType primtiveType) : ResolvedTypeNode(primtiveType) {}
 public:
     ECValue                     GetECValue() const { return _GetECValue(); }
     };
@@ -205,7 +205,7 @@ public:
 
     wchar_t const*   GetInternalValue () { return m_value.c_str(); }
 
-                StringLiteralNode (wchar_t const* literalValue) : ResolvedTypeNode(PRIMITIVETYPE_String)
+                StringLiteralNode (wchar_t const* literalValue) : LiteralNode(PRIMITIVETYPE_String)
         {
         m_value = literalValue;
         }
@@ -228,7 +228,7 @@ protected:
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return this; }
 
 public:
-    LiteralNode (T const& value) : ResolvedTypeNode(typeID), m_value(value) { }
+    BaseLiteralNode (T const& value) : LiteralNode(typeID), m_value(value) { }
     
     
     T           GetInternalValue() const { return m_value; }
@@ -248,7 +248,7 @@ public:
     ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    IntegerLiteralNode(::Int32 value) : LiteralNode(value) {}
+    IntegerLiteralNode(::Int32 value) : BaseLiteralNode(value) {}
     };
 
 /*=================================================================================**//**
@@ -265,7 +265,7 @@ public:
     ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
     ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    Int64LiteralNode(::Int64 value) : LiteralNode(value) {}
+    Int64LiteralNode(::Int64 value) : BaseLiteralNode(value) {}
     };
 
 /*=================================================================================**//**
@@ -275,7 +275,7 @@ struct DoubleLiteralNode : BaseLiteralNode<double, TOKEN_FloatConst, PRIMITIVETY
     {
 public:
     double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    DoubleLiteralNode(double value) : LiteralNode(value) {}
+    DoubleLiteralNode(double value) : BaseLiteralNode(value) {}
     };
 
 /*=================================================================================**//**
@@ -288,11 +288,11 @@ protected:
 public:
     ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
     bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    BooleanLiteralNode(bool value) : LiteralNode(value) {}
+    BooleanLiteralNode(bool value) : BaseLiteralNode(value) {}
     };
 
-typedef LiteralNode<DPoint2d, TOKEN_PointConst, PRIMITIVETYPE_Point2D>     Point2DLiteralNode;
-typedef LiteralNode<DPoint3d, TOKEN_PointConst, PRIMITIVETYPE_Point3D>     Point3DLiteralNode;
+typedef BaseLiteralNode<DPoint2d, TOKEN_PointConst, PRIMITIVETYPE_Point2D>     Point2DLiteralNode;
+typedef BaseLiteralNode<DPoint3d, TOKEN_PointConst, PRIMITIVETYPE_Point3D>     Point3DLiteralNode;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
@@ -302,7 +302,7 @@ struct DateTimeLiteralNode : BaseLiteralNode<Int64, TOKEN_DateTimeConst, PRIMITI
 protected:
     virtual ECValue         _GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
 public:
-    DateTimeLiteralNode (Int64 ticks) : LiteralNode<Int64, TOKEN_DateTimeConst, PRIMITIVETYPE_DateTime>(ticks) { }
+    DateTimeLiteralNode (Int64 ticks) : BaseLiteralNode<Int64, TOKEN_DateTimeConst, PRIMITIVETYPE_DateTime>(ticks) { }
     ::Int64 _GetDateTimeValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     };
 
@@ -323,7 +323,7 @@ protected:
 public:
     //  If we don't provide some type code it can't be a ResolvedTypeNode preventing the entire
     //  tree above it from being ResolvedTypeNode.  Nothing should match PRIMITIVETYPE_Binary.
-    NullLiteralNode() : ResolvedTypeNode(PRIMITIVETYPE_Binary) { }
+    NullLiteralNode() : LiteralNode(PRIMITIVETYPE_Binary) { }
     };
 
 /*=================================================================================**//**

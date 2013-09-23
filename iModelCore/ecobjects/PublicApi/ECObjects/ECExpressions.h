@@ -831,8 +831,8 @@ public:
     ExpressionToken         GetOperation () const { return _GetOperation(); }
     bool                    SetOperation (ExpressionToken token) { return _SetOperation (token); }
 
-    NodeP                   GetLeftP () { return _GetLeftP(); }
-    NodeP                   GetRightP () { return _GetRightP(); }
+    NodeP                   GetLeftP () const { return _GetLeftP(); }
+    NodeP                   GetRightP () const { return _GetRightP(); }
 
     NodeCP                  GetLeftCP () const { return _GetLeftP(); }
     NodeCP                  GetRightCP () const { return _GetRightP(); }
