@@ -624,14 +624,13 @@ public:
         int                     m_propertyIndex;
         int                     m_arrayIndex;
         mutable ECPropertyCP    m_cachedProperty;
-/*__PUBLISH_SECTION_END__*/
     public:
 
         Location (ECEnablerCP enabler, int propIdx, int arrayIdx) : m_enabler(enabler), m_propertyIndex(propIdx), m_arrayIndex(arrayIdx), m_cachedProperty(NULL) { }
         Location () : m_enabler(NULL), m_propertyIndex(-1), m_arrayIndex(INDEX_ROOT), m_cachedProperty(NULL) { }
         Location (const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) { }
 
-        ECPropertyCP    GetECProperty() const;
+/*__PUBLISH_SECTION_END__*/
         void            SetPropertyIndex (int index)                { m_cachedProperty = NULL; m_propertyIndex = index; }
         void            SetArrayIndex (int index)                   { m_arrayIndex = index; }
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
@@ -640,6 +639,7 @@ public:
         ECEnablerCP             GetEnabler() const          { return m_enabler; }
         int                     GetPropertyIndex() const    { return m_propertyIndex; }
         int                     GetArrayIndex() const       { return m_arrayIndex; }
+        ECPropertyCP            GetECProperty() const;
         };
 
     typedef bvector<Location> LocationVector;
