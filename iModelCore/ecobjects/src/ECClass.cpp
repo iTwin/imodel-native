@@ -1418,7 +1418,7 @@ ECPropertyP ECClass::GetInstanceLabelProperty() const
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
             {
             WCharCP propertyName = value.GetString();
             instanceLabelProperty = this->GetPropertyP (propertyName);
@@ -2123,7 +2123,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
         if (end == ECRelationshipEnd_Source)
             propertyName = L"OrderIdSourceProperty";
 
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             {
             propertyName = value.GetString ();
             return ECOBJECTS_STATUS_Success;
@@ -2149,8 +2149,8 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNo
         return SCHEMA_WRITE_STATUS_FailedToCreateXml;
         }
         
-    classNode->AddAttributeStringValue (STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength).c_str());
-    classNode->AddAttributeStringValue (STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection).c_str());
+    classNode->AddAttributeStringValue (STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength));
+    classNode->AddAttributeStringValue (STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection));
     
     m_source->WriteXml (*classNode, EC_SOURCECONSTRAINT_ELEMENT);
     m_target->WriteXml (*classNode, EC_TARGETCONSTRAINT_ELEMENT);

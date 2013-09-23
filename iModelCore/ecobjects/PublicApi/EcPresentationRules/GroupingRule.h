@@ -101,6 +101,9 @@ protected:
     ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) = 0;
 
 public:
+    //! Virtual destructor.
+    virtual ~GroupSpecification(){}
+    
     //! Reads group specification from xml node.
     ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 

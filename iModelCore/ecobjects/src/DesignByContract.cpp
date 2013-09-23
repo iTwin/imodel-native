@@ -27,7 +27,7 @@ AssertDisabler::AssertDisabler ()
 #if !defined (BENTLEY_WINRT) 
     // WIP: calling putenv is nonportable and generally a bad idea
     // to handle calls to BeAssert as well
-    putenv("MS_IGNORE_ASSERTS=1");
+    putenv(const_cast<char*>("MS_IGNORE_ASSERTS=1"));
 #endif
     }
 
@@ -40,7 +40,7 @@ AssertDisabler::~AssertDisabler ()
 
 #if !defined (BENTLEY_WINRT)
     // WIP: calling putenv is nonportable and generally a bad idea
-    putenv("MS_IGNORE_ASSERTS=");
+    putenv(const_cast<char*>("MS_IGNORE_ASSERTS="));
 #endif
     }
 

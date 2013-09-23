@@ -161,6 +161,8 @@
         <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="Static"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">
@@ -170,7 +172,8 @@
     </Product>
 
     <ProductDirectoryList ListName="ECObjectsTest">
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
         <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
         <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
@@ -178,9 +181,10 @@
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
 
-        <ProductDirectory Name="PublicAPI"  LibType="Static"        Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"  LibType="Static"        Deliver="false" />
-        <ProductDirectory Name="libs"       LibType="Static"        Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"  LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="libs"           LibType="Static"    Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
         <ProductDirectory Name="ECObjectsTestLoggingConfig"         Path=""/>

@@ -175,7 +175,7 @@ struct StandardCustomAttributesSchemaHolder : RefCountedBase
 {
 private:
     ECSchemaPtr            m_schema;
-    bmap<WCharCP, StandaloneECEnablerPtr> m_enablers;
+    bmap<WString, StandaloneECEnablerPtr> m_enablers;
 
     static StandardCustomAttributesSchemaHolderPtr s_schemaHolder;
 
@@ -200,7 +200,7 @@ StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::s_
 static WCharCP s_supplementalMetaDataAccessor = L"SupplementalSchemaMetaData";
 static WCharCP s_supplementalProvenanceAccessor = L"SupplementalProvenance";
 static const UInt32 s_bscaVersionMajor = 1;
-static const UInt32 s_bscaVersionMinor = 7;
+static const UInt32 s_bscaVersionMinor = 8;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
@@ -213,12 +213,16 @@ StandardCustomAttributesSchemaHolder::StandardCustomAttributesSchemaHolder()
     m_schema = ECSchema::LocateSchema(key, *schemaContext);
 
     ECClassP metaDataClass = m_schema->GetClassP(s_supplementalMetaDataAccessor);
-    StandaloneECEnablerPtr enabler = metaDataClass->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler;
+    if (NULL != metaDataClass)
+        enabler = metaDataClass->GetDefaultStandaloneEnabler();
 
     m_enablers.Insert(s_supplementalMetaDataAccessor, enabler);
 
     ECClassP provenanceClass = m_schema->GetClassP(s_supplementalProvenanceAccessor);
-    StandaloneECEnablerPtr provenanceEnabler = provenanceClass->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr provenanceEnabler;
+    if (NULL != provenanceClass)
+        provenanceEnabler = provenanceClass->GetDefaultStandaloneEnabler();
     m_enablers.Insert(s_supplementalProvenanceAccessor, provenanceEnabler);
 
     }
@@ -258,10 +262,18 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateCustomAttributeInsta
     if (!m_schema.IsValid())
         _GetSchema();
 
-    bmap<WCharCP, StandaloneECEnablerPtr>::const_iterator enablerIterator = m_enablers.find(attribute);
+    auto enablerIterator = m_enablers.find(attribute);
+    if (enablerIterator == m_enablers.end())
+        {
+        BeDataAssert (false && "Unknown supplemental schema custom attribute class name. Currently only SupplementalSchemaMetaData and SupplementalProvenance are supported.");
+        return nullptr;
+        }
+
     StandaloneECEnablerPtr enabler = enablerIterator->second;
-    StandaloneECInstancePtr standaloneInstance = enabler->CreateInstance();
-    return IECInstancePtr(standaloneInstance.get());
+    if (!enabler.IsValid())
+        return nullptr;
+
+    return enabler->CreateInstance().get();
     }
 
 /*---------------------------------------------------------------------------------**//**

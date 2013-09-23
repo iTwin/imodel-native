@@ -54,7 +54,7 @@ public:
 
     //! Load rules from parent XmlNode and adds to collection
     template<typename RuleType, typename RuleCollectionType>
-    static void                        LoadRulesFromXmlNode (BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char* ruleXmlElementName)
+    static void                        LoadRulesFromXmlNode (BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char const* ruleXmlElementName)
         {
         BeXmlDom::IterableNodeSet ruleNodes;
         xmlNode->SelectChildNodes (ruleNodes, ruleXmlElementName);

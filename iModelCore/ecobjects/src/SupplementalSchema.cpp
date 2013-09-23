@@ -44,22 +44,22 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
     assert (0 == supplementalSchemaMetaDataCustomAttribute.GetClass().GetName().compare(GetCustomAttributeAccessor()));
 
     ECValue propertyValue;
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaName = propertyValue.GetString();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMajorVersion = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMinorVersion = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
         m_supplementalSchemaPrecedence = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
         m_supplementalSchemaPurpose = propertyValue.GetString();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
         m_isUserSpecific = propertyValue.GetBoolean();
     }
 
@@ -1173,6 +1173,8 @@ WCharCP SupplementalSchemaInfo::GetCustomAttributeAccessor()
 IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     {
     IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(GetCustomAttributeAccessor());
+    if (!instance.IsValid())
+        return instance;
 
     ECClassCP schemaNameAndPurpose = StandardCustomAttributeHelper::GetCustomAttributeClass(L"SchemaNameAndPurpose");
     if (NULL == schemaNameAndPurpose)

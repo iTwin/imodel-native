@@ -44,7 +44,7 @@ protected:
 
 public:
     //! Destructor.
-    ECOBJECTS_EXPORT                                      ~ContentSpecification (void);
+    ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);
 
     //! Reads specification from XML.
     ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);

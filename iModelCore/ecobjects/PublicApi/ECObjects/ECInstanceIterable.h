@@ -12,12 +12,17 @@
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 
-#pragma  warning(push)
-#pragma  warning(disable:4265)
+#if defined (_MSC_VER)
+    #pragma  warning(push)
+    #pragma  warning(disable:4265)
+#endif // defined (_MSC_VER)
+
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/shared_ptr.hpp>
-#pragma  warning(pop)
 
+#if defined (_MSC_VER)
+    #pragma  warning(pop)
+#endif // defined (_MSC_VER)
 
 /*__PUBLISH_SECTION_START__*/
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
