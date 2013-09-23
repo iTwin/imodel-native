@@ -205,13 +205,7 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
         else
             return NULL;
 
-        if (!buf.empty())
-            {
-            size_t size = buf.size() * sizeof(WChar);
-            m_wchar = BeStringUtilities::Wcsdup(buf.c_str());
-            memcpy (const_cast<WCharP>(m_wchar), &buf[0], size);
-            }
-
+        m_wchar = BeStringUtilities::Wcsdup (buf.c_str());
         setDataOwned (flags, ECVALUE_DATA_WChar, true);
         }
             
