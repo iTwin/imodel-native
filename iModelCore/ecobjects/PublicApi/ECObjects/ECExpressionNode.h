@@ -145,6 +145,58 @@ public:
         }
     };
 
+//=======================================================================================
+//! A node with the data type fully determined.  A ResolvedTypeNode can be the child of a 
+//! Node, but a Node that is not a ResolvedTypeNode cannot be the child of a ResolvedTypeNode. 
+// @bsiclass                                                    John.Gooding    09/2013
+//=======================================================================================
+struct ResolvedTypeNode : Node
+    {
+private:
+    ECN::PrimitiveType       m_primitiveType;
+
+protected:
+    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
+    ResolvedTypeNode(ECN::PrimitiveType primitiveType) : m_primitiveType(primitiveType) {}
+    //!  Optimization provided as alternative to dynamic_cast
+    virtual ResolvedTypeNodeP _GetAsResolvedTypeNodeP () override { return this; }
+    //!  For classes that are not subclasses of ResolvedTypeNode try to create an instance of a subclass of ResolvedTypeNode.
+    virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return this; }
+    virtual WString     _ToString() const { return L"RESOLVED"; }
+
+    void CheckBoolean() {BeAssert(PRIMITIVETYPE_Boolean == m_primitiveType); }
+    void CheckDateTime() {BeAssert(PRIMITIVETYPE_DateTime == m_primitiveType); }
+    void CheckDouble() {BeAssert(PRIMITIVETYPE_Double == m_primitiveType); }
+    void CheckInteger() {BeAssert(PRIMITIVETYPE_Integer == m_primitiveType); }
+    void CheckLong() {BeAssert(PRIMITIVETYPE_Long == m_primitiveType); }
+    void CheckString() {BeAssert(PRIMITIVETYPE_String == m_primitiveType); }
+public:
+    enum SupportedGetTypes
+        {
+        GetBoolean      =  1,
+        GetDateTime     =  2,
+        GetInteger      =  4,
+        GetLong         =  8,
+        GetDouble       = 16,
+        GetString       = 32
+        };
+
+    virtual bool _SupportsGetBooleanValue() {return PRIMITIVETYPE_Boolean == m_primitiveType; }
+    virtual bool _SupportsGetDateTimeValue() {return PRIMITIVETYPE_DateTime == m_primitiveType; }
+    virtual bool _SupportsGetDoubleValue() {return PRIMITIVETYPE_Double == m_primitiveType; }
+    virtual bool _SupportsGetIntegerValue() {return PRIMITIVETYPE_Integer == m_primitiveType; }
+    virtual bool _SupportsGetLongValue() {return PRIMITIVETYPE_Long == m_primitiveType; }
+    virtual bool _SupportsGetStringValue() {return PRIMITIVETYPE_String == m_primitiveType; }
+
+    ECN::PrimitiveType GetResolvedPrimitiveType() const { return m_primitiveType; }
+    virtual bool _GetBooleanValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return false; }
+    virtual ::Int64 _GetDateTimeValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual double _GetDoubleValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
+    virtual ExpressionStatus _GetStringValue(ECValueR expressionStatus, ExpressionContextR context) { return ExprStatus_WrongType; }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -197,13 +249,13 @@ protected:
     virtual bool            _IsConstant () const override { return true; }
     virtual ECValue         _GetECValue() const override { return ECValue (m_value.c_str()); }
 public:
-    ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override
+    virtual ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override
         {
         result.SetString(m_value.c_str(), false);
         return ExprStatus_Success;
         }
 
-    wchar_t const*   GetInternalValue () { return m_value.c_str(); }
+    wchar_t const*   GetInternalValue () const { return m_value.c_str(); }
 
                 StringLiteralNode (wchar_t const* literalValue) : LiteralNode(PRIMITIVETYPE_String)
         {
@@ -244,10 +296,10 @@ protected:
     virtual bool _SupportsGetDoubleValue() override { return true; }
     virtual bool _SupportsGetLongValue() override { return true; }
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     IntegerLiteralNode(::Int32 value) : BaseLiteralNode(value) {}
     };
 
@@ -261,10 +313,10 @@ protected:
     virtual bool _SupportsGetDoubleValue() override { return true; }
     virtual bool _SupportsGetIntegerValue() override { return true; }
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     Int64LiteralNode(::Int64 value) : BaseLiteralNode(value) {}
     };
 
@@ -274,7 +326,7 @@ public:
 struct DoubleLiteralNode : BaseLiteralNode<double, TOKEN_FloatConst, PRIMITIVETYPE_Double>
     {
 public:
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     DoubleLiteralNode(double value) : BaseLiteralNode(value) {}
     };
 
@@ -286,8 +338,8 @@ struct BooleanLiteralNode : BaseLiteralNode<bool, TOKEN_True, PRIMITIVETYPE_Bool
 protected:
     virtual bool _SupportsGetIntegerValue() override { return true; }
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     BooleanLiteralNode(bool value) : BaseLiteralNode(value) {}
     };
 
@@ -303,7 +355,7 @@ protected:
     virtual ECValue         _GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
 public:
     DateTimeLiteralNode (Int64 ticks) : BaseLiteralNode<Int64, TOKEN_DateTimeConst, PRIMITIVETYPE_DateTime>(ticks) { }
-    ::Int64 _GetDateTimeValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual ::Int64 _GetDateTimeValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -991,9 +1043,9 @@ private:
     ResolvedUnaryMinusNode(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR operand) : ResolvedUnaryNode(primitiveType, operand) {}
 
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { CheckInteger(); return -m_operand->_GetIntegerValue(status, context); }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { CheckLong(); return -m_operand->_GetLongValue(status, context); }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { CheckDouble(); return -m_operand->_GetDoubleValue(status, context); }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { CheckInteger(); return -m_operand->_GetIntegerValue(status, context); }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { CheckLong(); return -m_operand->_GetLongValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { CheckDouble(); return -m_operand->_GetDoubleValue(status, context); }
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR operand)  { return new ResolvedUnaryMinusNode(primitiveType, operand); }
 
 };  //  End of struct ResolvedUnaryMinusNode
@@ -1009,9 +1061,9 @@ struct          ResolvedUnaryNotNode : ResolvedUnaryNode
 private:
     ResolvedUnaryNotNode(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR operand) : ResolvedUnaryNode(primitiveType, operand) {}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return !m_operand->_GetBooleanValue(status, context); }
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return ~m_operand->_GetIntegerValue(status, context); }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return ~m_operand->_GetLongValue(status, context); }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return !m_operand->_GetBooleanValue(status, context); }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return ~m_operand->_GetIntegerValue(status, context); }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return ~m_operand->_GetLongValue(status, context); }
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR operand) { return new ResolvedUnaryNotNode(primitiveType, operand); }
 };  //  End of struct UnaryNotNode
 
@@ -1038,9 +1090,9 @@ struct          ResolvedMultiplyNode : ResolvedBinaryNode
 private:
     ResolvedMultiplyNode(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primitiveType, left, right) {}
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) * m_right->_GetIntegerValue(status, context); }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) * m_right->_GetLongValue(status, context); }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) * m_right->_GetDoubleValue(status, context); }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) * m_right->_GetIntegerValue(status, context); }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) * m_right->_GetLongValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) * m_right->_GetDoubleValue(status, context); }
 
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedMultiplyNode(primitiveType, left, right); }
     };
@@ -1063,9 +1115,9 @@ private:
     ResolvedMultiplyConstantNode(ResolvedTypeNodeR left, ::Int64 value) : ResolvedTypeNode(PRIMITIVETYPE_Long), m_left(&left) { m_right.m_i64 = value; }
     ResolvedMultiplyConstantNode(ResolvedTypeNodeR left, double value) : ResolvedTypeNode(PRIMITIVETYPE_Double), m_left(&left) { m_right.m_d = value; }
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { CheckInteger(); return m_left->_GetIntegerValue(status, context) * m_right.m_i; }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { CheckLong(); return m_left->_GetLongValue(status, context) * m_right.m_i64; }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { CheckDouble(); return m_left->_GetDoubleValue(status, context) * m_right.m_d; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { CheckInteger(); return m_left->_GetIntegerValue(status, context) * m_right.m_i; }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { CheckLong(); return m_left->_GetLongValue(status, context) * m_right.m_i64; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { CheckDouble(); return m_left->_GetDoubleValue(status, context) * m_right.m_d; }
 
     static ResolvedTypeNodePtr CreateInteger(ResolvedTypeNodeR left, ::Int32 value) { return new ResolvedMultiplyConstantNode(left, value); }
     static ResolvedTypeNodePtr CreateInt64(ResolvedTypeNodeR left, ::Int64 value) { return new ResolvedMultiplyConstantNode(left, value); }
@@ -1080,7 +1132,7 @@ struct          ResolvedModNode : ResolvedBinaryNode
 private:
     ResolvedModNode(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primitiveType, left, right) {}
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override 
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override 
         {
         ::Int32 divisor = m_right->_GetIntegerValue(status, context);
         if (0 == divisor)
@@ -1093,7 +1145,7 @@ public:
         return m_left->_GetIntegerValue(status, context) % divisor; 
         }
 
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override
         {
         ::Int64 divisor = m_right->_GetLongValue(status, context);
         if (0 == divisor)
@@ -1120,7 +1172,7 @@ struct          ResolvedIntegerDivideNode : ResolvedBinaryNode
 private:
     ResolvedIntegerDivideNode(ECN::PrimitiveType primType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primType, left, right) {}
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override 
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override 
         {
         ::Int32 divisor = m_right->_GetIntegerValue(status, context);
         if (0 == divisor)
@@ -1133,7 +1185,7 @@ public:
         return m_left->_GetIntegerValue(status, context) / divisor; 
         }
 
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override
         {
         ::Int64 divisor = m_right->_GetLongValue(status, context);
         if (0 == divisor)
@@ -1146,7 +1198,7 @@ public:
         return m_left->_GetLongValue(status, context) / divisor; 
         }
 
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override
         {
         double divisor = m_right->_GetDoubleValue(status, context);
         if (0.0 == divisor)
@@ -1171,7 +1223,7 @@ struct          ResolvedDivideNode : ResolvedBinaryNode
 private:
     ResolvedDivideNode(ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(ECN::PRIMITIVETYPE_Double, left, right) {}
 public:
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override
         {
         double divisor = m_right->_GetDoubleValue(status, context);
         if (0.0 == divisor)
@@ -1198,7 +1250,7 @@ private:
     ResolvedDivideByConstantNode(ResolvedTypeNodeR left, double divisor) : ResolvedTypeNode(ECN::PRIMITIVETYPE_Double), m_left(&left), m_divisor(divisor) {}
 
 public:
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) / m_divisor; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) / m_divisor; }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left, double divisor) { return new ResolvedDivideByConstantNode(left, divisor); }
     };
 
@@ -1213,7 +1265,7 @@ private:
     ResolvedDivideConstantNode(double left, ResolvedTypeNodeR divisor) : ResolvedTypeNode(ECN::PRIMITIVETYPE_Double), m_left(left), m_divisor(&divisor) {}
 
 public:
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override
         {
         double divisor = m_divisor->_GetDoubleValue(status, context);
         if (0.0 == divisor)
@@ -1238,9 +1290,9 @@ struct          ResolvedAddNode : ResolvedBinaryNode
 private:
     ResolvedAddNode(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primitiveType, left, right) {}
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) + m_right->_GetIntegerValue(status, context); }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) + m_right->_GetLongValue(status, context); }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) + m_right->_GetDoubleValue(status, context); }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) + m_right->_GetIntegerValue(status, context); }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) + m_right->_GetLongValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) + m_right->_GetDoubleValue(status, context); }
 
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedAddNode(primitiveType, left, right); }
     };
@@ -1260,9 +1312,9 @@ private:
     ResolvedTypeNodePtr m_left;
     ResolvedAddConstantNode(ECN::PrimitiveType resultType, ResolvedTypeNodeR left, ECValueCR right);
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) + m_right.m_i; }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) + m_right.m_i64; }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) + m_right.m_d; }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) + m_right.m_i; }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) + m_right.m_i64; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) + m_right.m_d; }
 
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType resultType, ResolvedTypeNodeR left, ECValueCR right) { return new ResolvedAddConstantNode(resultType, left, right); }
     };
@@ -1275,9 +1327,9 @@ struct          ResolvedSubtractNode : ResolvedBinaryNode
 private:
     ResolvedSubtractNode(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primitiveType, left, right) {}
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) - m_right->_GetIntegerValue(status, context); }
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) - m_right->_GetLongValue(status, context); }
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) - m_right->_GetDoubleValue(status, context); }
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) - m_right->_GetIntegerValue(status, context); }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) - m_right->_GetLongValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) - m_right->_GetDoubleValue(status, context); }
 
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedSubtractNode(primitiveType, left, right); }
     };
@@ -1289,7 +1341,7 @@ struct          ResolvedConcatenateNode : ResolvedBinaryNode
     {
     ResolvedConcatenateNode(ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(PRIMITIVETYPE_String, left, right) {}
 public:
-    ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
+    virtual ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedConcatenateNode(left, right); }
     };
 
@@ -1313,7 +1365,7 @@ struct          ResolvedCompareIntegerNode : ResolvedCompareNode
 private:
     ResolvedCompareIntegerNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedCompareNode(operatorCode, left, right){}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedCompareIntegerNode(operatorCode, left, right); }
 };
 
@@ -1339,7 +1391,7 @@ struct          ResolvedCompareIntegerToConstantNode : ResolvedCompareToConstant
 private:
     ResolvedCompareIntegerToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int32 right) : ResolvedCompareToConstantNode<::Int32>(operatorCode, left, right) {}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int32 right) { return new ResolvedCompareIntegerToConstantNode(operatorCode, left, right); }
 };
 
@@ -1351,7 +1403,7 @@ struct          ResolvedCompareLongToConstantNode : ResolvedCompareToConstantNod
 private:
     ResolvedCompareLongToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int64 right) : ResolvedCompareToConstantNode<::Int64>(operatorCode, left, right) {}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int64 right) { return new ResolvedCompareLongToConstantNode(operatorCode, left, right); }
 };
 
@@ -1363,7 +1415,7 @@ struct          ResolvedCompareDoubleToConstantNode : ResolvedCompareToConstantN
 private:
     ResolvedCompareDoubleToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, double right) : ResolvedCompareToConstantNode<double>(operatorCode, left, right) {}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, double right) { return new ResolvedCompareDoubleToConstantNode(operatorCode, left, right); }
 };
 
@@ -1375,7 +1427,7 @@ struct          ResolvedCompareBooleanToConstantNode : ResolvedCompareToConstant
 private:
     ResolvedCompareBooleanToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, bool right) : ResolvedCompareToConstantNode<bool>(operatorCode, left, right) {}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, bool right) { return new ResolvedCompareBooleanToConstantNode(operatorCode, left, right); }
 };
 
@@ -1387,7 +1439,7 @@ struct          ResolvedCompareLongNode : ResolvedCompareNode
 private:
     ResolvedCompareLongNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedCompareNode(operatorCode, left, right){}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedCompareLongNode(operatorCode, left, right); }
 };
 
@@ -1399,7 +1451,7 @@ struct          ResolvedCompareDoubleNode : ResolvedCompareNode
 private:
     ResolvedCompareDoubleNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedCompareNode(operatorCode, left, right){}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedCompareDoubleNode(operatorCode, left, right); }
 };
 
@@ -1411,7 +1463,7 @@ struct          ResolvedCompareBooleanNode : ResolvedCompareNode
 private:
     ResolvedCompareBooleanNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedCompareNode(operatorCode, left, right){}
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedCompareBooleanNode(operatorCode, left, right); }
 };
 
@@ -1420,7 +1472,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ResolvedCompareStringNode : ResolvedCompareNode
 {
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     ResolvedCompareStringNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedCompareNode(operatorCode, left, right){}
 };
 
@@ -1433,9 +1485,9 @@ struct          ResolvedLogicalBitNode : ResolvedBinaryNode
     ResolvedLogicalBitNode(ECN::PrimitiveType primitiveType, ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(primitiveType, left, right), m_operatorCode(operatorCode) {}
 
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override;
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primitiveType, ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedLogicalBitNode(primitiveType, operatorCode, left, right); }
     };
 
@@ -1449,7 +1501,7 @@ private:
     ResolvedShiftInteger(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(PRIMITIVETYPE_Integer, left, right), m_operatorCode(operatorCode) {}
 
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedShiftInteger(operatorCode, left, right); }
     };
 
@@ -1463,7 +1515,7 @@ private:
     ResolvedShiftLong(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) : ResolvedBinaryNode(PRIMITIVETYPE_Long, left, right), m_operatorCode(operatorCode) {}
 
 public:
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ResolvedTypeNodeR right) { return new ResolvedShiftLong(operatorCode, left, right); }
     };
 
@@ -1481,11 +1533,11 @@ struct          ResolvedIIfNode : ResolvedTypeNode
                                 ResolvedTypeNode(primType), m_condition(&condition), m_true(&ifTrue), m_false(&ifFalse) {}
 
 public:
-    ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override;
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override;
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
-    ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
+    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
+    virtual ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ECN::PrimitiveType primType, ResolvedTypeNodeR condition, ResolvedTypeNodeR ifTrue, ResolvedTypeNodeR ifFalse) 
                     { return new ResolvedIIfNode(primType, condition, ifTrue, ifFalse); }
     };
@@ -1501,7 +1553,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context); }
+    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context); }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertIntegerToLong(left); }
     };
 
@@ -1516,7 +1568,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context); }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertIntegerToDouble(left); }
     };
 
@@ -1531,7 +1583,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context); }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertLongToDouble(left); }
     };
 
@@ -1546,7 +1598,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) != 0; }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context) != 0; }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertLongToBoolean(left); }
     };
 
@@ -1561,7 +1613,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) != 0; }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetIntegerValue(status, context) != 0; }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertIntegerToBoolean(left); }
     };
 
@@ -1576,7 +1628,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) != 0; }
+    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetDoubleValue(status, context) != 0; }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertDoubleToBoolean(left); }
     };
 
@@ -1591,7 +1643,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
+    virtual ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertToString(left); }
     };
 

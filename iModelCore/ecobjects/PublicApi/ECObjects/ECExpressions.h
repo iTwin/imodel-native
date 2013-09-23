@@ -884,59 +884,6 @@ public:
     ECOBJECTS_EXPORT WString  ToExpressionString() const;
 };  //  End of struct Node
 
-//=======================================================================================
-//! A node with the data type fully determined.  A ResolvedTypeNode can be the child of a 
-//! Node, but a Node that is not a ResolvedTypeNode cannot be the child of a ResolvedTypeNode. 
-// @bsiclass                                                    John.Gooding    09/2013
-//=======================================================================================
-struct ResolvedTypeNode : Node
-    {
-private:
-    ECN::PrimitiveType       m_primitiveType;
-
-protected:
-    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
-    ResolvedTypeNode(ECN::PrimitiveType primitiveType) : m_primitiveType(primitiveType) {}
-    //!  Optimization provided as alternative to dynamic_cast
-    virtual ResolvedTypeNodeP _GetAsResolvedTypeNodeP () override { return this; }
-    //!  For classes that are not subclasses of ResolvedTypeNode try to create an instance of a subclass of ResolvedTypeNode.
-    ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return this; }
-    virtual WString     _ToString() const { return L"RESOLVED"; }
-
-    void CheckBoolean() {BeAssert(PRIMITIVETYPE_Boolean == m_primitiveType); }
-    void CheckDateTime() {BeAssert(PRIMITIVETYPE_DateTime == m_primitiveType); }
-    void CheckDouble() {BeAssert(PRIMITIVETYPE_Double == m_primitiveType); }
-    void CheckInteger() {BeAssert(PRIMITIVETYPE_Integer == m_primitiveType); }
-    void CheckLong() {BeAssert(PRIMITIVETYPE_Long == m_primitiveType); }
-    void CheckString() {BeAssert(PRIMITIVETYPE_String == m_primitiveType); }
-public:
-    enum SupportedGetTypes
-        {
-        GetBoolean      =  1,
-        GetDateTime     =  2,
-        GetInteger      =  4,
-        GetLong         =  8,
-        GetDouble       = 16,
-        GetString       = 32
-        };
-
-    virtual bool _SupportsGetBooleanValue() {return PRIMITIVETYPE_Boolean == m_primitiveType; }
-    virtual bool _SupportsGetDateTimeValue() {return PRIMITIVETYPE_DateTime == m_primitiveType; }
-    virtual bool _SupportsGetDoubleValue() {return PRIMITIVETYPE_Double == m_primitiveType; }
-    virtual bool _SupportsGetIntegerValue() {return PRIMITIVETYPE_Integer == m_primitiveType; }
-    virtual bool _SupportsGetLongValue() {return PRIMITIVETYPE_Long == m_primitiveType; }
-    virtual bool _SupportsGetStringValue() {return PRIMITIVETYPE_String == m_primitiveType; }
-
-    ECN::PrimitiveType GetResolvedPrimitiveType() const { return m_primitiveType; }
-    virtual bool _GetBooleanValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return false; }
-    virtual ::Int64 _GetDateTimeValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual double _GetDoubleValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual ::Int32 _GetIntegerValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual ::Int64 _GetLongValue(ExpressionStatus& expressionStatus, ExpressionContextR context) { expressionStatus = ExprStatus_WrongType; return 0; }
-    virtual ExpressionStatus _GetStringValue(ECValueR expressionStatus, ExpressionContextR context) { return ExprStatus_WrongType; }
-    };
-
-
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
