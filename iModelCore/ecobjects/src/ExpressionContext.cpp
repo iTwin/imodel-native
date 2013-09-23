@@ -364,7 +364,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
 
             BeAssert (ECN::ECOBJECTS_STATUS_Success == status);
 
-            if (ECN::ECOBJECTS_STATUS_Success != status || ecValue.IsNull())
+            if (ECN::ECOBJECTS_STATUS_Success != status /* NEEDSWORK: why isn't null valid? || ecValue.IsNull() */)
                 {
                 evalResult.Clear();
                 return ExprStatus_UnknownError;

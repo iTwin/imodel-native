@@ -25,5 +25,7 @@ $(o)UnitsTests$(oext)               : $(baseDir)NonPublished/UnitsTests.cpp     
 
 $(o)UnitsTestBase$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)ECExpressionTests$(oext)        : $(baseDir)NonPublished/ECExpressionTests.cpp          $(PCHHeaderDependency) ${MultiCompileDepends}
+
 
 $(o)ECSchemaUnitsManagerTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}

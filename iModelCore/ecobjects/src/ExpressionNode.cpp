@@ -31,7 +31,8 @@ static void performConcatenation(ECValueR evalResult, ECValueCR left, ECValueCR 
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -63,9 +64,7 @@ ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue) 
     {
-    BeAssert (!ecValue.IsUninitialized());
-        
-    if (!ecValue.IsPrimitive() || ecValue.IsNull())
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
     if (ecValue.IsString())
@@ -111,7 +110,8 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -144,7 +144,8 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -248,10 +249,8 @@ ref EvaluationResultCR     ecValue
 ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResult)
     {
     ECValueR    ecValue = evalResult.GetECValueR();
-
-    BeAssert(!ecValue.IsUninitialized());
-    BeAssert(!ecValue.IsNull());
-    BeAssert(ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     if (ecValue.IsBoolean())
         return ExprStatus_Success;
@@ -430,7 +429,7 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
     ECN::ECValueR    left    = leftResult.GetECValueR();
     ECN::ECValueR    right   = rightResult.GetECValueR();
 
-    if (!left.IsPrimitive() || !right.IsPrimitive())
+    if (!left.IsPrimitive() || !right.IsPrimitive() || left.IsNull() || right.IsNull())
         return ExprStatus_PrimitiveRequired;
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
@@ -499,7 +498,7 @@ EvaluationResultR     left,
 EvaluationResultR     right
 )
     {
-    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive())
+    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive() || left.GetECValue().IsNull() || right.GetECValue().IsNull())
         return ExprStatus_WrongType;
 
     ExpressionStatus     status = ExprStatus_Success;
@@ -540,7 +539,7 @@ EvaluationResultR           left
     {
     ECN::ECValueR        ecLeft = left.GetECValueR();
 
-    if (!ecLeft.IsPrimitive())
+    if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
@@ -590,7 +589,7 @@ EvaluationResultR           left
     {
     ECN::ECValueR        ecLeft = left.GetECValueR();
 
-    if (!ecLeft.IsPrimitive())
+    if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
@@ -1212,14 +1211,14 @@ ValueResultPtr  ValueResult::Create(EvaluationResultR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost)
+void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost)
     {
     BeAssert (rightMost.IsAdditive());
 
     BinaryNodeCP    current = dynamic_cast<BinaryNodeCP>(&rightMost);
     BeAssert(NULL != current);
 
-    NodeP   left = current->GetLeftP();
+    NodeCP  left = current->GetLeftCP();
     if (left->IsAdditive())
         GetAdditiveNodes(nodes, *left);
 
@@ -1229,11 +1228,11 @@ void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rightMost)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCR rightMost)
     {
-    NodeVector  nodes;
+    NodeCPVector  nodes;
 
-    nodes.push_back(rightMost.GetLeftP());
+    nodes.push_back(rightMost.GetLeftCP());
     nodes.push_back(&rightMost);
     NodeHelpers::DetermineKnownUnitsSame(units, nodes);
     }
@@ -1241,17 +1240,19 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVector& nodes)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCPVector& nodes)
     {
     UnitsType   leftUnits;
+#if defined (NOTNOW)
     bool        powerPromotionRequired = false;
+#endif
 
-    NodeVectorIterator  nodeIterator = nodes.begin();
-    (*nodeIterator)->GetLeftP()->DetermineKnownUnits(leftUnits);
+    NodeCPVector::const_iterator nodeIterator = nodes.begin();
+    (*nodeIterator)->GetLeftCP()->DetermineKnownUnits(leftUnits);
     for (; nodeIterator != nodes.end(); nodeIterator++)
         {
         UnitsType   rightUnits;
-        NodeP       right = (*nodeIterator)->GetRightP();
+        NodeCP       right = (*nodeIterator)->GetRightCP();
         right->DetermineKnownUnits(rightUnits);
         if (leftUnits.m_unitsOrder == rightUnits.m_unitsOrder)
             {
@@ -1289,16 +1290,18 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVecto
             }
         }
 
+#if defined (NOTNOW)
     if (powerPromotionRequired)
         {
         NodeVectorIterator  nodeIterator = nodes.begin();
         (*nodeIterator)->GetLeftP()->ForceUnitsOrder(leftUnits);
         for (; nodeIterator != nodes.end(); nodeIterator++)
             {
-            NodeP       right = (*nodeIterator)->GetRightP();
+            NodeCP       right = (*nodeIterator)->GetRightCP();
             right->ForceUnitsOrder(leftUnits);
             }
         }
+#endif
 
     units = leftUnits;
     }
@@ -1322,7 +1325,7 @@ ResolvedTypeNodePtr Node::GetResolvedTree(ExpressionResolverR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Node::Traverse(NodeVisitorR visitor)
+bool            Node::Traverse(NodeVisitorR visitor) const
     {
     if (this->GetHasParens() && !visitor.OpenParens())
         return false;
@@ -1957,11 +1960,11 @@ UnitsTypeCR     requiredType
 void            ArithmeticNode::_DetermineKnownUnits
 (
 UnitsTypeR      unitsType
-)
+) const
     {
     if (IsAdditive())
         {
-        NodeVector  additiveNodes;
+        NodeCPVector  additiveNodes;
         //  Puts this node and all of the additive left children into the list.  The first node
         //  in the list 
         NodeHelpers::GetAdditiveNodes(additiveNodes, *this);
@@ -2099,7 +2102,17 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
     ECN::ECValueR    right   = rightResult.GetECValueR();
 
     if (!left.IsPrimitive() || !right.IsPrimitive())
-        return ExprStatus_PrimitiveRequired;
+        {
+        if (left.IsNull() && right.IsNull())
+            {
+            // Comparing null to null does not care about primitive type...just make sure neither value has a defined type.
+            left.Clear();
+            right.Clear();
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_PrimitiveRequired;
+        }
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
     ECN::PrimitiveType   rightCode   = right.GetPrimitiveType();
@@ -2263,7 +2276,11 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
-    return PromoteCommon(leftResult, rightResult, context, true);
+    ExpressionStatus status =  PromoteCommon(leftResult, rightResult, context, true);
+    if (ExprStatus_Success == status)
+        return !leftResult.GetECValue().IsNull() && !rightResult.GetECValue().IsNull() ? status : ExprStatus_PrimitiveRequired;
+    else
+        return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2366,8 +2383,17 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
     ECValueCR   ecRight     = rightResult.GetECValue();
     if (ecLeft.IsNull() || ecRight.IsNull())
         {
+        bool leftnull = ecLeft.IsNull(), rightnull = ecRight.IsNull();
+        bool boolResult = false;
+        switch (m_operatorCode)
+            {
+        case TOKEN_Equal:       boolResult = leftnull && rightnull; break;
+        case TOKEN_NotEqual:    boolResult = leftnull != rightnull; break;
+        default:                break;  // less/greater operators nonsensical for null values
+            }
+
         //  Maybe the not's should be true for this
-        evalResult.GetECValueR().SetBoolean(false);
+        evalResult.GetECValueR().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
@@ -2454,6 +2480,100 @@ ExpressionStatus ValueResult::GetECValue (ECN::ECValueR ecValue)
     {
     return m_evalResult.GetECValue(ecValue);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    02/2011 
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          ParseTreeTraverser : NodeVisitor
+    {
+private:
+    WString     m_expression;
+    bool        m_lastRequiredSpace;
+
+protected:
+    virtual bool OpenParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool CloseParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool StartArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"[";
+        return true;
+        }
+
+    virtual bool EndArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"]";
+        return true;
+        }
+
+    virtual bool StartArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool EndArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool Comma() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L",";
+        return true;
+        }
+
+    virtual bool ProcessNode(NodeCR node) override
+        {
+        WString     curr = node.ToString();
+        if (m_lastRequiredSpace && 
+                (iswalnum(curr[0]) || curr[0] == '_'))
+            m_expression += L" ";
+
+        size_t  stringLen = curr.size();
+        if (stringLen > 0)
+            m_lastRequiredSpace = (iswalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
+
+        m_expression += curr;
+        return true;
+        }
+
+public:
+    ParseTreeTraverser () : m_lastRequiredSpace(false) {}
+    WString Traverse (NodeCR node)
+        {
+        m_lastRequiredSpace = false;
+        m_expression = L"";
+        node.Traverse(*this);
+        return m_expression;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+WString Node::ToExpressionString() const
+    {
+    ParseTreeTraverser traverser;
+    return traverser.Traverse (*this);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
