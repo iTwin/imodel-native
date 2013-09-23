@@ -20,6 +20,7 @@ struct ContentRule : public PresentationRule
     {
     private:
         ContentSpecificationList  m_specifications;
+        WString                   m_customControl;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -43,6 +44,12 @@ struct ContentRule : public PresentationRule
 
         //! Collection ContentSpecifications that will be used to provide content.
         ECOBJECTS_EXPORT ContentSpecificationList&      GetSpecifications (void);
+
+        //! Returns display type of custom control which should display content of this rule.
+        ECOBJECTS_EXPORT WStringCR                      GetCustomControl (void);
+
+        //! Sets display type of custom control which should display content of this rule.
+        ECOBJECTS_EXPORT void                           SetCustomControl (WStringCR customControl);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
