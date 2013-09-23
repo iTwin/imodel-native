@@ -625,7 +625,6 @@ public:
     const static int INDEX_ROOT = -1;
     struct Location
         {
-/*__PUBLISH_SECTION_END__*/
     private:
         ECEnablerCP             m_enabler;
         int                     m_propertyIndex;
@@ -637,12 +636,13 @@ public:
         Location () : m_enabler(NULL), m_propertyIndex(-1), m_arrayIndex(INDEX_ROOT), m_cachedProperty(NULL) { }
         Location (const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) { }
 
-        ECPropertyCP    GetECProperty() const;
+/*__PUBLISH_SECTION_END__*/
         void            SetPropertyIndex (int index)                { m_cachedProperty = NULL; m_propertyIndex = index; }
         void            SetArrayIndex (int index)                   { m_arrayIndex = index; }
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
+        ECOBJECTS_EXPORT ECPropertyCP            GetECProperty() const;
         ECOBJECTS_EXPORT ECEnablerCP             GetEnabler() const;
         ECOBJECTS_EXPORT int                     GetPropertyIndex() const;
         ECOBJECTS_EXPORT int                     GetArrayIndex() const;
