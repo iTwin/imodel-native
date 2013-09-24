@@ -640,7 +640,7 @@ public:
         void            SetPropertyIndex (int index)                { m_cachedProperty = NULL; m_propertyIndex = index; }
         void            SetArrayIndex (int index)                   { m_arrayIndex = index; }
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
-
+/*__PUBLISH_SECTION_START__*/
     public:
         ECOBJECTS_EXPORT ECPropertyCP            GetECProperty() const;
         ECOBJECTS_EXPORT ECEnablerCP             GetEnabler() const;
