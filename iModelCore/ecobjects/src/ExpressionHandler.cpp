@@ -947,7 +947,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 break;
 
             case TOKEN_StringConst:
-                result = Node::CreateStringLiteral (m_lexer->GetTokenStringCP ());
+                result = Node::CreateStringLiteral (m_lexer->GetTokenStringCP (), true);
                 m_lexer->Advance ();
                 break;
 
