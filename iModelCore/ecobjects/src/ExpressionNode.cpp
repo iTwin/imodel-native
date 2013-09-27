@@ -1658,7 +1658,7 @@ ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, Ev
     EvaluationResultVector  argsVector;
 
     ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, context);
-    if (NULL != status)
+    if (ExprStatus_Success != status)
         return status;
 
     return methodReference->InvokeInstanceMethod(evalResult, instanceData, argsVector);
@@ -1672,7 +1672,7 @@ ExpressionStatus CallNode::InvokeStaticMethod(EvaluationResult& evalResult, Meth
     EvaluationResultVector  argsVector;
 
     ExpressionStatus status = m_arguments->EvaluateArguments(argsVector, context);
-    if (NULL != status)
+    if (ExprStatus_Success != status)
         return status;
 
     return methodReference.InvokeStaticMethod(evalResult, argsVector);

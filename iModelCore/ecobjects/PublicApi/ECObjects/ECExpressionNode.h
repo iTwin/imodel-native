@@ -316,7 +316,7 @@ public:
     virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
     virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
     virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return (double)m_value; }
     Int64LiteralNode(::Int64 value) : BaseLiteralNode(value) {}
     };
 
@@ -1583,7 +1583,7 @@ private:
 protected:
     virtual bool                _IsConstant () const override { return m_left->IsConstant(); }
 public:
-    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_left->_GetLongValue(status, context); }
+    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return (double)m_left->_GetLongValue(status, context); }
     static ResolvedTypeNodePtr Create(ResolvedTypeNodeR left) { return new ResolvedConvertLongToDouble(left); }
     };
 
