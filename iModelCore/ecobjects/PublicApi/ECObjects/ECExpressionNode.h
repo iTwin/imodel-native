@@ -289,7 +289,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IntegerLiteralNode : BaseLiteralNode<::Int32, TOKEN_IntegerConstant, PRIMITIVETYPE_Integer>
+struct IntegerLiteralNode : BaseLiteralNode< ::Int32, TOKEN_IntegerConstant, PRIMITIVETYPE_Integer>
     {
 protected:
     virtual bool _SupportsGetBooleanValue() override { return true; }
@@ -1386,10 +1386,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                                      John.Gooding    09/2013
 +===============+===============+===============+===============+===============+======*/
-struct          ResolvedCompareIntegerToConstantNode : ResolvedCompareToConstantNode<::Int32>
+struct          ResolvedCompareIntegerToConstantNode : ResolvedCompareToConstantNode< ::Int32 >
 {
 private:
-    ResolvedCompareIntegerToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int32 right) : ResolvedCompareToConstantNode<::Int32>(operatorCode, left, right) {}
+    ResolvedCompareIntegerToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int32 right) : ResolvedCompareToConstantNode< ::Int32 >(operatorCode, left, right) {}
 public:
     virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int32 right) { return new ResolvedCompareIntegerToConstantNode(operatorCode, left, right); }
@@ -1398,10 +1398,10 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                                      John.Gooding    09/2013
 +===============+===============+===============+===============+===============+======*/
-struct          ResolvedCompareLongToConstantNode : ResolvedCompareToConstantNode<::Int64>
+struct          ResolvedCompareLongToConstantNode : ResolvedCompareToConstantNode< ::Int64 >
 {
 private:
-    ResolvedCompareLongToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int64 right) : ResolvedCompareToConstantNode<::Int64>(operatorCode, left, right) {}
+    ResolvedCompareLongToConstantNode(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int64 right) : ResolvedCompareToConstantNode< ::Int64 >(operatorCode, left, right) {}
 public:
     virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override;
     static ResolvedTypeNodePtr Create(ExpressionToken operatorCode, ResolvedTypeNodeR left, ::Int64 right) { return new ResolvedCompareLongToConstantNode(operatorCode, left, right); }
