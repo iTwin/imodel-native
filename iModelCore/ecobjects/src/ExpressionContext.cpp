@@ -329,7 +329,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                 //  Since we don't allow struct values there must be another operator
                 //  We might want to require DOT here. We need to decide
                 //  -- will we allow indexing via a property name?
-                //  -- will we allow passing an struct t a method?
+                //  -- will we allow passing a struct to a method?
                 evalResult.Clear();
                 return ExprStatus_PrimitiveRequired;
                 }
@@ -405,7 +405,7 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
                     return ExprStatus_UnknownError;
                     }
 
-                if (ecValue.GetKind () !=- ECN::VALUEKIND_Struct)
+                if (ecValue.GetKind () != ECN::VALUEKIND_Struct)
                     {
                     evalResult.Clear();
                     return ExprStatus_StructRequired;;
