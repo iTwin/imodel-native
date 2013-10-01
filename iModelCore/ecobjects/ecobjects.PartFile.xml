@@ -41,6 +41,7 @@
     </Part>   
 
     <Part Name="HeaderFiles" BentleyBuildMakeFile="ecobjects.prewire.mke">
+        <SubPart PartName="HeaderFiles"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <Bindings>
             <PublicAPI Domain="ECObjects" />
             <PublicAPI Domain="ECPresentation" />
