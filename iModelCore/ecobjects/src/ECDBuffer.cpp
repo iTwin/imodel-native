@@ -1737,9 +1737,8 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
 
     // since we can not use memmove on XAttribute memory, copy the memory move it around and then use _ModifyData
     // copy the entire instance into allocated memory
-    ScopedArray<byte> scoped((size_t)bytesAllocated);
+    ScopedArray<byte> scoped((size_t)bytesAllocated, currentData);
     byte*   _data = scoped.GetData();
-    memcpy (_data, currentData, (size_t)bytesAllocated);
 
     byte*   propertyData = _data + GetOffsetToPropertyData();
 
