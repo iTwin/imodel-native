@@ -2153,6 +2153,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECClass::Is(WCharCP name) const
     {
+    // NEEDSWORK: this is ambiguous without schema name...collisions between unrelated class names are not wholly unexpected.
     if (0 == GetName().CompareTo(name))
         return true;
 
@@ -2160,6 +2161,24 @@ bool            ECClass::Is(WCharCP name) const
     for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
         {
         if ((*iter)->Is(name))
+            return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::Is (WCharCP schemaname, WCharCP classname) const
+    {
+    if (0 == GetName().CompareTo (classname) && 0 == GetSchema().GetName().CompareTo (schemaname))
+        return true;
+
+    const ECBaseClassesList& baseClass = GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
+        {
+        if ((*iter)->Is(schemaname, classname))
             return true;
         }
 
