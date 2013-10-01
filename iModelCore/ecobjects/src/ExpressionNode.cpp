@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2012
 //--------------+------------------------------------------------------------------------
-static void performConcatenation(EvaluationResultR evalResult, ECValueCR left, ECValueCR right)
+static void performConcatenation(ECValueR evalResult, ECValueCR left, ECValueCR right)
     {
     WString     resultString;
     wchar_t const* leftString   = left.GetString();
@@ -22,7 +22,7 @@ static void performConcatenation(EvaluationResultR evalResult, ECValueCR left, E
     resultString.reserve(wcslen(leftString) + wcslen(rightString) + 1);
     resultString.append(leftString);
     resultString.append(rightString);
-    evalResult.GetECValueR().SetString(resultString.c_str(), true);
+    evalResult.SetString(resultString.c_str(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,7 +31,8 @@ static void performConcatenation(EvaluationResultR evalResult, ECValueCR left, E
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -61,12 +62,9 @@ ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult) 
+ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue) 
     {
-    ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized());
-        
-    if (!ecValue.IsPrimitive() || ecValue.IsNull())
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
     if (ecValue.IsString())
@@ -94,8 +92,16 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
             return ExprStatus_NotImpl;
         }
 
-    evalResult.GetECValueR().SetString(buffer);
+    ecValue.SetString(buffer);
     return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult) 
+    {
+    return ConvertToString(evalResult.GetECValueR());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,7 +110,8 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -137,7 +144,8 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
     ECN::ECValueR    ecValue = evalResult.GetECValueR();
-    BeAssert (!ecValue.IsUninitialized() && ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     ECN::PrimitiveType  primType = ecValue.GetPrimitiveType();
     switch(primType)
@@ -241,10 +249,8 @@ ref EvaluationResultCR     ecValue
 ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResult)
     {
     ECValueR    ecValue = evalResult.GetECValueR();
-
-    BeAssert(!ecValue.IsUninitialized());
-    BeAssert(!ecValue.IsNull());
-    BeAssert(ecValue.IsPrimitive());
+    if (ecValue.IsNull() || !ecValue.IsPrimitive())
+        return ExprStatus_WrongType;
 
     if (ecValue.IsBoolean())
         return ExprStatus_Success;
@@ -418,12 +424,12 @@ ref ECEvaluationResult     ecValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult, bool allowStrings)
+ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult)
     {
     ECN::ECValueR    left    = leftResult.GetECValueR();
     ECN::ECValueR    right   = rightResult.GetECValueR();
 
-    if (!left.IsPrimitive() || !right.IsPrimitive())
+    if (!left.IsPrimitive() || !right.IsPrimitive() || left.IsNull() || right.IsNull())
         return ExprStatus_PrimitiveRequired;
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
@@ -433,19 +439,8 @@ ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftRe
     //  We may also want to provide a way for structs with extended types to perform the conversion to 
     //  string
     //
-    //  Managed ECExpressions always converted to numeric, requiring & for concatenation
-
-    if (PRIMITIVETYPE_String == leftCode || PRIMITIVETYPE_String == rightCode)
-        {
-        if (!allowStrings)
-            return ExprStatus_IncompatibleTypes;
-
-        if (leftCode == rightCode)
-            return ExprStatus_Success;
-
-        //  Convert to strings; may want to involve the extended type in that
-        return ExprStatus_IncompatibleTypes;
-        }
+    //  PerformArithmeticPromotion for Managed ECExpressions always converts strings to numeric,native 
+    //  ECExpressions has never supported automatic conversions of strings to numbers.
 
     if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
         {
@@ -503,7 +498,7 @@ EvaluationResultR     left,
 EvaluationResultR     right
 )
     {
-    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive())
+    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive() || left.GetECValue().IsNull() || right.GetECValue().IsNull())
         return ExprStatus_WrongType;
 
     ExpressionStatus     status = ExprStatus_Success;
@@ -530,7 +525,7 @@ EvaluationResultR     right
         return status;
         }
 
-    return PerformArithmeticPromotion (left, right, false);
+    return PerformArithmeticPromotion (left, right);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -544,7 +539,7 @@ EvaluationResultR           left
     {
     ECN::ECValueR        ecLeft = left.GetECValueR();
 
-    if (!ecLeft.IsPrimitive())
+    if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
@@ -594,7 +589,7 @@ EvaluationResultR           left
     {
     ECN::ECValueR        ecLeft = left.GetECValueR();
 
-    if (!ecLeft.IsPrimitive())
+    if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
 
     ECN::PrimitiveType   primType = ecLeft.GetPrimitiveType();
@@ -1216,14 +1211,14 @@ ValueResultPtr  ValueResult::Create(EvaluationResultR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost)
+void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost)
     {
     BeAssert (rightMost.IsAdditive());
 
     BinaryNodeCP    current = dynamic_cast<BinaryNodeCP>(&rightMost);
     BeAssert(NULL != current);
 
-    NodeP   left = current->GetLeftP();
+    NodeCP  left = current->GetLeftCP();
     if (left->IsAdditive())
         GetAdditiveNodes(nodes, *left);
 
@@ -1233,11 +1228,11 @@ void            NodeHelpers::GetAdditiveNodes(NodeVector& nodes, NodeR rightMost
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rightMost)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCR rightMost)
     {
-    NodeVector  nodes;
+    NodeCPVector  nodes;
 
-    nodes.push_back(rightMost.GetLeftP());
+    nodes.push_back(rightMost.GetLeftCP());
     nodes.push_back(&rightMost);
     NodeHelpers::DetermineKnownUnitsSame(units, nodes);
     }
@@ -1245,17 +1240,19 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeR rig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVector& nodes)
+void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCPVector& nodes)
     {
     UnitsType   leftUnits;
+#if defined (NOTNOW)
     bool        powerPromotionRequired = false;
+#endif
 
-    NodeVectorIterator  nodeIterator = nodes.begin();
-    (*nodeIterator)->GetLeftP()->DetermineKnownUnits(leftUnits);
+    NodeCPVector::const_iterator nodeIterator = nodes.begin();
+    (*nodeIterator)->GetLeftCP()->DetermineKnownUnits(leftUnits);
     for (; nodeIterator != nodes.end(); nodeIterator++)
         {
         UnitsType   rightUnits;
-        NodeP       right = (*nodeIterator)->GetRightP();
+        NodeCP       right = (*nodeIterator)->GetRightCP();
         right->DetermineKnownUnits(rightUnits);
         if (leftUnits.m_unitsOrder == rightUnits.m_unitsOrder)
             {
@@ -1293,16 +1290,18 @@ void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeVecto
             }
         }
 
+#if defined (NOTNOW)
     if (powerPromotionRequired)
         {
         NodeVectorIterator  nodeIterator = nodes.begin();
         (*nodeIterator)->GetLeftP()->ForceUnitsOrder(leftUnits);
         for (; nodeIterator != nodes.end(); nodeIterator++)
             {
-            NodeP       right = (*nodeIterator)->GetRightP();
+            NodeCP       right = (*nodeIterator)->GetRightCP();
             right->ForceUnitsOrder(leftUnits);
             }
         }
+#endif
 
     units = leftUnits;
     }
@@ -1315,10 +1314,18 @@ WString         Node::ToString() const
     return _ToString();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr Node::GetResolvedTree(ExpressionResolverR context)
+    {
+    return _GetResolvedTree(context);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Node::Traverse(NodeVisitorR visitor)
+bool            Node::Traverse(NodeVisitorR visitor) const
     {
     if (this->GetHasParens() && !visitor.OpenParens())
         return false;
@@ -1332,10 +1339,18 @@ bool            Node::Traverse(NodeVisitorR visitor)
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr Node::_GetResolvedTree(ExpressionResolverR context)
+    {
+    return NULL;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateBooleanLiteral(bool literalValue)
+ResolvedTypeNodePtr Node::CreateBooleanLiteral(bool literalValue)
     {
     return new BooleanLiteralNode(literalValue);
     }
@@ -1343,19 +1358,22 @@ NodePtr         Node::CreateBooleanLiteral(bool literalValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateNullLiteral()                   { return new NullLiteralNode(); }
-NodePtr         Node::CreatePoint2DLiteral (DPoint2dCR pt)  { return new Point2DLiteralNode (pt); }
-NodePtr         Node::CreatePoint3DLiteral (DPoint3dCR pt)  { return new Point3DLiteralNode (pt); }
-NodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return new DateTimeLiteralNode (ticks); }
+ResolvedTypeNodePtr         Node::CreateNullLiteral()                   { return new NullLiteralNode(); }
+ResolvedTypeNodePtr         Node::CreatePoint2DLiteral (DPoint2dCR pt)  { return new Point2DLiteralNode (pt); }
+ResolvedTypeNodePtr         Node::CreatePoint3DLiteral (DPoint3dCR pt)  { return new Point3DLiteralNode (pt); }
+ResolvedTypeNodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return new DateTimeLiteralNode (ticks); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateStringLiteral (wchar_t const* value)
+ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted)
     {
+    if (!quoted)
+        return new StringLiteralNode(value);
+
     size_t      origLen = wcslen(value);
     BeAssert(origLen > 1);
-    wchar_t*    buffer = (wchar_t*)_alloca(sizeof(wchar_t) * (origLen + 1));
+    wchar_t*    buffer = (wchar_t*)_alloca(2 *(origLen+1));
 
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
@@ -1366,7 +1384,7 @@ NodePtr         Node::CreateStringLiteral (wchar_t const* value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateIntegerLiteral (int value)
+ResolvedTypeNodePtr Node::CreateIntegerLiteral (int value)
     {
     return new IntegerLiteralNode(value);
     }
@@ -1374,7 +1392,7 @@ NodePtr         Node::CreateIntegerLiteral (int value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateInt64Literal(Int64 value)
+ResolvedTypeNodePtr Node::CreateInt64Literal(Int64 value)
     {
     return new Int64LiteralNode(value);
     }
@@ -1382,7 +1400,7 @@ NodePtr         Node::CreateInt64Literal(Int64 value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateFloatLiteral(double value)
+ResolvedTypeNodePtr Node::CreateFloatLiteral(double value)
     {
     return new DoubleLiteralNode(value);
     }
@@ -1440,14 +1458,6 @@ NodePtr         Node::CreateShift (ExpressionToken tokenId, NodeR left, NodeR ri
 NodePtr         Node::CreateComparison(ExpressionToken   tokenId, NodeR left, NodeR right)
     {
     return new ComparisonNode(tokenId, left, right);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         Node::CreateBitWise(ExpressionToken tokenId, NodeR left, NodeR right)
-    {
-    return new BitWiseNode(tokenId, left, right);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1596,6 +1606,15 @@ void            PrimaryListNode::AppendNameNode(IdentNodeR nameNode)
 void            PrimaryListNode::AppendArrayNode(LBracketNodeR lbracketNode)
     {
     m_operators.push_back(&lbracketNode);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+void IdentNode::PushQualifier(WCharCP rightName)
+    {
+    m_qualifiers.push_back(WString(m_value));
+    m_value = WString(rightName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1941,11 +1960,11 @@ UnitsTypeCR     requiredType
 void            ArithmeticNode::_DetermineKnownUnits
 (
 UnitsTypeR      unitsType
-)
+) const
     {
     if (IsAdditive())
         {
-        NodeVector  additiveNodes;
+        NodeCPVector  additiveNodes;
         //  Puts this node and all of the additive left children into the list.  The first node
         //  in the list 
         NodeHelpers::GetAdditiveNodes(additiveNodes, *this);
@@ -1994,7 +2013,7 @@ ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, Expre
     if (((status = Operations::ConvertToString(leftResult)) != ExprStatus_Success) || ((status = Operations::ConvertToString(rightResult)) != ExprStatus_Success))
         return status;
 
-    performConcatenation (evalResult, leftResult.GetECValue(), rightResult.GetECValue());
+    performConcatenation (evalResult.GetECValueR(), leftResult.GetECValue(), rightResult.GetECValue());
 
     return ExprStatus_Success;
     }
@@ -2032,12 +2051,13 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
         if (ExprStatus_Success == status)
             status = Operations::PerformJunctionOperator(evalResult, _GetOperation(), leftResult, rightResult);
         break;
+
     case TOKEN_AndAlso:
     case TOKEN_OrElse:
         {
         // Short-circuit operators do not evaluate righthand expression unless required.
         status = GetLeftP()->GetValue (leftResult, context, false, true);
-        bool leftBool;
+        bool leftBool = false;
         if (ExprStatus_Success == status && ExprStatus_Success == (status = leftResult.GetBoolean (leftBool, false)))
             {
             if (leftBool == (TOKEN_AndAlso == m_operatorCode))
@@ -2045,12 +2065,12 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
                 // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
                 status = GetRightP()->GetValue (rightResult, context, false, true);
                 }
+            }
 
-            if (ExprStatus_Success == status)
-                {
-                leftResult.GetECValueR().SetBoolean (leftBool);
-                status = (TOKEN_AndAlso == m_operatorCode) ? Operations::PerformLogicalAnd (evalResult, leftResult, rightResult) : Operations::PerformLogicalOr (evalResult, leftResult, rightResult);
-                }
+        if (ExprStatus_Success == status)
+            {
+            leftResult.GetECValueR().SetBoolean (leftBool);
+            status = (TOKEN_AndAlso == m_operatorCode) ? Operations::PerformLogicalAnd (evalResult, leftResult, rightResult) : Operations::PerformLogicalOr (evalResult, leftResult, rightResult);
             }
         }
         break;
@@ -2059,25 +2079,6 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
         }
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  BitWiseNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
-    {
-    EvaluationResult    leftResult;
-    EvaluationResult    rightResult;
-    ExpressionStatus    status = GetOperandValues(leftResult, rightResult, context);
-
-    if (ExprStatus_Success != status)
-        return status;
-
-    status = Operations::PerformArithmeticPromotion(leftResult, rightResult, false);
-    if (ExprStatus_Success != status)
-        return status;
-
-    return Operations::PerformJunctionOperator(evalResult, _GetOperation(), leftResult, rightResult);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2101,7 +2102,17 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
     ECN::ECValueR    right   = rightResult.GetECValueR();
 
     if (!left.IsPrimitive() || !right.IsPrimitive())
-        return ExprStatus_PrimitiveRequired;
+        {
+        if (left.IsNull() && right.IsNull())
+            {
+            // Comparing null to null does not care about primitive type...just make sure neither value has a defined type.
+            left.Clear();
+            right.Clear();
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_PrimitiveRequired;
+        }
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();
     ECN::PrimitiveType   rightCode   = right.GetPrimitiveType();
@@ -2265,7 +2276,11 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
-    return PromoteCommon(leftResult, rightResult, context, true);
+    ExpressionStatus status =  PromoteCommon(leftResult, rightResult, context, true);
+    if (ExprStatus_Success == status)
+        return !leftResult.GetECValue().IsNull() && !rightResult.GetECValue().IsNull() ? status : ExprStatus_PrimitiveRequired;
+    else
+        return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2282,7 +2297,7 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
         switch(left.GetPrimitiveType())
             {
             case PRIMITIVETYPE_String:
-                performConcatenation (evalResult, left, right);
+                performConcatenation (evalResult.GetECValueR(), left, right);
                 return ExprStatus_Success;
 
             case PRIMITIVETYPE_Long:
@@ -2368,8 +2383,17 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
     ECValueCR   ecRight     = rightResult.GetECValue();
     if (ecLeft.IsNull() || ecRight.IsNull())
         {
+        bool leftnull = ecLeft.IsNull(), rightnull = ecRight.IsNull();
+        bool boolResult = false;
+        switch (m_operatorCode)
+            {
+        case TOKEN_Equal:       boolResult = leftnull && rightnull; break;
+        case TOKEN_NotEqual:    boolResult = leftnull != rightnull; break;
+        default:                break;  // less/greater operators nonsensical for null values
+            }
+
         //  Maybe the not's should be true for this
-        evalResult.GetECValueR().SetBoolean(false);
+        evalResult.GetECValueR().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
@@ -2455,6 +2479,1238 @@ EvaluationResultR EvaluationResult::operator= (ECN::ECValueCR rhs)
 ExpressionStatus ValueResult::GetECValue (ECN::ECValueR ecValue)
     {
     return m_evalResult.GetECValue(ecValue);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    02/2011 
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          ParseTreeTraverser : NodeVisitor
+    {
+private:
+    WString     m_expression;
+    bool        m_lastRequiredSpace;
+
+protected:
+    virtual bool OpenParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool CloseParens() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool StartArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"[";
+        return true;
+        }
+
+    virtual bool EndArrayIndex(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"]";
+        return true;
+        }
+
+    virtual bool StartArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L"(";
+        return true;
+        }
+
+    virtual bool EndArguments(NodeCR node) override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L")";
+        return true;
+        }
+
+    virtual bool Comma() override
+        {
+        m_lastRequiredSpace = false;
+        m_expression += L",";
+        return true;
+        }
+
+    virtual bool ProcessNode(NodeCR node) override
+        {
+        WString     curr = node.ToString();
+        if (m_lastRequiredSpace && 
+                (iswalnum(curr[0]) || curr[0] == '_'))
+            m_expression += L" ";
+
+        size_t  stringLen = curr.size();
+        if (stringLen > 0)
+            m_lastRequiredSpace = (iswalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
+
+        m_expression += curr;
+        return true;
+        }
+
+public:
+    ParseTreeTraverser () : m_lastRequiredSpace(false) {}
+    WString Traverse (NodeCR node)
+        {
+        m_lastRequiredSpace = false;
+        m_expression = L"";
+        node.Traverse(*this);
+        return m_expression;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+WString Node::ToExpressionString() const
+    {
+    ParseTreeTraverser traverser;
+    return traverser.Traverse (*this);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+    {
+    ExpressionStatus    status = ExprStatus_Success;;
+    switch(m_primitiveType)
+        {
+        case PRIMITIVETYPE_Boolean:
+            evalResult.GetECValueR().SetBoolean(_GetBooleanValue(status, context));
+            return status;
+        case PRIMITIVETYPE_DateTime:
+            //  evalResult.GetECValueR().SetDateTime(_GetDateTimeValue(status, context));
+            return ExprStatus_NotImpl;
+        case PRIMITIVETYPE_Double:
+            evalResult.GetECValueR().SetDouble(_GetDoubleValue(status, context));
+            return status;
+        case PRIMITIVETYPE_Integer:
+            evalResult.GetECValueR().SetInteger(_GetIntegerValue(status, context));
+            return status;
+        case PRIMITIVETYPE_Long:
+            evalResult.GetECValueR().SetLong(_GetLongValue(status, context));
+            return status;
+        case PRIMITIVETYPE_String:
+            {
+            ECValue  result;
+            status = _GetStringValue(result, context);
+            if (result.IsUtf8())
+                evalResult.GetECValueR().SetUtf8CP(result.GetUtf8CP(), true);
+            else
+                evalResult.GetECValueR().SetString(result.GetString(), true);
+            }
+            return status;
+        }
+
+    return ExprStatus_IncompatibleTypes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ResolvedConcatenateNode::_GetStringValue(ECValueR result, ExpressionContextR context)
+    {
+    ECValue  left;
+    ExpressionStatus status = m_left->_GetStringValue(left, context);
+    if (ExprStatus_Success != status)
+        {
+        result.SetString(L"", true);
+        return status;
+        }
+
+    ECValue  right;
+    status = m_right->_GetStringValue(right, context);
+    if (ExprStatus_Success != status)
+        {
+        result.SetString(L"", true);
+        return status;
+        }
+
+    performConcatenation(result, left, right);
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareIntegerNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ::Int32 leftValue = m_left->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    ::Int32 rightValue = m_right->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, rightValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareLongNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ::Int64 leftValue = m_left->_GetLongValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    ::Int64 rightValue = m_right->_GetLongValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, rightValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareDoubleNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    double leftValue = m_left->_GetDoubleValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    double rightValue = m_right->_GetDoubleValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, rightValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareBooleanNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    bool leftValue = m_left->_GetBooleanValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    bool rightValue = m_right->_GetBooleanValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, rightValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareIntegerToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ::Int32 leftValue = m_left->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, m_right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareLongToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ::Int64 leftValue = m_left->_GetLongValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, m_right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareDoubleToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    double leftValue = m_left->_GetDoubleValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, m_right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareBooleanToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    bool leftValue = m_left->_GetBooleanValue(status, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    return PerformCompare(leftValue, m_operatorCode, m_right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedCompareStringNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ECValue   ecLeft;
+    ECValue   ecRight;
+
+    status = m_left->_GetStringValue(ecLeft, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    status = m_right->_GetStringValue(ecLeft, context);
+    if (ExprStatus_Success != status)
+        return false;
+
+    int             intResult = wcscmp(ecLeft.GetString(), ecRight.GetString());
+    bool            boolResult = false;
+        
+    switch (m_operatorCode)
+        {
+        case TOKEN_Equal:      boolResult = intResult == 0;    break;
+        case TOKEN_NotEqual:   boolResult = intResult != 0;    break;
+        case TOKEN_Less:       boolResult = intResult <  0;    break;
+        case TOKEN_LessEqual:  boolResult = intResult <= 0;    break;
+        case TOKEN_Greater:    boolResult = intResult >  0;    break;
+        case TOKEN_GreaterEqual: boolResult = intResult >= 0;    break;
+        }
+    return boolResult;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ExpressionResolver::PromoteToType(ResolvedTypeNodePtr& node, ECN::PrimitiveType  targetType)
+    {
+    ECN::PrimitiveType  sourceType = node->GetResolvedPrimitiveType();
+    if (sourceType == targetType)
+        return ExprStatus_Success;
+
+    switch (targetType)
+        {
+        case PRIMITIVETYPE_Boolean:
+            {
+            if (node->_SupportsGetBooleanValue())
+                return ExprStatus_Success;
+
+            if (PRIMITIVETYPE_Integer != sourceType && PRIMITIVETYPE_Long != sourceType && PRIMITIVETYPE_Double != sourceType)
+                return ExprStatus_IncompatibleTypes;
+
+            if (sourceType == PRIMITIVETYPE_Integer)
+                {
+                node = ResolvedConvertIntegerToBoolean::Create(*node);
+                return ExprStatus_Success;
+                }
+
+            if (sourceType == PRIMITIVETYPE_Long)
+                {
+                node = ResolvedConvertLongToBoolean::Create(*node);
+                return ExprStatus_Success;
+                }
+
+            if (sourceType == PRIMITIVETYPE_Double)
+                {
+                node = ResolvedConvertDoubleToBoolean::Create(*node);
+                return ExprStatus_Success;
+                }
+            }
+            break;
+
+        case PRIMITIVETYPE_Integer:
+            BeAssert(false && L"asked to promote to integer");
+            break;  //  Doesn't make sense. PRIMITIVETYPE_Integer is the smallest
+
+        case PRIMITIVETYPE_Long:
+            BeAssert(sourceType == PRIMITIVETYPE_Integer);
+            if (node->_SupportsGetLongValue())
+                return ExprStatus_Success;
+
+            node = ResolvedConvertIntegerToLong::Create(*node);
+            return ExprStatus_Success;
+
+        case PRIMITIVETYPE_Double:
+            if (node->_SupportsGetDoubleValue())
+                return ExprStatus_Success;
+            if (PRIMITIVETYPE_Integer == sourceType)
+                node = ResolvedConvertIntegerToDouble::Create(*node);
+            else
+                {
+                BeAssert(PRIMITIVETYPE_Long == sourceType);
+                node = ResolvedConvertLongToDouble::Create(*node);
+                }
+            return ExprStatus_Success;
+        }
+
+    BeAssert (targetType == PRIMITIVETYPE_Long);  //  or PRIMITIVETYPE_Double
+    return ExprStatus_IncompatibleTypes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ExpressionResolver::PromoteToString(ResolvedTypeNodePtr& node)
+    {
+    ECN::PrimitiveType  sourceType = node->GetResolvedPrimitiveType();
+    if (sourceType == PRIMITIVETYPE_String)
+        return ExprStatus_Success;
+
+    if (node->IsConstant())
+        {
+        WString     stringValue = node->ToString();
+        node = Node::CreateStringLiteral(stringValue.c_str(), false);
+        return ExprStatus_Success;
+        }
+
+    switch(sourceType)
+        {
+        case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Double:
+            node = ResolvedConvertToString::Create(*node);
+            return ExprStatus_Success;
+        }
+
+    return ExprStatus_IncompatibleTypes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ExpressionResolver::PerformArithmeticPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right)
+    {
+    //  Check this here instead of making every caller verify that it successfully resolved both types.
+    if (!left.IsValid() || !right.IsValid())
+        {
+        targetType = PRIMITIVETYPE_Binary;
+        return ExprStatus_WrongType;
+        }
+
+    ECN::PrimitiveType   leftCode    = left->GetResolvedPrimitiveType();
+    ECN::PrimitiveType   rightCode   = right->GetResolvedPrimitiveType();
+    targetType = leftCode;
+
+    if (leftCode == rightCode)
+        return ExprStatus_Success;
+
+    if (PRIMITIVETYPE_Double == leftCode || PRIMITIVETYPE_Double == rightCode)
+        targetType = PRIMITIVETYPE_Double;
+    else if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
+        targetType = PRIMITIVETYPE_Long;
+    else if (PRIMITIVETYPE_Integer != leftCode && PRIMITIVETYPE_Integer != rightCode)
+        return ExprStatus_IncompatibleTypes;
+
+    //  This calls one of the methods like _SupportsGetDoubleValue.  If the node returns true, then PromoteToType does
+    //  not create a new node. This results in a node that is used to get a value of a type that is different than the
+    //  nodes primary primitive type.
+    if (ExprStatus_Success != PromoteToType(left, targetType) || ExprStatus_Success != PromoteToType(right, targetType))
+        return ExprStatus_IncompatibleTypes;
+
+    return ExprStatus_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ExpressionResolver::PerformJunctionPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right)
+    {
+    if (!left.IsValid() || !right.IsValid())
+        {
+        targetType = PRIMITIVETYPE_Binary;
+        return ExprStatus_WrongType;
+        }
+
+    ECN::PrimitiveType   leftCode    = left->GetResolvedPrimitiveType();
+    ECN::PrimitiveType   rightCode   = right->GetResolvedPrimitiveType();
+    targetType = leftCode;
+
+    if (leftCode == rightCode)
+        return ExprStatus_Success;
+
+    if (PRIMITIVETYPE_Boolean == leftCode || PRIMITIVETYPE_Boolean == rightCode)
+        targetType = PRIMITIVETYPE_Boolean;
+    else if (PRIMITIVETYPE_Long == leftCode || PRIMITIVETYPE_Long == rightCode)
+        targetType = PRIMITIVETYPE_Long;
+    else if (PRIMITIVETYPE_Integer != leftCode && PRIMITIVETYPE_Integer != rightCode)
+        return ExprStatus_IncompatibleTypes;
+
+    if (ExprStatus_Success != PromoteToType(left, targetType) || ExprStatus_Success != PromoteToType(left, targetType))
+        return ExprStatus_IncompatibleTypes;
+
+    return ExprStatus_Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+static bool checkConstants(ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right, bool allowReorder)
+    {
+    if (right->IsConstant())
+        return true;
+    if (!left->IsConstant())
+        return false;
+
+    if (!allowReorder)
+        return true;    //  Resolver logic for commutative operands assumes constant is on right.
+
+    ResolvedTypeNodePtr temp = right;
+    right = left;
+    left = temp;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolvePrimaryList (PrimaryListNodeR primaryList) { return NULL; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveUnaryArithmeticNode (UnaryArithmeticNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    if (!left.IsValid())
+        return NULL;
+
+    switch(node.GetOperation())
+        {
+        case TOKEN_Plus:
+            return left;
+
+        case TOKEN_Minus:
+            {
+            ExpressionStatus status;
+            if (left->IsConstant())
+                {
+                switch(left->GetResolvedPrimitiveType())
+                    {
+                    case PRIMITIVETYPE_Integer:
+                        return Node::CreateIntegerLiteral(-left->_GetIntegerValue(status, *m_context));
+
+                    case PRIMITIVETYPE_Long:
+                        return Node::CreateInt64Literal(-left->_GetLongValue(status, *m_context));
+
+                    case PRIMITIVETYPE_Double:
+                        return Node::CreateFloatLiteral(-left->_GetDoubleValue(status, *m_context));
+                    }
+                }
+            }
+
+            return ResolvedUnaryMinusNode::Create(left->GetResolvedPrimitiveType(), *left);
+
+        case TOKEN_Not:
+            {
+            ExpressionStatus status;
+            if (left->IsConstant())
+                {
+                switch(left->GetResolvedPrimitiveType())
+                    {
+                    case PRIMITIVETYPE_Integer:
+                        return Node::CreateIntegerLiteral(~left->_GetIntegerValue(status, *m_context));
+
+                    case PRIMITIVETYPE_Long:
+                        return Node::CreateInt64Literal(~left->_GetLongValue(status, *m_context));
+
+                    case PRIMITIVETYPE_Boolean:
+                        return Node::CreateBooleanLiteral(!left->_GetBooleanValue(status, *m_context));
+                    }
+                }
+            }
+
+            return ResolvedUnaryNotNode::Create(left->GetResolvedPrimitiveType(), *left);
+        }
+
+    return NULL;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveMultiplyNode (MultiplyNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+
+    //  Returns an error if unsupported types or either operand was not resolved.
+    ECN::PrimitiveType  resultType;
+    if (ExprStatus_Success != ExpressionResolver::PerformArithmeticPromotion(resultType, left, right))
+        return NULL;
+
+    if (checkConstants(left, right, true))
+        {
+        BeAssert(right->IsConstant());
+        //  If just operand is constant, checkConstants moves it to the right side.  Therefore, if 
+        //  left side is constant then we know that both side are constant.
+        if (left->IsConstant())
+            {
+            ExpressionStatus    status = ExprStatus_Success;
+            switch(resultType)
+                {
+                case PRIMITIVETYPE_Integer:
+                    return Node::CreateIntegerLiteral(left->_GetIntegerValue(status, GetExpressionContextR()) * right->_GetIntegerValue(status, GetExpressionContextR()));
+                case PRIMITIVETYPE_Long:
+                    return Node::CreateInt64Literal(left->_GetLongValue(status, GetExpressionContextR()) * right->_GetLongValue(status, GetExpressionContextR()));
+                case PRIMITIVETYPE_Double:
+                    return Node::CreateFloatLiteral(left->_GetDoubleValue(status, GetExpressionContextR()) * right->_GetDoubleValue(status, GetExpressionContextR()));
+                }
+            }
+
+        ExpressionStatus    status = ExprStatus_Success;
+        switch(resultType)
+            {
+            case PRIMITIVETYPE_Integer:
+                return ResolvedMultiplyConstantNode::CreateInteger(*left, right->_GetIntegerValue(status, GetExpressionContextR()));
+            case PRIMITIVETYPE_Long:
+                return ResolvedMultiplyConstantNode::CreateInt64(*left, right->_GetLongValue(status, GetExpressionContextR()));
+            case PRIMITIVETYPE_Double:
+                return ResolvedMultiplyConstantNode::CreateDouble(*left, right->_GetDoubleValue(status, GetExpressionContextR()));
+            }
+        BeAssert(false && L"multiplication constant handling failed to generate nodes");
+        }
+
+    return ResolvedMultiplyNode::Create(resultType, *left, *right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+
+    ECN::PrimitiveType  resultType;
+    if (ExprStatus_Success != ExpressionResolver::PerformArithmeticPromotion(resultType, left, right))
+        return NULL;
+
+    ExpressionStatus status = ExprStatus_Success;
+    ExpressionContextR  expContext = GetExpressionContextR();
+    if (node.GetOperation() == TOKEN_Plus)
+        {
+        if (checkConstants(left, right, true))
+            {
+            if (left->IsConstant())
+                {
+                switch(resultType)
+                    {
+                    case PRIMITIVETYPE_Integer:
+                        return Node::CreateIntegerLiteral(left->_GetIntegerValue(status, expContext) + right->_GetIntegerValue(status, expContext));
+                    case PRIMITIVETYPE_Long:
+                        return Node::CreateInt64Literal(left->_GetLongValue(status, expContext) + right->_GetLongValue(status, expContext));
+                    case PRIMITIVETYPE_Double:
+                        return Node::CreateFloatLiteral(left->_GetDoubleValue(status, expContext) + right->_GetDoubleValue(status, expContext));
+                    }
+                }
+
+            EvaluationResult    evalResult;
+            right->GetValue(evalResult, expContext, false, false);
+            return ResolvedAddConstantNode::Create(resultType, *left, evalResult.GetECValue());
+            }
+
+        return ResolvedAddNode::Create(resultType, *left, *right);
+        }
+
+    if (right->IsConstant())
+        {
+        if (left->IsConstant())
+            {
+            switch(resultType)
+                {
+                case PRIMITIVETYPE_Integer:
+                    return Node::CreateIntegerLiteral(left->_GetIntegerValue(status, expContext) - right->_GetIntegerValue(status, expContext));
+                case PRIMITIVETYPE_Long:
+                    return Node::CreateInt64Literal(left->_GetLongValue(status, expContext) - right->_GetLongValue(status, expContext));
+                case PRIMITIVETYPE_Double:
+                    return Node::CreateFloatLiteral(left->_GetDoubleValue(status, expContext) - right->_GetDoubleValue(status, expContext));
+                }
+            }
+
+        EvaluationResult    evalResult;
+        right->GetValue(evalResult, expContext, false, false);
+        ECValueR  ecValue = evalResult.GetECValueR();
+        switch(resultType)
+            {
+            case PRIMITIVETYPE_Integer:
+                ecValue.SetInteger(-1 * ecValue.GetInteger());
+                break;
+            case PRIMITIVETYPE_Long:
+                ecValue.SetLong(-1 * ecValue.GetLong());
+                break;
+            case PRIMITIVETYPE_Double:
+                ecValue.SetDouble(-1 * ecValue.GetDouble());
+                break;
+            default:
+                BeAssert(false && L"encountered invalid primitive when creating constant subtract node");
+                return NULL;
+            }
+
+        return ResolvedAddConstantNode::Create(resultType, *left, evalResult.GetECValue());
+        }
+
+    BeAssert(node.GetOperation() == TOKEN_Minus);
+    return ResolvedSubtractNode::Create(resultType, *left, *right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveConcatenateNode (ConcatenateNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    if (!left.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+    if (!right.IsValid())
+        return NULL;
+
+    if (ExprStatus_Success != PromoteToString(left) || ExprStatus_Success != PromoteToString(right))
+        return NULL;
+
+    if (checkConstants(left, right, false))
+        {
+        //  If both constant then do the work here. If just one constant then may want to create a 
+        //  new node type to hold the constant value along with a pointer to the left operand.
+        //  If either value is one just return the left node
+        }
+
+    return ResolvedConcatenateNode::Create(*left, *right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveShiftNode (ShiftNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    if (!left.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+    if (!right.IsValid())
+        return NULL;
+
+    if (ExprStatus_Success != PromoteToType(right, PRIMITIVETYPE_Integer))
+        return NULL;
+
+    switch (left->GetResolvedPrimitiveType())
+        {
+        case PRIMITIVETYPE_Integer:
+            return ResolvedShiftInteger::Create(node.GetOperation(), *left, *right);
+        case PRIMITIVETYPE_Long:
+            return ResolvedShiftLong::Create(node.GetOperation(), *left, *right);
+        }
+
+    return NULL;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveIIfNode (IIfNodeCR node)
+    {
+    ResolvedTypeNodePtr condition = node.GetConditionP()->GetResolvedTree(*this);
+    if (!condition.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr trueNode = node.GetTrueP()->GetResolvedTree(*this);
+    if (!trueNode.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr falseNode = node.GetFalseP()->GetResolvedTree(*this);
+    if (!falseNode.IsValid())
+        return NULL;
+
+    //  Promote arguments.  If either is string, do string - else if either is bool do bool else do arithmetic
+    ECN::PrimitiveType  resultType;
+    if (ExprStatus_Success != PerformArithmeticPromotion(resultType, trueNode, falseNode))
+        return NULL;
+
+    if (ExprStatus_Success != PromoteToType(condition, PRIMITIVETYPE_Boolean))
+        return NULL;
+
+    return ResolvedIIfNode::Create(resultType, *condition, *trueNode, *falseNode);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveComparisonNode (ComparisonNodeCR node)
+    {
+    ExpressionToken operation = node.GetOperation();
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    if (!left.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+    if (!right.IsValid())
+        return NULL;
+
+    if (left->IsConstant() && !right->IsConstant())
+        {
+        ResolvedTypeNodePtr temp = left;
+        left = right;
+        right = temp;
+        switch(operation)
+            {
+            case TOKEN_Less:
+                operation = TOKEN_Greater;
+                break;
+            case TOKEN_LessEqual:
+                operation = TOKEN_GreaterEqual;
+                break;
+            case TOKEN_Greater:
+                operation = TOKEN_Less;
+                break;
+            case TOKEN_GreaterEqual:
+                operation = TOKEN_LessEqual;
+                break;
+            }
+        }
+
+    ExpressionStatus    status = ExprStatus_Success;
+    if (left->GetResolvedPrimitiveType() == PRIMITIVETYPE_Boolean || right->GetResolvedPrimitiveType() == PRIMITIVETYPE_Boolean)
+        {
+        if (ExprStatus_Success != PromoteToType(left, PRIMITIVETYPE_Boolean) || ExprStatus_Success != PromoteToType(right, PRIMITIVETYPE_Boolean))
+            return NULL;
+
+        if (right->IsConstant())
+            {
+            bool  rightValue = right->_GetBooleanValue(status, GetExpressionContextR());
+            if (left->IsConstant())
+                {
+                bool leftValue = left->_GetBooleanValue(status, GetExpressionContextR());
+                return Node::CreateBooleanLiteral(PerformCompare(leftValue, operation, rightValue));
+                }
+            if (rightValue)
+                return left;
+            return ResolvedCompareBooleanToConstantNode::Create(operation, *left, rightValue);
+            }
+
+        return ResolvedCompareBooleanNode::Create(operation, *left, *right);
+        }
+
+    if (left->GetResolvedPrimitiveType() != PRIMITIVETYPE_String && right->GetResolvedPrimitiveType() != PRIMITIVETYPE_String)
+        {
+        ECN::PrimitiveType  resultType;
+        ExpressionResolver::PerformArithmeticPromotion(resultType, left, right);
+        if (right->IsConstant())
+            {
+            if (left->IsConstant())
+                {
+                bool computed = false;
+                bool result = false;
+                switch (resultType)
+                    {
+                    case PRIMITIVETYPE_Integer:
+                        result = PerformCompare(left->_GetIntegerValue(status, GetExpressionContextR()), operation, right->_GetIntegerValue(status, GetExpressionContextR()));
+                        computed = true;
+                        break;
+                    case PRIMITIVETYPE_Long:
+                        result = PerformCompare(left->_GetLongValue(status, GetExpressionContextR()), operation, right->_GetLongValue(status, GetExpressionContextR()));
+                        computed = true;
+                        break;
+                    case PRIMITIVETYPE_Double:
+                        result = PerformCompare(left->_GetDoubleValue(status, GetExpressionContextR()), operation, right->_GetDoubleValue(status, GetExpressionContextR()));
+                        computed = true;
+                        break;
+                    }
+
+                if (computed)
+                    return Node::CreateBooleanLiteral(result);
+                }
+
+            //  Only the right operand is constant
+            switch(resultType)
+                {
+                case PRIMITIVETYPE_Integer:
+                    return ResolvedCompareIntegerToConstantNode::Create(operation, *left, right->_GetIntegerValue(status, GetExpressionContextR()));
+                case PRIMITIVETYPE_Long:
+                    return ResolvedCompareLongToConstantNode::Create(operation, *left, right->_GetLongValue(status, GetExpressionContextR()));
+                case PRIMITIVETYPE_Double:
+                    return ResolvedCompareDoubleToConstantNode::Create(operation, *left, right->_GetDoubleValue(status, GetExpressionContextR()));
+                }
+            }
+
+        switch(resultType)
+            {
+            case PRIMITIVETYPE_Integer:
+                return ResolvedCompareIntegerNode::Create(operation, *left, *right);
+            case PRIMITIVETYPE_Long:
+                return ResolvedCompareLongNode::Create(operation, *left, *right);
+            case PRIMITIVETYPE_Double:
+                return ResolvedCompareDoubleNode::Create(operation, *left, *right);
+            }
+        }
+
+    BeAssert(false && "_ResolveComparisonNode not implemented for this type");
+    return NULL;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveLogicalNode (LogicalNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    if (!left.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+    if (!right.IsValid())
+        return NULL;
+
+    switch(node.GetOperation())
+        {
+        case TOKEN_And:
+        case TOKEN_Or:
+        case TOKEN_Xor:
+            {
+            //  Process bitwise operators.  If we knew the desired result was boolean we could 
+            //  turn these into short circuiting operators that generate a boolean result
+            ECN::PrimitiveType      targetType;
+            ExpressionResolver::PerformJunctionPromotion(targetType, left, right);
+            switch(targetType)
+                {
+                case PRIMITIVETYPE_Boolean:
+                case PRIMITIVETYPE_Integer:
+                case PRIMITIVETYPE_Long:
+                    return ResolvedLogicalBitNode::Create(targetType, node.GetOperation(), *left, *right);
+                }
+            }
+            break;
+
+        case TOKEN_AndAlso:
+        case TOKEN_OrElse:
+            //  Force everything to Boolean.  Then use ResolvedLogicalBitNode::Create
+            break;
+        }
+
+    BeAssert (false && L"_ResolveLogicalNode is incomplete");
+    return NULL;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
+    {
+    ResolvedTypeNodePtr left = node.GetLeftP()->GetResolvedTree(*this);
+    if (!left.IsValid())
+        return NULL;
+
+    ResolvedTypeNodePtr right = node.GetRightP()->GetResolvedTree(*this);
+    if (!right.IsValid())
+        return NULL;
+
+    if (node.GetOperation() == TOKEN_Mod)
+        {
+        ECN::PrimitiveType  resultType;
+        if (ExprStatus_Success != PerformArithmeticPromotion(resultType, left, right))
+            return NULL;
+        if (resultType != PRIMITIVETYPE_Integer && resultType != PRIMITIVETYPE_Long)
+            return NULL;
+        return ResolvedModNode::Create(resultType, *left, *right);
+        }
+
+    if (node.GetOperation() == TOKEN_IntegerDivide)
+        {
+        ECN::PrimitiveType  resultType;
+        if (ExprStatus_Success != PerformArithmeticPromotion(resultType, left, right))
+            return NULL;
+        switch(resultType)
+            {
+            case PRIMITIVETYPE_Integer:
+            case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_Double:
+                return ResolvedIntegerDivideNode::Create(resultType, *left, *right);
+            default:
+                return NULL;
+            }
+        }
+
+    if (ExprStatus_Success != PromoteToType(left, PRIMITIVETYPE_Double) || ExprStatus_Success != PromoteToType(right, PRIMITIVETYPE_Double))
+        return NULL;
+
+    if (left->IsConstant())
+        {
+        ExpressionStatus status = ExprStatus_Success;
+        double leftValue = left->_GetDoubleValue(status, GetExpressionContextR());
+        if (right->IsConstant())
+            {
+            double divisor = right->_GetDoubleValue(status, GetExpressionContextR());
+            if (0.0 == divisor)
+                return NULL;
+            double result = leftValue/divisor;
+            if (result == ::Int32(result))
+                return Node::CreateIntegerLiteral(Int32(result));
+            return Node::CreateFloatLiteral(result);
+            }
+        return ResolvedDivideConstantNode::Create(leftValue, *right);
+        }
+    else if (right->IsConstant())
+        {
+        ExpressionStatus status = ExprStatus_Success;
+        double divisor = right->_GetDoubleValue(status, GetExpressionContextR());
+        if (0.0 == divisor)
+            return NULL;
+        return ResolvedDivideByConstantNode::Create(*left, divisor);
+        }
+
+    if (checkConstants(left, right, false))
+        {
+        //  If both constant then do the work here. If just one constant then may want to create a 
+        //  new node type to hold the constant value along with a pointer to the left operand.
+        //  If either value is one just return the left node
+        }
+
+    return ResolvedDivideNode::Create(*left, *right);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+::Int32 ResolvedShiftInteger::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ::Int32 left = m_left->_GetIntegerValue(status, context);
+    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return 0;
+
+    switch(m_operatorCode)
+        {
+        case TOKEN_ShiftLeft:
+            return left << right;
+        case TOKEN_ShiftRight:
+            return left >> right;
+        case TOKEN_UnsignedShiftRight:
+            return (::Int32)((UInt32)left >> right);
+        }
+
+    BeAssert(false && L"bad shift operator");
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+::Int64 ResolvedShiftLong::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    ::Int64 left = m_left->_GetLongValue(status, context);
+    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return 0;
+
+    switch(m_operatorCode)
+        {
+        case TOKEN_ShiftLeft:
+            return left << right;
+        case TOKEN_ShiftRight:
+            return left >> right;
+        case TOKEN_UnsignedShiftRight:
+            return (::Int64)((UInt64)left >> right);
+        }
+
+    BeAssert(false && L"bad shift operator");
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+::Int32 ResolvedLogicalBitNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    //  Assume that on success status is not set but on error it is so it there is no need to check
+    //  status between calls to _GetIntegerValue.
+    ::Int32 left = m_left->_GetIntegerValue(status, context);
+    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return 0;
+
+    switch(m_operatorCode)
+        {
+        case TOKEN_Or:
+            return left | right;
+
+        case TOKEN_And:
+            return left & right;
+
+        case TOKEN_Xor:
+            return left ^ right;
+        }
+
+    status = ExprStatus_NotImpl;
+    BeAssert (status != ExprStatus_NotImpl);
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+::Int64 ResolvedLogicalBitNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    //  Assume that on success status is not set but on error it is so it there is no need to check
+    //  status between calls to _GetIntegerValue.
+    ::Int64 left = m_left->_GetIntegerValue(status, context);
+    ::Int64 right = m_right->_GetIntegerValue(status, context);
+    if (ExprStatus_Success != status)
+        return 0;
+
+    switch(m_operatorCode)
+        {
+        case TOKEN_Or:
+            return left | right;
+
+        case TOKEN_And:
+            return left & right;
+
+        case TOKEN_Xor:
+            return left ^ right;
+        }
+
+    status = ExprStatus_NotImpl;
+    BeAssert (status != ExprStatus_NotImpl);
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+bool ResolvedLogicalBitNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    {
+    //  Assume that on success status is not set but on error it is so it there is no need to check
+    //  status between calls to _GetIntegerValue.
+    bool left = m_left->_GetBooleanValue(status, context);
+    if (ExprStatus_Success != status)
+        {
+        BeAssert(!left);
+        return false;
+        }
+
+    if (left && TOKEN_Or == m_operatorCode)
+        return true;   //  maybe we need to evaluate right to check for error
+    else if (!left && TOKEN_And == m_operatorCode)
+        return false;
+
+    bool right = m_right->_GetBooleanValue(status, context);
+    if (ExprStatus_Success != status)
+        {
+        BeAssert(!right);
+        return false;
+        }
+
+    switch(m_operatorCode)
+        {
+        case TOKEN_Or:
+            return left | right;
+
+        case TOKEN_And:
+            return left & right;
+
+        case TOKEN_Xor:
+            return left ^ right;
+        }
+
+    status = ExprStatus_NotImpl;
+    BeAssert (status != ExprStatus_NotImpl);
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+::Int32 ResolvedIIfNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+    { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetIntegerValue(status, context) : m_false->_GetIntegerValue(status, context); }
+
+::Int64 ResolvedIIfNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+    { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetLongValue(status, context) : m_false->_GetLongValue(status, context); }
+
+double ResolvedIIfNode::_GetDoubleValue(ExpressionStatus& status, ExpressionContextR context)
+    { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetDoubleValue(status, context) : m_false->_GetDoubleValue(status, context); }
+
+bool ResolvedIIfNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
+    { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetBooleanValue(status, context) : m_false->_GetBooleanValue(status, context); }
+
+ExpressionStatus ResolvedIIfNode::_GetStringValue(ECValueR result, ExpressionContextR context)
+    { 
+    ExpressionStatus status;
+    bool condition = m_condition->_GetBooleanValue(status, context);
+    if (ExprStatus_Success != status)
+        {
+        result.SetString(L"");
+        return status;
+        }
+
+    return  condition ? m_true->_GetStringValue(result, context) : m_false->_GetStringValue(result, context);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+    ResolvedAddConstantNode::ResolvedAddConstantNode(ECN::PrimitiveType resultType, ResolvedTypeNodeR left, ECValueCR right) 
+            : ResolvedTypeNode(resultType), m_left(&left) 
+    {
+    switch(resultType)
+        {
+        case PRIMITIVETYPE_Integer:
+            m_right.m_i = right.GetInteger();
+            break;
+        case PRIMITIVETYPE_Long:
+            m_right.m_i64 = right.GetLong();
+            break;
+        case PRIMITIVETYPE_Double:
+            m_right.m_d = right.GetDouble();
+            break;
+        default:
+            BeAssert(false && L"adding unknown constant type");
+            m_right.m_i64 = 0;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    09/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, ExpressionContextR context)
+    {
+    ExpressionStatus status = ExprStatus_Success;
+
+    switch(m_left->GetResolvedPrimitiveType())
+        {
+        case PRIMITIVETYPE_Integer:
+            {
+            ::Int32 value = m_left->_GetIntegerValue(status, context);
+            result.SetInteger(value);
+            if (ExprStatus_Success == status)
+                status = Operations::ConvertToString(result);
+            return status;
+            }
+
+        case PRIMITIVETYPE_Long:
+            {
+            ::Int64 value = m_left->_GetLongValue(status, context);
+            result.SetLong(value);
+            if (ExprStatus_Success == status)
+                status = Operations::ConvertToString(result);
+            return status;
+            }
+
+        case PRIMITIVETYPE_Double:
+            {
+            double value = m_left->_GetDoubleValue(status, context);
+            result.SetDouble(value);
+            if (ExprStatus_Success == status)
+                status = Operations::ConvertToString(result);
+            return status;
+            }
+        }
+
+    result.SetString(L"");
+    return ExprStatus_IncompatibleTypes;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

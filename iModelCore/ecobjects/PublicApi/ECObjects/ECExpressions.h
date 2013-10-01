@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
 /*__PUBLISH_SECTION_START__*/
 /// @cond BENTLEY_SDK_Desktop
 
@@ -24,30 +25,41 @@ EXPR_TYPEDEFS(ArgumentTreeNode)
 EXPR_TYPEDEFS(ArithmeticNode)
 EXPR_TYPEDEFS(BinaryNode)
 EXPR_TYPEDEFS(CallNode)
+EXPR_TYPEDEFS(ComparisonNode)
+EXPR_TYPEDEFS(ConcatenateNode)
 EXPR_TYPEDEFS(ContextSymbol)
 EXPR_TYPEDEFS(CustomSymbol)
+EXPR_TYPEDEFS(DivideNode)
 EXPR_TYPEDEFS(DotNode)
 EXPR_TYPEDEFS(ErrorNode)
 EXPR_TYPEDEFS(EvaluationResult)
 EXPR_TYPEDEFS(ExpressionContext)
+EXPR_TYPEDEFS(ExpressionResolver)
 EXPR_TYPEDEFS(ExpressionType)
 EXPR_TYPEDEFS(IdentNode)
+EXPR_TYPEDEFS(IIfNode)
 EXPR_TYPEDEFS(InstanceExpressionContext)
 EXPR_TYPEDEFS(InstanceListExpressionContext)
 EXPR_TYPEDEFS(LBracketNode)
 EXPR_TYPEDEFS(Lexer)
+EXPR_TYPEDEFS(LogicalNode)
 EXPR_TYPEDEFS(MethodReference)
 EXPR_TYPEDEFS(MethodSymbol)
+EXPR_TYPEDEFS(MultiplyNode)
 EXPR_TYPEDEFS(Node)
 EXPR_TYPEDEFS(NodeVisitor)
+EXPR_TYPEDEFS(PlusMinusNode)
 EXPR_TYPEDEFS(PrimaryListNode)
 EXPR_TYPEDEFS(ReferenceResult)
+EXPR_TYPEDEFS(ResolvedTypeNode)
+EXPR_TYPEDEFS(ShiftNode)
 EXPR_TYPEDEFS(Symbol)
 EXPR_TYPEDEFS(SymbolExpressionContext)
+EXPR_TYPEDEFS(UnaryArithmeticNode)
 EXPR_TYPEDEFS(UnitsType)
 EXPR_TYPEDEFS(ValueResult)
 EXPR_TYPEDEFS(ValueSymbol)
-EXPR_TYPEDEFS(IECSymbolProvider);
+EXPR_TYPEDEFS(IECSymbolProvider)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -67,12 +79,14 @@ typedef RefCountedPtr<MethodReference>              MethodReferencePtr;
 typedef RefCountedPtr<MethodSymbol>                 MethodSymbolPtr;
 typedef RefCountedPtr<Node>                         NodePtr;
 typedef RefCountedPtr<PrimaryListNode>              PrimaryListNodePtr;
+typedef RefCountedPtr<ResolvedTypeNode>             ResolvedTypeNodePtr;
 typedef RefCountedPtr<Symbol>                       SymbolPtr;
 typedef RefCountedPtr<SymbolExpressionContext>      SymbolExpressionContextPtr;
 typedef RefCountedPtr<ValueResult>                  ValueResultPtr;
 typedef RefCountedPtr<ValueSymbol>                  ValueSymbolPtr;
 
 typedef bvector<NodeP>                              NodeVector;
+typedef bvector<NodeCP>                             NodeCPVector;
 typedef NodeVector::iterator                        NodeVectorIterator;
 
 typedef bvector<NodePtr>                            NodePtrVector;
@@ -552,22 +566,32 @@ enum            ExpressionToken
     TOKEN_IIf                 = 72,               //      IFF
     TOKEN_LCurly              = 73,               //      {
     TOKEN_RCurly              = 74,               //      }
-    TOKEN_Error               = 81,
-    TOKEN_Ident               = 82,
-    TOKEN_StringConst         = 83,
-    TOKEN_PointConst          = 84,
-    TOKEN_DateTimeConst       = 85,               //      @
-    TOKEN_IntegerConstant     = 87,
-    TOKEN_HexConstant         = 88,
-    TOKEN_FloatConst          = 89,
-    TOKEN_UnitsConst          = 90,
-    TOKEN_Unrecognized        = 100,
-    TOKEN_BadNumber           = 101,
-    TOKEN_BadOctalNumber      = 102,
-    TOKEN_BadHexNumber        = 103,
-    TOKEN_BadFloatingPointNumber = 104,
-    TOKEN_UnterminatedString   = 105,
-    TOKEN_PrimaryList         = 106,
+
+    TOKEN_If                  = 75,
+    TOKEN_Else                = 76,
+    TOKEN_ElseIf              = 77,
+    TOKEN_Select              = 78,
+    TOKEN_End                 = 79,
+    TOKEN_EndIf               = 80,
+
+    TOKEN_DoubleColon         = 100,
+
+    TOKEN_Error               = 181,
+    TOKEN_Ident               = 182,
+    TOKEN_StringConst         = 183,
+    TOKEN_PointConst          = 184,
+    TOKEN_DateTimeConst       = 185,               //      @
+    TOKEN_IntegerConstant     = 187,
+    TOKEN_HexConstant         = 188,
+    TOKEN_FloatConst          = 189,
+    TOKEN_UnitsConst          = 190,
+    TOKEN_Unrecognized        = 200,
+    TOKEN_BadNumber           = 201,
+    TOKEN_BadOctalNumber      = 202,
+    TOKEN_BadHexNumber        = 203,
+    TOKEN_BadFloatingPointNumber = 204,
+    TOKEN_UnterminatedString   = 205,
+    TOKEN_PrimaryList         = 206,
     };
 
 /*__PUBLISH_SECTION_END__*/
@@ -633,11 +657,11 @@ public:
     ExpressionStatus        GetBoolean(bool& result, bool requireBoolean = true);
 
     //  Constructors and destructors
-            EvaluationResult ();
-            ~EvaluationResult ();
-            EvaluationResult(EvaluationResultCR rhs);
+    ECOBJECTS_EXPORT EvaluationResult ();
+    ECOBJECTS_EXPORT ~EvaluationResult ();
+    ECOBJECTS_EXPORT EvaluationResult(EvaluationResultCR rhs);
 
-    EvaluationResultR operator=(EvaluationResultCR rhs);
+    ECOBJECTS_EXPORT EvaluationResultR operator=(EvaluationResultCR rhs);
     void                    Clear();
 
     ECOBJECTS_EXPORT ECN::ECValueR            GetECValueR();
@@ -730,6 +754,38 @@ public:
 };
 
 /*=================================================================================**//**
+*
+* @ingroup ECObjectsGroup
++===============+===============+===============+===============+===============+======*/
+struct          ExpressionResolver : RefCountedBase
+{
+private:
+    ExpressionContextPtr m_context;
+
+protected:
+    ExpressionStatus PerformArithmeticPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    ExpressionStatus PerformJunctionPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    ExpressionStatus PromoteToType(ResolvedTypeNodePtr& node, ECN::PrimitiveType targetType);
+    ExpressionStatus PromoteToString(ResolvedTypeNodePtr& node);
+    ExpressionResolver(ExpressionContextR context) { m_context = &context; }
+
+public:
+    ExpressionContextCR GetExpressionContext() const { return *m_context; }
+    ExpressionContextR GetExpressionContextR() const { return *m_context; }
+
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolvePrimaryList (PrimaryListNodeR primaryList);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveUnaryArithmeticNode (UnaryArithmeticNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveMultiplyNode (MultiplyNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveDivideNode (DivideNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolvePlusMinusNode (PlusMinusNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveConcatenateNode (ConcatenateNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveComparisonNode (ComparisonNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveLogicalNode (LogicalNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveShiftNode (ShiftNodeCR node);
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveIIfNode (IIfNodeCR node);
+};
+
+/*=================================================================================**//**
 * Defines an expression tree for a parsed EC expression.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
@@ -740,7 +796,7 @@ private:
     bool                m_inParens;  //  Only used for ToString
 protected:
                         Node () { m_inParens = false; }
-    virtual bool        _Traverse(NodeVisitorR visitor) { return visitor.ProcessNode(*this); }
+    virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
     virtual WString     _ToString() const = 0;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
@@ -749,6 +805,10 @@ protected:
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_Unrecognized; }
 
+    virtual bool            _SetOperation (ExpressionToken token) { return false; }
+    ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context);
+    virtual ResolvedTypeNodeP _GetAsResolvedTypeNodeP () { return NULL; }
+
     virtual bool            _IsAdditive () const { return false; }
     virtual bool            _IsUnary () const  { return false; }
     virtual bool            _IsBinary () const  { return false; }
@@ -756,11 +816,13 @@ protected:
     virtual bool            _HasError () { return false; }
     virtual NodeP           _GetLeftP () const { return NULL; }
     virtual NodeP           _GetRightP () const { return NULL; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) { }
+    virtual bool            _SetLeft (NodeR node) { return false; }
+    virtual bool            _SetRight (NodeR node) { return false; }
+    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const { }
     virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType)  {}
 
 public:
-    bool                    GetHasParens() { return m_inParens; }
+    bool                    GetHasParens() const { return m_inParens; }
     void                    SetHasParens(bool hasParens) { m_inParens = hasParens; }
     bool                    IsAdditive ()   const  { return _IsAdditive(); }
     bool                    IsUnary ()      const  { return _IsUnary(); }
@@ -768,23 +830,27 @@ public:
     bool                    IsConstant ()   const  { return _IsConstant (); }
 
     void                    ForceUnitsOrder(UnitsTypeCR  knownType)  { _ForceUnitsOrder(knownType); }
-    void                    DetermineKnownUnits(UnitsTypeR unitsType) { _DetermineKnownUnits(unitsType);  }
-    ExpressionToken    GetOperation () const { return _GetOperation(); }
+    void                    DetermineKnownUnits(UnitsTypeR unitsType) const { _DetermineKnownUnits(unitsType);  }
+    ExpressionToken         GetOperation () const { return _GetOperation(); }
+    bool                    SetOperation (ExpressionToken token) { return _SetOperation (token); }
 
     NodeP                   GetLeftP () const { return _GetLeftP(); }
     NodeP                   GetRightP () const { return _GetRightP(); }
+
     NodeCP                  GetLeftCP () const { return _GetLeftP(); }
     NodeCP                  GetRightCP () const { return _GetRightP(); }
+    bool                    SetLeft (NodeR node) { return _SetLeft (node); }
+    bool                    SetRight (NodeR node) { return _SetRight (node); }
 
-    static NodePtr          CreateBooleanLiteral(bool literalValue);
-    static NodePtr          CreateStringLiteral (wchar_t const* value);
-    static NodePtr          CreateIntegerLiteral (int value);
-    static NodePtr          CreateInt64Literal(Int64 value);
-    static NodePtr          CreateFloatLiteral(double value);
-    static NodePtr          CreateNullLiteral();
-    static NodePtr          CreatePoint2DLiteral (DPoint2dCR value);
-    static NodePtr          CreatePoint3DLiteral (DPoint3dCR value);
-    static NodePtr          CreateDateTimeLiteral (Int64 ticks);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateBooleanLiteral(bool literalValue);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateStringLiteral (wchar_t const* value, bool quoted);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateIntegerLiteral (int value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(Int64 value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateFloatLiteral(double value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateNullLiteral();
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (Int64 ticks);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2DLiteral (DPoint2dCR value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3DLiteral (DPoint3dCR value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
     static NodePtr          CreateArithmetic(ExpressionToken  tokenID, NodeR left, NodeR right);
     static NodePtr          CreateShift (ExpressionToken tokenID, NodeR left, NodeR right);
@@ -797,25 +863,31 @@ public:
 
     //  Add nodes for Where, Property, Relationship, ConstantSets, Filters
 
-    ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context,
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides);
 
 // constructors are hidden from published API -> make it abstract in the published API
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Tries to generate a resolved tree.
+    //! @Returns a pointer to the root of the resolved tree, or NULL if unable to resolve any of the nodes in the subtree.
+    //! @remarks A resolved tree can be executed much more efficiently that a tree that has not been resolved.
+    ECOBJECTS_EXPORT ResolvedTypeNodePtr  GetResolvedTree(ExpressionResolverR context);
+
     //! Returns the value of this expression node using the supplied context
-    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context,
                                         bool allowUnknown, bool allowOverrides);
 
     //!  Traverses in parse order
-    ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor);
+    ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor) const;
 
     //! Returns a string representation of the Node expression
     ECOBJECTS_EXPORT WString  ToString() const;
 
+    //! Converts the Node expression into an expression string
+    ECOBJECTS_EXPORT WString  ToExpressionString() const;
 };  //  End of struct Node
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
