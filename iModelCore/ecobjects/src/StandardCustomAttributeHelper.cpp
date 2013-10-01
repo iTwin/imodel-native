@@ -47,7 +47,10 @@ DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isCompone
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DateTimeInfo::operator== (DateTimeInfo const& rhs) const
     {
-    return m_isKindNull == rhs.m_isKindNull && m_isComponentNull == rhs.m_isComponentNull && m_info == rhs.m_info;
+    return (
+            ((m_isKindNull && rhs.m_isKindNull) || (!m_isKindNull && !rhs.m_isKindNull && m_info.GetKind () == rhs.m_info.GetKind ())) &&
+            ((m_isComponentNull && rhs.m_isComponentNull) || (!m_isComponentNull && !rhs.m_isComponentNull && m_info.GetComponent () == rhs.m_info.GetComponent ()))
+            );
     }
 
 //---------------------------------------------------------------------------------------
