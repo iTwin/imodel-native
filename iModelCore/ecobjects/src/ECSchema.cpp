@@ -2702,13 +2702,12 @@ void            ECSchema::SetImmutable()
 int             SchemaKey::CompareByName (WString schemaName) const
     {
     int caseSensitive = wcscmp (m_schemaName.c_str(), schemaName.c_str());
-    if (0 != caseSensitive)
+    if (0 != caseSensitive && 0 == BeStringUtilities::Wcsicmp (m_schemaName.c_str(), schemaName.c_str()))
         {
-        int caseInsensitive = BeStringUtilities::Wcsicmp (m_schemaName.c_str(), schemaName.c_str());
-        if (0 == caseInsensitive)
-            LOG.warningv (L"Schema name %ls and schema name %ls are different in case only.", m_schemaName.c_str(), schemaName.c_str());
-        return caseInsensitive;
+        LOG.warningv (L"Schema name %ls and schema name %ls are different in case only.", m_schemaName.c_str(), schemaName.c_str());
+        return 0;
         }
+
     return caseSensitive;
     }
 
