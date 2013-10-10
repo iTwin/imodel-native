@@ -1003,6 +1003,8 @@ public:
 
     //! Returns true if the class name  is of the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(WCharCP name) const;
+    //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
+    ECOBJECTS_EXPORT bool            Is (WCharCP schemaName, WCharCP className) const;
 
     //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, WStringCR name);
@@ -1389,6 +1391,10 @@ struct SchemaKey
     //! @li SCHEMAMATCHTYPE_LatestCompatible - Returns whether this schema's name and major version are equal, and this schema's minor version is greater than or equal to the target's.
     //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
+
+    //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case insensitive
+    //! @param[in]  schemaName  The schema name to compare to
+    ECOBJECTS_EXPORT int  CompareByName (WString schemaName) const;
 
     //! Returns whether this SchemaKey is Identical to the target SchemaKey
     bool operator == (SchemaKeyCR rhs) const

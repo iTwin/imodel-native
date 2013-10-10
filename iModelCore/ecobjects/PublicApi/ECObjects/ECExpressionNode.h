@@ -460,6 +460,7 @@ protected:
 
 public:
     void                    PushQualifier(WCharCP rightName);
+    bvector<WString> const& GetQualifiers() const { return m_qualifiers; }
     wchar_t const*          GetName() const { return m_value.c_str(); }
     static IdentNodePtr     Create(wchar_t const*name) { return new IdentNode(name); }
 

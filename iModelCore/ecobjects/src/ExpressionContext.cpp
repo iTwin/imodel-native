@@ -299,8 +299,19 @@ ExpressionStatus InstanceExpressionContext::_GetValue(EvaluationResultR evalResu
             else
                 {
                 BeAssert(NULL != dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode(index)));
-
                 IdentNodeCP       identNode = static_cast<IdentNodeCP>(primaryList.GetOperatorNode(index));
+
+                if (TOKEN_Dot == nextOperation)
+                    {
+                    // Handle fully-qualified property accessor. Expect two qualifiers: schema name and class name
+                    bvector<WString> const& qualifiers = identNode->GetQualifiers();
+                    if (2 == qualifiers.size() && !instance->GetClass().Is (qualifiers[0].c_str(), qualifiers[1].c_str()))
+                        {
+                        evalResult.Clear();
+                        return ExprStatus_UnknownMember;
+                        }
+                    }
+
                 memberName = identNode->GetName();
                 }
 
