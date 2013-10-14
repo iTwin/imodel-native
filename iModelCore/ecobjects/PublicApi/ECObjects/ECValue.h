@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/VirtualCollectionIterator.h>
 #include <Bentley/DateTime.h>
@@ -267,7 +266,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
 
     //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Binary
-    //! @Note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
+    //! @note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
     //! @see ECValue::SetBinary
     //! @param[in] blob Value to initialize this ECValue from
     //! @param[in] size Size in bytes of the blob
@@ -472,12 +471,12 @@ public:
     ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);
 
     //! Gets the string content of this ECValue.
-    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //! @note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
     //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
     //! @return string content
     ECOBJECTS_EXPORT WCharCP        GetString () const;
     //! Gets the string content of this ECValue in UTF-8 encoding.
-    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //! @note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
     //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
     //! @return string content in UTF-8 encoding
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
@@ -536,14 +535,14 @@ public:
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
     //! DateTimes before the Unix epoch are negative.
-    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime as milliseconds since the beginning of the Unix epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
 
@@ -558,7 +557,7 @@ public:
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @Note If the ECProperty to which this ECValue will be applied contains the %DateTimeInfo custom attribute,
+    //! @note If the ECProperty to which this ECValue will be applied contains the %DateTimeInfo custom attribute,
     //! the ticks will be enriched with the metadata from the custom attribute.
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
@@ -862,7 +861,5 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/// @endcond BENTLEY_SDK_All
 
 //#pragma make_public (Bentley::ECN::ECValuesCollection)
