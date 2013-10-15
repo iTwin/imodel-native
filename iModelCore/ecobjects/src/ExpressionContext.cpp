@@ -279,6 +279,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             else if (accessorResult.GetValueType() != ValType_ECValue || !accessorResult.GetECValue()->IsString())
                 { evalResult.Clear(); return ExprStatus_WrongType; }
 
+            // ###TODO: NEEDSWORK: this doesn't work for expressions like 'this["Struct.Member"]'
             memberName = accessorResult.GetECValue()->GetString();
             }
         else
@@ -301,7 +302,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         nextOperation = primaryList.GetOperation (++index);
         if (appendDot)
-            accessString.append (L",");
+            accessString.append (L".");
         else
             appendDot = true;
 
@@ -398,9 +399,9 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResultR evalResult, size_t& startIndex, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList)
     {
     ExpressionStatus status = ExprStatus_StructRequired;
-    size_t index = startIndex;
     FOR_EACH (IECInstancePtr const& instance, instanceList)
         {
+        size_t index = startIndex;
         if (instance.IsNull())
             {
             BeAssert (false); continue;
@@ -585,6 +586,7 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
         return ExprStatus_UnknownError;    // Invalid operation on method
         }
 
+    // NEEDSWORK: If a static method returns an ECInstanceList, we can never access properties of those instances??
     if (primaryList.GetNumberOfOperators() != startIndex)
         {
         evalResult.InitECValue().Clear();
