@@ -18,6 +18,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex, IECInstanceCR rootInstance)
     {
+    BeAssert(m_initialized);
+
     size_t      numberOfOperators = primaryList.GetNumberOfOperators();
     size_t      index = startIndex;
     bool        appendDot = false;
@@ -249,6 +251,8 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance)
     {
+    BeAssert(m_initialized);
+
     ExpressionToken nextOperation = primaryList.GetOperation (index);
     if (TOKEN_Dot != nextOperation && TOKEN_Ident != nextOperation && TOKEN_LeftBracket != nextOperation)
         {
@@ -407,6 +411,8 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResultR evalResult, size_t& startIndex, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList)
     {
+    BeAssert(m_initialized);
+
     ExpressionStatus status = ExprStatus_StructRequired;
     FOR_EACH (IECInstancePtr const& instance, instanceList)
         {
@@ -448,6 +454,8 @@ static bool convertResultToInstanceList (EvaluationResultR result, bool requireI
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
     {
+    Initialize();
+
     evalResult.SetInstanceList (m_instances, false);
 
     size_t      numberOfOperators = primaryList.GetNumberOfOperators();
