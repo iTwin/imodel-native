@@ -1814,6 +1814,19 @@ ExpressionStatus AssignmentNode::PerformModifier (ExpressionToken  modifier, Eva
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static IECInstancePtr   getInstanceFromResult (EvaluationResultCR result)
+    {
+    if (result.IsInstanceList())
+        return result.GetInstanceList()->size() == 1 ? *result.GetInstanceList()->begin() : NULL;
+    else if (result.IsECValue() && result.GetECValue()->IsStruct())
+        return result.GetECValue()->GetStruct();
+    else
+        return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -1856,7 +1869,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     ECN::PrimitiveECPropertyCP   primProperty = refResult.m_property->GetAsPrimitiveProperty();
     if (NULL != primProperty)
         {
-        ECN::IECInstanceP    instance = instanceResult.GetECValue()->GetStruct().get();
+        ECN::IECInstancePtr  instance = getInstanceFromResult (instanceResult);
         ECN::ECEnablerCR     enabler = instance->GetEnabler();
 
         ::UInt32     propertyIndex;
@@ -3224,7 +3237,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
 
             EvaluationResult    evalResult;
             right->GetValue(evalResult, expContext, false, false);
-            return ResolvedAddConstantNode::Create(resultType, *left, evalResult.InitECValue());
+            return ResolvedAddConstantNode::Create(resultType, *left, *evalResult.GetECValue());
             }
 
         return ResolvedAddNode::Create(resultType, *left, *right);

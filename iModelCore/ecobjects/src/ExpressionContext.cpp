@@ -34,6 +34,8 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
         return ExprStatus_UnknownError;    // Report invalid reference
         }
 
+    evalResult.InitECValue().SetStruct (const_cast<IECInstanceP>(&rootInstance));
+
     ExpressionToken        nextOperation = primaryList.GetOperation(index);
     ECN::ECPropertyP             currentProperty = NULL;
     
@@ -387,7 +389,14 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         else if (!arrayVal.IsStruct())
             { evalResult.Clear(); return ExprStatus_StructRequired; }
 
-        return TOKEN_LParen != nextOperation ? GetInstanceValue (evalResult, index, primaryList, globalContext, *arrayVal.GetStruct()) : ExprStatus_Success;
+        if (TOKEN_LParen == nextOperation)
+            {
+            --index;    // place the LParen back in queue, caller will handle it.
+            evalResult = arrayVal;
+            return ExprStatus_Success;
+            }
+        else
+            return GetInstanceValue (evalResult, index, primaryList, globalContext, *arrayVal.GetStruct());
         }
     else
         return ExprStatus_UnknownError;
