@@ -1081,6 +1081,15 @@ public:
 
 }; // ECClass
 
+//! Used to define how the relationship OrderId is handled.
+//! @ingroup ECObjectsGroup
+enum OrderIdStorageMode: UInt8
+    {
+    ORDERIDSTORAGEMODE_None                     = 0,
+    ORDERIDSTORAGEMODE_ProvidedByPersistence    = 1,         
+    ORDERIDSTORAGEMODE_ProvidedByClient         = 2,
+    };
+
 //! Used to define which end of the relationship, source or target
 //! @ingroup ECObjectsGroup
 enum ECRelationshipEnd 
@@ -1263,11 +1272,19 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECClassCR classConstraint);
 
     //! Returns the classes applied to the constraint.
-    ECOBJECTS_EXPORT const ECConstraintClassesList& GetClasses() const;
+    ECOBJECTS_EXPORT const                      ECConstraintClassesList& GetClasses() const;
 
     //! Copies this constraint to the destination
     ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
 
+    //! Returns whether the relationship is ordered on this constraint.
+    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
+
+    //! Returns the storage mode of the OrderId for this contraint.
+    ECOBJECTS_EXPORT OrderIdStorageMode         GetOrderIdStorageMode () const;
+
+    //! Gets the name of the OrderId property for this constraint.
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName)  const;
 };
 
 //=======================================================================================
@@ -1694,6 +1711,7 @@ public:
     ECOBJECTS_EXPORT int     GetCount(); //!< Returns the number of schemas currently in the cache
     ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
+    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
 };
 
 
