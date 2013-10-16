@@ -27,6 +27,39 @@ using namespace std;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ExpressionTests : ECTestFixture
     {
+    virtual void        PublishSymbols (SymbolExpressionContextR context) { }
+
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, IECInstanceR instance)
+        {
+        InstanceExpressionContextPtr context = InstanceExpressionContext::Create (NULL);
+        context->SetInstance (instance);
+        return EvaluateExpression (result, expr, *context);
+        }
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, ECInstanceListCR instances)
+        {
+        InstanceListExpressionContextPtr context = InstanceListExpressionContext::Create (instances, NULL);
+        return EvaluateExpression (result, expr, *context);
+        }
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, InstanceListExpressionContextR context)
+        {
+        SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (NULL);
+        ContextSymbolPtr instanceSymbol = ContextSymbol::CreateContextSymbol (L"this", context);
+        symbolContext->AddSymbol (*instanceSymbol);
+
+        PublishSymbols (*symbolContext);
+
+        NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
+        EXPECT_NOT_NULL (tree.get());
+
+        return tree->GetValue (result, *symbolContext, true, true);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct RoundtripExpressionTests : ExpressionTests
+    {
     void        Roundtrip (WCharCP inExpr, WCharCP expectedExpr)
         {
         NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (inExpr);
@@ -38,26 +71,12 @@ struct ExpressionTests : ECTestFixture
             << "Expected: " << expectedExpr << "\n"
             << "Actual:   " << roundtrippedExpr.c_str();
         }
-
-    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, IECInstanceR instance)
-        {
-        InstanceExpressionContextPtr context = InstanceExpressionContext::Create (NULL);
-        context->SetInstance (instance);
-        SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (NULL);
-        ContextSymbolPtr instanceSymbol = ContextSymbol::CreateContextSymbol (L"this", *context);
-        symbolContext->AddSymbol (*instanceSymbol);
-
-        NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
-        EXPECT_NOT_NULL (tree.get());
-
-        return tree->GetValue (result, *symbolContext, true, true);
-        }
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ExpressionTests, Roundtrip)
+TEST_F (RoundtripExpressionTests, Roundtrip)
     {
     Roundtrip (L"1 + 2 * 3 / 4 + 5 - 6 ^ 7 + -8 / -9 + +10", L"1+2*3/4+5-6^7+-8/-9++10");
     Roundtrip (L"this.Property", L"this.Property");
@@ -83,12 +102,41 @@ TEST_F (ExpressionTests, Roundtrip)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ExpressionSchemaTests : ExpressionTests
+struct InstanceExpressionTests : ExpressionTests
     {
 protected:
     ECSchemaPtr         m_schema;
 public:
-    static WString      GetTestSchemaXMLString ()
+    virtual WString     GetTestSchemaXMLString () = 0;
+
+    ECSchemaR           GetSchema()
+        {
+        if (m_schema.IsNull())
+            {
+            WString schemaXMLString = GetTestSchemaXMLString ();
+            ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+            EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
+            }
+
+        return *m_schema;
+        }
+    IECInstancePtr      CreateInstance (WCharCP classname)
+        {
+        return CreateInstance (classname, GetSchema());
+        }
+    static IECInstancePtr CreateInstance (WCharCP classname, ECSchemaCR schema)
+        {
+        ECClassCP ecClass = schema.GetClassCP (classname);
+        return NULL != ecClass ? ecClass->GetDefaultStandaloneEnabler()->CreateInstance() : NULL;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct FullyQualifiedExpressionTests : InstanceExpressionTests
+    {
+    virtual WString GetTestSchemaXMLString() override
         {
         wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                         L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -107,23 +155,6 @@ public:
 
         return fmt;
         }
-
-    ECSchemaR           GetSchema()
-        {
-        if (m_schema.IsNull())
-            {
-            WString schemaXMLString = GetTestSchemaXMLString ();
-            ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
-            EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
-            }
-
-        return *m_schema;
-        }
-    IECInstancePtr      CreateInstance (WCharCP classname)
-        {
-        ECClassCP ecClass = GetSchema().GetClassCP (classname);
-        return NULL != ecClass ? ecClass->GetDefaultStandaloneEnabler()->CreateInstance() : NULL;
-        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,7 +164,7 @@ public:
 * specified class, even if that instance has a property matching AccessString.
 * @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ExpressionSchemaTests, FullyQualifiedAccessors)
+TEST_F (FullyQualifiedExpressionTests, FullyQualifiedAccessors)
     {
     IECInstancePtr A = CreateInstance (L"ClassA"),
                    B = CreateInstance (L"ClassB"),
@@ -152,6 +183,257 @@ TEST_F (ExpressionSchemaTests, FullyQualifiedAccessors)
     EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::DerivesFromA::p", *ADerived));
     // ClassA contains 'p' but we have specified a subclass - should not find it
     EXPECT_ERROR (EvaluateExpression (result, L"this.TestSchema::DerivesFromA::p", *A));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct InstanceListExpressionTests : InstanceExpressionTests
+    {
+    virtual WString GetTestSchemaXMLString() override
+        {
+        return      L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    L"    <ECClass typeName=\"Struct1\" isStruct=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"Ints\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"Int\" typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"Struct2\" isStruct=\"True\">"
+                    L"        <ECArrayProperty propertyName=\"Structs\" typeName=\"Struct1\" isStruct=\"True\" />"
+                    L"        <ECStructProperty propertyName=\"Struct\" typeName=\"Struct1\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
+                    L"        <ECStructProperty propertyName=\"Struct\" typeName=\"Struct2\" />"
+                    L"        <ECArrayProperty propertyName=\"Structs\" typeName=\"Struct2\" isStruct=\"True\" />"
+                    L"        <ECProperty propertyName=\"Int\" typeName=\"int\" />"
+                    L"        <ECArrayProperty propertyName=\"Ints\" typeName=\"int\" />"
+                    L"        <ECProperty propertyName=\"String\" typeName=\"string\" />"
+                    L"    </ECClass>"
+                    L"    <ECClass typeName=\"DerivedA\" isDomainClass=\"True\">"
+                    L"        <BaseClass>ClassA</BaseClass>"
+                    L"        <ECProperty propertyName=\"DerivedInt\" typeName=\"int\" />"
+                    L"    </ECClass>"
+                    L"</ECSchema>";
+        }
+
+    void    AddArrayElement (IECInstanceR instance, WCharCP accessString, ECValueCR entryVal)
+        {
+        ECValue arrayVal;
+        EXPECT_SUCCESS (instance.GetValue (arrayVal, accessString));
+        UInt32 index = arrayVal.GetArrayInfo().GetCount();
+        EXPECT_SUCCESS (instance.AddArrayElements (accessString, 1));
+        EXPECT_SUCCESS (instance.SetValue (accessString, entryVal, index));
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Test that the logic for evaluating property values in context of instance list behaves
+* as expected for complex expressions involving embedded structs and nested struct arrays.
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (InstanceListExpressionTests, ComplexExpressions)
+    {
+    IECInstancePtr s1 = CreateInstance (L"Struct1");
+    AddArrayElement (*s1, L"Ints", ECValue (1));
+    s1->SetValue (L"Int", ECValue (2));
+
+    ECValue v;
+    IECInstancePtr s2 = CreateInstance (L"Struct2");
+    s2->SetValue (L"Struct.Int", ECValue (3));
+    AddArrayElement (*s2, L"Struct.Ints", ECValue (4));
+
+    v.SetStruct (s1.get());
+    AddArrayElement (*s2, L"Structs", v);
+
+    IECInstancePtr a = CreateInstance (L"ClassA");
+    a->SetValue (L"Int", ECValue (5));
+    AddArrayElement (*a, L"Ints", ECValue (6));
+    
+    v.SetStruct (s2.get());
+    AddArrayElement (*a, L"Structs", v);
+
+    s1 = CreateInstance (L"Struct1");
+    AddArrayElement (*s1, L"Ints", ECValue (7));
+    s1->SetValue (L"Int", ECValue (8));
+
+    v.SetStruct (s1.get());
+    AddArrayElement (*a, L"Struct.Structs", v);
+
+    a->SetValue (L"Struct.Struct.Int", ECValue (9));
+    AddArrayElement (*a, L"Struct.Struct.Ints", ECValue (10));
+
+    static WCharCP  s_expressions[10] =
+        {
+        L"this.Structs[0].Structs[0].Ints[0]",
+        L"this.Structs[0].Structs[0].Int",
+        L"this.Structs[0].Struct.Int",
+        L"this.Structs[0].Struct.Ints[0]",
+        L"this.Int",
+        L"this.Ints[0]",
+        L"this.Struct.Structs[0].Ints[0]",
+        L"this.Struct.Structs[0].Int",
+        L"this.Struct.Struct.Int",
+        L"this.Struct.Struct.Ints[0]"
+        };
+
+    for (size_t i = 0; i < _countof(s_expressions); i++)
+        {
+        WCharCP expr = s_expressions[i];
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr, *a);
+        EXPECT_SUCCESS (status);
+        if (ExprStatus_Success != status)
+            continue;
+
+        EXPECT_TRUE (result.IsECValue());
+        EXPECT_EQ (result.GetECValue()->GetInteger(), (Int32)i+1);
+        }
+
+#ifdef NEEDSWORK_COMPLEX_ACCESS_STRINGS
+    // Doesn't work for expressions like 'this["Struct.Member"]'
+    static WCharCP s_bracketExpressions[10] =
+        {
+        L"this[\"Structs\"][0][\"Structs\"][0][\"Ints\"][0]",
+        L"this[\"Structs\"][0][\"Structs\"][0][\"Int\"]",
+        L"this[\"Structs\"][0][\"Struct.Int\"]",
+        L"this[\"Structs\"][0][\"Struct.Ints\"][0]",
+        L"this[\"Int\"]",
+        L"this[\"Ints\"][0]",
+        L"this[\"Struct.Structs\"][0][\"Ints\"][0]",
+        L"this[\"Struct.Structs\"][0][\"Int\"]",
+        L"this[\"Struct.Struct.Int\"]",
+        L"this[\"Struct.Struct.Ints\"][0]"
+        };
+
+    for (size_t i = 0; i < _countof(s_bracketExpressions); i++)
+        {
+        WCharCP expr = s_bracketExpressions[i];
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr, *a);
+        EXPECT_SUCCESS (status);
+        if (ExprStatus_Success != status)
+            continue;
+
+        EXPECT_TRUE (result.IsECValue());
+        EXPECT_EQ (result.GetECValue()->GetInteger(), (Int32)i+1);
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* In a case where two instances in the list can satisfy a property accessor, the value is
+* obtained from the first matching instance found.
+* Nobody should write expressions that rely on this behavior but we do want to test that
+* it behaves as expected.
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (InstanceListExpressionTests, FirstMatchWins)
+    {
+    IECInstancePtr a1 = CreateInstance(L"ClassA");
+    a1->SetValue (L"Int", ECValue (1));
+    IECInstancePtr a2 = CreateInstance (L"ClassA");
+    a2->SetValue (L"Int", ECValue (2));
+
+    ECInstanceList instances;
+    instances.push_back (a1);
+    instances.push_back (a2);
+
+    EvaluationResult result;
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.Int", instances));
+    EXPECT_TRUE (result.IsECValue());
+    EXPECT_EQ (result.GetECValue()->GetInteger(), 1);
+
+    instances.clear();
+    instances.push_back (a2);
+    instances.push_back (a1);
+
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.Int", instances));
+    EXPECT_TRUE (result.IsECValue());
+    EXPECT_EQ (result.GetECValue()->GetInteger(), 2);
+
+    // using fully-qualified property names can help resolve the correct instance
+    IECInstancePtr s1 = CreateInstance (L"Struct1");
+    s1->SetValue (L"Int", ECValue (3));
+
+    instances.clear();
+    instances.push_back (s1);
+    instances.push_back (a1);
+
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::ClassA::Int", instances));
+    EXPECT_EQ (result.GetECValue()->GetInteger(), 1);
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::Struct1::Int", instances));
+    EXPECT_EQ (result.GetECValue()->GetInteger(), 3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct MethodsReturningInstancesTests : InstanceListExpressionTests
+    {
+    static ECSchemaP        s_schema;
+
+    virtual void PublishSymbols (SymbolExpressionContextR context)
+        {
+        // NEEDSWORK? Cannot invoke methods on instance lists returned by static methods, only by instance methods...doesn't seem right...
+        context.AddSymbol (*MethodSymbol::Create (L"CreateInstanceA", NULL, &CreateInstanceA));
+        context.AddSymbol (*MethodSymbol::Create (L"CreateInstancesA", NULL, &CreateInstancesA));
+        }
+
+    static ExpressionStatus     CreateInstanceA (EvaluationResultR result, ECInstanceListCR, EvaluationResultVector& args)
+        {
+        IECInstancePtr instance = CreateInstance (L"ClassA", *s_schema);
+        instance->SetValue (L"String", ECValue (L"A"));
+        result.SetInstance (*instance);
+        return ExprStatus_Success;
+        }
+    static ExpressionStatus     CreateInstancesA (EvaluationResultR result, ECInstanceListCR, EvaluationResultVector& args)
+        {
+        ECInstanceList instances;
+        IECInstancePtr a = CreateInstance (L"ClassA", *s_schema);
+        a->SetValue (L"String", ECValue (L"A1"));
+        instances.push_back (a);
+
+        a = CreateInstance (L"DerivedA", *s_schema);
+        a->SetValue (L"String", ECValue (L"A2"));
+        a->SetValue (L"DerivedInt", ECValue (2));
+        instances.push_back (a);
+
+        result.SetInstanceList (instances, true);
+        return ExprStatus_Success;
+        }
+    };
+
+ECSchemaP MethodsReturningInstancesTests::s_schema = NULL;
+
+/*---------------------------------------------------------------------------------**//**
+* An ECExpression method can return 1 or multiple instances. Test both.
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (MethodsReturningInstancesTests, InstanceMethods)
+    {
+    s_schema = &GetSchema();
+    IECInstancePtr dummy = CreateInstance (L"ClassA");
+
+    EvaluationResult result;
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.CreateInstanceA()", *dummy));
+    EXPECT_TRUE (result.IsInstanceList());
+    EXPECT_EQ (1, result.GetInstanceList()->size());
+
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.CreateInstancesA()", *dummy));
+    EXPECT_TRUE (result.IsInstanceList());
+    EXPECT_EQ (2, result.GetInstanceList()->size());
+
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.CreateInstanceA().String", *dummy));
+    EXPECT_TRUE (result.IsECValue());
+    EXPECT_EQ (0, wcscmp (result.GetECValue()->GetString(), L"A"));
+
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.CreateInstancesA()[\"String\"]", *dummy));
+    EXPECT_TRUE (result.IsECValue());
+    EXPECT_EQ (0, wcscmp (result.GetECValue()->GetString(), L"A1"));
+
+    EXPECT_SUCCESS (EvaluateExpression (result, L"this.CreateInstancesA().DerivedInt", *dummy));
+    EXPECT_TRUE (result.IsECValue());
+    EXPECT_EQ (result.GetECValue()->GetInteger(), 2);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

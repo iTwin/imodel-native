@@ -963,7 +963,7 @@ public:
     static CallNodePtr      Create(ArgumentTreeNodeR arguments, wchar_t const*methodName, bool dotted)
                                     { return new CallNode(arguments, methodName, dotted); }
 
-    ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, EvaluationResultCR instanceData, ExpressionContextR context);
+    ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, ExpressionContextR context);
 
