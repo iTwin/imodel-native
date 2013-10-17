@@ -123,6 +123,7 @@
 #define SORTING_RULE_XML_NODE_NAME                                                    "SortingRule"
 #define SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING                                      "SortAscending"
 #define SORTING_RULE_XML_ATTRIBUTE_DONOTSORT                                          "DoNotSort"
+#define SORTING_RULE_XML_ATTRIBUTE_ISPOLYMORPHIC                                      "IsPolymorphic"
 
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"
