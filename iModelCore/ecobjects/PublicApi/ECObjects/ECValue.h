@@ -517,10 +517,10 @@ public:
 
     //! Gets the struct instance of this ECValue, if the ECValue holds a struct
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
-    //!Sets the specified struct instance in the ECValue. 
-    //! \Note ECValue doesn't create a copy of \p structInstance. Its ref-count is incremented by this method though.
-    //!@param[in] structInstance struct instance to set in the ECValue
-    //!@return SUCCESS or ERROR
+    //! Sets the specified struct instance in the ECValue. 
+    //! @note ECValue doesn't create a copy of \p structInstance. Its ref-count is incremented by this method though.
+    //! @param[in] structInstance struct instance to set in the ECValue
+    //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
 
     //! Gets the DateTime value.
