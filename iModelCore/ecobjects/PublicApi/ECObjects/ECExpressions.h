@@ -8,9 +8,9 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
 
-//#include "ECInstanceIterable.h"
+#include "ECInstanceIterable.h"
+#include "ECInstance.h"
 
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
@@ -38,8 +38,8 @@ EXPR_TYPEDEFS(ExpressionResolver)
 EXPR_TYPEDEFS(ExpressionType)
 EXPR_TYPEDEFS(IdentNode)
 EXPR_TYPEDEFS(IIfNode)
-EXPR_TYPEDEFS(InstanceExpressionContext)
 EXPR_TYPEDEFS(InstanceListExpressionContext)
+EXPR_TYPEDEFS(InstanceExpressionContext)
 EXPR_TYPEDEFS(LBracketNode)
 EXPR_TYPEDEFS(Lexer)
 EXPR_TYPEDEFS(LogicalNode)
@@ -71,8 +71,8 @@ typedef RefCountedPtr<ErrorNode>                    ErrorNodePtr;
 typedef RefCountedPtr<ExpressionType>               ExpressionTypePtr;
 typedef RefCountedPtr<ExpressionContext>            ExpressionContextPtr;
 typedef RefCountedPtr<IdentNode>                    IdentNodePtr;
-typedef RefCountedPtr<InstanceExpressionContext>    InstanceExpressionContextPtr;
 typedef RefCountedPtr<InstanceListExpressionContext> InstanceListExpressionContextPtr;
+typedef RefCountedPtr<InstanceExpressionContext>    InstanceExpressionContextPtr;
 typedef RefCountedPtr<LBracketNode>                 LBracketNodePtr;
 typedef RefCountedPtr<Lexer>                        LexerPtr;
 typedef RefCountedPtr<MethodReference>              MethodReferencePtr;
@@ -108,7 +108,7 @@ enum ExpressionStatus
     ExprStatus_UnknownSymbol        =   6, //!< Returned when the symbol in the expression cannot be resolved
     ExprStatus_DotNotSupported      =   7,
 
-    //  Returning ExprStatus_NotImpl in base methods is the lazy approach for methods that should be
+    //  Returning ExprStatus_NotImpl in base methods is the lazy approach for methods that should be 
     //  pure virtual.  Should be eliminated after prototyping phase is done
     ExprStatus_NotImpl              =   8,
 
@@ -127,9 +127,10 @@ enum ExpressionStatus
 
 enum ValueType
     {
-    ValType_None        =  0,
-    ValType_ECValue     =  1,
-    ValType_Custom      =  2,
+    ValType_None            =  0,
+    ValType_ECValue         =  1,
+    ValType_Custom          =  2,
+    ValType_InstanceList    = 3,
     };
 
 enum UnitsOrder
@@ -156,7 +157,7 @@ enum            ResultCategory
     Result_PrimitiveProperty,
     Result_ArrayProperty,
     Result_StructProperty,
-    Result_InstanceSymbol,
+    Result_InstanceListSymbol,
     Result_ClassBinder,                         //  Should only be found in bind phase
     Result_PointMember,
     Result_StaticMethod,
@@ -167,14 +168,14 @@ enum            ResultCategory
 /*__PUBLISH_SECTION_START__*/
 
 typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, EvaluationResultVector& arguments);
-typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalResult, EvaluationResultCR instanceData, EvaluationResultVector& arguments);
+typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalResult, ECInstanceListCR instanceList, EvaluationResultVector& arguments);
 
 /*__PUBLISH_SECTION_END__*/
 
 /*=================================================================================**//**
 *
 * This is result of _GetMethodReference. It is used to invoke a method. If the method
-* is an instance method, the MethodReference holds a reference to the instance used to
+* is an instance method, the MethodReference holds a reference to the instance used to 
 * invoke the method. That is not supplied on a subsequent call to invoke.
 *
 +===============+===============+===============+===============+===============+======*/
@@ -184,7 +185,7 @@ protected:
                                 MethodReference() {}
     virtual bool                _CanReuseResult ()               { return false; }
     virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
-    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, EvaluationResultCR instanceData, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
+    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
     virtual bool                _SupportsStaticMethodCall () const = 0;
     virtual bool                _SupportsInstanceMethodCall () const = 0;
 
@@ -193,15 +194,15 @@ public:
     bool                        SupportsInstanceMethodCall () const { return _SupportsInstanceMethodCall(); }
 
     bool                        CanReuseResult()                { return _CanReuseResult(); }
-    ExpressionStatus            InvokeStaticMethod (EvaluationResult& evalResult, EvaluationResultVector& arguments)
+    ExpressionStatus            InvokeStaticMethod (EvaluationResult& evalResult, EvaluationResultVector& arguments) 
                                             { return _InvokeStaticMethod(evalResult, arguments); }
-    ExpressionStatus            InvokeInstanceMethod (EvaluationResult& evalResult, EvaluationResultCR instanceData, EvaluationResultVector& arguments)
+    ExpressionStatus            InvokeInstanceMethod (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) 
                                             { return _InvokeInstanceMethod(evalResult, instanceData, arguments); }
 }; // MethodReference
 
 /*=================================================================================**//**
 *
-* This is result of _GetMethodReference. It is used to invoke a method.
+* This is result of _GetMethodReference. It is used to invoke a method. 
 *
 +===============+===============+===============+===============+===============+======*/
 struct          MethodReferenceStandard : MethodReference
@@ -215,11 +216,11 @@ protected:
     virtual bool                _SupportsStaticMethodCall () const override { return NULL != m_staticMethod; }
     virtual bool                _SupportsInstanceMethodCall () const override { return NULL != m_instanceMethod; }
 
-    //  The vector of arguments does not include the object used to invoke the method. It is
+    //  The vector of arguments does not include the object used to invoke the method. It is 
     //  up to the specific implementation of MethodReference to hold onto the instance and to use
     //  that to invoke the method.
     virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
-    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, EvaluationResultCR instanceData, EvaluationResultVector& arguments) override;
+    virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) override;
 public:
 
     static MethodReferencePtr   Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
@@ -255,7 +256,7 @@ public:
 
     bool                        IsNamespace () const  { return _IsNamespace(); }
     ExpressionContextP          GetOuterP () const   { return m_outer.get(); }
-    ExpressionStatus            ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary)
+    ExpressionStatus            ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) 
                                     { return _ResolveMethod(result, ident, useOuterIfNecessary); }
 
     ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex = 0)
@@ -265,8 +266,6 @@ public:
 
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
     //! By default, property values obtained from IECInstances are subject to type conversion. The ConvertToExpressionType() method of
     //! the IECTypeAdapter associated with the ECProperty will be called to perform conversion.
@@ -280,33 +279,6 @@ public:
 }; // End of class ExpressionContext
 
 /*=================================================================================**//**
-* A context in which an IECInstance provides the context for expression evaluation.
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
-struct          InstanceExpressionContext : ExpressionContext
-{
-/*__PUBLISH_SECTION_END__*/
-
-private:
-    ECN::IECInstancePtr          m_instance;
-
-protected:
-
-                                InstanceExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
-    virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-
-public:
-    ECN::ECEnablerCR             GetEnabler() { return m_instance->GetEnabler(); }
-    ECN::IECInstanceP            GetInstanceP() { return m_instance.get(); }
-/*__PUBLISH_SECTION_START__*/
-public:
-    ECOBJECTS_EXPORT ECN::IECInstanceCP          GetInstanceCP() const; //!< Returns the IECInstance that is the context of this expression
-    ECOBJECTS_EXPORT void                        SetInstance(ECN::IECInstanceCR instance); //!< Sets the instance that is used as the context for this expression
-    ECOBJECTS_EXPORT static InstanceExpressionContextPtr Create(ExpressionContextP outer); //!< Creates a new InstanceExpressionContext from the supplied ExpressionContext
-}; // End of class InstanceExpressionContext
-
-/*=================================================================================**//**
 * A context in which multiple IECInstances provide the context for expression evaluation
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
@@ -314,32 +286,52 @@ struct          InstanceListExpressionContext : ExpressionContext
     {
 /*__PUBLISH_SECTION_END__*/
 private:
-    bvector<InstanceExpressionContextPtr>                   m_instances;
-    bool                                                    m_initialized;
+    ECInstanceList              m_instances;
+    bool                        m_initialized;
 
-    InstanceListExpressionContext (bvector<IECInstancePtr> const& instances);
+    InstanceListExpressionContext (ECInstanceListCR instances, ExpressionContextP outer = NULL);
 
     void                                        Initialize();
-    void                                        Initialize (bvector<IECInstancePtr> const& instances);
 
-                     virtual bool               _IsNamespace() const override { return true; }
+    ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance);
+    ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList);
+
     ECOBJECTS_EXPORT virtual ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
     ECOBJECTS_EXPORT virtual ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus   _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
+
+    ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex, IECInstanceCR instance);
 protected:
     // The following protected methods are only relevant to derived classes, which may want to:
     //  -lazily load the instance list, and/or
     //  -Reuse the context for differing lists of instances
-    ECOBJECTS_EXPORT InstanceListExpressionContext();
+    ECOBJECTS_EXPORT InstanceListExpressionContext (ExpressionContextP outer = NULL);
 
-    virtual void                                _GetInstances (bvector<IECInstancePtr>& instances) { }
+    virtual void                                _GetInstances (ECInstanceListR instances) { }
 
     bool                                        IsInitialized() const { return m_initialized; }
     void                                        Reset() { m_instances.clear(); m_initialized = false; }
+    void                                        SetInstanceList (ECInstanceListCR instances) { m_instances = instances; m_initialized = true; }
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new InstanceListExpressionContext from the list of IECInstances
-    ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances);
+    ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances, ExpressionContextP outer = NULL);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* An InstanceListExpressionContext which simply wraps one or more IECInstances.
+* @bsistruct                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct InstanceExpressionContext : InstanceListExpressionContext
+    {
+//__PUBLISH_SECTION_END__
+private:
+    InstanceExpressionContext (ExpressionContextP outer) : InstanceListExpressionContext (outer) { }
+//__PUBLISH_SECTION_START__
+public:
+    ECOBJECTS_EXPORT static InstanceExpressionContextPtr        Create (ExpressionContextP outer = NULL);
+    
+    ECOBJECTS_EXPORT void           SetInstance (IECInstanceCR instance);
+    ECOBJECTS_EXPORT void           SetInstances (ECInstanceListCR instances);
     };
 
 /*=================================================================================**//**
@@ -425,7 +417,7 @@ struct          ContextSymbol : Symbol
 protected:
     ExpressionContextPtr        m_context;
 
-                ContextSymbol (wchar_t const* name, ExpressionContextR context)
+                ContextSymbol (wchar_t const* name, ExpressionContextR context) 
                                     : Symbol(name), m_context(&context) {}
 
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
@@ -455,10 +447,10 @@ protected:
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
     virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
                                                 { return ExprStatus_NeedsLValue; }
-    virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const
-        {
+    virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     
+        { 
         result = m_methodReference.get();
-        return ExprStatus_Success;
+        return ExprStatus_Success; 
         }
 
                 MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
@@ -617,7 +609,7 @@ private:
     ECN::ValueKind       m_valueKind;
     ECN::PrimitiveType   m_primitiveType;
     ECN::ArrayKind       m_arrayKind;    //  Relevant only if m_valueKind == VALUEKIND_Array
-    ECN::ECClassCP       m_structClass;  //  Relevant if m_valueKind == VALUEKIND_Struct or
+    ECN::ECClassCP       m_structClass;  //  Relevant if m_valueKind == VALUEKIND_Struct or 
                                         //  m_valueKind == VALUEKIND_Array and m_arrayKind == ARRAYKIND_Struct
 private:
     void                Init();
@@ -632,7 +624,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct          ReferenceResult
+struct          ReferenceResult 
 {
     ECN::ECPropertyCP    m_property;
     WString             m_accessString;
@@ -643,31 +635,40 @@ struct          ReferenceResult
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct          EvaluationResult
+struct          EvaluationResult 
 {
 private:
 //  Provides a list of conditions for which the shortcuts or bindings are valid
-    ValueType   m_valueType;
-    UnitsOrder  m_unitsOrder;
-    ECN::ECValue m_ecValue;
-
+    ECN::ECValue        m_ecValue;
+    ECInstanceListCP    m_instanceList;
+    bool                m_ownsInstanceList;
+    ValueType           m_valueType;
+    UnitsOrder          m_unitsOrder;
 public:
+    ValueType           GetValueType() const { return m_valueType; }
+    bool                IsInstanceList() const { return ValType_InstanceList == m_valueType; }
+    bool                IsECValue() const   { return ValType_ECValue == m_valueType; }
 
-    ExpressionStatus        GetInteger(Int32& result);
-    ExpressionStatus        GetBoolean(bool& result, bool requireBoolean = true);
+    ExpressionStatus    GetInteger(Int32& result);
+    ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
 
     //  Constructors and destructors
     ECOBJECTS_EXPORT EvaluationResult ();
     ECOBJECTS_EXPORT ~EvaluationResult ();
     ECOBJECTS_EXPORT EvaluationResult(EvaluationResultCR rhs);
 
-    ECOBJECTS_EXPORT EvaluationResultR operator=(EvaluationResultCR rhs);
-    void                    Clear();
+    ECOBJECTS_EXPORT void               Clear();
+    ECOBJECTS_EXPORT EvaluationResultR  operator=(EvaluationResultCR rhs);
+    ECOBJECTS_EXPORT EvaluationResultR  operator= (ECN::ECValueCR rhs);
 
-    ECOBJECTS_EXPORT ECN::ECValueR            GetECValueR();
-    ECOBJECTS_EXPORT ExpressionStatus        GetECValue(ECN::ECValueR result);
-    ECOBJECTS_EXPORT ECN::ECValueCR           GetECValue() const;
-    ECOBJECTS_EXPORT EvaluationResultR       operator= (ECN::ECValueCR rhs);
+    ECOBJECTS_EXPORT ExpressionStatus       GetECValue(ECN::ECValueR result);
+    ECOBJECTS_EXPORT ECValueP               GetECValue();
+    ECOBJECTS_EXPORT ECValueCP              GetECValue() const;
+    ECOBJECTS_EXPORT ECValueR               InitECValue();
+
+    ECOBJECTS_EXPORT ECInstanceListCP       GetInstanceList() const;
+    ECOBJECTS_EXPORT void                   SetInstanceList (ECInstanceListCR instanceList, bool makeACopy);
+    ECOBJECTS_EXPORT void                   SetInstance (IECInstanceCR instance);
     };
 
 /*__PUBLISH_SECTION_START__*/
@@ -675,7 +676,7 @@ public:
 /*=================================================================================**//**
 *
 +===============+===============+===============+===============+===============+======*/
-struct          NodeVisitor
+struct          NodeVisitor 
 {
     virtual     ~NodeVisitor() {}
     virtual bool OpenParens() = 0;
@@ -754,7 +755,7 @@ public:
 };
 
 /*=================================================================================**//**
-*
+* 
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionResolver : RefCountedBase
@@ -793,13 +794,13 @@ struct          Node : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    bool                m_inParens;  //  Only used for ToString
+    bool                m_inParens;  //  Only used for ToString    
 protected:
                         Node () { m_inParens = false; }
     virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
     virtual WString     _ToString() const = 0;
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context,
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides)
         { return ExprStatus_NotImpl; }
 
@@ -863,11 +864,9 @@ public:
 
     //  Add nodes for Where, Property, Relationship, ConstantSets, Filters
 
-    ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context,
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides);
 
-// constructors are hidden from published API -> make it abstract in the published API
-//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Tries to generate a resolved tree.
@@ -876,7 +875,7 @@ public:
     ECOBJECTS_EXPORT ResolvedTypeNodePtr  GetResolvedTree(ExpressionResolverR context);
 
     //! Returns the value of this expression node using the supplied context
-    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context,
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
                                         bool allowUnknown, bool allowOverrides);
 
     //!  Traverses in parse order
@@ -890,8 +889,6 @@ public:
 };  //  End of struct Node
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/// @endcond BENTLEY_SDK_Desktop
 
 /*__PUBLISH_SECTION_END__*/
 

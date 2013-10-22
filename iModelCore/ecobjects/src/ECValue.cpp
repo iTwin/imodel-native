@@ -2089,24 +2089,25 @@ void                                            ECValueAccessor::PushLocation (I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, WCharCP accessString, int newArrayIndex)
+bool                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, WCharCP accessString, int newArrayIndex)
     {
     UInt32 propertyIndex;
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        BeAssert (false && "Could not resolve property index for this access string");
-        return;
+        //BeAssert (false && "Could not resolve property index for this access string");
+        return false;
         }
     PushLocation (newEnabler, (int)propertyIndex, newArrayIndex);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                                            ECValueAccessor::PushLocation (IECInstanceCR instance, WCharCP accessString, int newArrayIndex)
+bool                                            ECValueAccessor::PushLocation (IECInstanceCR instance, WCharCP accessString, int newArrayIndex)
     {
-    PushLocation (instance.GetEnabler(), accessString, newArrayIndex);
+    return PushLocation (instance.GetEnabler(), accessString, newArrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

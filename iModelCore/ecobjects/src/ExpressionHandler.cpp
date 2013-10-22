@@ -781,7 +781,7 @@ if (m_lexer->GetTokenType() == TOKEN_Minus)     \
 else     \
     fac = 1.0;     \
  \
-if (1 != BE_STRING_UTILITIES_SWSCANF (m_lexer->GetTokenStringCP(), L"%lg", &COORD))     \
+if (1 != BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP(), L"%lg", &COORD))     \
     return GetErrorNode (L"PointLiteralExpected");     \
 else     \
     {   \
@@ -1021,7 +1021,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 m_lexer->Advance();
                 Int64 ticks;
-                if (1 != BE_STRING_UTILITIES_SWSCANF (m_lexer->GetTokenStringCP(), L"%lld", &ticks))
+                if (1 != BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP(), L"%lld", &ticks))
                     return GetErrorNode (L"DateTimeLiteralExpected");
 
                 result = Node::CreateDateTimeLiteral (ticks);

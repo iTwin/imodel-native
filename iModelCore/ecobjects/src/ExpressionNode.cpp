@@ -30,7 +30,10 @@ static void performConcatenation(ECValueR evalResult, ECValueCR left, ECValueCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToInt32(EvaluationResultR evalResult) 
     {
-    ECN::ECValueR    ecValue = evalResult.GetECValueR();
+    if (!evalResult.IsECValue())
+        return ExprStatus_WrongType;
+
+    ECN::ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
@@ -101,7 +104,7 @@ ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult) 
     {
-    return ConvertToString(evalResult.GetECValueR());
+    return evalResult.IsECValue() ? ConvertToString(*evalResult.GetECValue()) : ExprStatus_WrongType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,7 +112,10 @@ ExpressionStatus Operations::ConvertToString(EvaluationResultR evalResult)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult) 
     {
-    ECN::ECValueR    ecValue = evalResult.GetECValueR();
+    if (!evalResult.IsECValue())
+        return ExprStatus_WrongType;
+
+    ECN::ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
@@ -143,7 +149,10 @@ ExpressionStatus Operations::ConvertToInt64(EvaluationResultR evalResult)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToDouble(EvaluationResultR evalResult) 
     {
-    ECN::ECValueR    ecValue = evalResult.GetECValueR();
+    if (!evalResult.IsECValue())
+        return ExprStatus_WrongType;
+
+    ECN::ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
@@ -248,7 +257,10 @@ ref EvaluationResultCR     ecValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::ConvertToBooleanOperand (EvaluationResultR evalResult)
     {
-    ECValueR    ecValue = evalResult.GetECValueR();
+    if (!evalResult.IsECValue())
+        return ExprStatus_WrongType;
+
+    ECValueR    ecValue = *evalResult.GetECValue();
     if (ecValue.IsNull() || !ecValue.IsPrimitive())
         return ExprStatus_WrongType;
 
@@ -426,8 +438,11 @@ ref ECEvaluationResult     ecValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::PerformArithmeticPromotion(EvaluationResult& leftResult, EvaluationResult& rightResult)
     {
-    ECN::ECValueR    left    = leftResult.GetECValueR();
-    ECN::ECValueR    right   = rightResult.GetECValueR();
+    if (!leftResult.IsECValue() || !rightResult.IsECValue())
+        return ExprStatus_PrimitiveRequired;
+
+    ECN::ECValueR    left    = *leftResult.GetECValue();
+    ECN::ECValueR    right   = *rightResult.GetECValue();
 
     if (!left.IsPrimitive() || !right.IsPrimitive() || left.IsNull() || right.IsNull())
         return ExprStatus_PrimitiveRequired;
@@ -498,26 +513,30 @@ EvaluationResultR     left,
 EvaluationResultR     right
 )
     {
-    if (!left.GetECValue().IsPrimitive() || !right.GetECValue().IsPrimitive() || left.GetECValue().IsNull() || right.GetECValue().IsNull())
+    if (!left.IsECValue() || !right.IsECValue())
+        return ExprStatus_WrongType;
+
+    ECValueR lv = *left.GetECValue(), rv = *right.GetECValue();
+    if (!lv.IsPrimitive() || !rv.IsPrimitive() || lv.IsNull() || rv.IsNull())
         return ExprStatus_WrongType;
 
     ExpressionStatus     status = ExprStatus_Success;
 
-    if (left.GetECValue().IsString())
+    if (lv.IsString())
         {
         status = ConvertStringToArithmeticOrBooleanOperand (left);
         if (ExprStatus_Success != status)
             return status;
         }
 
-    if (right.GetECValue().IsString())
+    if (rv.IsString())
         {
         status = ConvertStringToArithmeticOrBooleanOperand (right);
         if (ExprStatus_Success != status)
             return status;
         }
 
-    if (left.GetECValue().IsBoolean() || right.GetECValue().IsBoolean())
+    if (lv.IsBoolean() || rv.IsBoolean())
         {
         status = ConvertToBooleanOperand (left);
         if (ExprStatus_Success == status)
@@ -537,7 +556,10 @@ EvaluationResultR           resultOut,
 EvaluationResultR           left
 )
     {
-    ECN::ECValueR        ecLeft = left.GetECValueR();
+    if (!left.IsECValue())
+        return ExprStatus_PrimitiveRequired;
+
+    ECN::ECValueR        ecLeft = *left.GetECValue();
 
     if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
@@ -553,29 +575,32 @@ EvaluationResultR           left
         primType = ecLeft.GetPrimitiveType();
         }
 
+    ECValue v;
     switch (primType)
         {
         case PRIMITIVETYPE_Double:
             {
-            resultOut.GetECValueR().SetDouble(-left.GetECValue().GetDouble());
-            return ExprStatus_Success;
+            v.SetDouble(-left.GetECValue()->GetDouble());
+            break;
             }
 
         case PRIMITIVETYPE_Integer:
             {
-            resultOut.GetECValueR().SetInteger(-left.GetECValue().GetInteger());
-            return ExprStatus_Success;
+            v.SetInteger(-left.GetECValue()->GetInteger());
+            break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            resultOut.GetECValueR().SetLong(-left.GetECValue().GetLong());
-            return ExprStatus_Success;
+            v.SetLong(-left.GetECValue()->GetLong());
+            break;
             }
-
+        default:
+            return ExprStatus_WrongType;
         }
 
-    return ExprStatus_WrongType;
+    resultOut = v;
+    return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -587,7 +612,10 @@ EvaluationResultR           resultOut,
 EvaluationResultR           left
 )
     {
-    ECN::ECValueR        ecLeft = left.GetECValueR();
+    if (!left.IsECValue())
+        return ExprStatus_PrimitiveRequired;
+
+    ECN::ECValueR        ecLeft = *left.GetECValue();
 
     if (!ecLeft.IsPrimitive() || ecLeft.IsNull())
         return ExprStatus_IncompatibleTypes;
@@ -603,29 +631,33 @@ EvaluationResultR           left
         primType = ecLeft.GetPrimitiveType();
         }
 
+    ECValue v;
     switch (primType)
         {
         case PRIMITIVETYPE_Boolean:
             {
-            resultOut.GetECValueR().SetBoolean(!left.GetECValue().GetBoolean());
-            return ExprStatus_Success;
+            v.SetBoolean(!left.GetECValue()->GetBoolean());
+            break;
             }
 
         case PRIMITIVETYPE_Integer:
             {
-            resultOut.GetECValueR().SetInteger(~left.GetECValue().GetInteger());
-            return ExprStatus_Success;
+            v.SetInteger(~left.GetECValue()->GetInteger());
+            break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            resultOut.GetECValueR().SetLong(~left.GetECValue().GetLong());
-            return ExprStatus_Success;
+            v.SetLong(~left.GetECValue()->GetLong());
+            break;
             }
 
+        default:
+            return ExprStatus_WrongType;
         }
 
-    return ExprStatus_WrongType;
+    resultOut = v;
+    return ExprStatus_Success;
     }
 
 //  TODO Can we apply this to arrays? strings?
@@ -646,61 +678,68 @@ EvaluationResultR         right
     if (ExprStatus_Success != status)
         return status;
 
-    if (!left.GetECValue().IsPrimitive())
+    if (!left.IsECValue() || !left.GetECValue()->IsPrimitive())
         return ExprStatus_WrongType;
 
-    ECN::PrimitiveType   primType = left.GetECValue().GetPrimitiveType();
-    int                 count = right.GetECValue().GetInteger();
+    ECN::PrimitiveType   primType = left.GetECValue()->GetPrimitiveType();
+    int                 count = right.GetECValue()->GetInteger();
 
     //  If string, we may want to try to convert to int.
+    ECValue v;
     switch (primType)
         {
         case PRIMITIVETYPE_Integer:
             {
-            int     value = left.GetECValue().GetInteger();
+            int     value = left.GetECValue()->GetInteger();
             if (shiftOp == TOKEN_ShiftLeft)
                 {
-                resultOut.GetECValueR().SetInteger(value << count);
-                return ExprStatus_Success;
+                v.SetInteger(value << count);
+                break;
                 }
             else if (shiftOp == TOKEN_ShiftRight)
                 {
-                resultOut.GetECValueR().SetInteger(value >> count);
-                return ExprStatus_Success;
+                v.SetInteger(value >> count);
+                break;
                 }
             else if (shiftOp == TOKEN_UnsignedShiftRight)
                 {
                 UInt32  uvalue = (UInt32)value;
-                resultOut.GetECValueR().SetInteger((int)(uvalue >> count));
-                return ExprStatus_Success;
+                v.SetInteger((int)(uvalue >> count));
+                break;
                 }
             }
             break;
 
         case PRIMITIVETYPE_Long:
             {
-            Int64         value = left.GetECValue().GetInteger();
+            Int64         value = left.GetECValue()->GetInteger();
             if (shiftOp == TOKEN_ShiftLeft)
                 {
-                resultOut.GetECValueR().SetLong(value << count);
-                return ExprStatus_Success;
+                v.SetLong(value << count);
+                break;
                 }
             else if (shiftOp == TOKEN_ShiftRight)
                 {
-                resultOut.GetECValueR().SetLong(value >> count);
-                return ExprStatus_Success;
+                v.SetLong(value >> count);
+                break;
                 }
             else if (shiftOp == TOKEN_UnsignedShiftRight)
                 {
                 UInt64  uvalue = (UInt64)value;
-                resultOut.GetECValueR().SetLong((Int64)(uvalue >> count));
-                return ExprStatus_Success;
+                v.SetLong((Int64)(uvalue >> count));
+                break;
                 }
             }
             break;
         }
 
-    return ExprStatus_WrongType;
+    if (!v.IsNull())
+        {
+        resultOut = v;
+        return ExprStatus_Success;
+        }
+    else
+        return ExprStatus_WrongType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -718,30 +757,35 @@ EvaluationResultR           right
     if (ExprStatus_Success != status)
         return status;
 
-    ECN::PrimitiveType   primType = left.GetECValue().GetPrimitiveType();
+    ECN::PrimitiveType   primType = left.GetECValue()->GetPrimitiveType();
 
+    ECValue v;
     switch (primType)
         {
         case PRIMITIVETYPE_Integer:
             {
-            resultOut.GetECValueR().SetInteger(left.GetECValue().GetInteger() * right.GetECValue().GetInteger());
-            return ExprStatus_Success;
+            v.SetInteger(left.GetECValue()->GetInteger() * right.GetECValue()->GetInteger());
+            break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            resultOut.GetECValueR().SetLong(left.GetECValue().GetLong() * right.GetECValue().GetLong());
-            return ExprStatus_Success;
+            v.SetLong(left.GetECValue()->GetLong() * right.GetECValue()->GetLong());
+            break;
             }
 
         case PRIMITIVETYPE_Double:
             {
-            resultOut.GetECValueR().SetDouble(left.GetECValue().GetDouble() * right.GetECValue().GetDouble());
-            return ExprStatus_Success;
+            v.SetDouble(left.GetECValue()->GetDouble() * right.GetECValue()->GetDouble());
+            break;
             }
+
+        default:
+            return ExprStatus_WrongType;
         }
 
-    return ExprStatus_WrongType;
+    resultOut = v;
+    return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,44 +816,48 @@ EvaluationResultR           right
     if (ExprStatus_Success != status)
         return status;
 
-    switch (left.GetECValue().GetPrimitiveType())
+    ECValue v;
+    switch (left.GetECValue()->GetPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
             {
-            int     divisor = right.GetECValue().GetInteger();
+            int     divisor = right.GetECValue()->GetInteger();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
-            resultOut.GetECValueR().SetInteger(left.GetECValue().GetInteger() / divisor);
+            v.SetInteger(left.GetECValue()->GetInteger() / divisor);
 
-            return ExprStatus_Success;
+            break;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            Int64     divisor = right.GetECValue().GetLong();
+            Int64     divisor = right.GetECValue()->GetLong();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
-            resultOut.GetECValueR().SetLong(left.GetECValue().GetLong() / divisor);
+            v.SetLong(left.GetECValue()->GetLong() / divisor);
 
-            return ExprStatus_Success;
+            break;
             }
 
         case PRIMITIVETYPE_Double:
             {
-            double     divisor = right.GetECValue().GetDouble();
+            double     divisor = right.GetECValue()->GetDouble();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
-            resultOut.GetECValueR().SetDouble(floor(left.GetECValue().GetDouble() / divisor));
+            v.SetDouble(floor(left.GetECValue()->GetDouble() / divisor));
 
-            return ExprStatus_Success;
+            break;
             }
 
+        default:
+            return ExprStatus_InvalidTypesForDivision;
         }
 
-    return ExprStatus_InvalidTypesForDivision;
+    resultOut = v;
+    return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -830,11 +878,11 @@ EvaluationResultR           right
     if (ExprStatus_Success != status)
         return status;
 
-    double  divisor = right.GetECValue().GetDouble();
+    double  divisor = right.GetECValue()->GetDouble();
     if (0 == divisor)
         return ExprStatus_DivideByZero;
 
-    resultOut.GetECValueR().SetDouble(left.GetECValueR().GetDouble() / divisor);
+    resultOut = ECValue (left.GetECValue()->GetDouble() / divisor);
     return ExprStatus_Success;
     }
 
@@ -853,25 +901,25 @@ EvaluationResultR            right
     if (ExprStatus_Success != status)
         return status;
 
-    switch (left.GetECValue().GetPrimitiveType())
+    switch (left.GetECValue()->GetPrimitiveType())
         {
         case PRIMITIVETYPE_Integer:
             {
-            int     divisor = right.GetECValue().GetInteger();
+            int     divisor = right.GetECValue()->GetInteger();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
-            resultOut.GetECValueR().SetInteger(left.GetECValue().GetInteger() % divisor);
+            resultOut = ECValue (left.GetECValue()->GetInteger() % divisor);
             return ExprStatus_Success;
             }
 
         case PRIMITIVETYPE_Long:
             {
-            Int64     divisor = right.GetECValue().GetLong();
+            Int64     divisor = right.GetECValue()->GetLong();
             if (0 == divisor)
                 return ExprStatus_DivideByZero;
 
-            resultOut.GetECValueR().SetLong(left.GetECValue().GetLong() % divisor);
+            resultOut = ECValue (left.GetECValue()->GetLong() % divisor);
             return ExprStatus_Success;
             }
         }
@@ -908,39 +956,39 @@ EvaluationResultR            right
     if (ExprStatus_Success != status)
         return status;
 
-    if (left.GetECValue().IsBoolean())
+    if (left.GetECValue()->IsBoolean())
         {
         switch (junctionOperator)
             {
             case TOKEN_Or:
-                resultOut.GetECValueR().SetBoolean(left.GetECValue().GetBoolean() | right.GetECValue().GetBoolean());
+                resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() | right.GetECValue()->GetBoolean());
                 return ExprStatus_Success;
 
             case TOKEN_And:
-                resultOut.GetECValueR().SetBoolean(left.GetECValue().GetBoolean() & right.GetECValue().GetBoolean());
+                resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() & right.GetECValue()->GetBoolean());
                 return ExprStatus_Success;
 
             case TOKEN_Xor:
-                resultOut.GetECValueR().SetBoolean(left.GetECValue().GetBoolean() ^ right.GetECValue().GetBoolean());
+                resultOut.InitECValue().SetBoolean(left.GetECValue()->GetBoolean() ^ right.GetECValue()->GetBoolean());
                 return ExprStatus_Success;
             }
         }
 
-    ECN::PrimitiveType  primType = left.GetECValue().GetPrimitiveType();
+    ECN::PrimitiveType  primType = left.GetECValue()->GetPrimitiveType();
     if (PRIMITIVETYPE_Integer == primType)
         {
         switch (junctionOperator)
             {
             case TOKEN_Or:
-                resultOut.GetECValueR().SetInteger(left.GetECValue().GetInteger() | right.GetECValue().GetInteger());
+                resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() | right.GetECValue()->GetInteger());
                 return ExprStatus_Success;
 
             case TOKEN_And:
-                resultOut.GetECValueR().SetInteger(left.GetECValue().GetInteger() & right.GetECValue().GetInteger());
+                resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() & right.GetECValue()->GetInteger());
                 return ExprStatus_Success;
 
             case TOKEN_Xor:
-                resultOut.GetECValueR().SetInteger(left.GetECValue().GetInteger() ^ right.GetECValue().GetInteger());
+                resultOut.InitECValue().SetInteger(left.GetECValue()->GetInteger() ^ right.GetECValue()->GetInteger());
                 return ExprStatus_Success;
             }
         }
@@ -950,15 +998,15 @@ EvaluationResultR            right
         switch (junctionOperator)
             {
             case TOKEN_Or:
-                resultOut.GetECValueR().SetLong(left.GetECValue().GetLong() | right.GetECValue().GetLong());
+                resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() | right.GetECValue()->GetLong());
                 return ExprStatus_Success;
 
             case TOKEN_And:
-                resultOut.GetECValueR().SetLong(left.GetECValue().GetLong() & right.GetECValue().GetLong());
+                resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() & right.GetECValue()->GetLong());
                 return ExprStatus_Success;
 
             case TOKEN_Xor:
-                resultOut.GetECValueR().SetLong(left.GetECValue().GetLong() ^ right.GetECValue().GetLong());
+                resultOut.InitECValue().SetLong(left.GetECValue()->GetLong() ^ right.GetECValue()->GetLong());
                 return ExprStatus_Success;
             }
         }
@@ -987,7 +1035,7 @@ EvaluationResultR            rightValue
 
     if (boolValue)
         {
-        resultOut = leftValue.GetECValue();
+        resultOut = *leftValue.GetECValue();
         return ExprStatus_Success;
         }
 
@@ -995,7 +1043,7 @@ EvaluationResultR            rightValue
     if (ExprStatus_Success != status)
         return status;
 
-    resultOut = rightValue.GetECValue();
+    resultOut = *rightValue.GetECValue();
     return ExprStatus_Success;
     }
 
@@ -1018,7 +1066,7 @@ EvaluationResultR            rightValue
 
     if (!boolValue)
         {
-        resultOut = leftValue.GetECValue();
+        resultOut = *leftValue.GetECValue();
         return ExprStatus_Success;
         }
 
@@ -1026,37 +1074,47 @@ EvaluationResultR            rightValue
     if (ExprStatus_Success != status)
         return status;
 
-    resultOut = rightValue.GetECValue();
+    resultOut = *rightValue.GetECValue();
     return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                EvaluationResult::EvaluationResult () : 
-                        m_valueType(ValType_None), m_unitsOrder(UO_Unknown) 
+EvaluationResult::EvaluationResult()
+    : m_instanceList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
     {
+
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                EvaluationResult::~EvaluationResult () {}
+EvaluationResult::~EvaluationResult()
+    {
+    Clear();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus EvaluationResult::GetInteger(Int32& result)
     {
-#if defined (NOTNOW)
-    //  Enable this is we disable direct access to ECValue
-    //  Only we don't allow direct access to ECValue
-    if (ValType_ECValue != m_valueType)
+    if (ValType_ECValue != m_valueType || !m_ecValue.IsInteger() || m_ecValue.IsNull())
         return ExprStatus_WrongType;
-#endif
 
     result = m_ecValue.GetInteger();
     return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValueR EvaluationResult::InitECValue()
+    {
+    Clear();
+    m_valueType = ValType_ECValue;
+    return m_ecValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1064,43 +1122,48 @@ ExpressionStatus EvaluationResult::GetInteger(Int32& result)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus EvaluationResult::GetECValue(ECN::ECValueR result)
     {
-#if defined (NOTNOW)
-    //  Enable this is we disable direct access to ECValue
     if (ValType_ECValue != m_valueType)
         return ExprStatus_WrongType;
-#endif
 
     result.Clear();
     result = m_ecValue;
     return ExprStatus_Success;
     }
 
-//  Still undecided on wrapping ECValue vs. extending it.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECValueR    EvaluationResult::GetECValueR() 
+ECN::ECValueP    EvaluationResult::GetECValue() 
     { 
-    return m_ecValue; 
+    return ValType_ECValue == m_valueType ? &m_ecValue : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECValueCR   EvaluationResult::GetECValue() const 
+ECN::ECValueCP   EvaluationResult::GetECValue() const 
     { 
-    return m_ecValue; 
+    return ValType_ECValue == m_valueType ? &m_ecValue : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                EvaluationResult::EvaluationResult(EvaluationResultCR rhs)
+EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
+    : m_instanceList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
     {
-    m_ecValue.Clear();
-    m_valueType = rhs.m_valueType;
-    m_unitsOrder = rhs.m_unitsOrder;
-    m_ecValue = rhs.m_ecValue;
+    if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
+        {
+        if (!rhs.m_ownsInstanceList)
+            m_instanceList = rhs.m_instanceList;
+        else
+            {
+            m_instanceList = new ECInstanceList (*rhs.m_instanceList);
+            m_ownsInstanceList = true;
+            }
+        }
+    else if (ValType_ECValue == rhs.m_valueType)
+        m_ecValue = rhs.m_ecValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1108,10 +1171,13 @@ ECN::ECValueCR   EvaluationResult::GetECValue() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     {
-    m_ecValue.Clear();
+    Clear();
+
     m_valueType = rhs.m_valueType;
     m_unitsOrder = rhs.m_unitsOrder;
     m_ecValue = rhs.m_ecValue;
+    if (m_valueType == ValType_InstanceList)
+        SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
 
     return *this;
     }
@@ -1121,7 +1187,16 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            EvaluationResult::Clear()
     {
+    if (m_ownsInstanceList)
+        {
+        if (NULL != m_instanceList)
+            delete m_instanceList;
+
+        m_ownsInstanceList = false;
+        }
+
     m_ecValue.Clear();
+    m_instanceList = NULL;
     m_valueType = ValType_None;
     m_unitsOrder = UO_Unknown;
     }
@@ -1131,10 +1206,9 @@ void            EvaluationResult::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
     {
-#ifdef NOTNOW   //  Only we don't allow direct access to ECValue
     if (ValType_ECValue != m_valueType)
         return ExprStatus_WrongType;
-#endif
+
     if (m_ecValue.IsNull())
         {
         result = false;
@@ -1184,6 +1258,41 @@ ExpressionStatus EvaluationResult::GetBoolean(bool& result, bool requireBoolean)
     return ExprStatus_WrongType;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceListCP EvaluationResult::GetInstanceList() const
+    {
+    return ValType_InstanceList == m_valueType ? m_instanceList : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetInstance (IECInstanceCR instance)
+    {
+    Clear();
+    IECInstancePtr pInstance = const_cast<IECInstanceP>(&instance);
+    m_valueType = ValType_InstanceList;
+    m_ownsInstanceList = true;
+    m_instanceList = new ECInstanceList (1, pInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetInstanceList (ECInstanceListCR instanceList, bool makeACopy = false)
+    {
+    Clear();
+    m_valueType = ValType_InstanceList;
+    if (makeACopy)
+        {
+        m_ownsInstanceList = true;
+        m_instanceList = new ECInstanceList (instanceList);
+        }
+    else
+        m_instanceList = &instanceList;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
@@ -1373,7 +1482,7 @@ ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted
 
     size_t      origLen = wcslen(value);
     BeAssert(origLen > 1);
-    wchar_t*    buffer = (wchar_t*)_alloca(sizeof(wchar_t) *(origLen+1));
+    wchar_t*    buffer = (wchar_t*)_alloca(sizeof(*buffer) *(origLen+1));
 
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
@@ -1643,7 +1752,7 @@ ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, Ex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, EvaluationResultCR instanceData, ExpressionContextR context)
+ExpressionStatus CallNode::InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context)
     {
     MethodReferencePtr  methodReference;
 
@@ -1705,6 +1814,19 @@ ExpressionStatus AssignmentNode::PerformModifier (ExpressionToken  modifier, Eva
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static IECInstancePtr   getInstanceFromResult (EvaluationResultCR result)
+    {
+    if (result.IsInstanceList())
+        return result.GetInstanceList()->size() == 1 ? *result.GetInstanceList()->begin() : NULL;
+    else if (result.IsECValue() && result.GetECValue()->IsStruct())
+        return result.GetECValue()->GetStruct();
+    else
+        return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
@@ -1747,7 +1869,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     ECN::PrimitiveECPropertyCP   primProperty = refResult.m_property->GetAsPrimitiveProperty();
     if (NULL != primProperty)
         {
-        ECN::IECInstanceP    instance = instanceResult.GetECValueR().GetStruct().get();
+        ECN::IECInstancePtr  instance = getInstanceFromResult (instanceResult);
         ECN::ECEnablerCR     enabler = instance->GetEnabler();
 
         ::UInt32     propertyIndex;
@@ -1766,7 +1888,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
             case ECN::PRIMITIVETYPE_Integer:
             case ECN::PRIMITIVETYPE_Double:
 #endif
-        ECN::ECObjectsStatus  ecStatus = instance->SetValue(propertyIndex, evalResult.GetECValue());
+        ECN::ECObjectsStatus  ecStatus = instance->SetValue(propertyIndex, *evalResult.GetECValue());
         if (ECN::ECOBJECTS_STATUS_Success != ecStatus)
             {
             evalResult.Clear();
@@ -2013,7 +2135,7 @@ ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, Expre
     if (((status = Operations::ConvertToString(leftResult)) != ExprStatus_Success) || ((status = Operations::ConvertToString(rightResult)) != ExprStatus_Success))
         return status;
 
-    performConcatenation (evalResult.GetECValueR(), leftResult.GetECValue(), rightResult.GetECValue());
+    performConcatenation (evalResult.InitECValue(), *leftResult.GetECValue(), *rightResult.GetECValue());
 
     return ExprStatus_Success;
     }
@@ -2069,7 +2191,7 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
 
         if (ExprStatus_Success == status)
             {
-            leftResult.GetECValueR().SetBoolean (leftBool);
+            leftResult.InitECValue().SetBoolean (leftBool);
             status = (TOKEN_AndAlso == m_operatorCode) ? Operations::PerformLogicalAnd (evalResult, leftResult, rightResult) : Operations::PerformLogicalOr (evalResult, leftResult, rightResult);
             }
         }
@@ -2098,8 +2220,11 @@ ExpressionStatus BinaryNode::GetOperandValues(EvaluationResult& leftResult, Eval
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings)
     {
-    ECN::ECValueR    left    = leftResult.GetECValueR();
-    ECN::ECValueR    right   = rightResult.GetECValueR();
+    if (!leftResult.IsECValue() || !rightResult.IsECValue())
+        return ExprStatus_PrimitiveRequired;
+
+    ECN::ECValueR    left    = *leftResult.GetECValue();
+    ECN::ECValueR    right   = *rightResult.GetECValue();
 
     if (!left.IsPrimitive() || !right.IsPrimitive())
         {
@@ -2278,7 +2403,7 @@ ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, Evaluatio
     {
     ExpressionStatus status =  PromoteCommon(leftResult, rightResult, context, true);
     if (ExprStatus_Success == status)
-        return !leftResult.GetECValue().IsNull() && !rightResult.GetECValue().IsNull() ? status : ExprStatus_PrimitiveRequired;
+        return !leftResult.GetECValue()->IsNull() && !rightResult.GetECValue()->IsNull() ? status : ExprStatus_PrimitiveRequired;
     else
         return status;
     }
@@ -2288,16 +2413,19 @@ ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, Evaluatio
 +---------------+---------------+---------------+---------------+---------------+-----*/
 ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, EvaluationResultCR leftResult, EvaluationResultCR rightResult, ExpressionContextR context)
     {
-    ECN::ECValueCR   left    = leftResult.GetECValue();
-    ECN::ECValueCR   right   = rightResult.GetECValue();
-    ECN::ECValueR    result  = evalResult.GetECValueR();
+    if (!leftResult.IsECValue() || !rightResult.IsECValue())
+        return ExprStatus_WrongType;
+
+    ECN::ECValueCR   left    = *leftResult.GetECValue();
+    ECN::ECValueCR   right   = *rightResult.GetECValue();
+    ECN::ECValueR    result  = evalResult.InitECValue();
 
     if (m_operatorCode == TOKEN_Plus)
         {
         switch(left.GetPrimitiveType())
             {
             case PRIMITIVETYPE_String:
-                performConcatenation (evalResult.GetECValueR(), left, right);
+                performConcatenation (result, left, right);
                 return ExprStatus_Success;
 
             case PRIMITIVETYPE_Long:
@@ -2379,8 +2507,8 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
     if (TOKEN_Like == m_operatorCode)
         return ExprStatus_NotImpl;
 
-    ECValueCR   ecLeft      = leftResult.GetECValue();
-    ECValueCR   ecRight     = rightResult.GetECValue();
+    ECValueCR   ecLeft      = *leftResult.GetECValue();
+    ECValueCR   ecRight     = *rightResult.GetECValue();
     if (ecLeft.IsNull() || ecRight.IsNull())
         {
         bool leftnull = ecLeft.IsNull(), rightnull = ecRight.IsNull();
@@ -2393,7 +2521,7 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
             }
 
         //  Maybe the not's should be true for this
-        evalResult.GetECValueR().SetBoolean(boolResult);
+        evalResult.InitECValue().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
@@ -2415,23 +2543,23 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
             case TOKEN_GreaterEqual: boolResult = intResult >= 0;    break;
             }
 
-        evalResult.GetECValueR().SetBoolean(boolResult);
+        evalResult.InitECValue().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
     switch (ecLeft.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Boolean:
-            evalResult.GetECValueR().SetBoolean(PerformCompare(ecLeft.GetBoolean(), m_operatorCode, ecRight.GetBoolean()));
+            evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetBoolean(), m_operatorCode, ecRight.GetBoolean()));
             return ExprStatus_Success;
         case PRIMITIVETYPE_Double:
-            evalResult.GetECValueR().SetBoolean(PerformCompare(ecLeft.GetDouble(), m_operatorCode, ecRight.GetDouble()));
+            evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetDouble(), m_operatorCode, ecRight.GetDouble()));
             return ExprStatus_Success;
         case PRIMITIVETYPE_Integer:
-            evalResult.GetECValueR().SetBoolean(PerformCompare(ecLeft.GetInteger(), m_operatorCode, ecRight.GetInteger()));
+            evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetInteger(), m_operatorCode, ecRight.GetInteger()));
             return ExprStatus_Success;
         case PRIMITIVETYPE_Long:
-            evalResult.GetECValueR().SetBoolean(PerformCompare(ecLeft.GetLong(), m_operatorCode, ecRight.GetLong()));
+            evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetLong(), m_operatorCode, ecRight.GetLong()));
             return ExprStatus_Success;
         }
     
@@ -2466,9 +2594,9 @@ ExpressionStatus Node::GetValue(ValueResultPtr& valueResult, ExpressionContextR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResultR EvaluationResult::operator= (ECN::ECValueCR rhs)
     {
-    m_ecValue.Clear();
-    m_ecValue = rhs;
+    Clear();
     m_valueType = ValType_ECValue;
+    m_ecValue = rhs;
 
     return *this;
     }
@@ -2584,28 +2712,28 @@ ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, Expre
     switch(m_primitiveType)
         {
         case PRIMITIVETYPE_Boolean:
-            evalResult.GetECValueR().SetBoolean(_GetBooleanValue(status, context));
+            evalResult.InitECValue().SetBoolean(_GetBooleanValue(status, context));
             return status;
         case PRIMITIVETYPE_DateTime:
-            //  evalResult.GetECValueR().SetDateTime(_GetDateTimeValue(status, context));
+            //  evalResult.InitECValue().SetDateTime(_GetDateTimeValue(status, context));
             return ExprStatus_NotImpl;
         case PRIMITIVETYPE_Double:
-            evalResult.GetECValueR().SetDouble(_GetDoubleValue(status, context));
+            evalResult.InitECValue().SetDouble(_GetDoubleValue(status, context));
             return status;
         case PRIMITIVETYPE_Integer:
-            evalResult.GetECValueR().SetInteger(_GetIntegerValue(status, context));
+            evalResult.InitECValue().SetInteger(_GetIntegerValue(status, context));
             return status;
         case PRIMITIVETYPE_Long:
-            evalResult.GetECValueR().SetLong(_GetLongValue(status, context));
+            evalResult.InitECValue().SetLong(_GetLongValue(status, context));
             return status;
         case PRIMITIVETYPE_String:
             {
             ECValue  result;
             status = _GetStringValue(result, context);
             if (result.IsUtf8())
-                evalResult.GetECValueR().SetUtf8CP(result.GetUtf8CP(), true);
+                evalResult.InitECValue().SetUtf8CP(result.GetUtf8CP(), true);
             else
-                evalResult.GetECValueR().SetString(result.GetString(), true);
+                evalResult.InitECValue().SetString(result.GetString(), true);
             }
             return status;
         }
@@ -3109,7 +3237,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
 
             EvaluationResult    evalResult;
             right->GetValue(evalResult, expContext, false, false);
-            return ResolvedAddConstantNode::Create(resultType, *left, evalResult.GetECValue());
+            return ResolvedAddConstantNode::Create(resultType, *left, *evalResult.GetECValue());
             }
 
         return ResolvedAddNode::Create(resultType, *left, *right);
@@ -3132,7 +3260,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
 
         EvaluationResult    evalResult;
         right->GetValue(evalResult, expContext, false, false);
-        ECValueR  ecValue = evalResult.GetECValueR();
+        ECValueR  ecValue = *evalResult.GetECValue();
         switch(resultType)
             {
             case PRIMITIVETYPE_Integer:
@@ -3149,7 +3277,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
                 return NULL;
             }
 
-        return ResolvedAddConstantNode::Create(resultType, *left, evalResult.GetECValue());
+        return ResolvedAddConstantNode::Create(resultType, *left, *evalResult.GetECValue());
         }
 
     BeAssert(node.GetOperation() == TOKEN_Minus);

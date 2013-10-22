@@ -713,10 +713,10 @@ public:
     ECOBJECTS_EXPORT WCharCP                GetAccessString () const;
 
     ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, WCharCP,   int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT bool  PushLocation (ECEnablerCR, WCharCP,   int arrayIndex=INDEX_ROOT);
 
     ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, WCharCP,   int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT bool  PushLocation (IECInstanceCR, WCharCP,   int arrayIndex=INDEX_ROOT);
 
     ECOBJECTS_EXPORT void       PopLocation ();
     ECOBJECTS_EXPORT Location&  DeepestLocation ();
