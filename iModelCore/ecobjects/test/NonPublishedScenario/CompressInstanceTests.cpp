@@ -10,7 +10,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-struct CompressInstanceTests : ECTestFixture {};
+struct CompressInstanceTests : ECTestFixture
+{
 
 static WString       GetKitchenSinkSchemaXml ()
     {
@@ -72,67 +73,7 @@ static ECSchemaPtr   CreateKitchenSinkSchema ()
     return schema;
     }
 
-void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 count, bool isFixedCount)
-    {
-    v.Clear();
-    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
-    EXPECT_EQ (count, v.GetArrayInfo().GetCount());
-    EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
-    }
-
-void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 start, UInt32 count
-, bool isNull)
-    {
-    for (UInt32 i = start ; i < start + count ; i++)
-        {
-        v.Clear();
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
-        EXPECT_TRUE (isNull == v.IsNull());
-        }
-    }
-void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, WCharCP value)
-    {
-    v.Clear();
-    if (useIndex)
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
-    else
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
-    EXPECT_STREQ (value, v.GetString());
-    }
-void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
-    {
-    return VerifyString (instance, v, accessString, false, 0, value);
-    }
-void SetAndVerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
-    {
-    v.SetString(value);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
-    VerifyString (instance, v, accessString, value);
-    }
-
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, UInt32 value)
-    {
-    v.Clear();
-    if (useIndex)
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
-    else
-        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
-    EXPECT_EQ (value, v.GetInteger());
-    }
-
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
-    {
-    return VerifyInteger (instance, v, accessString, false, 0, value);
-    }
-
-
-void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
-    {
-    v.SetInteger(value);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
-    VerifyInteger (instance, v, accessString, value);
-    }
-static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void ValidateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
@@ -146,6 +87,7 @@ static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP p
         EXPECT_TRUE (SUCCESS == instance.GetValue (ventry, propertyName, i));
         }
     }
+};
 
 TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     {
@@ -243,7 +185,7 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     // remove struct array element
     instance->RemoveArrayElement(L"myManufacturerStructArray", 2);
         instance->Compress();
-    validateArrayCount (*instance, L"myManufacturerStructArray", 3);
+    ValidateArrayCount (*instance, L"myManufacturerStructArray", 3);
 
    }
 END_BENTLEY_ECOBJECT_NAMESPACE

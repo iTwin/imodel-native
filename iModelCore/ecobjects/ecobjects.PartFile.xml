@@ -128,18 +128,9 @@
     </Part>
     -->
 
-    <Part Name="Tests">
-        <!-- 
-        <SubPart PartName="ECObjectsPublishedTests" />
-        <SubPart PartName="ECObjectsNonPublishedTests" />
-        <SubPart PartName="ECObjectsPerformanceTests" />
-        <SubPart PartName="ECObjectsScenarioTests" />
-        <SubPart PartName="ECObjectsNonPublishedScenarioTests" />
-        -->
-    </Part>
-
     <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-
+        <SubPart PartName="ECObjectsPublishedTests"/>
+        <SubPart PartName="ECObjectsNonPublishedTests"/>
     </Part>
 
     <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="test\ECObjectsPerformanceTest.run.mke">
@@ -216,23 +207,5 @@
         <ProductDirectory Name="ECObjectsTestExe"                   Path=""/>
         <ProductDirectory Name="ecschemas"                          Path=""/>
     </ProductDirectoryList>
-
-    <Product Name="ECObjectsTests" SaveProduct="true">
-        <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="ECObjectsTest"/>
-    </Product>
-
-    <ProductDirectoryList ListName="ECObjectsTested">
-    </ProductDirectoryList>
-    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true">
-    <!-- 
-        <SubProduct ProductName="ECObjects" />
-        <SubProduct ProductName="ECObjectsStatic" />
-        <SubProduct ProductName="ECObjectsTests" />
-        <SubPart PartName="RunECObjectsTests" />
-    -->
-
-        <Directories DirectoryListName="ECObjectsTested"/>
-    </Product>
 
 </BuildContext>

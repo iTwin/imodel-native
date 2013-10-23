@@ -32,8 +32,6 @@ BEGTEST_DEPENDENCIES=$(baseDir)SeedData.prewire.mke
 %undef CPchOpts
 %undef CCPchOpts
 
-%warn $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*$(oext)]
-
 GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
@@ -44,8 +42,8 @@ GUNITTEST_SYMB      = $(o)
 
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*$(oext)]
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 
 SORTED_LOCAL_GUNITTEST_OBJS =% $[@sort $(LOCAL_GUNITTEST_OBJS)]
 LOCAL_GUNITTEST_OBJS = $(SORTED_LOCAL_GUNITTEST_OBJS)

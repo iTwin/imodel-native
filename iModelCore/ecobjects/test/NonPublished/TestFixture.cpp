@@ -101,47 +101,6 @@ WString ECTestFixture::GetWorkingDirectoryPath(WCharCP testFixture, WCharCP data
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
     {
-#ifdef WIP_ECOBJECTS_TEST_NEEDS_WORK
-    WString path = WString(getenv ("TESTRESULTS_DIR"), false);
-
-    // If they don't, we will put them in the tmp dir.
-    if (0 == path.size())
-        {
-        path = WString (getenv ("OutRoot"), false);
-        if (path.size() > 0)
-            {
-            if (*path.rbegin() != '\\')
-                path.append (L"\\");
-
-            WString processorArch = WString (getenv ("DEFAULT_TARGET_PROCESSOR_ARCHITECTURE"), false);
-            if (0 == processorArch.size())
-                path += L"Winx64";
-            else
-                path = path + L"Win" + processorArch + L"\\TestResults\\";
-            }
-        }
-    else
-        {
-        if (*path.rbegin() != '\\')
-            path.append (L"\\");
-        }
-
-    if (0 == path.size())
-        {
-        path.AssignA (getenv ("tmp"));
-        if (path.size() > 0 && *path.rbegin() != '\\')
-            path.append (L"\\");
-
-        path.append (L"TestResults\\");
-        }
-
-    path = ReplaceSlashes (path);
-
-    if (fileName)
-        path.append (fileName);
-
-    return path;
-#else
     BeFileName filePath;
     BeTest::GetHost().GetOutputRoot (filePath);
 
@@ -153,33 +112,7 @@ WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
     filePath.AppendToPath(fileName);
     
     return filePath;
-#endif
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
-BentleyStatus ECTestFixture::CheckProcessDirectory
-(
-WCharP filepath, 
-ULong32 bufferSize
-)
-    {
-    WString dllPath = GetDllPath();
-    if (0 == dllPath.length())
-        return ERROR;
-        
-    wchar_t executingDirectory[_MAX_DIR];
-    wchar_t executingDrive[_MAX_DRIVE];
-    _wsplitpath(dllPath.c_str(), executingDrive, executingDirectory, NULL, NULL);
-
-    // Look for a file called "logging.config.xml" in the executing process's directory
-    _wmakepath(filepath, executingDrive, executingDirectory, L"logging.config.xml", L"xml");
-    if (0 == _waccess(filepath, 0))
-        return SUCCESS;
-    return ERROR;
-    }
-***WIP_ECOBJECTS_TEST
-+---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                01/2010
@@ -232,6 +165,203 @@ WString  ECTestFixture::GetDateTime ()
     return dateTime;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, WCharCP value)
+    {
+    v.Clear();
+    if (useIndex)
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+    else
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_STREQ (value, v.GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
+    {
+    return VerifyString (instance, v, accessString, false, 0, value);
+    }    
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::SetAndVerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
+    {
+    v.SetString(value);
+    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    VerifyString (instance, v, accessString, value);
+    }
+       
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, UInt32 value)
+    {
+    v.Clear();
+    if (useIndex)
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
+    else
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_EQ (value, v.GetInteger());
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
+    {
+    return VerifyInteger (instance, v, accessString, false, 0, value);
+    }    
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
+    {
+    v.SetInteger(value);
+    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    VerifyInteger (instance, v, accessString, value);
+    }  
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyDouble (IECInstanceR instance, ECValueR v, WCharCP accessString, double value)
+    {
+    v.Clear();
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_EQ (value, v.GetDouble());
+    }
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::SetAndVerifyDouble (IECInstanceR instance, ECValueR v, WCharCP accessString, double value)
+    {
+    v.SetDouble(value);
+    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    VerifyDouble (instance, v, accessString, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64 value)
+    {
+    v.Clear();
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_EQ (value, v.GetLong());
+    }
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     10/09
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::SetAndVerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64 value)
+    {
+    v.SetLong(value);
+    EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
+    VerifyLong (instance, v, accessString, value);
+    } 
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 count, bool isFixedCount)
+    {
+    v.Clear();
+    EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
+    EXPECT_EQ (count, v.GetArrayInfo().GetCount());
+    EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 index)
+    {
+    v.Clear();    
+    EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.GetValue (v, accessString, index));
+    EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.SetValue (accessString, v, index));
+    }    
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, UInt32 start, UInt32 count)
+    {
+    WString incrementingString = value;
+   
+    for (UInt32 i=start ; i < start + count ; i++)        
+        {
+        incrementingString.append (L"X");
+        VerifyString (instance, v, accessString, true, i, incrementingString.c_str());
+        }
+    }  
+              
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, UInt32 count)
+    {
+    WString incrementingString = value;
+    for (UInt32 i=0 ; i < count ; i++)        
+        {
+        incrementingString.append (L"X");
+        v.SetString(incrementingString.c_str());
+
+        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
+        ECObjectsStatus status = instance.SetValue (accessString, v, i);
+        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
+        }
+    
+    VerifyStringArray (instance, v, accessString, value, 0, count);
+    }  
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::VerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 baseValue, UInt32 start, UInt32 count)
+    {       
+    for (UInt32 i=start ; i < start + count ; i++)        
+        {
+        VerifyInteger (instance, v, accessString, true, i, baseValue++);
+        }
+    }        
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    AdamKlatzkin     01/10
++---------------+---------------+---------------+---------------+---------------+------*/    
+void ECTestFixture::SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 baseValue, UInt32 count)
+    {
+    for (UInt32 i=0 ; i < count ; i++)        
+        {
+        v.SetInteger(baseValue + i); 
+
+        // since the test sets some of the array values more than once to the same value we must check SUCCESS || ECOBJECTS_STATUS_PropertyValueMatchesNoChange 
+        ECObjectsStatus status = instance.SetValue (accessString, v, i);
+        EXPECT_TRUE (SUCCESS == status || ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status);
+        }
+        
+    VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
+    }      
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Adam.Klatzkin                   01/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECTestFixture::VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 start, UInt32 count, bool isNull)
+    {
+    for (UInt32 i = start ; i < start + count ; i++)    
+        {
+        v.Clear();
+        EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
+        EXPECT_TRUE (isNull == v.IsNull());        
+        }
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
