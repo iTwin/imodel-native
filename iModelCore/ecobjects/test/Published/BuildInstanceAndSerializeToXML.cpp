@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
+#include "../ECObjectsTestPCH.h"
 #include <comdef.h>
-#include "TestFixture.h"
+
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
@@ -166,7 +166,7 @@ struct  SampleDataInstanceManager
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
+//    EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
     SampleDataInstanceManager instanceManager;
     WString ecInstanceXml;
@@ -181,7 +181,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
         EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
         }
 
-    CoUninitialize();
+    //CoUninitialize();
     }
 
 

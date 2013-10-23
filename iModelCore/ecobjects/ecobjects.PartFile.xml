@@ -29,7 +29,7 @@
     <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
         <SubPart PartName="PublicAPI" />
         <Bindings>
-            <Directory SubPartDirectory="PublishedAPI" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
+            <Directory SubPartDirectory="PublishedAPI/ECObjects" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
     </Part>
 
@@ -51,43 +51,59 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <!-- 
+    <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*</Files>
         </Bindings>
     </Part>
+    -->
 
-    <Part Name="ECObjectsTestLoggingConfig" BentleyBuildMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsTestLoggingConfig" BentleyBuildMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/logging.config.xml</Files>
         </Bindings>
     </Part>
 
     <Part Name="ECObjectsTestsDependencies">
-        <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
+        <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
         <SubPart PartName="Logging" /> 
         <SubPart PartName="ECObjectsNative" />
+        <!-- 
         <SubPart PartName="ECObjectsTestsSeedData"/>
+        -->
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
     </Part>
 
-    <Part Name="ECObjectsPublishedTests" BentleyBuildMakeFile="test/PublishedTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
         <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="PublishedApi"/>
+    </Part>
+
+    <Part Name="ECObjectsStandaloneTestsDependencies">
+        <SubPart PartName="ECObjectsUnitTests"/>
+        <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
+    </Part>
+
+    <Part Name="ECObjectsPublishedTests" BentleyBuildMakeFile="test/PublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNonPublishedTests"/>
+        <SubPart PartName="ECObjectsStandaloneTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_Published.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsNonPublishedTests" BentleyBuildMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
+    <Part Name="ECObjectsNonPublishedTests" BentleyBuildMakeFile="test/NonPublishedTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsStandaloneTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery/ECObjectsTest_NonPublished.exe</Files>
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <!-- 
+    <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
@@ -95,7 +111,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublishedScenario.exe</Files>
@@ -103,23 +119,26 @@
     </Part>
 
 
-    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
       <SubPart PartName="ECObjectsTestsDependencies"/>
       <SubPart PartName="PublishedApi"/>
       <Bindings>
         <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Performance.exe</Files>
       </Bindings>
     </Part>
+    -->
 
     <Part Name="Tests">
+        <!-- 
         <SubPart PartName="ECObjectsPublishedTests" />
         <SubPart PartName="ECObjectsNonPublishedTests" />
         <SubPart PartName="ECObjectsPerformanceTests" />
         <SubPart PartName="ECObjectsScenarioTests" />
         <SubPart PartName="ECObjectsNonPublishedScenarioTests" />
+        -->
     </Part>
 
-    <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
+    <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
 
     </Part>
 
@@ -206,10 +225,12 @@
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
     <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true">
+    <!-- 
         <SubProduct ProductName="ECObjects" />
         <SubProduct ProductName="ECObjectsStatic" />
         <SubProduct ProductName="ECObjectsTests" />
         <SubPart PartName="RunECObjectsTests" />
+    -->
 
         <Directories DirectoryListName="ECObjectsTested"/>
     </Product>

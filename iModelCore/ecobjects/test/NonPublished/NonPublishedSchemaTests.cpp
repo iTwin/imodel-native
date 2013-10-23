@@ -5,9 +5,8 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <comdef.h>
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
@@ -18,8 +17,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
-struct SchemaTest : ECTestFixture {};
-TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
+struct NonPublishedSchemaTest : ECTestFixture {};
+TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
     ECClassP foo;
@@ -53,7 +52,7 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ASSERT_EQ(4, count);
     }
 
-TEST_F (SchemaTest, TestCircularReferenceWithLocateSchema)
+TEST_F (NonPublishedSchemaTest, TestCircularReferenceWithLocateSchema)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
@@ -68,7 +67,7 @@ TEST_F (SchemaTest, TestCircularReferenceWithLocateSchema)
     EXPECT_FALSE(testSchema.IsValid());
     }
 
-TEST_F (SchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
+TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;

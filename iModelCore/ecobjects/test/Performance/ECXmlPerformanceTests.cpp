@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 #include <Bentley/BeTimeUtilities.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -96,7 +96,6 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     FILE* logFile=NULL;
 
     WString logfilePath = GetTestResultsFilePath (L"ECObjectsPerformanceResults.csv");
-    MakeDirContainingFile (logfilePath.c_str());
 
     bool existingFile = (0 == _waccess_s(logfilePath.c_str(), 0 ));
 
@@ -120,7 +119,6 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
     FILE* logFile=NULL;
 
     WString logfilePath = GetTestResultsFilePath (L"ECObjectsPerformanceResults.csv");
-    MakeDirContainingFile (logfilePath.c_str());
 
     bool existingFile = (0 == _waccess_s(logfilePath.c_str(), 0 ));
 

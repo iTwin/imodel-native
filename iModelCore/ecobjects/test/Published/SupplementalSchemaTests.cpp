@@ -5,10 +5,10 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
+#include "../ECObjectsTestPCH.h"
 #include <objbase.h>
 #include <comdef.h>
-#include "TestFixture.h"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -40,7 +40,7 @@ struct SchemaHolderTestFixture : ECTestFixture
     public:
         virtual void            SetUp () override 
             { 
-            EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+            // EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
             ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
             SchemaKey key (L"Bentley_Standard_CustomAttributes", 1, 6);
@@ -51,7 +51,7 @@ struct SchemaHolderTestFixture : ECTestFixture
 
         virtual void TearDown() override
             {
-            CoUninitialize();
+            // CoUninitialize();
             __super::TearDown();
             }
 

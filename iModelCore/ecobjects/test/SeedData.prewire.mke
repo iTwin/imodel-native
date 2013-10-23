@@ -2,7 +2,7 @@
 #
 #     $Source: test/SeedData.prewire.mke $
 #
-#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -14,5 +14,6 @@ always:
     $(unzipCmd) -n $(ecobjectsSrc)test/SeedData/performance.zip -d $(buildDir)ECObjectsTest_Data/
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/=$(buildDir)ECObjectsTest_Data/performance/*.xml"
 
-   
 
+# Expose seed data as assets needed by ECObjects unit tests
+BEGTEST_ASSETS     + $(ContextDeliveryDir)SeedData/

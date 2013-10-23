@@ -5,14 +5,14 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-struct SchemaTest : ECTestFixture {};
+struct NonPublishedScenarioSchemaTest : ECTestFixture {};
 
-TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
+TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
     ECClassP foo;
@@ -46,7 +46,7 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ASSERT_EQ(4, count);
     }
 
-TEST_F(SchemaTest, TestGetClassCount)
+TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
     {
    
 	ECSchemaPtr schema;
@@ -83,7 +83,7 @@ TEST_F(SchemaTest, TestGetClassCount)
 	ASSERT_EQ(2,schema->GetClassCount());
     }
 
-TEST_F (SchemaTest, DISABLED_TestCircularReference)
+TEST_F (NonPublishedScenarioSchemaTest, DISABLED_TestCircularReference)
 {
 	ECSchemaPtr testSchema;
 	ECSchemaReadContextPtr   schemaContext;
@@ -98,7 +98,7 @@ TEST_F (SchemaTest, DISABLED_TestCircularReference)
 	EXPECT_FALSE(testSchema.IsValid());
 }
 
-TEST_F (SchemaTest, TestsLatestCompatible)
+TEST_F (NonPublishedScenarioSchemaTest, TestsLatestCompatible)
 {
 	ECSchemaPtr testSchema;
 	ECSchemaReadContextPtr   schemaContext;
@@ -115,7 +115,7 @@ TEST_F (SchemaTest, TestsLatestCompatible)
 	EXPECT_TRUE(testSchema->GetVersionMinor()==6);
 }
 
-TEST_F (SchemaTest, TestsLatest)
+TEST_F (NonPublishedScenarioSchemaTest, TestsLatest)
 {
 	ECSchemaPtr testSchema;
 	ECSchemaReadContextPtr   schemaContext;
@@ -132,7 +132,7 @@ TEST_F (SchemaTest, TestsLatest)
 	EXPECT_TRUE(testSchema->GetVersionMinor()==6);
 }
 
-TEST_F (SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
+TEST_F (NonPublishedScenarioSchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
 {
 	ECSchemaPtr testSchema;
 	ECSchemaReadContextPtr   schemaContext;
@@ -154,7 +154,7 @@ TEST_F (SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
 	CircleClassInstance->SetValue (L"Name", v);
 }
 
-TEST_F (SchemaTest, GetBaseClassProperty)
+TEST_F (NonPublishedScenarioSchemaTest, GetBaseClassProperty)
 {
 	ECSchemaPtr testSchema;
 	ECSchemaReadContextPtr   schemaContext;

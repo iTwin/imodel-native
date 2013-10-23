@@ -2,83 +2,17 @@
 |
 |     $Source: test/NonPublished/TestFixture.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
-#include <Bentley/BeFileName.h>
-
-#include <Logging\bentleylogging.h>
+#include "../ECObjectsTestPCH.h"
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
   
-#define MAX_INTERNAL_INSTANCES  0
-#define MAX_INTERNAL_SCHEMAS    0
-
-//#define DEBUG_ECSCHEMA_LEAKS
-//#define DEBUG_IECINSTANCE_LEAKS
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void*    getDLLInstance ()
-    {
-    MEMORY_BASIC_INFORMATION    mbi;
-    if (VirtualQuery ((void*)&getDLLInstance, &mbi, sizeof mbi))
-        return mbi.AllocationBase;
-
-    return 0;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DirExists (WCharCP dir)
-    {
-    DWORD attributes = GetFileAttributesW(dir);
-    return attributes != INVALID_FILE_ATTRIBUTES;
-    }
- 
- /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KevinNyman      07/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CreateDirectoryRecursive (WCharCP path, bool failIfExists)
-    {
-    if (DirExists (path))
-        return true;
-    std::wstring tempPath = path;
-    std::wstring incPath = L"";
-    size_t i, sz = tempPath.size();
-    for (i = 0; i < sz; ++i)
-        {
-        if (tempPath[i] == L'/')
-            tempPath[i] = L'\\';
-        }
-    // Some shells like TCC won't allow you to mkdir with a full path so do it piecewise.
-    while (tempPath.size() > 0)
-        {
-        std::size_t pos = tempPath.find (L"\\");
-        std::wstring part = tempPath.substr (0, pos);
-        tempPath = tempPath.substr (pos+1, tempPath.size());
-        incPath += part;
-        incPath += L"\\";
-        if (!DirExists (incPath.c_str()))
-            {
-            if (!CreateDirectoryW (incPath.c_str(), NULL))
-                return false;
-            }
-        else
-            if (failIfExists)
-                return false;
-        }
-    return (DirExists (path));
-    }
-
 bool ECTestFixture::s_isLoggerInitialized = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
@@ -87,6 +21,7 @@ ECTestFixture::ECTestFixture()
     {
     //LoggingConfig::ActivateProvider(CONSOLE_LOGGING_PROVIDER);
 
+    #if defined (WIP_ECOBJECTS_TEST)
     if (!s_isLoggerInitialized)
         {
         LoggingConfig::ActivateProvider(LOG4CXX_LOGGING_PROVIDER);
@@ -95,8 +30,11 @@ ECTestFixture::ECTestFixture()
         LoggingConfig::SetSeverity(L"ECObjectsNative", LOG_WARNING);
         s_isLoggerInitialized = true;
         }
+    #endif
 
-    ECN::ECSchemaReadContext::Initialize (BeFileName(GetDllPath().c_str()));
+    BeFileName assetsDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory (assetsDir);
+    ECN::ECSchemaReadContext::Initialize (assetsDir);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,79 +51,117 @@ void            ECTestFixture::TearDown ()
     {
     }
 
-WString ECTestFixture::s_dllPath = L"";
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                08/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString ECTestFixture::GetDllPath()
-    {
-    if (s_dllPath.empty())
-        {
-        HINSTANCE ecobjectsHInstance = (HINSTANCE) getDLLInstance();
-        wchar_t strExePath [MAX_PATH];
-        if (0 == (GetModuleFileNameW (ecobjectsHInstance, strExePath, MAX_PATH)))
-            return L"";
-            
-        wchar_t executingDirectory[_MAX_DIR];
-        wchar_t executingDrive[_MAX_DRIVE];
-        _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
-        wchar_t filepath[MAX_PATH];
-        _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
-        s_dllPath = filepath;
-        }
-    return s_dllPath;
-    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Carole.MacDonald 02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTestDataPath(WCharCP dataFile)
     {
-    WString testData(GetDllPath());
-    testData.append(L"SeedData\\");
-    testData.append(dataFile);
+    BeFileName testData;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory (testData);
+    testData.AppendToPath (L"SeedData");
+    testData.AppendToPath (dataFile);
     return testData;
     } 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
+    {
+    BeFileName testData;
+    BeTest::GetHost().GetOutputRoot (testData);
+    testData.AppendToPath (dataFile);
+    return testData;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetWorkingDirectoryPath(WCharCP testFixture, WCharCP dataFile)
     {
-    wchar_t path[MAX_PATH];
-
-    if (0 == GetEnvironmentVariableW(L"OutRoot", path, MAX_PATH))
-        {
-        GetEnvironmentVariableW(L"tmp", path, MAX_PATH);
-        }
-
-    WString filePath(path);
-    if (filePath.size() == 0)
-        return filePath;
-
-    if (*filePath.rbegin() != '\\')
-        filePath.append (L"\\");
+    BeFileName filePath;
+    BeTest::GetHost().GetOutputRoot (filePath);
 
     WCharP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
-    filePath.append(processorArchitecture);
-    filePath.append(L"\\");
-    filePath.append(L"build\\ECObjectsTests\\AtpWorkingRoot\\");
-    filePath.append(testFixture);
-    filePath.append(L"\\");
+    filePath.AppendToPath(processorArchitecture);
+    filePath.AppendToPath(L"build");
+    filePath.AppendToPath(L"ECObjectsTests");
+    filePath.AppendToPath(L"AtpWorkingRoot");
+    filePath.AppendToPath(testFixture);
 
-    CreateDirectoryRecursive(filePath.c_str(), false);
+    BeFileName::CreateNewDirectory (filePath.c_str());
 
-    filePath.append(dataFile);
+    filePath.AppendToPath (dataFile);
     return filePath;
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
+* @bsimethod                                    Bill.Steinbock                  02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
+    {
+#ifdef WIP_ECOBJECTS_TEST_NEEDS_WORK
+    WString path = WString(getenv ("TESTRESULTS_DIR"), false);
+
+    // If they don't, we will put them in the tmp dir.
+    if (0 == path.size())
+        {
+        path = WString (getenv ("OutRoot"), false);
+        if (path.size() > 0)
+            {
+            if (*path.rbegin() != '\\')
+                path.append (L"\\");
+
+            WString processorArch = WString (getenv ("DEFAULT_TARGET_PROCESSOR_ARCHITECTURE"), false);
+            if (0 == processorArch.size())
+                path += L"Winx64";
+            else
+                path = path + L"Win" + processorArch + L"\\TestResults\\";
+            }
+        }
+    else
+        {
+        if (*path.rbegin() != '\\')
+            path.append (L"\\");
+        }
+
+    if (0 == path.size())
+        {
+        path.AssignA (getenv ("tmp"));
+        if (path.size() > 0 && *path.rbegin() != '\\')
+            path.append (L"\\");
+
+        path.append (L"TestResults\\");
+        }
+
+    path = ReplaceSlashes (path);
+
+    if (fileName)
+        path.append (fileName);
+
+    return path;
+#else
+    BeFileName filePath;
+    BeTest::GetHost().GetOutputRoot (filePath);
+
+    WCharP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
+    filePath.AppendToPath(processorArchitecture);
+    filePath.AppendToPath(L"TestResults");
+    BeFileName::CreateNewDirectory (filePath.c_str());
+    
+    filePath.AppendToPath(fileName);
+    
+    return filePath;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                01/2010
 BentleyStatus ECTestFixture::CheckProcessDirectory
 (
 WCharP filepath, 
-DWORD bufferSize
+ULong32 bufferSize
 )
     {
     WString dllPath = GetDllPath();
@@ -202,12 +178,15 @@ DWORD bufferSize
         return SUCCESS;
     return ERROR;
     }
+***WIP_ECOBJECTS_TEST
++---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Casey.Mullen                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetLogConfigurationFilename()
     {
+    /* ***WIP_ECOBJECTS_TEST
     wchar_t filepath[MAX_PATH];
 
     if ((0 != GetEnvironmentVariableW(L"BENTLEY_LOGGING_CONFIG", filepath, MAX_PATH)) && (0 ==_waccess(filepath, 0)))
@@ -232,9 +211,27 @@ WString ECTestFixture::GetLogConfigurationFilename()
             return filepath;
             }
         }
+    */
 
     return L"";
     }       
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WString  ECTestFixture::GetDateTime ()
+    {
+    wchar_t date[9];
+    wchar_t time[9];
+    
+    _wstrdate(date);
+    _wstrtime(time);
+    WString dateTime (date);
+    dateTime.append (L" ");
+    dateTime.append (time);
+    return dateTime;
+    }
+
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

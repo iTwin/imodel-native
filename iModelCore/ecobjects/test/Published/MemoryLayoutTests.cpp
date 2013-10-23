@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 #include <ECObjects\ECInstance.h>
 #include <ECObjects\StandaloneECInstance.h>
@@ -428,7 +428,7 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"  </ECClass>"
                     L"</ECSchema>";
 
-    wchar_t* buff = (wchar_t*) _alloca (sizeof(wchar_t) * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
+    wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
 
     swprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
 
