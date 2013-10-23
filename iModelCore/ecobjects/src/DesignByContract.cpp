@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <Bentley/BeTest.h>
 
 int AssertDisabler::s_globalIgnoreCount = 0;
 
@@ -24,6 +25,9 @@ AssertDisabler::AssertDisabler ()
     {    
     AssertDisabler::s_globalIgnoreCount++;
 
+    if (1 == s_globalIgnoreCount)
+        Bentley::BeTest::SetFailOnAssert (false);
+
 #if !defined (BENTLEY_WINRT) 
     // WIP: calling putenv is nonportable and generally a bad idea
     // to handle calls to BeAssert as well
@@ -37,6 +41,9 @@ AssertDisabler::AssertDisabler ()
 AssertDisabler::~AssertDisabler ()
     {    
     AssertDisabler::s_globalIgnoreCount--;
+
+    if (0 == AssertDisabler::s_globalIgnoreCount)
+        Bentley::BeTest::SetFailOnAssert (true);
 
 #if !defined (BENTLEY_WINRT)
     // WIP: calling putenv is nonportable and generally a bad idea
