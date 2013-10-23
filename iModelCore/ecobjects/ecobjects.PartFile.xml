@@ -51,13 +51,11 @@
         </Bindings>
     </Part>
 
-    <!-- 
     <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*</Files>
         </Bindings>
     </Part>
-    -->
 
     <Part Name="ECObjectsTestLoggingConfig" BentleyBuildMakeFile="test/LoggingConfig.prewire.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <Bindings>
@@ -70,10 +68,14 @@
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
         <SubPart PartName="Logging" /> 
         <SubPart PartName="ECObjectsNative" />
-        <!-- 
-        <SubPart PartName="ECObjectsTestsSeedData"/>
-        -->
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
+    </Part>
+
+    <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
+
+    <Part Name="StandaloneECObjectsTestsDependencies">
+        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="ECObjectsTestsSeedData"/>
     </Part>
 
     <Part Name="ECObjectsUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
@@ -81,6 +83,7 @@
         <SubPart PartName="PublishedApi"/>
     </Part>
 
+    <!-- These parts build stand-alone test runners (Windows only) -->
     <Part Name="ECObjectsStandaloneTestsDependencies">
         <SubPart PartName="ECObjectsUnitTests"/>
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
@@ -102,9 +105,8 @@
         </Bindings>
     </Part>
 
-    <!-- 
     <Part Name="ECObjectsScenarioTests" BentleyBuildMakeFile="test\scenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="ECObjectsStandaloneTestsDependencies"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Scenario.exe</Files>
@@ -112,7 +114,7 @@
     </Part>
     
     <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test\nonPublishedScenarioTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsTestsDependencies"/>
+        <SubPart PartName="ECObjectsStandaloneTestsDependencies"/>
         <Bindings>
             <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_NonPublishedScenario.exe</Files>
         </Bindings>
@@ -120,17 +122,23 @@
 
 
     <Part Name="ECObjectsPerformanceTests" BentleyBuildMakeFile="test\PerformanceTests.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-      <SubPart PartName="ECObjectsTestsDependencies"/>
+      <SubPart PartName="ECObjectsStandaloneTestsDependencies"/>
       <SubPart PartName="PublishedApi"/>
       <Bindings>
         <Files ProductDirectoryName="ECObjectsTestExe">Delivery\ECObjectsTest_Performance.exe</Files>
       </Bindings>
     </Part>
-    -->
+
+    <Part Name="Tests">
+        <SubPart PartName="ECObjectsPublishedTests" />
+        <SubPart PartName="ECObjectsNonPublishedTests" />
+        <SubPart PartName="ECObjectsPerformanceTests" />
+        <SubPart PartName="ECObjectsScenarioTests" />
+        <SubPart PartName="ECObjectsNonPublishedScenarioTests" />
+    </Part>
 
     <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ECObjectsPublishedTests"/>
-        <SubPart PartName="ECObjectsNonPublishedTests"/>
+
     </Part>
 
     <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="test\ECObjectsPerformanceTest.run.mke">
@@ -207,5 +215,20 @@
         <ProductDirectory Name="ECObjectsTestExe"                   Path=""/>
         <ProductDirectory Name="ecschemas"                          Path=""/>
     </ProductDirectoryList>
+
+    <Product Name="ECObjectsTests" SaveProduct="true">
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="ECObjectsTest"/>
+    </Product>
+
+    <ProductDirectoryList ListName="ECObjectsTested">
+    </ProductDirectoryList>
+    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true">
+        <SubProduct ProductName="ECObjects" />
+        <SubProduct ProductName="ECObjectsStatic" />
+        <SubProduct ProductName="ECObjectsTests" />
+        <SubPart PartName="RunECObjectsTests" />
+        <Directories DirectoryListName="ECObjectsTested"/>
+    </Product>
 
 </BuildContext>
