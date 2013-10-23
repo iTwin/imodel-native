@@ -50,6 +50,7 @@ private:
 public:
     // TODO: This needs to migrate to the ECSchema implementation
     static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
+    static ECOBJECTS_EXPORT void UnRegisterClassLocater ();
     static IECClassLocaterP GetRegisteredClassLocater();
     };
 
