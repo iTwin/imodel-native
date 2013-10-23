@@ -169,6 +169,7 @@ enum            ResultCategory
 /*__PUBLISH_SECTION_START__*/
 
 typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, EvaluationResultVector& arguments);
+typedef ExpressionStatus (*ExpressionStaticMethodWithContext_t)(EvaluationResult& evalResult, void*methodContext, EvaluationResultVector& arguments);
 typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalResult, ECInstanceListCR instanceList, EvaluationResultVector& arguments);
 
 /*__PUBLISH_SECTION_END__*/
@@ -225,6 +226,29 @@ protected:
 public:
 
     static MethodReferencePtr   Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+};
+
+/*=================================================================================**//**
+*
+* This is result of _GetMethodReference. It is used to invoke a method.
+*
++===============+===============+===============+===============+===============+======*/
+struct          MethodReferenceStaticWithContext : MethodReference
+{
+private:
+    ExpressionStaticMethodWithContext_t m_staticMethod;
+    void*                       m_context;
+
+protected:
+                                MethodReferenceStaticWithContext(ExpressionStaticMethodWithContext_t staticMethod, void*methodData);
+    virtual bool                _CanReuseResult ()               { return true; }
+    virtual bool                _SupportsStaticMethodCall () const override { return true; }
+    virtual bool                _SupportsInstanceMethodCall () const override { return false; }
+
+    virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
+public:
+
+    static MethodReferencePtr   Create(ExpressionStaticMethodWithContext_t staticMethod, void*context);
 }; // MethodReference
 
 /*__PUBLISH_SECTION_START__*/
@@ -458,12 +482,13 @@ protected:
         return ExprStatus_Success;
         }
 
-                MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+                MethodSymbol(wchar_t const* name, MethodReferenceR methodReference);
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new method symbol context, using the supplied methods
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethodWithContext_t staticMethod, void*context);
 };
 
 /*=================================================================================**//**

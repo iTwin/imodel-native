@@ -547,6 +547,32 @@ ExpressionStatus MethodReferenceStandard::_InvokeStaticMethod (EvaluationResultR
     return (*m_staticMethod)(evalResult, arguments);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodReferenceStaticWithContext::MethodReferenceStaticWithContext(ExpressionStaticMethodWithContext_t staticMethod, void*methodData)
+    : m_staticMethod(staticMethod), m_context(methodData) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodReferencePtr MethodReferenceStaticWithContext::Create(ExpressionStaticMethodWithContext_t staticMethod, void*context)
+    {
+    return new MethodReferenceStaticWithContext(staticMethod, context);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus MethodReferenceStaticWithContext::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
+    {
+    if (NULL == m_staticMethod)
+        return ExprStatus_StaticMethodRequired;
+
+    return (*m_staticMethod)(evalResult, m_context, arguments);
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -569,10 +595,10 @@ MethodReferencePtr MethodReferenceStandard::Create(ExpressionStaticMethod_t stat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                MethodSymbol::MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
+                MethodSymbol::MethodSymbol(wchar_t const* name, MethodReferenceR methodReference)
                 : Symbol(name)
     {
-    m_methodReference = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    m_methodReference = &methodReference;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,7 +606,17 @@ MethodReferencePtr MethodReferenceStandard::Create(ExpressionStaticMethod_t stat
 +---------------+---------------+---------------+---------------+---------------+------*/
 MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
     {
-    return new MethodSymbol(name, staticMethod, instanceMethod);
+    MethodReferencePtr  ref = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    return new MethodSymbol(name, *ref);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethodWithContext_t staticMethod, void*context)
+    {
+    MethodReferencePtr  ref = MethodReferenceStaticWithContext::Create(staticMethod, context);
+    return new MethodSymbol(name, *ref);
     }
 
 /*---------------------------------------------------------------------------------**//**
