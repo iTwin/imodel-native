@@ -49,6 +49,8 @@ AssertDisabler::~AssertDisabler ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LogFailureMessage (WCharCP message, ...)
     {
+    if (AssertDisabler::AreAssertsDisabled())
+        return;
     va_list arguments;
     WString msg;
     va_start (arguments, message);              
