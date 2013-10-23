@@ -77,27 +77,6 @@ WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                08/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString ECTestFixture::GetWorkingDirectoryPath(WCharCP testFixture, WCharCP dataFile)
-    {
-    BeFileName filePath;
-    BeTest::GetHost().GetOutputRoot (filePath);
-
-    WCharP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
-    filePath.AppendToPath(processorArchitecture);
-    filePath.AppendToPath(L"build");
-    filePath.AppendToPath(L"ECObjectsTests");
-    filePath.AppendToPath(L"AtpWorkingRoot");
-    filePath.AppendToPath(testFixture);
-
-    BeFileName::CreateNewDirectory (filePath.c_str());
-
-    filePath.AppendToPath (dataFile);
-    return filePath;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
@@ -105,7 +84,7 @@ WString ECTestFixture::GetTestResultsFilePath (WCharCP fileName)
     BeFileName filePath;
     BeTest::GetHost().GetOutputRoot (filePath);
 
-    WCharP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
+    WCharCP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
     filePath.AppendToPath(processorArchitecture);
     filePath.AppendToPath(L"TestResults");
     BeFileName::CreateNewDirectory (filePath.c_str());
