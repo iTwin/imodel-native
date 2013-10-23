@@ -43,6 +43,7 @@ GUNITTEST_SYMB      = $(o)
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
+LOCAL_GUNITTEST_OBJS + $(OutputRootDir)build/UnitTests/ECObjects/NonPublishedECObjectsUnitTests/TestFixture.obj
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 
 SORTED_LOCAL_GUNITTEST_OBJS =% $[@sort $(LOCAL_GUNITTEST_OBJS)]

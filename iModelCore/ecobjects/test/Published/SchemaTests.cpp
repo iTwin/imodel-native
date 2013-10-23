@@ -1058,7 +1058,8 @@ TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Bentley_Plant.06.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    ASSERT_EQ (SCHEMA_READ_STATUS_Success, status);
+    ASSERT_TRUE( schema.IsValid() );
     bvector<ECSchemaP> schemasToImport;
     schema->FindAllSchemasInGraph (schemasToImport, true);
     bvector<WCharCP> expectedPrefixes;
