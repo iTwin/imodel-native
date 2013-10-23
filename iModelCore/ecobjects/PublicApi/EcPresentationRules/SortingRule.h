@@ -23,6 +23,7 @@ struct SortingRule : public PresentationRule
         WString m_propertyName;
         bool    m_sortAscending;
         bool    m_doNotSort;
+        bool    m_isPolymorphic;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -39,7 +40,7 @@ struct SortingRule : public PresentationRule
         ECOBJECTS_EXPORT SortingRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT SortingRule (WStringCR condition, int priority, WStringCR schemaName, WStringCR className, WStringCR propertyName, bool sortAscending, bool doNotSort);
+        ECOBJECTS_EXPORT SortingRule (WStringCR condition, int priority, WStringCR schemaName, WStringCR className, WStringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic);
 
         //! SchemaName of ECInstances to which sorting configuration should be applied.
         ECOBJECTS_EXPORT WStringCR        GetSchemaName (void) const;
@@ -56,6 +57,9 @@ struct SortingRule : public PresentationRule
         //! Identifies whether sort or not ECInstances. If true, then ECInstances will be listed
         //! in the order they were stored, or the order PersistenceProvider returns them.
         ECOBJECTS_EXPORT bool             GetDoNotSort (void) const;
+
+        //! Identifies whether ECClass defined in this rule should be accepted polymorphically.
+        ECOBJECTS_EXPORT bool             GetIsPolymorphic (void) const;
 
     };
 

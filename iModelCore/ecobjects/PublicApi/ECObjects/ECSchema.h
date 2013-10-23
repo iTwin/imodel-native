@@ -1477,17 +1477,25 @@ public:
 
     SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
     SchemaNameClassNamePair (WCharCP schemaName, WCharCP className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair() { }
     SchemaNameClassNamePair (WStringCR schemaAndClassNameSeparatedByColon)
+        {
+        BeAssert (WString::npos != schemaAndClassNameSeparatedByColon.find (':'));
+        Parse (schemaAndClassNameSeparatedByColon);
+        }
+
+    bool Parse (WStringCR schemaAndClassNameSeparatedByColon)
         {
         size_t pos = schemaAndClassNameSeparatedByColon.find (':');
         if (WString::npos != pos)
             {
             m_schemaName = schemaAndClassNameSeparatedByColon.substr (0, pos);
             m_className = schemaAndClassNameSeparatedByColon.substr (pos+1);
+            return true;
             }
+        else
+            return false;
         }
-
-    SchemaNameClassNamePair () {};
 
     bool operator<(SchemaNameClassNamePair other) const
         {
