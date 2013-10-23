@@ -8,9 +8,9 @@
 #include "../ECObjectsTestPCH.h"
 
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48

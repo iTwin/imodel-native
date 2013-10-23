@@ -8,9 +8,9 @@
 #include "../ECObjectsTestPCH.h"
 
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

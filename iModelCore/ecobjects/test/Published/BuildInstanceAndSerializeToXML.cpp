@@ -8,9 +8,9 @@
 #include "../ECObjectsTestPCH.h"
 
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE

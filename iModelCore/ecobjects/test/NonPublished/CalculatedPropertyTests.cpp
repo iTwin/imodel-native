@@ -8,9 +8,9 @@
 #include "../ECObjectsTestPCH.h"
 
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
 
