@@ -1336,7 +1336,7 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     expectedValues.push_back (AccessStringValuePair (L"Name",           ECValue (L"merge")));
 
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*mergeToInstance);
-    dumpPropertyValues (*collection, false, 0);
+//    dumpPropertyValues (*collection, false, 0);
 
     UInt32                  iValue = 0;
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);

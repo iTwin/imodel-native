@@ -1497,8 +1497,9 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
         elapsedSeconds += timer.GetElapsedSeconds();
         instance->ClearValues();
         }
-    
+#if PRINT_PROFILING
     wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
+#endif
     }
     
 TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
