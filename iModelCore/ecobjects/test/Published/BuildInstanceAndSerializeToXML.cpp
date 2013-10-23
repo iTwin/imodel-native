@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-#include <comdef.h>
 
 
 #include <ECObjects\ECInstance.h>
@@ -67,10 +66,7 @@ struct  SampleData
 
     SampleData (int id, UInt32 numReadings)
         {
-        wchar_t buffer[50];
-        swprintf (buffer, L"Sample_%d", id);
-
-        m_name = buffer;
+        m_name.Sprintf (L"Sample_%d", id);
         m_id = id;
         m_numReadings = numReadings;
 

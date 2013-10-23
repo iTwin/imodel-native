@@ -176,9 +176,9 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"    </ECClass>"
                     L"</ECSchema>";
 
-    wchar_t* buff = (wchar_t*) _alloca (2 * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
+    WString buff;
 
-    swprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
+    buff.Sprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
 
     return buff;
     }
@@ -212,13 +212,13 @@ ECSchemaPtr     CreateProfilingSchema (int nStrings)
 
     for (int i = 0; i < nStrings; i++)
         {
-        wchar_t propertyName[32];
-        swprintf(propertyName, L"StringProperty%02d", i);
+        WString propertyName;
+        propertyName.Sprintf (L"StringProperty%02d", i);
         s_propertyNames.push_back (propertyName);
         WCharCP propertyFormat = 
                     L"        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
-        wchar_t propertyXml[128];
-        swprintf (propertyXml, propertyFormat, propertyName);
+        WString propertyXml;
+        propertyXml.Sprintf (propertyFormat, propertyName.c_str());
         schemaXml += propertyXml;
         }                    
 
@@ -449,9 +449,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        SetAndVerifyString (instance, v, propertyName, valueForFinalStrings);
+        WString propertyName;
+        propertyName.Sprintf (L"Property%i", i);
+        SetAndVerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
         }          
         
 #ifdef THESE_TESTS_DUPLICATE_PUBLISHED_TESTS
@@ -499,9 +499,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        VerifyString (instance, v, propertyName, valueForFinalStrings);
+        WString propertyName;
+        propertyName.Sprintf (L"Property%i", i);
+        VerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
         }    
     VerifyArrayInfo     (instance, v, L"BeginningArray", 14, false);
     VerifyIsNullArrayElements   (instance, v, L"BeginningArray", 0, 14, false);
@@ -530,17 +530,16 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
-    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
-    string[0] = '\0';
+    WString string;
     for (int i = 0; i < nChars; i++)
         {
         int digit = i % 10;
-        wchar_t digitAsString[2];
-        swprintf (digitAsString, L"%d", digit);
-        wcscat (string, digitAsString);
+        WString digitAsString;
+        digitAsString.Sprintf (L"%d", digit);
+        string.append (digitAsString);
         }
         
-    ECValue v(string);
+    ECValue v(string.c_str());
     EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
     }
 

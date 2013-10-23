@@ -22,7 +22,7 @@ protected:
     static void AssertDateTime (DateTimeCR expected, DateTimeCR actual, bool ignoreDateTimeInfo)
         {
         WString expectedActualStr;
-        expectedActualStr.Sprintf (L"Expected: %ls - Actual: %ls", expected.ToString (), actual.ToString ());
+        expectedActualStr.Sprintf (L"Expected: %ls - Actual: %ls", expected.ToString ().c_str(), actual.ToString ().c_str());
 
         if (ignoreDateTimeInfo)
             {

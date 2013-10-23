@@ -8,6 +8,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
+#include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
@@ -154,15 +155,16 @@ WString ECTestFixture::GetLogConfigurationFilename()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString  ECTestFixture::GetDateTime ()
     {
-    wchar_t date[9];
-    wchar_t time[9];
-    
-    _wstrdate(date);
-    _wstrtime(time);
-    WString dateTime (date);
-    dateTime.append (L" ");
-    dateTime.append (time);
-    return dateTime;
+    struct tm timeinfo;
+    BeTimeUtilities::ConvertUnixMillisToTm (timeinfo, BeTimeUtilities::GetCurrentTimeAsUnixMillis());   // GMT
+
+    char buff[32];
+    strftime (buff, sizeof(buff), "%y/%m/%d", &timeinfo);
+    Utf8String dateTime (buff);
+    dateTime.append (" ");
+    strftime(buff, sizeof(buff), "%H:%M:%S", &timeinfo);
+    dateTime.append (buff);
+    return WString(dateTime.c_str(), true);
     }
 
 /*---------------------------------------------------------------------------------**//**

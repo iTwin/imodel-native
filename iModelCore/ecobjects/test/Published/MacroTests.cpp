@@ -7,8 +7,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-#include <objbase.h>
-#include <comdef.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

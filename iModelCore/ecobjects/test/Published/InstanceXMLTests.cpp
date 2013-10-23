@@ -130,9 +130,9 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     for (UInt32 index=0; index < 300; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
-        wchar_t     expectedString[128];
-        swprintf (expectedString, L"String %d", index%30);
-        EXPECT_STREQ (expectedString, ecValue.GetString());
+        WString expectedString;
+        expectedString.Sprintf (L"String %d", index%30);
+        EXPECT_STREQ (expectedString.c_str(), ecValue.GetString());
         }
 
     for (UInt32 index=0; index < 100; index++)
@@ -686,6 +686,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlString)
     {
+#ifdef _WIN32
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     // we get the instance we want to serialize by reading the instance from XML.
@@ -699,6 +700,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlStrin
         
     IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
         
+        // *** WIP_PORTABILITY: Use an escape such as \u here. Don't try to use extended ascii directly
     //*** Test with WChar String
     WString expectedString (L"הצüבß");
     ECValue expectedValue (expectedString.c_str ());
@@ -719,6 +721,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlStrin
     EXPECT_TRUE (expectedValue.Equals (actualValue)) << L"Roundtripped WChar ECValue does not match original ECValue.";
     WCharCP actualString = actualValue.GetString ();
     EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
+#endif
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,6 +729,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlStrin
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString)
     {
+#ifdef _WIN32
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     // we get the instance we want to serialize by reading the instance from XML.
@@ -739,6 +743,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString
         
     IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
         
+        // *** WIP_PORTABILITY: Use an escape such as \u here. Don't try to use extended ascii directly
     //*** Test with WChar String
     Utf8String expectedString;
     BeStringUtilities::WCharToUtf8 (expectedString, L"הצüßבט");
@@ -760,6 +765,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString
     EXPECT_TRUE (expectedValue.Equals (actualValue)) << L"Roundtripped WChar ECValue does not match original ECValue.";
     Utf8CP actualString = actualValue.GetUtf8CP ();
     EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
+#endif
     };
 
 /*---------------------------------------------------------------------------------**//**

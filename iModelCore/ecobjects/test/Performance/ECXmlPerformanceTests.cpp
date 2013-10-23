@@ -40,8 +40,8 @@ FILE* logFile
 
     WString dateTime = ECTestFixture::GetDateTime ();
     ECSchemaReferenceList references = schema->GetReferencedSchemas();
-    fwprintf (logFile, L"%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), references.size(), deserializationTimer.GetElapsedSeconds());
-    fwprintf (logFile, L"%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), stringLength, serializationTimer.GetElapsedSeconds());
+    fwprintf (logFile, L"%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), references.size(), deserializationTimer.GetElapsedSeconds());
+    fwprintf (logFile, L"%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), stringLength, serializationTimer.GetElapsedSeconds());
 
     }
 
@@ -81,8 +81,8 @@ FILE* logFile
     WString dateTime = ECTestFixture::GetDateTime ();
     size_t stringLength = ecInstanceXml.length();
 
-    fwprintf (logFile, L"%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), readingTimer.GetElapsedSeconds());
-    fwprintf (logFile, L"%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName(), testInstance->GetClass().GetName(), stringLength, writingTimer.GetElapsedSeconds());
+    fwprintf (logFile, L"%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), readingTimer.GetElapsedSeconds());
+    fwprintf (logFile, L"%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength, writingTimer.GetElapsedSeconds());
 
     }
 
@@ -97,9 +97,9 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
 
     WString logfilePath = GetTestResultsFilePath (L"ECObjectsPerformanceResults.csv");
 
-    bool existingFile = (0 == _waccess_s(logfilePath.c_str(), 0 ));
+    bool existingFile = BeFileName::DoesPathExist (logfilePath.c_str());
 
-    _wfopen_s(&logFile, logfilePath.c_str(), L"a+"); 
+    logFile = fopen (Utf8String(logfilePath).c_str(), "a+"); 
     wprintf (L"CSV Results filename: %s\n", logfilePath.c_str());
 
     if (!existingFile)
@@ -120,9 +120,9 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
 
     WString logfilePath = GetTestResultsFilePath (L"ECObjectsPerformanceResults.csv");
 
-    bool existingFile = (0 == _waccess_s(logfilePath.c_str(), 0 ));
+    bool existingFile = BeFileName::DoesPathExist (logfilePath.c_str());
 
-    _wfopen_s(&logFile, logfilePath.c_str(), L"a+"); 
+    logFile = fopen (Utf8String(logfilePath).c_str(), "a+"); 
     wprintf (L"CSV Results filename: %s\n", logfilePath.c_str());
 
     if (!existingFile)

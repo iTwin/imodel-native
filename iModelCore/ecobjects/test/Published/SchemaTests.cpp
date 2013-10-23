@@ -1112,8 +1112,8 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         
         SchemaKey key (entry.first.c_str(), 1, 0);
         EXPECT_TRUE(ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, entry.second) == ECOBJECTS_STATUS_Success);
-        EXPECT_EQ(key.m_versionMajor, _wtoi(entry.second));
-        EXPECT_EQ(key.m_versionMinor, _wtoi(wcschr(entry.second, L'.') + 1));
+        EXPECT_EQ(key.m_versionMajor, BeStringUtilities::Wtoi(entry.second));
+        EXPECT_EQ(key.m_versionMinor, BeStringUtilities::Wtoi(wcschr(entry.second, L'.') + 1));
         schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsStandardSchema());
