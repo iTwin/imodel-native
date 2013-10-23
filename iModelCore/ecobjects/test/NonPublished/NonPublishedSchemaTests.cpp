@@ -37,16 +37,22 @@ TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     for (ECClassContainer::const_iterator cit = container.begin(); cit != container.end(); ++cit)
         {
         ECClassCP ecClass = *cit;
+        ASSERT_TRUE(ecClass != NULL);
+#if PRINT_DUMP
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+#endif
         count++;
         }
     ASSERT_EQ(2, count);
 
     FOR_EACH (ECClassCP ecClass, container)
         {
+        ASSERT_TRUE(ecClass != NULL);
+#if PRINT_DUMP
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+#endif
         count++;
         }
     ASSERT_EQ(4, count);
@@ -63,6 +69,7 @@ TEST_F (NonPublishedSchemaTest, TestCircularReferenceWithLocateSchema)
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);    
     SchemaKey key(L"CircleSchema", 01, 00);
+    DISABLE_ASSERTS
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_FALSE(testSchema.IsValid());
     }
