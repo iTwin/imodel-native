@@ -26,7 +26,6 @@ public:
 
     static WString GetTestDataPath(WCharCP fileName);
     static WString GetTempDataPath(WCharCP fileName);
-    static WString GetWorkingDirectoryPath(WCharCP testFixture, WCharCP fileName);
     static WString GetTestResultsFilePath (WCharCP fileName);
     static WString GetDateTime();
 
