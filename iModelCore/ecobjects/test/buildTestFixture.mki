@@ -13,13 +13,6 @@ baseDir =   $(_MakeFilePath)
 GUNITTEST_NOEXEC = 1
 
 #----------------------------------------------------------------------
-#       Create output directories
-#----------------------------------------------------------------------
-always:
-    !~@mkdir $(o)
-    !~@mkdir $(OutputRootDir)build/UnitTests/ecobjects/NonPublishedECObjectsUnitTests
-
-#----------------------------------------------------------------------
 #       Compile the unit tests
 #----------------------------------------------------------------------
 BEGTEST_NAME=$(programName)
@@ -27,12 +20,18 @@ BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 BEGTEST_DEPENDENCIES=$(baseDir)SeedData.prewire.mke
 %include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
 
+#----------------------------------------------------------------------
+#       Compile the main and testfixture 
+#----------------------------------------------------------------------
+# Let all stand-alone tests share the same gtestmain and TestFixture objects.
+o = $(OutputRootDir)build/ecobjects/buildTestFixture/
+
+always:
+    !~@mkdir $(o)
+
 $(o)gtestmain.obj : $(SrcRoot)ecobjects/test/gtestmain.cpp
 
-# TRICKY! All unit tests use ECTestFixture. That class is implemented by the following .obj. So, we always make sure that's built, too.
-testFixtureObj = $(OutputRootDir)build/ECObjectsTest_NonPublished/ECObjectsTest_NonPublished/TestFixture.obj
-
-$(testFixtureObj) : $(SrcRoot)ecobjects/test/NonPublished/TestFixture.cpp
+$(o)TestFixture.obj : $(SrcRoot)ecobjects/test/TestFixture/TestFixture.cpp
 
 #----------------------------------------------------------------------------------------
 #   Link the executable
@@ -51,13 +50,10 @@ GTEST_MAIN_IS_SUPPLIED = 1
 
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
+LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj 
+LOCAL_GUNITTEST_OBJS + $(o)TestFixture.obj
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
-
-LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj
-
-# TRICKY! All unit tests use ECTestFixture. That class is implemented by the following .obj. So, we always link that in, too.
-LOCAL_GUNITTEST_OBJS + $(testFixtureObj)
 
 SORTED_LOCAL_GUNITTEST_OBJS =% $[@sort $(LOCAL_GUNITTEST_OBJS)]
 LOCAL_GUNITTEST_OBJS = $(SORTED_LOCAL_GUNITTEST_OBJS)

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/TestFixture.h $
+|     $Source: test/TestFixture/TestFixture.h $
 |
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |

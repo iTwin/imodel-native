@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/TestFixture.cpp $
+|     $Source: test/TestFixture/TestFixture.cpp $
 |
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 | Based on http://cplus.about.com/od/howtodothingsi2/a/timing.htm

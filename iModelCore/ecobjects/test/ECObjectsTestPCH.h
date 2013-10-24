@@ -14,7 +14,7 @@
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
 
-#include "TestFixture.h"
+#include "TestFixture/TestFixture.h"
 
 //define DesignByContract macros here locally in a simplified form until it is available from the API.
 #ifndef PRECONDITION
