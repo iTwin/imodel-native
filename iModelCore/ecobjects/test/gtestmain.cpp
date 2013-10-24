@@ -184,9 +184,7 @@ int main (int argc, char **argv)
             ::testing::GTEST_FLAG(filter) = filters.c_str();
         }
 
-    printf ("__START_TESTS__\n");
     int errors = RUN_ALL_TESTS();
-    printf ("__END_TESTS__\n");
 
     return errors;
     }
