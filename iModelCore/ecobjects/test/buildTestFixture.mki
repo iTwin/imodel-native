@@ -43,7 +43,6 @@ GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
 GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
-GUNITTEST_LIBS      + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
 GUNITTEST_PATH      = $(o) 
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
@@ -54,9 +53,6 @@ LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj
 LOCAL_GUNITTEST_OBJS + $(o)TestFixture.obj
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
-
-SORTED_LOCAL_GUNITTEST_OBJS =% $[@sort $(LOCAL_GUNITTEST_OBJS)]
-LOCAL_GUNITTEST_OBJS = $(SORTED_LOCAL_GUNITTEST_OBJS)
 
 %include $(SharedMki)gunittest.mki
 

@@ -56,9 +56,7 @@
     <Part Name="ECObjectsTestsBasicDependencies">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
-        <SubPart PartName="Logging" />
         <SubPart PartName="ECObjectsNative" />
-        <SubPart PartName="ECObjectsTestLoggingConfig"/>
     </Part>
 
     <Part Name="ECObjectsUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
@@ -83,6 +81,7 @@
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
+        <SubPart PartName="Logging" />
         <SubPart PartName="ECObjectsTestLoggingConfig"/>
     </Part>
 
