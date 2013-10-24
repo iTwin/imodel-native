@@ -2550,17 +2550,16 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
 
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
-    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
-    string[0] = '\0';
+    WString string;
     for (int i = 0; i < nChars; i++)
         {
         int digit = i % 10;
-        wchar_t digitAsString[2];
-        swprintf (digitAsString, L"%d", digit);
-        wcscat (string, digitAsString);
+        WString digitAsString;
+        digitAsString.Sprintf (L"%d", digit);
+        string.append (digitAsString);
         }
         
-    ECValue v(string);
+    ECValue v(string.c_str());
     EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
     }
 
