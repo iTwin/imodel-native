@@ -48,7 +48,9 @@ struct CalculatedPropertyTests : ECTestFixture
         {
         ECValue actualVal;
         EXPECT_SUCCESS (instance.GetValue (actualVal, propName));
-        EXPECT_TRUE (actualVal.Equals (ECValue (expectedVal))) << "Expect: " << expectedVal << " Actual: " << actualVal.ToString().c_str();
+        EXPECT_TRUE (actualVal.Equals (ECValue (expectedVal)));
+        // << "Expect: " << expectedVal << " Actual: " << actualVal.ToString().c_str();
+		// Causes WinRT build error
         }
 
     void TestNull (IECInstanceCR instance, WCharCP propName)
