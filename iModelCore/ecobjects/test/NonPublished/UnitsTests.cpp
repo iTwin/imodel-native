@@ -186,9 +186,7 @@ void UnitsTest::TestUnitConversion (double fromVal, WCharCP fromUnitName, double
     EXPECT_TRUE (srcUnit.IsCompatible (dstUnit) && dstUnit.IsCompatible (srcUnit));
     double convertedVal = fromVal;
     EXPECT_TRUE (srcUnit.ConvertTo (convertedVal, dstUnit));
-    EXPECT_TRUE (fabs (convertedVal - expectedVal) < tolerance);
-    // << L"Input " << fromVal << fromUnitName << L" Expected " << expectedVal << targetUnitName << L" Actual " << convertedVal;
-	// Causes WinRT build error. 
+    EXPECT_TRUE (fabs (convertedVal - expectedVal) < tolerance) << L"Input " << fromVal << fromUnitName << L" Expected " << expectedVal << targetUnitName << L" Actual " << convertedVal;
     }
 
 /*---------------------------------------------------------------------------------**//**

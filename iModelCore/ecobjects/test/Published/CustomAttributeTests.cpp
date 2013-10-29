@@ -550,7 +550,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caUtf8StringPropName, expectedUtf8Value)) << L"Assigning value to " << caUtf8StringPropName << L" in custom attribute instance failed.";
 
     ECClassP testClass = expectedSchema->GetClassP (testClassName);
-    EXPECT_TRUE (testClass != NULL) << L"Test class " << testClass << L" not found";
+    EXPECT_TRUE (testClass != NULL) << L"Test class " << testClassName << L" not found";
     EXPECT_EQ (ECOBJECTS_STATUS_Success, testClass->SetCustomAttribute (*caInstance)) << L"Assigning the custom attribute instance to class " << testClassName << L" failed.";
 
     //serializing
