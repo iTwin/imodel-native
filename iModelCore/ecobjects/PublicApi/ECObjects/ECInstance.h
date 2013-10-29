@@ -90,7 +90,7 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
 //!
-//! @if BENTLEY_SDK_Desktop
+//! @if BENTLEY_SDK_Internal
 //! ### Comparison to .NET ECObjects
 //! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 

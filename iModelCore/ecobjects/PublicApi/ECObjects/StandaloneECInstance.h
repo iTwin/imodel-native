@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECObjects/ECObjects.h>
-/** @cond BENTLEY_SDK_Desktop */
+/** @cond BENTLEY_SDK_Internal */
 #include <ECObjects/ECDBuffer.h>
 /** @endcond */
 
@@ -22,7 +22,7 @@ typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
 
-/** @cond BENTLEY_SDK_Desktop */
+/** @cond BENTLEY_SDK_Internal */
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
@@ -243,7 +243,7 @@ public:
     ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
     };
 
-/** @cond BENTLEY_SDK_Desktop */
+/** @cond BENTLEY_SDK_Internal */
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an
 //! ECRelationship.
