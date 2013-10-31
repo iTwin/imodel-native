@@ -19,8 +19,15 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 using namespace Bentley::ECN;
 using namespace std;
 
-struct NonPublishedMemoryLayoutTests : ECTestFixture {};
+struct NonPublishedMemoryLayoutTests : ECTestFixture 
+    {
+    static std::vector<WString> s_propertyNames;
 
+    void SetValuesForProfiling (StandaloneECInstanceR instance)
+        {
+        for (NameVector::const_iterator it = s_propertyNames.begin(); it != s_propertyNames.end(); ++it)
+            instance.SetValue (it->c_str(), ECValue (it->c_str()));
+        }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -395,7 +402,6 @@ ECSchemaPtr     CreateTestSchema ()
     }
     
 typedef std::vector<WString> NameVector;
-static std::vector<WString> s_propertyNames;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
@@ -726,7 +732,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 
     instance.ToString(L"").c_str();
     }
+};
 
+std::vector<WString> NonPublishedMemoryLayoutTests::s_propertyNames;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1453,27 +1461,6 @@ TEST_F (NonPublishedMemoryLayoutTests, TestSetGetNull)
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"S"));
     EXPECT_FALSE (v.IsNull());     
     };
-    
-void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
-    {
-    WString string;
-    for (int i = 0; i < nChars; i++)
-        {
-        int digit = i % 10;
-        WString digitAsString;
-        digitAsString.Sprintf (L"%d", digit);
-        string.append (digitAsString);
-        }
-        
-    ECValue v(string.c_str());
-    EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
-    }
-
-void SetValuesForProfiling (StandaloneECInstanceR instance)
-    {
-    for (NameVector::const_iterator it = s_propertyNames.begin(); it != s_propertyNames.end(); ++it)
-        instance.SetValue (it->c_str(), ECValue (it->c_str()));
-    }
     
 TEST_F (NonPublishedMemoryLayoutTests, ProfileSettingValues)
     {
