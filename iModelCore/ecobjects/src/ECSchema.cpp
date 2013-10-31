@@ -2247,6 +2247,15 @@ void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaP>& allSch
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaId ECSchema::GetId() const
+    {
+    BeAssert (0 != m_ecSchemaId);
+    return m_ecSchemaId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const

@@ -186,6 +186,10 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
+typedef Int64 ECClassId;
+typedef Int64 ECPropertyId;
+typedef Int64 ECSchemaId;
+
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
@@ -520,6 +524,7 @@ friend struct ECClass;
 private:
     WString                 m_description;
     ECValidatedName         m_validatedName;
+    mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;
@@ -565,9 +570,14 @@ public:
     ECOBJECTS_EXPORT bool                                IsCalculated() const;
     //! Call this method rather than setting the custom attribute directly!
     ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert(0 == m_ecPropertyId); m_ecPropertyId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecPropertyId != 0; };
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECOBJECTS_EXPORT ECPropertyId       GetId() const;
     //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     // ECClass implementation will index property by name so publicly name can not be reset
@@ -847,6 +857,7 @@ private:
     mutable WString                 m_fullName;
     WString                         m_description;
     ECValidatedName                 m_validatedName;
+    mutable ECClassId               m_ecClassId;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -916,9 +927,15 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
 
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert(0 == m_ecClassId); m_ecClassId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != 0; };
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECOBJECTS_EXPORT ECClassId             GetId() const;
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     //! Used to avoid dynamic_cast
@@ -1770,6 +1787,7 @@ private:
     SchemaKey               m_key;
     WString                 m_namespacePrefix;
     WString                 m_displayLabel;
+    mutable ECSchemaId      m_ecSchemaId;
     WString                 m_description;
     ECClassContainer        m_classContainer;
 
@@ -1819,6 +1837,10 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
 public:
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECSchemaId id) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
+
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, WCharCP newName);
 
@@ -1832,6 +1854,9 @@ public:
     //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
     //! @param[in] doAssert Controls whether asserts should be tested or not.  Defaults to true.
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
+
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECOBJECTS_EXPORT ECSchemaId         GetId() const;
 
     //! Sets the name of this schema
     //! @param[in]  value   The name of the ECSchema
