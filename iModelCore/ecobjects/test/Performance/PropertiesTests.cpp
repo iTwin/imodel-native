@@ -15,7 +15,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PerformancePropertiesTest   : PerformanceTestFixture 
 {
-    void AddElementsOneAtATime(ECClassP classA, WStringCR propertyName, bmap<Utf8String, double> results)
+    void AddElementsOneAtATime(ECClassP classA, WStringCR propertyName, bmap<Utf8String, double>& results)
         {
         wchar_t timerName[256];
         BeStringUtilities::Snwprintf (timerName, L"Adding 10000 array elements one at a time to %ls", propertyName.c_str());
@@ -29,7 +29,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
         PERFORMANCELOG.infov("%ls - %lf", timerName, timer.GetElapsedSeconds());
         results[Utf8String(timerName)] = timer.GetElapsedSeconds();
         }
-    void AddElementsOnce(ECClassP classA, WStringCR propertyName, bmap<Utf8String, double> results)
+    void AddElementsOnce(ECClassP classA, WStringCR propertyName, bmap<Utf8String, double>& results)
         {
         wchar_t timerName[256];
         BeStringUtilities::Snwprintf (timerName, L"Adding 10000 array elements at once to %ls", propertyName.c_str());
