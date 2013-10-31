@@ -62,6 +62,9 @@
      specified not explicitly specifed in a category node.
 -->
 
+    <category name="Performance">
+        <priority value="info"/>
+    </category>
     <category name="ECObjectsNative">   <priority value="info"/></category>
     <category name="DgnEC">             <priority value="info"/></category>
 

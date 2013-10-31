@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                               Raimondas.Rimkus   02/2013
@@ -97,4 +99,4 @@ TEST_F (ValueAccessorTests, CreateFromEnabledIndexConstruct)
     EXPECT_STREQ (value1.GetString(), L"Some value 1");
     }
     
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

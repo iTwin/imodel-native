@@ -6,10 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
+using namespace Bentley::ECN;
 
 #include <regex>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct ValueTests : ECTestFixture
     {
@@ -139,4 +141,4 @@ TEST_F(ValueTests, DateTimeConversions)
     EXPECT_EQ (value.GetDateTimeUnixMillis(), 1360835897456L);
     }
     
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

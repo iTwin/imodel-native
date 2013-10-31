@@ -6,16 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-
+#include "../TestFixture/TestFixture.h"
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 #include <ECObjects/ECSchema.h>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
+using namespace Bentley::ECN;
 
 struct NonPublishedSchemaTest : ECTestFixture {};
 TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
@@ -91,4 +92,4 @@ TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

@@ -6,13 +6,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-
+#include "../TestFixture/TestFixture.h"
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
 
@@ -263,5 +264,5 @@ TEST_F (StringEncodingTests, ForceUtf8)
     ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE
 

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
@@ -13,13 +14,12 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+using namespace Bentley::ECN;
 using namespace std;
 
 struct NonPublishedMemoryLayoutTests : ECTestFixture {};
-
-namespace {
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -396,8 +396,6 @@ ECSchemaPtr     CreateTestSchema ()
     
 typedef std::vector<WString> NameVector;
 static std::vector<WString> s_propertyNames;
-
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
@@ -2055,4 +2053,4 @@ TEST_F (ECDBufferTests, ArraysAreNotNull)
     EXPECT_FALSE (v.IsNull());
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

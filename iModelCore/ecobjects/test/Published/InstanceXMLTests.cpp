@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct InstanceDeserializationTest      : ECTestFixture {};
 struct PolymorphismDeserializationTest  : ECTestFixture {};
@@ -803,4 +805,4 @@ TEST_F (InstanceSerializationTest, EmptyPropertyTags)
     EXPECT_TRUE (v.IsNull());
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

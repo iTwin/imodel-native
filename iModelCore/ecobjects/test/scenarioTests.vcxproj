@@ -63,8 +63,6 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp" />
-    <ClCompile Include="scenario\TestFixture.cpp" />
     <ClCompile Include="scenario\ValueTests.cpp" />
   </ItemGroup>
   <ItemGroup>

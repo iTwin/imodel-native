@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 
 #include <ECObjects/ECInstance.h>
@@ -19,6 +20,8 @@
 
 using namespace std;
 USING_NAMESPACE_EC
+
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct MemoryLayoutTests : ECTestFixture {};
 
@@ -2603,3 +2606,4 @@ TEST_F (MemoryLayoutTests, TestValueAccessor)
     ECValueAccessor m_accessor;
     }
 
+END_BENTLEY_ECN_TEST_NAMESPACE

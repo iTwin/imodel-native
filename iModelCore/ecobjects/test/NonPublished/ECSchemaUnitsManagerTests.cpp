@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 #include <ECUnits/Units.h>
 #include "UnitsTestBase.h"
@@ -13,7 +14,7 @@
 using namespace Bentley::ECN;
 
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 /*====================================================================================**/
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
@@ -190,4 +191,4 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults
     VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

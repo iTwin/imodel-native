@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaTest                : ECTestFixture {};
 struct SchemaDeserializationTest : ECTestFixture {};
@@ -496,4 +498,4 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     EXPECT_EQ (schema->SetVersionMinor(13), ECOBJECTS_STATUS_SchemaIsImmutable);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

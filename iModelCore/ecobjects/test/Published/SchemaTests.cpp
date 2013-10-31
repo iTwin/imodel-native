@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 // NEEDSWORK Improve strategy for seed data.  Should not be maintained in source.
 #define SCHEMAS_PATH  L"" 
@@ -2215,4 +2217,4 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     EXPECT_TRUE (schema.IsNull());
     }
     
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

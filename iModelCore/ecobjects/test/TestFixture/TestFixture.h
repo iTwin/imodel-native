@@ -8,26 +8,20 @@
 #pragma once
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFileName.h>
+#include "../ECObjectsTestPCH.h"
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct ECTestFixture : ::testing::Test
     {
-private:
-    static bool s_isLoggerInitialized;
-    WString GetLogConfigurationFilename();
-
 protected:
     ECTestFixture();
     
 public:
-    virtual void            SetUp () override;
-    virtual void            TearDown () override;
 
     static WString GetTestDataPath(WCharCP fileName);
     static WString GetTempDataPath(WCharCP fileName);
-    static WString GetTestResultsFilePath (WCharCP fileName);
     static WString GetDateTime();
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

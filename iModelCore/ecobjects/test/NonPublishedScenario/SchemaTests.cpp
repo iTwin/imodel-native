@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct NonPublishedScenarioSchemaTest : ECTestFixture {};
 
@@ -176,4 +178,4 @@ TEST_F (NonPublishedScenarioSchemaTest, GetBaseClassProperty)
 	WheelsChildInstance->SetValue (L"Name", v);
 }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

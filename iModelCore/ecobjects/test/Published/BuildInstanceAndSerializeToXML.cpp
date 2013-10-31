@@ -6,16 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-
+#include "../TestFixture/TestFixture.h"
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
+using namespace Bentley::ECN;
 
 struct BasicTest : ECTestFixture {};
 
@@ -181,4 +182,4 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     }
 
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

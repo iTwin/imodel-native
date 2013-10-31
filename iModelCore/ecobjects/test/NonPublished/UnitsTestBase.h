@@ -11,7 +11,7 @@
 
 using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 /*====================================================================================**/
 /// <summary>Tests for Bentley.Units and Bentley.ECObjects.Units.</summary>
 /// <author>Colin.Kerr</author>                             <date>3/2008</date>
@@ -527,4 +527,4 @@ Unit defaultUnit
 //
 //#endregion
 //}
-};END_BENTLEY_ECOBJECT_NAMESPACE
+};END_BENTLEY_ECN_TEST_NAMESPACE

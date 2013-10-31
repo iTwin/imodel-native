@@ -6,11 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-
+#include "../TestFixture/TestFixture.h"
 
 #include <ECPresentationRules/PresentationRules.h>
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PresentationRulesTests : ECTestFixture {};
 
@@ -337,4 +338,4 @@ TEST_F(PresentationRulesTests, TestPresentationRuleSetSavingToXml)
     EXPECT_EQ (1, localizationResourceKeyDefinitionCount);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

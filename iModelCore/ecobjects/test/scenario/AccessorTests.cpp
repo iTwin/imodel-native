@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                               Raimondas.Rimkus   02/2013
@@ -215,4 +217,4 @@ TEST_F (ValueAccessorTests, MatchAccessors)
     EXPECT_TRUE (accessor_1 != accessor_3);
     }
     
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

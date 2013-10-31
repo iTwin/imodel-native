@@ -6,10 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
+using namespace Bentley::ECN;
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct TestCopySchema : ECTestFixture {
 	ECSchemaPtr m_testSchema;
@@ -118,4 +120,4 @@ TEST_F (TestCopySchema, CopySchemaWithInvalidReferenceAndCreateInstance)
 	EXPECT_TRUE(out.Equals (ECValue (L"test"))) << "Expect: " << L"test" << " Actual: " << out.ToString().c_str();
 }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

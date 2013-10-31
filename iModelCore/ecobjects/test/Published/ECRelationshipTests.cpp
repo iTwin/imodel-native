@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+using namespace Bentley::ECN;
 
 struct ECRelationshipTests : ECTestFixture {};
 
@@ -186,4 +188,4 @@ TEST_F(ECRelationshipTests, SetRelationshipProperties)
     EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

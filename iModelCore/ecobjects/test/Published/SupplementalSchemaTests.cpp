@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+using namespace Bentley::ECN;
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
@@ -1159,4 +1161,4 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
     }
 #endif
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

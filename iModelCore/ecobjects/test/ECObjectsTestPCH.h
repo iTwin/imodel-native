@@ -14,7 +14,9 @@
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
 
-#include "TestFixture/TestFixture.h"
+#define BEGIN_BENTLEY_ECN_TEST_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECNTests {
+
+#define END_BENTLEY_ECN_TEST_NAMESPACE    }}
 
 //define DesignByContract macros here locally in a simplified form until it is available from the API.
 #ifndef PRECONDITION

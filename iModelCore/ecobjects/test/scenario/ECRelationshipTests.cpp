@@ -6,10 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
+
+using namespace Bentley::ECN;
 
 #include <regex>
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 bvector<WString> split (WString text, WChar delimiter)
 {
@@ -307,4 +310,4 @@ TEST_F(ECRelationshipTests, DISABLED_DumpToString)
         }
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

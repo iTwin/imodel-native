@@ -6,22 +6,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
-
+#include "../TestFixture/TestFixture.h"
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CalculatedPropertyTests : ECTestFixture
+struct CalculatedPropertyTests : ::testing::Test
     {
     enum { OPTION_UseLastValid = 1 << 0, OPTION_DefaultOnly = 1 << 1 };
 
@@ -556,4 +557,4 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
     Test (*instance, L"S2", L"y");
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

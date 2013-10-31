@@ -63,13 +63,13 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ECObjectsTestPCH.cpp" />
-    <ClCompile Include="Performance\TestFixture.cpp" />
     <ClCompile Include="Performance\ECXmlPerformanceTests.cpp" />
+    <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
+    <ClCompile Include="Performance\PropertiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
-    <ClInclude Include="Performance\TestFixture.h" />
+    <ClInclude Include="Performance\PerformanceTestFixture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="logging.config.xml" />

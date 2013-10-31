@@ -6,12 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 #include "UnitsTestBase.h"
 
 using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 void UnitsTestBase::SetUp()
     {
@@ -116,4 +117,4 @@ void UnitsTestBase::VerifyDefaultUnit (WString expectedUnitName, Unit defaultUni
     ASSERT_TRUE (expectedUnitName.Equals (defaultUnit.GetName())) << "Expected " << expectedUnitName.c_str() << " Actual " << defaultUnit.GetName();
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

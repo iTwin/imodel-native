@@ -6,12 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
 #include <ECUnits/Units.h>
 
 using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 static WCharCP s_refSchemaXml =
     L"<ECSchema schemaName=\"RefSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -1762,4 +1763,4 @@ TEST_F (UnitsTest, Formatting)
     // Storage: km Display: miles Format: 0000.###### \"ignored\"
     TestUnitFormatting (L"FromDimension", 123.456, L"0076.712002 ignored mi");
     }
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE
