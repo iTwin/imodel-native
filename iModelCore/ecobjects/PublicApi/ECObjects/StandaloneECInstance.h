@@ -252,6 +252,8 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _GetSourceOrderId (Int64 &sourceOrderId) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _GetTargetOrderId (Int64 &targetOrderId) = 0;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -259,6 +261,8 @@ struct IECWipRelationshipInstance : StandaloneECInstance
         ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
+        ECOBJECTS_EXPORT BentleyStatus  GetSourceOrderId (Int64& sourceOrderId);
+        ECOBJECTS_EXPORT BentleyStatus  GetTargetOrderId (Int64& targetOrderId);
     };
 
 //=======================================================================================

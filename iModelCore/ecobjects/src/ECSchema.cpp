@@ -2247,6 +2247,15 @@ void            ECSchema::FindAllSchemasInGraph (bvector<ECN::ECSchemaP>& allSch
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaId ECSchema::GetId() const
+    {
+    BeAssert (0 != m_ecSchemaId);
+    return m_ecSchemaId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchema::CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const
@@ -2472,6 +2481,17 @@ ECSchemaPtr     ECSchemaCache::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
 ECSchemaCachePtr    ECSchemaCache::Create ()
     {
     return new ECSchemaCache;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas) const
+    {
+    schemas.clear();
+    for (SchemaMap::const_iterator it = m_schemas.begin(); it != m_schemas.end(); it++)
+        schemas.push_back (it->second.get());
+    return schemas.size();
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
