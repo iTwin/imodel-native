@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/** @cond BENTLEY_SDK_Internal */
 //#include <ECObjects/VirtualCollectionIterator.h>
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
@@ -248,7 +248,7 @@ struct ECInstanceIterable
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_Desktop
+/** @endcond */
 
 /*__PUBLISH_SECTION_END__*/
 //#pragma make_public (Bentley::ECN::ECInstanceIterable)

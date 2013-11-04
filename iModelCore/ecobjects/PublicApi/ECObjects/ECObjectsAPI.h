@@ -9,7 +9,7 @@
 //#define EC_TRACE_MEMORY
 // This file describes the public API for writing applications using the ECObjects library.
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_Desktop
+/** @cond BENTLEY_SDK_Internal */
 
 /*=================================================================================**//**
 @if ECOBJECTS_MAINPAGE
@@ -82,5 +82,4 @@ capture this information.
 #endif
 /*__PUBLISH_SECTION_START__*/
 
-/// @endcond BENTLEY_SDK_Desktop
-
+/** @endcond */
