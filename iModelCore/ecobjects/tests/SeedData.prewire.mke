@@ -8,9 +8,9 @@
 PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 %include mdl.mki
 
-buildDir=$(OutputRootDir)build/ECObjects/test/
+buildDir=$(OutputRootDir)build/ECObjects/tests/
 
-seedDataSource=$(SrcRoot)ecobjects/test/SeedData/
+seedDataSource=$(SrcRoot)ecobjects/tests/SeedData/
 
 # Wire in seed data
 always:
