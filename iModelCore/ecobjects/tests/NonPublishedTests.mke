@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
+PolicyFile = $(SrcRoot)/ecobjects/tests/ECObjectsTestPolicy.mki
 baseDir =   $(_MakeFilePath)
 
 programName = ECObjectsTest_NonPublished
