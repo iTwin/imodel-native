@@ -5,10 +5,9 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__PUBLISH_SECTION_START__
-/// @cond BENTLEY_SDK_All
 #pragma once
 
+//__PUBLISH_SECTION_START__
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECSchema.h>
@@ -17,18 +16,14 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
+
 //__PUBLISH_SECTION_END__
 #include <stack>
 #include <set>
 #include <memory>
-//__PUBLISH_SECTION_START__
 
-
-
-//__PUBLISH_SECTION_END__
 EC_TYPEDEFS(ECDiffNode);
 EC_TYPEDEFS(ECDiffValue);
-
 
 //__PUBLISH_SECTION_START__
 EC_TYPEDEFS(ECDiff);
@@ -565,7 +560,4 @@ public:
 //__PUBLISH_SECTION_START__
 	
 END_BENTLEY_ECOBJECT_NAMESPACE
-/// @endcond BENTLEY_SDK_All
-
-//__PUBLISH_SECTION_END__
 

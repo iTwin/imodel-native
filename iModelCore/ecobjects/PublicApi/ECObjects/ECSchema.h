@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
@@ -127,7 +126,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
-struct ECTypeDescriptor /*__PUBLISH_SEALED__*/
+struct ECTypeDescriptor
 {
 private:
     ValueKind       m_typeKind;
@@ -2180,9 +2179,5 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_All
-
 //#pragma make_public (Bentley::ECN::ECClass)
 //#pragma make_public (Bentley::ECN::ECSchema)
-
-

@@ -5,23 +5,24 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
 #define FIXED_COUNT_ARRAYS_ARE_SUPPORTED 0
 
 using namespace std;
+USING_NAMESPACE_EC
 
 struct MemoryLayoutTests : ECTestFixture {};
+
+namespace {
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -428,9 +429,9 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"  </ECClass>"
                     L"</ECSchema>";
 
-    wchar_t* buff = (wchar_t*) _alloca (sizeof(wchar_t) * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
+    WString buff;
 
-    swprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
+    buff.Sprintf (fmt, schemaName, versionMajor, versionMinor, className);
 
     return buff;
     }
@@ -465,13 +466,13 @@ ECSchemaPtr     CreateProfilingSchema (int nStrings)
 
     for (int i = 0; i < nStrings; i++)
         {
-        wchar_t propertyName[32];
-        swprintf(propertyName, L"StringProperty%02d", i);
+        WString propertyName;
+        propertyName.Sprintf (L"StringProperty%02d", i);
         s_propertyNames.push_back (propertyName);
         WCharCP propertyFormat = 
                     L"        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
-        wchar_t propertyXml[128];
-        swprintf (propertyXml, propertyFormat, propertyName);
+        WString propertyXml;
+        propertyXml.Sprintf (propertyFormat, propertyName.c_str());
         schemaXml += propertyXml;
         }                    
 
@@ -683,9 +684,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     SetAndVerifyString (instance, v, L"S", largeString);
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        SetAndVerifyString (instance, v, propertyName, valueForFinalStrings);
+        WString propertyName;
+        propertyName.Sprintf (L"Property%i", i);
+        SetAndVerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
         }          
         
     VerifyArrayInfo (instance, v, L"BeginningArray", 0, false);
@@ -751,9 +752,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        VerifyString (instance, v, propertyName, valueForFinalStrings);
+        WString propertyName;
+        propertyName.Sprintf (L"Property%i", i);
+        VerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
         }    
     VerifyArrayInfo     (instance, v, L"BeginningArray", 14, false);
     VerifyIsNullArrayElements   (instance, v, L"BeginningArray", 0, 14, false);
@@ -779,6 +780,8 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 
     instance.ToString(L"").c_str();
     }
+
+};
 
 #ifdef  MUST_PUBLISH_ECInstanceInteropHelper
 /*---------------------------------------------------------------------------------**//**
@@ -1002,7 +1005,7 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
     {
     UInt32  arrayIndex = 0;
 
-    for each (ECPropertyValueCR propertyValue in collection)
+    for (ECPropertyValueCR propertyValue : collection)
         {
         ECValueCR v = propertyValue.GetValue();
 
@@ -1013,7 +1016,7 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
 
         if (isArray)
             {
-            printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString());
+            printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
             }
         else
             {
@@ -1039,7 +1042,7 @@ static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool i
     {
     UInt32  arrayIndex = 0;
 
-    for each (ECPropertyValueCR propertyValue in collection)
+    for (ECPropertyValueCR propertyValue : collection)
         {
         ECValueCR v = propertyValue.GetValue();
         if (!v.IsLoaded())
@@ -1055,7 +1058,7 @@ static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool i
 
             if (isArray)
                 {
-                printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString());
+                printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
                 }
             else
                 {
@@ -1082,7 +1085,7 @@ typedef bpair<WString, ECValue>  AccessStringValuePair;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue, bool isDup)
     {
-    for each (ECPropertyValueCR propertyValue in collection)
+    for (ECPropertyValueCR propertyValue : collection)
         {
         WString   foundAccessString    = propertyValue.GetValueAccessor().GetManagedAccessString(); 
         WString   expectedAccessString = expectedValues[iValue].first;
@@ -1138,7 +1141,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
         Iterate through its values - shouldn't find any
     --------------------------------------------------------------------------*/
     UInt32 foundValues = 0;
-    for each(ECPropertyValueCR propertyValue in *collection)
+    for (ECPropertyValueCR propertyValue : *collection)
         {
         propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
@@ -1152,7 +1155,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
 
     collection = ECValuesCollection::Create (*standAloneInstance);
     foundValues = 0;
-    for each(ECPropertyValueCR propertyValue in *collection)
+    for (ECPropertyValueCR propertyValue : *collection)
         {
         propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
@@ -1336,7 +1339,7 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     expectedValues.push_back (AccessStringValuePair (L"Name",           ECValue (L"merge")));
 
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*mergeToInstance);
-    dumpPropertyValues (*collection, false, 0);
+//    dumpPropertyValues (*collection, false, 0);
 
     UInt32                  iValue = 0;
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
@@ -1868,7 +1871,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     */
     ECValuesCollectionPtr collection = ECValuesCollection::Create (*sourceInstance1);
 
-    for each(ECPropertyValueCR propertyValue in *collection)
+    for (ECPropertyValueCR propertyValue : *collection)
         {
         ECValue             localValue;
         ECValueCP           ecValue  = &propertyValue.GetValue();
@@ -1893,7 +1896,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     int valuesCounted = 0;
     ECValuesCollectionPtr targetCollection = ECValuesCollection::Create (*targetInstance);
 
-    for each(ECPropertyValueCR propertyValue in *targetCollection)
+    for (ECPropertyValueCR propertyValue : *targetCollection)
         {
         if ( ! propertyValue.GetValue().IsPrimitive())
             continue;
@@ -2547,17 +2550,16 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
 
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
-    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
-    string[0] = '\0';
+    WString string;
     for (int i = 0; i < nChars; i++)
         {
         int digit = i % 10;
-        wchar_t digitAsString[2];
-        swprintf (digitAsString, L"%d", digit);
-        wcscat (string, digitAsString);
+        WString digitAsString;
+        digitAsString.Sprintf (L"%d", digit);
+        string.append (digitAsString);
         }
         
-    ECValue v(string);
+    ECValue v(string.c_str());
     EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
     }
 
@@ -2593,7 +2595,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
         }
     
     //wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
-    };
+    }
     
 
 TEST_F (MemoryLayoutTests, TestValueAccessor)
@@ -2601,4 +2603,3 @@ TEST_F (MemoryLayoutTests, TestValueAccessor)
     ECValueAccessor m_accessor;
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE

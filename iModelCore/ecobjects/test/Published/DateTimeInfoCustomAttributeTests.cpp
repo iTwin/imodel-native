@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //********************** DateTimeInfoTestFixture base classes *************************************
@@ -22,7 +22,7 @@ protected:
     static void AssertDateTime (DateTimeCR expected, DateTimeCR actual, bool ignoreDateTimeInfo)
         {
         WString expectedActualStr;
-        expectedActualStr.Sprintf (L"Expected: %ls - Actual: %ls", expected.ToString (), actual.ToString ());
+        expectedActualStr.Sprintf (L"Expected: %ls - Actual: %ls", expected.ToString ().c_str(), actual.ToString ().c_str());
 
         if (ignoreDateTimeInfo)
             {

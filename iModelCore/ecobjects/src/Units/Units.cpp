@@ -93,6 +93,14 @@ void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECClassLocater::UnRegisterClassLocater ()
+    {
+    s_registeredClassLocater = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 

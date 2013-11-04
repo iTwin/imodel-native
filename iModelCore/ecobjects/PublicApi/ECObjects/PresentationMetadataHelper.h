@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_All
 
 #include <ECObjects/ECObjects.h>
 
@@ -105,5 +104,3 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/// @endcond BENTLEY_SDK_All

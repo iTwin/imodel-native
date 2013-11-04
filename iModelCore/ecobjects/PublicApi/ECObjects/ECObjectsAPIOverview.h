@@ -8,8 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/// @cond BENTLEY_SDK_All
-
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //! @namespace Bentley::ECN Types defined by @ref ECObjectsGroup
@@ -74,7 +72,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! In contrast to @ref ECInstancesStructPropertiesHowTos "struct properties", struct array properties can only be set 
 //! in an IECInstance using ECValue::SetStruct. Here using the property access string option would fail.
 //!
-//! @Note ECValue::SetStruct does not copy the struct object.
+//! @note ECValue::SetStruct does not copy the struct object.
 //!
 //! @e Example:
 //!
@@ -98,7 +96,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! can contain metadata about the actual date time value (see also DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the @b %DateTimeInfo custom attribute from the standard ECSchema @b Bentley_Standard_CustomAttributes.
-//! @Note The metadata is not persisted per-instance. Instead it is the custom attribute that holds the information on a per-property
+//! @note The metadata is not persisted per-instance. Instead it is the custom attribute that holds the information on a per-property
 //! base. So all date times within a given ECProperty have the same date time metadata.
 //! @see DateTimeInfo, StandardCustomAttributeHelper
 //!
@@ -120,7 +118,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! @li If the custom attribute is present, the resulting DateTime object will have the metadata from the custom attribute.
 //! @li If the custom attribute is not present, the resulting DateTime object will get @e default metadata as defined by DateTimeInfo::GetDefault
 //!
-//! @Note Only the use of the %DateTimeInfo custom attribute preserves the full information of a DateTime object during a roundtrip. Not using
+//! @note Only the use of the %DateTimeInfo custom attribute preserves the full information of a DateTime object during a roundtrip. Not using
 //! the custom attribute is applicable for use cases where the metadata is irrelevant or of no interest.
 //!
 //!     //Assume an ECProperty 'LastModified' without DateTimeInfo custom attribute and
@@ -136,10 +134,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!
 //! @section ECInstancesPropertyIndex Property Index
 //! The property index is the index into the PropertyLayout of the corresponding ECProperty.
-//! @Note The property index is @b 1-based
+//! @note The property index is @b 1-based
 //!
 //! @see Bentley::ECN
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-/// @endcond BENTLEY_SDK_All

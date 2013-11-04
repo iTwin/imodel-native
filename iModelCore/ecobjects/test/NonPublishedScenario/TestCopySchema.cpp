@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE

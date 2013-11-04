@@ -5,19 +5,21 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 #include <Bentley/BeTimeUtilities.h>
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
-struct MemoryLayoutTests : ECTestFixture {};
+struct NonPublishedMemoryLayoutTests : ECTestFixture {};
+
+namespace {
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -370,9 +372,9 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"    </ECClass>"
                     L"</ECSchema>";
 
-    wchar_t* buff = (wchar_t*) _alloca (sizeof(wchar_t) * (50 + wcslen (fmt) + wcslen (schemaName) + wcslen (className)));
+    WString buff;
 
-    swprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
+    buff.Sprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
 
     return buff;
     }
@@ -395,6 +397,8 @@ ECSchemaPtr     CreateTestSchema ()
 typedef std::vector<WString> NameVector;
 static std::vector<WString> s_propertyNames;
 
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -409,13 +413,13 @@ ECSchemaPtr     CreateProfilingSchema (int nStrings)
 
     for (int i = 0; i < nStrings; i++)
         {
-        wchar_t propertyName[32];
-        swprintf(propertyName, L"StringProperty%02d", i);
+        WString propertyName;
+        propertyName.Sprintf (L"StringProperty%02d", i);
         s_propertyNames.push_back (propertyName);
         WCharCP propertyFormat = 
                     L"        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
-        wchar_t propertyXml[128];
-        swprintf (propertyXml, propertyFormat, propertyName);
+        WString propertyXml;
+        propertyXml.Sprintf (propertyFormat, propertyName.c_str());
         schemaXml += propertyXml;
         }                    
 
@@ -646,9 +650,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        SetAndVerifyString (instance, v, propertyName, valueForFinalStrings);
+        WString propertyName;
+        propertyName.Sprintf (L"Property%i", i);
+        SetAndVerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
         }          
         
 #ifdef THESE_TESTS_DUPLICATE_PUBLISHED_TESTS
@@ -696,9 +700,9 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
     VerifyString (instance, v, L"Manufacturer.Name", L"Charmed");
     for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
         {
-        wchar_t propertyName[66];
-        swprintf (propertyName, L"Property%i", i);
-        VerifyString (instance, v, propertyName, valueForFinalStrings);
+        WString propertyName;
+        propertyName.Sprintf (L"Property%i", i);
+        VerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
         }    
     VerifyArrayInfo     (instance, v, L"BeginningArray", 14, false);
     VerifyIsNullArrayElements   (instance, v, L"BeginningArray", 0, 14, false);
@@ -728,7 +732,7 @@ void ExerciseInstance (IECInstanceR instance, wchar_t* valueForFinalStrings)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
+TEST_F(NonPublishedMemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema.IsValid());
@@ -837,7 +841,7 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
+TEST_F(NonPublishedMemoryLayoutTests, GetStructArraysUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema.IsValid());
@@ -885,7 +889,7 @@ TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
+TEST_F(NonPublishedMemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
     {
     ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema.IsValid());
@@ -942,7 +946,7 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
+TEST_F(NonPublishedMemoryLayoutTests, GetValuesUsingInteropHelper)
     {
     ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema != NULL);
@@ -989,7 +993,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
+TEST_F(NonPublishedMemoryLayoutTests, InstantiateStandaloneInstance)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1013,7 +1017,7 @@ TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
+TEST_F(NonPublishedMemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1037,7 +1041,7 @@ TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
+TEST_F(NonPublishedMemoryLayoutTests, DirectSetStandaloneInstance)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1136,7 +1140,7 @@ static void  setValue (WCharCP accessString, ECValueCR value, ECN::StandaloneECI
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
+TEST_F(NonPublishedMemoryLayoutTests, CheckPerPropertyFlags)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1211,7 +1215,7 @@ TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
+TEST_F(NonPublishedMemoryLayoutTests, GetSetValuesByIndex)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1276,7 +1280,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
+TEST_F(NonPublishedMemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
     
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1316,7 +1320,7 @@ TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, Values) // move it!
+TEST_F (NonPublishedMemoryLayoutTests, Values) // move it!
     {
     ECValue i(3);
     EXPECT_TRUE (i.IsInteger());
@@ -1418,7 +1422,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, TestSetGetNull)
+TEST_F (NonPublishedMemoryLayoutTests, TestSetGetNull)
     {
     ;
     ECSchemaPtr      schema = CreateTestSchema();
@@ -1454,17 +1458,16 @@ TEST_F (MemoryLayoutTests, TestSetGetNull)
     
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
-    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
-    string[0] = '\0';
+    WString string;
     for (int i = 0; i < nChars; i++)
         {
         int digit = i % 10;
-        wchar_t digitAsString[2];
-        swprintf (digitAsString, L"%d", digit);
-        wcscat (string, digitAsString);
+        WString digitAsString;
+        digitAsString.Sprintf (L"%d", digit);
+        string.append (digitAsString);
         }
         
-    ECValue v(string);
+    ECValue v(string.c_str());
     EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
     }
 
@@ -1474,7 +1477,7 @@ void SetValuesForProfiling (StandaloneECInstanceR instance)
         instance.SetValue (it->c_str(), ECValue (it->c_str()));
     }
     
-TEST_F (MemoryLayoutTests, ProfileSettingValues)
+TEST_F (NonPublishedMemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
     int nInstances = 1000;
@@ -1501,7 +1504,7 @@ TEST_F (MemoryLayoutTests, ProfileSettingValues)
     wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
     }
     
-TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
+TEST_F (NonPublishedMemoryLayoutTests, PropertyLayoutBracketsTest)
     {
     // ClassLayout maintains a vector of PropertyLayouts sorted by access string.
     // We discovered a defect in which the access string used for sorting did not include the brackets[] for array properties, causing lookup to fail.
@@ -1538,7 +1541,7 @@ TEST_F (MemoryLayoutTests, PropertyLayoutBracketsTest)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, layout->GetPropertyLayout (propLayout, L"B0"));
     }
 
-TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
+TEST_F (NonPublishedMemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
     {
     ECSchemaPtr      schema = CreateTestSchema();
     ASSERT_TRUE (schema.IsValid());
@@ -1596,7 +1599,7 @@ TEST_F (MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
 * a single supporting instance; otherwise modifying one would modify the other.
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, SupportingInstanceOwnership)
+TEST_F (NonPublishedMemoryLayoutTests, SupportingInstanceOwnership)
     {
     ECSchemaPtr schema = CreateTestSchema();
     ECClassP parentClass = schema->GetClassP (L"NestedStructArray");    // contains an array of Manufacturer structs
@@ -1628,7 +1631,7 @@ TEST_F (MemoryLayoutTests, SupportingInstanceOwnership)
 * recursively.
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
+TEST_F (NonPublishedMemoryLayoutTests, CopyRecursiveSupportingInstances)
     {
     ECSchemaPtr schema = CreateTestSchema();
 
@@ -1673,7 +1676,7 @@ TEST_F (MemoryLayoutTests, CopyRecursiveSupportingInstances)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDBufferTests : MemoryLayoutTests
+struct ECDBufferTests : NonPublishedMemoryLayoutTests
     {
     template<typename T> void TestIsEmpty (IECInstanceR instance, WCharCP accessor, T const& value)
         {

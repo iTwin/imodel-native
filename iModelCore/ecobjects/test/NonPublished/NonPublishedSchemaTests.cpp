@@ -5,21 +5,20 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <comdef.h>
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\ECSchema.h>
+
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
+#include <ECObjects/ECSchema.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 using namespace std;
 
-struct SchemaTest : ECTestFixture {};
-TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
+struct NonPublishedSchemaTest : ECTestFixture {};
+TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     {
     ECSchemaPtr schema;
     ECClassP foo;
@@ -38,22 +37,28 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     for (ECClassContainer::const_iterator cit = container.begin(); cit != container.end(); ++cit)
         {
         ECClassCP ecClass = *cit;
+        ASSERT_TRUE(ecClass != NULL);
+#if PRINT_DUMP
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+#endif
         count++;
         }
     ASSERT_EQ(2, count);
 
     FOR_EACH (ECClassCP ecClass, container)
         {
+        ASSERT_TRUE(ecClass != NULL);
+#if PRINT_DUMP
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+#endif
         count++;
         }
     ASSERT_EQ(4, count);
     }
 
-TEST_F (SchemaTest, TestCircularReferenceWithLocateSchema)
+TEST_F (NonPublishedSchemaTest, TestCircularReferenceWithLocateSchema)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
@@ -64,11 +69,12 @@ TEST_F (SchemaTest, TestCircularReferenceWithLocateSchema)
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);    
     SchemaKey key(L"CircleSchema", 01, 00);
+    DISABLE_ASSERTS
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_FALSE(testSchema.IsValid());
     }
 
-TEST_F (SchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
+TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;

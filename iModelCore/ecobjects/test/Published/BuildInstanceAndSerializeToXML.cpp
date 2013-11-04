@@ -5,13 +5,12 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <comdef.h>
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -67,10 +66,7 @@ struct  SampleData
 
     SampleData (int id, UInt32 numReadings)
         {
-        wchar_t buffer[50];
-        swprintf (buffer, L"Sample_%d", id);
-
-        m_name = buffer;
+        m_name.Sprintf (L"Sample_%d", id);
         m_id = id;
         m_numReadings = numReadings;
 
@@ -166,7 +162,7 @@ struct  SampleDataInstanceManager
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
     {
-    EXPECT_EQ (S_OK, CoInitialize(NULL));  
+//    EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
     SampleDataInstanceManager instanceManager;
     WString ecInstanceXml;
@@ -181,7 +177,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
         EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
         }
 
-    CoUninitialize();
+    //CoUninitialize();
     }
 
 

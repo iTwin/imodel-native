@@ -5,15 +5,15 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include <objbase.h>
-#include <comdef.h>
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
+    DEFINE_T_SUPER (ECTestFixture)
+
     protected:
         ECSchemaPtr m_bscaSchema;
 
@@ -40,19 +40,21 @@ struct SchemaHolderTestFixture : ECTestFixture
     public:
         virtual void            SetUp () override 
             { 
-            EXPECT_EQ (S_OK, CoInitialize(NULL)); 
+            // EXPECT_EQ (S_OK, CoInitialize(NULL)); 
 
             ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
             SchemaKey key (L"Bentley_Standard_CustomAttributes", 1, 6);
 
             m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
-            __super::SetUp();
+            ASSERT_TRUE( m_bscaSchema.IsValid() );
+                
+            T_Super::SetUp();
             }
 
         virtual void TearDown() override
             {
-            CoUninitialize();
-            __super::TearDown();
+            // CoUninitialize();
+            T_Super::TearDown();
             }
 
     };
@@ -63,6 +65,8 @@ struct SupplementalSchemaInfoTests     : SchemaHolderTestFixture   {};
 
 struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture 
     {
+    DEFINE_T_SUPER (SchemaHolderTestFixture)
+
     protected:
         ECSchemaPtr m_customAttributeSchema;
         StandaloneECEnablerPtr m_systemInfoCAEnabler;
@@ -813,7 +817,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
     public:
         virtual void            SetUp () override 
             { 
-            __super::SetUp();
+            T_Super::SetUp();
             CreateCustomAttributeSchema();
             CreatePrimarySchema(m_primaryTestSchema);
             CreateSupplementalSchema1 (m_supplementalTestSchema1);

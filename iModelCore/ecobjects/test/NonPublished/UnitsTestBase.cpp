@@ -5,8 +5,8 @@
 |   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 #include "UnitsTestBase.h"
 
 using namespace Bentley::ECN;

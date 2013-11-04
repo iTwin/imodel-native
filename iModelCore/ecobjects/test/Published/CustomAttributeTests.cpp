@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
+#include "../ECObjectsTestPCH.h"
 
-#include "TestFixture.h"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -524,6 +524,7 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     {
+#ifdef _WIN32
     WCharCP const testClassName = L"TestClass";
 
     WCharCP const caClassName = L"CustomAttribClass";
@@ -536,6 +537,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     caClass->CreatePrimitiveProperty (stringProp, caWCharStringPropName, PRIMITIVETYPE_String);
     caClass->CreatePrimitiveProperty (stringProp, caUtf8StringPropName, PRIMITIVETYPE_String);
 
+        // *** WIP_PORTABILITY: Use an escape such as \u here. Don't try to use extended ascii directly
     WCharCP caPropValueString = L"äöüßá³µ";
     Utf8String expectedCAPropValueUtf8String;
     EXPECT_EQ (SUCCESS, BeStringUtilities::WCharToUtf8 (expectedCAPropValueUtf8String, caPropValueString));
@@ -548,7 +550,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, caInstance->SetValue (caUtf8StringPropName, expectedUtf8Value)) << L"Assigning value to " << caUtf8StringPropName << L" in custom attribute instance failed.";
 
     ECClassP testClass = expectedSchema->GetClassP (testClassName);
-    EXPECT_TRUE (testClass != NULL) << L"Test class " << testClass << L" not found";
+    EXPECT_TRUE (testClass != NULL) << L"Test class " << testClassName << L" not found";
     EXPECT_EQ (ECOBJECTS_STATUS_Success, testClass->SetCustomAttribute (*caInstance)) << L"Assigning the custom attribute instance to class " << testClassName << L" failed.";
 
     //serializing
@@ -581,6 +583,7 @@ TEST_F (CustomAttributeTest, SerializeSchemaToXmlUtfString)
     ASSERT_EQ (ECOBJECTS_STATUS_Success, actualCAInstance->GetValue (actualWCharValue, caWCharStringPropName)) << L"Property " << caWCharStringPropName << L"not found in custom attribute instance on test class.";
     EXPECT_TRUE (expectedWCharValue.Equals (actualWCharValue)) << L"Unexpected ECValue of property " << caWCharStringPropName << L" of custom attribute instance";
     EXPECT_STREQ (caPropValueString, actualWCharValue.GetString ()) << L"Unexpected string value of property " << caWCharStringPropName << L" of custom attribute instance";
+#endif
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
-/// @cond BENTLEY_SDK_All
 
 #include <Bentley/DateTime.h>
 #include "ECObjects.h"
@@ -15,7 +14,6 @@
 
 BENTLEY_TYPEDEFS (BeXmlDom)
 BENTLEY_TYPEDEFS (BeXmlNode)
-
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -29,7 +27,6 @@ typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 //! @ingroup ECObjectsGroup
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
-//! @bsiclass
 struct ICustomECStructSerializer
     {
     //! Returns whether the given property uses a custom xml string
@@ -56,7 +53,6 @@ struct ICustomECStructSerializer
 
 //! @ingroup ECObjectsGroup
 //! Used to manage multiple custom struct serializers
-//! @bsiclass
 struct CustomStructSerializerManager
 {
 //__PUBLISH_SECTION_END__
@@ -94,15 +90,14 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
 //!
-//! @cond BENTLEY_SDK_Desktop
+//! @if BENTLEY_SDK_Desktop
 //! ### Comparison to .NET ECObjects
 //! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
-//! @endcond
+//! @endif
 //! @ingroup ECObjectsGroup
-//! @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
@@ -263,13 +258,13 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 arrayIndex) const;
     //! Gets the value stored in the ECProperty referred to by the specified property index
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 propertyIndex) const;
     //! Gets the value stored in the specified ECProperty
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -287,13 +282,13 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
     //! Sets the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 propertyIndex, ECValueCR v);
     //! Sets the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -312,13 +307,13 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex);
     //! Change the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (UInt32 propertyIndex, ECValueCR v);
     //! Change the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -345,14 +340,14 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString, UInt32 arrayIndex) const;
 
     //! Check for Null property value
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] isNull          If successful, will contain true if property value is NULL.
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, UInt32 propertyIndex) const;
 
     //! Check for Null property value
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -558,7 +553,6 @@ public:
 //! the relationship between two \ref IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
 //! @ingroup ECObjectsGroup
-//! @bsiclass
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
     {
@@ -671,7 +665,6 @@ typedef ECInstanceList const            *ECInstanceListCP;
 typedef ECInstanceList const            &ECInstanceListCR;
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-/// @endcond BENTLEY_SDK_All
 /*__PUBLISH_SECTION_END__*/
 //#pragma make_public (Bentley::ECN::IECInstance)
 /*__PUBLISH_SECTION_START__*/

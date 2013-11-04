@@ -5,12 +5,12 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
+
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

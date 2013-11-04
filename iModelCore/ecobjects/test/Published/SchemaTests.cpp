@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -1058,7 +1058,8 @@ TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Bentley_Plant.06.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+    ASSERT_EQ (SCHEMA_READ_STATUS_Success, status);
+    ASSERT_TRUE( schema.IsValid() );
     bvector<ECSchemaP> schemasToImport;
     schema->FindAllSchemasInGraph (schemasToImport, true);
     bvector<WCharCP> expectedPrefixes;
@@ -1112,8 +1113,8 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
         
         SchemaKey key (entry.first.c_str(), 1, 0);
         EXPECT_TRUE(ECSchema::ParseVersionString(key.m_versionMajor, key.m_versionMinor, entry.second) == ECOBJECTS_STATUS_Success);
-        EXPECT_EQ(key.m_versionMajor, _wtoi(entry.second));
-        EXPECT_EQ(key.m_versionMinor, _wtoi(wcschr(entry.second, L'.') + 1));
+        EXPECT_EQ(key.m_versionMajor, BeStringUtilities::Wtoi(entry.second));
+        EXPECT_EQ(key.m_versionMinor, BeStringUtilities::Wtoi(wcschr(entry.second, L'.') + 1));
         schema = ECSchema::LocateSchema(key, *schemaContext);
         EXPECT_TRUE(schema.IsValid());
         EXPECT_TRUE(schema->IsStandardSchema());
