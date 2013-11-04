@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: tests/PublishedTests.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)/ecobjects/test/ECObjectsTestPolicy.mki
+baseDir =   $(_MakeFilePath)
+
+programName=ECObjectsTest_Published
+BEGTEST_INPUT=$(baseDir)Published\/
+BEGTEST_API= $(BuildContext)SubParts\/PublishedApi\/ECObjects\/
+COMPILING_PUBLISHED_TESTS = 1
+
+%include buildTestFixture.mki
