@@ -29,9 +29,9 @@ o = $(OutputRootDir)build/ecobjects/buildTestFixture/
 always:
     !~@mkdir $(o)
 
-$(o)gtestmain.obj : $(SrcRoot)ecobjects/test/gtestmain.cpp
+$(o)gtestmain.obj : $(SrcRoot)ecobjects/tests/gtestmain.cpp
 
-$(o)TestFixture.obj : $(SrcRoot)ecobjects/test/TestFixture/TestFixture.cpp
+$(o)TestFixture.obj : $(SrcRoot)ecobjects/tests/TestFixture/TestFixture.cpp
 
 #----------------------------------------------------------------------------------------
 #   Link the executable
