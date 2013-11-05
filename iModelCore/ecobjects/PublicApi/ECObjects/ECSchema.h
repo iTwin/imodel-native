@@ -1020,6 +1020,9 @@ public:
     //! Returns true if the class name  is of the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(WCharCP name) const;
 
+    //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
+    ECOBJECTS_EXPORT bool            Is (WCharCP schemaName, WCharCP className) const;
+
     //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, WStringCR name);
 

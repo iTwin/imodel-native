@@ -659,6 +659,10 @@ struct ECInstanceInteropHelper
 
 /*__PUBLISH_SECTION_START__*/
 
+typedef bvector<IECInstancePtr>         ECInstanceList;
+typedef ECInstanceList                  *ECInstanceListP, &ECInstanceListR;
+typedef ECInstanceList const            *ECInstanceListCP;
+typedef ECInstanceList const            &ECInstanceListCR;
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

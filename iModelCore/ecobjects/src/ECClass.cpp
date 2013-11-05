@@ -2218,4 +2218,22 @@ bool            ECClass::Is(WCharCP name) const
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::Is (WCharCP schemaname, WCharCP classname) const
+    {
+    if (0 == GetName().CompareTo (classname) && 0 == GetSchema().GetName().CompareTo (schemaname))
+        return true;
+
+    const ECBaseClassesList& baseClass = GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
+        {
+        if ((*iter)->Is(schemaname, classname))
+            return true;
+        }
+
+    return false;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
