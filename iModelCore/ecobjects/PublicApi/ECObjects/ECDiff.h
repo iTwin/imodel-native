@@ -257,7 +257,32 @@ public:
     //! Return top level diff node
     //! @return IECDiffNode that represent a difference between two schemas. nullptr if difference was not found.
     ECOBJECTS_EXPORT IECDiffNodeCP GetRootNode () const;
+    };
 
+//======================================================================================
+//! ECDiffValueHelper can be use to convert string value to strong type values
+//! @ingroup ECObjectsGroup
+//! @bsiclass                                                     Affan.Khan      10/2013
+//+===============+===============+===============+===============+===============+======
+struct ECDiffValueHelper
+    {
+    //! Attempt to parse a string into ECN::StrengthType
+    //! @param[out] strengthType return ECN::StrengthType from string representation.
+    //! @param[in] strengthTypeValue string representation of strength type value. 
+    //! @return if successfully it will return true.
+    ECOBJECTS_EXPORT static bool TryParseRelationshipStrengthType (ECN::StrengthType& strengthType, WStringCR strengthTypeValue);
+
+    //! Attempt to parse a string into ECN::ECRelatedInstanceDirection
+    //! @param[out] strengthDirection return ECN::ECRelatedInstanceDirection from string representation.
+    //! @param[in] strengthDirectionValue string representation of strength type value. 
+    //! @return if successfully it will return true.
+    ECOBJECTS_EXPORT static bool TryParseRelatedStrengthDirection (ECN::ECRelatedInstanceDirection& strengthDirection, WStringCR strengthDirectionValue);
+
+    //! Attempt to parse a string into ECN::PrimitiveType
+    //! @param[out] primitiveType return ECN::PrimitiveType from string representation.
+    //! @param[in] primtiveTypeValue string representation of strength type value. 
+    //! @return if successfully it will return true.
+    ECOBJECTS_EXPORT static bool TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, WStringCR primtiveTypeValue);
     };
 
 //__PUBLISH_SECTION_END__
@@ -480,9 +505,6 @@ private:
     void EnsureSchemaIsReferenced (ECClassCR referenceClass);
     void EnsureSchemaIsReferenced (ECSchemaCR reference);
     void BuildClassMap (ECSchemaCR schema);
-    bool ParseStrengthDirection(ECRelatedInstanceDirection& direction, WStringCR directionStr);
-    static bool ParseStrength(StrengthType& type, WStringCR strengthStr);
-    static bool ParsePrimitiveType (PrimitiveType& primitiveType, WStringCR primitiveTypeString);
 
     IECInstancePtr CreateCopyThroughSerialization (IECInstanceR instance, ECClassCR ecClass);
     bool IsPartOfMergeSchema(ECClassCR ecClass) const;

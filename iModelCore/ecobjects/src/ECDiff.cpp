@@ -1544,50 +1544,89 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
     return true;
     }
 
-//////////////////////////////////////ECSchemaMergeTool////////////////////////////////////////////
+
+//////////////////////////////////////ECDiffValueHelper////////////////////////////////////////////
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      02/2013
+* @bsimethod                                                    Affan.Khan      10/2013
+static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  ECSchemaMergeTool::ParseStrengthDirection(ECRelatedInstanceDirection& direction, WStringCR directionStr)
+bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, WStringCR primtiveTypeValue)
     {
-    if (directionStr.CompareToI(ID_STRENGTH_DIRECTION_BACKWARD) == 0)
+    if (primtiveTypeValue.CompareToI (L"String") == 0)
+        primitiveType = PRIMITIVETYPE_String;
+    else if (primtiveTypeValue.CompareToI (L"Binary") == 0)
+        primitiveType = PRIMITIVETYPE_Binary;
+    else if (primtiveTypeValue.CompareToI (L"Boolean") == 0)
+        primitiveType = PRIMITIVETYPE_Boolean;
+    else if (primtiveTypeValue.CompareToI (L"DateTime") == 0)
+        primitiveType = PRIMITIVETYPE_DateTime;
+    else if (primtiveTypeValue.CompareToI (L"Double") == 0)
+        primitiveType = PRIMITIVETYPE_Double;
+    else if (primtiveTypeValue.CompareToI (L"IGeometry") == 0)
+        primitiveType = PRIMITIVETYPE_IGeometry;
+    else if (primtiveTypeValue.CompareToI (L"Integer") == 0 || primtiveTypeValue.CompareToI (L"Int") == 0)
+        primitiveType = PRIMITIVETYPE_Integer;
+    else if (primtiveTypeValue.CompareToI (L"Long") == 0)
+        primitiveType = PRIMITIVETYPE_Long;
+    else if (primtiveTypeValue.CompareToI (L"Point2D") == 0)
+        primitiveType = PRIMITIVETYPE_Point2D;
+    else if (primtiveTypeValue.CompareToI (L"Point3D") == 0)
+        primitiveType = PRIMITIVETYPE_Point3D;
+    else
+        return false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      10/2013
+static
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDiffValueHelper::TryParseRelationshipStrengthType (ECN::StrengthType& strengthType, WStringCR strengthValue)
+    {
+    if (strengthValue.CompareToI(ID_STRENGTH_TYPE_EMBEDDING) == 0)
         {
-        direction = ECRelatedInstanceDirection::Backward;
+        strengthType = STRENGTHTYPE_Embedding;
+        return true;
+        }
+    if (strengthValue.CompareToI(ID_STRENGTH_TYPE_HOLDING) == 0)
+        {
+        strengthType = STRENGTHTYPE_Holding;
+        return true;
+        }
+    if (strengthValue.CompareToI(ID_STRENGTH_TYPE_REFERENCING) == 0)
+        {
+        strengthType = STRENGTHTYPE_Referencing;
+        return true;
+        }
+    BeAssert (false && "Unknown strength type value");
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      10/2013
+static
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDiffValueHelper::TryParseRelatedStrengthDirection (ECN::ECRelatedInstanceDirection& strengthDirection, WStringCR strengthDirectionValue)
+    {
+    if (strengthDirectionValue.CompareToI(ID_STRENGTH_DIRECTION_BACKWARD) == 0)
+        {
+        strengthDirection = ECRelatedInstanceDirection::Backward;
         return true;
         }
 
-    if (directionStr.CompareToI(ID_STRENGTH_DIRECTION_FORWARD) == 0)
+    if (strengthDirectionValue.CompareToI(ID_STRENGTH_DIRECTION_FORWARD) == 0)
         {
-        direction = ECRelatedInstanceDirection::Forward;
+        strengthDirection = ECRelatedInstanceDirection::Forward;
         return true;
         }
     BeAssert (false && "Unknown strength direction value");
     return false;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchemaMergeTool::ParseStrength(StrengthType& type, WStringCR strengthStr)
-    {
-    if (strengthStr.CompareToI(ID_STRENGTH_TYPE_EMBEDDING) == 0)
-        {
-        type = STRENGTHTYPE_Embedding;
-        return true;
-        }
-    if (strengthStr.CompareToI(ID_STRENGTH_TYPE_HOLDING) == 0)
-        {
-        type = STRENGTHTYPE_Holding;
-        return true;
-        }
-    if (strengthStr.CompareToI(ID_STRENGTH_TYPE_REFERENCING) == 0)
-        {
-        type = STRENGTHTYPE_Referencing;
-        return true;
-        }
-    return false;
-    }
+
+//////////////////////////////////////ECSchemaMergeTool////////////////////////////////////////////
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2002,7 +2041,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
     if ((v = GetMergeValue (*diff, DiffNodeId::Strength)) != NULL)
         {
         StrengthType strengthType;
-        if (!ParseStrength (strengthType, v->GetValueString()))
+        if (!ECDiffValueHelper::TryParseRelationshipStrengthType(strengthType, v->GetValueString()))
             return MERGESTATUS_ErrorParsingRelationshipStrengthType;
         mergedClass.SetStrength (strengthType);
         }
@@ -2014,7 +2053,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationship (ECDiffNodeP diff, ECRelationsh
     if ((v = GetMergeValue (*diff, DiffNodeId::StrengthDirection)) == NULL)
         {
         ECRelatedInstanceDirection strengthDirection;
-        if (!ParseStrengthDirection (strengthDirection, v->GetValueString()))
+        if (! ECDiffValueHelper::TryParseRelatedStrengthDirection (strengthDirection, v->GetValueString()))
             return MERGESTATUS_ErrorParsingRelationshipStrengthDirection;
         mergedClass.SetStrengthDirection (strengthDirection);
         }
@@ -2326,7 +2365,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         if (typeName.find (L":") == WString::npos)
             {
             PrimitiveType primitiveType;
-            if (!ParsePrimitiveType (primitiveType, typeName))
+            if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
                 return MERGESTATUS_Failed;
             if (mergedClass.CreateArrayProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECOBJECTS_STATUS_Success)
                 return MERGESTATUS_Failed;
@@ -2358,7 +2397,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
         {
         PrimitiveECPropertyP newProperty;
         PrimitiveType primitiveType;
-        if (!ParsePrimitiveType (primitiveType, typeName))
+        if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
             return MERGESTATUS_Failed;
         if (mergedClass.CreatePrimitiveProperty (newProperty, defaultProperty->GetName(), primitiveType) != ECOBJECTS_STATUS_Success)
             return MERGESTATUS_Failed;
@@ -2397,35 +2436,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
 
     return MERGESTATUS_Success;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchemaMergeTool::ParsePrimitiveType (PrimitiveType& primitiveType, WStringCR primitiveTypeString)
-    {
-    if (primitiveTypeString.CompareToI (L"String") == 0)
-        primitiveType = PRIMITIVETYPE_String;
-    else if (primitiveTypeString.CompareToI (L"Binary") == 0)
-        primitiveType = PRIMITIVETYPE_Binary;
-    else if (primitiveTypeString.CompareToI (L"Boolean") == 0)
-        primitiveType = PRIMITIVETYPE_Boolean;
-    else if (primitiveTypeString.CompareToI (L"DateTime") == 0)
-        primitiveType = PRIMITIVETYPE_DateTime;
-    else if (primitiveTypeString.CompareToI (L"Double") == 0)
-        primitiveType = PRIMITIVETYPE_Double;
-    else if (primitiveTypeString.CompareToI (L"IGeometry") == 0)
-        primitiveType = PRIMITIVETYPE_IGeometry;
-    else if (primitiveTypeString.CompareToI (L"Integer") == 0 || primitiveTypeString.CompareToI (L"Int") == 0)
-        primitiveType = PRIMITIVETYPE_Integer;
-    else if (primitiveTypeString.CompareToI (L"Long") == 0)
-        primitiveType = PRIMITIVETYPE_Long;
-    else if (primitiveTypeString.CompareToI (L"Point2D") == 0)
-        primitiveType = PRIMITIVETYPE_Point2D;
-    else if (primitiveTypeString.CompareToI (L"Point3D") == 0)
-        primitiveType = PRIMITIVETYPE_Point3D;
-    else
-        return false;
-    return true;
-    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
