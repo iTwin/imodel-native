@@ -27,7 +27,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL), m_ecPropertyId(0)
     {
     //
     }

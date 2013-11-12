@@ -27,7 +27,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true)
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_ecClassId(0)
     {
     //
     };

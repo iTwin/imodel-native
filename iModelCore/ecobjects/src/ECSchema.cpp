@@ -184,7 +184,7 @@ void ECValidatedName::SetDisplayLabel (WCharCP label)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchema::ECSchema ()
-    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false)
+    :m_classContainer(m_classMap), m_isSupplemented(false), m_hasExplicitDisplayLabel(false), m_immutable(false), m_ecSchemaId(0)
     {
     //
     };
