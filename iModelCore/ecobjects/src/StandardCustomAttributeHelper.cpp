@@ -26,11 +26,35 @@ DateTimeInfo::DateTimeInfo ()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 09/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+DateTimeInfo::DateTimeInfo (DateTime::Info const& metadata)
+    : m_isKindNull (false), m_isComponentNull (false), m_info (metadata)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component)
     : m_isKindNull (isKindNull), m_isComponentNull (isComponentNull), m_info (kind, component)
     {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 08/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::operator== (DateTimeInfo const& rhs) const
+    {
+    return m_isKindNull == rhs.m_isKindNull && m_isComponentNull == rhs.m_isComponentNull && m_info == rhs.m_info;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 08/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::operator!= (DateTimeInfo const& rhs) const
+    {
+    return !(*this == rhs);
     }
 
 //---------------------------------------------------------------------------------------
