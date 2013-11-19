@@ -1596,7 +1596,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Long:
         {
         Int64 i;
-        if (1 != BeStringUtilities::Swscanf (str, L"%lld", &i))
+        if (1 != swscanf (str, L"%lld", &i))
             return false;
         else if (PRIMITIVETYPE_Long == primitiveType)
             SetLong (i);
@@ -1607,7 +1607,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Double:
         {
         double d;
-        if (1 == BeStringUtilities::Swscanf (str, L"%lg", &d))
+        if (1 == swscanf (str, L"%lg", &d))
             SetDouble (d);
         else
             return false;
@@ -1616,7 +1616,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Integer:
         {
         Int64 i;
-        if (1 == BeStringUtilities::Swscanf (str, L"%lld", &i))
+        if (1 == swscanf (str, L"%lld", &i))
             {
             if (INT_MAX >= i && INT_MIN <= i)
                 SetInteger ((Int32)i);
@@ -1630,7 +1630,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt;
-        if (2 == BeStringUtilities::Swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
+        if (2 == swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
             SetPoint2D (pt);
         else
             return false;
@@ -1639,7 +1639,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt;
-        if (3 == BeStringUtilities::Swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+        if (3 == swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
             SetPoint3D (pt);
         else
             return false;
@@ -2407,7 +2407,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
+    swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue  arrayVal;
 
@@ -3012,9 +3012,9 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                     {
                     case 'x':       // hexadecimal
                         {
-                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HEXFORMAT_LeadingZeros;
+                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HexFormatOptions::LeadingZeros;
                         if ('X' == spec)
-                            opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
+                            opts = (BeStringUtilities::HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(BeStringUtilities::HexFormatOptions::Uppercase));
 
                         BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
                         }
