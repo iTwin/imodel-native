@@ -250,7 +250,12 @@ protected:
 
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
     virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
+
+    virtual bool    _ChangeValuesAllowed() const { return ! IsReadOnly(); }
+
 public:
+
+    bool    ChangeValuesAllowed()  { return _ChangeValuesAllowed(); }
 
     //! Returns the base address for this instance
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
