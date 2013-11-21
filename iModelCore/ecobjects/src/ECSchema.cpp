@@ -53,7 +53,7 @@ ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
 void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
     {
     WChar buf[5];
-    BeStringUtilities::HexFormatOptions opts = (BeStringUtilities::HexFormatOptions)(static_cast<int>(BeStringUtilities::HexFormatOptions::LeadingZeros) | static_cast<int>(BeStringUtilities::HexFormatOptions::Uppercase));
+    HexFormatOptions opts = (HexFormatOptions)(static_cast<int>(HexFormatOptions::LeadingZeros) | static_cast<int>(HexFormatOptions::Uppercase));
     BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)c, opts, 4);
     encoded.append (L"__x");
     encoded.append (buf);

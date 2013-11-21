@@ -3012,9 +3012,9 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                     {
                     case 'x':       // hexadecimal
                         {
-                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HexFormatOptions::LeadingZeros;
+                        HexFormatOptions opts = HexFormatOptions::LeadingZeros;
                         if ('X' == spec)
-                            opts = (BeStringUtilities::HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(BeStringUtilities::HexFormatOptions::Uppercase));
+                            opts = (HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(HexFormatOptions::Uppercase));
 
                         BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
                         }
