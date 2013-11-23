@@ -2365,6 +2365,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
 
     // see if we can find the class from the schema.
+    m_context.ResolveSerializedClassName (className, *schema);
     ECClassCP    foundClass;
     if (NULL == (foundClass = schema->GetClassCP (className.c_str())))
         {

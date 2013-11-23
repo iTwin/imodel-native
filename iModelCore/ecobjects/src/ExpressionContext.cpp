@@ -486,6 +486,7 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             if (TOKEN_None == nextOperation)
                 {
                 convertResultToInstanceList (evalResult, false);
+                //  -- will we allow passing an struct t a method?
                 return ExprStatus_Success;
                 }
             else if (!convertResultToInstanceList (evalResult, true))

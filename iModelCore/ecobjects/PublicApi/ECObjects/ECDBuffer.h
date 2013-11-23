@@ -313,8 +313,9 @@ private:
 public:
     SchemaLayout(SchemaIndex index) : m_schemaIndex(index) {}
 
-    ClassLayoutP            GetClassLayoutP (ClassIndex classIndex) { return const_cast<ClassLayoutP>(GetClassLayout(classIndex)); }
+    ClassLayoutP                            GetClassLayoutP (ClassIndex classIndex) { return const_cast<ClassLayoutP>(GetClassLayout(classIndex)); }
 
+    ECOBJECTS_EXPORT ClassLayoutCP           FindClassLayout (WCharCP className, ClassIndex* classIndex) const;
 /*__PUBLISH_SECTION_START__*/
 private:
     SchemaLayout (){}
