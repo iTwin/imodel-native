@@ -60,10 +60,12 @@ public:
 
 #ifdef  NDEBUG
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
+    #define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message) (void)0
 #else
     //! Avoid direct use of this macro.  It is only intended for use by other macros defined in this file.
     // Forces an assert with the specified message as long as asserts are enabled.  No expression is evaluated.
     #define ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeAssert(_Message), 0))
+    #define DATA_ASSERT_FALSE_IF_NOT_DISABLED(_Message)    (void)((AssertDisabler::AreAssertsDisabled()) || (BeDataAssert(_Message), 0))
 #endif
 
 #if defined(NDEBUG) && !defined (LOG_ASSERT_IN_PRODUCTION_CODE)
@@ -165,6 +167,35 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! @endcode
 #define UNEXPECTED_CONDITION(_Expression) !EXPECTED_CONDITION(!(_Expression))
+
+//! This macro should be utilized to check that an expected data condition is true.  If the data condition evaluates to false the macro will log and BeAssert leaving it to the caller
+//! to return an error code or take any additional action.
+//! The assertion will only occur in debug builds.  Further, the assertion will only occur as long as they have not been disabled using the DISABLE_ASSERTS macro which allows
+//! for creation of tests to validate failure cases without being aborted by the standard assert behavior.
+//! Example:
+//! \code
+//!     If (!EXPECTED_DATA_CONDITION (x < 3))
+//!         {
+//!         // free something I malloced
+//!         // set outputs to 0
+//!         return MyStatus::ERROR_ItFailed;
+//!         }
+//! \endcode
+#define EXPECTED_DATA_CONDITION(_Expression)     ( (_Expression) \
+    || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (DATA_ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
+
+//! An inverted form of EXPECTED_DATA_CONDITION if you prefer checking for the positive of an expression when writing your code.
+//! @see EXPECTED_DATA_CONDITION
+//! @code
+//!     if (UNEXPECTED_DATA_CONDITION(x >= 3))
+//!         {
+//!         // free something I malloced
+//!         // set outputs to 0
+//!         return MyStatus::ERROR_ItFailed;
+//!         }
+//! @endcode
+#define UNEXPECTED_DATA_CONDITION(_Expression) !EXPECTED_DATA_CONDITION(!(_Expression))
 
 #ifdef NDEBUG
     #define DEBUG_EXPECT(_Expression) (void)0
