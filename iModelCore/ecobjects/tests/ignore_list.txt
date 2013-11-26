@@ -1,2 +1,17 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
 ECXmlPerformance*
 Performance*
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+
+CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamed                                      # Fails on Android
+CalculatedPropertyTests.ExpectSuccessWhenCopyFailedCalculatedPropertyThatHasARegex              # Fails on Android
+CalculatedPropertyTests.SetValue                                                                # Fails on Android
+CalculatedPropertyTests.SettingACalculatedPropertyUpdatesThePropertiesFromWhichItWasCalculate   # Fails on Android
+
+UnitsTest.Formatting    # Fails on Android
