@@ -16,7 +16,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRule::ContentRule () : PresentationRule ()
+ContentRule::ContentRule () : PresentationRule (), m_customControl (L"")
     {
     }
 
@@ -24,7 +24,7 @@ ContentRule::ContentRule () : PresentationRule ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled)
-    : PresentationRule (condition, priority, onlyIfNotHandled)
+    : PresentationRule (condition, priority, onlyIfNotHandled), m_customControl (L"")
     {
     }
 
@@ -49,6 +49,9 @@ CharCP ContentRule::_GetXmlElementName ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
     {
+    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_customControl, CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL))
+        m_customControl = L"";
+
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp (child->GetName (), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
@@ -67,6 +70,8 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentRule::_WriteXml (BeXmlNodeP xmlNode)
     {
+    xmlNode->AddAttributeStringValue (CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL, m_customControl.c_str ());
+
     CommonTools::WriteRulesToXmlNode<ContentSpecification, ContentSpecificationList> (xmlNode, m_specifications);
 
     PresentationRule::_WriteXml (xmlNode);
@@ -76,3 +81,13 @@ void ContentRule::_WriteXml (BeXmlNodeP xmlNode)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentSpecificationList& ContentRule::GetSpecifications (void) { return m_specifications; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR ContentRule::GetCustomControl (void)                  { return m_customControl;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRule::SetCustomControl (WStringCR customControl)    { m_customControl = customControl; }

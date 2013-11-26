@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
+#include "CommonTools.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentationRules/PresentationRules.h>
 
@@ -16,7 +17,8 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification ()
-    : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), m_skipRelatedLevel (0), m_supportedSchemas (L"")
+    : ChildNodeSpecification (), m_groupByClass (true), m_groupByRelationship (false), m_groupByLabel (true), 
+      m_skipRelatedLevel (0), m_supportedSchemas (L""), m_requiredDirection (RequiredRelationDirection_Both)
     {
     }
 
@@ -36,7 +38,7 @@ int       skipRelatedLevel,
 WStringCR supportedSchemas
 ) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
     m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel),
-    m_skipRelatedLevel (skipRelatedLevel), m_supportedSchemas (supportedSchemas)
+    m_skipRelatedLevel (skipRelatedLevel), m_supportedSchemas (supportedSchemas), m_requiredDirection (RequiredRelationDirection_Both)
     {
     }
 
@@ -69,6 +71,12 @@ bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
         m_supportedSchemas = L"";
 
+    WString requiredDirectionString = L"";
+    if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
+        requiredDirectionString = L"";
+    else
+        m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
+
     return true;
     }
 
@@ -82,6 +90,7 @@ void AllRelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     xmlNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_SKIPRELATEDLEVEL, m_skipRelatedLevel);
     xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS, m_supportedSchemas.c_str ());
+    xmlNode->AddAttributeStringValue  (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonTools::FormatRequiredDirectionString (m_requiredDirection));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,3 +117,13 @@ int AllRelatedInstanceNodesSpecification::GetSkipRelatedLevel (void) const { ret
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR AllRelatedInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+RequiredRelationDirection AllRelatedInstanceNodesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               09/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllRelatedInstanceNodesSpecification::SetRequiredRelationDirection (RequiredRelationDirection requiredDirection) { m_requiredDirection = requiredDirection; }

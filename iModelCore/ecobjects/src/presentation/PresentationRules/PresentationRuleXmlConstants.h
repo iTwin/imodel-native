@@ -56,6 +56,7 @@
 #define CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE                                      "TargetTree"
 
 #define CONTENT_RULE_XML_NODE_NAME                                                    "ContentRule"
+#define CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL                                      "CustomControl"
 
 #define IMAGE_ID_OVERRIDE_XML_NODE_NAME                                               "ImageIdOverride"
 #define IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID                                       "ImageId"
@@ -122,6 +123,7 @@
 #define SORTING_RULE_XML_NODE_NAME                                                    "SortingRule"
 #define SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING                                      "SortAscending"
 #define SORTING_RULE_XML_ATTRIBUTE_DONOTSORT                                          "DoNotSort"
+#define SORTING_RULE_XML_ATTRIBUTE_ISPOLYMORPHIC                                      "IsPolymorphic"
 
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"
