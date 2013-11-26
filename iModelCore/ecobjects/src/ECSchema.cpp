@@ -2778,6 +2778,21 @@ void            ECSchema::SetImmutable()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+int             SchemaKey::CompareByName (WString schemaName) const
+    {
+    int caseSensitive = wcscmp (m_schemaName.c_str(), schemaName.c_str());
+    if (0 != caseSensitive && 0 == BeStringUtilities::Wcsicmp (m_schemaName.c_str(), schemaName.c_str()))
+        {
+        LOG.warningv (L"Schema name %ls and schema name %ls are different in case only.", m_schemaName.c_str(), schemaName.c_str());
+        return 0;
+        }
+
+    return caseSensitive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
@@ -2792,7 +2807,7 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
             }
         case SCHEMAMATCHTYPE_Exact:
             {
-            int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+            int nameCompare = CompareByName (rhs.m_schemaName);
 
             if (nameCompare != 0)
                 return nameCompare < 0;
@@ -2805,7 +2820,7 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
             }
         case SCHEMAMATCHTYPE_LatestCompatible:
             {
-            int nameCompare = wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+            int nameCompare = CompareByName (rhs.m_schemaName);
 
             if (nameCompare != 0)
                 return nameCompare < 0;
@@ -2814,7 +2829,7 @@ bool            SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType)
             }
         case SCHEMAMATCHTYPE_Latest: //Only compare by name
             {
-            return wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) < 0;
+            return CompareByName (rhs.m_schemaName) < 0;
             }
         default:
             return false;
@@ -2835,11 +2850,11 @@ bool            SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) 
             //fall through
             }
         case SCHEMAMATCHTYPE_Exact:
-            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
+            return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor && m_versionMinor == rhs.m_versionMinor;
         case SCHEMAMATCHTYPE_LatestCompatible:
-            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str()) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
+            return 0 == CompareByName (rhs.m_schemaName) && m_versionMajor == rhs.m_versionMajor && m_versionMinor >= rhs.m_versionMinor;
         case SCHEMAMATCHTYPE_Latest:
-            return 0 == wcscmp(m_schemaName.c_str(), rhs.m_schemaName.c_str());
+            return 0 == CompareByName (rhs.m_schemaName);
         default:
             return false;
         }

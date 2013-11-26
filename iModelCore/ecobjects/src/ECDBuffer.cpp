@@ -1327,8 +1327,28 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className) const
         if (classLayout.IsNull())
             continue;
 
-        if (0 == BeStringUtilities::Wcsicmp (classLayout->GetECClassName().c_str(), className))
+        if (0 == wcscmp (classLayout->GetECClassName().c_str(), className))
             return classLayout.get();
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutCP SchemaLayout::FindClassLayout (WCharCP className, ClassIndex* classIndex) const
+    {
+    for (size_t i = 0; i < m_classLayouts.size(); i++)
+        {
+        ClassLayoutCP layout = m_classLayouts[i].get();
+        if (NULL != layout && 0 == wcscmp (layout->GetECClassName().c_str(), className))
+            {
+            if (NULL != classIndex)
+                *classIndex = (ClassIndex)i;
+
+            return layout;
+            }
         }
 
     return NULL;

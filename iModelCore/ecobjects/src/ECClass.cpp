@@ -2205,6 +2205,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECClass::Is(WCharCP name) const
     {
+    // NEEDSWORK: this is ambiguous without schema name...collisions between unrelated class names are not wholly unexpected.
     if (0 == GetName().CompareTo(name))
         return true;
 
