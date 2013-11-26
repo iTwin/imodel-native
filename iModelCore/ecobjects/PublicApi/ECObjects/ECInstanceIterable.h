@@ -250,9 +250,9 @@ struct ECInstanceIterable
 
 /*---------------------------------------------------------------------------------**//**
 typical usage 
-for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != collection.end(); ++iter)
+for (ECRelationshipIterable::const_iterator iter = collection.begin(); iter != collection.end(); ++iter)
     {
-    IECInstanceP instance = *iter;
+    IECRelationshipInstanceP instance = *iter;
     }
 @ingroup ECObjectsGroup
 @bsiclass

@@ -50,14 +50,14 @@ bool            ECInstanceIterable::IsNull () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  07/2012
+* @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipIterable::ECRelationshipIterable(IECRelationshipCollectionAdapter* collection)
     :m_collectionPtr(collection)
     {}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
+* @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipIterable::const_iterator  ECRelationshipIterable::begin () const
     {
@@ -65,7 +65,7 @@ ECRelationshipIterable::const_iterator  ECRelationshipIterable::begin () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
+* @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipIterable::const_iterator ECRelationshipIterable::end() const
     {
@@ -73,7 +73,7 @@ ECRelationshipIterable::const_iterator ECRelationshipIterable::end() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
+* @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECRelationshipIterable::empty() const
     {
@@ -81,7 +81,7 @@ bool            ECRelationshipIterable::empty() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
+* @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ECRelationshipIterable::IsNull () const
     {
