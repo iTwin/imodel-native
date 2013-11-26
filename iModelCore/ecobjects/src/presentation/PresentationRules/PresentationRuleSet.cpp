@@ -17,7 +17,8 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::PresentationRuleSet (void)
-    : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_supplementationPurpose (L""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true)
+    : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_supplementationPurpose (L""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true),
+      m_extendedData (L""), m_searchClasses (L"")
     {
     }
 
@@ -132,6 +133,9 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSearchEnabled, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED))
         m_isSearchEnabled = true;
 
+    if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_searchClasses, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES))
+        m_searchClasses = L"";
+
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_extendedData, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA))
         m_extendedData = L"";
 
@@ -166,6 +170,7 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
     ruleSetNode->AddAttributeInt32Value   (PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMINOR,           m_versionMinor);
     ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE,         m_preferredImage.c_str ());
     ruleSetNode->AddAttributeBooleanValue (PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED,        m_isSearchEnabled);
+    ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES,          m_searchClasses.c_str ());
     ruleSetNode->AddAttributeStringValue  (PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA,           m_extendedData.c_str ());
 
     CommonTools::WriteRulesToXmlNode<RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules);
@@ -293,6 +298,16 @@ WStringCR              PresentationRuleSet::GetPreferredImage (void) const    { 
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                   PresentationRuleSet::GetIsSearchEnabled (void) const   { return m_isSearchEnabled;  }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringCR              PresentationRuleSet::GetSearchClasses (void) const     { return m_searchClasses;    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Andrius.Zonys                   11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void                   PresentationRuleSet::SetSearchClasses (WStringCR searchClasses) { m_searchClasses = searchClasses; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   08/2013
