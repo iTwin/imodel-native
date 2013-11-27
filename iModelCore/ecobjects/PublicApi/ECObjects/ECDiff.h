@@ -162,7 +162,11 @@ public:
     //! @param[in] id The id of child diff node.
     //! @return if successfully will return child node otherwise nullptr
     ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildById(DiffNodeId id) const = 0;
-   //! Returns diff type for current diff node
+    //! Return child by accessString
+    //! @param[in] accessString The accessString of child diff node.
+    //! @return if successfully will return child node otherwise nullptr
+    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildByAccessString(WCharCP accessString) const = 0;
+    //! Returns diff type for current diff node
     //! @param[in] bRecursively If true it will compute accumulative diff type of sub tree.
     //! @return DiffType for current node or accumulative one if bRecursively was true.
     ECOBJECTS_EXPORT virtual DiffType                    GetDiffType(bool bRecursively =false) const = 0;
@@ -283,6 +287,13 @@ struct ECDiffValueHelper
     //! @param[in] primtiveTypeValue string representation of strength type value. 
     //! @return if successfully it will return true.
     ECOBJECTS_EXPORT static bool TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, WStringCR primtiveTypeValue);
+
+    //! Attempt to parse a classkey string into schemaName and className
+    //! @param[out] schema name 
+    //! @param[out] class name. 
+    //! @return if successfully it will return true.
+    ECOBJECTS_EXPORT static bool TryParseClassKey(WStringR schemaName, WStringR className, WStringCR classKey);
+
     };
 
 //__PUBLISH_SECTION_END__
@@ -406,6 +417,7 @@ public:
             list.push_back(n);
         return list;
         }
+    IECDiffNodeCP GetChildByAccessString(WCharCP name ) const override;
     IECDiffNodeCP GetChildById (DiffNodeId id) const override
         {
         return const_cast<ECDiffNode*>(this)->ImplGetChildById (id);
