@@ -26,6 +26,10 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(baseDir)ECObjectsPch.cpp
 PchOutputDir = $(o)
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts  = $(UsePrecompiledHeaderOptions)
