@@ -2933,7 +2933,7 @@ private:
     double          multiplier;
     size_t          insertPos;
 
-    NumericFormat () : insertThousandsSeparator(false), precisionType(PRECISION_TYPE_Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
+    NumericFormat () : insertThousandsSeparator(false), precisionType(PrecisionType::Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
 
     DoubleFormatterPtr ToFormatter() const
         {
@@ -3055,14 +3055,14 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
     WChar spec = *fmt,
           lspec = towlower (spec);
 
-    PrecisionType precisionType = PRECISION_TYPE_Decimal;
+    PrecisionType precisionType = PrecisionType::Decimal;
     bool groupSeparators = false,
          appendPercent = false,
          ignoreExtractedPrecision = false;
     switch (lspec)
         {
     case 'e':
-        precisionType = PRECISION_TYPE_Scientific;
+        precisionType = PrecisionType::Scientific;
         break;
     case 'p':
         d *= 100.0;
@@ -3174,7 +3174,7 @@ bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
                 break;
             case 'e':
             case 'E':
-                numFormat.precisionType = PRECISION_TYPE_Scientific;
+                numFormat.precisionType = PrecisionType::Scientific;
                 // ignore exponent sign
                 fmt++;
                 if ('+' == *fmt || '-' == *fmt)
