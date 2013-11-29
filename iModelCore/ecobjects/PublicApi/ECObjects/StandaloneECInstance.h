@@ -182,7 +182,7 @@ public: // These must be public so that ECXInstanceEnabler can get at the guts o
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct StandaloneECInstance : IECInstance
+struct StandaloneECInstance : virtual IECInstance
 //__PUBLISH_SECTION_END__
                             , MemoryECInstanceBase
 //__PUBLISH_SECTION_START__
@@ -239,33 +239,6 @@ public:
     };
 
 //=======================================================================================
-//! IECWipRelationshipInstance is used to set the name and order properties for an 
-//! ECRelationship.
-//! @ingroup ECObjectsGroup
-//=======================================================================================
-struct IECWipRelationshipInstance : StandaloneECInstance
-    {
-//__PUBLISH_SECTION_END__
-    protected:
-        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
-
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _GetSourceOrderId (Int64 &sourceOrderId) = 0;
-        ECOBJECTS_EXPORT virtual BentleyStatus  _GetTargetOrderId (Int64 &targetOrderId) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-    public:
-        ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
-        ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
-        ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
-        ECOBJECTS_EXPORT BentleyStatus  GetSourceOrderId (Int64& sourceOrderId);
-        ECOBJECTS_EXPORT BentleyStatus  GetTargetOrderId (Int64& targetOrderId);
-    };
-
-//=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
 //! @see StandaloneECInstance
 //! @ingroup ECObjectsGroup
@@ -276,10 +249,10 @@ struct StandaloneECEnabler : public ECEnabler
 private:
     ClassLayoutPtr          m_classLayout;
 
+protected:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
-protected:
     virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
