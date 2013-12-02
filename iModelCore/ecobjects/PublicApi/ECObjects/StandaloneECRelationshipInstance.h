@@ -26,7 +26,7 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //! StandaloneECRelationshipInstance is used to represent a relationship between
 //! two IECInstances 
 //=======================================================================================
-struct StandaloneECRelationshipInstance : virtual IECRelationshipInstance
+struct StandaloneECRelationshipInstance : IECRelationshipInstance
 //__PUBLISH_SECTION_END__
                                           , StandaloneECInstance
 //__PUBLISH_SECTION_START__
@@ -104,13 +104,29 @@ struct IECWipRelationshipInstance: StandaloneECRelationshipInstance
         //! Sets the property string of this RelationshipInstance
         ECOBJECTS_EXPORT ECObjectsStatus    SetPropertiesString (WCharCP propertiesString); 
 
+        //! Sets the orderId of the next source instance in case of ordered relationship.
+        //! This is set by the client of a persistence provider and allows the provider 
+        //! determining the orderid for this relationship.
         ECOBJECTS_EXPORT ECObjectsStatus    SetSourceNextOrderId (Int64 sourceOrderId);
+        //! Sets the orderId of the next target instance in case of ordered relationship.
+        //! This is set by the client of a persistence provider and allows the provider 
+        //! determining the orderid for this relationship.
         ECOBJECTS_EXPORT ECObjectsStatus    SetTargetNextOrderId (Int64 sourceOrderId);
+        //! Gets the orderId of the next source instance in case of ordered relationship.
+        //! This is used by the persistence provider to get the value assigned by the client 
+        //! and compute the orderId of this relationship.
         ECOBJECTS_EXPORT ECObjectsStatus    GetSourceNextOrderId (Int64& orderId) const;
+        //! Gets the orderId of the next target instance in case of ordered relationship.
+        //! This is used by the persistence provider to get the value assigned by the client 
+        //! and compute the orderId of this relationship.
         ECOBJECTS_EXPORT ECObjectsStatus    GetTargetNextOrderId (Int64& orderId) const;
+        //! Gets whether the source orderId is defined.
         ECOBJECTS_EXPORT bool               IsSourceOrderIdDefined ();
+        //! Gets whether the target orderId is defined.
         ECOBJECTS_EXPORT bool               IsTargetOrderIdDefined ();
+        //! Gets whether the next source orderId is defined.
         ECOBJECTS_EXPORT bool               IsSourceNextOrderIdDefined ();
+        //! Gets whether the next target orderId is defined.
         ECOBJECTS_EXPORT bool               IsTargetNextOrderIdDefined ();
     };
 
@@ -128,14 +144,6 @@ private:
     ECOBJECTS_EXPORT ~StandaloneECRelationshipEnabler ();
 
 protected:
-    //virtual WCharCP                     _GetName() const override;
-    //virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
-    //virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
-    //virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
-    //virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
-    //virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
-    //virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
-
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
     virtual ECN::ECRelationshipClassCR    _GetRelationshipClass() const;
 

@@ -331,14 +331,6 @@ StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationship
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-//ClassLayoutCR StandaloneECRelationshipEnabler::GetClassLayout() const
-//    {
-//    return GetClass().GetDefaultStandaloneEnabler()->GetClassLayout();
-//    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnabler::~StandaloneECRelationshipEnabler ()
