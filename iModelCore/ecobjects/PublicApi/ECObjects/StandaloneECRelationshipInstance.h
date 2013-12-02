@@ -47,26 +47,6 @@ protected:
     ECOBJECTS_EXPORT virtual void            _SetTarget (IECInstanceP instance);
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetTarget () const;
 
-    // IECInstance
-    //virtual WString             _GetInstanceId() const override;
-    //virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
-    //virtual bool                _IsReadOnly() const override;        
-    //virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    //virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;      
-    //virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
-    //virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-
-    //virtual ECObjectsStatus     _InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size) override;
-    //virtual ECObjectsStatus     _AddArrayElements (UInt32 propIdx, UInt32 size) override;
-    //virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propIdx, UInt32 index) override;
-    //virtual ECObjectsStatus     _ClearArray (UInt32 propIdx) override;    
-    //virtual WString             _ToString (WCharCP indent) const override;
-    //virtual ClassLayoutCR       _GetClassLayout () const;
-    //virtual ECEnablerCR         _GetEnabler() const override;
-    //virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
-    //virtual size_t              _GetObjectSize () const;
-    //virtual size_t              _GetOffsetToIECInstance () const;
-
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstanceP            _GetAsIECInstance () const;
 
@@ -82,7 +62,11 @@ public:
     ECOBJECTS_EXPORT ECRelationshipClassCR              GetRelationshipClass () const;
     };
 
-//! @ingroup DgnECGroup
+//=======================================================================================
+//! @ingroup ECObjectsGroup
+//! IECWipRelationshipInstance is an infoprmation holder used to represent a relationship between
+//! two IECInstances when passed to relationship persistence operation.
+//=======================================================================================
 struct IECWipRelationshipInstance: StandaloneECRelationshipInstance
     {
     private:
@@ -93,13 +77,11 @@ struct IECWipRelationshipInstance: StandaloneECRelationshipInstance
         Int64       m_targetNextOrderId;
         bool        m_isTargetNextOrderIdDefined;
         WString     m_propertiesString;
+        Int64       m_sourceOrderId;            // Might be deffered toprovider  implementations.
+        Int64       m_targetOrderId;            // Might be deffered toprovider  implementations.
 
     protected:
         ECOBJECTS_EXPORT                            IECWipRelationshipInstance (StandaloneECRelationshipEnablerR relationshipEnabler);
-        virtual ECOBJECTS_EXPORT ECObjectsStatus    _SetSourceOrderId (Int64 orderId) = 0;
-        virtual ECOBJECTS_EXPORT ECObjectsStatus    _SetTargetOrderId (Int64 orderId) = 0;
-        virtual ECOBJECTS_EXPORT ECObjectsStatus    _GetSourceOrderId (Int64& sourceOrderId) const = 0;
-        virtual ECOBJECTS_EXPORT ECObjectsStatus    _GetTargetOrderId (Int64& targetOrderId) const = 0;
         
     public:
 
