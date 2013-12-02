@@ -2040,6 +2040,57 @@ ECObjectsStatus                 IECInstance::SetDisplayLabel (WCharCP displayLab
     return  _SetDisplayLabel (displayLabel);
     }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//   IECRelationshipInstance
+///////////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            IECRelationshipInstance::SetSource (IECInstanceP instance)
+    {
+    _SetSource (instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr                  IECRelationshipInstance::GetSource () const
+    {
+    return _GetSource ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            IECRelationshipInstance::SetTarget (IECInstanceP instance)
+    {
+    _SetTarget (instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr                  IECRelationshipInstance::GetTarget () const
+    {
+    return _GetTarget ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (Int64& sourceOrderId) const
+    {
+    return _GetSourceOrderId (sourceOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ ECObjectsStatus                IECRelationshipInstance::GetTargetOrderId (Int64& targetOrderId) const
+    {
+    return _GetTargetOrderId (targetOrderId);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3390,40 +3441,5 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
 void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//   IECRelationshipInstance
-///////////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  08/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                            IECRelationshipInstance::SetSource (IECInstanceP instance)
-    {
-    _SetSource (instance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  08/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr                  IECRelationshipInstance::GetSource () const
-    {
-    return _GetSource ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  08/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                            IECRelationshipInstance::SetTarget (IECInstanceP instance)
-    {
-    _SetTarget (instance);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  08/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr                  IECRelationshipInstance::GetTarget () const
-    {
-    return _GetTarget ();
-    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

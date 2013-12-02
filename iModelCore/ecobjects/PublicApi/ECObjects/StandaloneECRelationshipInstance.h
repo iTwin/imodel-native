@@ -39,6 +39,8 @@ private:
     IECInstancePtr                    m_target;
     StandaloneECRelationshipEnablerCP m_relationshipEnabler; 
     WString                           m_instanceId;
+    Int64                             m_sourceOrderId;        
+    Int64                             m_targetOrderId;        
 
 protected:  
     // IECRelationshipInstance
@@ -46,6 +48,10 @@ protected:
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetSource () const;
     ECOBJECTS_EXPORT virtual void            _SetTarget (IECInstanceP instance);
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetTarget () const;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _SetSourceOrderId (Int64 sourceOrderId);
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _SetTargetOrderId (Int64 targetOrderId);
 
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstanceP            _GetAsIECInstance () const;
@@ -60,6 +66,12 @@ public:
     ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const;  
     //! Returns the RelationshipClass that this Instance is an instance of
     ECOBJECTS_EXPORT ECRelationshipClassCR              GetRelationshipClass () const;
+    //! Sets the source order Id.
+    //! @param[in] sourceOrderId Contains the orderId to set for the source instance
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetSourceOrderId (Int64 sourceOrderId);
+    //! Sets the target order Id.
+    //! @param[in] targetOrderId Contains the orderId to set for the target instance
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetOrderId (Int64 targetOrderId);
     };
 
 //=======================================================================================
@@ -77,22 +89,16 @@ struct IECWipRelationshipInstance: StandaloneECRelationshipInstance
         Int64       m_targetNextOrderId;
         bool        m_isTargetNextOrderIdDefined;
         WString     m_propertiesString;
-        Int64       m_sourceOrderId;            // Might be deffered toprovider  implementations.
-        Int64       m_targetOrderId;            // Might be deffered toprovider  implementations.
 
     protected:
-        ECOBJECTS_EXPORT                            IECWipRelationshipInstance (StandaloneECRelationshipEnablerR relationshipEnabler);
+        ECOBJECTS_EXPORT         IECWipRelationshipInstance (StandaloneECRelationshipEnablerR relationshipEnabler);
+        ECOBJECTS_EXPORT virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const override;
+        ECOBJECTS_EXPORT virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const override;
+        ECOBJECTS_EXPORT virtual ECObjectsStatus _SetSourceOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT virtual ECObjectsStatus _SetTargetOrderId (Int64 sourceOrderId);
         
     public:
 
-        //! Sets the source orderId of this RelationshipInstance
-        ECOBJECTS_EXPORT ECObjectsStatus    SetSourceOrderId (Int64 sourceOrderId);
-        //! Sets the target orderId of this RelationshipInstance
-        ECOBJECTS_EXPORT ECObjectsStatus    SetTargetOrderId (Int64 sourceOrderId);
-        //! Gets the source orderId of this RelationshipInstance
-        ECOBJECTS_EXPORT ECObjectsStatus    GetSourceOrderId (Int64& sourceOrderId) const;
-        //! Gets the target orderId of this RelationshipInstance
-        ECOBJECTS_EXPORT ECObjectsStatus    GetTargetOrderId (Int64& targetOrderId) const;
         //! Gets the property string of this RelationshipInstance
         ECOBJECTS_EXPORT WCharCP            GetPropertiesString() const; 
         //! Sets the property string of this RelationshipInstance

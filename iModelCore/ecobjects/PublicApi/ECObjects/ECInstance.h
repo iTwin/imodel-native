@@ -584,10 +584,10 @@ struct IECRelationshipInstance : virtual IECInstance
     private:
         virtual void            _SetSource (IECInstanceP instance) = 0;
         virtual IECInstancePtr  _GetSource () const = 0;
-        //virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const = 0;
+        virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const = 0;
         virtual void            _SetTarget (IECInstanceP instance)= 0;
         virtual IECInstancePtr  _GetTarget () const = 0;
-        //virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const = 0;
+        virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const = 0;
 
     public:
 
@@ -600,7 +600,7 @@ struct IECRelationshipInstance : virtual IECInstance
 
         //! Gets the source order id
         //! @param[out] sourceOrderId Contains the orderId of the source instance
-        //ECOBJECTS_EXPORT ECObjectsStatus GetSourceOrderId (Int64& sourceOrderId) const;
+        ECOBJECTS_EXPORT ECObjectsStatus GetSourceOrderId (Int64& sourceOrderId) const;
 
         //! Sets the Target instance of the relationship
         //! @param[in] instance The target instance
@@ -611,7 +611,7 @@ struct IECRelationshipInstance : virtual IECInstance
 
         //! Gets the target order id
         //! @param[out] targetOrderId Contains the orderId of the target instance
-        //ECOBJECTS_EXPORT ECObjectsStatus GetTargetOrderId (Int64& targetOrderId) const;
+        ECOBJECTS_EXPORT ECObjectsStatus GetTargetOrderId (Int64& targetOrderId) const;
     };
 
 typedef RefCountedPtr<IECRelationshipInstance> IECRelationshipInstancePtr;
