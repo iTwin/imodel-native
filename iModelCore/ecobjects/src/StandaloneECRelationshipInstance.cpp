@@ -22,6 +22,8 @@ StandaloneECRelationshipInstance::StandaloneECRelationshipInstance (StandaloneEC
     m_relationshipEnabler->AddRef();   // make sure relationship enabler stays around
     m_target = NULL;
     m_source = NULL;
+    m_sourceOrderId = 0;
+    m_targetOrderId = 0;    
     }
     
 /*---------------------------------------------------------------------------------**//**

@@ -134,7 +134,10 @@ struct IECWipRelationshipInstance: StandaloneECRelationshipInstance
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public StandaloneECEnabler
+struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler
+//__PUBLISH_SECTION_END__
+    , public StandaloneECEnabler
+//__PUBLISH_SECTION_START__
    {
 //__PUBLISH_SECTION_END__
 private:
@@ -155,6 +158,11 @@ public:
     //! @param[in]  ecClass The relationship class which to create an enabler for
     //! @returns The StandaloneECRelationshipEnabler for the given class.
     ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr  CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
+    //! Given an ECRelationshipClass, will create an enabler for that class
+    //! @param[in]  ecClass The relationship class which to create an enabler for
+    //! @param[in]  classLayout for the ecClass
+    //! @param[in]  enablerLocater
+    //! @returns The StandaloneECRelationshipEnabler for the given class.
     ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr  CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     //! Creates an instance of the supported ECRelationshipClass
     ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr        CreateRelationshipInstance ();
