@@ -665,6 +665,15 @@ DiffType ECDiffNode::_GetDiffType (bool bRecursively)
         }
     return type;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+IECDiffNodeCP ECDiffNode::GetChildByAccessString(WCharCP accessString ) const
+    {
+    return const_cast<ECDiffNodeP>(this)->GetChild(accessString, false);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -890,7 +899,10 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
             else if (!leftR && rightR)
                 diff->Add ((*itor).c_str(), DiffNodeId::Reference)->ImplGetValueRight().SetValue (rightR->GetFullSchemaName().c_str());
             else
-                if (leftR->GetSchemaKey() != rightR->GetSchemaKey())
+                //donot compare leftR->GetSchemaKey() != rightR->GetSchemaKey() as it compare hash and 
+                //ecdb doesnt not have same hash for store schema as it strip out comments and while reading back
+                //may not have even same order of class and properties.
+                if (leftR->GetSchemaKey().GetFullSchemaName() != rightR->GetSchemaKey().GetFullSchemaName())
                     diff->Add ((*itor).c_str(), DiffNodeId::Reference)->SetValue (leftR->GetFullSchemaName().c_str(), rightR->GetFullSchemaName().c_str());
             }
         return parentDiff.RemoveIfEmpty (diff);
@@ -1546,6 +1558,22 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
 
 
 //////////////////////////////////////ECDiffValueHelper////////////////////////////////////////////
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      10/2013
+static
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDiffValueHelper::TryParseClassKey(WStringR schemaName, WStringR className, WStringCR classKey)
+    {
+    auto indexOfDelimiter = classKey.find (L":");
+    if (indexOfDelimiter == WString::npos)
+        return false;
+
+    schemaName = classKey.substr (0, indexOfDelimiter);
+    className  = classKey.substr (indexOfDelimiter + 1);
+    BeDataAssert (!schemaName.empty() && !className.empty());
+    return true;
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
