@@ -23,7 +23,7 @@ StandaloneECRelationshipInstance::StandaloneECRelationshipInstance (StandaloneEC
     m_target = NULL;
     m_source = NULL;
     m_sourceOrderId = 0;
-    m_targetOrderId = 0;    
+    m_targetOrderId = 0; 
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -120,6 +120,14 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetTarget () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                 12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+OrderIdEntries& StandaloneECRelationshipInstance::OrderIdEntries()
+    {
+    return m_orderIdEntries;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (Int64& sourceOrderId) const
     {
     sourceOrderId = m_sourceOrderId;
@@ -137,9 +145,59 @@ ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (Int64& targ
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                 12/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_SetSourceOrderId (Int64 sourceOrderId)
++---------------+---------------+---------------+---------------+---------------+------*/        
+OrderIdEntries::OrderIdEntries () 
     {
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/        
+ECObjectsStatus OrderIdEntries::Clear () 
+    {
+    m_sourceOrderId = 0;
+    m_targetOrderId = 0; 
+    m_isSourceOrderIdDefined = false;
+    m_isTargetOrderIdDefined = false;
+    m_sourceNextOrderId = 0;
+    m_isSourceNextOrderIdDefined = false;
+    m_targetNextOrderId = 0;
+    m_isTargetNextOrderIdDefined = false;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OrderIdEntries::TryGetSourceOrderId (Int64& sourceOrderId) const
+    {
+    sourceOrderId = 0;
+     if (!m_isSourceOrderIdDefined)
+         return false;
+    sourceOrderId = m_sourceOrderId;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OrderIdEntries::TryGetTargetOrderId (Int64& targetOrderId) const
+    {
+    targetOrderId = 0;
+     if (!m_isTargetOrderIdDefined)
+         return false;
+    targetOrderId = m_targetOrderId;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus OrderIdEntries::SetSourceOrderId (Int64 sourceOrderId)
+    {
+    m_isSourceNextOrderIdDefined = false;
+    m_isSourceOrderIdDefined = true;
     m_sourceOrderId = sourceOrderId;
     return ECOBJECTS_STATUS_Success;
     }
@@ -147,8 +205,10 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetSourceOrderId (Int64 sourc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                 12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_SetTargetOrderId (Int64 targetOrderId)
+ECObjectsStatus OrderIdEntries::SetTargetOrderId (Int64 targetOrderId)
     {
+    m_isTargetNextOrderIdDefined = false;
+    m_isTargetOrderIdDefined = true;
     m_targetOrderId = targetOrderId;
     return ECOBJECTS_STATUS_Success;
     }
@@ -158,7 +218,8 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetTargetOrderId (Int64 targe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StandaloneECRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
     {
-    return _SetSourceOrderId (sourceOrderId);
+    m_sourceOrderId = sourceOrderId;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -166,143 +227,58 @@ ECObjectsStatus StandaloneECRelationshipInstance::SetSourceOrderId (Int64 source
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StandaloneECRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
     {
-    return _SetTargetOrderId (targetOrderId);
+    m_targetOrderId = targetOrderId;
+    return ECOBJECTS_STATUS_Success;
     }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//   IECWipRelationshipInstance
-///////////////////////////////////////////////////////////////////////////////////////////////
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
- IECWipRelationshipInstance::IECWipRelationshipInstance (StandaloneECRelationshipEnablerR relationshipEnabler) 
-     : StandaloneECRelationshipInstance (relationshipEnabler)
+ ECObjectsStatus OrderIdEntries::SetSourceNextOrderId (Int64 sourceOrderId)
      {
      m_isSourceOrderIdDefined = false;
-     m_isTargetOrderIdDefined = false;
-     m_sourceNextOrderId = 0;
-     m_isSourceNextOrderIdDefined = false;
-     m_targetNextOrderId = 0;
-     m_isTargetNextOrderIdDefined = false;
-     }
- 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::_SetSourceOrderId (Int64 sourceOrderId)
-     {
-     m_isSourceOrderIdDefined = true;
-     return StandaloneECRelationshipInstance::_SetSourceOrderId (sourceOrderId);
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECWipRelationshipInstance::_SetTargetOrderId (Int64 targetOrderId)
-     {
-     m_isTargetOrderIdDefined = true;
-     return StandaloneECRelationshipInstance::_SetTargetOrderId (targetOrderId);
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::SetSourceNextOrderId (Int64 sourceOrderId)
-     {
-     m_sourceNextOrderId = sourceOrderId;
      m_isSourceNextOrderIdDefined = true;
+     m_sourceNextOrderId = sourceOrderId;
      return ECOBJECTS_STATUS_Success;
      }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::SetTargetNextOrderId (Int64 sourceOrderId)
+ ECObjectsStatus OrderIdEntries::SetTargetNextOrderId (Int64 sourceOrderId)
      {
-     m_targetNextOrderId = sourceOrderId;
+     m_isSourceOrderIdDefined = false;
      m_isTargetNextOrderIdDefined = true;
+     m_targetNextOrderId = sourceOrderId;
      return ECOBJECTS_STATUS_Success;
      }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::_GetSourceOrderId (Int64& orderId) const
-     {
-     if (!m_isSourceOrderIdDefined)
-         return ECOBJECTS_STATUS_Error;
-     return StandaloneECRelationshipInstance::_GetSourceOrderId (orderId);
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::_GetTargetOrderId (Int64& orderId) const
-     {
-     if (!m_isTargetOrderIdDefined)
-         return ECOBJECTS_STATUS_Error;
-     return StandaloneECRelationshipInstance::_GetSourceOrderId (orderId);
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::GetSourceNextOrderId (Int64& orderId) const
+ bool OrderIdEntries::TryGetSourceNextOrderId (Int64& orderId) const
      {
      if (!m_isSourceNextOrderIdDefined)
-         return ECOBJECTS_STATUS_Error;
+         return false;
      orderId = m_sourceNextOrderId;
-     return ECOBJECTS_STATUS_Success;
+     return true;
      }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sylvain.Pucci                  11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus IECWipRelationshipInstance::GetTargetNextOrderId (Int64& orderId) const
+ bool OrderIdEntries::TryGetTargetNextOrderId (Int64& orderId) const
      {
      if (!m_isTargetNextOrderIdDefined)
-         return ECOBJECTS_STATUS_Error;
+         return false;
      orderId = m_targetNextOrderId;
-     return ECOBJECTS_STATUS_Success;
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- bool IECWipRelationshipInstance::IsSourceOrderIdDefined ()
-     {
-     return m_isSourceOrderIdDefined;
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- bool IECWipRelationshipInstance::IsTargetOrderIdDefined ()
-     {
-     return m_isTargetOrderIdDefined;
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- bool IECWipRelationshipInstance::IsSourceNextOrderIdDefined ()
-     {
-     return m_isSourceNextOrderIdDefined;
-     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sylvain.Pucci                  11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
- bool IECWipRelationshipInstance::IsTargetNextOrderIdDefined ()
-     {
-     return m_isTargetNextOrderIdDefined;
+     return true;
      }
 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECWipRelationshipInstance::SetPropertiesString (WCharCP propertiesString) 
+ECObjectsStatus StandaloneECRelationshipInstance::SetPropertiesString (WCharCP propertiesString) 
     {
     if (!propertiesString)
         return ECOBJECTS_STATUS_Error;
@@ -313,7 +289,7 @@ ECObjectsStatus IECWipRelationshipInstance::SetPropertiesString (WCharCP propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP     IECWipRelationshipInstance::GetPropertiesString() const
+WCharCP     StandaloneECRelationshipInstance::GetPropertiesString() const
     {
     if (m_propertiesString.empty())
         return NULL;
@@ -342,7 +318,7 @@ StandaloneECRelationshipEnabler::~StandaloneECRelationshipEnabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECWipRelationshipInstancePtr StandaloneECRelationshipEnabler::_CreateWipRelationshipInstance () const
+StandaloneECRelationshipInstancePtr StandaloneECRelationshipEnabler::_CreateWipRelationshipInstance () const
     {
     // not supported
     return  NULL;

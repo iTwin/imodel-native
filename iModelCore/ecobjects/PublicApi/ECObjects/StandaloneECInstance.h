@@ -18,7 +18,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 #define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
-typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
