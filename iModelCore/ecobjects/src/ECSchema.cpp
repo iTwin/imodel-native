@@ -486,12 +486,12 @@ ECClassP ECSchema::GetClassP (WCharCP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
     {
-    wprintf(L"ECSchema: this=0x%x  %ls.%02d.%02d, nClasses=%d\n", this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
+    wprintf(L"ECSchema: this=0x%p  %ls.%02d.%02d, nClasses=%d\n", this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<WCharCP, ECClassP>const& entry = *it;
         ECClassCP ecClass = entry.second;
-        wprintf(L"    ECClass: 0x%x, %ls\n", ecClass, ecClass->GetName().c_str());
+        wprintf(L"    ECClass: 0x%p, %ls\n", ecClass, ecClass->GetName().c_str());
         }
     }
 
