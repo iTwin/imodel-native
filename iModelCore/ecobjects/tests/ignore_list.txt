@@ -15,3 +15,5 @@ CalculatedPropertyTests.SetValue                                                
 CalculatedPropertyTests.SettingACalculatedPropertyUpdatesThePropertiesFromWhichItWasCalculate   # Fails on Android
 
 UnitsTest.Formatting    # Fails on Android
+
+SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
