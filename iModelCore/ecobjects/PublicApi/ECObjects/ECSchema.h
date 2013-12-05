@@ -367,6 +367,22 @@ public:
 struct PrimitiveECProperty;
 
 /*=================================================================================**//**
+* @bsistruct                                                  Ramanujam.Raman   12/12
++===============+===============+===============+===============+===============+======*/
+struct IECClassLocater
+    {
+protected:
+    ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
+public:
+    ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
+        {
+        return _LocateClass (schemaName, className);
+        }
+    };
+    
+typedef IECClassLocater& IECClassLocaterR;
+
+/*=================================================================================**//**
 Base class for an object which provides the context for an IECTypeAdapter
 @ingroup ECObjectsGroup
 @bsiclass
@@ -378,8 +394,9 @@ protected:
     virtual ECPropertyCP                        _GetProperty() const = 0;
     virtual UInt32                              _GetComponentIndex() const = 0;
     virtual bool                                _Is3d() const = 0;
-    virtual IECInstanceCP               	_GetECInstance() const = 0;
+    virtual IECInstanceCP                       _GetECInstance() const = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
+    ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
 public:
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
@@ -388,6 +405,8 @@ public:
     //! The following are relevant to adapters for point types.
     ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
     ECOBJECTS_EXPORT  bool              Is3d() const;
+
+    IECClassLocaterR                    GetUnitsECClassLocater() const {return _GetUnitsECClassLocater();}
 
     //! internal use only, primarily for ECExpressions
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance);
