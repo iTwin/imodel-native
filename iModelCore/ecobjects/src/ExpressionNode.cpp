@@ -2226,17 +2226,19 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
     ECN::ECValueR    left    = *leftResult.GetECValue();
     ECN::ECValueR    right   = *rightResult.GetECValue();
 
-    if (!left.IsPrimitive() || !right.IsPrimitive())
+    if (left.IsNull() || right.IsNull())
         {
-        if (left.IsNull() && right.IsNull())
-            {
-            // Comparing null to null does not care about primitive type...just make sure neither value has a defined type.
+        // make sure null value does not have a defined type - it's just 'null'
+        if (left.IsNull())
             left.Clear();
+        if (right.IsNull())
             right.Clear();
-            return ExprStatus_Success;
-            }
-        else
-            return ExprStatus_PrimitiveRequired;
+
+        return ExprStatus_Success;
+        }
+    else if (!left.IsPrimitive() || !right.IsPrimitive())
+        {
+        return ExprStatus_PrimitiveRequired;
         }
 
     ECN::PrimitiveType   leftCode    = left.GetPrimitiveType();

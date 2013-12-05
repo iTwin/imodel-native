@@ -179,6 +179,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     ecClass->CreatePrimitiveProperty (ecProp, L"D", PRIMITIVETYPE_Double);
     ecClass->CreatePrimitiveProperty (ecProp, L"D1", PRIMITIVETYPE_Double);
     ecClass->CreatePrimitiveProperty (ecProp, L"D2", PRIMITIVETYPE_Double);
+    ecClass->CreatePrimitiveProperty (ecProp, L"B", PRIMITIVETYPE_Boolean);
     ecClass->CreateArrayProperty (arrayProp, L"A", PRIMITIVETYPE_Integer);
 
     // Apply the CalculatedECPropertySpecification
@@ -272,6 +273,19 @@ TEST_F (CalculatedPropertyTests, BasicExpressions)
     SetValue (*instance, L"A", 5, 0);
     SetValue (*instance, L"A", 6, 1);
     Test (*instance, L"S", L"30");
+
+    // Null comparisons
+    instance = CreateTestCase (L"B", L"this.S1 = Null", 0, L"False");
+    SetNullValue(*instance, L"S1");
+    Test (*instance, L"B", true);
+    SetValue (*instance, L"S1", L"no longer null");
+    Test (*instance, L"B", false);
+
+    instance = CreateTestCase (L"B", L"this.S1 <> Null", 0, L"False");
+    SetNullValue (*instance, L"S1");
+    Test (*instance, L"B", false);
+    SetValue (*instance, L"S1", L"no longer null");
+    Test (*instance, L"B", true);
     }
 
 /*---------------------------------------------------------------------------------**//**
