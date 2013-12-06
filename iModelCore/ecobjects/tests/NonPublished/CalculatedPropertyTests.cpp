@@ -22,7 +22,7 @@ using namespace std;
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CalculatedPropertyTests : ::testing::Test
+struct CalculatedPropertyTests : ECTestFixture
     {
     enum { OPTION_UseLastValid = 1 << 0, OPTION_DefaultOnly = 1 << 1 };
 
@@ -156,6 +156,12 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharC
     static Int32 s_schemaNumber = 0;
     
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext->AddSchemaLocater (*schemaLocater);
+
     SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 5);
     ECSchemaPtr customAttrSchema = schemaContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE (customAttrSchema.IsValid());
