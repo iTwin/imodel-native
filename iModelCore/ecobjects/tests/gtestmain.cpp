@@ -33,7 +33,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
 
     virtual void _GetDocumentsRoot (BeFileName& path) override              {path = m_programPath;}
     virtual void _GetDgnPlatformAssetsDirectory (BeFileName& path) override {path = m_programPath;}
-    virtual void _GetLocalStateDir (BeFileName& path) override              {path = m_programPath;}
+    virtual void _GetTempDir (BeFileName& path) override                    {path = m_programPath;}
 
     virtual void _GetOutputRoot (BeFileName& path) override
         {

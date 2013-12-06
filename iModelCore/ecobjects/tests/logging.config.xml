@@ -65,8 +65,8 @@
     <category name="Performance">
         <priority value="info"/>
     </category>
-    <category name="ECObjectsNative">   <priority value="info"/></category>
-    <category name="DgnEC">             <priority value="info"/></category>
+    <category name="ECObjectsNative">   <priority value="warn"/></category>
+    <category name="DgnEC">             <priority value="warn"/></category>
 
     <root>                            
         <priority value="warn" />
