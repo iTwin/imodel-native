@@ -29,23 +29,30 @@ enum UnitConversionType
     UnitConversionType_FactorAndOffset
     };
     
+typedef RefCountedPtr<ECUnitsClassLocater> ECUnitsClassLocaterPtr;
+
 /*---------------------------------------------------------------------------------**//**
 * Because Graphite loads ECClasses from schemas dynamically, ECSchemas are not pre-
 * processed for units info and units info is not cached.
 * @bsistruct                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECUnitsClassLocater : IECClassLocater
+struct ECUnitsClassLocater : RefCounted<IECClassLocater>
     {
 private:
     ECSchemaReadContextPtr   m_context;
     ECSchemaPtr              m_unitsSchema, m_koqSchema;
+    static ECUnitsClassLocaterPtr s_unitsECClassLocaterPtr;
 
     bool Initialize();
 
     ECClassCP _LocateClass (WCharCP schemaName, WCharCP className);
 
-public:
+protected:
     ECUnitsClassLocater () {}
+    ~ECUnitsClassLocater() {}
+
+public:
+    static ECUnitsClassLocaterPtr Create();
     ECOBJECTS_EXPORT static bool LoadUnitsSchemas (ECSchemaReadContextR context);
     };
     

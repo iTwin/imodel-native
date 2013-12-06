@@ -41,6 +41,8 @@ static WCharCP const  BASEUNIT_CONVERTER                = L"BaseUnit Converter";
 static WCharCP const  NOOP_CONVERTER                    = L"NoOp Converter";
 static WCharCP const  SLOPE_CONVERTER                   = L"Slope Converter";
 
+ECUnitsClassLocaterPtr ECUnitsClassLocater::s_unitsECClassLocaterPtr;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -82,6 +84,16 @@ bool Unit::ConvertTo (double& value, UnitCR target) const
     return true;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECUnitsClassLocaterPtr ECUnitsClassLocater::Create()
+    {
+    if (s_unitsECClassLocaterPtr.IsNull())
+        s_unitsECClassLocaterPtr = new ECUnitsClassLocater();
+    return s_unitsECClassLocaterPtr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -363,8 +375,8 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop, IECClassLocate
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
     {
-    ECUnitsClassLocater unitsECClassLocater;
-    return GetUnitForECProperty (unit, ecprop, unitsECClassLocater);
+    ECUnitsClassLocaterPtr unitsECClassLocater =  ECUnitsClassLocater::Create();
+    return GetUnitForECProperty (unit, ecprop, *unitsECClassLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -392,8 +404,8 @@ bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
     {
-    ECUnitsClassLocater unitsECClassLocater;
-    return FormatValue (formatted, inputVal, ecprop, instance, unitsECClassLocater);
+    ECUnitsClassLocaterPtr unitsECClassLocater =  ECUnitsClassLocater::Create();
+    return FormatValue (formatted, inputVal, ecprop, instance, *unitsECClassLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
