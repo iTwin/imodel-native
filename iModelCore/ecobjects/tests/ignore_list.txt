@@ -15,3 +15,4 @@ CalculatedPropertyTests.SetValue                                                
 CalculatedPropertyTests.SettingACalculatedPropertyUpdatesThePropertiesFromWhichItWasCalculate   # Fails on Android
 
 UnitsTest.Formatting    # Fails on Android
+UnitsTest.Conversions   # Takes WAY too long to run every time
