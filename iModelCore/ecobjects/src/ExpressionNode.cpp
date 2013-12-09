@@ -1082,7 +1082,7 @@ EvaluationResultR            rightValue
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult()
-    : m_instanceList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
+    : m_valueList (NULL), m_instanceList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
     {
 
     }
@@ -1150,7 +1150,7 @@ ECN::ECValueCP   EvaluationResult::GetECValue() const
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
-    : m_instanceList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
+    : m_valueList(NULL), m_instanceList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
     {
     if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
         {
@@ -1164,6 +1164,12 @@ EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
         }
     else if (ValType_ECValue == rhs.m_valueType)
         m_ecValue = rhs.m_ecValue;
+    else if (ValType_ValueList == rhs.m_valueType)
+        {
+        m_valueList = rhs.m_valueList;
+        m_valueList->AddRef();
+        m_valueType = ValType_ValueList;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1178,6 +1184,8 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     m_ecValue = rhs.m_ecValue;
     if (m_valueType == ValType_InstanceList)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
+    else if (m_valueType == ValType_ValueList)
+        SetValueList (*rhs.m_valueList);
 
     return *this;
     }
@@ -1195,8 +1203,12 @@ void            EvaluationResult::Clear()
         m_ownsInstanceList = false;
         }
 
+    if (NULL != m_valueList)
+        m_valueList->Release();
+
     m_ecValue.Clear();
     m_instanceList = NULL;
+    m_valueList = NULL;
     m_valueType = ValType_None;
     m_unitsOrder = UO_Unknown;
     }
@@ -1295,18 +1307,39 @@ void EvaluationResult::SetInstanceList (ECInstanceListCR instanceList, bool make
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    03/2011
+* @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueResult::ValueResult (EvaluationResultR result) : 
-                            m_evalResult(result) 
+IValueListResultCP EvaluationResult::GetValueList() const
     {
+    return ValType_ValueList == m_valueType ? m_valueList : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetValueList (IValueListResultR valueList)
+    {
+    Clear();
+    m_valueList = &valueList;
+    m_valueList->AddRef();
+    m_valueType = ValType_ValueList;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueResult::~ValueResult()
+ValueResult::ValueResult (EvaluationResultR result)
+    : m_evalResult(result) 
     {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    03/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ValueResult::~ValueResult()
+    {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1747,6 +1780,24 @@ ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, Ex
         }
 
     return Operations::PerformUnaryNot(evalResult, inputValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus CallNode::InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context)
+    {
+    MethodReferencePtr methodRef;
+    ExpressionStatus status = context.ResolveMethod (methodRef, GetMethodName(), true);
+    if (ExprStatus_Success == status)
+        {
+        EvaluationResultVector argsList;
+        status = m_arguments->EvaluateArguments (argsList, context);
+        if (ExprStatus_Success == status)
+            status = methodRef->InvokeValueListMethod (evalResult, valueList, argsList);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3841,6 +3892,66 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
 
     result.SetString(L"");
     return ExprStatus_IncompatibleTypes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 IValueListResult::GetCount() const { return _GetCount(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus IValueListResult::GetValueAt (EvaluationResultR result, UInt32 index) const
+    {
+    return index < GetCount() ? _GetValueAt (result, index) : ExprStatus_IndexOutOfRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ArrayValueResult : IValueListResult
+    {
+private:
+    IECInstancePtr      m_instance;
+    UInt32              m_propertyIndex;
+    UInt32              m_count;
+
+    ArrayValueResult (IECInstanceR instance, UInt32 propIdx)
+        : m_instance(&instance), m_propertyIndex(propIdx), m_count(0)
+        {
+        m_instance = &instance;
+        m_propertyIndex = propIdx;
+
+        ECValue v;
+        if (ECOBJECTS_STATUS_Success == instance.GetValue (v, propIdx) && v.IsArray())
+            m_count = v.GetArrayInfo().GetCount();
+        else
+            BeAssert (false);
+        }
+
+    virtual UInt32              _GetCount() const override
+        {
+        return m_count;
+        }
+
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const override
+        {
+        if (ECOBJECTS_STATUS_Success == m_instance->GetValue (result.InitECValue(), m_propertyIndex, index))
+            return ExprStatus_Success;
+        else
+            return ExprStatus_UnknownError;
+        }
+public:
+    static IValueListResultPtr Create (IECInstanceR instance, UInt32 propIdx) { return new ArrayValueResult (instance, propIdx); }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IValueListResultPtr IValueListResult::Create (IECInstanceR instance, UInt32 propIdx)
+    {
+    return ArrayValueResult::Create (instance, propIdx);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -966,6 +966,7 @@ public:
     ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, ExpressionContextR context);
+    ExpressionStatus    InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context);
 
 };  //  End of struct CallNode
 
