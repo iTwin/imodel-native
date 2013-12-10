@@ -1529,14 +1529,14 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         {
     case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
     case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%I64d", GetDateTimeTicks()); return true;
-    case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13g", GetDouble()); return true;
+    case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13f", GetDouble()); return true;
     case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
     case PRIMITIVETYPE_Long:        expr.Sprintf (L"%I64d", GetLong()); return true;
-    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13g,%.13g}", GetPoint2D().x, GetPoint2D().y); return true;
+    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13f,%.13f}", GetPoint2D().x, GetPoint2D().y); return true;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        expr.Sprintf (L"{%.13g,%.13g,%.13g}", pt.x, pt.y, pt.z);
+        expr.Sprintf (L"{%.13f,%.13f,%.13f}", pt.x, pt.y, pt.z);
         }
         return true;
     case PRIMITIVETYPE_String:
@@ -2089,24 +2089,25 @@ void                                            ECValueAccessor::PushLocation (I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, WCharCP accessString, int newArrayIndex)
+bool                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, WCharCP accessString, int newArrayIndex)
     {
     UInt32 propertyIndex;
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        BeAssert (false && "Could not resolve property index for this access string");
-        return;
+        //BeAssert (false && "Could not resolve property index for this access string");
+        return false;
         }
     PushLocation (newEnabler, (int)propertyIndex, newArrayIndex);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                                            ECValueAccessor::PushLocation (IECInstanceCR instance, WCharCP accessString, int newArrayIndex)
+bool                                            ECValueAccessor::PushLocation (IECInstanceCR instance, WCharCP accessString, int newArrayIndex)
     {
-    PushLocation (instance.GetEnabler(), accessString, newArrayIndex);
+    return PushLocation (instance.GetEnabler(), accessString, newArrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**

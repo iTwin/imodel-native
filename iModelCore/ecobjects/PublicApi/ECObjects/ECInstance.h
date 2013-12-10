@@ -227,7 +227,12 @@ protected:
 /*__PUBLISH_SECTION_START__*/
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
     virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
+
+    virtual bool    _ChangeValuesAllowed() const { return ! IsReadOnly(); }
+
 public:
+
+    bool    ChangeValuesAllowed()  { return _ChangeValuesAllowed(); }
 
     //! Returns the base address for this instance
     ECOBJECTS_EXPORT void const*        GetBaseAddress () {return this;}
@@ -367,6 +372,8 @@ public:
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
     ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 #endif
+    ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId);
+
     /*__PUBLISH_SECTION_START__*/
     //! Attempts to copy all property values from one instance to this instance.
     //! It is expected that the source instance is of the same class as this instance.
@@ -655,9 +662,35 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static ECObjectsStatus SetValueByIndex         (IECInstanceR instance, int propertyIndex, int arrayIndex, ECValueCR value);
     ECOBJECTS_EXPORT static ECObjectsStatus GetValueByIndex         (ECValueR value, IECInstanceCR instance, int propertyIndex, int arrayIndex);
+
+    ECOBJECTS_EXPORT static ECObjectsStatus ClearArray (IECInstanceR instance, WCharCP accessString);
+    ECOBJECTS_EXPORT static ECObjectsStatus RemoveArrayElement (IECInstanceR instance, WCharCP accessString, UInt32 index);
+    ECOBJECTS_EXPORT static ECObjectsStatus AddArrayElements (IECInstanceR instance, WCharCP accessString, UInt32 count);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* When updating serialized ECInstances to a new version of a schema, resolves the old data
+* to the new schema.
+* @bsistruct                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECSchemaRemapper
+    {
+protected:
+    virtual void                _ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const = 0;
+    virtual void                _ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const = 0;
+public:
+    //! Given a serialized property name, return the name of the possibly renamed property in the specified ECClass.
+    ECOBJECTS_EXPORT void       ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const;
+    //! Given a serialized class name, return the name of the possibly renamed class in the specified ECSchema
+    ECOBJECTS_EXPORT void       ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const;
     };
 
 /*__PUBLISH_SECTION_START__*/
+
+typedef bvector<IECInstancePtr>         ECInstanceList;
+typedef ECInstanceList                  *ECInstanceListP, &ECInstanceListR;
+typedef ECInstanceList const            *ECInstanceListCP;
+typedef ECInstanceList const            &ECInstanceListCR;
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

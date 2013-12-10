@@ -218,9 +218,11 @@ size_t IECInstance::GetOffsetToIECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) const
     {
+/*
     if (_IsReadOnly())
         return true;
-    
+*/
+
     UInt32 propertyIndex;
     return ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex (propertyIndex, accessString) || IsPropertyReadOnly (propertyIndex);
     }
@@ -230,7 +232,7 @@ bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) cons
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
     {
-    return _IsReadOnly() || GetEnabler().IsPropertyReadOnly (propertyIndex);
+    return /*_IsReadOnly() || */ GetEnabler().IsPropertyReadOnly (propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,7 +452,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v)
 //+---------------+---------------+---------------+---------------+---------------+-----
 ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) 
     {
-    if (IsReadOnly())
+    if ( ! ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     bool isNull = false;
@@ -826,7 +828,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
-    if (IsReadOnly())
+    if ( ! ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     return  SetInternalValueUsingAccessor (accessor, valueToSet);
@@ -1108,6 +1110,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     {
     // skip all the work if the instance is read only
     if (instance.IsReadOnly())
+    if ( ! instance.ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     // see if access string specifies an array
@@ -1676,7 +1679,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
             return ECOBJECTS_STATUS_Error;
 
         // only proceed if not read only instance
-        if (instance.IsReadOnly())
+        if ( ! instance.ChangeValuesAllowed())
             return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
         ECN::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
@@ -1714,7 +1717,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
                 return ECOBJECTS_STATUS_Error;
 
             // only proceed if not read only instance
-            if (instance.IsReadOnly())
+            if (instance.ChangeValuesAllowed())
                 return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
             arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
@@ -1800,6 +1803,109 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
         value.SetToNull ();
         }
     return instance.GetValue (value, (UInt32) propertyIndex, (UInt32) arrayIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Expect some accessor ending in an array property. Want the last IECInstance in the
+* chain and the property index of the array property.
+* ex: "SomeStruct.SomeStructArray[0].SomeArray"
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECObjectsStatus  resolveArrayAccessString (IECInstancePtr& resolvedInstance, UInt32& resolvedPropertyIndex, IECInstanceR rootInstance, WCharCP fullAccessString)
+    {
+    ECValueAccessor accessor;
+    ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (accessor, rootInstance, fullAccessString);
+    if (ECOBJECTS_STATUS_Success != status)
+        return status;
+    else if (0 == accessor.GetDepth())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    resolvedInstance = const_cast<IECInstanceP> (&rootInstance);
+    resolvedPropertyIndex = 0;
+
+    UInt32 depth = 0;
+    for ( ; depth < accessor.GetDepth() - 1; depth++)
+        {
+        ECValue v;
+        bool compatible = (accessor[depth].GetEnabler() == &resolvedInstance->GetEnabler());
+        ECObjectsStatus status = getValueHelper (v, *resolvedInstance, accessor, depth, compatible);
+        if (ECOBJECTS_STATUS_Success != status)
+            {
+            ECPropertyCP ecprop = accessor[depth].GetECProperty();
+            if (NULL != ecprop && ecprop->GetIsStruct())
+                continue;
+            else
+                return status;
+            }
+
+        if (v.IsStruct() && accessor[depth].GetArrayIndex() >= 0)
+            {
+            resolvedInstance = v.GetStruct();
+            if (resolvedInstance.IsNull())
+                return ECOBJECTS_STATUS_Error;
+            }
+        }
+
+    if (accessor[depth].GetArrayIndex() >= 0)
+        return ECOBJECTS_STATUS_Error;
+
+    if (accessor[depth].GetEnabler() == &resolvedInstance->GetEnabler())
+        resolvedPropertyIndex = accessor[depth].GetPropertyIndex();
+    else
+        {
+        WCharCP accessString = accessor.GetAccessString (depth);
+        if (NULL == accessString)
+            return ECOBJECTS_STATUS_Error;
+
+        ECObjectsStatus status = resolvedInstance->GetEnabler().GetPropertyIndex (resolvedPropertyIndex, accessString);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
+        }
+
+    ECPropertyCP ecprop = accessor[depth].GetECProperty();
+    return NULL != ecprop && ecprop->GetIsArray() ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::ClearArray (IECInstanceR rootInstance, WCharCP accessString)
+    {
+    IECInstancePtr resolvedInstance;
+    UInt32 propertyIndex;
+    ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = resolvedInstance->ClearArray (propertyIndex);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootInstance, WCharCP accessString, UInt32 arrayIndex)
+    {
+    IECInstancePtr resolvedInstance;
+    UInt32 propertyIndex;
+    ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = resolvedInstance->RemoveArrayElement (propertyIndex, arrayIndex);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count)
+    {
+    IECInstancePtr resolvedInstance;
+    UInt32 propertyIndex;
+    ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        status = resolvedInstance->AddArrayElements (propertyIndex, count);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2275,6 +2381,7 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         }
 
     // see if we can find the class from the schema.
+    m_context.ResolveSerializedClassName (className, *schema);
     ECClassCP    foundClass;
     if (NULL == (foundClass = schema->GetClassCP (className.c_str())))
         {
@@ -2379,6 +2486,7 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     {
     // on entry, propertyValueNode is the XML node for the property value.
     WString     propertyName (propertyValueNode.GetName(), true);
+    m_context.ResolveSerializedPropertyName (propertyName, ecClass);
 
     // try to find the property in the class.
     ECPropertyP ecProperty;
@@ -2514,6 +2622,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
             // For polymorphic arrays, the Name might also be the name of a class that has structMemberType as a BaseType.
             ECClassCP   thisMemberType;
             WString     arrayMemberType (arrayValueNode->GetName(), true);
+            m_context.ResolveSerializedClassName (arrayMemberType, structMemberType->GetSchema());
             if (NULL == (thisMemberType = ValidateArrayStructType (arrayMemberType.c_str(), structMemberType)))
                 continue;
 
@@ -3336,6 +3445,14 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlNodeR node)
     return instanceWriter.WriteInstance (*this, false);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus IECInstance::WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId)
+    {
+    InstanceXmlWriter writer (dom, rootNode);
+    return writer.WriteInstance (*this, writeInstanceId);
+    }
 
 #if defined (NEEDSWORK_LIBXML) // WIP_NONPORT
 /*---------------------------------------------------------------------------------**//**
@@ -3399,5 +3516,11 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 
     return &m_fallBackSchema;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
+void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

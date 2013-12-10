@@ -1038,6 +1038,8 @@ public:
 
     //! Returns true if the class name  is of the type specified or derived from it.
     ECOBJECTS_EXPORT bool            Is(WCharCP name) const;
+    //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
+    ECOBJECTS_EXPORT bool            Is (WCharCP schemaName, WCharCP className) const;
 
     //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, WStringCR name);
@@ -1431,6 +1433,10 @@ struct SchemaKey
     //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
+    //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case insensitive
+    //! @param[in]  schemaName  The schema name to compare to
+    ECOBJECTS_EXPORT int  CompareByName (WString schemaName) const;
+
     //! Returns whether this SchemaKey is Identical to the target SchemaKey
     bool operator == (SchemaKeyCR rhs) const
         {
@@ -1512,14 +1518,32 @@ struct SchemaKeyMatchPredicate
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaNameClassNamePair
-{
+    {
 public:
     WString m_schemaName;
     WString m_className;
 
     SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
     SchemaNameClassNamePair (WCharCP schemaName, WCharCP className) : m_schemaName (schemaName), m_className  (className) {}
-    SchemaNameClassNamePair () {};
+    SchemaNameClassNamePair() { }
+    SchemaNameClassNamePair (WStringCR schemaAndClassNameSeparatedByColon)
+        {
+        BeAssert (WString::npos != schemaAndClassNameSeparatedByColon.find (':'));
+        Parse (schemaAndClassNameSeparatedByColon);
+        }
+
+    bool Parse (WStringCR schemaAndClassNameSeparatedByColon)
+        {
+        size_t pos = schemaAndClassNameSeparatedByColon.find (':');
+        if (WString::npos != pos)
+            {
+            m_schemaName = schemaAndClassNameSeparatedByColon.substr (0, pos);
+            m_className = schemaAndClassNameSeparatedByColon.substr (pos+1);
+            return true;
+            }
+        else
+            return false;
+        }
 
     bool operator<(SchemaNameClassNamePair other) const
         {
@@ -1536,7 +1560,14 @@ public:
         {
         return 0 == m_schemaName.CompareTo(rhs.m_schemaName) && 0 == m_className.CompareTo(rhs.m_className);
         }
-};
+
+    WString     ToColonSeparatedString() const
+        {
+        WString str;
+        str.Sprintf (L"%ls:%ls", m_schemaName.c_str(), m_className.c_str());
+        return str;
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
