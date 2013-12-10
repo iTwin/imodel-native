@@ -10,10 +10,8 @@ PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
 
 always:
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Published.exe
-%if defined (NOT_YET)
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_NonPublished.exe
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Scenario.exe
      $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_NonPublishedScenario.exe
-%endif
 
 
