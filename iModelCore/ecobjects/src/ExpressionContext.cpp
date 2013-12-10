@@ -658,9 +658,58 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
 BentleyStatus   SymbolExpressionContext::AddSymbol (SymbolR symbol)
     {
     //  Check for duplicates in context
-    m_symbols.push_back(SymbolPtr(&symbol));
+    if (NULL != FindCP (symbol.GetName ()))
+        return BSIERROR;
 
+    m_symbols.push_back (SymbolPtr (&symbol));
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolCP        SymbolExpressionContext::FindCP (wchar_t const* ident)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        SymbolP symbol = (*curr).get ();
+        if (0 == wcscmp (ident, symbol->GetName ()))
+            return symbol;
+        }
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbolExpressionContext::RemoveSymbol (wchar_t const* ident)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        SymbolP symbol = (*curr).get ();
+        if (0 == wcscmp (ident, symbol->GetName ()))
+            {
+            m_symbols.erase (curr);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbolExpressionContext::RemoveSymbol (SymbolR symbol)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        if ((*curr).get () == &symbol)
+            {
+            m_symbols.erase (curr);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

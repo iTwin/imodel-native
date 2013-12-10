@@ -382,9 +382,9 @@ protected:
 
 public:
 
-    SymbolCP                    FindCP (wchar_t const* ident);
-    BentleyStatus               RemoveSymbol (SymbolR symbol);
-    BentleyStatus               RemoveSymbol (wchar_t const* ident);
+    ECOBJECTS_EXPORT SymbolCP       FindCP (wchar_t const* ident);
+    ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (SymbolR symbol);
+    ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (wchar_t const* ident);
 
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
 
