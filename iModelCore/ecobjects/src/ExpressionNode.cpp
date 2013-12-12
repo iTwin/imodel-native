@@ -1743,6 +1743,14 @@ void            PrimaryListNode::AppendNameNode(IdentNodeR nameNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            PrimaryListNode::AppendLambdaNode (LambdaNodeR lambdaNode)
+    {
+    m_operators.push_back (&lambdaNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PrimaryListNode::AppendArrayNode(LBracketNodeR lbracketNode)

@@ -104,6 +104,9 @@ WString         Lexer::GetString(ExpressionToken tokenName)
         case TOKEN_LParen:
             retval = L"(";
             break;
+        case TOKEN_Where:
+            retval = L"Where";
+            break;
         case TOKEN_RParen:
             retval = L")";
             break;
@@ -482,6 +485,8 @@ ExpressionToken Lexer::GetIdentifier ()
         return TOKEN_IIf;
     else if (BeStringUtilities::Wcsicmp (L"Null", identifier) == 0)
         return TOKEN_Null;
+    else if (BeStringUtilities::Wcsicmp (L"Where", identifier) == 0)
+        return TOKEN_Where;
 
     return TOKEN_Ident;
     }
@@ -933,6 +938,23 @@ NodePtr         ECEvaluator::ParsePrimary
                                 }
 
                             dotted = true;
+                            }
+                            break;
+
+                        case TOKEN_Where:
+                            {
+                            m_lexer->Advance();
+                            NodePtr lambdaExpr = ParseValueExpression();
+                            if (lambdaExpr.IsNull())
+                                {
+                                BeAssert (false);
+                                break;
+                                }
+
+                            WCharCP symbolName = identNode.IsValid() ? identNode->GetName() : L"";
+                            LambdaNodePtr lambdaNode = LambdaNode::Create (symbolName, *lambdaExpr);
+                            primaryList->AppendLambdaNode (*lambdaNode);
+                            identNode = NULL;
                             }
                             break;
 

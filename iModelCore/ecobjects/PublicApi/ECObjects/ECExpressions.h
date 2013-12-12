@@ -25,6 +25,7 @@ EXPR_TYPEDEFS(ArgumentTreeNode)
 EXPR_TYPEDEFS(ArithmeticNode)
 EXPR_TYPEDEFS(BinaryNode)
 EXPR_TYPEDEFS(CallNode)
+EXPR_TYPEDEFS(LambdaNode)
 EXPR_TYPEDEFS(ComparisonNode)
 EXPR_TYPEDEFS(ConcatenateNode)
 EXPR_TYPEDEFS(ContextSymbol)
@@ -66,6 +67,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ArgumentTreeNode>             ArgumentTreeNodePtr;
 typedef RefCountedPtr<CallNode>                     CallNodePtr;
+typedef RefCountedPtr<LambdaNode>                   LambdaNodePtr;
 typedef RefCountedPtr<ContextSymbol>                ContextSymbolPtr;
 typedef RefCountedPtr<DotNode>                      DotNodePtr;
 typedef RefCountedPtr<ErrorNode>                    ErrorNodePtr;
@@ -564,6 +566,8 @@ enum            ExpressionToken
     TOKEN_Select              = 78,
     TOKEN_End                 = 79,
     TOKEN_EndIf               = 80,
+
+    TOKEN_Where               = 85,               // "Where", e.g. "IDENT Where SOME_EXPRESSION_INVOLVING_IDENT"
 
     TOKEN_DoubleColon         = 100,
 

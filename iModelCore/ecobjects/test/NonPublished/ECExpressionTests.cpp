@@ -118,6 +118,7 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"Something.Method ( )", L"Something.Method()");
     Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2,\"string\",this.Property)");
     Roundtrip (L"IIf (True,  Null, \t2 ^3  -3* 4)", L"IIf(True,Null,2^3-3*4)");
+    Roundtrip (L"X = \"Thing\" OrElse X = \"Stuff\"", L"X=\"Thing\"OrElse X=\"Stuff\"");
 
     // Make sure we're capturing parens...
     Roundtrip (L"(1 +2) * 3", L"(1+2)*3");
@@ -131,6 +132,9 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"((1 + 2) * 3 / (4 + (5 - 6))) ^ (((7 + ((-8) -(((9)))) + +(10))))", L"((1+2)*3/(4+(5-6)))^(7+((-8)-(9))++(10))");
     Roundtrip (L"0.00390625", L"0.00390625");
     Roundtrip (L"method (method (True, method (method (1.5), False)))", L"method(method(True,method(method(1.5),False)))");
+
+    Roundtrip (L"X where X < 5.0 AndAlso X > 1.5", L"X Where X<5 AndAlso X>1.5");
+    Roundtrip (L"this.Array.Any (X Where X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", L"this.Array.Any(X Where X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 
 /*---------------------------------------------------------------------------------**//**
