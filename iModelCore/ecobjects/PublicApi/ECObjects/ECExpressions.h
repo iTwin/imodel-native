@@ -405,13 +405,13 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          Symbol : RefCountedBase
 {
+/*__PUBLISH_SECTION_END__*/
 private:
     WString     m_name;
 
 protected:
     Symbol (wchar_t const* name) : m_name (name) { }
 
-/*__PUBLISH_SECTION_END__*/
     virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     { return ExprStatus_MethodRequired; };
     virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) = 0;
     virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) = 0;
@@ -518,11 +518,30 @@ public:
 };  //  End of ValueSymbol
 
 /*=================================================================================**//**
+* @ingroup ECObjectsGroup
++===============+===============+===============+===============+===============+======*/
+struct PropertySymbolBase : Symbol
+{
+protected:
+    ECOBJECTS_EXPORT PropertySymbolBase (wchar_t const* name);
+    virtual ECValue _EvaluateProperty () = 0;
+
+/*__PUBLISH_SECTION_END__*/
+protected:
+    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override 
+        {
+        return ExprStatus_NeedsLValue;
+        }
+/*__PUBLISH_SECTION_START__*/
+};
+
+/*=================================================================================**//**
 * Used to introduce a named property into the context.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 template<class InstanceType, class ReturnValueType>
-struct PropertySymbol : Symbol
+struct PropertySymbol : PropertySymbolBase
 {
 //! The property return type
 typedef ReturnValueType (InstanceType::*GetPropertyMethod) () const;
@@ -533,42 +552,18 @@ private:
 
 protected:
     PropertySymbol (WCharCP name, InstanceType const& instance, GetPropertyMethod method)
-        : Symbol (name), m_instance (instance), m_method (method)
+        : PropertySymbolBase (name), m_instance (instance), m_method (method)
         { }
     virtual ~PropertySymbol () { }
 
 /*__PUBLISH_SECTION_END__*/
-    virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
-        {
-        if (primaryList.GetNumberOfOperators () > startIndex)
-            {
-            ExpressionToken token = primaryList.GetOperation (startIndex);
-            if (ECN::TOKEN_Dot == token)
-                return ExprStatus_StructRequired;
-
-            if (ECN::TOKEN_LParen == token)
-                return ExprStatus_MethodRequired;
-
-            if (ECN::TOKEN_LeftBracket == token)
-                return ExprStatus_ArrayRequired;
-
-            return ExprStatus_UnknownError;
-            }
-
-        evalResult = ECValue ((m_instance.*m_method) ());
-        return ExprStatus_Success;
-        }
-    virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override 
-        {
-        return ExprStatus_NeedsLValue;
-        }
+    virtual ECValue _EvaluateProperty () override { return ECValue ((m_instance.*m_method) ()); }
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new PropertySymbol with the given name, instance and method reference to get the property value
     static RefCountedPtr<PropertySymbol> Create (WCharCP name, InstanceType const& instance, GetPropertyMethod method) { return new PropertySymbol (name, instance, method); }
 };
-
 
 /*__PUBLISH_SECTION_END__*/
 

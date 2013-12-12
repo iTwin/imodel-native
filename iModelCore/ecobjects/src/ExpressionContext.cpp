@@ -879,6 +879,38 @@ ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECN::ECValueCR exprValu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertySymbolBase::PropertySymbolBase (wchar_t const* name)
+    : Symbol (name)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus PropertySymbolBase::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+    {
+    if (primaryList.GetNumberOfOperators() > startIndex)
+        {
+        ExpressionToken token = primaryList.GetOperation(startIndex);
+        if (ECN::TOKEN_Dot == token)
+            return ExprStatus_StructRequired;
+
+        if (ECN::TOKEN_LParen == token)
+            return ExprStatus_MethodRequired;
+
+        if (ECN::TOKEN_LeftBracket == token)
+            return ExprStatus_ArrayRequired;
+
+        return ExprStatus_UnknownError;
+        }
+
+    evalResult = _EvaluateProperty ();
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher publisher)
