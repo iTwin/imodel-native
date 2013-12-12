@@ -38,6 +38,7 @@ EXPR_TYPEDEFS(ExpressionContext)
 EXPR_TYPEDEFS(ExpressionResolver)
 EXPR_TYPEDEFS(ExpressionType)
 EXPR_TYPEDEFS(IValueListResult)
+EXPR_TYPEDEFS(ContextualValue)
 EXPR_TYPEDEFS(IdentNode)
 EXPR_TYPEDEFS(IIfNode)
 EXPR_TYPEDEFS(InstanceListExpressionContext)
@@ -73,6 +74,7 @@ typedef RefCountedPtr<DotNode>                      DotNodePtr;
 typedef RefCountedPtr<ErrorNode>                    ErrorNodePtr;
 typedef RefCountedPtr<ExpressionType>               ExpressionTypePtr;
 typedef RefCountedPtr<IValueListResult>             IValueListResultPtr;
+typedef RefCountedPtr<ContextualValue>              ContextualValuePtr;
 typedef RefCountedPtr<ExpressionContext>            ExpressionContextPtr;
 typedef RefCountedPtr<IdentNode>                    IdentNodePtr;
 typedef RefCountedPtr<InstanceListExpressionContext> InstanceListExpressionContextPtr;
@@ -137,6 +139,7 @@ enum ValueType
     ValType_Custom          =  2,
     ValType_InstanceList    =  3,
     ValType_ValueList       =  4,
+    ValType_Contextual      =  5,
     };
 
 enum UnitsOrder
@@ -653,6 +656,24 @@ public:
     ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, UInt32 arrayPropertyIndex);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* A result which needs to be evaluated in context.
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ContextualValue : RefCountedBase
+    {
+private:
+    NodePtr                 m_node;
+    ExpressionContextPtr    m_context;
+    
+    ContextualValue (NodeR node, ExpressionContextR context) : m_node(&node), m_context(&context) { }
+public:
+    NodeR                   GetNode() const { return *m_node; }
+    ExpressionContextCR     GetContext() const { return *m_context; }
+
+    static ContextualValuePtr Create (NodeR node, ExpressionContextR context) { return new ContextualValue (node, context); }
+    };
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -661,16 +682,21 @@ struct          EvaluationResult
 private:
 //  Provides a list of conditions for which the shortcuts or bindings are valid
     ECN::ECValue        m_ecValue;
-    IValueListResultP   m_valueList;
-    ECInstanceListCP    m_instanceList;
+    union
+        {
+        IValueListResultP           m_valueList;
+        ECInstanceListCP            m_instanceList;
+        ContextualValueP            m_contextual;
+        };
     bool                m_ownsInstanceList;
     ValueType           m_valueType;
     UnitsOrder          m_unitsOrder;
 public:
-    ValueType           GetValueType() const { return m_valueType; }
-    bool                IsInstanceList() const { return ValType_InstanceList == m_valueType; }
-    bool                IsECValue() const   { return ValType_ECValue == m_valueType; }
-    bool                IsValueList() const { return ValType_ValueList == m_valueType; }
+    ValueType           GetValueType() const    { return m_valueType; }
+    bool                IsInstanceList() const  { return ValType_InstanceList == m_valueType; }
+    bool                IsECValue() const       { return ValType_ECValue == m_valueType; }
+    bool                IsValueList() const     { return ValType_ValueList == m_valueType; }
+    bool                IsContextual() const    { return ValType_Contextual == m_valueType; }
 
     ExpressionStatus    GetInteger(Int32& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
@@ -695,6 +721,9 @@ public:
 
     ECOBJECTS_EXPORT IValueListResultCP     GetValueList() const;
     ECOBJECTS_EXPORT void                   SetValueList (IValueListResultR valueList);
+
+    ECOBJECTS_EXPORT ContextualValueCP      GetContextualValue() const;
+    ECOBJECTS_EXPORT void                   SetContextualValue (ContextualValueR value);
     };
 
 /*__PUBLISH_SECTION_START__*/

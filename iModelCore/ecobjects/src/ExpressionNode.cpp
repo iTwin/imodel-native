@@ -1082,7 +1082,7 @@ EvaluationResultR            rightValue
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult()
-    : m_valueList (NULL), m_instanceList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
+    : m_valueList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
     {
 
     }
@@ -1150,7 +1150,7 @@ ECN::ECValueCP   EvaluationResult::GetECValue() const
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
-    : m_valueList(NULL), m_instanceList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
+    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
     {
     if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
         {
@@ -1168,7 +1168,11 @@ EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
         {
         m_valueList = rhs.m_valueList;
         m_valueList->AddRef();
-        m_valueType = ValType_ValueList;
+        }
+    else if (ValType_Contextual == rhs.m_valueType)
+        {
+        m_contextual = rhs.m_contextual;
+        m_contextual->AddRef();
         }
     }
 
@@ -1186,6 +1190,8 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
     else if (m_valueType == ValType_ValueList)
         SetValueList (*rhs.m_valueList);
+    else if (m_valueType == ValType_Contextual)
+        SetContextualValue (*rhs.m_contextual);
 
     return *this;
     }
@@ -1195,19 +1201,25 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            EvaluationResult::Clear()
     {
-    if (m_ownsInstanceList)
+    if (ValType_InstanceList == m_valueType)
         {
         if (NULL != m_instanceList)
             delete m_instanceList;
-
-        m_ownsInstanceList = false;
+        }
+    else if (ValType_ValueList == m_valueType)
+        {
+        if (NULL != m_valueList)
+            m_valueList->Release();
+        }
+    else if (ValType_Contextual == m_valueType)
+        {
+        if (NULL != m_contextual)
+            m_contextual->Release();
         }
 
-    if (NULL != m_valueList)
-        m_valueList->Release();
-
     m_ecValue.Clear();
-    m_instanceList = NULL;
+    m_ownsInstanceList = false;
+    m_instanceList = NULL;  // and m_valueList, and m_contextual...
     m_valueList = NULL;
     m_valueType = ValType_None;
     m_unitsOrder = UO_Unknown;
@@ -1323,6 +1335,25 @@ void EvaluationResult::SetValueList (IValueListResultR valueList)
     m_valueList = &valueList;
     m_valueList->AddRef();
     m_valueType = ValType_ValueList;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ContextualValueCP EvaluationResult::GetContextualValue() const
+    {
+    return ValType_Contextual == m_valueType ? m_contextual : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetContextualValue (ContextualValueR value)
+    {
+    Clear();
+    m_valueType = ValType_Contextual;
+    m_contextual = &value;
+    m_contextual->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**

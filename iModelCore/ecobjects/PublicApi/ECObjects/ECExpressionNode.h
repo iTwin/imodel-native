@@ -998,9 +998,15 @@ protected:
         return ret;
         }
 
-    virtual ExpressionToken _GetOperation() const override { return TOKEN_Where; }
+    virtual ExpressionToken     _GetOperation() const override { return TOKEN_Where; }
+    virtual ExpressionStatus    _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override
+        {
+        // Bind expression and context
+        evalResult.SetContextualValue (*ContextualValue::Create (*this, context));
+        return ExprStatus_Success;
+        }
 public:
-    // ###TODO
+    // ###TODO: ECOBJECTS_EXPORT ExpressionStatus   Evaluate (
     static LambdaNodePtr    Create (WCharCP name, NodeR expr) { return new LambdaNode (name, expr); }
     };
 
