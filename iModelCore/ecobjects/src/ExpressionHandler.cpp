@@ -953,7 +953,7 @@ NodePtr         ECEvaluator::ParsePrimary
 
                             WCharCP symbolName = identNode.IsValid() ? identNode->GetName() : L"";
                             LambdaNodePtr lambdaNode = LambdaNode::Create (symbolName, *lambdaExpr);
-                            primaryList->AppendLambdaNode (*lambdaNode);
+                            result = lambdaNode;
                             identNode = NULL;
                             }
                             break;
