@@ -1203,7 +1203,7 @@ void            EvaluationResult::Clear()
     {
     if (ValType_InstanceList == m_valueType)
         {
-        if (NULL != m_instanceList && m_ownsInstanceList)
+        if (m_ownsInstanceList && NULL != m_instanceList)
             delete m_instanceList;
         }
     else if (ValType_ValueList == m_valueType)
