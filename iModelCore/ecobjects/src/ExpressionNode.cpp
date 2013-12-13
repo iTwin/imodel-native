@@ -1082,7 +1082,7 @@ EvaluationResultR            rightValue
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult()
-    : m_instanceList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
+    : m_valueList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
     {
 
     }
@@ -1150,7 +1150,7 @@ ECN::ECValueCP   EvaluationResult::GetECValue() const
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
-    : m_instanceList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
+    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
     {
     if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
         {
@@ -1164,6 +1164,16 @@ EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
         }
     else if (ValType_ECValue == rhs.m_valueType)
         m_ecValue = rhs.m_ecValue;
+    else if (ValType_ValueList == rhs.m_valueType)
+        {
+        m_valueList = rhs.m_valueList;
+        m_valueList->AddRef();
+        }
+    else if (ValType_Contextual == rhs.m_valueType)
+        {
+        m_contextual = rhs.m_contextual;
+        m_contextual->AddRef();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1178,6 +1188,10 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     m_ecValue = rhs.m_ecValue;
     if (m_valueType == ValType_InstanceList)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
+    else if (m_valueType == ValType_ValueList)
+        SetValueList (*rhs.m_valueList);
+    else if (m_valueType == ValType_Contextual)
+        SetContextualValue (*rhs.m_contextual);
 
     return *this;
     }
@@ -1187,16 +1201,26 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            EvaluationResult::Clear()
     {
-    if (m_ownsInstanceList)
+    if (ValType_InstanceList == m_valueType)
         {
-        if (NULL != m_instanceList)
+        if (m_ownsInstanceList && NULL != m_instanceList)
             delete m_instanceList;
-
-        m_ownsInstanceList = false;
+        }
+    else if (ValType_ValueList == m_valueType)
+        {
+        if (NULL != m_valueList)
+            m_valueList->Release();
+        }
+    else if (ValType_Contextual == m_valueType)
+        {
+        if (NULL != m_contextual)
+            m_contextual->Release();
         }
 
     m_ecValue.Clear();
-    m_instanceList = NULL;
+    m_ownsInstanceList = false;
+    m_instanceList = NULL;  // and m_valueList, and m_contextual...
+    m_valueList = NULL;
     m_valueType = ValType_None;
     m_unitsOrder = UO_Unknown;
     }
@@ -1295,18 +1319,58 @@ void EvaluationResult::SetInstanceList (ECInstanceListCR instanceList, bool make
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    03/2011
+* @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueResult::ValueResult (EvaluationResultR result) : 
-                            m_evalResult(result) 
+IValueListResultCP EvaluationResult::GetValueList() const
     {
+    return ValType_ValueList == m_valueType ? m_valueList : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetValueList (IValueListResultR valueList)
+    {
+    Clear();
+    m_valueList = &valueList;
+    m_valueList->AddRef();
+    m_valueType = ValType_ValueList;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ContextualValueCP EvaluationResult::GetContextualValue() const
+    {
+    return ValType_Contextual == m_valueType ? m_contextual : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetContextualValue (ContextualValueR value)
+    {
+    Clear();
+    m_valueType = ValType_Contextual;
+    m_contextual = &value;
+    m_contextual->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueResult::~ValueResult()
+ValueResult::ValueResult (EvaluationResultR result)
+    : m_evalResult(result) 
     {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    03/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ValueResult::~ValueResult()
+    {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1710,6 +1774,14 @@ void            PrimaryListNode::AppendNameNode(IdentNodeR nameNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void            PrimaryListNode::AppendLambdaNode (LambdaNodeR lambdaNode)
+    {
+    m_operators.push_back (&lambdaNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PrimaryListNode::AppendArrayNode(LBracketNodeR lbracketNode)
@@ -1747,6 +1819,24 @@ ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, Ex
         }
 
     return Operations::PerformUnaryNot(evalResult, inputValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus CallNode::InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context)
+    {
+    MethodReferencePtr methodRef;
+    ExpressionStatus status = context.ResolveMethod (methodRef, GetMethodName(), true);
+    if (ExprStatus_Success == status)
+        {
+        EvaluationResultVector argsList;
+        status = m_arguments->EvaluateArguments (argsList, context);
+        if (ExprStatus_Success == status)
+            status = methodRef->InvokeValueListMethod (evalResult, valueList, argsList);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3841,6 +3931,66 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
 
     result.SetString(L"");
     return ExprStatus_IncompatibleTypes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 IValueListResult::GetCount() const { return _GetCount(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus IValueListResult::GetValueAt (EvaluationResultR result, UInt32 index) const
+    {
+    return index < GetCount() ? _GetValueAt (result, index) : ExprStatus_IndexOutOfRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ArrayValueResult : IValueListResult
+    {
+private:
+    IECInstancePtr      m_instance;
+    UInt32              m_propertyIndex;
+    UInt32              m_count;
+
+    ArrayValueResult (IECInstanceR instance, UInt32 propIdx)
+        : m_instance(&instance), m_propertyIndex(propIdx), m_count(0)
+        {
+        m_instance = &instance;
+        m_propertyIndex = propIdx;
+
+        ECValue v;
+        if (ECOBJECTS_STATUS_Success == instance.GetValue (v, propIdx) && v.IsArray())
+            m_count = v.GetArrayInfo().GetCount();
+        else
+            BeAssert (false);
+        }
+
+    virtual UInt32              _GetCount() const override
+        {
+        return m_count;
+        }
+
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const override
+        {
+        if (ECOBJECTS_STATUS_Success == m_instance->GetValue (result.InitECValue(), m_propertyIndex, index))
+            return ExprStatus_Success;
+        else
+            return ExprStatus_UnknownError;
+        }
+public:
+    static IValueListResultPtr Create (IECInstanceR instance, UInt32 propIdx) { return new ArrayValueResult (instance, propIdx); }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IValueListResultPtr IValueListResult::Create (IECInstanceR instance, UInt32 propIdx)
+    {
+    return ArrayValueResult::Create (instance, propIdx);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

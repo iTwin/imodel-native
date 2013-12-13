@@ -25,6 +25,7 @@ EXPR_TYPEDEFS(ArgumentTreeNode)
 EXPR_TYPEDEFS(ArithmeticNode)
 EXPR_TYPEDEFS(BinaryNode)
 EXPR_TYPEDEFS(CallNode)
+EXPR_TYPEDEFS(LambdaNode)
 EXPR_TYPEDEFS(ComparisonNode)
 EXPR_TYPEDEFS(ConcatenateNode)
 EXPR_TYPEDEFS(ContextSymbol)
@@ -36,6 +37,8 @@ EXPR_TYPEDEFS(EvaluationResult)
 EXPR_TYPEDEFS(ExpressionContext)
 EXPR_TYPEDEFS(ExpressionResolver)
 EXPR_TYPEDEFS(ExpressionType)
+EXPR_TYPEDEFS(IValueListResult)
+EXPR_TYPEDEFS(ContextualValue)
 EXPR_TYPEDEFS(IdentNode)
 EXPR_TYPEDEFS(IIfNode)
 EXPR_TYPEDEFS(InstanceListExpressionContext)
@@ -65,10 +68,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<ArgumentTreeNode>             ArgumentTreeNodePtr;
 typedef RefCountedPtr<CallNode>                     CallNodePtr;
+typedef RefCountedPtr<LambdaNode>                   LambdaNodePtr;
 typedef RefCountedPtr<ContextSymbol>                ContextSymbolPtr;
 typedef RefCountedPtr<DotNode>                      DotNodePtr;
 typedef RefCountedPtr<ErrorNode>                    ErrorNodePtr;
 typedef RefCountedPtr<ExpressionType>               ExpressionTypePtr;
+typedef RefCountedPtr<IValueListResult>             IValueListResultPtr;
+typedef RefCountedPtr<ContextualValue>              ContextualValuePtr;
 typedef RefCountedPtr<ExpressionContext>            ExpressionContextPtr;
 typedef RefCountedPtr<IdentNode>                    IdentNodePtr;
 typedef RefCountedPtr<InstanceListExpressionContext> InstanceListExpressionContextPtr;
@@ -121,6 +127,7 @@ enum ExpressionStatus
     ExprStatus_InvalidTypesForDivision =  15, //!< Returned when the expression tries to perform a division operation on types that cannot be divided
     ExprStatus_DivideByZero             =  16, //!< Returned when the division operation tries to divide by zero
     ExprStatus_WrongNumberOfArguments   =  17, //!< Returned when the number of arguments to a method in an expression do not match the number of arguments actually expected
+    ExprStatus_IndexOutOfRange          = 18, //!< Returned when array index is used which is outside the bounds of the array.
     };
 
 /*__PUBLISH_SECTION_END__*/
@@ -130,7 +137,9 @@ enum ValueType
     ValType_None            =  0,
     ValType_ECValue         =  1,
     ValType_Custom          =  2,
-    ValType_InstanceList    = 3,
+    ValType_InstanceList    =  3,
+    ValType_ValueList       =  4,
+    ValType_Contextual      =  5,
     };
 
 enum UnitsOrder
@@ -142,33 +151,13 @@ enum UnitsOrder
     UO_Volume       = 8
     };
 
-/*=================================================================================**//**
-*
-*
-+===============+===============+===============+===============+===============+======*/
-enum            ResultCategory
-    {
-    Result_Unknown,
-    Result_Error,                               //  Should insert some error detail
-    Result_UnknownSymbol,
-    Result_UnknownMember,
-    Result_Value,
-    Result_Null,
-    Result_PrimitiveProperty,
-    Result_ArrayProperty,
-    Result_StructProperty,
-    Result_InstanceListSymbol,
-    Result_ClassBinder,                         //  Should only be found in bind phase
-    Result_PointMember,
-    Result_StaticMethod,
-    Result_InstanceMethod,
-    Result_CustomSymbol,                        //  Is this really different from Result_Namespace
-    };
-
 /*__PUBLISH_SECTION_START__*/
 
 typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, EvaluationResultVector& arguments);
 typedef ExpressionStatus (*ExpressionInstanceMethod_t)(EvaluationResult& evalResult, ECInstanceListCR instanceList, EvaluationResultVector& arguments);
+// NB: We could generalize Instance methods to take any EvaluationResult as the calling object, but we'd have to refactor all our existing instance method implementations to
+// check that the caller is an ECInstanceList...rather keep value list methods separate from instance list methods...
+typedef ExpressionStatus (*ExpressionValueListMethod_t)(EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments);
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -186,18 +175,23 @@ protected:
     virtual bool                _CanReuseResult ()               { return false; }
     virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
     virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
+    virtual ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) { return ExprStatus_NotImpl; }
     virtual bool                _SupportsStaticMethodCall () const = 0;
     virtual bool                _SupportsInstanceMethodCall () const = 0;
+    virtual bool                _SupportsValueListMethodCall () const = 0;
 
 public:
     bool                        SupportsStaticMethodCall () const { return _SupportsStaticMethodCall(); }
     bool                        SupportsInstanceMethodCall () const { return _SupportsInstanceMethodCall(); }
+    bool                        SupportsValueListMethodCall () const { return _SupportsValueListMethodCall(); }
 
     bool                        CanReuseResult()                { return _CanReuseResult(); }
     ExpressionStatus            InvokeStaticMethod (EvaluationResult& evalResult, EvaluationResultVector& arguments) 
                                             { return _InvokeStaticMethod(evalResult, arguments); }
     ExpressionStatus            InvokeInstanceMethod (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) 
                                             { return _InvokeInstanceMethod(evalResult, instanceData, arguments); }
+    ExpressionStatus            InvokeValueListMethod (EvaluationResult& evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments)
+                                            { return _InvokeValueListMethod (evalResult, valueList, arguments); }
 }; // MethodReference
 
 /*=================================================================================**//**
@@ -210,20 +204,26 @@ struct          MethodReferenceStandard : MethodReference
 private:
     ExpressionStaticMethod_t    m_staticMethod;
     ExpressionInstanceMethod_t  m_instanceMethod;
+    ExpressionValueListMethod_t m_valueListMethod;
 protected:
                                 MethodReferenceStandard(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+                                MethodReferenceStandard(ExpressionValueListMethod_t valueListMethod);
+
     virtual bool                _CanReuseResult ()               { return true; }
     virtual bool                _SupportsStaticMethodCall () const override { return NULL != m_staticMethod; }
     virtual bool                _SupportsInstanceMethodCall () const override { return NULL != m_instanceMethod; }
+    virtual bool                _SupportsValueListMethodCall() const override { return NULL != m_valueListMethod; }
 
     //  The vector of arguments does not include the object used to invoke the method. It is 
     //  up to the specific implementation of MethodReference to hold onto the instance and to use
     //  that to invoke the method.
     virtual ExpressionStatus    _InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments) override;
     virtual ExpressionStatus    _InvokeInstanceMethod (EvaluationResultR evalResult, ECInstanceListCR instanceData, EvaluationResultVector& arguments) override;
+    virtual ExpressionStatus    _InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, EvaluationResultVector& arguments) override;
 public:
 
     static MethodReferencePtr   Create(ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+    static MethodReferencePtr   Create(ExpressionValueListMethod_t valueListMethod);
 }; // MethodReference
 
 /*__PUBLISH_SECTION_START__*/
@@ -453,7 +453,11 @@ protected:
         return ExprStatus_Success; 
         }
 
-                MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+    MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+    MethodSymbol(wchar_t const* name, ExpressionValueListMethod_t valueListMethod);
+
+public:
+    ECOBJECTS_EXPORT static MethodSymbolPtr     Create (WCharCP name, ExpressionValueListMethod_t valueListMethod);
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -566,6 +570,8 @@ enum            ExpressionToken
     TOKEN_End                 = 79,
     TOKEN_EndIf               = 80,
 
+    TOKEN_Where               = 85,               // "Where", e.g. "IDENT Where SOME_EXPRESSION_INVOLVING_IDENT"
+
     TOKEN_DoubleColon         = 100,
 
     TOKEN_Error               = 181,
@@ -633,6 +639,42 @@ struct          ReferenceResult
 };
 
 /*=================================================================================**//**
+* Result of an ECExpression that contains a list of values, e.g., an array.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct IValueListResult : RefCountedBase
+    {
+protected:
+    virtual UInt32              _GetCount() const = 0;
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const = 0;
+
+    IValueListResult() { }
+public:
+    ECOBJECTS_EXPORT UInt32                     GetCount() const;
+    ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, UInt32 index) const;
+
+    ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, UInt32 arrayPropertyIndex);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* A result which needs to be evaluated in context.
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ContextualValue : RefCountedBase
+    {
+private:
+    NodePtr                 m_node;
+    ExpressionContextPtr    m_context;
+    
+    ContextualValue (NodeR node, ExpressionContextR context) : m_node(&node), m_context(&context) { }
+public:
+    NodeR                   GetNode() const { return *m_node; }
+    ExpressionContextCR     GetContext() const { return *m_context; }
+
+    static ContextualValuePtr Create (NodeR node, ExpressionContextR context) { return new ContextualValue (node, context); }
+    };
+
+/*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct          EvaluationResult 
@@ -640,14 +682,21 @@ struct          EvaluationResult
 private:
 //  Provides a list of conditions for which the shortcuts or bindings are valid
     ECN::ECValue        m_ecValue;
-    ECInstanceListCP    m_instanceList;
+    union
+        {
+        IValueListResultP           m_valueList;
+        ECInstanceListCP            m_instanceList;
+        ContextualValueP            m_contextual;
+        };
     bool                m_ownsInstanceList;
     ValueType           m_valueType;
     UnitsOrder          m_unitsOrder;
 public:
-    ValueType           GetValueType() const { return m_valueType; }
-    bool                IsInstanceList() const { return ValType_InstanceList == m_valueType; }
-    bool                IsECValue() const   { return ValType_ECValue == m_valueType; }
+    ValueType           GetValueType() const    { return m_valueType; }
+    bool                IsInstanceList() const  { return ValType_InstanceList == m_valueType; }
+    bool                IsECValue() const       { return ValType_ECValue == m_valueType; }
+    bool                IsValueList() const     { return ValType_ValueList == m_valueType; }
+    bool                IsContextual() const    { return ValType_Contextual == m_valueType; }
 
     ExpressionStatus    GetInteger(Int32& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
@@ -669,6 +718,12 @@ public:
     ECOBJECTS_EXPORT ECInstanceListCP       GetInstanceList() const;
     ECOBJECTS_EXPORT void                   SetInstanceList (ECInstanceListCR instanceList, bool makeACopy);
     ECOBJECTS_EXPORT void                   SetInstance (IECInstanceCR instance);
+
+    ECOBJECTS_EXPORT IValueListResultCP     GetValueList() const;
+    ECOBJECTS_EXPORT void                   SetValueList (IValueListResultR valueList);
+
+    ECOBJECTS_EXPORT ContextualValueCP      GetContextualValue() const;
+    ECOBJECTS_EXPORT void                   SetContextualValue (ContextualValueR value);
     };
 
 /*__PUBLISH_SECTION_START__*/

@@ -432,6 +432,7 @@ public:
     void                    AppendCallNode(CallNodeR  callNode);
     void                    AppendNameNode(IdentNodeR  nameNode);
     void                    AppendArrayNode(LBracketNodeR  lbracketNode);
+    void                    AppendLambdaNode (LambdaNodeR lambdaNode);
 }; //  End of PrimaryListNode
 
 /*=================================================================================**//**
@@ -966,8 +967,48 @@ public:
     ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, ExpressionContextR context);
+    ExpressionStatus    InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context);
 
 };  //  End of struct CallNode
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LambdaNode : Node
+    {
+private:
+    WString         m_symbolName;
+    NodePtr         m_lambdaExpression;
+
+    LambdaNode (WCharCP name, NodeR lambdaExpr) : m_symbolName (name), m_lambdaExpression (&lambdaExpr) { }
+protected:
+    virtual bool    _Traverse (NodeVisitorR visitor) const
+        {
+        bool retval = visitor.ProcessNode (*this);
+        if (retval)
+            retval = m_lambdaExpression->Traverse (visitor);
+
+        return retval;
+        }
+    
+    virtual WString _ToString() const override
+        {
+        WString ret (m_symbolName);
+        ret.append (L" Where");
+        return ret;
+        }
+
+    virtual ExpressionToken     _GetOperation() const override { return TOKEN_Where; }
+    virtual ExpressionStatus    _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override
+        {
+        // Bind expression and context
+        evalResult.SetContextualValue (*ContextualValue::Create (*this, context));
+        return ExprStatus_Success;
+        }
+public:
+    // ###TODO: ECOBJECTS_EXPORT ExpressionStatus   Evaluate (
+    static LambdaNodePtr    Create (WCharCP name, NodeR expr) { return new LambdaNode (name, expr); }
+    };
 
 /*=================================================================================**//**
 *
