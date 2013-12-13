@@ -4016,6 +4016,46 @@ IValueListResultPtr IValueListResult::Create (IECInstanceR instance, UInt32 prop
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+struct ValueListResult : IValueListResult
+    {
+private:
+    EvaluationResultVector      m_values;
+
+    ValueListResult (EvaluationResultVector const& values) : m_values(values) { }
+
+    virtual UInt32              _GetCount() const override
+        {
+        return (UInt32)m_values.size();
+        }
+
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const override
+        {
+        if (index < _GetCount())
+            {
+            result = m_values[index];
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_IndexOutOfRange;
+        }
+public:
+    static IValueListResultPtr Create (EvaluationResultVector const& values)
+        {
+        return new ValueListResult (values);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IValueListResultPtr IValueListResult::Create (EvaluationResultVector const& values)
+    {
+    return ValueListResult::Create (values);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ArrayMemberSymbol : Symbol
     {
 private:

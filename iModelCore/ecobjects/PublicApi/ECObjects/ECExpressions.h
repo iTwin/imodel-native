@@ -625,6 +625,7 @@ public:
     ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, UInt32 index) const;
 
     ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, UInt32 arrayPropertyIndex);
+    ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
 
 /*=================================================================================**//**
