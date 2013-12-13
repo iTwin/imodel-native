@@ -994,11 +994,11 @@ protected:
     virtual WString _ToString() const override
         {
         WString ret (m_symbolName);
-        ret.append (L" Where");
+        ret.append (L"=>");
         return ret;
         }
 
-    virtual ExpressionToken     _GetOperation() const override { return TOKEN_Where; }
+    virtual ExpressionToken     _GetOperation() const override { return TOKEN_Lambda; }
     virtual ExpressionStatus    _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
 public:
     WCharCP             GetSymbolName() const { return m_symbolName.c_str(); }

@@ -541,7 +541,7 @@ enum            ExpressionToken
     TOKEN_End                 = 79,
     TOKEN_EndIf               = 80,
 
-    TOKEN_Where               = 85,               // "Where", e.g. "IDENT Where SOME_EXPRESSION_INVOLVING_IDENT"
+    TOKEN_Lambda              = 85,               // => e.g. "SomeArray.Select (X => X.Name)", "SomeArray.AnyMatches (val => val > 10)"
 
     TOKEN_DoubleColon         = 100,
 

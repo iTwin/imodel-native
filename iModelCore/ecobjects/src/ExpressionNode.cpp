@@ -1720,7 +1720,7 @@ wchar_t const*  PrimaryListNode::GetName(size_t index) const
         IdentNodeP identNode = static_cast<IdentNodeP>(node);
         return identNode->GetName();
         }
-    else if (TOKEN_Where == nodeId)
+    else if (TOKEN_Lambda == nodeId)
         {
         LambdaNodeP lambdaNode = static_cast<LambdaNodeP>(node);
         return lambdaNode->GetSymbolName();
