@@ -249,7 +249,11 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static UInt32 ComputeFnvHashForString (WCharCP buf, UInt32 hashValue)
     {
-    size_t len = wcslen(buf) * sizeof (WCharCP);
+    if (NULL == buf || 0==*buf)
+        return hashValue;
+
+    size_t len = wcslen(buf) * sizeof (WChar);
+
     unsigned char *bp = (unsigned char *)buf;	/* start of buffer */
     unsigned char *be = bp + len;		/* beyond end of buffer */
 
@@ -299,14 +303,13 @@ static UInt32 ComputeFnvHashForUInt32 (UInt32 buf, UInt32 hashValue)
 UInt32  ClassLayout::ComputeCheckSum () const
     {
     UInt32 checkSum = FNV1_32_INIT;
-
     checkSum = ComputeFnvHashForUInt32 ((UInt32)m_propertyLayouts.size(), checkSum);
 
     FOR_EACH (PropertyLayoutP propertyP, m_propertyLayouts)
         {
         checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetParentStructIndex(), checkSum);
         checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetModifierFlags(), checkSum);
-        checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetModifierFlags(), checkSum);
+        checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetModifierData(), checkSum);
 
         ECN::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
         checkSum = ComputeFnvHashForUInt32 ((UInt32)typeDescr.GetTypeKind(), checkSum);
@@ -316,7 +319,7 @@ UInt32  ClassLayout::ComputeCheckSum () const
             {
             checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetOffset(), checkSum);
             checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetNullflagsOffset(), checkSum);
-            }
+           }
 
         checkSum = ComputeFnvHashForString (propertyP->GetAccessString(), checkSum);
         }
