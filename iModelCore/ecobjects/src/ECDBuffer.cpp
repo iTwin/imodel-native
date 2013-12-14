@@ -226,29 +226,75 @@ UInt32          PropertyLayout::GetSizeInFixedSection () const
     return 0;
     }    
 
+#define FNV1_32_INIT ((UInt32)0x811c9dc5)
+#define FNV_32_PRIME ((UInt32)0x01000193)
+
 /*---------------------------------------------------------------------------------**//**
-* stolen from Dan East code mdlDialog_getHashCodeFromToolPath
-* @bsimethod                                    Bill.Steinbock                  01/2012
+*
+*  perform a 32 bit Fowler/Noll/Vo hash on a buffer
+*
+* based on  http://www.isthe.com/chongo/src/fnv/hash_32.c
+*
+* input:
+*	buf	- start of buffer to hash
+*	len	- length of buffer in octets
+*	hval	- previous hash value or 0 if first call
+*
+* returns:
+*	32 bit hash as a static hash type
+*
+*
+*
+* @bsimethod                                    Bill.Steinbock                  12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32     getHashCodeForString
-(
-WCharCP        pString
-)
+static UInt32 ComputeFnvHashForString (WCharCP buf, UInt32 hashValue)
     {
-    UInt32        hashCode = 0;
-    WCharCP    pChar;
-    int         index = 1;
-    
-    pChar = pString;
-    
-    while (pChar != NULL && 0 != *pChar)
+    if (NULL == buf || 0==*buf)
+        return hashValue;
+
+    size_t len = wcslen(buf) * sizeof (WChar);
+
+    unsigned char *bp = (unsigned char *)buf;	/* start of buffer */
+    unsigned char *be = bp + len;		/* beyond end of buffer */
+
+    /*
+    * FNV-1 hash each octet in the buffer
+    */
+    while (bp < be) 
         {
-        hashCode += (index * (*pChar));
-        pChar++;
-        index++;
+        /* multiply by the 32 bit FNV magic prime mod 2^32 */
+        hashValue *= FNV_32_PRIME;
+
+        /* xor the bottom with the current octet */
+        hashValue ^= (UInt32)*bp++;
         }
 
-    return hashCode;
+    /* return our new hash value */
+    return hashValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static UInt32 ComputeFnvHashForUInt32 (UInt32 buf, UInt32 hashValue)
+    {
+    unsigned char *bp = (unsigned char *)&buf;	/* start of buffer */
+    unsigned char *be = bp + sizeof (buf);	/* beyond end of buffer */
+
+    /*
+    * FNV-1 hash each octet in the buffer
+    */
+    while (bp < be) 
+        {
+        /* multiply by the 32 bit FNV magic prime mod 2^32 */
+        hashValue *= FNV_32_PRIME;
+
+        /* xor the bottom with the current octet */
+        hashValue ^= (UInt32)*bp++;
+        }
+
+    /* return our new hash value */
+    return hashValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,25 +302,26 @@ WCharCP        pString
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32  ClassLayout::ComputeCheckSum () const
     {
-    UInt32 checkSum = (((UInt32)m_propertyLayouts.size()) & 0xffff);
+    UInt32 checkSum = FNV1_32_INIT;
+    checkSum = ComputeFnvHashForUInt32 ((UInt32)m_propertyLayouts.size(), checkSum);
 
     FOR_EACH (PropertyLayoutP propertyP, m_propertyLayouts)
         {
-        checkSum = ((checkSum + (UInt32)propertyP->GetParentStructIndex()) & 0xffff);
-        checkSum = ((checkSum + (UInt32)propertyP->GetModifierFlags()) & 0xffff);
-        checkSum = ((checkSum + (UInt32)propertyP->GetModifierData()) & 0xffff);
+        checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetParentStructIndex(), checkSum);
+        checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetModifierFlags(), checkSum);
+        checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetModifierData(), checkSum);
 
         ECN::ECTypeDescriptor typeDescr = propertyP->GetTypeDescriptor();
-        checkSum = ((checkSum + (UInt32)typeDescr.GetTypeKind()) & 0xffff);
-        checkSum = ((checkSum + (UInt32)typeDescr.GetPrimitiveType()) & 0xffff);    // since we are in a union Primitive Type includes Array Type
+        checkSum = ComputeFnvHashForUInt32 ((UInt32)typeDescr.GetTypeKind(), checkSum);
+        checkSum = ComputeFnvHashForUInt32 ((UInt32)typeDescr.GetPrimitiveType(), checkSum);  // since we are in a union Primitive Type includes Array Type
 
         if (!propertyP->GetTypeDescriptor().IsStruct())
             {
-            checkSum = ((checkSum + (UInt32)propertyP->GetOffset()) & 0xffff);
-            checkSum = ((checkSum + (UInt32)propertyP->GetNullflagsOffset()) & 0xffff);
-            }
+            checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetOffset(), checkSum);
+            checkSum = ComputeFnvHashForUInt32 ((UInt32)propertyP->GetNullflagsOffset(), checkSum);
+           }
 
-        checkSum = ((checkSum + getHashCodeForString(propertyP->GetAccessString())) & 0xffff);
+        checkSum = ComputeFnvHashForString (propertyP->GetAccessString(), checkSum);
         }
 
     return checkSum;
