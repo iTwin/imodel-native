@@ -3005,8 +3005,13 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
                     ixwStatus = INSTANCE_WRITE_STATUS_BadPrimitivePropertyType;
                 else
                     {
-                    rootNode.SetContent (xmlString.c_str());
-                    ixwStatus = INSTANCE_WRITE_STATUS_Success;
+                    // the tag of the element for an embedded struct is the property name.
+                    BeXmlNodeP structNode = rootNode.AddEmptyElement (structProperty->GetName().c_str());
+                    if (NULL != structNode)
+                        {
+                        structNode->SetContent (xmlString.c_str());
+                        ixwStatus = INSTANCE_WRITE_STATUS_Success;
+                        }
                     }
                 }
             else
