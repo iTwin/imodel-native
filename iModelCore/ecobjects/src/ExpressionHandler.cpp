@@ -104,8 +104,8 @@ WString         Lexer::GetString(ExpressionToken tokenName)
         case TOKEN_LParen:
             retval = L"(";
             break;
-        case TOKEN_Where:
-            retval = L"Where";
+        case TOKEN_Lambda:
+            retval = L"=>";
             break;
         case TOKEN_RParen:
             retval = L")";
@@ -485,8 +485,6 @@ ExpressionToken Lexer::GetIdentifier ()
         return TOKEN_IIf;
     else if (BeStringUtilities::Wcsicmp (L"Null", identifier) == 0)
         return TOKEN_Null;
-    else if (BeStringUtilities::Wcsicmp (L"Where", identifier) == 0)
-        return TOKEN_Where;
 
     return TOKEN_Ident;
     }
@@ -631,7 +629,12 @@ ExpressionToken Lexer::ScanToken ()
                     }
 
             case '=':
-                return TOKEN_Equal;
+                t = TOKEN_Equal;
+                if ((current = GetNextChar()) == '>')
+                    t = TOKEN_Lambda;
+                else
+                    PushBack();
+                return t;
 
             case '.':
                 if (0 != iswdigit (PeekChar ()))
@@ -941,7 +944,7 @@ NodePtr         ECEvaluator::ParsePrimary
                             }
                             break;
 
-                        case TOKEN_Where:
+                        case TOKEN_Lambda:
                             {
                             m_lexer->Advance();
                             NodePtr lambdaExpr = ParseValueExpression();
@@ -953,7 +956,7 @@ NodePtr         ECEvaluator::ParsePrimary
 
                             WCharCP symbolName = identNode.IsValid() ? identNode->GetName() : L"";
                             LambdaNodePtr lambdaNode = LambdaNode::Create (symbolName, *lambdaExpr);
-                            primaryList->AppendLambdaNode (*lambdaNode);
+                            result = lambdaNode;
                             identNode = NULL;
                             }
                             break;

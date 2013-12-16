@@ -422,41 +422,45 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             if (ECOBJECTS_STATUS_Success == instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
                 {
                 IValueListResultPtr list = IValueListResult::Create (const_cast<IECInstanceR>(instance), propIdx);
+                evalResult.SetValueList (*list);
+                }
+            }
 
-                if (TOKEN_Dot == nextOperation)
+        if (evalResult.IsValueList())
+            {
+            IValueListResultCP list = evalResult.GetValueList();
+            if (TOKEN_Dot == nextOperation)
+                {
+                IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
+                WCharCP arrayPropName = NULL != ident ? ident->GetName() : NULL;
+                UInt32 count = list->GetCount();
+                if (NULL != arrayPropName)
                     {
-                    IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
-                    WCharCP arrayPropName = NULL != ident ? ident->GetName() : NULL;
-                    UInt32 count = list->GetCount();
-                    if (NULL != arrayPropName)
+                    if (0 == wcscmp (L"Count", arrayPropName))
                         {
-                        if (0 == wcscmp (L"Count", arrayPropName))
+                        evalResult.InitECValue().SetInteger ((Int32)count);
+                        return ExprStatus_Success;
+                        }
+
+                    bool wantFirst = 0 == wcscmp (L"First", arrayPropName);
+                    if (wantFirst || 0 == wcscmp (L"Last", arrayPropName))
+                        {
+                        // if array is empty, we return null successfully. Otherwise get array member.
+                        if (0 == count)
                             {
-                            evalResult.InitECValue().SetInteger ((Int32)count);
+                            evalResult.InitECValue().SetToNull();
                             return ExprStatus_Success;
                             }
-                        
-                        bool wantFirst = 0 == wcscmp (L"First", arrayPropName);
-                        if (wantFirst || 0 == wcscmp (L"Last", arrayPropName))
-                            {
-                            // if array is empty, we return null successfully. Otherwise get array member.
-                            if (0 == count)
-                                {
-                                evalResult.InitECValue().SetToNull();
-                                return ExprStatus_Success;
-                                }
-                            else
-                                return list->GetValueAt (evalResult, wantFirst ? 0 : count - 1);
-                            }
+                        else
+                            return list->GetValueAt (evalResult, wantFirst ? 0 : count - 1);
                         }
                     }
-                else
-                    {
-                    // put the LParen back in queue, caller will handle it.
-                    evalResult.SetValueList (*list);
-                    --index;
-                    return ExprStatus_Success;
-                    }
+                }
+            else
+                {
+                // put the LParen back in queue, caller will handle it.
+                --index;
+                return ExprStatus_Success;
                 }
             }
         }
@@ -841,14 +845,15 @@ ContextSymbolPtr ContextSymbol::CreateContextSymbol(wchar_t const* name, Express
 * with the ECObjects DLL.
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueSymbol::~ValueSymbol()
+ValueSymbol::~ValueSymbol()
     {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                ValueSymbol::ValueSymbol (wchar_t const* name, ECN::ECValueCR value) : Symbol(name)
+ValueSymbol::ValueSymbol (wchar_t const* name, EvaluationResultCR value) : Symbol(name)
     {
     m_expressionValue = value;
     }
@@ -877,29 +882,23 @@ ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLis
     return ExprStatus_Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    03/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ValueSymbol::GetValue(ECN::ECValueR exprValue)
-    {
-    exprValue = m_expressionValue; 
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    07/2012
-//--------------+------------------------------------------------------------------------
-void            ValueSymbol::SetValue(ECN::ECValueCR exprValue)
-    {
-    m_expressionValue = exprValue; 
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2012
 //--------------+------------------------------------------------------------------------
 ValueSymbolPtr  ValueSymbol::Create(wchar_t const* name, ECN::ECValueCR exprValue)
     {
-    return new ValueSymbol (name, exprValue);
+    EvaluationResult evalResult;
+    evalResult = exprValue;
+    return new ValueSymbol (name, evalResult);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ValueSymbolPtr ValueSymbol::Create (wchar_t const* name, EvaluationResultCR value) { return new ValueSymbol (name, value); }
+EvaluationResultCR ValueSymbol::GetValue() const { return m_expressionValue; }
+void ValueSymbol::SetValue (EvaluationResultCR value) { m_expressionValue = value; }
+void ValueSymbol::SetValue (ECValueCR value) { m_expressionValue = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
@@ -914,9 +913,9 @@ void IECSymbolProvider::RegisterExternalSymbolPublisher (ExternalSymbolPublisher
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> const& requestedSymbolSets)
+SymbolExpressionContextPtr SymbolExpressionContext::Create (bvector<WString> const& requestedSymbolSets, ExpressionContextP outer)
     {
-    SymbolExpressionContextPtr context = Create (NULL);
+    SymbolExpressionContextPtr context = Create (outer);
     if (context.IsValid())
         {
         if (NULL != s_externalSymbolPublisher)

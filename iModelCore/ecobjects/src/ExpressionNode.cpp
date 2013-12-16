@@ -1169,10 +1169,10 @@ EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
         m_valueList = rhs.m_valueList;
         m_valueList->AddRef();
         }
-    else if (ValType_Contextual == rhs.m_valueType)
+    else if (ValType_Lambda == rhs.m_valueType)
         {
-        m_contextual = rhs.m_contextual;
-        m_contextual->AddRef();
+        m_lambda = rhs.m_lambda;
+        m_lambda->AddRef();
         }
     }
 
@@ -1190,8 +1190,8 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
     else if (m_valueType == ValType_ValueList)
         SetValueList (*rhs.m_valueList);
-    else if (m_valueType == ValType_Contextual)
-        SetContextualValue (*rhs.m_contextual);
+    else if (m_valueType == ValType_Lambda)
+        SetLambda (*rhs.m_lambda);
 
     return *this;
     }
@@ -1211,15 +1211,15 @@ void            EvaluationResult::Clear()
         if (NULL != m_valueList)
             m_valueList->Release();
         }
-    else if (ValType_Contextual == m_valueType)
+    else if (ValType_Lambda == m_valueType)
         {
-        if (NULL != m_contextual)
-            m_contextual->Release();
+        if (NULL != m_lambda)
+            m_lambda->Release();
         }
 
     m_ecValue.Clear();
     m_ownsInstanceList = false;
-    m_instanceList = NULL;  // and m_valueList, and m_contextual...
+    m_instanceList = NULL;  // and m_valueList, and m_lambda...
     m_valueList = NULL;
     m_valueType = ValType_None;
     m_unitsOrder = UO_Unknown;
@@ -1340,20 +1340,20 @@ void EvaluationResult::SetValueList (IValueListResultR valueList)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContextualValueCP EvaluationResult::GetContextualValue() const
+LambdaValueCP EvaluationResult::GetLambda() const
     {
-    return ValType_Contextual == m_valueType ? m_contextual : NULL;
+    return ValType_Lambda == m_valueType ? m_lambda : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void EvaluationResult::SetContextualValue (ContextualValueR value)
+void EvaluationResult::SetLambda (LambdaValueR value)
     {
     Clear();
-    m_valueType = ValType_Contextual;
-    m_contextual = &value;
-    m_contextual->AddRef();
+    m_valueType = ValType_Lambda;
+    m_lambda = &value;
+    m_lambda->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1720,6 +1720,11 @@ wchar_t const*  PrimaryListNode::GetName(size_t index) const
         IdentNodeP identNode = static_cast<IdentNodeP>(node);
         return identNode->GetName();
         }
+    else if (TOKEN_Lambda == nodeId)
+        {
+        LambdaNodeP lambdaNode = static_cast<LambdaNodeP>(node);
+        return lambdaNode->GetSymbolName();
+        }
 
     BeAssert(TOKEN_LParen == nodeId);
 
@@ -1779,6 +1784,16 @@ void            PrimaryListNode::AppendNameNode(IdentNodeR nameNode)
 void            PrimaryListNode::AppendLambdaNode (LambdaNodeR lambdaNode)
     {
     m_operators.push_back (&lambdaNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus LambdaNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+    {
+    // Bind expression and context
+    evalResult.SetLambda (*LambdaValue::Create (*this, context));
+    return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3977,7 +3992,12 @@ private:
     virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const override
         {
         if (ECOBJECTS_STATUS_Success == m_instance->GetValue (result.InitECValue(), m_propertyIndex, index))
+            {
+            if (result.GetECValue()->IsStruct() && !result.GetECValue()->IsNull())
+                result.SetInstance (*result.GetECValue()->GetStruct());
+
             return ExprStatus_Success;
+            }
         else
             return ExprStatus_UnknownError;
         }
@@ -3991,6 +4011,149 @@ public:
 IValueListResultPtr IValueListResult::Create (IECInstanceR instance, UInt32 propIdx)
     {
     return ArrayValueResult::Create (instance, propIdx);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ValueListResult : IValueListResult
+    {
+private:
+    EvaluationResultVector      m_values;
+
+    ValueListResult (EvaluationResultVector const& values) : m_values(values) { }
+
+    virtual UInt32              _GetCount() const override
+        {
+        return (UInt32)m_values.size();
+        }
+
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const override
+        {
+        if (index < _GetCount())
+            {
+            result = m_values[index];
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_IndexOutOfRange;
+        }
+public:
+    static IValueListResultPtr Create (EvaluationResultVector const& values)
+        {
+        return new ValueListResult (values);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IValueListResultPtr IValueListResult::Create (EvaluationResultVector const& values)
+    {
+    return ValueListResult::Create (values);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ArrayMemberSymbol : Symbol
+    {
+private:
+    EvaluationResult                m_primitive;
+    InstanceExpressionContextPtr    m_struct;
+
+    ArrayMemberSymbol (WCharCP name) : Symbol (name)
+        {
+        m_primitive = ECValue (/*null*/);
+        }
+
+    virtual ExpressionStatus        _GetValue (EvaluationResultR result, PrimaryListNodeR primaryList, ExpressionContextR context, UInt32 index) override
+        {
+        if (m_struct.IsValid())
+            return m_struct->GetValue (result, primaryList, context, index);
+        else if (primaryList.GetNumberOfOperators() <= index)
+            {
+            result = m_primitive;
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_UnknownError;
+        }
+    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
+        {
+        // not applicable
+        return ExprStatus_UnknownError;
+        }
+
+    static bool     ConvertToStruct (EvaluationResultR result)
+        {
+        if (result.IsInstanceList())
+            return true;
+        else if (result.IsECValue() && result.GetECValue()->IsStruct())
+            {
+            if (result.GetECValue()->IsNull())
+                {
+                ECInstanceList empty;
+                result.SetInstanceList (empty, true);
+                }
+            else
+                result.SetInstance (*result.GetECValue()->GetStruct());
+
+            return true;
+            }
+        else
+            return false;
+        }
+public:
+    static RefCountedPtr<ArrayMemberSymbol> Create (WCharCP name) { return new ArrayMemberSymbol (name); }
+
+    void        Set (EvaluationResultR ev)
+        {
+        if (ConvertToStruct (ev) && m_struct.IsNull())
+            m_struct = InstanceExpressionContext::Create();
+
+        // once this is initialized we know we're dealing with a struct array (possible we encounter null entries first)
+        if (m_struct.IsValid())
+            {
+            m_struct->Clear();
+            if (ev.IsInstanceList())
+                m_struct->SetInstances (*ev.GetInstanceList());
+            }
+        else
+            m_primitive = ev;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus    LambdaValue::Evaluate (IValueListResultCR valueList, LambdaValue::IProcessor& processor) const
+    {
+    UInt32 count = valueList.GetCount();
+    if (0 < count)
+        {
+        // Set up a symbol context to map symbol name to member of list being processed
+        SymbolExpressionContextPtr innerContext = SymbolExpressionContext::Create (m_context.get());
+        RefCountedPtr<ArrayMemberSymbol> symbol = ArrayMemberSymbol::Create (m_node->GetSymbolName());
+        innerContext->AddSymbol (*symbol);
+
+        for (UInt32 i = 0; i < count; i++)
+            {
+            EvaluationResult member;
+            ExpressionStatus status = valueList.GetValueAt (member, i);
+            if (ExprStatus_Success != status)
+                return status;
+
+            symbol->Set (member);
+
+            EvaluationResult lambdaResult;
+            status = m_node->GetExpression().GetValue (lambdaResult, *innerContext, true, true /* these boolean params are never used, why do they exist... */);
+            if (!processor.ProcessResult (status, member, lambdaResult))
+                break;
+            }
+        }
+
+    return ExprStatus_Success;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

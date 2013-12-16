@@ -38,7 +38,7 @@ EXPR_TYPEDEFS(ExpressionContext)
 EXPR_TYPEDEFS(ExpressionResolver)
 EXPR_TYPEDEFS(ExpressionType)
 EXPR_TYPEDEFS(IValueListResult)
-EXPR_TYPEDEFS(ContextualValue)
+EXPR_TYPEDEFS(LambdaValue)
 EXPR_TYPEDEFS(IdentNode)
 EXPR_TYPEDEFS(IIfNode)
 EXPR_TYPEDEFS(InstanceListExpressionContext)
@@ -74,7 +74,7 @@ typedef RefCountedPtr<DotNode>                      DotNodePtr;
 typedef RefCountedPtr<ErrorNode>                    ErrorNodePtr;
 typedef RefCountedPtr<ExpressionType>               ExpressionTypePtr;
 typedef RefCountedPtr<IValueListResult>             IValueListResultPtr;
-typedef RefCountedPtr<ContextualValue>              ContextualValuePtr;
+typedef RefCountedPtr<LambdaValue>                  LambdaValuePtr;
 typedef RefCountedPtr<ExpressionContext>            ExpressionContextPtr;
 typedef RefCountedPtr<IdentNode>                    IdentNodePtr;
 typedef RefCountedPtr<InstanceListExpressionContext> InstanceListExpressionContextPtr;
@@ -139,7 +139,7 @@ enum ValueType
     ValType_Custom          =  2,
     ValType_InstanceList    =  3,
     ValType_ValueList       =  4,
-    ValType_Contextual      =  5,
+    ValType_Lambda          =  5,
     };
 
 enum UnitsOrder
@@ -311,6 +311,8 @@ protected:
     bool                                        IsInitialized() const { return m_initialized; }
     void                                        Reset() { m_instances.clear(); m_initialized = false; }
     void                                        SetInstanceList (ECInstanceListCR instances) { m_instances = instances; m_initialized = true; }
+public:
+    void                                        Clear() { m_instances.clear(); }
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new InstanceListExpressionContext from the list of IECInstances
@@ -359,7 +361,7 @@ public:
     BentleyStatus               RemoveSymbol (SymbolR symbol);
     BentleyStatus               RemoveSymbol (wchar_t const* ident);
 
-    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets);
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   Create (bvector<WString> const& requestedSymbolSets, ExpressionContextP outer = NULL);
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -465,37 +467,6 @@ public:
     ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
 };
 
-/*=================================================================================**//**
-*
-* Used to introduce a named value into the context.
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
-struct          ValueSymbol : Symbol
-{
-/*__PUBLISH_SECTION_END__*/
-private:
-    ECN::ECValue     m_expressionValue;
-
-protected:
-    virtual                         ~ValueSymbol();
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
-                                                { return ExprStatus_NeedsLValue; }
-
-public:
-                ValueSymbol (wchar_t const* name, ECN::ECValueCR exprValue);
-
-/*__PUBLISH_SECTION_START__*/
-    //! Gets the value of this symbol
-    ECOBJECTS_EXPORT void       GetValue(ECN::ECValueR exprValue);
-    //! Sets the value of this symbol to a new ECValue
-    ECOBJECTS_EXPORT void       SetValue(ECN::ECValueCR exprValue);
-    //! Creates a new ValueSymbol with the given name and given ECValue
-    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
-
-};  //  End of ValueSymbol
-
 /*__PUBLISH_SECTION_END__*/
 
 /*=================================================================================**//**
@@ -570,7 +541,7 @@ enum            ExpressionToken
     TOKEN_End                 = 79,
     TOKEN_EndIf               = 80,
 
-    TOKEN_Where               = 85,               // "Where", e.g. "IDENT Where SOME_EXPRESSION_INVOLVING_IDENT"
+    TOKEN_Lambda              = 85,               // => e.g. "SomeArray.Select (X => X.Name)", "SomeArray.AnyMatches (val => val > 10)"
 
     TOKEN_DoubleColon         = 100,
 
@@ -654,24 +625,7 @@ public:
     ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, UInt32 index) const;
 
     ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, UInt32 arrayPropertyIndex);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* A result which needs to be evaluated in context.
-* @bsistruct                                                    Paul.Connelly   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ContextualValue : RefCountedBase
-    {
-private:
-    NodePtr                 m_node;
-    ExpressionContextPtr    m_context;
-    
-    ContextualValue (NodeR node, ExpressionContextR context) : m_node(&node), m_context(&context) { }
-public:
-    NodeR                   GetNode() const { return *m_node; }
-    ExpressionContextCR     GetContext() const { return *m_context; }
-
-    static ContextualValuePtr Create (NodeR node, ExpressionContextR context) { return new ContextualValue (node, context); }
+    ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
 
 /*=================================================================================**//**
@@ -686,7 +640,7 @@ private:
         {
         IValueListResultP           m_valueList;
         ECInstanceListCP            m_instanceList;
-        ContextualValueP            m_contextual;
+        LambdaValueP                m_lambda;
         };
     bool                m_ownsInstanceList;
     ValueType           m_valueType;
@@ -696,7 +650,7 @@ public:
     bool                IsInstanceList() const  { return ValType_InstanceList == m_valueType; }
     bool                IsECValue() const       { return ValType_ECValue == m_valueType; }
     bool                IsValueList() const     { return ValType_ValueList == m_valueType; }
-    bool                IsContextual() const    { return ValType_Contextual == m_valueType; }
+    bool                IsLambda() const        { return ValType_Lambda == m_valueType; }
 
     ExpressionStatus    GetInteger(Int32& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
@@ -722,11 +676,42 @@ public:
     ECOBJECTS_EXPORT IValueListResultCP     GetValueList() const;
     ECOBJECTS_EXPORT void                   SetValueList (IValueListResultR valueList);
 
-    ECOBJECTS_EXPORT ContextualValueCP      GetContextualValue() const;
-    ECOBJECTS_EXPORT void                   SetContextualValue (ContextualValueR value);
+    ECOBJECTS_EXPORT LambdaValueCP          GetLambda() const;
+    ECOBJECTS_EXPORT void                   SetLambda (LambdaValueR value);
     };
 
 /*__PUBLISH_SECTION_START__*/
+
+/*=================================================================================**//**
+*
+* Used to introduce a named value into the context.
+* @ingroup ECObjectsGroup
++===============+===============+===============+===============+===============+======*/
+struct          ValueSymbol : Symbol
+{
+/*__PUBLISH_SECTION_END__*/
+private:
+    EvaluationResult                m_expressionValue;
+
+protected:
+    ValueSymbol (wchar_t const* name, EvaluationResultCR exprValue);
+
+    virtual                         ~ValueSymbol();
+    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
+                                                { return ExprStatus_NeedsLValue; }
+public:
+    ECOBJECTS_EXPORT static ValueSymbolPtr  Create (wchar_t const* name, EvaluationResultCR value);
+
+    ECOBJECTS_EXPORT EvaluationResultCR     GetValue() const;
+    ECOBJECTS_EXPORT void                   SetValue (EvaluationResultCR value);
+    ECOBJECTS_EXPORT void                   SetValue (ECValueCR value);
+
+/*__PUBLISH_SECTION_START__*/
+    //! Creates a new ValueSymbol with the given name and given ECValue
+    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
+
+};  //  End of ValueSymbol
 
 /*=================================================================================**//**
 *
