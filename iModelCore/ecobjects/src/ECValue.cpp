@@ -2942,7 +2942,7 @@ private:
     double          multiplier;
     size_t          insertPos;
 
-    NumericFormat () : insertThousandsSeparator(false), precisionType(PRECISION_TYPE_Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
+    NumericFormat () : insertThousandsSeparator(false), precisionType(PrecisionType::Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
 
     DoubleFormatterPtr ToFormatter() const
         {
@@ -3021,9 +3021,9 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                     {
                     case 'x':       // hexadecimal
                         {
-                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HEXFORMAT_LeadingZeros;
+                        HexFormatOptions opts = HexFormatOptions::LeadingZeros;
                         if ('X' == spec)
-                            opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
+                            opts = (HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(HexFormatOptions::Uppercase));
 
                         BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, static_cast <UInt8> (precision));
                         }
@@ -3064,14 +3064,14 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
     WChar spec = *fmt,
           lspec = towlower (spec);
 
-    PrecisionType precisionType = PRECISION_TYPE_Decimal;
+    PrecisionType precisionType = PrecisionType::Decimal;
     bool groupSeparators = false,
          appendPercent = false,
          ignoreExtractedPrecision = false;
     switch (lspec)
         {
     case 'e':
-        precisionType = PRECISION_TYPE_Scientific;
+        precisionType = PrecisionType::Scientific;
         break;
     case 'p':
         d *= 100.0;
@@ -3183,7 +3183,7 @@ bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
                 break;
             case 'e':
             case 'E':
-                numFormat.precisionType = PRECISION_TYPE_Scientific;
+                numFormat.precisionType = PrecisionType::Scientific;
                 // ignore exponent sign
                 fmt++;
                 if ('+' == *fmt || '-' == *fmt)

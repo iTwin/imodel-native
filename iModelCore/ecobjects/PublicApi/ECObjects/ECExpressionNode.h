@@ -432,6 +432,7 @@ public:
     void                    AppendCallNode(CallNodeR  callNode);
     void                    AppendNameNode(IdentNodeR  nameNode);
     void                    AppendArrayNode(LBracketNodeR  lbracketNode);
+    void                    AppendLambdaNode (LambdaNodeR lambdaNode);
 }; //  End of PrimaryListNode
 
 /*=================================================================================**//**
@@ -966,8 +967,71 @@ public:
     ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, ExpressionContextR context);
     ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, ExpressionContextR context);
+    ExpressionStatus    InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, ExpressionContextR context);
 
 };  //  End of struct CallNode
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LambdaNode : Node
+    {
+private:
+    WString         m_symbolName;
+    NodePtr         m_lambdaExpression;
+
+    LambdaNode (WCharCP name, NodeR lambdaExpr) : m_symbolName (name), m_lambdaExpression (&lambdaExpr) { }
+protected:
+    virtual bool    _Traverse (NodeVisitorR visitor) const
+        {
+        bool retval = visitor.ProcessNode (*this);
+        if (retval)
+            retval = m_lambdaExpression->Traverse (visitor);
+
+        return retval;
+        }
+    
+    virtual WString _ToString() const override
+        {
+        WString ret (m_symbolName);
+        ret.append (L"=>");
+        return ret;
+        }
+
+    virtual ExpressionToken     _GetOperation() const override { return TOKEN_Lambda; }
+    virtual ExpressionStatus    _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
+public:
+    WCharCP             GetSymbolName() const { return m_symbolName.c_str(); }
+    NodeR               GetExpression() const { return *m_lambdaExpression; }
+
+    static LambdaNodePtr    Create (WCharCP name, NodeR expr) { return new LambdaNode (name, expr); }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* A result which needs to be evaluated in context.
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LambdaValue : RefCountedBase
+    {
+private:
+    LambdaNodePtr           m_node;
+    ExpressionContextPtr    m_context;
+    
+    LambdaValue (LambdaNodeR node, ExpressionContextR context) : m_node(&node), m_context(&context) { }
+public:
+    LambdaNodeR             GetNode() const { return *m_node; }
+    ExpressionContextCR     GetContext() const { return *m_context; }
+
+    static LambdaValuePtr Create (LambdaNodeR node, ExpressionContextR context) { return new LambdaValue (node, context); }
+
+    struct IProcessor
+        {
+        // Called for each application of the lambda to a target. Return false if no further evaluation desired.
+        virtual bool        ProcessResult (ExpressionStatus status, EvaluationResultCR member, EvaluationResultCR result) = 0;
+        };
+
+    ECOBJECTS_EXPORT ExpressionStatus   Evaluate (IValueListResultCR valueList, IProcessor& processor) const;
+    };
 
 /*=================================================================================**//**
 *
