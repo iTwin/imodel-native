@@ -135,6 +135,9 @@ public:
     //! Gets orderId entries associated to the relationship instance.
     //! This is used upon persistence to provide to the ECProvider the necessary informationto compute the orderId.
     ECOBJECTS_EXPORT OrderIdEntries&                    OrderIdEntries();
+    //! Gets orderId entries associated to the relationship instance.
+    //! This is used upon persistence to provide to the ECProvider the necessary informationto compute the orderId.
+    //ECOBJECTS_EXPORT OrderIdEntries&                    OrderIdEntries();
     };
 
 //=======================================================================================
