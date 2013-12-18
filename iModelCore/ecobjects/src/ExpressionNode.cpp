@@ -1329,6 +1329,14 @@ IValueListResultCP EvaluationResult::GetValueList() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+IValueListResultP EvaluationResult::GetValueList()
+    {
+    return ValType_ValueList == m_valueType ? m_valueList  :NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
 void EvaluationResult::SetValueList (IValueListResultR valueList)
     {
     Clear();

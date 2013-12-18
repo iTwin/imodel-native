@@ -674,6 +674,7 @@ public:
     ECOBJECTS_EXPORT void                   SetInstance (IECInstanceCR instance);
 
     ECOBJECTS_EXPORT IValueListResultCP     GetValueList() const;
+    ECOBJECTS_EXPORT IValueListResultP      GetValueList();
     ECOBJECTS_EXPORT void                   SetValueList (IValueListResultR valueList);
 
     ECOBJECTS_EXPORT LambdaValueCP          GetLambda() const;
