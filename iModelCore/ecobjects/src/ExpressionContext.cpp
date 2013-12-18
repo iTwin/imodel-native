@@ -428,7 +428,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         if (evalResult.IsValueList())
             {
-            IValueListResultCP list = evalResult.GetValueList();
+            IValueListResultPtr list = evalResult.GetValueList();
             if (TOKEN_Dot == nextOperation)
                 {
                 IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
