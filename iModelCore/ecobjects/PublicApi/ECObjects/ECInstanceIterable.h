@@ -87,9 +87,12 @@ public:
     virtual const_iterator end() const = 0; //!< returns the end of the collection
     };
 
-typedef ECN::IInstanceCollectionAdapter<IECInstanceP const>              IECInstanceCollectionAdapter;
-typedef RefCountedPtr<IECInstanceCollectionAdapter>                     IECInstanceCollectionAdapterPtr;
-typedef ECN::IInstanceCollectionIteratorAdapter<IECInstanceP const>      IECInstanceCollectionIteratorAdapter;
+typedef ECN::IInstanceCollectionAdapter<IECInstanceP const>                     IECInstanceCollectionAdapter;
+typedef RefCountedPtr<IECInstanceCollectionAdapter>                             IECInstanceCollectionAdapterPtr;
+typedef ECN::IInstanceCollectionIteratorAdapter<IECInstanceP const>             IECInstanceCollectionIteratorAdapter;
+typedef ECN::IInstanceCollectionAdapter<IECRelationshipInstanceP const>         IECRelationshipCollectionAdapter;
+typedef RefCountedPtr<IECRelationshipCollectionAdapter>                         IECRelationshipCollectionAdapterPtr;
+typedef ECN::IInstanceCollectionIteratorAdapter<IECRelationshipInstanceP const> IECRelationshipCollectionIteratorAdapter;
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -198,6 +201,11 @@ struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterI
     {
     };
 
+template <typename CollectionType>
+struct IECRelationshipCollectionAdapterImpl : public ECN::InstanceCollectionAdapterImpl<CollectionType, IECRelationshipInstanceP const> 
+    {
+    };
+
 template <typename T_Instance>
 struct ECInstancePVector : public ECN::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECN::RefCountedPtrToValueTransform<T_Instance> >
     {
@@ -234,6 +242,37 @@ struct ECInstanceIterable
         ECOBJECTS_EXPORT ECInstanceIterable (IECInstanceCollectionAdapter* collection);
     
         typedef IECInstanceCollectionAdapter::const_iterator  const_iterator;
+        ECOBJECTS_EXPORT const_iterator begin () const; //!< returns the beginning of this collection
+        ECOBJECTS_EXPORT const_iterator end   () const; //!< returns the end of the collection
+        ECOBJECTS_EXPORT bool empty() const; //!< returns whether the collection is empty or not
+        ECOBJECTS_EXPORT bool IsNull () const; //!< returns whether the collection is Null
+    };
+
+/*---------------------------------------------------------------------------------**//**
+typical usage 
+for (ECRelationshipIterable::const_iterator iter = collection.begin(); iter != collection.end(); ++iter)
+    {
+    IECRelationshipInstanceP instance = *iter;
+    }
+@ingroup ECObjectsGroup
+@bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECRelationshipIterable
+    {
+    private:
+        IECRelationshipCollectionAdapterPtr m_collectionPtr;
+
+    public:
+        //! Default constructor
+        ECRelationshipIterable ()
+            {
+            }
+
+        //! Constructor that takes another collection
+        //! @param[in] collection   The collection to make an ECInstanceIterable out of
+        ECOBJECTS_EXPORT ECRelationshipIterable (IECRelationshipCollectionAdapter* collection);
+    
+        typedef IECRelationshipCollectionAdapter::const_iterator  const_iterator;
         ECOBJECTS_EXPORT const_iterator begin () const; //!< returns the beginning of this collection
         ECOBJECTS_EXPORT const_iterator end   () const; //!< returns the end of the collection
         ECOBJECTS_EXPORT bool empty() const; //!< returns whether the collection is empty or not
