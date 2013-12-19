@@ -1,8 +1,8 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ecobjects/native/StandardSchemas.prewire.mke $
+#     $Source: src/StandardSchemas.prewire.mke $
 #
-#  $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 #  We have to list them out individually because in the source tree we
 #  have past versions, but we only want to deliver the latest version
 #----------------------------------------------------------------------
-$(ContextDeliveryDir)Schemas/EditorCustomAttributes.01.00.ecschema.xml: $(ecobjectsSrc)Standards/EditorCustomAttributes.01.00.ecschema.xml
+$(ContextDeliveryDir)Schemas/EditorCustomAttributes.01.01.ecschema.xml: $(ecobjectsSrc)Standards/EditorCustomAttributes.01.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
     
 $(ContextDeliveryDir)Schemas/Bentley_Standard_CustomAttributes.01.03.ecschema.xml: $(ecobjectsSrc)Standards/Bentley_Standard_CustomAttributes.01.03.ecschema.xml
