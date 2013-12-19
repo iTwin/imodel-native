@@ -216,9 +216,11 @@ size_t IECInstance::GetOffsetToIECInstance () const
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) const
     {
+/*
     if (_IsReadOnly())
         return true;
-    
+*/
+
     UInt32 propertyIndex;
     return ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex (propertyIndex, accessString) || IsPropertyReadOnly (propertyIndex);
     }
@@ -228,7 +230,7 @@ bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) cons
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
     {
-    return _IsReadOnly() || GetEnabler().IsPropertyReadOnly (propertyIndex);
+    return /*_IsReadOnly() || */ GetEnabler().IsPropertyReadOnly (propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -428,7 +430,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
 //+---------------+---------------+---------------+---------------+---------------+-----
 ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) 
     {
-    if (IsReadOnly())
+    if ( ! ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     bool isNull = false;
@@ -536,7 +538,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
+    swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue         arrayVal;
     ECObjectsStatus status;
@@ -803,7 +805,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
-    if (IsReadOnly())
+    if ( ! ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     return  SetInternalValueUsingAccessor (accessor, valueToSet);
@@ -1079,6 +1081,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     {
     // skip all the work if the instance is read only
     if (instance.IsReadOnly())
+    if ( ! instance.ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
     // see if access string specifies an array
@@ -1103,7 +1106,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = 0;
-    if (1 != BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue))
+    if (1 != swscanf (indexBuffer, L"%ud", &indexValue))
         return ECOBJECTS_STATUS_Error;
 
     ECValue         arrayVal;
@@ -1647,7 +1650,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
             return ECOBJECTS_STATUS_Error;
 
         // only proceed if not read only instance
-        if (instance.IsReadOnly())
+        if ( ! instance.ChangeValuesAllowed())
             return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
         ECN::IECInstancePtr parentNativeInstance = getParentNativeInstance (&instance, structArrayValueAccessor);
@@ -1685,7 +1688,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
                 return ECOBJECTS_STATUS_Error;
 
             // only proceed if not read only instance
-            if (instance.IsReadOnly())
+            if (instance.ChangeValuesAllowed())
                 return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
 
             arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());

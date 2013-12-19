@@ -852,7 +852,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (UInt32 minOccurs)
 ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
     {    
     UInt32 iMinOccurs;
-    int count = BeStringUtilities::Swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
+    int count = swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
         LOG.errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
@@ -892,7 +892,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
     {    
     UInt32 iMaxOccurs;
-    int count = BeStringUtilities::Swscanf (maxOccurs.c_str(), L"%u", &iMaxOccurs);
+    int count = swscanf (maxOccurs.c_str(), L"%u", &iMaxOccurs);
     if (count != 1)
         {
         if (0 == wcscmp (maxOccurs.c_str(), ECXML_UNBOUNDED))

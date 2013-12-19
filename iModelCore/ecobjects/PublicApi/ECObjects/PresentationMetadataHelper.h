@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,32 @@
 #include <ECObjects/StandaloneECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* Standard sorting priorities for properties.
+* @bsistruct                                                    Paul.Connelly   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class PropertySortPriority : Int32
+    {
+    VeryHigh   = 400000,//!>Very High
+    High       = 300000,//!>High
+    Medium     = 200000,//!>Medium
+    Low        = 100000,//!>Low
+    VeryLow    = 0,     //!>Very Low
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Standard sorting priorities for property categories.
+* @bsistruct                                                    Paul.Connelly   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class CategorySortPriority : Int32
+    {
+    VeryHigh   = 400000,//!>Very High
+    High       = 300000,//!>High
+    Medium     = 200000,//!>Medium
+    Low        = 100000,//!>Low
+    VeryLow    = 0,     //!>Very Low
+    };
 
 //=======================================================================================
 //! Helper object used to apply metadata to ECSchemas, ECClasses, and ECProperties used 
@@ -34,6 +60,8 @@ private:
     ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, WCharCP className, CustomAttributeData const* data = NULL) const;
     ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, WCharCP className, CustomAttributeData const& data) const;
 
+public:
+    ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaR editorCustomAttributesSchema);
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates an PresentationMetadataHelper object which can be used to apply metadata to ECSchema, ECClass, and ECProperty objects.
@@ -41,6 +69,22 @@ public:
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaReadContextR schemaContext);
     
     ECOBJECTS_EXPORT ~PresentationMetadataHelper();
+
+    //! Applies a standard category to the property
+    //! @param[in]      ecproperty         
+    //! @param[in]      standardCategoryId 
+    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    ECOBJECTS_EXPORT ECObjectsStatus    SetStandardCategory (ECPropertyR ecproperty, Int32 standardCategoryId) const;
+
+    //! Applies a custom category to a property
+    //! @param[in]      ecproperty   
+    //! @param[in]      uniqueName   
+    //! @param[in]      displayLabel 
+    //! @param[in]      priority     
+    //! @param[in]      expand       
+    //! @param[in]      description  
+    //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
+    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, Int32 priority, bool expand = false, WCharCP description = NULL) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for the property

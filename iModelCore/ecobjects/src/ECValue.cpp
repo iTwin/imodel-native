@@ -1596,7 +1596,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Long:
         {
         Int64 i;
-        if (1 != BeStringUtilities::Swscanf (str, L"%lld", &i))
+        if (1 != swscanf (str, L"%lld", &i))
             return false;
         else if (PRIMITIVETYPE_Long == primitiveType)
             SetLong (i);
@@ -1607,7 +1607,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Double:
         {
         double d;
-        if (1 == BeStringUtilities::Swscanf (str, L"%lg", &d))
+        if (1 == swscanf (str, L"%lg", &d))
             SetDouble (d);
         else
             return false;
@@ -1616,7 +1616,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Integer:
         {
         Int64 i;
-        if (1 == BeStringUtilities::Swscanf (str, L"%lld", &i))
+        if (1 == swscanf (str, L"%lld", &i))
             {
             if (INT_MAX >= i && INT_MIN <= i)
                 SetInteger ((Int32)i);
@@ -1630,7 +1630,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt;
-        if (2 == BeStringUtilities::Swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
+        if (2 == swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
             SetPoint2D (pt);
         else
             return false;
@@ -1639,7 +1639,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt;
-        if (3 == BeStringUtilities::Swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+        if (3 == swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
             SetPoint3D (pt);
         else
             return false;
@@ -2407,7 +2407,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    BeStringUtilities::Swscanf (indexBuffer, L"%ud", &indexValue);
+    swscanf (indexBuffer, L"%ud", &indexValue);
 
     ECValue  arrayVal;
 
@@ -2933,7 +2933,7 @@ private:
     double          multiplier;
     size_t          insertPos;
 
-    NumericFormat () : insertThousandsSeparator(false), precisionType(PRECISION_TYPE_Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
+    NumericFormat () : insertThousandsSeparator(false), precisionType(PrecisionType::Decimal), widthBeforeDecimal(0), minDecimalPrecision(0), maxDecimalPrecision(0), multiplier(1.0), insertPos(-1) { }
 
     DoubleFormatterPtr ToFormatter() const
         {
@@ -3012,9 +3012,9 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                     {
                     case 'x':       // hexadecimal
                         {
-                        BeStringUtilities::HexFormatOptions opts = BeStringUtilities::HEXFORMAT_LeadingZeros;
+                        HexFormatOptions opts = HexFormatOptions::LeadingZeros;
                         if ('X' == spec)
-                            opts = (BeStringUtilities::HexFormatOptions)(opts | BeStringUtilities::HEXFORMAT_Uppercase);
+                            opts = (HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(HexFormatOptions::Uppercase));
 
                         BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
                         }
@@ -3055,14 +3055,14 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
     WChar spec = *fmt,
           lspec = towlower (spec);
 
-    PrecisionType precisionType = PRECISION_TYPE_Decimal;
+    PrecisionType precisionType = PrecisionType::Decimal;
     bool groupSeparators = false,
          appendPercent = false,
          ignoreExtractedPrecision = false;
     switch (lspec)
         {
     case 'e':
-        precisionType = PRECISION_TYPE_Scientific;
+        precisionType = PrecisionType::Scientific;
         break;
     case 'p':
         d *= 100.0;
@@ -3174,7 +3174,7 @@ bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
                 break;
             case 'e':
             case 'E':
-                numFormat.precisionType = PRECISION_TYPE_Scientific;
+                numFormat.precisionType = PrecisionType::Scientific;
                 // ignore exponent sign
                 fmt++;
                 if ('+' == *fmt || '-' == *fmt)

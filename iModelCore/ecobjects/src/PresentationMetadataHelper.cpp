@@ -2,7 +2,7 @@
 |
 |  $Source: src/PresentationMetadataHelper.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -50,6 +50,9 @@ public:
     template <typename T_PRIMITIVE>
     CustomAttributeData (WCharCP name, T_PRIMITIVE value) : m_name(name), m_value(value) { }
 
+    template <WCharCP>
+    CustomAttributeData (WCharCP name, WCharCP value) : m_name(name), m_value(value, false) { }
+
     ECObjectsStatus Apply (IECInstanceR instance) const
         {
         return m_name ? instance.SetValue (m_name, m_value) : ECOBJECTS_STATUS_Success;
@@ -68,6 +71,21 @@ PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaReadContextR sch
         // If we can't find the custom attributes schema, all methods will return ECOBJECTS_STATUS_SchemaNotFound
         BeAssert (false);
         LOG.error (L"Unable to locate EditorCustomAttributes schema");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationMetadataHelper::PresentationMetadataHelper (ECSchemaR editorCustomAttributesSchema)
+    {
+    SchemaKey schemaKey (EDITOR_SCHEMA_NAME, 1, 0);
+    if (editorCustomAttributesSchema.GetSchemaKey().Matches (schemaKey, SCHEMAMATCHTYPE_Latest))
+        m_customAttributesSchema = &editorCustomAttributesSchema;
+    else
+        {
+        BeAssert (false);
+        LOG.error (L"Passed invalid schema, expected EditorCustomAttributes.01.00 or compatible");
         }
     }
 
@@ -251,4 +269,37 @@ ECObjectsStatus PresentationMetadataHelper::SetRequiresReload (ECPropertyR ecpro
     {
     return CreateCustomAttribute (ecproperty, REQUIRES_RELOAD_CLASSNAME);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PresentationMetadataHelper::SetStandardCategory (ECPropertyR ecproperty, Int32 standardCategoryId) const
+    {
+    return CreateCustomAttribute (ecproperty, CATEGORY_CLASSNAME, CustomAttributeData (L"Standard", standardCategoryId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PresentationMetadataHelper::SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, Int32 priority, bool expand, WCharCP description) const
+    {
+    if (NULL == uniqueName || 0 == *uniqueName)
+        return ECOBJECTS_STATUS_Error;
+
+    IECInstancePtr attr;
+    ECObjectsStatus status = EnsureSchemaReference (ecproperty);
+    if (ECOBJECTS_STATUS_Success == status && (attr = CreateInstance (CATEGORY_CLASSNAME)).IsValid())
+        {
+        attr->SetValue (L"Name", ECValue (uniqueName, false));
+        attr->SetValue (L"DisplayLabel", ECValue (displayLabel, false));
+        attr->SetValue (L"Description", ECValue (description, false));
+        attr->SetValue (L"Priority", ECValue (priority));
+        attr->SetValue (L"Expand", ECValue (expand));
+
+        status = ecproperty.SetCustomAttribute (*attr);
+        }
+
+    return status;
+    }
+
 

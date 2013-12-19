@@ -53,7 +53,7 @@ ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
 void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
     {
     WChar buf[5];
-    BeStringUtilities::HexFormatOptions opts = (BeStringUtilities::HexFormatOptions)(BeStringUtilities::HEXFORMAT_LeadingZeros | BeStringUtilities::HEXFORMAT_Uppercase);
+    HexFormatOptions opts = (HexFormatOptions)(static_cast<int>(HexFormatOptions::LeadingZeros) | static_cast<int>(HexFormatOptions::Uppercase));
     BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)c, opts, 4);
     encoded.append (L"__x");
     encoded.append (buf);
@@ -84,7 +84,7 @@ bool ECNameValidation::DecodeFromValidName (WStringR decoded, WStringCR name)
         if ('_' == decoded[pos+7] && '_' == decoded[pos+8])
             {
             UInt32 charCode;
-            if (1 == BeStringUtilities::Swscanf (decoded.c_str() + pos + 3, L"%x", &charCode))
+            if (1 == swscanf (decoded.c_str() + pos + 3, L"%x", &charCode))
                 {
                 decoded[pos] = (WChar)charCode;
                 decoded.erase (pos+1, 8);
@@ -1951,7 +1951,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
     {
     UInt32 checkSum = 0;
     BeFile file;
-    if (BE_FILE_STATUS_Success != file.Open (schemaFile, BE_FILE_ACCESS_Read, BE_FILE_SHARE_ReadWrite))
+    if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read, BeFileSharing::ReadWrite))
         {
         BeAssert(false);
         return checkSum;
