@@ -88,7 +88,7 @@ struct CalculatedPropertyTests : ECTestFixture
         ECValue v (newValue);
         EXPECT_SUCCESS (instance.SetValue (propname, v));
 
-        FOR_EACH (ExpectedValue const& exp, dependentValues.values)
+        for (ExpectedValue const& exp: dependentValues.values)
             {
             ECValueAccessor accessor;
             EXPECT_SUCCESS (ECValueAccessor::PopulateValueAccessor (accessor, instance, exp.name));

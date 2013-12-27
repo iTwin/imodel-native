@@ -535,7 +535,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
         void ValidatePropertyValuesAreEqual(IECInstancePtr instanceA, IECInstancePtr instanceB)
             {
             ECPropertyIterableCR    collection  = instanceA->GetClass().GetProperties(true);
-            FOR_EACH(ECPropertyP propertyA, collection)
+            for(ECPropertyP propertyA: collection)
                 {
                 ECValue valueA;
                 instanceA->GetValue(valueA, propertyA->GetName().c_str());
@@ -595,12 +595,12 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
         bool CustomAttributesAreEqual(ECCustomAttributeInstanceIterable customAttributesA, ECCustomAttributeInstanceIterable customAttributesB)
             {
             UInt32 countA = 0;
-            FOR_EACH(IECInstancePtr attributeA, customAttributesA)
+            for(IECInstancePtr attributeA: customAttributesA)
                 {
                 countA++;
                 WStringCR className = attributeA->GetClass().GetName();
                 bool customAttributeFound = false;
-                FOR_EACH(IECInstancePtr attributeB, customAttributesB)
+                for(IECInstancePtr attributeB: customAttributesB)
                     {
                     ECClassCR classB = attributeB->GetClass();
                     if (0 == className.compare(classB.GetName()))
@@ -615,7 +615,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 }
 
             UInt32 countB = 0;
-            FOR_EACH(IECInstancePtr attributeB, customAttributesB)
+            for(IECInstancePtr attributeB: customAttributesB)
                 {
                 countB++;
                 }
@@ -687,7 +687,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             propertyP = consolidatedClass->GetPropertyP(L"ReadOnly");
             ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
             UInt32 count = 0;
-            FOR_EACH(IECInstancePtr attribute, attributes)
+            for(IECInstancePtr attribute: attributes)
                 {
                 count++;
                 }
@@ -732,7 +732,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"BitDepth");
             ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
             UInt32 count = 0;
-            FOR_EACH(IECInstancePtr attribute, attributes)
+            for(IECInstancePtr attribute: attributes)
                 {
                 count++;
                 }
@@ -759,7 +759,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             EXPECT_TRUE(CustomAttributesAreEqual(preCustomAttributes, postCustomAttributes));
 
             UInt32 preClassCount = 0;
-            FOR_EACH(ECClassP preSupplementClass, schemaPreSupplement->GetClasses())
+            for(ECClassP preSupplementClass: schemaPreSupplement->GetClasses())
                 {
                 EXPECT_TRUE(NULL != preSupplementClass);
                 preClassCount++;
@@ -771,7 +771,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             EXPECT_TRUE(0 < preClassCount);
 
             UInt32 postClassCount = 0;
-            FOR_EACH(ECClassP postSupplementClass, schemaPostSupplement->GetClasses())
+            for(ECClassP postSupplementClass: schemaPostSupplement->GetClasses())
                 {
                 EXPECT_TRUE(NULL != postSupplementClass);
                 postClassCount++;
@@ -790,7 +790,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             }
         void CompareSupplementedSchemaAndPrimary(ECSchemaPtr consolidatedSchema)
             {
-            FOR_EACH(ECClassP consolidatedClass, consolidatedSchema->GetClasses())
+            for(ECClassP consolidatedClass: consolidatedSchema->GetClasses())
                 {
                 if (0 == wcscmp(consolidatedClass->GetName().c_str(), L"Folder"))
                     ValidateFolderClass(consolidatedClass, m_primaryTestSchema->GetClassP(L"Folder"));
@@ -956,7 +956,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     {
     ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetCustomAttributes(false);
     UInt32 localCustomAttributesCount = 0;
-    FOR_EACH(IECInstancePtr attribute, localCustomAttributes)
+    for(IECInstancePtr attribute: localCustomAttributes)
         {
         localCustomAttributesCount++;
         }
@@ -964,7 +964,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetCustomAttributes(true);
     UInt32 allCustomAttributesCount = 0;
-    FOR_EACH(IECInstancePtr attribute, allCustomAttributes)
+    for(IECInstancePtr attribute: allCustomAttributes)
         {
         allCustomAttributesCount++;
         }
@@ -972,7 +972,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable localCustomAttributes2 = supplementedClass->GetCustomAttributes(false);
     localCustomAttributesCount = 0;
-    FOR_EACH(IECInstancePtr attribute, localCustomAttributes2)
+    for(IECInstancePtr attribute: localCustomAttributes2)
         {
         localCustomAttributesCount++;
         }
@@ -983,7 +983,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     {
     ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(false);
     UInt32 localCustomAttributesCount = 0;
-    FOR_EACH(IECInstancePtr attribute, localCustomAttributes)
+    for(IECInstancePtr attribute: localCustomAttributes)
         {
         localCustomAttributesCount++;
         }
@@ -991,7 +991,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(true);
     UInt32 allCustomAttributesCount = 0;
-    FOR_EACH(IECInstancePtr attribute, allCustomAttributes)
+    for(IECInstancePtr attribute: allCustomAttributes)
         {
         allCustomAttributesCount++;
         }
@@ -999,7 +999,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 
     ECCustomAttributeInstanceIterable localCustomAttributes2 = supplementedClass->GetPrimaryCustomAttributes(false);
     localCustomAttributesCount = 0;
-    FOR_EACH(IECInstancePtr attribute, localCustomAttributes2)
+    for(IECInstancePtr attribute: localCustomAttributes2)
         {
         localCustomAttributesCount++;
         }

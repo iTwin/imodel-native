@@ -63,7 +63,7 @@ ECSchemaPtr const&   schema
     EXPECT_EQ (6, schema->GetVersionMinor());        
  
 #ifdef DEBUG_PRINT
-    FOR_EACH (ECClassP pClass, schema->GetClasses())
+    for (ECClassP pClass: schema->GetClasses())
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
         }
@@ -178,7 +178,7 @@ ECSchemaPtr const&   schema
     EXPECT_FALSE (ecValue.GetBoolean());
    
 #ifdef DEBUG_PRINT
-    FOR_EACH (ECPropertyP pProperty, pClass->GetProperties())
+    for (ECPropertyP pProperty: pClass->GetProperties())
         {
         wprintf (L"TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
         }
@@ -605,7 +605,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_EQ (6, schema->GetVersionMinor());        
     
 #ifdef DEBUG_PRINT
-    FOR_EACH (ECClassP pClass, schema->GetClasses())
+    for (ECClassP pClass: schema->GetClasses())
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
         }
@@ -1036,7 +1036,7 @@ TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
 
     EXPECT_EQ(schemasToImport.size(), expectedPrefixes.size());
     int counter = 0;
-    FOR_EACH(ECSchemaP testSchema, schemasToImport)
+    for(ECSchemaP testSchema: schemasToImport)
         {
         WString prefix = testSchema->GetNamespacePrefix();
         EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter]));
@@ -1645,7 +1645,7 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     
     int i = 0;
     ECPropertyIterable  iterable = class1->GetProperties (false);
-    FOR_EACH (ECPropertyP prop, iterable)
+    for (ECPropertyP prop: iterable)
         {
         EXPECT_EQ(0, prop->GetName().compare(propertyNames[i]));
         i++;
@@ -1761,7 +1761,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     
     ECPropertyIterable  iterable1 = mn->GetProperties (true);
     std::vector<ECPropertyP> testVector;
-    FOR_EACH (ECPropertyP prop, iterable1)
+    for (ECPropertyP prop: iterable1)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
@@ -1797,7 +1797,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
 
     ECPropertyIterable  iterable2 = mn->GetProperties (true);
     testVector.clear();
-    FOR_EACH (ECPropertyP prop, iterable2)
+    for (ECPropertyP prop: iterable2)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
@@ -1846,7 +1846,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
 
     ECPropertyIterable  iterable3 = mn->GetProperties (true);
     testVector.clear();
-    FOR_EACH (ECPropertyP prop, iterable3)
+    for (ECPropertyP prop: iterable3)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());

@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CommonTools.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,7 +59,7 @@ public:
         BeXmlDom::IterableNodeSet ruleNodes;
         xmlNode->SelectChildNodes (ruleNodes, ruleXmlElementName);
 
-        FOR_EACH (BeXmlNodeP& ruleNode, ruleNodes)
+        for (BeXmlNodeP& ruleNode: ruleNodes)
             LoadRuleFromXmlNode<RuleType, RuleCollectionType> (ruleNode, rulesCollection);
         }
 
@@ -67,7 +67,7 @@ public:
     template<typename RuleType, typename RuleCollectionType>
     static void WriteRulesToXmlNode (BeXmlNodeP parentXmlNode, RuleCollectionType& rulesCollection)
         {
-        FOR_EACH (RuleType* rule, rulesCollection)
+        for (RuleType* rule: rulesCollection)
             rule->WriteXml (parentXmlNode);
         }
 };

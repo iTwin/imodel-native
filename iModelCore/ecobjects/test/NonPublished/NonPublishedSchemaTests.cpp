@@ -44,7 +44,7 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         }
     ASSERT_EQ(2, count);
 
-    FOR_EACH (ECClassCP ecClass, container)
+    for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%p, name=%s\n", ecClass, name.c_str());

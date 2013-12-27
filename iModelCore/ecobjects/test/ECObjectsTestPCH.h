@@ -2,7 +2,7 @@
 |
 |     $Source: test/ECObjectsTestPCH.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,5 +19,3 @@
 #include <ECObjects\ECObjectsAPI.h>
 #include <gtest\gtest.h>
 
-#undef FOR_EACH
-#define FOR_EACH(V,C) for each (V in C)
