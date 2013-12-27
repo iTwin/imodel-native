@@ -286,7 +286,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     bool foundCustomAttrib2 = false;
     bool foundCustomAttrib3 = false;
     ECCustomAttributeInstanceIterable  iterableFalse = containerClass->GetCustomAttributes (false);
-    FOR_EACH (IECInstancePtr testInstance, iterableFalse)
+    for (IECInstancePtr testInstance: iterableFalse)
         {
         if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;
@@ -304,7 +304,7 @@ TEST_F(CustomAttributeTest, ExpectCanGetAllCustomAttributes)
     foundCustomAttrib3 = false;
 
     ECCustomAttributeInstanceIterable  iterableTrue = containerClass->GetCustomAttributes (true);
-    FOR_EACH (IECInstancePtr testInstance, iterableTrue)
+    for (IECInstancePtr testInstance: iterableTrue)
         {
         if (testInstance->GetClass().GetName().compare(L"CustomAttribClass") == 0)
             foundCustomAttrib = true;

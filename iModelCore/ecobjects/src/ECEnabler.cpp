@@ -154,7 +154,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
     bool anyCandidates = false;
     bool allTypes = (opts & PROPERTY_PROCESSING_OPTIONS_AllTypes) != 0;
 
-    FOR_EACH (ECPropertyCP prop, instance.GetClass().GetProperties())
+    for (ECPropertyCP prop: instance.GetClass().GetProperties())
         {
         ECValue v;
         instance.GetValue (v, prop->GetName().c_str());

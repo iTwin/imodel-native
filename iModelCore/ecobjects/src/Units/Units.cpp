@@ -247,7 +247,7 @@ bool UnitLocater::LocateUnitBySpecification (UnitR unit, WCharCP propName, WChar
     
     // WIP_UNITS: figure out which (if any) referenced schema contains specifications once and cache it
     // (not sure how this works on graphite)
-    FOR_EACH (ECSchemaReferenceList::value_type const& refSchemaEntry, schema.GetReferencedSchemas())
+    for (ECSchemaReferenceList::value_type const& refSchemaEntry: schema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = refSchemaEntry.second;
         if (refSchema->GetCustomAttribute (IS_UNIT_SYSTEM_SCHEMA).IsValid() && (specsAttr = refSchema->GetCustomAttribute (UNIT_SPECIFICATIONS)).IsValid())

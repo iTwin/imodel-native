@@ -128,7 +128,7 @@ struct StringEncodingTests : ECTestFixture
 
     bool                    CompareInstances (ECValuesCollectionCR aVals, StandaloneECInstancePtr b, bool outputDifferences = false)
         {
-        FOR_EACH (ECPropertyValueCR aVal, aVals)
+        for (ECPropertyValueCR aVal: aVals)
             {
             ECValueCR aV = aVal.GetValue();
             ECValue bV;

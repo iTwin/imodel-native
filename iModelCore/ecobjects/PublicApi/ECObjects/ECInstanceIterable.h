@@ -11,12 +11,6 @@
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 
-#pragma  warning(push)
-#pragma  warning(disable:4265)
-#include <boost/shared_ptr.hpp>
-#pragma  warning(pop)
-
-
 /*__PUBLISH_SECTION_START__*/
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -67,7 +61,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
     private:
         typename CollectionType::const_iterator m_adapteriterator;
         CollectionType const*                   m_adapterParentcollection;
-        boost::shared_ptr<value_type>           m_ptr;
+        std::shared_ptr<value_type>           m_ptr;
         InstanceCollectionAdapterIteratorImpl (CollectionType const& collection, bool begin)
             :m_adapterParentcollection(&collection), m_adapteriterator(begin ? collection.begin(): collection.end())
             {
@@ -100,7 +94,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
 
         virtual typename IInstanceCollectionIteratorAdapter<value_type>::reference GetCurrent () override
             {
-            m_ptr = boost::shared_ptr<value_type>(new value_type(*m_adapteriterator));
+            m_ptr = std::shared_ptr<value_type>(new value_type(*m_adapteriterator));
             return *m_ptr;
             }
 
@@ -129,7 +123,7 @@ template <typename CollectionType, typename value_type>
 struct InstanceCollectionAdapterImpl : public IInstanceCollectionAdapter<value_type>
     {
 private:
-    boost::shared_ptr<CollectionType>   m_adaptedcollection;
+    std::shared_ptr<CollectionType>   m_adaptedcollection;
 protected:
      InstanceCollectionAdapterImpl (CollectionType& collection)
         :m_adaptedcollection(&collection)

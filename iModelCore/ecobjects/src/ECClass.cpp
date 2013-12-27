@@ -527,7 +527,7 @@ bool includeBaseClasses
         return NULL;
 
     // not found yet, search the inheritence hierarchy
-    FOR_EACH (const ECClassP& baseClass, m_baseClasses)
+    for (const ECClassP& baseClass: m_baseClasses)
         {
         ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
         if (NULL != baseProperty)
@@ -591,7 +591,7 @@ ECPropertyP ECClass::GetPropertyP (Utf8CP name, bool includeBaseClasses) const
         }
     else if (includeBaseClasses)
         {
-        FOR_EACH (ECClassCP ecClass, m_baseClasses)
+        for (ECClassCP ecClass: m_baseClasses)
             {
             ECPropertyP prop = ecClass->GetPropertyP (name, true);
             if (NULL != prop)
@@ -915,7 +915,7 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    FOR_EACH (ECPropertyP prop, baseClassProperties)
+    for (ECPropertyP prop: baseClassProperties)
         {
         ECPropertyP thisProperty;
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
@@ -1033,7 +1033,7 @@ ECPropertyIterable ECClass::GetProperties (bool includeBaseProperties) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::GetProperties (bool includeBaseProperties, PropertyList* propertyList) const
     {
-    FOR_EACH (ECPropertyP prop, m_propertyList)
+    for (ECPropertyP prop: m_propertyList)
         propertyList->push_back(prop);
         
     if (!includeBaseProperties)
@@ -1057,7 +1057,7 @@ bool ECClass::AddUniquePropertiesToList (ECClassCP currentBaseClass, const void 
     
     PropertyList newProperties;
     PropertyList::iterator currentEnd = propertyList->end();
-    FOR_EACH (ECPropertyP prop, currentBaseClass->GetProperties(false))
+    for (ECPropertyP prop: currentBaseClass->GetProperties(false))
         {
         PropertyList::iterator testIter;
         for (testIter = propertyList->begin(); testIter != currentEnd; testIter++)
@@ -1086,7 +1086,7 @@ bool ECClass::TraverseBaseClasses (TraversalDelegate traverseMethod, bool recurs
     if (m_baseClasses.size() == 0)
         return false;
         
-    FOR_EACH (const ECClassP& baseClass, m_baseClasses)
+    for (const ECClassP& baseClass: m_baseClasses)
         {
         if (traverseMethod(baseClass, arg))
             return true;
@@ -1255,12 +1255,12 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNo
     classNode->AddAttributeBooleanValue (IS_DOMAINCLASS_ATTRIBUTE, this->GetIsDomainClass());
     classNode->AddAttributeBooleanValue (IS_CUSTOMATTRIBUTE_ATTRIBUTE, this->GetIsCustomAttributeClass());
     
-    FOR_EACH (const ECClassP& baseClass, m_baseClasses)
+    for (const ECClassP& baseClass: m_baseClasses)
         classNode->AddElementStringValue (EC_BASE_CLASS_ELEMENT, (ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str() );
 
     WriteCustomAttributes (*classNode);
             
-    FOR_EACH (ECPropertyP prop, GetProperties(false))
+    for (ECPropertyP prop: GetProperties(false))
         {
         BeXmlNodeP  propertyNode;
         prop->_WriteXml (propertyNode, *classNode);
@@ -1358,7 +1358,7 @@ void ECClass::_GetBaseContainers
 bvector<IECCustomAttributeContainerP>& returnList
 ) const
     {
-    FOR_EACH (ECClassP baseClass, m_baseClasses)
+    for (ECClassP baseClass: m_baseClasses)
         returnList.push_back(baseClass);
     }
 
@@ -1380,7 +1380,7 @@ size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
     size_t nProperties = m_propertyList.size();
     if (includeBaseClasses)
         {
-        FOR_EACH (const ECClassP& baseClass, m_baseClasses)
+        for (const ECClassP& baseClass: m_baseClasses)
             nProperties += baseClass->GetPropertyCount (true);
         }
 
@@ -1718,7 +1718,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlNodeR parentNode, Utf
         
     WriteCustomAttributes (*constraintNode);
 
-    FOR_EACH (ECClassP constraint, m_constraintClasses)
+    for (ECClassP constraint: m_constraintClasses)
         {
         BeXmlNodeP  constraintClassNode = constraintNode->AddEmptyElement (EC_CONSTRAINTCLASS_ELEMENT);
         constraintClassNode->AddAttributeStringValue (CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *constraint).c_str());
@@ -1923,7 +1923,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 
     ECObjectsStatus status;
     ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
-    FOR_EACH(ECClassP constraintClass, GetClasses())
+    for(ECClassP constraintClass: GetClasses())
         {
         ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
         if (NULL == destConstraintClass)

@@ -476,7 +476,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
     BeAssert(m_initialized);
 
     ExpressionStatus status = ExprStatus_StructRequired;
-    FOR_EACH (IECInstancePtr const& instance, instanceList)
+    for (IECInstancePtr const& instance: instanceList)
         {
         size_t index = startIndex;
         if (instance.IsNull())
@@ -998,7 +998,7 @@ ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR
     WCharCP name = primaryList.GetName (startIndex);
     if (NULL != name)
         {
-        FOR_EACH (IECInstancePtr const& instance, m_instances)
+        for (IECInstancePtr const& instance: m_instances)
             {
             if (instance.IsValid() && ExprStatus_Success == (status = GetReference (evalResult, refResult, primaryList, globalContext, startIndex, *instance)))
                 break;

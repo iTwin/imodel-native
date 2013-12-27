@@ -138,7 +138,7 @@ IECInstance::~IECInstance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsExcluded(WString& className, bvector<WString>& classNamesToExclude)
     {
-    FOR_EACH (WString excludedClass, classNamesToExclude)
+    for (WString excludedClass: classNamesToExclude)
         {
         if (0 == className.compare (excludedClass))
             return true;
@@ -1951,7 +1951,7 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
             }
         }
 
-    FOR_EACH (ECClassCP baseClass, ecClass.GetBaseClasses())
+    for (ECClassCP baseClass: ecClass.GetBaseClasses())
         {
         if (getInstanceLabelPropertyNameFromClass (propertyName, *baseClass))
             return true;
@@ -2969,7 +2969,7 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
     CustomStructSerializerManagerR customStructSerializerMgr = CustomStructSerializerManager::GetManager();
 
     ECPropertyIterableCR    collection  = ecClass.GetProperties (true);
-    FOR_EACH (ECPropertyP ecProperty, collection)
+    for (ECPropertyP ecProperty: collection)
         {
         PrimitiveECPropertyP    primitiveProperty;
         ArrayECPropertyP        arrayProperty;
