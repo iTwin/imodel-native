@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -3989,7 +3989,7 @@ private:
         if (ECOBJECTS_STATUS_Success == instance.GetValue (v, propIdx) && v.IsArray())
             m_count = v.GetArrayInfo().GetCount();
         else
-            BeAssert (false);
+            m_count = 0;
         }
 
     virtual UInt32              _GetCount() const override
