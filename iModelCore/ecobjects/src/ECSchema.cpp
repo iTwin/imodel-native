@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2006,7 +2006,7 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
     {
     UInt32 checkSum = 0;
     BeFile file;
-    if (BE_FILE_STATUS_Success != file.Open (schemaFile, BE_FILE_ACCESS_Read))
+    if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read))
         {
         BeAssert(false);
         return checkSum;
