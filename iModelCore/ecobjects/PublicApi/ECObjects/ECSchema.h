@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -425,6 +425,7 @@ protected:
 
     virtual bool                _GetDisplayType (PrimitiveType& type) const = 0;
     virtual bool                _ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
+    virtual bool                _AllowExpandMembers() const = 0;
 public:
     // For DgnPlatform interop
     struct Factory
@@ -503,11 +504,11 @@ public:
     //! @return true if this type adapter provides a finite set of permissible values for the property it represents
     ECOBJECTS_EXPORT bool                 HasStandardValues() const;
 
-    //! @return true if the underlying type is a struct.
 /*__PUBLISH_SECTION_END__*/
-    // Note that type adapters representing structs will not be invoked from managed code, as managed callers cannot always
-    // provide the native struct ECInstance, and doing so would be expensive.
+    ECOBJECTS_EXPORT bool                 AllowExpandMembers() const;
 /*__PUBLISH_SECTION_START__*/
+
+    //! @return true if the underlying type is a struct.
     ECOBJECTS_EXPORT bool                 IsStruct() const;
 
     //! Indicates if the value is intended to be interpreted as a string by the user, regardless of the underlying property type.
