@@ -8,6 +8,8 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
+#ifdef WIP_DATE_TIME_UNIT_TESTS
+
 using namespace Bentley::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
@@ -857,3 +859,5 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
+
+#endif
