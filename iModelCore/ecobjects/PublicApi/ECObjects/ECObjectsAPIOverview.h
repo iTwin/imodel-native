@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPIOverview.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -108,7 +108,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!
 //!     //Assume an ECProperty 'LastModified' without DateTimeInfo custom attribute and
 //!     //an ECProperty 'LastModifiedUtc' with a DateTimeInfo custom attribute where DateTimeKind is set to 'Utc'
-//!     DateTime dt (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 26, 12, 30);
+//!     DateTime dt (DateTime::Kind::Unspecified, 2013, 2, 26, 12, 30);
 //!     ECValue v (dt);
 //!     IECInstanceP instance = ...;
 //!     instance->SetValue (L"LastModified", v); // works as LastModified doesn't have a DateTimeInfo custom attribute
@@ -129,7 +129,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!     DateTime dt = v.GetDateTime (); //dt.GetInfo () will amount to default
 //!     ...
 //!     instance->GetValue (v, L"LastModifiedUtc");
-//!     dt = v.GetDateTime (); //dt.GetInfo ().GetKind () will amount to DateTime::DATETIMEKIND_Utc
+//!     dt = v.GetDateTime (); //dt.GetInfo ().GetKind () will amount to DateTime::Kind::Utc
 //! 
 //!
 //! @section ECInstancesPropertyIndex Property Index

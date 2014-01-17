@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandardCustomAttributeHelper.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,7 +92,7 @@ public:
     ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
     
     //! Gets a DateTimeInfo object with the default values used by ECObjects.
-    //! @remarks The default values are DateTime::DATETIMEKIND_Unspecified and DateTime::DATETIMECOMPONENT_DateTime.
+    //! @remarks The default values are DateTime::Kind::Unspecified and DateTime::Component::DateAndTime.
     //! @return Default DateTime::Info
     ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
 

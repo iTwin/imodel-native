@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -299,7 +299,7 @@ BentleyStatus ECValue::DateTimeInfo::Set (DateTimeCR dateTime)
     //No support for local DateTimes (yet?) as client might expect this to do time zone
     //conversions - which we want the client / application side to do as it is nearly
     //impossible to do time zone conversions right in a generic and portable way.
-    PRECONDITION (dateTime.GetInfo ().GetKind () != DateTime::DATETIMEKIND_Local, ERROR);
+    PRECONDITION (dateTime.GetInfo ().GetKind () != DateTime::Kind::Local, ERROR);
 
     Int64 ceTicks = 0LL;
     BentleyStatus stat = dateTime.ToCommonEraTicks (ceTicks);
@@ -371,7 +371,7 @@ BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata
     //No support for local DateTimes (yet?) as client might expect this to do time zone
     //conversions - which we want the client / application side to do as it is nearly
     //impossible to do time zone conversions right in a generic and portable way.
-    if (metadata.GetKind () == DateTime::DATETIMEKIND_Local)
+    if (metadata.GetKind () == DateTime::Kind::Local)
         {
         LOG.error (L"DateTime kind 'Local' not supported.");
         BeAssert (false && L"DateTime kind 'Local' not supported.");
@@ -1170,7 +1170,7 @@ BentleyStatus           ECValue::SetLocalDateTimeFromUnixMillis (Int64 millis)
             {
             // Uhh...we don't actually support local DateTime values? Yet we produce them? See assertion in ECValue::SetDateTime()
             // So convert the value back to "unspecified" DateTime.
-            local = DateTime (DateTime::DATETIMEKIND_Unspecified, local.GetYear(), local.GetMonth(), local.GetDay(), local.GetHour(), local.GetMinute(), local.GetSecond(), local.GetHectoNanosecond());
+            local = DateTime (DateTime::Kind::Unspecified, local.GetYear(), local.GetMonth(), local.GetDay(), local.GetHour(), local.GetMinute(), local.GetSecond(), local.GetHectoNanosecond());
             }
 
         return SetDateTime (local);

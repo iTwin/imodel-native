@@ -2,7 +2,7 @@
 |
 |     $Source: tests/scenario/ValueTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -57,7 +57,7 @@ TEST_F(ValueTests, DISABLED_IGeometrySetGet)
 TEST_F(ValueTests, ECValueToString)
     {
     const byte binary[] = {0x00, 0x01, 0x02, 0x03};
-    DateTime dateTime = DateTime(DateTime::DATETIMEKIND_Utc, 2013, 2, 14, 9, 58, 17, 4560000);
+    DateTime dateTime = DateTime(DateTime::Kind::Utc, 2013, 2, 14, 9, 58, 17, 4560000);
     DPoint2d point2d = {123.456, 456.789};
     DPoint3d point3d = {1.2, -3.4, 5.6};
     WChar *unichar = L"TestingTesting\x017D\x06C6\x0F3D\x132B\x25E7\x277C\x28BE";
@@ -132,7 +132,7 @@ TEST_F(ValueTests, DISABLED_ValueReadOnly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ValueTests, DateTimeConversions)
     {
-    DateTime dateTime = DateTime(DateTime::DATETIMEKIND_Utc, 2013, 2, 14, 9, 58, 17, 4560000);
+    DateTime dateTime = DateTime(DateTime::Kind::Utc, 2013, 2, 14, 9, 58, 17, 4560000);
     ECValue value = ECValue(dateTime);
     
     EXPECT_TRUE (value.IsDateTime());
