@@ -8,8 +8,6 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-#ifdef WIP_DATE_TIME_UNIT_TESTS
-
 using namespace Bentley::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
@@ -584,7 +582,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (SUCCESS, stat);
     
     DateTime actualDate = v.GetDateTime ();
-    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
 
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -596,7 +594,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
-    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ ((int)DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
 
     //test 2: Original date is Unspecified
@@ -609,7 +607,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (SUCCESS, stat);
 
     actualDate = v.GetDateTime ();
-    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, false);
 
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -621,7 +619,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
-    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, false);
 
 
@@ -635,7 +633,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (SUCCESS, stat);
 
     actualDate = v.GetDateTime ();
-    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
 
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -647,7 +645,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
-    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ ((int) DateTime::Kind::Unspecified, (int) actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
     }
 
@@ -859,5 +857,3 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
-
-#endif
