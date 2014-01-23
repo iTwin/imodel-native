@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auiitem.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -114,6 +114,7 @@ struct  IAUIDataContext
 
 /*__PUBLISH_SECTION_END__*/
 
+#if defined (REMOVED_FOR_BOOST)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -129,6 +130,7 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
         
         virtual ECInstanceIterableCP    GetInstanceIterable () const override{return &m_data;}
     };
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
@@ -170,6 +172,7 @@ struct  ECGroupingNodeDataContext : public IAUIDataContext
         virtual WString     GetMoniker () const override { return m_nodeMoniker; }
     };
 
+#if defined (REMOVED_FOR_BOOST)
 /*---------------------------------------------------------------------------------**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
 * @bsiclass                                    Abeesh.Basheer                  04/2012
@@ -191,6 +194,7 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
         virtual ECInstanceIterableCP    GetInstanceIterable () const { return &m_data; }
         virtual void*                   GetCustomData() const {return m_customData;}
     };
+#endif
 
 /*__PUBLISH_SECTION_START__*/
 END_BENTLEY_ECOBJECT_NAMESPACE

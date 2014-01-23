@@ -2,13 +2,14 @@
 |
 |     $Source: src/ecinstanceiterable.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <ECObjects/ECObjectsAPI.h>
 USING_NAMESPACE_EC
 
+#if defined (REMOVED_FOR_BOOST)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -47,3 +48,6 @@ bool            ECInstanceIterable::IsNull () const
     {
     return m_collectionPtr.IsNull();
     }
+
+
+#endif

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,8 +17,8 @@
     #pragma  warning(disable:4265)
 #endif // defined (_MSC_VER)
 
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/shared_ptr.hpp>
+//#include <boost/iterator/transform_iterator.hpp>
+//#include <boost/shared_ptr.hpp>
 
 #if defined (_MSC_VER)
     #pragma  warning(pop)
@@ -26,6 +26,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+#if defined (REMOVED_FOR_BOOST)
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -246,6 +248,7 @@ struct ECInstanceIterable
         ECOBJECTS_EXPORT bool IsNull () const; //!< returns whether the collection is Null
     };
 
+#endif
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /** @endcond */

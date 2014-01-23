@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auipresentationmgr.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -318,12 +318,14 @@ IAUIDataContextCP ECPresentationManager::GetSelection (void const* eventHub, boo
             if (NULL == dataContext)
                 continue;
 
+#if defined (REMOVED_FOR_BOOST)
             ECInstanceIterableCP iterable = dataContext->GetInstanceIterable();
             if (NULL == iterable || iterable->begin() == iterable->end())
                 {
                 delete dataContext;
                 continue;
                 }
+#endif
 
             return dataContext;
             }
