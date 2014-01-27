@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,7 +27,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL), m_ecPropertyId(0)
     {
     //
     }
@@ -71,6 +71,15 @@ ECClassCR ECProperty::GetClass () const
 WStringCR ECProperty::GetName () const
     {
     return m_validatedName.GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyId ECProperty::GetId () const
+    {
+    BeAssert (0 != m_ecPropertyId);
+    return m_ecPropertyId;
     }
 
 /*---------------------------------------------------------------------------------**//**
