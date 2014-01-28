@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDiff.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -289,8 +289,9 @@ struct ECDiffValueHelper
     ECOBJECTS_EXPORT static bool TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, WStringCR primtiveTypeValue);
 
     //! Attempt to parse a classkey string into schemaName and className
-    //! @param[out] schema name 
-    //! @param[out] class name. 
+    //! @param[out] schemaName the parsed schema name
+    //! @param[out] className the parsed class name
+    //! @param[in] classKey the input class key
     //! @return if successfully it will return true.
     ECOBJECTS_EXPORT static bool TryParseClassKey(WStringR schemaName, WStringR className, WStringCR classKey);
 
