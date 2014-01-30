@@ -159,7 +159,7 @@ struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterI
     };
 
 template <typename T_Instance, typename T_ReturnType = T_Instance>
-struct ECInstancePVector : public IInstanceCollectionAdapter<T_ReturnType* const>
+struct ECInstancePVector : public IInstanceCollectionAdapterEx<T_ReturnType* const>
     {
     bvector<RefCountedPtr<T_Instance> > m_vector;
     
