@@ -8,7 +8,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley/VirtualCollectionIterator.h>
+#include <ECObjects/VirtualCollectionIterator.h>
 #include <Bentley/DateTime.h>
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
@@ -32,10 +32,10 @@ private:
         {
         ArrayKind       m_arrayKind;
         PrimitiveType   m_elementPrimitiveType;
-        };    
+        };
     bool                m_isFixedCount;
     UInt32              m_count;
-            
+
 public:
     //! Initialize the array as a struct array with the given number of entries
     //! @param[in] count        How many elements the array (initially) holds
@@ -71,10 +71,12 @@ public:
 //=======================================================================================
 struct ECValue
     {
+//__PUBLISH_SECTION_END__
 public:
     //! Performs a shallow copy
     void ShallowCopy (ECValueCR v);
-private:        
+//__PUBLISH_SECTION_START__
+private:
     union
         {
         ValueKind       m_valueKind;
@@ -88,7 +90,7 @@ private:
     BentleyStatus       SetBinaryInternal (const byte * data, size_t size, bool holdADuplicate = false);
     bool                ConvertToPrimitiveFromString (PrimitiveType primitiveType);
 
-protected:    
+//protected:
     typedef bvector<ECValue>  ValuesVector;
     typedef bvector<ECValue>* ValuesVectorP;
     
@@ -103,9 +105,11 @@ protected:
     struct StringInfo
         {
     private:
+//__PUBLISH_SECTION_END__
         friend void ECValue::ShallowCopy (ECValueCR);
+//__PUBLISH_SECTION_START__
 
-        Utf8CP              m_utf8;             
+        Utf8CP              m_utf8;
         Utf16CP             m_utf16;
 #if !defined (_WIN32)
         WCharCP             m_wchar;        // On Windows we use m_utf16. The presence of the extra pointer wouldn't hurt anything but want to ensure it's only used on unix.
@@ -190,17 +194,17 @@ protected:
     //! The union storing the actual data of this ECValue
     union
         {
-        bool                m_boolean;      //!< If a Boolean primitive type, holds the bool value
-        ::Int32             m_integer32;    //!< If an Int32 primitive type, holds the Int32 value
-        ::Int64             m_long64;       //!< If an Int64 primitive type, holds the Int64 value
-        double              m_double;       //!< If a double primitive type, holds the double value
+        bool                m_boolean;          //!< If a Boolean primitive type, holds the bool value
+        ::Int32             m_integer32;        //!< If an Int32 primitive type, holds the Int32 value
+        ::Int64             m_long64;           //!< If an Int64 primitive type, holds the Int64 value
+        double              m_double;           //!< If a double primitive type, holds the double value
         //! If a String primitive type, holds the StringInfo struct defining the string
         mutable StringInfo  m_stringInfo;       // mutable so that we can convert to requested encoding on demand
-        DPoint2d            m_dPoint2d;     //!< If a DPoint2d primitive, holds the DPoint2d value
-        DateTimeInfo        m_dateTimeInfo; //!< If a DateTime primitive, holds the DateTime value
-        DPoint3d            m_dPoint3d;     //!< If a DPoint3d primitive, holds the DPoint3d value
-        ArrayInfo           m_arrayInfo;    //!< If an array value, holds the ArrayInfo struct defining the array
-        BinaryInfo          m_binaryInfo;   //!< If a binary value, holds the BinaryInfo struct defining the binary data
+        DateTimeInfo        m_dateTimeInfo;     //!< If a DateTime primitive, holds the DateTime value
+        DPoint2d            m_dPoint2d;         //!< If a DPoint2d primitive, holds the DPoint2d value
+        DPoint3d            m_dPoint3d;         //!< If a DPoint3d primitive, holds the DPoint3d value
+        ArrayInfo           m_arrayInfo;        //!< If an array value, holds the ArrayInfo struct defining the array
+        BinaryInfo          m_binaryInfo;       //!< If a binary value, holds the BinaryInfo struct defining the binary data
         IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
         };
 
@@ -262,7 +266,7 @@ public:
     ECOBJECTS_EXPORT explicit ECValue (Utf16CP string, bool holdADuplicate = true);
 
     //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Binary
-    //! @Note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
+    //! @note No copy of \p blob is created. Use ECValue::SetBinary otherwise.
     //! @see ECValue::SetBinary
     //! @param[in] blob Value to initialize this ECValue from
     //! @param[in] size Size in bytes of the blob
@@ -319,7 +323,7 @@ public:
     ECOBJECTS_EXPORT ValueKind      GetKind() const; 
     //! Checks whether this ECValue is uninitialized
     ECOBJECTS_EXPORT bool           IsUninitialized () const; 
-    
+
     //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_String (regardless of encoding).
     //! @return true if the ECValue content is of type ::PRIMITIVETYPE_String. false otherwise.
     ECOBJECTS_EXPORT bool           IsString () const;
@@ -345,7 +349,8 @@ public:
     //!
     //! @return true if the ECValue content is encoded in UTF-8. false otherwise.
     ECOBJECTS_EXPORT bool           IsUtf8 () const;
-    //! Indicates whether the content of this ECValue is of type #PRIMITIVETYPE_Integer.
+
+    //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Integer.
     //! @return true if the ECValue content is of type ::PRIMITIVETYPE_Integer. false otherwise.
     ECOBJECTS_EXPORT bool           IsInteger () const;
     //! Indicates whether the content of this ECValue is of type ::PRIMITIVETYPE_Long.
@@ -389,7 +394,7 @@ public:
     //! Sets the PrimitiveType of this ECValue
     //! @param[in] primitiveElementType The type of primitive that this ECValue holds.
     ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
-    
+
 /*__PUBLISH_SECTION_END__*/
     // Attempts to convert this ECValue's primitive value to a different primitive type.
     // Currently supported conversions (motivated by ECExpressions):
@@ -463,15 +468,15 @@ public:
     //! Sets the value of this ECValue to the given double
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a double Primitive
     //! @param[in] value  The value to set
-    ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);  
-        
+    ECOBJECTS_EXPORT BentleyStatus  SetDouble (double value);
+
     //! Gets the string content of this ECValue.
-    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //! @note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
     //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
     //! @return string content
     ECOBJECTS_EXPORT WCharCP        GetString () const;
     //! Gets the string content of this ECValue in UTF-8 encoding.
-    //! @Note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
+    //! @note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
     //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
     //! @return string content in UTF-8 encoding
     ECOBJECTS_EXPORT Utf8CP         GetUtf8CP () const;
@@ -512,10 +517,10 @@ public:
 
     //! Gets the struct instance of this ECValue, if the ECValue holds a struct
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
-    //!Sets the specified struct instance in the ECValue. 
-    //! \Note ECValue doesn't create a copy of \p structInstance. Its ref-count is incremented by this method though.
-    //! @param[in] structInstance   The value to set
-    //!@return SUCCESS or ERROR
+    //! Sets the specified struct instance in the ECValue. 
+    //! @note ECValue doesn't create a copy of \p structInstance. Its ref-count is incremented by this method though.
+    //! @param[in] structInstance struct instance to set in the ECValue
+    //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
 
     //! Gets the DateTime value.
@@ -530,14 +535,14 @@ public:
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
     //! DateTimes before the Unix epoch are negative.
-    //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
+    //! @note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime as milliseconds since the beginning of the Unix epoch.
     ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
 
@@ -552,7 +557,7 @@ public:
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
     //! epoch begins at 0001-01-01 00:00:00 UTC.
-    //! @Note If the ECProperty to which this ECValue will be applied contains the %DateTimeInfo custom attribute,
+    //! @note If the ECProperty to which this ECValue will be applied contains the %DateTimeInfo custom attribute,
     //! the ticks will be enriched with the metadata from the custom attribute.
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
@@ -591,7 +596,7 @@ public:
     //! For fixed primitive types, returns the number of bytes required to represent the type
     //! @param[in]  primitiveType   The type to measure
     //! @returns The sizeof the given type, if it is a fixed size primitive 
-    static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
+    static ECOBJECTS_EXPORT UInt32  GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT WString       ToString () const;
@@ -600,18 +605,18 @@ public:
     ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
     };
 
-//=======================================================================================    
+//=======================================================================================
 //! A structure used for describing the complete location of an ECValue within an ECInstance.
 //! They can be thought of as the equivalent to access strings, but generally do not require
 //! any string manipulation to create or use them.
-//! ECValueAccessors consist of a stack of locations, each of which consist of a triplet of 
-//! an ECEnabler, property index, and array index.  In cases where the array index is not 
-//! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant 
-//! is used.  
+//! ECValueAccessors consist of a stack of locations, each of which consist of a triplet of
+//! an ECEnabler, property index, and array index.  In cases where the array index is not
+//! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant
+//! is used.
 //! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
-//! @bsiclass 
-//======================================================================================= 
+//! @bsiclass
+//=======================================================================================
 struct ECValueAccessor
     {
 public:
@@ -636,10 +641,10 @@ public:
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
-        ECEnablerCP             GetEnabler() const          { return m_enabler; }
-        int                     GetPropertyIndex() const    { return m_propertyIndex; }
-        int                     GetArrayIndex() const       { return m_arrayIndex; }
-        ECPropertyCP            GetECProperty() const;
+        ECOBJECTS_EXPORT ECPropertyCP            GetECProperty() const;
+        ECOBJECTS_EXPORT ECEnablerCP             GetEnabler() const;
+        ECOBJECTS_EXPORT int                     GetPropertyIndex() const;
+        ECOBJECTS_EXPORT int                     GetArrayIndex() const;
         };
 
     typedef bvector<Location> LocationVector;
@@ -662,16 +667,16 @@ public:
     //! @param[in]      instance         The instance that the accessor is representative of.
     //! @param[in]      newPropertyIndex The property index of the ECProperty.
     //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
-    ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance, 
-                                      int newPropertyIndex, 
+    ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance,
+                                      int newPropertyIndex,
                                       int newArrayIndex=INDEX_ROOT);
 
     //! Constructs an ECValueAccessor for a given Enabler.
     //! @param[in]      enabler          The ECEnabler that the accessor is representative of.
     //! @param[in]      newPropertyIndex The property index of the ECProperty.
     //! @param[in]      newArrayIndex    The array index of the ECProperty, or INDEX_ROOT
-    ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR enabler, 
-                                      int newPropertyIndex, 
+    ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR enabler,
+                                      int newPropertyIndex,
                                       int newArrayIndex=INDEX_ROOT);
 
     //! Clone an existing ECValueAccessor. Any existing locations are clear so the resulting accessor refers to the same property.
@@ -684,7 +689,7 @@ public:
 
     ECOBJECTS_EXPORT const Location&        operator[] (UInt32 depth) const;
     ECOBJECTS_EXPORT ECEnablerCR            GetEnabler (UInt32 depth) const;
- 
+
     //! Determines whether or not the ECEnabler matches that of the accessor at the given depth.
     //! @param[in]      depth           The stack depth of the Accessor's ECEnablerPtr.
     //! @param[in]      other           The ECEnablerPtr to compare to.
@@ -698,7 +703,7 @@ public:
 public:
     ECOBJECTS_EXPORT UInt32                 GetDepth() const;
 
-    //! Gets the native-style access string for a given stack depth.  This access string does 
+    //! Gets the native-style access string for a given stack depth.  This access string does
     //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.
     //! @param[in]      depth           The stack depth of the native access string.
     //! @return         The access string.
@@ -728,15 +733,17 @@ public:
     //! @param[in]      accessor         The accessor to be copied.
     ECOBJECTS_EXPORT ECValueAccessor (ECValueAccessorCR accessor);
 
-    //! Gets the managed-style access string for this Accessor.  Includes the array indicies,
-    //! and traverses structs when necessary.  This full access string can be used with 
-    //! managed code or the InteropHelper.
-    //! @see            ECInstanceInteropHelper
-    ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
-
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
 
+    //! Gets the managed-style access string for this Accessor.  Includes the array indices,
+    //! and traverses structs when necessary.  This full access string can be used with
+    //! managed code or the InteropHelper.
+    //! @see            ECInstanceInteropHelper
+    //! @private
+    ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
+
+    //! @private
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor);
     };
 
@@ -746,11 +753,11 @@ struct ECValuesCollectionIterator;
 
 /*__PUBLISH_SECTION_START__*/
 
-//=======================================================================================  
+//=======================================================================================
 //! @ingroup ECObjectsGroup
 //! Relates an ECProperty with an ECValue. Used when iterating over the values of an ECInstance
-//! @bsiclass 
-//======================================================================================= 
+//! @bsiclass
+//=======================================================================================
 struct ECPropertyValue : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
@@ -774,16 +781,17 @@ public:
 
     ECValueAccessorR    GetValueAccessorR ();
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     ECOBJECTS_EXPORT IECInstanceCR          GetInstance () const;
 
     ECOBJECTS_EXPORT ECValueCR              GetValue () const;
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
-    
+
     //! Indicates whether the value is an array or struct
     ECOBJECTS_EXPORT bool                   HasChildValues () const;
-    
+
     //! For array and struct values, gets a virtual collection of the embedded values
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
 
@@ -791,11 +799,11 @@ public:
     ECOBJECTS_EXPORT static ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyAccessor);
     };
 
-//=======================================================================================  
+//=======================================================================================
 //! @see ECValue, ECValueAccessor, ECValuesCollection
 //! @ingroup ECObjectsGroup
-//! @bsiclass 
-//======================================================================================= 
+//! @bsiclass
+//=======================================================================================
 struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
     {
 /*__PUBLISH_SECTION_END__*/
@@ -812,6 +820,7 @@ private:
     ECPropertyValue     GetFirstPropertyValue (IECInstanceCR);
     ECPropertyValue     GetChildPropertyValue (ECPropertyValueCR parentPropertyValue);
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 
 public:
@@ -820,10 +829,10 @@ public:
     ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
     };
 
-//=======================================================================================    
+//=======================================================================================
 //! @ingroup ECObjectsGroup
-//! @bsiclass 
-//======================================================================================= 
+//! @bsiclass
+//=======================================================================================
 struct ECValuesCollection : RefCountedBase
     {
 public:
@@ -839,7 +848,9 @@ private:
     ECValuesCollection (ECPropertyValueCR parentPropValue);
 public:
     ECOBJECTS_EXPORT ECValuesCollection (IECInstanceCR);
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
+public:
     ECOBJECTS_EXPORT const_iterator begin () const;
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
@@ -850,6 +861,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//__PUBLISH_SECTION_END__
-#pragma make_public (Bentley::ECN::ECValuesCollection)
-//__PUBLISH_SECTION_START__
+//#pragma make_public (Bentley::ECN::ECValuesCollection)

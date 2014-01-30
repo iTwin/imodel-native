@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -44,22 +44,22 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
     assert (0 == supplementalSchemaMetaDataCustomAttribute.GetClass().GetName().compare(GetCustomAttributeAccessor()));
 
     ECValue propertyValue;
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaName = propertyValue.GetString();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMajorVersion = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMinorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMinorVersion = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrecedencePropertyAccessor()) && !propertyValue.IsNull())
         m_supplementalSchemaPrecedence = propertyValue.GetInteger();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
         m_supplementalSchemaPurpose = propertyValue.GetString();
 
-    if (SUCCESS == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
+    if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
         m_isUserSpecific = propertyValue.GetBoolean();
     }
 
@@ -345,10 +345,13 @@ SchemaMatchType matchType
 SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
 (
 ECSchemaR primarySchema, 
-bvector<ECSchemaP>& supplementalSchemaList
+bvector<ECSchemaP>& supplementalSchemaList,
+bool createCopyOfSupplementalCustomAttribute
 )
     {
+    m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
     StopWatch timer (L"", true);
+
     bmap<UInt32, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
     SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
@@ -590,7 +593,7 @@ WStringCP consolidatedSchemaFullName
         if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
             continue;
 
-        IECInstancePtr supplementalCustomAttribute = customAttribute->CreateCopyThroughSerialization();
+        IECInstancePtr supplementalCustomAttribute = m_createCopyOfSupplementalCustomAttribute ? customAttribute->CreateCopyThroughSerialization() : customAttribute;
         IECInstancePtr localCustomAttribute = consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass());
         IECInstancePtr consolidatedCustomAttribute;
         
@@ -602,8 +605,10 @@ WStringCP consolidatedSchemaFullName
             continue;
             }
 
-
+        if (m_createCopyOfSupplementalCustomAttribute)
             consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
+        else
+            consolidatedCustomAttribute = localCustomAttribute;
 
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
@@ -758,6 +763,7 @@ SchemaPrecedence precedence
             if (ECOBJECTS_STATUS_Success != status)
                 continue;
 
+            consolidatedECProperty->SetBaseProperty (inheritedECProperty);
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
             for(ECClassP derivedClass: consolidatedECClass->GetDerivedClasses())
@@ -767,6 +773,7 @@ SchemaPrecedence precedence
                     derivedECProperty->SetBaseProperty(consolidatedECProperty);
                 }
             }
+
         WString schemaName = supplementalECClass->GetSchema().GetFullSchemaName();
         status = MergeCustomAttributeClasses(*consolidatedECProperty, supplementalCustomAttributes, precedence, &schemaName, NULL);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)

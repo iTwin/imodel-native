@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -222,7 +222,9 @@ ECEnabler::PropertyProcessingResult ECEnabler::ProcessPrimitiveProperties (bset<
 #endif // defined (EXPERIMENTAL_TEXT_FILTER)
 
  /////////////////////////////////////////////////////////////////////////////////////////
-#pragma region IECRelationshipEnabler
+#if defined (_MSC_VER)
+    #pragma region IECRelationshipEnabler
+#endif // defined (_MSC_VER)
 /////////////////////////////////////////////////////////////////////////////////////////
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
@@ -240,7 +242,9 @@ ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() 
     return _GetRelationshipClass ();
     }
 
-#pragma endregion //IECRelationshipEnabler
+#if defined (_MSC_VER)
+    #pragma endregion //IECRelationshipEnabler
+#endif // defined (_MSC_VER)
 //
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Abeesh.Basheer                  04/2012

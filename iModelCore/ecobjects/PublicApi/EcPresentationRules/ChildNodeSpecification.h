@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@ struct ChildNodeSpecification
         bool               m_alwaysReturnsChildren;
         bool               m_hideNodesInHierarchy;
         bool               m_hideIfNoChildren;
+        bool               m_doNotSort;
         WString            m_extendedData;
         ChildNodeRuleList  m_nestedRules;
 
@@ -47,7 +48,7 @@ struct ChildNodeSpecification
 
     public:
         //! Destructor.
-        ECOBJECTS_EXPORT                              ~ChildNodeSpecification (void);
+        ECOBJECTS_EXPORT virtual                      ~ChildNodeSpecification (void);
 
         //! Reads specification from XML.
         ECOBJECTS_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
@@ -64,7 +65,7 @@ struct ChildNodeSpecification
         //! Returns true if specification always returns nodes. This allows to optimize node expand performance.
         ECOBJECTS_EXPORT bool                         GetAlwaysReturnsChildren (void) const;
 
-        //! f this property is set it will not show nodes of this specification in the hierarchy, instead it will 
+        //! If this property is set it will not show nodes of this specification in the hierarchy, instead it will 
         //! use those nodes to get children that will be actually returned.
         ECOBJECTS_EXPORT bool                         GetHideNodesInHierarchy (void) const;
 
@@ -77,6 +78,14 @@ struct ChildNodeSpecification
 
         //! Sets a string that represents extended data that will be passed to ECQuery for this particular specification.
         ECOBJECTS_EXPORT void                         SetExtendedData (WStringCR extendedData);
+
+        //! Identifies whether ECInstances sort or not returned by specification. If true, then ECInstances will be listed
+        //! in the order they were stored, or the order PersistenceProvider returns them.
+        ECOBJECTS_EXPORT bool                         GetDoNotSort (void);
+
+        //! Identifies whether ECInstances sort or not returned by specification. If true, then ECInstances will be listed
+        //! in the order they were stored, or the order PersistenceProvider returns them.
+        ECOBJECTS_EXPORT void                         SetDoNotSort (bool doNotSort);
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
         ECOBJECTS_EXPORT ChildNodeRuleList&           GetNestedRules (void);

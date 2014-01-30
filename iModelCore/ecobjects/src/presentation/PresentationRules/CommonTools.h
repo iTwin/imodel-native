@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CommonTools.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ public:
     template<typename T>
     static void                        FreePresentationRules (T& set)
         {
-        for (T::const_iterator iter = set.begin (); iter != set.end (); ++iter)
+        for (typename T::const_iterator iter = set.begin (); iter != set.end (); ++iter)
             delete *iter;
         set.clear ();
         }
@@ -54,7 +54,7 @@ public:
 
     //! Load rules from parent XmlNode and adds to collection
     template<typename RuleType, typename RuleCollectionType>
-    static void                        LoadRulesFromXmlNode (BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char* ruleXmlElementName)
+    static void                        LoadRulesFromXmlNode (BeXmlNodeP xmlNode, RuleCollectionType& rulesCollection, char const* ruleXmlElementName)
         {
         BeXmlDom::IterableNodeSet ruleNodes;
         xmlNode->SelectChildNodes (ruleNodes, ruleXmlElementName);

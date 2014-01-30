@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
@@ -27,7 +27,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass)
     :
-    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL)
+    m_class(ecClass), m_readOnly(false), m_baseProperty(NULL), m_forSupplementation(false), m_cachedTypeAdapter(NULL), m_ecPropertyId(0)
     {
     //
     }
@@ -71,6 +71,15 @@ ECClassCR ECProperty::GetClass () const
 WStringCR ECProperty::GetName () const
     {
     return m_validatedName.GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyId ECProperty::GetId () const
+    {
+    BeAssert (0 != m_ecPropertyId);
+    return m_ecPropertyId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -653,7 +662,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())  
 
-    if (SCHEMA_READ_STATUS_FailedToParseXml == setterStatus)
+    if (ECOBJECTS_STATUS_Success != setterStatus)
         {
         LOG.warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_READ_STATUS_Success;
@@ -843,7 +852,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (UInt32 minOccurs)
 ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
     {    
     UInt32 iMinOccurs;
-    int count = swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
+    int count = BE_STRING_UTILITIES_SWSCANF (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
         LOG.errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
@@ -883,7 +892,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
     {    
     UInt32 iMaxOccurs;
-    int count = swscanf (maxOccurs.c_str(), L"%u", &iMaxOccurs);
+    int count = BE_STRING_UTILITIES_SWSCANF (maxOccurs.c_str(), L"%u", &iMaxOccurs);
     if (count != 1)
         {
         if (0 == wcscmp (maxOccurs.c_str(), ECXML_UNBOUNDED))

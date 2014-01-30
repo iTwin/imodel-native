@@ -44,7 +44,7 @@ protected:
 
 public:
     //! Destructor.
-    ECOBJECTS_EXPORT                                      ~ContentSpecification (void);
+    ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);
 
     //! Reads specification from XML.
     ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
@@ -64,4 +64,5 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-#pragma make_public (Bentley::ECN::ContentSpecification)
+//__PUBLISH_SECTION_END__
+//#pragma make_public (Bentley::ECN::ContentSpecification)

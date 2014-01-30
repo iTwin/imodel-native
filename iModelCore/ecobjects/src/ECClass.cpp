@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,7 +27,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true)
+    m_schema(schema), m_isStruct(false), m_isCustomAttributeClass(false), m_isDomainClass(true), m_ecClassId(0)
     {
     //
     };
@@ -56,6 +56,17 @@ ECClass::~ECClass ()
 WStringCR ECClass::GetName () const
     {        
     return m_validatedName.GetName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                      Affan.Khan        12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassId ECClass::GetId () const
+    {
+
+    BeAssert (0 != m_ecClassId);
+    return m_ecClassId;
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -921,7 +932,10 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
             if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+                {
+                LOG.errorv (L"Attempt to override a %ls property of class %ls with a different type property in derived class %ls", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
                 return status;
+                }        
             }
         }
 
@@ -1135,6 +1149,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {            
+	bool isSchemaSupplemental = WString::npos != GetSchema().GetName().find(L"_Supplemental_");
     // Get the BaseClass child nodes.
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
@@ -1146,7 +1161,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SCHEMA_READ_STATUS_Success != status)
                 return status;
             }
-        else if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
+        else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode);
             if (SCHEMA_READ_STATUS_Success != status)
@@ -1385,6 +1400,43 @@ size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
         }
 
     return nProperties;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetInstanceLabelProperty() const
+    {
+    /*
+     * Note: The ugly case by case comparisions is just a way to make the instance 
+     * labels from legacy ECschemas (that didn't follow consistent property naming)
+     * acceptable.
+     */
+
+    ECPropertyP instanceLabelProperty = NULL;
+    IECInstancePtr caInstance = this->GetCustomAttribute(L"InstanceLabelSpecification");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+            {
+            WCharCP propertyName = value.GetString();
+            instanceLabelProperty = this->GetPropertyP (propertyName);
+            if (NULL != instanceLabelProperty)
+                return instanceLabelProperty;
+            }
+        }
+
+    WString instanceLabelPropertyNames[6] = 
+        {L"DisplayLabel", L"DISPLAYLABEL", L"displaylabel", L"Name", L"NAME", L"name"};
+    FOR_EACH (WStringCR propName, instanceLabelPropertyNames)
+        {
+        instanceLabelProperty = this->GetPropertyP (propName.c_str());
+        if (NULL != instanceLabelProperty)
+            return instanceLabelProperty;
+        }
+
+    return NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1944,7 +1996,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);
@@ -2071,7 +2123,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
         if (end == ECRelationshipEnd_Source)
             propertyName = L"OrderIdSourceProperty";
 
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             {
             propertyName = value.GetString ();
             return ECOBJECTS_STATUS_Success;

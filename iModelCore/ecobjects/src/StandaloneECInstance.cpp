@@ -1,4 +1,4 @@
-P*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
@@ -110,9 +110,9 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::SetData (const byte * data, UInt32 size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+void MemoryECInstanceBase::SetData (const byte * data, UInt32 size, bool freeExisitingDataAndCreateCopyOfNewData) //The MemoryECInstanceBase will take ownership of the memory
     {
-    if (freeExisitingData)
+    if (freeExisitingDataAndCreateCopyOfNewData)
         {
         if (m_data)
             {
@@ -1124,7 +1124,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (UInt32 propIdx)
     {
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     UInt32 arrayCount = GetReservedArrayCount (*pPropertyLayout);

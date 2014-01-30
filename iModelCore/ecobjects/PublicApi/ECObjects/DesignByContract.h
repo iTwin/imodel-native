@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/DesignByContract.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
+/// @cond BENTLEY_SDK_Internal
 #include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
@@ -20,11 +21,11 @@ private:
     static int s_globalIgnoreCount;
 
 public:
+/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static bool AreAssertsDisabled (void);
     ECOBJECTS_EXPORT AssertDisabler(void);
     ECOBJECTS_EXPORT ~AssertDisabler(void);
 };
-/*__PUBLISH_SECTION_START__*/
 
     //! Utilize this macro to disable asserts that may occur within a codeblock.
     //! The intent is that this macro will only ever be used by ATPs when testing failure scenarios.  No delivered code should ever utilize this macro.
@@ -109,7 +110,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define PRECONDITION(_Expression, _ErrorStatus)             \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-        L"The following method precondition check has failed:\n  precondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", \
+        L"Precondition failed: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", \
         #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
 
@@ -134,7 +135,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define POSTCONDITION(_Expression, _ErrorStatus)            \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-            L"The following method postcondition check has failed:\n  postcondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n",   \
+            L"Postcondition failed: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", \
             #_Expression, __FUNCTION__, __FILE__, __LINE__)
 
 
@@ -152,7 +153,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_CONDITION(_Expression)     ( (_Expression) \
-    || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LOG_ASSERT_FAILURE(L"Expected condition failed: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
 
 //! An inverted form of EXPECTED_CONDITION if you prefer checking for the positive of an expression when writing your code.
@@ -181,7 +182,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_DATA_CONDITION(_Expression)     ( (_Expression) \
-    || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LOG_ASSERT_FAILURE(L"Expected condition failed: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
     || (DATA_ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
 
 //! An inverted form of EXPECTED_DATA_CONDITION if you prefer checking for the positive of an expression when writing your code.
@@ -204,3 +205,6 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
 #endif
 
+/*__PUBLISH_SECTION_START__*/
+
+/// @endcond BENTLEY_SDK_Internal

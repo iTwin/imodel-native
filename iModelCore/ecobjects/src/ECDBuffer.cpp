@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -50,7 +50,7 @@ static int      randomValue  ()
     // includes low, excludes high.
     int     randomNum = rand();
     int     range = high - low;
-    return  low + (int) ( (double) range * (double) randomNum / (double) (RAND_MAX + 1));
+    return  low + (int) ( (double) range * (double) randomNum / ((double)RAND_MAX + 1));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,16 +142,21 @@ static inline UInt32    CalculateFixedArrayPropertySize (UInt32 fixedCount, Prim
            
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  PropertyLayout inline methods
+//
+//  NONPORT_WIP - Removed inline from the methods below because with GCC it is not valid to call methods
+//                that have been inlined in one CPP file from another CPP file.  This needs to change to a 
+//                portable way of inlining.
+//
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WCharCP                     PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
-UInt32                      PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
-UInt32                      PropertyLayout::GetOffset() const           { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
-UInt32                      PropertyLayout::GetNullflagsOffset() const  { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
-NullflagsBitmask            PropertyLayout::GetNullflagsBitmask() const { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
-ECTypeDescriptor            PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
-UInt32                      PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
-UInt32                      PropertyLayout::GetModifierData() const     { return m_modifierData; }    
-bool                        PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
+WCharCP             PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
+UInt32              PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
+UInt32              PropertyLayout::GetOffset() const           { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
+UInt32              PropertyLayout::GetNullflagsOffset() const  { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
+NullflagsBitmask    PropertyLayout::GetNullflagsBitmask() const { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsBitmask; }
+ECTypeDescriptor    PropertyLayout::GetTypeDescriptor() const   { return m_typeDescriptor; }
+UInt32              PropertyLayout::GetModifierFlags() const    { return m_modifierFlags; }
+UInt32              PropertyLayout::GetModifierData() const     { return m_modifierData; }    
+bool                PropertyLayout::IsReadOnlyProperty () const {return PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly == (m_modifierFlags & PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  09/2011
@@ -418,7 +423,7 @@ WString        ClassLayout::LogicalStructureToString (UInt32 parentStuctIndex, U
         PropertyLayoutCP    propertyLayout = NULL;
         ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propIndex);
 
-        if (SUCCESS != status || NULL == propertyLayout)
+        if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
             {
             oss += L"  *** ERROR finding PropertyLayout ***\n";
             continue;
@@ -643,7 +648,7 @@ UInt32          ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
     {
     // The access string will contain a '.' only if the property is inside an embedded struct.
     UInt32          parentStructIndex = 0;
-    WCharCP  pLastDot = wcsrchr (accessString, L'.');
+    WCharCP  pLastDot = ::wcsrchr (accessString, L'.');
 
     if (NULL != pLastDot)
         {
@@ -1049,6 +1054,8 @@ void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyL
 ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const
     {
     // this vector is always sorted, so we can do binary search
+    // Explicitly implemented binary search (instead of using stl::lower_bound) in order to save one call to wcscmp in the case where we have
+    // a match. Also experiments showed that the stl algorithm was not being inlined, and this is a very performance critical part of our code
     IndicesByAccessString::const_iterator begin   = m_indicesByAccessString.begin(),
                                     end           = m_indicesByAccessString.end(),
                                     it;
@@ -1085,6 +1092,7 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
     else
         return (it != end && 0 == wcscmp (accessString, it->first)) ? it : end;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
@@ -1209,10 +1217,7 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (UInt32& propertyIndex, WCharC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const
     {
-    BeAssert (propertyIndex < m_propertyLayouts.size());
-    if (propertyIndex >= m_propertyLayouts.size())
-        return ECOBJECTS_STATUS_IndexOutOfRange; 
-        
+    PRECONDITION (propertyIndex < m_propertyLayouts.size(), ECOBJECTS_STATUS_IndexOutOfRange);
     propertyLayout = m_propertyLayouts[propertyIndex];
     return ECOBJECTS_STATUS_Success;
     }
@@ -1553,6 +1558,9 @@ ArrayCount      ECDBuffer::GetAllocatedArrayCount (PropertyLayoutCR propertyLayo
         if ((arrayOffset == 0) || (*pNextOffset == 0) || (arrayOffset == *pNextOffset))
             return 0;
 
+        if (arrayOffset >= _GetBytesAllocated())
+            return 0; //NEEDSWORK: A temporary hack until we can find the real problem
+
         byte const * pCount = GetPropertyData() + arrayOffset;
         return *((ArrayCount*)pCount);
         }
@@ -1804,8 +1812,9 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
 
     // since we can not use memmove on XAttribute memory, copy the memory move it around and then use _ModifyData
     // copy the entire instance into allocated memory
-    ScopedArray<byte> scoped((size_t)bytesAllocated, currentData);
+    ScopedArray<byte> scoped((size_t)bytesAllocated);
     byte*   _data = scoped.GetData();
+    memcpy (_data, currentData, (size_t)bytesAllocated);
 
     byte*   propertyData = _data + GetOffsetToPropertyData();
 
@@ -1837,8 +1846,9 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         bytesToMove = bytesAllocated - endIndexValueOffset;
         }
 
-    if (bytesToMove < 0)
-        return ECOBJECTS_STATUS_Error;
+    // WIP: bytesToMove is UInt32, and therefore will always be positive.
+    // if (bytesToMove < 0)
+    //     return ECOBJECTS_STATUS_Error;
 
     // remove the array values - bytesToMove may be equal to zero if allocated size has no padding and we are deleting the last member of the array.
     if (bytesToMove > 0)
@@ -2033,7 +2043,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsAt (UInt32 propIdx, UInt32 removeI
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     return RemoveArrayElements (*pPropertyLayout, removeIndex, removeCount);
@@ -2047,7 +2057,7 @@ ECObjectsStatus ECDBuffer::InsertNullArrayElementsAt (UInt32 propIdx, UInt32 ins
     ClassLayoutCR classLayout = GetClassLayout();
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
             
     PropertyLayoutCR propertyLayout = *pPropertyLayout;
@@ -2314,7 +2324,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         if (prop.HasChildValues())
             {
             // Stupid PropertyValueMatchesNoChange return value is stupid.
-            if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues())))
+            if (ECOBJECTS_STATUS_Success != (status = duplicateProperties (target, *prop.GetChildValues())))
                 if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
 
@@ -2323,7 +2333,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         else 
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
-            if (NULL != ecProp && ecProp->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+            if (NULL != ecProp && ecProp->GetIsPrimitive() && ECOBJECTS_STATUS_Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
                 if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
             }
@@ -2650,7 +2660,10 @@ ECObjectsStatus       ECDBuffer::GetIsNullValueFromMemory (bool& isNull, UInt32 
     if (useIndex)
         {
         if (!propertyLayout->GetTypeDescriptor().IsArray())
-            return ECOBJECTS_STATUS_PropertyNotFound;    
+            {
+            BeAssert(false && "You cannot use an array index if the property is not an array!");
+            return ECOBJECTS_STATUS_PropertyNotFound;
+            }
 
         if (index >= GetReservedArrayCount (*propertyLayout))
             return ECOBJECTS_STATUS_IndexOutOfRange;
@@ -2697,17 +2710,17 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         {
         ECObjectsStatus calcStatus = _UpdateCalculatedPropertyDependents (v, propertyLayout);
         switch (calcStatus)
-            {
-        case ECOBJECTS_STATUS_Success:
-            break;
-        case ECOBJECTS_STATUS_UnableToSetReadOnlyProperty:
-            // It is okay to set the read-only value once
-            if (isOriginalValueNull)
+            {//needswork: if it failed to parse the value with a regexp, maybe we still allow them to set it... just not propagate to dependents?
+            case ECOBJECTS_STATUS_Success:
                 break;
-            else
+            case ECOBJECTS_STATUS_UnableToSetReadOnlyProperty:
+                // It is okay to set the read-only value once
+                if (isOriginalValueNull)
+                    break;
+                else
+                    return calcStatus;
+            default:
                 return calcStatus;
-        default:
-            return calcStatus;
             }
         }
 
@@ -2725,9 +2738,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         } 
 
     if (isInUninitializedFixedCountArray)
-        {
         ArrayResizer::CreateNullArrayElementsAt (GetClassLayout(), propertyLayout, *this, 0, GetReservedArrayCount (propertyLayout));
-        }   
 
     UInt32 offset = GetOffsetOfPropertyValue (propertyLayout, useIndex, index);
 
@@ -2789,7 +2800,7 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             {
             if (!v.IsString ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
-
+            
             void const* value;
             UInt32 bytesNeeded;
             if (StringEncoding_Utf16 == GetStringEncoding())
@@ -2831,13 +2842,13 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
             if (!v.IsBinary ())
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
-            UInt32 currentSize;
+            UInt32 currentSize = 0;
             if (useIndex)
                 currentSize = GetPropertyValueSize (propertyLayout, index);
             else
                 currentSize = GetPropertyValueSize (propertyLayout);
 
-            size_t size;
+            size_t size = 0;
             byte const * data = v.GetBinary (size);
             size_t totalSize = size + sizeof(UInt32);
             UInt32 propertySize = (UInt32)size;
@@ -3110,11 +3121,11 @@ ECObjectsStatus ECDBuffer::MoveData (byte* to, byte const* from, size_t len)
         }
     }
 
-#if defined(_WIN32)
-static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf16;
-#else
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+// In Graphite strings should always be stored in UTF-8
 static ECDBuffer::StringEncoding s_preferredEncoding = ECDBuffer::StringEncoding_Utf8;
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
@@ -3254,7 +3265,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
                         WString structString = v.GetStruct()->ToString(structIndent.c_str());
                         oss += structString;
 
-                        appendFormattedString (oss, L"%ls=================== END Struct Instance ===========================\n", structIndent);
+                        appendFormattedString (oss, L"%ls=================== END Struct Instance ===========================\n", structIndent.c_str());
                         }         
                     }
                 }

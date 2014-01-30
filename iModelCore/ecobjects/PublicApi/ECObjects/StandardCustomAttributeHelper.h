@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandardCustomAttributeHelper.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,9 +44,28 @@ public:
 
     //! Initializes a new instance of the DateTimeInfo type.
     ECOBJECTS_EXPORT DateTimeInfo ();
+    
+    //! Initializes a new instance of the DateTimeInfo type.
+    //! @param[in] metadata object from which the DateTimeInfo will be initialized.
+    ECOBJECTS_EXPORT explicit DateTimeInfo (DateTime::Info const& metadata);
+    
     //__PUBLISH_SECTION_END__
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
     //__PUBLISH_SECTION_START__
+
+    //! Compares this DateTimeInfo to @p rhs.
+    //! @param [in] rhs DateTimeInfo to compare this against
+    //! @return true if both objects are equal, false otherwise
+    ECOBJECTS_EXPORT bool operator== (DateTimeInfo const& rhs) const;
+
+    //! Compares this DateTimeInfo to @p rhs for inequality.
+    //! @param [in] rhs DateTimeInfo to compare this against
+    //! @return true if the objects are not equal, false otherwise
+    ECOBJECTS_EXPORT bool operator!= (DateTimeInfo const& rhs) const;
+
+    //! Indicates whether the DateTime::Kind and DateTime::Component are both unset or not.
+    //! @return true, if both DateTime::Kind and DateTime::Component are unset. false, if at least one of the two are not unset.
+    ECOBJECTS_EXPORT bool IsNull () const;
 
     //! Indicates whether the DateTime::Kind is unset or not.
     //! @return true, if the DateTime::Kind is unset. false, otherwise
@@ -73,7 +92,7 @@ public:
     ECOBJECTS_EXPORT DateTime::Info GetInfo (bool useDefaultIfUnset) const; 
     
     //! Gets a DateTimeInfo object with the default values used by ECObjects.
-    //! @remarks The default values are DateTime::DATETIMEKIND_Unspecified and DateTime::DATETIMECOMPONENT_DateTime.
+    //! @remarks The default values are DateTime::Kind::Unspecified and DateTime::Component::DateAndTime.
     //! @return Default DateTime::Info
     ECOBJECTS_EXPORT static DateTime::Info const& GetDefault (); 
 
@@ -108,14 +127,16 @@ private:
     //__PUBLISH_SECTION_START__
 
 public:
-    //! Retrieves the content of the @b %DateTimeInfo custom attribute from the specified date time ECProperty.
-    //! @remarks The @b %DateTimeInfo custom attribute is defined in the standard schema @b Bentley_Standard_CustomAttributes.
-    //!          See also DateTimeInfo.
-    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute
+    //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
+    //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
+    //! @b Bentley_Standard_CustomAttributes) on a date time ECProperty.
+    //! See also DateTimeInfo.
+    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
+    //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return true if @p dateTimeProperty contains the %DateTimeInfo custom attribute, false if @p dateTimeProperty 
-    //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
-    ECOBJECTS_EXPORT static bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
+    //! @return ::ECOBJECTS_STATUS_Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
+    //! is not of type ::PRIMITIVETYPE_DateTime. 
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Indicates whether the specified schema is a @b system schema (in contrast to a user-supplied schema) by
     //! checking whether the @b %SystemSchema custom attribute from the standard schema @b Bentley_Standard_CustomAttributes
@@ -154,5 +175,3 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-//__PUBLISH_SECTION_END__

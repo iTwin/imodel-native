@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECRelationshipInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -209,7 +209,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
 
     for (ECClassCP source: GetRelationshipClass().GetSource().GetClasses())
         {
-        if (instance->GetClass().Is(source))
+        if (source->GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(source))
             {
             m_source = instance;
             return;
@@ -263,7 +263,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
 
     for (ECClassCP target: this->GetRelationshipClass().GetTarget().GetClasses())
         {
-        if (instance->GetClass().Is(target))
+        if (target->GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(target))
             {
             m_target = instance;
             return;

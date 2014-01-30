@@ -13,9 +13,11 @@
 // It supports applying UnitSpecifications and DisplayUnitSpecifications to ECProperties.
 
 #include <ECObjects/ECObjects.h>
+#include <ECUnits/Units.h>
 
 EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
+EC_TYPEDEFS (ECUnitsClassLocater);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -26,7 +28,34 @@ enum UnitConversionType
     UnitConversionType_Factor,
     UnitConversionType_FactorAndOffset
     };
+    
+typedef RefCountedPtr<ECUnitsClassLocater> ECUnitsClassLocaterPtr;
 
+/*---------------------------------------------------------------------------------**//**
+* Because Graphite loads ECClasses from schemas dynamically, ECSchemas are not pre-
+* processed for units info and units info is not cached.
+* @bsistruct                                                    Paul.Connelly   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECUnitsClassLocater : RefCounted<IECClassLocater>
+    {
+private:
+    ECSchemaReadContextPtr   m_context;
+    ECSchemaPtr              m_unitsSchema, m_koqSchema;
+    static ECUnitsClassLocaterPtr s_unitsECClassLocaterPtr;
+
+    bool Initialize();
+
+    ECClassCP _LocateClass (WCharCP schemaName, WCharCP className);
+
+protected:
+    ECUnitsClassLocater () {}
+    ~ECUnitsClassLocater() {}
+
+public:
+    static ECUnitsClassLocaterPtr Create();
+    ECOBJECTS_EXPORT static bool LoadUnitsSchemas (ECSchemaReadContextR context);
+    };
+    
 /*---------------------------------------------------------------------------------**//**
 * Every Unit has a UnitConverter capable of converting values to and from its base Unit.
 * @bsistruct                                                    Paul.Connelly   10/12
@@ -68,15 +97,18 @@ public:
     bool                    IsCompatible (UnitCR other) const   { return m_baseUnitName.Equals (other.m_baseUnitName); }
 
     ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitCR target) const;
-
+    
     ECOBJECTS_EXPORT static bool        GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop);
-    ECOBJECTS_EXPORT static bool        GetDisplayUnitForECProperty (UnitR unit, WStringR displayFormat, ECPropertyCR ecprop);
+    ECOBJECTS_EXPORT static bool        GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater);
+    ECOBJECTS_EXPORT static bool        GetDisplayUnitForECProperty (UnitR unit, WStringR displayFormat, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater);
 
     // Formats the ECValue according to UnitSpecification custom attribute on the ECProperty.
     // If instance is non-null and an IECTypeAdapter can be located to perform the formatting, the IECTypeAdapter::ConvertToString() method will be used
     // The numeric value will be formatted according to the DisplayFormatString property of any DisplayUnitSpecification custom attribute on the ECProperty
     // Returns false if no UnitSpecification present or if an error occurs
+    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance, IECClassLocaterR unitsECClassLocater);
     ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance);
+
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -47,6 +47,9 @@ protected:
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
 
 public:
+    //! Virtual destructor.
+    virtual ~PresentationKey(){}
+    
     //! Reads PresentationRule from xml node.
     ECOBJECTS_EXPORT bool                   ReadXml (BeXmlNodeP xmlNode);
 

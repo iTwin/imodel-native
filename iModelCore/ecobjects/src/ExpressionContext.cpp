@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -634,6 +634,32 @@ ExpressionStatus MethodReferenceStandard::_InvokeValueListMethod (EvaluationResu
     return NULL != m_valueListMethod ? (*m_valueListMethod)(evalResult, valueList, args) : ExprStatus_InstanceMethodRequired;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodReferenceStaticWithContext::MethodReferenceStaticWithContext(ExpressionStaticMethodWithContext_t staticMethod, void*methodData)
+    : m_staticMethod(staticMethod), m_context(methodData) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodReferencePtr MethodReferenceStaticWithContext::Create(ExpressionStaticMethodWithContext_t staticMethod, void*context)
+    {
+    return new MethodReferenceStaticWithContext(staticMethod, context);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+ExpressionStatus MethodReferenceStaticWithContext::_InvokeStaticMethod (EvaluationResultR evalResult, EvaluationResultVector& arguments)
+    {
+    if (NULL == m_staticMethod)
+        return ExprStatus_StaticMethodRequired;
+
+    return (*m_staticMethod)(evalResult, m_context, arguments);
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -664,10 +690,10 @@ MethodReferencePtr MethodReferenceStandard::Create (ExpressionValueListMethod_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbol::MethodSymbol(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
+MethodSymbol::MethodSymbol(wchar_t const* name, MethodReferenceR methodReference)
     : Symbol(name)
     {
-    m_methodReference = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    m_methodReference = &methodReference;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -684,15 +710,17 @@ MethodSymbol::MethodSymbol (WCharCP name, ExpressionValueListMethod_t method)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod)
     {
-    return new MethodSymbol(name, staticMethod, instanceMethod);
+    MethodReferencePtr  ref = MethodReferenceStandard::Create(staticMethod, instanceMethod);
+    return new MethodSymbol(name, *ref);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-MethodSymbolPtr MethodSymbol::Create (WCharCP name, ExpressionValueListMethod_t method)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2013
+//---------------------------------------------------------------------------------------
+MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethodWithContext_t staticMethod, void*context)
     {
-    return new MethodSymbol (name, method);
+    MethodReferencePtr  ref = MethodReferenceStaticWithContext::Create(staticMethod, context);
+    return new MethodSymbol(name, *ref);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,9 +762,58 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
 BentleyStatus   SymbolExpressionContext::AddSymbol (SymbolR symbol)
     {
     //  Check for duplicates in context
-    m_symbols.push_back(SymbolPtr(&symbol));
+    if (NULL != FindCP (symbol.GetName ()))
+        return BSIERROR;
 
+    m_symbols.push_back (SymbolPtr (&symbol));
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+SymbolCP        SymbolExpressionContext::FindCP (wchar_t const* ident)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        SymbolP symbol = (*curr).get ();
+        if (0 == wcscmp (ident, symbol->GetName ()))
+            return symbol;
+        }
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbolExpressionContext::RemoveSymbol (wchar_t const* ident)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        SymbolP symbol = (*curr).get ();
+        if (0 == wcscmp (ident, symbol->GetName ()))
+            {
+            m_symbols.erase (curr);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   SymbolExpressionContext::RemoveSymbol (SymbolR symbol)
+    {
+    for (bvector<SymbolPtr>::iterator curr = m_symbols.begin (); curr != m_symbols.end (); curr++)
+        {
+        if ((*curr).get () == &symbol)
+            {
+            m_symbols.erase (curr);
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -899,6 +976,38 @@ ValueSymbolPtr ValueSymbol::Create (wchar_t const* name, EvaluationResultCR valu
 EvaluationResultCR ValueSymbol::GetValue() const { return m_expressionValue; }
 void ValueSymbol::SetValue (EvaluationResultCR value) { m_expressionValue = value; }
 void ValueSymbol::SetValue (ECValueCR value) { m_expressionValue = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertySymbolBase::PropertySymbolBase (wchar_t const* name)
+    : Symbol (name)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus PropertySymbolBase::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+    {
+    if (primaryList.GetNumberOfOperators() > startIndex)
+        {
+        ExpressionToken token = primaryList.GetOperation(startIndex);
+        if (ECN::TOKEN_Dot == token)
+            return ExprStatus_StructRequired;
+
+        if (ECN::TOKEN_LParen == token)
+            return ExprStatus_MethodRequired;
+
+        if (ECN::TOKEN_LeftBracket == token)
+            return ExprStatus_ArrayRequired;
+
+        return ExprStatus_UnknownError;
+        }
+
+    evalResult = _EvaluateProperty ();
+    return ExprStatus_Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12

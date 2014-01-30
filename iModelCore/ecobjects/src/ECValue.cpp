@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -10,7 +10,6 @@
 #include <Bentley/ValueFormat.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
     {
     ECVALUE_STATE_None                              = 0x00,
@@ -203,12 +202,11 @@ WCharCP ECValue::StringInfo::GetWChar (UInt8& flags)
             BeStringUtilities::Utf8ToWChar (buf, m_utf8);
         else if (NULL != m_utf16)
             BeStringUtilities::Utf16ToWChar (buf, m_utf16);
+        else
+            return NULL;
 
-        size_t size = buf.size() * sizeof(WChar) + 1;
-        m_wchar = (WCharCP)malloc (size);
-        memcpy (const_cast<WCharP>(m_wchar), &buf[0], size);
-
-        setDataOwned (flags, ECVALUE_DATA_WChar, NULL != m_wchar);
+        m_wchar = BeStringUtilities::Wcsdup (buf.c_str());
+        setDataOwned (flags, ECVALUE_DATA_WChar, true);
         }
             
     return m_wchar;
@@ -256,7 +254,7 @@ bool ECValue::StringInfo::Equals (ECValue::StringInfo const& rhs, UInt8& flags)
             return 0 == BeStringUtilities::CompareUtf16 (m_utf16, rhs.m_utf16);
 #if !defined (_WIN32)
         else if (NULL != m_wchar)
-            return 0 == BeStringutilities::CompareUtf16WChar (rhs.m_utf16, m_wchar);
+            return 0 == BeStringUtilities::CompareUtf16WChar (rhs.m_utf16, m_wchar);
 #endif
         else
             {
@@ -301,7 +299,7 @@ BentleyStatus ECValue::DateTimeInfo::Set (DateTimeCR dateTime)
     //No support for local DateTimes (yet?) as client might expect this to do time zone
     //conversions - which we want the client / application side to do as it is nearly
     //impossible to do time zone conversions right in a generic and portable way.
-    PRECONDITION (dateTime.GetInfo ().GetKind () != DateTime::DATETIMEKIND_Local, ERROR);
+    PRECONDITION (dateTime.GetInfo ().GetKind () != DateTime::Kind::Local, ERROR);
 
     Int64 ceTicks = 0LL;
     BentleyStatus stat = dateTime.ToCommonEraTicks (ceTicks);
@@ -356,6 +354,11 @@ bool ECValue::DateTimeInfo::TryGetMetadata (DateTime::Info& metadata) const
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTimeInfoCR caMetadata)
     {
+    //DateTimeInfo::IsNull indicates whether the metadata is unset or not. Only if it is not unset, store anything
+    //in the ECValue
+    if (caMetadata.IsNull ())
+        return SUCCESS;
+
     DateTime::Info metadata = caMetadata.GetInfo (true);
     return SetMetadata (metadata);
     }
@@ -368,7 +371,7 @@ BentleyStatus ECValue::DateTimeInfo::SetMetadata (DateTime::Info const& metadata
     //No support for local DateTimes (yet?) as client might expect this to do time zone
     //conversions - which we want the client / application side to do as it is nearly
     //impossible to do time zone conversions right in a generic and portable way.
-    if (metadata.GetKind () == DateTime::DATETIMEKIND_Local)
+    if (metadata.GetKind () == DateTime::Kind::Local)
         {
         LOG.error (L"DateTime kind 'Local' not supported.");
         BeAssert (false && L"DateTime kind 'Local' not supported.");
@@ -430,7 +433,6 @@ void            ECValue::SetIsReadOnly(bool isReadOnly)
     else
         m_stateFlags &= ~((UInt8)ECVALUE_STATE_IsReadOnly); 
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -886,12 +888,12 @@ ECValue::ECValue (bool value)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  02/2010
+* @bsimethod                                    Krischan.Eberle                  10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (DateTimeCR time)
+ECValue::ECValue (DateTimeCR dateTime)
     {
     ConstructUninitialized();
-    SetDateTime (time);
+    SetDateTime (dateTime);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -899,7 +901,7 @@ ECValue::ECValue (DateTimeCR time)
 * ECN::ECValue holds the original pointer. Intended only for use when initializing arrays of strings, to avoid duplicating them twice.
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::ECValue (WCharCP string, bool holdADuplicate)
+ECValue::ECValue (WCharCP string, bool holdADuplicate) //needswork: add an overload that takes utf8
     {
     ConstructUninitialized();
     SetString (string, holdADuplicate);
@@ -924,7 +926,7 @@ ECValue::ECValue (Utf16CP string, bool holdADuplicate)
     };
 
 /*---------------------------------------------------------------------------------**//**
-* The ECValue is never responsible for freeing the memory... its creator is. 
+* The ECValue constructed by this overload is not responsible for freeing the memory... its creator is. 
 * The consumer of the ECValue should make a copy of the memory.
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1168,7 +1170,7 @@ BentleyStatus           ECValue::SetLocalDateTimeFromUnixMillis (Int64 millis)
             {
             // Uhh...we don't actually support local DateTime values? Yet we produce them? See assertion in ECValue::SetDateTime()
             // So convert the value back to "unspecified" DateTime.
-            local = DateTime (DateTime::DATETIMEKIND_Unspecified, local.GetYear(), local.GetMonth(), local.GetDay(), local.GetHour(), local.GetMinute(), local.GetSecond(), local.GetHectoNanosecond());
+            local = DateTime (DateTime::Kind::Unspecified, local.GetYear(), local.GetMonth(), local.GetDay(), local.GetHour(), local.GetMinute(), local.GetSecond(), local.GetHectoNanosecond());
             }
 
         return SetDateTime (local);
@@ -1596,7 +1598,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Long:
         {
         Int64 i;
-        if (1 != swscanf (str, L"%lld", &i))
+        if (1 != BE_STRING_UTILITIES_SWSCANF (str, L"%lld", &i))
             return false;
         else if (PRIMITIVETYPE_Long == primitiveType)
             SetLong (i);
@@ -1607,7 +1609,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Double:
         {
         double d;
-        if (1 == swscanf (str, L"%lg", &d))
+        if (1 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg", &d))
             SetDouble (d);
         else
             return false;
@@ -1616,7 +1618,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Integer:
         {
         Int64 i;
-        if (1 == swscanf (str, L"%lld", &i))
+        if (1 == BE_STRING_UTILITIES_SWSCANF (str, L"%lld", &i))
             {
             if (INT_MAX >= i && INT_MIN <= i)
                 SetInteger ((Int32)i);
@@ -1630,7 +1632,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt;
-        if (2 == swscanf (str, L"%lg,%lg", &pt.x, &pt.y))
+        if (2 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg,%lg", &pt.x, &pt.y))
             SetPoint2D (pt);
         else
             return false;
@@ -1639,7 +1641,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt;
-        if (3 == swscanf (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+        if (3 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
             SetPoint3D (pt);
         else
             return false;
@@ -1672,7 +1674,7 @@ WString    ECValue::ToString () const
         {
         return L"IECInstance containing struct value";
         }
-    else if (PRIMITIVETYPE_DateTime == m_valueKind)
+    else if (PRIMITIVETYPE_DateTime == m_primitiveType)
         str = GetDateTime().ToString(); // want something more readable than the ticks
     else if (!ConvertPrimitiveToString (str))
         str = L"<error>";
@@ -1906,9 +1908,9 @@ UInt32          ECValue::GetFixedPrimitiveValueSize (PrimitiveType primitivetype
         case PRIMITIVETYPE_Boolean:
             return sizeof(bool); 
         case PRIMITIVETYPE_Point2D:
-            return 2*sizeof(double);
+            return 2 * sizeof(double);
         case PRIMITIVETYPE_Point3D:
-            return 3*sizeof(double);
+            return 3 * sizeof(double);
         case PRIMITIVETYPE_DateTime:
             return sizeof(Int64); //ticks
         default:
@@ -1975,7 +1977,7 @@ PrimitiveType   ArrayInfo::GetElementPrimitiveType() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ArrayInfo::IsPrimitiveArray() const
     {        
-    return GetKind() == ARRAYKIND_Primitive; 
+    return GetKind() == VALUEKIND_Primitive; 
     }  
 
 /*---------------------------------------------------------------------------------**//**
@@ -1983,8 +1985,15 @@ bool            ArrayInfo::IsPrimitiveArray() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ArrayInfo::IsStructArray() const
     {        
-    return GetKind() == ARRAYKIND_Struct; 
+    return GetKind() == VALUEKIND_Struct; 
     }  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnablerCP ECValueAccessor::Location::GetEnabler() const { return m_enabler; }
+int ECValueAccessor::Location::GetPropertyIndex() const { return m_propertyIndex; }
+int ECValueAccessor::Location::GetArrayIndex() const { return m_arrayIndex; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
@@ -2407,7 +2416,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
     indexBuffer[numChars]=0;
 
     UInt32 indexValue = -1;
-    swscanf (indexBuffer, L"%ud", &indexValue);
+    BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue);
 
     ECValue  arrayVal;
 
@@ -3016,7 +3025,7 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, Int64 i)
                         if ('X' == spec)
                             opts = (HexFormatOptions)(static_cast<int>(opts) | static_cast<int>(HexFormatOptions::Uppercase));
 
-                        BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, precision);
+                        BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)i, opts, static_cast <UInt8> (precision));
                         }
                         break;
                     case 'd':       // decimal
@@ -3086,7 +3095,7 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
         return false;
         }
 
-    UInt32 precision = 'f' == lspec ? 2 : 6;
+    UInt32 precision = 16;
     if (!ExtractStandardFormatPrecision (fmt + 1, precision))
         return false;
 
@@ -3095,7 +3104,7 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
     if (ignoreExtractedPrecision)
         precision = MAX_PRECISION;
     else
-        fmtr->SetTrailingZeros (true);
+        fmtr->SetTrailingZeros (false);
 
     fmtr->SetLeadingZero (true);
     fmtr->SetInsertThousandsSeparator (groupSeparators);
@@ -3330,7 +3339,7 @@ WCharCP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, WCharCP star
 
     if ('.' == *cur)
         {
-        UInt32 numPlaceholders = 0;
+        UInt8 numPlaceholders = 0;
         cur++;
         stopProcessing = false;
         while (0 != *cur)
