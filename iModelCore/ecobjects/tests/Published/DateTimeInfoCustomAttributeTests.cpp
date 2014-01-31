@@ -251,7 +251,7 @@ protected:
         testDateTimes.push_back (DateTime (DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22));
         testDateTimes.push_back (DateTime (2013, 2, 18));
 
-        FOR_EACH (DateTimeCR testDateTime, testDateTimes)
+        for (DateTimeCR testDateTime: testDateTimes)
             {
             ECValue value;
             EXPECT_EQ (SUCCESS, value.SetDateTime (testDateTime)) << "Return value of ECValue::SetDateTime";
@@ -329,7 +329,7 @@ TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfo)
     ECClassP testClass = testSchema->GetClassP (L"TestClass");
     ASSERT_TRUE (testClass != NULL);
 
-    FOR_EACH (ExpectedResultPerProperty const& result, expectedResults)
+    for (ExpectedResultPerProperty const& result: expectedResults)
         {
         ECPropertyP prop = testClass->GetPropertyP (result.first.c_str ());
         ASSERT_TRUE (prop != NULL);
@@ -669,7 +669,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
 
     DISABLE_ASSERTS
 
-    FOR_EACH (DateTimeCR testDateTime, testDateTimes)
+    for (DateTimeCR testDateTime: testDateTimes)
         {
         const bool isLocal = testDateTime.GetInfo ().GetKind () == DateTime::Kind::Local;
         ECValue value;

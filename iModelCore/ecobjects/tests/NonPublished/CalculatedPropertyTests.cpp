@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/CalculatedPropertyTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -89,7 +89,7 @@ struct CalculatedPropertyTests : ECTestFixture
         ECValue v (newValue);
         EXPECT_SUCCESS (instance.SetValue (propname, v));
 
-        FOR_EACH (ExpectedValue const& exp, dependentValues.values)
+        for (ExpectedValue const& exp: dependentValues.values)
             {
             ECValueAccessor accessor;
             EXPECT_SUCCESS (ECValueAccessor::PopulateValueAccessor (accessor, instance, exp.name));
