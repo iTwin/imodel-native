@@ -23,7 +23,7 @@ collection.
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
-struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std::iterator<std::forward_iterator_tag, value_type>
+struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, public std::iterator<std::forward_iterator_tag, value_type>
     {
     public:
     typedef value_type&         reference;
@@ -184,7 +184,7 @@ struct ECInstancePVector : public IInstanceCollectionAdapterEx<T_ReturnType* con
 
             return rhsImpl->m_iter != m_iter;
             }
-        virtual reference           GetCurrent() override
+        virtual typename IInstanceCollectionIteratorAdapter<T_ReturnType* const>::reference GetCurrent() override
             {
             m_value = m_iter->get();
             return m_value;
@@ -195,11 +195,11 @@ struct ECInstancePVector : public IInstanceCollectionAdapterEx<T_ReturnType* con
             {}
         };
 
-    virtual const_iterator begin() const
+    virtual typename IInstanceCollectionAdapterEx<T_ReturnType* const>::const_iterator begin() const
         {
         return new ECInstancePVectorIterator(m_vector.begin());
         }
-    virtual const_iterator end() const
+    virtual typename IInstanceCollectionAdapterEx<T_ReturnType* const>::const_iterator end() const
         {
         return new ECInstancePVectorIterator(m_vector.end());
         }
