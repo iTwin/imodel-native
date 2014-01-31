@@ -714,6 +714,14 @@ MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethod
     return new MethodSymbol(name, *ref);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+MethodSymbolPtr MethodSymbol::Create (WCharCP name, ExpressionValueListMethod_t method)
+    {
+    return new MethodSymbol (name, method);
+    }
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
