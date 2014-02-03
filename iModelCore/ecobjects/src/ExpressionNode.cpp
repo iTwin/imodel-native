@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1324,6 +1324,14 @@ void EvaluationResult::SetInstanceList (ECInstanceListCR instanceList, bool make
 IValueListResultCP EvaluationResult::GetValueList() const
     {
     return ValType_ValueList == m_valueType ? m_valueList : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+IValueListResultP EvaluationResult::GetValueList()
+    {
+    return ValType_ValueList == m_valueType ? m_valueList  :NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**

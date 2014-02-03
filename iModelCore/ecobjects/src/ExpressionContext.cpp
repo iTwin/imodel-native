@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -428,7 +428,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         if (evalResult.IsValueList())
             {
-            IValueListResultCP list = evalResult.GetValueList();
+            IValueListResultPtr list = evalResult.GetValueList();
             if (TOKEN_Dot == nextOperation)
                 {
                 IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
@@ -476,7 +476,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
     BeAssert(m_initialized);
 
     ExpressionStatus status = ExprStatus_StructRequired;
-    FOR_EACH (IECInstancePtr const& instance, instanceList)
+    for (IECInstancePtr const& instance: instanceList)
         {
         size_t index = startIndex;
         if (instance.IsNull())
@@ -714,6 +714,14 @@ MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethod
     return new MethodSymbol(name, *ref);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+MethodSymbolPtr MethodSymbol::Create (WCharCP name, ExpressionValueListMethod_t method)
+    {
+    return new MethodSymbol (name, method);
+    }
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
@@ -1107,7 +1115,7 @@ ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR
     WCharCP name = primaryList.GetName (startIndex);
     if (NULL != name)
         {
-        FOR_EACH (IECInstancePtr const& instance, m_instances)
+        for (IECInstancePtr const& instance: m_instances)
             {
             if (instance.IsValid() && ExprStatus_Success == (status = GetReference (evalResult, refResult, primaryList, globalContext, startIndex, *instance)))
                 break;

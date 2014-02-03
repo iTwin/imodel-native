@@ -1,24 +1,25 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/ECExpressionTests.cpp $
+|     $Source: tests/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ECObjectsTestPCH.h"
-#include "TestFixture.h"
+#include "../ECObjectsTestPCH.h"
+#include "../TestFixture/TestFixture.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\ECExpressions.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
+#include <ECObjects/ECExpressions.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == (EXPR))
 #define EXPECT_ERROR(EXPR) EXPECT_FALSE(SUCCESS == (EXPR))
 #define EXPECT_NOT_NULL(EXPR) EXPECT_FALSE(NULL == (EXPR))
 #define EXPECT_NULL(EXPR) EXPECT_TRUE(NULL == (EXPR))
+using namespace Bentley::ECN;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
 
@@ -615,5 +616,5 @@ TEST_F (MethodsReturningInstancesTests, InstanceMethods)
     EXPECT_EQ (result.GetECValue()->GetInteger(), 2);
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE
 

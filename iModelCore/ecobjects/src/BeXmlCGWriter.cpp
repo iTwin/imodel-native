@@ -2,7 +2,7 @@
 |
 |  $Source: src/BeXmlCGWriter.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -450,7 +450,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
                 {
                 dest.WriteElementStart ("CurveChain");
                     dest.WriteElementStart ("ListOfCurve");
-                    FOR_EACH(ICurvePrimitivePtr curve , curveVector)
+                    for(ICurvePrimitivePtr curve : curveVector)
                         Write (dest, *curve);
                     dest.WriteElementEnd ();
                 dest.WriteElementEnd ();
@@ -468,7 +468,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
                 {
                 dest.WriteElementStart ("CurveChain");
                     dest.WriteElementStart ("ListOfCurve");
-                    FOR_EACH(ICurvePrimitivePtr curve , curveVector)
+                    for(ICurvePrimitivePtr curve : curveVector)
                         Write (dest, *curve);
                     dest.WriteElementEnd ();
                 dest.WriteElementEnd ();
@@ -481,7 +481,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
             {
             dest.WriteElementStart ("SurfacePatch");
             bvector <ICurvePrimitivePtr> holeLoop;
-            FOR_EACH(ICurvePrimitivePtr curve , curveVector)
+            for(ICurvePrimitivePtr curve : curveVector)
                 {
                 if (NULL != curve->GetChildCurveVectorCP ())
                     {
@@ -519,7 +519,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
         case CurveVector::BOUNDARY_TYPE_UnionRegion:
             {
             dest.WriteElementStart ("SurfaceGroup");
-            FOR_EACH(ICurvePrimitivePtr curve , curveVector)
+            for(ICurvePrimitivePtr curve : curveVector)
                 Write (dest, *curve->GetChildCurveVectorCP ());
             dest.WriteElementEnd ();
             
@@ -529,7 +529,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
         case CurveVector::BOUNDARY_TYPE_None:
             {
             dest.WriteElementStart ("Group");
-            FOR_EACH(ICurvePrimitivePtr curve , curveVector)
+            for(ICurvePrimitivePtr curve : curveVector)
                 Write (dest, *curve);
             dest.WriteElementEnd ();
             

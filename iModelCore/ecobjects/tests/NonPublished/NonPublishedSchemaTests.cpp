@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/NonPublishedSchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -47,7 +47,7 @@ TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         }
     ASSERT_EQ(2, count);
 
-    FOR_EACH (ECClassCP ecClass, container)
+    for (ECClassCP ecClass: container)
         {
         ASSERT_TRUE(ecClass != NULL);
 #if PRINT_DUMP

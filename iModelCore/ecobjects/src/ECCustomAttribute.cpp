@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,13 +36,13 @@ void IECCustomAttributeContainer::AddUniqueCustomAttributesToList
 ECCustomAttributeCollection& returnList
 ) 
     {
-    FOR_EACH (IECInstancePtr instance, GetCustomAttributes(false))
+    for (IECInstancePtr instance: GetCustomAttributes(false))
         {
         bool alreadyFound = false;
         ECClassCR classDefinition = instance->GetClass();
 
         // only add the instance if there isn't already one with the same classDefinition in the list
-        FOR_EACH (IECInstancePtr testInstance, returnList)
+        for (IECInstancePtr testInstance: returnList)
             {
             ECClassCR testClass = testInstance->GetClass();
             if (&classDefinition == &testClass || ECClass::ClassesAreEqualByName(&classDefinition, &testClass))
@@ -58,7 +58,7 @@ ECCustomAttributeCollection& returnList
     // do base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+    for (IECCustomAttributeContainerP container: baseContainers)
         {
         container->AddUniqueCustomAttributesToList(returnList);
         }
@@ -72,13 +72,13 @@ void IECCustomAttributeContainer::AddUniquePrimaryCustomAttributesToList
 ECCustomAttributeCollection& returnList
 ) 
     {
-    FOR_EACH (IECInstancePtr instance, GetPrimaryCustomAttributes(false))
+    for (IECInstancePtr instance: GetPrimaryCustomAttributes(false))
         {
         bool alreadyFound = false;
         ECClassCR classDefinition = instance->GetClass();
 
         // only add the instance if there isn't already one with the same classDefinition in the list
-        FOR_EACH (IECInstancePtr testInstance, returnList)
+        for (IECInstancePtr testInstance: returnList)
             {
             ECClassCR testClass = testInstance->GetClass();
             if (&classDefinition == &testClass || ECClass::ClassesAreEqualByName(&classDefinition, &testClass))
@@ -94,7 +94,7 @@ ECCustomAttributeCollection& returnList
     // do base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+    for (IECCustomAttributeContainerP container: baseContainers)
         {
         container->AddUniquePrimaryCustomAttributesToList(returnList);
         }
@@ -118,7 +118,7 @@ WStringCR className
     // check base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+    for (IECCustomAttributeContainerP container: baseContainers)
         {
         if (container->IsDefined(className))
             return true;
@@ -144,7 +144,7 @@ ECClassCR classDefinition
     // check base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+    for (IECCustomAttributeContainerP container: baseContainers)
         {
         if (container->IsDefined(classDefinition))
             return true;
@@ -190,7 +190,7 @@ bool      includeSupplementalAttributes
         return NULL;
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+    for (IECCustomAttributeContainerP container: baseContainers)
         {
         result = container->GetCustomAttribute(className);
         if (result.IsValid())
@@ -282,7 +282,7 @@ bool      includeSupplementalAttributes
 
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);
-    FOR_EACH (IECCustomAttributeContainerP container, baseContainers)
+    for (IECCustomAttributeContainerP container: baseContainers)
         {
         result = container->GetCustomAttribute(classDefinition);
         if (result.IsValid())
@@ -567,7 +567,7 @@ IECCustomAttributeContainerR destContainer
 ) const
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    FOR_EACH (IECInstancePtr customAttribute, GetPrimaryCustomAttributes(false))
+    for (IECInstancePtr customAttribute: GetPrimaryCustomAttributes(false))
         {
         status = destContainer.SetPrimaryCustomAttribute(*(customAttribute->CreateCopyThroughSerialization()));
         if (ECOBJECTS_STATUS_Success != status)
@@ -673,12 +673,12 @@ bool includeSupplementalAttributes
 )
     {
     m_customAttributes = new ECCustomAttributeCollection();
-    FOR_EACH (IECInstancePtr ptr, container.m_primaryCustomAttributes)
+    for (IECInstancePtr ptr: container.m_primaryCustomAttributes)
         m_customAttributes->push_back(ptr);
 
     if (includeSupplementalAttributes)
         {
-        FOR_EACH (IECInstancePtr ptr, container.m_consolidatedCustomAttributes)
+        for (IECInstancePtr ptr: container.m_consolidatedCustomAttributes)
             m_customAttributes->push_back(ptr);
         }
 
@@ -686,7 +686,7 @@ bool includeSupplementalAttributes
         {
         bvector<IECCustomAttributeContainerP> baseContainers;
         container._GetBaseContainers(baseContainers);
-        FOR_EACH (IECCustomAttributeContainerP baseContainer, baseContainers)
+        for (IECCustomAttributeContainerP baseContainer: baseContainers)
             {
             if (includeSupplementalAttributes)
                 baseContainer->AddUniqueCustomAttributesToList(*m_customAttributes);

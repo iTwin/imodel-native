@@ -2026,7 +2026,7 @@ void ECValueAccessor::Clone (ECValueAccessorCR accessor)
     {
     m_locationVector.clear();
 
-    FOR_EACH (ECValueAccessor::Location const & location, accessor.GetLocationVectorCR())
+    for (ECValueAccessor::Location const & location: accessor.GetLocationVectorCR())
         PushLocation (*location.GetEnabler(), location.GetPropertyIndex(), location.GetArrayIndex());
     }
 

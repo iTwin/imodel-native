@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/StringEncodingTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -129,7 +129,7 @@ struct StringEncodingTests : ECTestFixture
 
     bool                    CompareInstances (ECValuesCollectionCR aVals, StandaloneECInstancePtr b, bool outputDifferences = false)
         {
-        FOR_EACH (ECPropertyValueCR aVal, aVals)
+        for (ECPropertyValueCR aVal: aVals)
             {
             ECValueCR aV = aVal.GetValue();
             ECValue bV;

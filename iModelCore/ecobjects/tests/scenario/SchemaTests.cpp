@@ -2,7 +2,7 @@
 |
 |     $Source: tests/scenario/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -51,7 +51,7 @@ ECSchemaPtr const&   schema
     EXPECT_EQ (6, schema->GetVersionMinor());        
  
 #ifdef DEBUG_PRINT
-    FOR_EACH (ECClassP pClass, schema->GetClasses())
+    for (ECClassP pClass: schema->GetClasses())
         {
         wprintf (L"Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
         }
@@ -166,7 +166,7 @@ ECSchemaPtr const&   schema
     EXPECT_FALSE (ecValue.GetBoolean());
    
 #ifdef DEBUG_PRINT
-    FOR_EACH (ECPropertyP pProperty, pClass->GetProperties())
+    for (ECPropertyP pProperty: pClass->GetProperties())
         {
         wprintf (L"TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
         }

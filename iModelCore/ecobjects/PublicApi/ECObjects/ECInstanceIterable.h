@@ -12,57 +12,10 @@
 #include <ECObjects/ECObjects.h>
 /*__PUBLISH_SECTION_END__*/
 
-#if defined (_MSC_VER)
-    #pragma  warning(push)
-    #pragma  warning(disable:4265)
-#endif // defined (_MSC_VER)
-
-//#include <boost/iterator/transform_iterator.hpp>
-//#include <boost/shared_ptr.hpp>
-
-#if defined (_MSC_VER)
-    #pragma  warning(pop)
-#endif // defined (_MSC_VER)
-
 /*__PUBLISH_SECTION_START__*/
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-#if defined (REMOVED_FOR_BOOST)
-
-/*__PUBLISH_SECTION_END__*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CollectionType, class UnaryFunction>
-struct CollectionTransformIteratble
-    {
-    private:
-    CollectionType const* m_collection;
-
-    public:
-    CollectionTransformIteratble (CollectionType const& collection)
-        :m_collection (&collection)
-        {}
-
-    typedef boost::transform_iterator<UnaryFunction, typename CollectionType::const_iterator> const_iterator;
-    const_iterator begin () const {return const_iterator (m_collection->begin(), UnaryFunction());}
-    const_iterator end () const {return const_iterator (m_collection->end(), UnaryFunction());}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T_Instance>
-struct RefCountedPtrToValueTransform: public std::unary_function<RefCountedPtr<T_Instance>, T_Instance* const &>
-    {
-    T_Instance* const& operator () (RefCountedPtr<T_Instance> const& ptr) const
-        {
-        return ptr.GetCR();
-        }
-    };
-
-/*__PUBLISH_SECTION_START__*/
+    
 
 /*---------------------------------------------------------------------------------**//**
 This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
@@ -71,7 +24,7 @@ collection.
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
-struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, std::iterator<std::forward_iterator_tag, value_type>
+struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, public std::iterator<std::forward_iterator_tag, value_type>
     {
     public:
     typedef value_type&         reference;
@@ -111,7 +64,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
     private:
         typename CollectionType::const_iterator m_adapteriterator;
         CollectionType const*                   m_adapterParentcollection;
-        boost::shared_ptr<value_type>           m_ptr;
+        std::shared_ptr<value_type>           m_ptr;
         InstanceCollectionAdapterIteratorImpl (CollectionType const& collection, bool begin)
             :m_adapterParentcollection(&collection), m_adapteriterator(begin ? collection.begin(): collection.end())
             {
@@ -144,7 +97,7 @@ struct InstanceCollectionAdapterIteratorImpl :public IInstanceCollectionIterator
 
         virtual typename IInstanceCollectionIteratorAdapter<value_type>::reference GetCurrent () override
             {
-            m_ptr = boost::shared_ptr<value_type>(new value_type(*m_adapteriterator));
+            m_ptr = std::shared_ptr<value_type>(new value_type(*m_adapteriterator));
             return *m_ptr;
             }
 
@@ -173,7 +126,7 @@ template <typename CollectionType, typename value_type>
 struct InstanceCollectionAdapterImpl : public IInstanceCollectionAdapterEx<value_type>
     {
 private:
-    boost::shared_ptr<CollectionType>   m_adaptedcollection;
+    std::shared_ptr<CollectionType>   m_adaptedcollection;
 protected:
      InstanceCollectionAdapterImpl (CollectionType& collection)
         :m_adaptedcollection(&collection)
@@ -206,13 +159,57 @@ struct IECInstanceCollectionAdapterImpl : public ECN::InstanceCollectionAdapterI
     {
     };
 
-template <typename T_Instance>
-struct ECInstancePVector : public ECN::CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECN::RefCountedPtrToValueTransform<T_Instance> >
+template <typename T_Instance, typename T_ReturnType = T_Instance>
+struct ECInstancePVector : public IInstanceCollectionAdapterEx<T_ReturnType* const>
     {
     bvector<RefCountedPtr<T_Instance> > m_vector;
-    public:
+    
     ECInstancePVector (bvector<RefCountedPtr<T_Instance> >const& collection)
-        :m_vector(collection), CollectionTransformIteratble< bvector<RefCountedPtr<T_Instance> >, ECN::RefCountedPtrToValueTransform<T_Instance> > (m_vector)
+        :m_vector(collection)
+        {}
+    
+    public:
+        struct ECInstancePVectorIterator :public IInstanceCollectionIteratorAdapter<T_ReturnType* const>
+        {
+        typename bvector<RefCountedPtr<T_Instance> >::const_iterator    m_iter;
+        T_ReturnType*                                                   m_value;
+        virtual void                MoveToNext() override
+            {
+            ++m_iter;
+            }
+        virtual bool                IsDifferent(IInstanceCollectionIteratorAdapter<T_ReturnType* const> const & iter) const override
+            {
+            ECInstancePVectorIterator const* rhsImpl = static_cast<ECInstancePVectorIterator const*> (&iter);
+            if (NULL == rhsImpl)//TODO evaluate performance of this cast. Since only public facing collection do this it should be okay
+                return true;
+
+            return rhsImpl->m_iter != m_iter;
+            }
+        virtual typename IInstanceCollectionIteratorAdapter<T_ReturnType* const>::reference GetCurrent() override
+            {
+            m_value = m_iter->get();
+            return m_value;
+            }
+
+        ECInstancePVectorIterator(typename bvector<RefCountedPtr<T_Instance> >::const_iterator const& iter)
+            :m_iter(iter), m_value(NULL)
+            {}
+        };
+
+    virtual typename IInstanceCollectionAdapterEx<T_ReturnType* const>::const_iterator begin() const
+        {
+        return new ECInstancePVectorIterator(m_vector.begin());
+        }
+    virtual typename IInstanceCollectionAdapterEx<T_ReturnType* const>::const_iterator end() const
+        {
+        return new ECInstancePVectorIterator(m_vector.end());
+        }
+
+    static ECInstancePVector* Create(bvector<RefCountedPtr<T_Instance> >const& collection)
+        {
+        return new ECInstancePVector(collection);
+        }
+    ~ECInstancePVector()
         {}
     };
 

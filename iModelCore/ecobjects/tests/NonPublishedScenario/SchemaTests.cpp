@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublishedScenario/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -39,7 +39,7 @@ TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer
         }
     ASSERT_EQ(2, count);
 
-    FOR_EACH (ECClassCP ecClass, container)
+    for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
@@ -74,7 +74,7 @@ TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
         }
     ASSERT_EQ(2, count);
 
-    FOR_EACH (ECClassCP ecClass, container)
+    for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
         wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());

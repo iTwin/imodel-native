@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -749,6 +749,7 @@ public:
     ECOBJECTS_EXPORT void                   SetInstance (IECInstanceCR instance);
 
     ECOBJECTS_EXPORT IValueListResultCP     GetValueList() const;
+    ECOBJECTS_EXPORT IValueListResultP      GetValueList();
     ECOBJECTS_EXPORT void                   SetValueList (IValueListResultR valueList);
 
     ECOBJECTS_EXPORT LambdaValueCP          GetLambda() const;
