@@ -8,10 +8,10 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-#include <ECObjects\ECInstance.h>
-#include <ECObjects\StandaloneECInstance.h>
-#include <ECObjects\ECValue.h>
-#include <ECObjects\ECExpressions.h>
+#include <ECObjects/ECInstance.h>
+#include <ECObjects/StandaloneECInstance.h>
+#include <ECObjects/ECValue.h>
+#include <ECObjects/ECExpressions.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == (EXPR))
 #define EXPECT_ERROR(EXPR) EXPECT_FALSE(SUCCESS == (EXPR))
