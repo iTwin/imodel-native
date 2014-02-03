@@ -8,14 +8,9 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 /** @cond BENTLEY_SDK_Internal */
-//#include <ECObjects/VirtualCollectionIterator.h>
 #include <ECObjects/ECObjects.h>
-/*__PUBLISH_SECTION_END__*/
 
-/*__PUBLISH_SECTION_START__*/
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-    
 
 /*---------------------------------------------------------------------------------**//**
 This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
@@ -245,10 +240,8 @@ struct ECInstanceIterable
         ECOBJECTS_EXPORT bool IsNull () const; //!< returns whether the collection is Null
     };
 
-#endif
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /** @endcond */
 
 /*__PUBLISH_SECTION_END__*/
-//#pragma make_public (Bentley::ECN::ECInstanceIterable)
