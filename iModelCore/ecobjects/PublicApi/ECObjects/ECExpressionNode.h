@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressionNode.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -916,7 +916,7 @@ public:
     size_t      GetArgumentCount() const { return m_arguments.size(); }
     NodeCP      GetArgument (size_t i) const { return i < m_arguments.size() ? m_arguments[i].get() : NULL; }
     void        PushArgument(NodeR node) { m_arguments.push_back(&node); }
-    ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context);
+    ECOBJECTS_EXPORT ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context) const;
 };  //  End of struct ArgumentTreeNode
 
 /*=================================================================================**//**
