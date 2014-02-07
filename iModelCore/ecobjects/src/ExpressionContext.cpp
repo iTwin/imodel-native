@@ -988,15 +988,23 @@ void ValueSymbol::SetValue (ECValueCR value) { m_expressionValue = value; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertySymbolBase::PropertySymbolBase (wchar_t const* name)
-    : Symbol (name)
+PropertySymbol::PropertySymbol (WCharCP name, RefCountedPtr<PropertySymbol::PropertyEvaluator> evaluator) 
+    : Symbol (name), m_evaluator (evaluator) 
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus PropertySymbolBase::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+RefCountedPtr<PropertySymbol> PropertySymbol::Create (WCharCP name, RefCountedPtr<PropertySymbol::PropertyEvaluator> evaluator)
+    {
+    return new PropertySymbol (name, evaluator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
     {
     if (primaryList.GetNumberOfOperators() > startIndex)
         {
@@ -1013,7 +1021,7 @@ ExpressionStatus PropertySymbolBase::_GetValue (EvaluationResultR evalResult, Pr
         return ExprStatus_UnknownError;
         }
 
-    evalResult = _EvaluateProperty ();
+    evalResult = m_evaluator->EvaluateProperty ();
     return ExprStatus_Success;
     }
 
