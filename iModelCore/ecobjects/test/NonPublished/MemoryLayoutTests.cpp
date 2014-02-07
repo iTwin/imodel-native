@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1813,6 +1813,26 @@ TEST_F (ECDBufferTests, ClearArray)
     EXPECT_EQ (0, v.GetArrayInfo().GetCount());
     EXPECT_EQ (0, instance->GetValue (v, L"Strings"));
     EXPECT_EQ (0, v.GetArrayInfo().GetCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, MoreClearArrayTests)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"Test", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"Test");
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, L"Strings", PRIMITIVETYPE_String);
+    PrimitiveECPropertyP primProp;
+    ecClass->CreatePrimitiveProperty (primProp, L"Stringy", PRIMITIVETYPE_String);
+
+    IECInstancePtr inst = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    inst->AddArrayElements (L"Strings", 1);
+    inst->SetValue (L"Strings", ECValue (L"String", false), 0);
+    inst->ClearArray (L"Strings");
     }
 
 /*---------------------------------------------------------------------------------**//**
