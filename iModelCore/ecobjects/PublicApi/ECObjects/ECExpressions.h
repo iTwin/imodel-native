@@ -495,51 +495,63 @@ public:
 };
 
 /*=================================================================================**//**
+* Used to introduce a named property into the context.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
-struct PropertySymbolBase : Symbol
+struct PropertySymbol : Symbol
 {
-protected:
-    ECOBJECTS_EXPORT PropertySymbolBase (wchar_t const* name);
-    virtual ECValue _EvaluateProperty () = 0;
+private:
+    /*=============================================================================**//**
+    * @bsiclass
+    +===============+===============+===============+===============+===============+==*/
+    struct PropertyEvaluator : RefCountedBase
+        {
+        virtual ECValue EvaluateProperty () = 0;
+        };
+
+    /*=============================================================================**//**
+    * @bsiclass
+    +===============+===============+===============+===============+===============+==*/
+    template<class InstanceType, class ReturnValueType>
+    struct TemplatedPropertyEvaluator : PropertyEvaluator
+        {
+        typedef ReturnValueType (InstanceType::*GetPropertyMethod) () const;
+        private:
+            InstanceType const& m_instance;
+            GetPropertyMethod   m_method;
+            TemplatedPropertyEvaluator (InstanceType const& instance, GetPropertyMethod method)
+                : m_instance (instance), m_method (method)
+                { }
+        public:
+            virtual ECValue EvaluateProperty () override { return ECValue ((m_instance.*m_method) ()); }
+            static RefCountedPtr<PropertyEvaluator> Create (InstanceType const& instance, GetPropertyMethod method) { return new TemplatedPropertyEvaluator (instance, method); }
+        };
+
+    ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create (WCharCP name, RefCountedPtr<PropertyEvaluator> evaluator);
 
 /*__PUBLISH_SECTION_END__*/
+private:
+    RefCountedPtr<PropertyEvaluator> m_evaluator;
+
 protected:
+    ECOBJECTS_EXPORT PropertySymbol (WCharCP name, RefCountedPtr<PropertyEvaluator> evaluator);
     ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
     virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override 
         {
         return ExprStatus_NeedsLValue;
         }
-/*__PUBLISH_SECTION_START__*/
-};
-
-/*=================================================================================**//**
-* Used to introduce a named property into the context.
-* @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/
-template<class InstanceType, class ReturnValueType>
-struct PropertySymbol : PropertySymbolBase
-{
-//! The property return type
-typedef ReturnValueType (InstanceType::*GetPropertyMethod) () const;
-
-private:
-    InstanceType const& m_instance;
-    GetPropertyMethod   m_method;
-
-protected:
-    PropertySymbol (WCharCP name, InstanceType const& instance, GetPropertyMethod method)
-        : PropertySymbolBase (name), m_instance (instance), m_method (method)
-        { }
-    virtual ~PropertySymbol () { }
-
-/*__PUBLISH_SECTION_END__*/
-    virtual ECValue _EvaluateProperty () override { return ECValue ((m_instance.*m_method) ()); }
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new PropertySymbol with the given name, instance and method reference to get the property value
-    static RefCountedPtr<PropertySymbol> Create (WCharCP name, InstanceType const& instance, GetPropertyMethod method) { return new PropertySymbol (name, instance, method); }
+    //! @param name     Name of the symbol.
+    //! @param instance Instance of type InstanceType that will be used to invoke the provided method.
+    //! @param method   The method that provides value for this property.
+    template<class InstanceType, class ReturnValueType>
+    static RefCountedPtr<PropertySymbol> Create (WCharCP name, InstanceType const& instance, ReturnValueType (InstanceType::*method) () const) 
+        {
+        return Create (name, TemplatedPropertyEvaluator<InstanceType, ReturnValueType>::Create (instance, method));
+        }
 };
 
 /*__PUBLISH_SECTION_END__*/
