@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/ecpresentationtypedefs.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -41,7 +41,7 @@ EC_TYPEDEFS (ECSelectionEvent);
 EC_TYPEDEFS (ECSelectionListener);
 EC_TYPEDEFS (ECInstanceIterableDataContext);
 
-namespace Bentley {namespace DgnPlatform {struct ECQuery;}}
+namespace BENTLEY_NAMESPACE_NAME {namespace DgnPlatform {struct ECQuery;}}
 ADD_BENTLEY_TYPEDEFS1(DgnPlatform,ECQuery,ECQuery,struct)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
