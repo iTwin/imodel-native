@@ -2,11 +2,12 @@
 |
 |     $Source: tests/ECObjectsTestPCH.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <BentleyApi/BentleyApi.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/DesignByContract.h>
 #include <Bentley/WString.h>
@@ -14,9 +15,8 @@
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
 
-#define BEGIN_BENTLEY_ECN_TEST_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECNTests {
-
-#define END_BENTLEY_ECN_TEST_NAMESPACE    }}
+#define BEGIN_BENTLEY_ECN_TEST_NAMESPACE  BEGIN_BENTLEY_API_NAMESPACE namespace ECNTests {
+#define END_BENTLEY_ECN_TEST_NAMESPACE    } END_BENTLEY_API_NAMESPACE
 
 //define DesignByContract macros here locally in a simplified form until it is available from the API.
 #ifndef PRECONDITION

@@ -16,6 +16,7 @@
         <SubPart PartName="BoostHeaders"    PartFile="BoostHeaders" Repository="BoostHeaders" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyApi"      PartFile="BentleyApi"   Repository="BentleyApi" />
         <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />

@@ -23,7 +23,7 @@ collection.
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
-struct   IInstanceCollectionIteratorAdapter :public Bentley::RefCountedBase, public std::iterator<std::forward_iterator_tag, value_type>
+struct   IInstanceCollectionIteratorAdapter :public RefCountedBase, public std::iterator<std::forward_iterator_tag, value_type>
     {
     public:
     typedef value_type&         reference;
@@ -37,7 +37,7 @@ A container collection which allows you to expose different kinds of collection 
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename value_type>
-struct IInstanceCollectionAdapterEx : public Bentley::RefCountedBase
+struct IInstanceCollectionAdapterEx : public RefCountedBase
     {
 private:
 
@@ -249,4 +249,4 @@ END_BENTLEY_ECOBJECT_NAMESPACE
 /** @endcond */
 
 /*__PUBLISH_SECTION_END__*/
-//#pragma make_public (Bentley::ECN::ECInstanceIterable)
+//#pragma make_public (ECN::ECInstanceIterable)

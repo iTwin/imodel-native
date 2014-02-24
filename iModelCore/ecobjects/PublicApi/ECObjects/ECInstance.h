@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,8 +12,8 @@
 #include "ECObjects.h"
 #include <Geom/GeomApi.h>
 
-BENTLEY_TYPEDEFS (BeXmlDom)
-BENTLEY_TYPEDEFS (BeXmlNode)
+BENTLEY_NAMESPACE_TYPEDEFS (BeXmlDom)
+BENTLEY_NAMESPACE_TYPEDEFS (BeXmlNode)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -222,7 +222,7 @@ protected:
 
 /*__PUBLISH_SECTION_END__*/
 #ifdef DGN_IMPORTER_REORG_WIP
-    virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
+    virtual DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
 #endif
 /*__PUBLISH_SECTION_START__*/
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
@@ -369,8 +369,8 @@ public:
 
     // These are provided to avoid the cost of dynamic cast.
 #ifdef DGN_IMPORTER_REORG_WIP
-    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
-    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
+    ECOBJECTS_EXPORT DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
+    ECOBJECTS_EXPORT DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 #endif
     ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId);
 
@@ -695,5 +695,5 @@ typedef ECInstanceList const            &ECInstanceListCR;
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
-//#pragma make_public (Bentley::ECN::IECInstance)
+//#pragma make_public (ECN::IECInstance)
 /*__PUBLISH_SECTION_START__*/

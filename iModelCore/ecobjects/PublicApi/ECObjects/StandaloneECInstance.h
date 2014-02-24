@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -303,6 +303,6 @@ public:
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//#pragma make_public (Bentley::ECN::StandaloneECEnabler)
-//#pragma make_public (Bentley::ECN::StandaloneECInstance)
-//#pragma make_public (Bentley::ECN::MemoryECInstanceBase)
+//#pragma make_public (ECN::StandaloneECEnabler)
+//#pragma make_public (ECN::StandaloneECInstance)
+//#pragma make_public (ECN::MemoryECInstanceBase)

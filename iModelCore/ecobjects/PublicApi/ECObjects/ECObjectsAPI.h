@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPI.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,7 @@
 \image html BentleyLOGO_4C_no-tag.gif
 
 @section Namespaces
-All of the ECObjects APIs are contained within the Bentley::ECN namespace. 
+All of the ECObjects APIs are contained within the BentleyApi::ECN namespace. 
 
 @section headerFiles Header Files
 By far the most convenient and efficient way of accessing the classes in the ECObjects API is to use:

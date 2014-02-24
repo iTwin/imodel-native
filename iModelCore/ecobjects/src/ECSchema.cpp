@@ -1488,7 +1488,7 @@ bvector<WString>&               searchPaths
         TryLoadingSupplementalSchemas(key.m_schemaName.c_str(), schemaPathStr, schemaContext, supplementalSchemas);
         if (supplementalSchemas.size() > 0)
             {
-            Bentley::ECN::SupplementedSchemaBuilder builder;
+            ECN::SupplementedSchemaBuilder builder;
             builder.UpdateSchema(*schemaOut, supplementalSchemas);
             }
 

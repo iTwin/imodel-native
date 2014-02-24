@@ -13,7 +13,7 @@
 #include <ECObjects/ECValue.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == EXPR)
-using namespace Bentley::ECN;
+using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 

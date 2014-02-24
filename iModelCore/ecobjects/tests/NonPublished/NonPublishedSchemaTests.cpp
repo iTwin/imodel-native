@@ -16,7 +16,7 @@
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 using namespace std;
-using namespace Bentley::ECN;
+using namespace BentleyApi::ECN;
 
 struct NonPublishedSchemaTest : ECTestFixture {};
 TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)

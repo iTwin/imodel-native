@@ -2226,5 +2226,5 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//#pragma make_public (Bentley::ECN::ECClass)
-//#pragma make_public (Bentley::ECN::ECSchema)
+//#pragma make_public (ECN::ECClass)
+//#pragma make_public (ECN::ECSchema)

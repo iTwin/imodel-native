@@ -8,7 +8,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/ECSchema.h>
 
-DEFINE_KEY_METHOD(Bentley::ECN::IECRelationshipInstance)
+DEFINE_KEY_METHOD(ECN::IECRelationshipInstance)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -3487,7 +3487,7 @@ bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const
+DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() const
     {
     return _GetAsDgnECInstance();
     }
@@ -3495,9 +3495,9 @@ Bentley::DgnPlatform::DgnECInstance const* IECInstance::AsDgnECInstanceCP() cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
+DgnPlatform::DgnECInstance* IECInstance::AsDgnECInstanceP()
     {
-    return const_cast<Bentley::DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
+    return const_cast<DgnPlatform::DgnECInstance*> (_GetAsDgnECInstance());
     }
 #endif
 

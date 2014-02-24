@@ -2,7 +2,7 @@
 |
 |     $Source: tests/Published/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -10,7 +10,7 @@
 
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-using namespace Bentley::ECN;
+using namespace BentleyApi::ECN;
 
 struct ECRelationshipTests : ECTestFixture {};
 
