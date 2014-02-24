@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1021,10 +1021,10 @@ TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
     bvector<ECSchemaP> schemasToImport;
     schema->FindAllSchemasInGraph (schemasToImport, true);
     bvector<WCharCP> expectedPrefixes;
+    expectedPrefixes.push_back(L"bsca");
     expectedPrefixes.push_back(L"iipmdbca");
     expectedPrefixes.push_back(L"rdlca");
     expectedPrefixes.push_back(L"beca");
-    expectedPrefixes.push_back(L"bsca");
     expectedPrefixes.push_back(L"bsm");
     expectedPrefixes.push_back(L"bjca");
     expectedPrefixes.push_back(L"jclass");
@@ -1039,7 +1039,8 @@ TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
     for(ECSchemaP testSchema: schemasToImport)
         {
         WString prefix = testSchema->GetNamespacePrefix();
-        EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter]));
+        WCharCP expectedPrefix = expectedPrefixes[counter];
+        EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter])) << "Expected " << expectedPrefix << " Actual " << prefix.c_str();
         counter++;
         }
     }
