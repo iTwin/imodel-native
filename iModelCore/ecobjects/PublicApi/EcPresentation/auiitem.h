@@ -200,5 +200,5 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
-//#pragma make_public (Bentley::ECN::IAUIDataContext)
-//#pragma make_public (Bentley::ECN::IUICommand)
+//#pragma make_public (ECN::IAUIDataContext)
+//#pragma make_public (ECN::IUICommand)

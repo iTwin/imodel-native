@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublished/ECSchemaUnitsManagerTests.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -11,7 +11,7 @@
 #include <ECUnits/Units.h>
 #include "UnitsTestBase.h"
 
-using namespace Bentley::ECN;
+using namespace BentleyApi::ECN;
 
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE

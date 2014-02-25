@@ -2,7 +2,7 @@
 |
 |     $Source: tests/Performance/PerformanceTestFixture.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,7 @@
 #include <Logging/bentleylogging.h>
 #include "../TestFixture/TestFixture.h"
 
-#define PERFORMANCELOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"Performance"))
+#define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 typedef bpair<Utf8String, double> T_TimerResultPair;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE

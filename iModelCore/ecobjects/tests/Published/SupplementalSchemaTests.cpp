@@ -10,7 +10,7 @@
 
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-using namespace Bentley::ECN;
+using namespace BentleyApi::ECN;
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
@@ -859,7 +859,7 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
             tempSchema->GetFullSchemaName();
             ECCustomAttributeInstanceIterable iter = tempSchema->GetCustomAttributeContainer().GetCustomAttributes(true);
 
-    Bentley::ECN::SupplementalSchemaMetaDataPtr metaData;
+    ECN::SupplementalSchemaMetaDataPtr metaData;
     EXPECT_TRUE(SupplementalSchemaMetaData::TryGetFromSchema(metaData, *supplemental));
     EXPECT_TRUE(metaData.IsValid());
     EXPECT_STREQ(L"TestSchema", metaData->GetPrimarySchemaName().c_str());

@@ -27,7 +27,7 @@ private:
     size_t          m_startPosition;
 
     wchar_t const*  m_inputCP;              //  Points into contents of m_inputString
-    Bentley::WString   m_inputString;
+    WString         m_inputString;
 
     wchar_t const*          getTokenStringCP ();
     wchar_t                 GetCurrentChar ();

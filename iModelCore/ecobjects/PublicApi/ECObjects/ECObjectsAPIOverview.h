@@ -10,7 +10,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//! @namespace Bentley::ECN Types defined by @ref ECObjectsGroup
+//! @namespace BentleyApi::ECN Types defined by @ref ECObjectsGroup
 
 //****** API doc main page *******
 
@@ -136,6 +136,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! The property index is the index into the PropertyLayout of the corresponding ECProperty.
 //! @note The property index is @b 1-based
 //!
-//! @see Bentley::ECN
+//! @see BentleyApi::ECN
 
 END_BENTLEY_ECOBJECT_NAMESPACE

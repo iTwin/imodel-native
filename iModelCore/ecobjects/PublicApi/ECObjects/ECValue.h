@@ -861,4 +861,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-//#pragma make_public (Bentley::ECN::ECValuesCollection)
+//#pragma make_public (ECN::ECValuesCollection)

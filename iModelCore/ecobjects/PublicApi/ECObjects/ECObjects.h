@@ -2,13 +2,13 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <Bentley/Bentley.h>
+#include <BentleyApi/BentleyApi.h>
 #include <Bentley/BeAssert.h>
 
 #ifdef __ECOBJECTS_BUILD__
@@ -17,11 +17,9 @@
     #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECN {
-
-#define END_BENTLEY_ECOBJECT_NAMESPACE    }}
-
-#define USING_NAMESPACE_EC  using namespace Bentley::ECN;
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE    BEGIN_BENTLEY_API_NAMESPACE namespace ECN {
+#define END_BENTLEY_ECOBJECT_NAMESPACE      } END_BENTLEY_API_NAMESPACE
+#define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \

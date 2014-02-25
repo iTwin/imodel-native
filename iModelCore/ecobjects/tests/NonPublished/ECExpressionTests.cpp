@@ -17,7 +17,7 @@
 #define EXPECT_ERROR(EXPR) EXPECT_FALSE(SUCCESS == (EXPR))
 #define EXPECT_NOT_NULL(EXPR) EXPECT_FALSE(NULL == (EXPR))
 #define EXPECT_NULL(EXPR) EXPECT_TRUE(NULL == (EXPR))
-using namespace Bentley::ECN;
+using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
