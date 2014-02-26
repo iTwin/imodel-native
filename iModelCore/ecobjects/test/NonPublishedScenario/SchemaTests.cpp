@@ -32,15 +32,15 @@ TEST_F(SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         {
         ECClassCP ecClass = *cit;
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", ecClass, name.c_str());
+        wprintf(L"ECClass=0x%p, name=%s\n", ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(2, count);
 
-    FOR_EACH (ECClassCP ecClass, container)
+    for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", ecClass, name.c_str());
+        wprintf(L"ECClass=0x%p, name=%s\n", ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(4, count);
@@ -67,15 +67,15 @@ TEST_F(SchemaTest, TestGetClassCount)
         {
         ECClassCP ecClass = *cit;
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", ecClass, name.c_str());
+        wprintf(L"ECClass=0x%p, name=%s\n", ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(2, count);
 
-    FOR_EACH (ECClassCP ecClass, container)
+    for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", ecClass, name.c_str());
+        wprintf(L"ECClass=0x%p, name=%s\n", ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(4, count);

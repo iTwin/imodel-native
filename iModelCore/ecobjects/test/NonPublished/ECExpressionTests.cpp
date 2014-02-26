@@ -53,6 +53,40 @@ struct ExpressionTests : ECTestFixture
 
         return tree->GetValue (result, *symbolContext, true, true);
         }
+
+    void                TestExpressionEquals (IECInstanceR instance, WCharCP expr, ECValueCR expectVal)
+        {
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr, instance);
+        EXPECT_SUCCESS (status);
+        if (SUCCESS == status)
+            {
+            EXPECT_TRUE (result.IsECValue());
+            if (result.IsECValue())
+                EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str();
+            }
+        }
+
+    template<typename T> void TestExpressionEquals (IECInstanceR instance, WCharCP expr, T const& v)
+        {
+        TestExpressionEquals (instance, expr, ECValue (v));
+        }
+
+    void                TestExpressionNullity (IECInstanceR instance, WCharCP expr, bool expectNull)
+        {
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr, instance);
+        EXPECT_SUCCESS (status);
+        if (SUCCESS == status)
+            {
+            if (result.IsECValue())
+                EXPECT_EQ (expectNull, result.GetECValue()->IsNull());
+            else
+                EXPECT_TRUE (!expectNull && result.IsInstanceList());
+            }
+        }
+    void                TestExpressionNull (IECInstanceR instance, WCharCP expr) { TestExpressionNullity (instance, expr, true); }
+    void                TestExpressionNotNull (IECInstanceR instance, WCharCP expr) { TestExpressionNullity (instance, expr, false); }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,6 +118,7 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"Something.Method ( )", L"Something.Method()");
     Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2,\"string\",this.Property)");
     Roundtrip (L"IIf (True,  Null, \t2 ^3  -3* 4)", L"IIf(True,Null,2^3-3*4)");
+    Roundtrip (L"X = \"Thing\" OrElse X = \"Stuff\"", L"X=\"Thing\"OrElse X=\"Stuff\"");
 
     // Make sure we're capturing parens...
     Roundtrip (L"(1 +2) * 3", L"(1+2)*3");
@@ -97,6 +132,9 @@ TEST_F (RoundtripExpressionTests, Roundtrip)
     Roundtrip (L"((1 + 2) * 3 / (4 + (5 - 6))) ^ (((7 + ((-8) -(((9)))) + +(10))))", L"((1+2)*3/(4+(5-6)))^(7+((-8)-(9))++(10))");
     Roundtrip (L"0.00390625", L"0.00390625");
     Roundtrip (L"method (method (True, method (method (1.5), False)))", L"method(method(True,method(method(1.5),False)))");
+
+    Roundtrip (L"X => X < 5.0 AndAlso X > 1.5", L"X=>X<5 AndAlso X>1.5");
+    Roundtrip (L"this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", L"this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,6 +356,147 @@ TEST_F (InstanceListExpressionTests, ComplexExpressions)
         EXPECT_EQ (result.GetECValue()->GetInteger(), (Int32)i+1);
         }
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ArrayExpressionTests : InstanceListExpressionTests
+    {
+    IValueListResultPtr     GetIValueList (IECInstanceR instance, WCharCP expr)
+        {
+        EvaluationResult result;
+        ExpressionStatus status = EvaluateExpression (result, expr, instance);
+        EXPECT_SUCCESS (status);
+        EXPECT_NOT_NULL (result.GetValueList());
+        return const_cast<IValueListResultP>(result.GetValueList());
+        }
+
+    void                    TestIValueList (IValueListResultP list, UInt32 expectedCount)
+        {
+        EXPECT_NOT_NULL (list);
+        if (NULL != list)
+            {
+            EXPECT_EQ (list->GetCount(), expectedCount);
+
+            for (UInt32 i = 0; i < expectedCount; i++)
+                {
+                EvaluationResult elem;
+                EXPECT_SUCCESS (list->GetValueAt (elem, i));
+                }
+            }
+        }
+
+    static ExpressionStatus     SumArrayMembers (EvaluationResultR result, IValueListResultCR valueList, EvaluationResultVector& args)
+        {
+        UInt32 count = valueList.GetCount();
+        Int32 sum = 0;
+        ExpressionStatus status = ExprStatus_Success;
+
+        for (UInt32 i = 0; i < count; i++)
+            {
+            EvaluationResult member;
+            status = valueList.GetValueAt (member, i);
+            if (ExprStatus_Success == status && member.IsECValue() && member.GetECValue()->IsInteger())
+                sum += member.GetECValue()->GetInteger();
+            }
+
+        if (ExprStatus_Success == status)
+            result.InitECValue().SetInteger (sum);
+
+        return status;
+        }
+
+    virtual void PublishSymbols (SymbolExpressionContextR context) override
+        {
+        context.AddSymbol (*MethodSymbol::Create (L"SumArray", &SumArrayMembers));
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArrayExpressionTests, ArrayProperties)
+    {
+    IECInstancePtr s1 = CreateInstance (L"Struct1");
+    AddArrayElement (*s1, L"Ints", ECValue (1));
+    AddArrayElement (*s1, L"Ints", ECValue (2));
+
+    IECInstancePtr s2 = CreateInstance (L"Struct2");
+    ECValue v;
+    v.SetStruct (s1.get());
+    AddArrayElement (*s2, L"Structs", v);
+
+    IECInstancePtr a = CreateInstance (L"ClassA");
+    for (UInt32 i = 0; i < 5; i++)
+        {
+        v.SetInteger ((Int32)i);
+        AddArrayElement (*a, L"Ints", v);
+        }
+
+    v.SetStruct (s2.get());
+    AddArrayElement (*a, L"Structs", v);
+
+    // -- Test querying the value lists directly --
+
+    IValueListResultPtr list = GetIValueList (*a, L"this.Ints");
+    TestIValueList (list.get(), 5);
+
+    list = GetIValueList (*a, L"this.Structs");
+    TestIValueList (list.get(), 1);
+
+    list = GetIValueList (*a, L"this.Struct.Structs");
+    TestIValueList (list.get(), 0);
+
+    list = GetIValueList (*a, L"this.Structs[0].Structs");
+    TestIValueList (list.get(), 1);
+
+    list = GetIValueList (*a, L"this.Structs[0].Structs[0].Ints");
+    TestIValueList (list.get(), 2);
+
+    // -- Test Count, First, Last properties --
+
+    TestExpressionEquals (*a, L"this.Ints.Count", 5);
+    TestExpressionEquals (*a, L"this.Structs.Count", 1);
+    TestExpressionEquals (*a, L"this.Struct.Structs.Count", 0);
+    TestExpressionEquals (*a, L"this.Structs[0].Structs.Count", 1);
+    TestExpressionEquals (*a, L"this.Structs[0].Structs[0].Ints.Count", 2);
+
+    TestExpressionEquals (*a, L"this.Ints.First", 0);
+    TestExpressionEquals (*a, L"this.Ints.Last", 4);
+
+    TestExpressionEquals (*a, L"this.Structs[0].Structs[0].Ints.First", 1);
+    TestExpressionEquals (*a, L"this.Structs[0].Structs[0].Ints.Last", 2);
+
+    // First and Last return null for an empty array (but not an error!)
+    TestExpressionNull (*a, L"this.Struct.Structs.First");
+    TestExpressionNull (*a, L"this.Struct.Structs.Last");
+
+    // Can't really test struct array values for equality, but can test not null
+    TestExpressionNotNull (*a, L"this.Structs.First");
+    TestExpressionNotNull (*a, L"this.Structs.Last");
+
+    // -- ###TODO Test Any() and All() methods -- 
+
+    //EvaluationResult result;
+    //EXPECT_SUCCESS (EvaluateExpression (result, L"this.Structs.Any(\"args...\")", *a));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ArrayExpressionTests, ArrayMethods)
+    {
+    IECInstancePtr a = CreateInstance (L"ClassA");
+    Int32 expectedSum = 0;
+    for (Int32 i = 0; i < 4; i++)
+        {
+        expectedSum += i;
+        AddArrayElement (*a, L"Ints", ECValue (i));
+        }
+
+    TestExpressionEquals (*a, L"this.Ints.SumArray()", expectedSum);
+    TestExpressionEquals (*a, L"this.Ints.SumArray() * this.Ints.SumArray()", expectedSum*expectedSum);
     }
 
 /*---------------------------------------------------------------------------------**//**

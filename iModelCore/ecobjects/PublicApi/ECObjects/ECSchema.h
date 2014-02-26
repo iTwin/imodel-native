@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,10 +19,6 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
-
-//__PUBLISH_SECTION_END__
-#include <boost/foreach.hpp>
-//__PUBLISH_SECTION_START__
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
@@ -430,6 +426,9 @@ protected:
     virtual bool                _RequiresExpressionTypeConversion() const = 0;
     virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
     virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
+
+    virtual bool                _GetDisplayType (PrimitiveType& type) const = 0;
+    virtual bool                _ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
 public:
     // For DgnPlatform interop
     struct Factory
@@ -438,6 +437,26 @@ public:
         virtual IECTypeAdapter& GetForArrayMember (ArrayECPropertyCR ecproperty) const = 0;
         };
     ECOBJECTS_EXPORT static void          SetFactory (Factory const& factory);
+
+    //! "Display Type" refers to the type that the user would associate with the displayed value of the property.
+    //! For example, a value of type "Area" may be stored as a double in UORs, with a string representation in working units with unit label.
+    //! In some contexts the user wants to operate on the displayed value as a double, but in working units. In this case the "display type"
+    //! matches the stored type but not the stored value.
+    //! Similarly a property with StandardValues custom attribute is stored as an integer but presented as a string. In this case the "display type"
+    //! is also a string as the integer values have no meaning to the user.
+    //! If the type adapter returns true from CanConvertToString(), it should also return true from GetDisplayType().
+    //! @param[out] type      Will be initialized to the display type if one exists.
+    //! @return true if the type adapter has a display type.
+    ECOBJECTS_EXPORT bool       GetDisplayType (PrimitiveType& type) const;
+
+    //! Converts a stored value to a value of the display type.
+    //! For example, if the same arguments passed to ConvertToString() would return "44.5 Square Meters", this method should return 44.5
+    //! @param[out] v           The stored value, to be converted in-place to display type.
+    //! @param[in] context      Context in which to perform conversion
+    //! @param[in] formatter    Formatting options, e.g. floating point precision, unit labels, etc.
+    //! @return true if successfully converted to display type.
+    ECOBJECTS_EXPORT bool       ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter);
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
@@ -2202,9 +2221,6 @@ public:
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECCustomAttributeInstanceIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECPropertyIterable)
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECClassContainer)
 
 #pragma make_public (Bentley::ECN::ECClass)
 #pragma make_public (Bentley::ECN::ECSchema)

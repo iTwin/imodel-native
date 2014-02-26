@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -96,7 +96,8 @@ private:
     Int64                               m_sourceOrderId;        
     Int64                               m_targetOrderId; 
     OrderIdEntries                      m_orderIdEntries;
-    WString                             m_propertiesString;
+    WString                             m_sourcePropertiesString;
+    WString                             m_targetPropertiesString;
 
 protected:  
     // IECRelationshipInstance
@@ -126,12 +127,18 @@ public:
     ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const;  
     //! Returns the RelationshipClass that this Instance is an instance of
     ECOBJECTS_EXPORT ECRelationshipClassCR              GetRelationshipClass () const;
-    //! Gets the property string of this RelationshipInstance. 
+    //! Gets the source property string of this RelationshipInstance. 
     //! This is a string associated to the relationship and that is parsed/encoded by the client.
-    ECOBJECTS_EXPORT WCharCP                            GetPropertiesString() const; 
-    //! Sets the property string of this RelationshipInstance
+    ECOBJECTS_EXPORT WCharCP                            GetSourcePropertiesString() const; 
+    //! Sets the source property string of this RelationshipInstance
     //! This is a string associated to the relationship and that is parsed/encoded by the client.
-    ECOBJECTS_EXPORT ECObjectsStatus                    SetPropertiesString (WCharCP propertiesString); 
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetSourcePropertiesString (WCharCP propertiesString); 
+    //! Gets the target property string of this RelationshipInstance. 
+    //! This is a string associated to the relationship and that is parsed/encoded by the client.
+    ECOBJECTS_EXPORT WCharCP                            GetTargetPropertiesString() const; 
+    //! Sets the target property string of this RelationshipInstance
+    //! This is a string associated to the relationship and that is parsed/encoded by the client.
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetPropertiesString (WCharCP propertiesString); 
     //! Gets orderId entries associated to the relationship instance.
     //! This is used upon persistence to provide to the ECProvider the necessary informationto compute the orderId.
     ECOBJECTS_EXPORT OrderIdEntries&                    OrderIdEntries();

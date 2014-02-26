@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECRelationshipInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -52,7 +52,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    FOR_EACH (ECClassCP source, GetRelationshipClass().GetSource().GetClasses())
+    for (ECClassCP source: GetRelationshipClass().GetSource().GetClasses())
         {
         if (instance->GetClass().Is(source))
             {
@@ -96,7 +96,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    FOR_EACH (ECClassCP target, this->GetRelationshipClass().GetTarget().GetClasses())
+    for (ECClassCP target: this->GetRelationshipClass().GetTarget().GetClasses())
         {
         if (instance->GetClass().Is(target))
             {
@@ -278,22 +278,43 @@ ECObjectsStatus StandaloneECRelationshipInstance::SetTargetOrderId (Int64 target
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::SetPropertiesString (WCharCP propertiesString) 
+ECObjectsStatus StandaloneECRelationshipInstance::SetSourcePropertiesString (WCharCP propertiesString) 
     {
     if (!propertiesString)
         return ECOBJECTS_STATUS_Error;
-    m_propertiesString = propertiesString;
+    m_sourcePropertiesString = propertiesString;
     return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP     StandaloneECRelationshipInstance::GetPropertiesString() const
+WCharCP     StandaloneECRelationshipInstance::GetSourcePropertiesString() const
     {
-    if (m_propertiesString.empty())
+    if (m_sourcePropertiesString.empty())
         return NULL;
-    return m_propertiesString.c_str();
+    return m_sourcePropertiesString.c_str();
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::SetTargetPropertiesString (WCharCP propertiesString) 
+    {
+    if (!propertiesString)
+        return ECOBJECTS_STATUS_Error;
+    m_targetPropertiesString = propertiesString;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP     StandaloneECRelationshipInstance::GetTargetPropertiesString() const
+    {
+    if (m_targetPropertiesString.empty())
+        return NULL;
+    return m_targetPropertiesString.c_str();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

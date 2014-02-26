@@ -851,8 +851,5 @@ public:
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
-#include <boost/foreach.hpp>
-BENTLEY_ENABLE_BOOST_FOREACH_CONST_ITERATOR(Bentley::ECN::ECValuesCollection)
-
 #pragma make_public (Bentley::ECN::ECValuesCollection)
 //__PUBLISH_SECTION_START__

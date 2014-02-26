@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,7 +16,6 @@
 #include <Bentley/BeFileListIterator.h>
 
 #include <ECObjects/StronglyConnectedGraph.h>
-#include <boost/iterator/iterator_adaptor.hpp>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -486,12 +485,12 @@ ECClassP ECSchema::GetClassP (WCharCP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
     {
-    wprintf(L"ECSchema: this=0x%x  %ls.%02d.%02d, nClasses=%d\n", this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
+    wprintf(L"ECSchema: this=0x%p  %ls.%02d.%02d, nClasses=%d\n", this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<WCharCP, ECClassP>const& entry = *it;
         ECClassCP ecClass = entry.second;
-        wprintf(L"    ECClass: 0x%x, %ls\n", ecClass, ecClass->GetName().c_str());
+        wprintf(L"    ECClass: 0x%p, %ls\n", ecClass, ecClass->GetName().c_str());
         }
     }
 
@@ -615,14 +614,14 @@ ECClassCR sourceClass
 
     // Set the base classes on the target class from the source class
     // This is inconsistent with the Managed implementation of CopyClass which does not copy base classes
-    FOR_EACH (ECClassP baseClass, sourceClass.GetBaseClasses())
+    for (ECClassP baseClass: sourceClass.GetBaseClasses())
         {
         targetClass->AddBaseClass(*baseClass);
         }
 
     if (!sourceClass.GetSchema().IsSupplemented())
         {
-        FOR_EACH(ECPropertyP sourceProperty, sourceClass.GetProperties(false))
+        for(ECPropertyP sourceProperty: sourceClass.GetProperties(false))
             {
             ECPropertyP destProperty;
             status = targetClass->CopyProperty(destProperty, sourceProperty, true);
@@ -859,7 +858,7 @@ ECSchemaPtr& schemaOut
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         schemaOut->AddReferencedSchema(*iter->second.get());
         
-    FOR_EACH(ECClassP ecClass, m_classContainer)
+    for(ECClassP ecClass: m_classContainer)
         {
         ECClassP copyClass;
         status = schemaOut->CopyClass(copyClass, *ecClass);
@@ -1023,10 +1022,10 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
     // Can only remove the reference if nothing actually references it.
     
     ECSchemaPtr foundSchema = schemaIterator->second;
-    FOR_EACH (ECClassP ecClass, GetClasses())
+    for (ECClassP ecClass: GetClasses())
         {
         // First, check each base class to see if the base class uses that schema
-        FOR_EACH (ECClassP baseClass, ecClass->GetBaseClasses())
+        for (ECClassP baseClass: ecClass->GetBaseClasses())
             {
             if ((ECSchemaP) &(baseClass->GetSchema()) == foundSchema.get())
                 {
@@ -1038,14 +1037,14 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
         if (NULL != relClass)
             {
-            FOR_EACH (ECClassP target, relClass->GetTarget().GetClasses())
+            for (ECClassP target: relClass->GetTarget().GetClasses())
                 {
                 if ((ECSchemaP) &(target->GetSchema()) == foundSchema.get())
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
                 }
-            FOR_EACH (ECClassP source, relClass->GetSource().GetClasses())
+            for (ECClassP source: relClass->GetSource().GetClasses())
                 {
                 if ((ECSchemaP) &(source->GetSchema()) == foundSchema.get())
                     {
@@ -1055,7 +1054,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
             }
             
         // And make sure that there are no struct types from another schema
-        FOR_EACH (ECPropertyP prop, ecClass->GetProperties(false))
+        for (ECPropertyP prop: ecClass->GetProperties(false))
             {
             ECClassCP typeClass;
             if (prop->GetIsStruct())
@@ -1231,7 +1230,7 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
 
     BeXmlDom::IterableNodeSet schemaReferenceNodes;
     schemaNode.SelectChildNodes (schemaReferenceNodes, EC_NAMESPACE_PREFIX ":" EC_SCHEMAREFERENCE_ELEMENT);
-    FOR_EACH (BeXmlNodeP& schemaReferenceNode, schemaReferenceNodes)
+    for (BeXmlNodeP& schemaReferenceNode: schemaReferenceNodes)
         {
         SchemaKey key;
         if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue (key.m_schemaName, SCHEMAREF_NAME_ATTRIBUTE))
@@ -1385,7 +1384,7 @@ bvector<WString>&               searchPaths
 )
     {
     WString fullFileName;
-    FOR_EACH (WString schemaPathStr, searchPaths)
+    for (WString schemaPathStr: searchPaths)
         {
         BeFileName schemaPath (schemaPathStr.c_str());
         schemaPath.AppendToPath (schemaMatchExpression.c_str());
@@ -1675,7 +1674,7 @@ SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies (BeXmlNodeR parentN
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
-    FOR_EACH (IECInstancePtr instance, container.GetCustomAttributes(false))
+    for (IECInstancePtr instance: container.GetCustomAttributes(false))
         {
         ECClassCR currentClass = instance->GetClass();
         status = WriteClass (parentNode, currentClass, context);
@@ -1704,7 +1703,7 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
         context.m_alreadyWrittenClasses.insert(ecClass.GetName().c_str());
         
     // write the base classes first.
-    FOR_EACH (ECClassP baseClass, ecClass.GetBaseClasses())
+    for (ECClassP baseClass: ecClass.GetBaseClasses())
         {
         WriteClass(parentNode, *baseClass, context);
         }
@@ -1713,10 +1712,10 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
     ECRelationshipClassP relClass = const_cast<ECRelationshipClassP>(ecClass.GetRelationshipClassCP());
     if (NULL != relClass)
         {
-        FOR_EACH (ECClassP source, relClass->GetSource().GetClasses())
+        for (ECClassP source: relClass->GetSource().GetClasses())
             WriteClass(parentNode, *source, context);
             
-        FOR_EACH (ECClassP target, relClass->GetTarget().GetClasses())
+        for (ECClassP target: relClass->GetTarget().GetClasses())
             WriteClass(parentNode, *target, context);
         }
     WritePropertyDependencies(parentNode, ecClass, context); 
@@ -1735,7 +1734,7 @@ SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, EC
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     
-    FOR_EACH (ECPropertyP prop, ecClass.GetProperties(false))
+    for (ECPropertyP prop: ecClass.GetProperties(false))
         {
         if (prop->GetIsStruct())
             {
@@ -1787,7 +1786,7 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
     
     std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are written is predictable.
-    FOR_EACH (ECClassP pClass, GetClasses())
+    for (ECClassP pClass: GetClasses())
         {
         if (NULL == pClass)
             {
@@ -1800,7 +1799,7 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
 
     sortedClasses.sort (ClassNameComparer);
     
-    FOR_EACH (ECClassP pClass, sortedClasses)
+    for (ECClassP pClass: sortedClasses)
         {
         WriteClass (*schemaNode, *pClass, context);
         }

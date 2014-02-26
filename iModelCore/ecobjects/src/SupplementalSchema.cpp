@@ -442,7 +442,7 @@ ECSchemaP schema2
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    FOR_EACH(ECClassP supplementalClass, schema2->GetClasses())
+    for(ECClassP supplementalClass: schema2->GetClasses())
         {
         status = MergeClassesWithEqualPrecedence(mergedSchema.get(), supplementalClass, supplementalSchemaFullName, mergedSchemaFullName);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
@@ -477,7 +477,7 @@ WStringCR mergedSchemaFullName
     if (NULL != supplementalRelationship)
         MergeRelationshipClassConstraints(mergedClass, supplementalRelationship, SCHEMA_PRECEDENCE_Equal);
 
-    FOR_EACH(ECPropertyP supplementalProperty, supplementalClass->GetProperties(false))
+    for(ECPropertyP supplementalProperty: supplementalClass->GetProperties(false))
         {
         ECPropertyP mergedProperty = mergedClass->GetPropertyP(supplementalProperty->GetName(), false);
         // Class exists but this property does not
@@ -557,7 +557,7 @@ SchemaPrecedence precedence
         return status;
         }
 
-    FOR_EACH (ECClassP ecClass, supplementalSchema->GetClasses())
+    for (ECClassP ecClass: supplementalSchema->GetClasses())
         {
         status = SupplementClass(primarySchema, supplementalSchema, ecClass, precedence, &supplementalSchemaFullName);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
@@ -584,7 +584,7 @@ WStringCP consolidatedSchemaFullName
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    FOR_EACH (IECInstancePtr const & customAttribute, supplementalCustomAttributes)
+    for (IECInstancePtr const & customAttribute: supplementalCustomAttributes)
         {
         WString className = customAttribute->GetClass().GetName();
         if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
@@ -736,7 +736,7 @@ SchemaPrecedence precedence
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
-    FOR_EACH(ECPropertyP supplementalECProperty, supplementalECClass->GetProperties(false))
+    for(ECPropertyP supplementalECProperty: supplementalECClass->GetProperties(false))
         {
         ECCustomAttributeInstanceIterable supplementalCustomAttributes = supplementalECProperty->GetCustomAttributes(false);
 
@@ -760,7 +760,7 @@ SchemaPrecedence precedence
 
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
-            FOR_EACH(ECClassP derivedClass, consolidatedECClass->GetDerivedClasses())
+            for(ECClassP derivedClass: consolidatedECClass->GetDerivedClasses())
                 {
                 ECPropertyP derivedECProperty = derivedClass->GetPropertyP(supplementalECProperty->GetName(), false);
                 if (NULL != derivedECProperty)
