@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/Units.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -10,6 +10,8 @@
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+IECClassLocaterPtr IECClassLocater::s_registeredClassLocater = NULL;
 
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
@@ -80,6 +82,30 @@ bool Unit::ConvertTo (double& value, UnitCR target) const
 
     value = target.GetConverter().FromBase (this->GetConverter().ToBase (value));
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater) 
+    {
+    s_registeredClassLocater = IECClassLocaterPtr (&classLocater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECClassLocater::UnRegisterClassLocater ()
+    {
+    s_registeredClassLocater = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 
+    {
+    return s_registeredClassLocater.get();
     }
 
 /*---------------------------------------------------------------------------------**//**

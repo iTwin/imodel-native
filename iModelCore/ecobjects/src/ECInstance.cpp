@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -2092,33 +2092,6 @@ ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (Int64
  ECObjectsStatus                IECRelationshipInstance::GetTargetOrderId (Int64& targetOrderId) const
     {
     return _GetTargetOrderId (targetOrderId);
-    }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//   IECWipRelationshipInstance
-///////////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetName (WCharCP name)   
-    {
-    return _SetName (name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
-    {
-    return _SetSourceOrderId (sourceOrderId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
-    {
-    return _SetTargetOrderId (targetOrderId);
     }
 
 /*---------------------------------------------------------------------------------**//**
