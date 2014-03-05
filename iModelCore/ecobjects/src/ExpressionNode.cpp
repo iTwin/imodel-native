@@ -2292,14 +2292,16 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
         {
         // Short-circuit operators do not evaluate righthand expression unless required.
         status = GetLeftP()->GetValue (leftResult, context, false, true);
+
+        // Treat error as false evaluation value
         bool leftBool = false;
-        if (ExprStatus_Success == status && ExprStatus_Success == (status = leftResult.GetBoolean (leftBool, false)))
+        if (ExprStatus_Success != status || ExprStatus_Success != (status = leftResult.GetBoolean (leftBool, false)))
+            leftBool = false;
+
+        if (leftBool == (TOKEN_AndAlso == m_operatorCode))
             {
-            if (leftBool == (TOKEN_AndAlso == m_operatorCode))
-                {
-                // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
-                status = GetRightP()->GetValue (rightResult, context, false, true);
-                }
+            // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
+            status = GetRightP()->GetValue (rightResult, context, false, true);
             }
 
         if (ExprStatus_Success == status)

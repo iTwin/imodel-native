@@ -915,6 +915,11 @@ bool IECTypeAdapter::HasStandardValues() const                                  
 bool IECTypeAdapter::CanConvertFromString () const                                                  { return _CanConvertFromString (); }
 bool IECTypeAdapter::CanConvertToString () const                                                    { return _CanConvertToString (); }
 bool IECTypeAdapter::IsStruct() const                                                               { return _IsStruct(); }
+bool IECTypeAdapter::AllowExpandMembers() const
+    {
+    // TFS#38705
+    return _AllowExpandMembers();
+    }
 bool IECTypeAdapter::IsTreatedAsString() const                                                      { return _IsTreatedAsString(); }
 IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const    { return _CreateDefaultFormatter (includeAllValues, forDwg); }
 IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const    { return _CondenseFormatterForSerialization (formatter); }

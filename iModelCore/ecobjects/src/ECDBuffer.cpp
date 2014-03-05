@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -1808,6 +1808,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
     byte*   _data = scoped.GetData();
 
     byte*   propertyData = _data + GetOffsetToPropertyData();
+    UInt32  propertyBytesAllocated = bytesAllocated - GetOffsetToPropertyData();
 
     bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout) || ((PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()));
     UInt32  arrayOffset           = GetOffsetOfPropertyValue (propertyLayout);   
@@ -1827,14 +1828,14 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
     if ((removeIndex + removeCount) >= preArrayCount) // removing entries an end of array
         {
         source = propertyData + *pNextProperty;
-        bytesToMove = bytesAllocated - *pNextProperty;
+        bytesToMove = propertyBytesAllocated - *pNextProperty;
         }
     else   // removing entries at beginning or in middle of array
         {
         SecondaryOffset endIndexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, removeIndex+removeCount);
         source = propertyData + endIndexValueOffset;
 
-        bytesToMove = bytesAllocated - endIndexValueOffset;
+        bytesToMove = propertyBytesAllocated - endIndexValueOffset;
         }
 
     if (bytesToMove < 0)
@@ -1859,7 +1860,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         UInt32           offsetDelta = removeCount * sizeof(SecondaryOffset);
 
         source      = destination + offsetDelta;    
-        bytesToMove = bytesAllocated - (beginIndexValueOffset+offsetDelta);
+        bytesToMove = propertyBytesAllocated - (beginIndexValueOffset+offsetDelta);
 
         if (bytesToMove > 0)
             memmove (destination, source, bytesToMove);
@@ -1937,7 +1938,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         destination = arrayAddress + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask));
         source = (byte*)firstArrayEntryOffset;
 
-        bytesToMove = bytesAllocated - (arrayOffset + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
+        bytesToMove = propertyBytesAllocated - (arrayOffset + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
 
         memmove (destination, source, bytesToMove);
         totalBytesAdjusted += (UInt32)(source - destination);

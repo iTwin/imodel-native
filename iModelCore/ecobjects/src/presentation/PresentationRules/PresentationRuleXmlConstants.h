@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -100,6 +100,7 @@
 #define GROUP_XML_ATTRIBUTE_IMAGEID                                                   "ImageId"
 #define GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM                                  "CreateGroupForSingleItem"
 #define GROUP_XML_ATTRIBUTE_MENULABEL                                                 "ContextMenuLabel"
+#define GROUP_XML_ATTRIBUTE_DEFAULTLABEL                                              "DefaultGroupLabel"
 
 #define PROPERTY_RANGE_GROUP_XML_NODE_NAME                                            "Range"
 #define PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL                                      "Label"
