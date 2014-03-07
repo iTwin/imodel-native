@@ -3805,7 +3805,10 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
                                  srcType = srcPropLayout->GetTypeDescriptor();
 
                 if (dstType.GetTypeKind() != srcType.GetTypeKind())
+                    {
+                    BeAssert (false && "ECDBuffer::CopyDataBuffer() skipping property with mismatched types...this may be a programmer error");
                     continue;
+                    }
                 else if (dstType.IsStruct())
                     continue;   // embedded structs always null
                 else if (dstType.IsPrimitive())
