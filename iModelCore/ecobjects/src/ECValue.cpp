@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -2443,50 +2443,19 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor)
     {
+    return PopulateValueAccessor (va, instance.GetEnabler(), managedPropertyAccessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP accessor)
+    {
     wchar_t         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
     wchar_t         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
     va.Clear ();
-    return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, instance.GetEnabler(), managedPropertyAccessor);
+    return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, enabler, accessor);
     }
-
-#ifdef NO_MORE
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
-    {
-    ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
-    IECInstanceCP  currentInstance    = &instance;
-    IECInstancePtr structInstancePtr;
-    for (UInt32 depth = 0; depth < GetDepth(); depth ++)
-        {
-        Location loc = m_locationVector[depth];
-
-        if (!(loc.GetEnabler() == &currentInstance->GetEnabler()))
-            return ECOBJECTS_STATUS_Error;
-
-        if (-1 != loc.GetArrayIndex())
-            status = instance.GetValue (v, loc.GetPropertyIndex(), loc.GetArrayIndex());
-        else
-            status = instance.GetValue (v, loc.GetPropertyIndex());
-
-        if (ECOBJECTS_STATUS_Success != status)
-            return status;
-
-        if (v.IsStruct() && 0 <= loc.GetArrayIndex())
-            {
-            structInstancePtr = v.GetStruct();
-            if (structInstancePtr.IsNull())
-                return ECOBJECTS_STATUS_Error;
-
-            // get property and next location
-            currentInstance = structInstancePtr.get();
-            }
-        }
-
-    return status;
-    }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  ECPropertyValue
