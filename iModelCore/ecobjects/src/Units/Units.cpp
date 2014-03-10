@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/Units.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -331,15 +331,18 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop)
+bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop)
     {
-    ECValue v;
     IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
-    if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() && UnitLocater (ecprop, false).LocateUnitByName (unit, v.GetString()))
+    if (attr.IsValid())
         {
-        fmt.clear();
+        ECValue v;
+        if (ECOBJECTS_STATUS_Success != attr->GetValue(v, DISPLAY_UNIT_NAME) || v.IsNull() || !UnitLocater(ecprop, false).LocateUnitByName(displayUnit, v.GetString()))
+            displayUnit = storedUnit;
+        
+        displayFormat.clear();
         if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
-            fmt = v.GetString();
+            displayFormat = v.GetString();
 
         return true;
         }
@@ -375,7 +378,7 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
 
     Unit displayUnit;
     WString fmt;
-    if (Unit::GetDisplayUnitForECProperty (displayUnit, fmt, ecprop))
+    if (Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, fmt, storedUnit, ecprop))
         {
         double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
