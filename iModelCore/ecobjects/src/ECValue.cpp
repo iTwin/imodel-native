@@ -2956,6 +2956,7 @@ private:
 
     static bool     ExtractStandardFormatPrecision (WCharCP fmt, UInt32& precision);
     static bool     ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d);
+    static void     ParseCustomFormatString(WStringR formatted, WCharCP fmt, NumericFormat& numFormat, bool ignoreExponent);
     static bool     ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, double d, bool* onlyZeros);
     static WCharCP  ParseNumberFormat (NumericFormat& numFormat, WCharCP start);
     static WCharCP  SkipLiteralString (WCharCP start);
@@ -3136,12 +3137,8 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, double d, bool* onlyZeros)
+void NumericFormat::ParseCustomFormatString(WStringR formatted, WCharCP fmt, NumericFormat& numFormat, bool ignoreExponent)
     {
-    WString originalFmt = fmt;
-    formatted.clear();
-    
-    NumericFormat numFormat;
     while (0 != *fmt)
         {
         switch (*fmt)
@@ -3176,15 +3173,28 @@ bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, do
                 break;
             case 'e':
             case 'E':
-                numFormat.precisionType = PrecisionType::Scientific;
-                // ignore exponent sign
-                fmt++;
-                if ('+' == *fmt || '-' == *fmt)
-                    fmt++;
+                if (ignoreExponent)
+                    {
+                    formatted.append(1, *fmt++);
 
-                // ignore exponent width
-                while ('0' == *fmt)
+                    if ('+' == *fmt || '-' == *fmt)
+                        formatted.append(1, *fmt++);
+
+                    while (L'0' == *fmt)
+                        formatted.append(1, *fmt++);
+                    }
+                else
+                    {
+                    numFormat.precisionType = PrecisionType::Scientific;
+                    // ignore exponent sign
                     fmt++;
+                    if ('+' == *fmt || '-' == *fmt)
+                        fmt++;
+
+                    // ignore exponent width
+                    while ('0' == *fmt)
+                        fmt++;
+                    }
 
                 continue;   // we've already moved to next token
             case '.':
@@ -3206,14 +3216,29 @@ bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, do
         fmt++;
         }
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, double d, bool* onlyZeros)
+    {
+    WString originalFmt = fmt;
+    formatted.clear();
+    
+    NumericFormat numFormat;
+    ParseCustomFormatString(formatted, fmt, numFormat, false);
+
     if (NULL != onlyZeros)
         *onlyZeros = false;
     
     // It's possible the format string did not actually contain any placeholders for the digits, in which case we have no formatting to do
     if (WString::npos == numFormat.insertPos)
         {
-        // Use the original formatted; above would have stripped out some characters, such as E's.
-        formatted = originalFmt;
+        // Need to go back and put processed characters such as exponents back in.
+        formatted.clear();
+        ParseCustomFormatString(formatted, fmt, numFormat, true);
+        
         return true;
         }
 
