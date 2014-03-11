@@ -13,7 +13,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
-static WCharCP const  DIMENSION_SCHEMA                  = L"Dimension_Schema";
 
 static WCharCP const  UNIT_ATTRIBUTES                   = L"Unit_Attributes";
 static WCharCP const  KOQ_ATTRIBUTES                    = L"KindOfQuantity_Attributes";
@@ -382,16 +381,18 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::GetDisplayUnitForECProperty (UnitR unit, WStringR fmt, ECPropertyCR ecprop, IECClassLocaterR unitsClassLocater)
+bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater)
     {
-    ECValue v;
     IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
-    if (attr.IsValid() && ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_UNIT_NAME) && !v.IsNull() 
-        && UnitLocater (ecprop, false, unitsClassLocater).LocateUnitByName (unit, v.GetString()))
+    if (attr.IsValid())
         {
-        fmt.clear();
+        ECValue v;
+        if (ECOBJECTS_STATUS_Success != attr->GetValue(v, DISPLAY_UNIT_NAME) || v.IsNull() || !UnitLocater(ecprop, false, unitsECClassLocater).LocateUnitByName(displayUnit, v.GetString()))
+            displayUnit = storedUnit;
+        
+        displayFormat.clear();
         if (ECOBJECTS_STATUS_Success == attr->GetValue (v, DISPLAY_FORMAT_STRING) && !v.IsNull())
-            fmt = v.GetString();
+            displayFormat = v.GetString();
 
         return true;
         }
@@ -436,7 +437,7 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
 
     Unit displayUnit;
     WString fmt;
-    if (Unit::GetDisplayUnitForECProperty (displayUnit, fmt, ecprop, unitsECClassLocater))
+    if (Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, fmt, storedUnit, ecprop, unitsECClassLocater))
         {
         double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
