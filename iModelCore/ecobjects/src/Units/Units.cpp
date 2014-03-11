@@ -13,7 +13,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
-static WCharCP const  DIMENSION_SCHEMA                  = L"Dimension_Schema";
 
 static WCharCP const  UNIT_ATTRIBUTES                   = L"Unit_Attributes";
 static WCharCP const  KOQ_ATTRIBUTES                    = L"KindOfQuantity_Attributes";
