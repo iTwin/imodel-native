@@ -636,10 +636,10 @@ public:
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
-        ECEnablerCP             GetEnabler() const          { return m_enabler; }
-        int                     GetPropertyIndex() const    { return m_propertyIndex; }
-        int                     GetArrayIndex() const       { return m_arrayIndex; }
-        ECPropertyCP            GetECProperty() const;
+        ECEnablerCP                     GetEnabler() const          { return m_enabler; }
+        int                             GetPropertyIndex() const    { return m_propertyIndex; }
+        int                             GetArrayIndex() const       { return m_arrayIndex; }
+        ECOBJECTS_EXPORT ECPropertyCP   GetECProperty() const;
         };
 
     typedef bvector<Location> LocationVector;
