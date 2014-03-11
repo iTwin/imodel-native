@@ -23,6 +23,8 @@
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
 
+EC_TYPEDEFS(QualifiedECAccessor);
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
@@ -1540,6 +1542,37 @@ public:
         return str;
         }
     };
+
+/*---------------------------------------------------------------------------------**//**
+* Identifies an ECProperty by schema name, class name, and access string.
+* @bsistruct                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct QualifiedECAccessor
+    {
+protected:
+    WString         m_schemaName;
+    WString         m_className;
+    WString         m_accessString;
+public:
+    QualifiedECAccessor() { }
+    QualifiedECAccessor (WCharCP schemaName, WCharCP className, WCharCP accessString)
+        : m_schemaName(schemaName), m_className(className), m_accessString(accessString) { }
+
+    WCharCP     GetSchemaName() const           { return m_schemaName.c_str(); }
+    WCharCP     GetClassName() const            { return m_className.c_str(); }
+    WCharCP     GetAccessString() const         { return m_accessString.c_str(); }
+    void        SetSchemaName (WCharCP name)    { m_schemaName = name; }
+    void        SetClassName (WCharCP name)     { m_className = name; }
+    void        SetAccessString (WCharCP acStr) { m_accessString = acStr; }
+
+    ECOBJECTS_EXPORT WString    ToString() const;
+    ECOBJECTS_EXPORT bool       FromString (WCharCP str);
+
+    ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, WCharCP accessString);
+    };
+
+typedef bvector<QualifiedECAccessor> QualifiedECAccessorList;
+typedef QualifiedECAccessorList const& QualifiedECAccessorListCR;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
