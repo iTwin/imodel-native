@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -636,10 +636,10 @@ public:
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
-        ECEnablerCP             GetEnabler() const          { return m_enabler; }
-        int                     GetPropertyIndex() const    { return m_propertyIndex; }
-        int                     GetArrayIndex() const       { return m_arrayIndex; }
-        ECPropertyCP            GetECProperty() const;
+        ECEnablerCP                     GetEnabler() const          { return m_enabler; }
+        int                             GetPropertyIndex() const    { return m_propertyIndex; }
+        int                             GetArrayIndex() const       { return m_arrayIndex; }
+        ECOBJECTS_EXPORT ECPropertyCP   GetECProperty() const;
         };
 
     typedef bvector<Location> LocationVector;
@@ -738,6 +738,7 @@ public:
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
 
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP managedPropertyAccessor);
     };
 
 /*__PUBLISH_SECTION_END__*/
