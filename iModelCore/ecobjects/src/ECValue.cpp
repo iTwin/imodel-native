@@ -1360,7 +1360,7 @@ const byte * ECValue::GetIGeometry(size_t& size) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const byte * ECValue::GetBinary(size_t& size) const
     {
-    PRECONDITION (IsBinary() && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
+    PRECONDITION ((IsBinary() || IsIGeometry()) && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
     size = m_binaryInfo.m_size;
     return m_binaryInfo.m_data;
     };
