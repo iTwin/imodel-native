@@ -2500,7 +2500,6 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 break;
                 }
             case PRIMITIVETYPE_Binary:
-            case PRIMITIVETYPE_IGeometry:
                 {
                 UInt32 size;
                 if (useIndex)
@@ -2512,6 +2511,20 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 byte const*   actualBuffer = pValue+sizeof(UInt32);
 
                 v.SetBinary (actualBuffer, *actualSize);
+                break;
+                }
+            case PRIMITIVETYPE_IGeometry:
+                {
+                UInt32 size;
+                if (useIndex)
+                    size = GetPropertyValueSize (propertyLayout, index);
+                else
+                    size = GetPropertyValueSize (propertyLayout);
+
+                UInt32 const* actualSize   = (UInt32 const*)pValue;
+                byte const*   actualBuffer = pValue+sizeof(UInt32);
+
+                v.SetIGeometry (actualBuffer, *actualSize);
                 break;
                 }  
             case PRIMITIVETYPE_Boolean:
@@ -2829,7 +2842,8 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
-            if (!v.IsBinary ())
+            if ((primitiveType == PRIMITIVETYPE_Binary && !v.IsBinary ()) ||
+                (primitiveType == PRIMITIVETYPE_IGeometry && !(v.IsIGeometry() || v.IsBinary())))
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             UInt32 currentSize;
