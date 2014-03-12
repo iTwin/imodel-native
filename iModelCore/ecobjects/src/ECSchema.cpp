@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1189,7 +1189,14 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
         {
         IECInstancePtr attribute = info->CreateCustomAttribute();
         if (attribute.IsValid())
+            {
             this->SetConsolidatedCustomAttribute(*attribute);
+            auto& bsca = attribute->GetClass().GetSchema();
+            if (!ECSchema::IsSchemaReferenced(*this, bsca ))
+                {
+                this->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
+                }
+            }
         }
     }
 
