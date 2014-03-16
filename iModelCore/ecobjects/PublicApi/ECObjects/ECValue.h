@@ -773,6 +773,8 @@ public:
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR, ECValueCR);
 
+    ECOBJECTS_EXPORT ECObjectsStatus    Initialize (IECInstanceCR, WCharCP accessString, ECValueCR);
+
     ECValueAccessorR    GetValueAccessorR ();
 
 /*__PUBLISH_SECTION_START__*/

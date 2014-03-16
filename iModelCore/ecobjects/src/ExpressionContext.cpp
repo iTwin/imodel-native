@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -349,7 +349,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         else if (AllowsTypeConversion())
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
-            if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance)))
+            if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
                 return ExprStatus_UnknownError;
             }
 
@@ -384,7 +384,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         else if (isPrimitive && AllowsTypeConversion())
             {
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
-            if (NULL != adapter && adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance)))
+            if (NULL != adapter && adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
                 { evalResult.Clear(); return ExprStatus_UnknownError; }
             }
 

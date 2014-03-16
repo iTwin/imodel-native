@@ -359,7 +359,7 @@ bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR dis
 * schemas present in the instance's DgnFile).
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString)
     {
     Unit storedUnit;
     ECValue v (inputVal);
@@ -371,7 +371,7 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
     // See if we've got a registered ECUnitsTypeAdapter from DgnPlatform
     IECTypeAdapter* typeAdapter;
     if (NULL != instance && NULL != (typeAdapter = ecprop.GetTypeAdapter()))
-        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance));
+        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance, accessString));
 
     // No TypeAdapter
     WCharCP label = storedUnit.GetShortLabel();

@@ -2542,6 +2542,22 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECPropertyValue::Initialize (IECInstanceCR instance, WCharCP accessString, ECValueCR v)
+    {
+    ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (m_accessor, instance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        m_instance = &instance;
+        m_ecValue = v;
+        m_evaluated = true;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                ECPropertyValue::HasChildValues () const

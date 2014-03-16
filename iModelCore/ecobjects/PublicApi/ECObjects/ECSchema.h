@@ -377,19 +377,21 @@ protected:
     virtual bool                                _Is3d() const = 0;
     virtual IECInstanceCP               	_GetECInstance() const = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
+    virtual WCharCP                             _GetAccessString() const = 0;
 public:
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
     ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
+    ECOBJECTS_EXPORT  WCharCP           GetAccessString() const;
 
     //! The following are relevant to adapters for point types.
     ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
     ECOBJECTS_EXPORT  bool              Is3d() const;
 
     //! internal use only, primarily for ECExpressions
-    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance);
+    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, WCharCP accessString);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
-    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance);
+    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, WCharCP accessString);
 /*__PUBLISH_SECTION_START__*/
     };
 
@@ -406,7 +408,6 @@ struct IECTypeAdapter : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
     // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
     // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
-    // We may want to see if it is worthwhile to factor out the non-dgn-specific context and move it down to the ECObjects layer.
 protected:
     virtual bool                _HasStandardValues() const = 0;
     virtual bool                _IsStruct() const = 0;
@@ -416,8 +417,8 @@ protected:
     virtual IECInstancePtr      _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const = 0;
     virtual IECInstancePtr      _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
 
-    virtual bool                _CanConvertToString() const = 0;
-    virtual bool                _CanConvertFromString() const = 0;
+    virtual bool                _CanConvertToString (IECTypeAdapterContextCR context) const = 0;
+    virtual bool                _CanConvertFromString (IECTypeAdapterContextCR context) const = 0;
     virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
     virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) = 0;
 
@@ -460,10 +461,10 @@ public:
 //__PUBLISH_SECTION_START__
 public:
     //! @return true if it is possible to convert the underlying type to a string
-    ECOBJECTS_EXPORT bool                 CanConvertToString () const;
+    ECOBJECTS_EXPORT bool                 CanConvertToString (IECTypeAdapterContextCR context) const;
 
     //! @return true if it is possible to extract the underlying type from a string
-    ECOBJECTS_EXPORT bool                 CanConvertFromString () const;
+    ECOBJECTS_EXPORT bool                 CanConvertFromString (IECTypeAdapterContextCR context) const;
 
     //! Converts the ECValue to a display string
     //! @param[out] str     The string representation of the value
