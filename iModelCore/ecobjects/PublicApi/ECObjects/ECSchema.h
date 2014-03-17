@@ -835,6 +835,8 @@ public:
 public:
     ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
     ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
+
+    ECOBJECTS_EXPORT ECPropertyCP   FindByDisplayLabel (WCharCP label) const;
     };
 
 typedef bvector<ECClassP> ECBaseClassesList;

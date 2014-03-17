@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1418,6 +1418,18 @@ ECPropertyIterable::const_iterator  ECPropertyIterable::end () const
     {
     return ECPropertyIterable::const_iterator();        
     }   
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECPropertyIterable::FindByDisplayLabel (WCharCP label) const
+    {
+    for (auto const& prop : *this)
+        if (prop->GetDisplayLabel().Equals (label))
+            return prop;
+
+    return nullptr;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
