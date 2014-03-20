@@ -286,7 +286,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
 
     propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
 
-    if (m_originalTypeName.size() > 0)
+    if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains(L"GeometryNET"))
         propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
     else
     	propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
