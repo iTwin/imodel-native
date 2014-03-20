@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ChildNodeRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -97,7 +97,7 @@ ChildNodeSpecificationList& SubCondition::GetSpecifications (void) { return m_sp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule () : PresentationRule ()
+ChildNodeRule::ChildNodeRule () : PresentationRule (), m_targetTree (TargetTree_MainTree), m_stopFurtherProcessing (false)
     {
     }
 
@@ -105,7 +105,7 @@ ChildNodeRule::ChildNodeRule () : PresentationRule ()
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeRule::ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
-    : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree)
+    : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree), m_stopFurtherProcessing (false)
     {
     }
 
@@ -136,6 +136,9 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success == xmlNode->GetAttributeStringValue (ruleTargetTreeString, CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE))
         m_targetTree = CommonTools::ParseTargetTreeString (ruleTargetTreeString.c_str ());
 
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_stopFurtherProcessing, COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING))
+        m_stopFurtherProcessing = false;
+
     CommonTools::LoadRulesFromXmlNode <SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
@@ -163,6 +166,7 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
 void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode)
     {
     xmlNode->AddAttributeStringValue (CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, CommonTools::FormatTargetTreeString (m_targetTree));
+    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
 
     CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList> (xmlNode, m_specifications);
 
@@ -183,6 +187,16 @@ SubConditionList& ChildNodeRule::GetSubConditions (void) { return m_subCondition
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecificationList& ChildNodeRule::GetSpecifications (void) { return m_specifications; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeRule::SetStopFurtherProcessing (bool stopFurtherProcessing) { m_stopFurtherProcessing = stopFurtherProcessing; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeRule::GetStopFurtherProcessing (void) { return m_stopFurtherProcessing; }
 
 
 /*---------------------------------------------------------------------------------**//**
