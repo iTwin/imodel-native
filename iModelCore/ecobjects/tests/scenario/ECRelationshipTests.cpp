@@ -2,13 +2,13 @@
 |
 |     $Source: tests/scenario/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-using namespace Bentley::ECN;
+using namespace ECN;
 
 #include <regex>
 
