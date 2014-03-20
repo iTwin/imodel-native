@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-using namespace Bentley::ECN;
+using namespace ECN;
 
 #include <regex>
 
