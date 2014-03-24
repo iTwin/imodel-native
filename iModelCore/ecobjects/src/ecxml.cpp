@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -51,7 +51,7 @@ WCharCP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
         case PRIMITIVETYPE_String:
             return ECXML_TYPENAME_STRING;
         case PRIMITIVETYPE_IGeometry:
-            return ECXML_TYPENAME_IGEOMETRY;
+            return ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC;
         default:
             return EMPTY_STRING;
         }

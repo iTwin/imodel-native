@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeRule.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,6 +62,7 @@ struct ChildNodeRule : public PresentationRule
         RuleTargetTree             m_targetTree;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
+        bool                       m_stopFurtherProcessing;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -91,6 +92,15 @@ struct ChildNodeRule : public PresentationRule
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
         ECOBJECTS_EXPORT ChildNodeSpecificationList&    GetSpecifications (void);
+
+        //! If this flag is set, this rule will stop any further processing of rules.
+        //! This helps in cases when recursion suppression is needed.
+        //! Note: such rules should not contain any SubConditions or specifications,
+        //! because they will not be applied.
+        ECOBJECTS_EXPORT void                           SetStopFurtherProcessing (bool stopFurtherProcessing);
+
+        //! If this flag is set, this rule will stop any further processing of rules.
+        ECOBJECTS_EXPORT bool                           GetStopFurtherProcessing (void);
 
     };
 
