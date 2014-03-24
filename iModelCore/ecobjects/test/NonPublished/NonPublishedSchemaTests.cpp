@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/NonPublishedSchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -83,6 +83,22 @@ TEST_F (SchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     EXPECT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->GetVersionMajor()==9);
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
+    }
+
+TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key(L"MasterSchema", 1, 0);
+    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    EXPECT_TRUE(testSchema->IsSupplemented());
+
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
