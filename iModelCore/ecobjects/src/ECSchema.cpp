@@ -1596,7 +1596,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     if ( (BEXML_Success != xmlDom.SelectNode (schemaNode, "/" EC_NAMESPACE_PREFIX ":" EC_SCHEMA_ELEMENT, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == schemaNode) )
         {
         BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchemaXML: Missing a top-level %hs node in the %hs namespace", EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
+        LOG.errorv(L"Invalid ECSchemaXML: Missing a top-level %ls node in the %ls namespace", WString(EC_SCHEMA_ELEMENT, BentleyCharEncoding::Utf8).c_str(), WString(ECXML_URI_2_0, BentleyCharEncoding::Utf8).c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
@@ -1605,7 +1605,7 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
     if (BEXML_Success != schemaNode->GetAttributeStringValue (schemaName, SCHEMA_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a schemaName attribute", EC_SCHEMA_ELEMENT);
+        LOG.errorv(L"Invalid ECSchemaXML: %ls element must contain a schemaName attribute", WString(EC_SCHEMA_ELEMENT, BentleyCharEncoding::Utf8).c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
