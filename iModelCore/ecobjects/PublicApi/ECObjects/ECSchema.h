@@ -782,7 +782,13 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(UInt32 value);
     //! Gets the Maximum number of array members.
     ECOBJECTS_EXPORT UInt32             GetMaxOccurs() const;
-};
+
+//__PUBLISH_SECTION_END__
+    //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
+    //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
+    UInt32                              GetStoredMaxOccurs () const { return m_maxOccurs; }
+//__PUBLISH_SECTION_START__
+    };
 
 //=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
