@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -325,7 +325,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
+        LOG.errorv(L"Invalid ECSchemaXML: %ls element must contain a %ls attribute", WString(propertyNode.GetName(), BentleyCharEncoding::Utf8).c_str(), WString(TYPE_NAME_ATTRIBUTE, BentleyCharEncoding::Utf8).c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))
