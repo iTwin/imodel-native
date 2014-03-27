@@ -232,7 +232,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP acces
 WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, WCharCP className)
     {
     wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    L"<ECSchema schemaName=\"%ls\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                     L"    <ECClass typeName=\"EmptyClass\" isDomainClass=\"True\">"
                     L"    </ECClass>"
                     L"    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
@@ -290,7 +290,7 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
                     L"        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
                     L"    </ECClass>"
-                    L"    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
+                    L"    <ECClass typeName=\"%ls\" isDomainClass=\"True\">"
                     L"        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
                     L"        <ECProperty propertyName=\"A\" typeName=\"int\" />"
                     L"        <ECProperty propertyName=\"AA\" typeName=\"int\" />"
@@ -421,7 +421,7 @@ ECSchemaPtr     CreateProfilingSchema (int nStrings)
         propertyName.Sprintf (L"StringProperty%02d", i);
         s_propertyNames.push_back (propertyName);
         WCharCP propertyFormat = 
-                    L"        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
+                    L"        <ECProperty propertyName=\"%ls\" typeName=\"string\" />";
         WString propertyXml;
         propertyXml.Sprintf (propertyFormat, propertyName.c_str());
         schemaXml += propertyXml;
