@@ -378,7 +378,7 @@ bool requireSchemaReference
                 {
                 LOG.errorv(L"%ls (used in ECSchema %ls) requires a (missing) reference to ECSchema %ls", 
                     classDefinition.GetFullName(), 
-                    containerSchema->GetName().c_str(), 
+                    containerSchema->GetFullSchemaName().c_str(), 
                     classDefinition.GetSchema().GetFullSchemaName().c_str());
                 BeAssert (false);
                 return ECOBJECTS_STATUS_SchemaNotFound;
