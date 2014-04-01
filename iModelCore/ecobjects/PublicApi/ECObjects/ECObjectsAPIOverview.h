@@ -15,12 +15,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //****** API doc main page *******
 
 //! @addtogroup ECObjectsGroup
-//! ECObjects is a set of abstractions for working with engineering/business data and metadata (see @ref ECInstanceHowTos for details).
-//! \b EC stands for Engineering Content.
+//! ECObjects is the heart of @b EC, Bentley's Information Modeling System. ECObjects is a set of abstractions 
+//! working with engineering/business data and metadata (see @ref ECInstanceHowTos for details).
 //! 
-//! An ECSchema is used to describe the data model / metadata of the Engineering Content. An ECSchema is just a collection of @ref ECClass "ECClasses".
-//! You can think of an ECClass as being like a C++ class that only defines properties (ECClasses define no methods or behaviors.) 
-//! In some ways, they are closer to C++ pure virtual abstract base classes that only contain property getters and setters. 
+//! An ECSchema is used to describe the data model / metadata of the information model. An ECSchema is just a collection of 
+//! @ref ECClass "ECClasses". You can think of an ECClass as being like a C++ class that only defines 
+//! properties (ECClasses define no methods or behaviors.) In some ways, they are closer to 
+//! C++ pure virtual abstract base classes that only contain property getters and setters. 
 //! They are also very analogous to a database table definition.
 //! ECClasses contain @ref ECProperty "ECProperties". These are property *definitions*, not values.
 //!

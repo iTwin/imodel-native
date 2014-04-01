@@ -2190,11 +2190,15 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
         
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
-        m_source->ReadXml (*sourceNode, context);
+        status = m_source->ReadXml (*sourceNode, context);
+    if (status != SCHEMA_READ_STATUS_Success)
+        return status;
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != targetNode)
-        m_target->ReadXml (*targetNode, context);
+        status = m_target->ReadXml (*targetNode, context);
+    if (status != SCHEMA_READ_STATUS_Success)
+        return status;
         
     return SCHEMA_READ_STATUS_Success;
     }
