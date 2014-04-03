@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleSet.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -196,7 +196,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
 
     BeXmlStatus xmlStatus;
     size_t stringSize = wcslen (xmlString) * sizeof(WChar);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (WChar));
     
     if (BEXML_Success != xmlStatus)
         {
