@@ -770,7 +770,9 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR primitive)
         }
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
     {
     CurveVectorPtr cv;
@@ -808,4 +810,38 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
         return;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), data);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ISolidPrimitiveR data)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), data);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ICurvePrimitiveCR curve)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), curve);
+    xmlDom->ToString(cgBeXml);
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
