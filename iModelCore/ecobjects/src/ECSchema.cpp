@@ -2140,7 +2140,7 @@ ECSchemaReadContextR schemaContext
 
     BeXmlStatus xmlStatus;
     size_t stringSize = wcslen (ecSchemaXml) * sizeof(WChar);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecSchemaXml, stringSize);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, ecSchemaXml, stringSize / sizeof (WChar));
 
     if (BEXML_Success != xmlStatus)
         {

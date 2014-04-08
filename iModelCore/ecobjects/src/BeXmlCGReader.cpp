@@ -2,7 +2,7 @@
 |
 |  $Source: src/BeXmlCGReader.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -577,5 +577,44 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, 
     return count > 0;
     }
 
+bool BeXmlCGParser::TryParse (Utf8CP beXmlCGString, ICurvePrimitivePtr &result)
+    {
+    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
+
+    BeXmlNodeP child(pXmlDom->GetRootElement());
+    return TryParse(child, result);
+    }
+
+bool BeXmlCGParser::TryParse (Utf8CP beXmlCGString, ISolidPrimitivePtr &result)
+    {
+    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
+
+    BeXmlNodeP child(pXmlDom->GetRootElement());
+    return TryParse(child, result);
+    }
+
+bool BeXmlCGParser::TryParse (Utf8CP beXmlCGString, MSBsplineSurfacePtr &result)
+    {
+    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
+
+    BeXmlNodeP child(pXmlDom->GetRootElement());
+    return TryParse(child, result);
+    }
+
+bool BeXmlCGParser::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, size_t maxDepth)
+    {
+    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
+
+    BeXmlNodeP child(pXmlDom->GetRootElement());
+    return TryParse(child, geometry, maxDepth);
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
