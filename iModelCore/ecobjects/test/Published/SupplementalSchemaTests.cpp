@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SupplementalSchemaTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1152,6 +1152,18 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     ECPropertyP bc2Prop1DerivedClass4 = derivedClass4->GetPropertyP(L"BC2Prop1");
     EXPECT_TRUE(NULL != bc2Prop1DerivedClass4);
     ValidateSystemInfoCustomAttribute(bc2Prop1DerivedClass4, L"LowPrioritySchema1.DerivedClass4.BC2Prop1", L"LowPrioritySchema1.DerivedClass4.BC2Prop1");
+    }
+
+TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    SchemaKey key(L"MasterSchema", 1, 0);
+    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    EXPECT_TRUE(testSchema->IsSupplemented());
+
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

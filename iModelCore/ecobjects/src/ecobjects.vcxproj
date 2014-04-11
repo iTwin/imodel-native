@@ -95,6 +95,7 @@
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
+    <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
@@ -120,6 +121,7 @@
     <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ECResourceProvider.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h" />
+    <ClInclude Include="..\PublicApi\ECUnits\Units.h" />
     <ClInclude Include="ECEvent.h" />
     <ClInclude Include="ecobjectsnativelog.h" />
     <ClInclude Include="ECObjectsPch.h" />

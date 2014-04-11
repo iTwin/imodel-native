@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECUnits/Units.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -95,13 +95,13 @@ public:
     ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitCR target) const;
 
     ECOBJECTS_EXPORT static bool        GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop);
-    ECOBJECTS_EXPORT static bool        GetDisplayUnitForECProperty (UnitR unit, WStringR displayFormat, ECPropertyCR ecprop);
+    ECOBJECTS_EXPORT static bool        GetDisplayUnitAndFormatForECProperty(UnitR unit, WStringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop);
 
     // Formats the ECValue according to UnitSpecification custom attribute on the ECProperty.
     // If instance is non-null and an IECTypeAdapter can be located to perform the formatting, the IECTypeAdapter::ConvertToString() method will be used
     // The numeric value will be formatted according to the DisplayFormatString property of any DisplayUnitSpecification custom attribute on the ECProperty
     // Returns false if no UnitSpecification present or if an error occurs
-    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance);
+    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

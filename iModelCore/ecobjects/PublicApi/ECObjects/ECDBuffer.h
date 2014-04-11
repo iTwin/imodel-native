@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -727,8 +727,9 @@ public:
     // (Call GetBufferSize() to determine the required size of the allocation).
     ECOBJECTS_EXPORT void                   GetBufferData (byte* dest) const;
 
-    // Evaluates all calculated property values in the buffer. Recurses into struct array members.
+    // Evaluates all calculated property values in the buffer. Recurses into struct array members. Does not re-evaluate default value specifications if value has been overridden
     ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties ();
+    ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties (bool includeDefaultValueSpecifications);
 /*__PUBLISH_SECTION_START__*/  
 public:
     //! Returns true if the buffer is empty (all values are null and all arrays are empty)

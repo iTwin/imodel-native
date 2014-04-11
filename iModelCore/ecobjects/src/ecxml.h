@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -79,6 +79,7 @@ static WCharCP ECXML_TYPENAME_STRING             = L"string";
 static WCharCP ECXML_TYPENAME_IGEOMETRY          = L"Bentley.GeometryNET.Common.IGeometry";
 static WCharCP ECXML_TYPENAME_IGEOMETRY_GENERIC  = L"Bentley.GeometryNET.Common"; // This is used for matching incoming types to any common geometry type
 static WCharCP ECXML_TYPENAME_IGEOMETRY_LEGACY   = L"Bentley.Geometry.Common";
+static WCharCP ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC   = L"Bentley.Geometry.Common.IGeometry";
 static WCharCP EMPTY_STRING = L"";
 
 static WCharCP ECXML_STRENGTH_REFERENCING        = L"referencing";

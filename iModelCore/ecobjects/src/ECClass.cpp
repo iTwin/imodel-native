@@ -1431,6 +1431,18 @@ ECPropertyIterable::const_iterator  ECPropertyIterable::end () const
     }   
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP ECPropertyIterable::FindByDisplayLabel (WCharCP label) const
+    {
+    for (auto const& prop : *this)
+        if (prop->GetDisplayLabel().Equals (label))
+            return prop;
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyIterable::const_iterator& ECPropertyIterable::const_iterator::operator++()

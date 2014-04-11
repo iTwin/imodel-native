@@ -1189,7 +1189,14 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
         {
         IECInstancePtr attribute = info->CreateCustomAttribute();
         if (attribute.IsValid())
+            {
             this->SetConsolidatedCustomAttribute(*attribute);
+            auto& bsca = attribute->GetClass().GetSchema();
+            if (!ECSchema::IsSchemaReferenced(*this, bsca ))
+                {
+                this->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
+                }
+            }
         }
     }
 
@@ -2808,9 +2815,54 @@ void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance)
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, WCharCP accessString)
     {
-    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance) : NULL;
+    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, accessString) : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WString QualifiedECAccessor::ToString() const
+    {
+    WString str;
+    str.Sprintf (L"%ls:%ls:%ls", m_schemaName.c_str(), m_className.c_str(), m_accessString.c_str());
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::FromString (WCharCP str)
+    {
+    bvector<WString> tokens;
+    BeStringUtilities::Split (str, L":", tokens);
+    if (3 != tokens.size())
+        return false;
+
+    m_schemaName = tokens[0];
+    m_className = tokens[1];
+    m_accessString = tokens[2];
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::FromAccessString (ECEnablerCR enabler, WCharCP accessString)
+    {
+    ECValueAccessor va;
+    if (ECValueAccessor::PopulateValueAccessor (va, enabler, accessString) && 0 < va.GetDepth() && nullptr != va[0].GetECProperty())
+        {
+        ECClassCR rootClass = va[0].GetECProperty()->GetClass();
+        m_schemaName = rootClass.GetSchema().GetName();
+        m_className = rootClass.GetName();
+        m_accessString = accessString;
+        return true;
+        }
+    else
+        return false;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

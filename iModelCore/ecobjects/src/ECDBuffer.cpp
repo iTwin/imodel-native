@@ -2500,7 +2500,6 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 break;
                 }
             case PRIMITIVETYPE_Binary:
-            case PRIMITIVETYPE_IGeometry:
                 {
                 UInt32 size;
                 if (useIndex)
@@ -2512,6 +2511,20 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 byte const*   actualBuffer = pValue+sizeof(UInt32);
 
                 v.SetBinary (actualBuffer, *actualSize);
+                break;
+                }
+            case PRIMITIVETYPE_IGeometry:
+                {
+                UInt32 size;
+                if (useIndex)
+                    size = GetPropertyValueSize (propertyLayout, index);
+                else
+                    size = GetPropertyValueSize (propertyLayout);
+
+                UInt32 const* actualSize   = (UInt32 const*)pValue;
+                byte const*   actualBuffer = pValue+sizeof(UInt32);
+
+                v.SetIGeometry (actualBuffer, *actualSize);
                 break;
                 }  
             case PRIMITIVETYPE_Boolean:
@@ -2829,7 +2842,8 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
-            if (!v.IsBinary ())
+            if ((primitiveType == PRIMITIVETYPE_Binary && !v.IsBinary ()) ||
+                (primitiveType == PRIMITIVETYPE_IGeometry && !(v.IsIGeometry() || v.IsBinary())))
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             UInt32 currentSize;
@@ -3726,21 +3740,38 @@ bool ECDBuffer::IsEmpty() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDBuffer::EvaluateAllCalculatedProperties()
     {
+    return EvaluateAllCalculatedProperties (false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::EvaluateAllCalculatedProperties (bool includeDefaults)
+    {
     ScopedDataAccessor scopedDataAccessor (*this);
     if (!scopedDataAccessor.IsValid())
         { BeAssert (false); return false; }
 
+    ECValue null;
     for (PropertyLayout const* propLayout: GetClassLayout().m_propertyLayouts)
         {
         if (propLayout->HoldsCalculatedProperty())
             {
+            if (includeDefaults && !propLayout->GetTypeDescriptor().IsArray())
+                SetValueToMemory (null, *propLayout);
+
             ECValue v;
             if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout) && v.IsArray())
                 {
                 // an array of calculated primitive values
                 UInt32 arrayCount = v.GetArrayInfo().GetCount();
                 for (UInt32 i = 0; i < arrayCount; i++)
+                    {
+                    if (includeDefaults)
+                        SetValueToMemory (null, *propLayout, i);
+
                     GetValueFromMemory (v, *propLayout, i);
+                    }
                 }
             }
         else if (propLayout->GetTypeDescriptor().IsStructArray())
@@ -3805,7 +3836,10 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
                                  srcType = srcPropLayout->GetTypeDescriptor();
 
                 if (dstType.GetTypeKind() != srcType.GetTypeKind())
+                    {
+                    BeAssert (false && "ECDBuffer::CopyDataBuffer() skipping property with mismatched types...this may be a programmer error");
                     continue;
+                    }
                 else if (dstType.IsStruct())
                     continue;   // embedded structs always null
                 else if (dstType.IsPrimitive())

@@ -295,7 +295,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
 
     propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
 
-    if (m_originalTypeName.size() > 0)
+    if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains(L"GeometryNET"))
         propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
     else
     	propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
@@ -912,8 +912,8 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECTypeAdapter::HasStandardValues() const                                                      { return _HasStandardValues(); }
-bool IECTypeAdapter::CanConvertFromString () const                                                  { return _CanConvertFromString (); }
-bool IECTypeAdapter::CanConvertToString () const                                                    { return _CanConvertToString (); }
+bool IECTypeAdapter::CanConvertFromString (IECTypeAdapterContextCR context) const                   { return _CanConvertFromString (context); }
+bool IECTypeAdapter::CanConvertToString (IECTypeAdapterContextCR context) const                     { return _CanConvertToString (context); }
 bool IECTypeAdapter::IsStruct() const                                                               { return _IsStruct(); }
 bool IECTypeAdapter::AllowExpandMembers() const
     {
@@ -934,6 +934,7 @@ bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR c
 
 ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
 UInt32              IECTypeAdapterContext::GetComponentIndex() const     { return _GetComponentIndex(); }
+WCharCP             IECTypeAdapterContext::GetAccessString() const       { return _GetAccessString(); }
 bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
 IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
 ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
