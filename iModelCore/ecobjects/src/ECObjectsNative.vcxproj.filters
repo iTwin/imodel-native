@@ -240,7 +240,10 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h">
       <Filter>Header Files</Filter>
-    </ClInclude>   
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

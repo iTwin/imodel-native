@@ -45,12 +45,15 @@
     <ClCompile Include="Published\InstanceTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\CGSerializationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\TestFixture.h">
+    <ClInclude Include="TestFixture\TestFixture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

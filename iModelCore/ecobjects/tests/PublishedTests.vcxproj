@@ -64,6 +64,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
+    <ClCompile Include="Published\CGSerializationTests.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
     <ClCompile Include="Published\InstanceTests.cpp" />
@@ -76,7 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
-    <ClInclude Include="Published\TestFixture.h" />
+    <ClInclude Include="TestFixture\TestFixture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="logging.config.xml" />
