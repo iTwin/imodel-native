@@ -90,6 +90,7 @@
     <ClCompile Include="SupplementalSchema.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />

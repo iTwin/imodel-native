@@ -218,15 +218,31 @@ private:
 
     /*__PUBLISH_SECTION_START__*/
 public:
-    //! @param [in] cgBeXml xml receiver
-    static ECOBJECTS_EXPORT void Write (Utf8StringR cgBeXml, ISolidPrimitiveR data);
-    //! @param [in] cgBeXml xml receiver
-    static ECOBJECTS_EXPORT void Write (Utf8StringR cgBeXml, IGeometryPtr data);
-
     //! Write common geometry xml for curve primitive.
-    //! @param [in] dest xml receiver
+    //! @param [out] cgBeXml xml string
+    //! @param [in] curve source geometry
     static ECOBJECTS_EXPORT void Write (Utf8StringR cgBeXml, ICurvePrimitiveCR curve);
+    
+    //! Write common geometry xml for curve vector.
+    //! @param [out] cgBeXml xml string
+    //! @param [in] curve source geometry
+    static void Write (Utf8StringR cgBeXml, CurveVectorCR curve);
 
+    //! Write common geometry xml for a CurveVector, compacting if possible
+    //! @param [out] cgBeXml xml string
+    //! @param [in] curve source geometry
+    //! @param [in] preferMostCompactPrimitives if true, try to substitute circular disk, elliptic disk for formal curve chain over single primitive.
+    static void Write (Utf8StringR cgBeXml, CurveVectorCR curve, bool preferMostCompactPrimitives);
+
+    //! Write common geometry xml for an ISolidPrimitive
+    //! @param [out] cgBeXml xml string
+    //! @param [in]  data ISolidPrimitive common geometry object to be serialized
+    static ECOBJECTS_EXPORT void Write (Utf8StringR cgBeXml, ISolidPrimitiveR data);
+
+    //! Write common geometry xml for an IGeometryPtr object
+    //! @param [out] cgBeXml xml string
+    //! @param [in]  data IGeometryPtr common geometry object to be serialized
+    static ECOBJECTS_EXPORT void Write (Utf8StringR cgBeXml, IGeometryPtr data);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
