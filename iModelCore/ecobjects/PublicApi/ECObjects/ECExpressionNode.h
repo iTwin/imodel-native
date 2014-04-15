@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressionNode.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -498,7 +498,7 @@ protected:
 
 public:
 
-    wchar_t const*   GetMemberName() { return m_memberName.c_str(); }
+    wchar_t const*   GetMemberName() const { return m_memberName.c_str(); }
 
                 DotNode (wchar_t const* memberName) : IdentNode(memberName), m_memberName(memberName) {}
     static DotNodePtr Create(wchar_t const* memberName) { return new DotNode(memberName); }

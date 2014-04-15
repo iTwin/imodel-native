@@ -24,6 +24,15 @@
       <UniqueIdentifier>{3b4f4dab-c793-44bb-aecb-cad8174719c7}</UniqueIdentifier>
       <Extensions>*.cpp</Extensions>
     </Filter>
+    <Filter Include="ECUnits">
+      <UniqueIdentifier>{941fe668-0f6f-4986-8668-8f323be6976b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECUnits\Header Files">
+      <UniqueIdentifier>{b43f62e6-cb4b-45ff-8b7b-d94e567f6b9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ECUnits\Source Files">
+      <UniqueIdentifier>{3118501a-d447-465a-9b9f-7d593da60f89}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp">
@@ -125,6 +134,9 @@
     <ClCompile Include="ECDBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Units\Units.cpp">
+      <Filter>ECUnits\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -222,6 +234,9 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECUnits\Units.h">
+      <Filter>ECUnits\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

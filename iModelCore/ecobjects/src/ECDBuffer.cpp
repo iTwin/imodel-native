@@ -3740,21 +3740,38 @@ bool ECDBuffer::IsEmpty() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDBuffer::EvaluateAllCalculatedProperties()
     {
+    return EvaluateAllCalculatedProperties (false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::EvaluateAllCalculatedProperties (bool includeDefaults)
+    {
     ScopedDataAccessor scopedDataAccessor (*this);
     if (!scopedDataAccessor.IsValid())
         { BeAssert (false); return false; }
 
+    ECValue null;
     for (PropertyLayout const* propLayout: GetClassLayout().m_propertyLayouts)
         {
         if (propLayout->HoldsCalculatedProperty())
             {
+            if (includeDefaults && !propLayout->GetTypeDescriptor().IsArray())
+                SetValueToMemory (null, *propLayout);
+
             ECValue v;
             if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout) && v.IsArray())
                 {
                 // an array of calculated primitive values
                 UInt32 arrayCount = v.GetArrayInfo().GetCount();
                 for (UInt32 i = 0; i < arrayCount; i++)
+                    {
+                    if (includeDefaults)
+                        SetValueToMemory (null, *propLayout, i);
+
                     GetValueFromMemory (v, *propLayout, i);
+                    }
                 }
             }
         else if (propLayout->GetTypeDescriptor().IsStructArray())

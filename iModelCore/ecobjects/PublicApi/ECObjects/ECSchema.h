@@ -778,6 +778,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(UInt32 value);
     //! Gets the Maximum number of array members.
     ECOBJECTS_EXPORT UInt32             GetMaxOccurs() const;
+/*__PUBLISH_SECTION_END__*/
+    UInt32                              GetStoredMaxOccurs() const { return m_maxOccurs; }
+/*__PUBLISH_SECTION_START__*/
 };
 
 //=======================================================================================
