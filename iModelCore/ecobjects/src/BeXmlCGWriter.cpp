@@ -814,11 +814,33 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ICurvePrimitiveCR curve)
     {
     cgBeXml.clear();
     BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
-    Write(*xmlDom.get(), data);
+    Write(*xmlDom.get(), curve);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, CurveVectorCR curve)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), curve, false);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, CurveVectorCR curve, bool preferMostCompactPrimitives)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), curve, preferMostCompactPrimitives);
     xmlDom->ToString(cgBeXml);
     }
 
@@ -836,12 +858,13 @@ void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ISolidPrimitiveR data)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ICurvePrimitiveCR curve)
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
     {
     cgBeXml.clear();
     BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
-    Write(*xmlDom.get(), curve);
+    Write(*xmlDom.get(), data);
     xmlDom->ToString(cgBeXml);
     }
+
 
 END_BENTLEY_ECOBJECT_NAMESPACE
