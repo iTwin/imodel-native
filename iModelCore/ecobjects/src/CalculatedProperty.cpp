@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -94,7 +94,6 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
     {
     PRECONDITION (in != NULL && end != NULL, false);
 
-    bool inQuotes = false;
     while (in < end)
         {
         switch (*in)
@@ -102,20 +101,14 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
         case '\\':
             converted.append (1, *in++);
             break;
-        case '"':
-            inQuotes = !inQuotes;
-            break;
         case '(':
-            if (!inQuotes)
-                {
-                converted.append (1, '(');
-                depth++;
-                if (!ProcessCaptureGroup (converted, ++in, end, depth))
-                    return false;
-                }
+            converted.append (1, '(');
+            depth++;
+            if (!ProcessCaptureGroup (converted, ++in, end, depth))
+                return false;
             break;
         case ')':
-            if (!inQuotes && 0 < --depth)
+            if (0 < --depth)
                 return true;    // parsing an inner group
             }
 
