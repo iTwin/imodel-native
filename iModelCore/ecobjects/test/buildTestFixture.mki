@@ -2,7 +2,7 @@
 #
 #  $Source: test/buildTestFixture.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 baseDir =   $(_MakeFilePath)
@@ -33,6 +33,7 @@ GUNIT_TEST_VERSION = 1.3
 libsUsed = \
         $(BuildContext)SubParts/Libs/ECObjects.lib \
         $(BuildContext)SubParts/Libs/Bentley.lib \
+        $(BuildContext)SubParts/Libs/BentleyAllocator.lib
 
 #----------------------------------------------------------------------
 #       Create output directories
