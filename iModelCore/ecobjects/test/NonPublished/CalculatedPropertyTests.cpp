@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/CalculatedPropertyTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -558,7 +558,7 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
     //  "^(?<S1>[ a-z\\d/]+[\"]?)[\\s]*X[\\s]*(?<S2>[ a-z\\d/]+[\"]?)|[\\w]*"
     // causes exception in construction of std::wregex from ParserRegex::Create()
     // We're mainly testing to make sure we don't get an exception in constructing the regex for the CalculatedPropertySpecfication
-    IECInstancePtr instance = CreateTestCase (L"S", L"this.S1 & \" X \" & this.S2", 0, L"FAILED", L"^(?<S1>[ a-z\\\\d/]+[\\\"]?)[\\\\s]*X[\\\\s]*(?<S2>[ a-z\\\\d/]+[\\\"]?)|[\\\\w]*");
+    IECInstancePtr instance = CreateTestCase (L"S", L"this.S1 & \" X \" & this.S2", 0, L"FAILED", L"^(?<S1>[ a-z\\\\d/]+[\"]?)[\\\\s]*X[\\\\s]*(?<S2>[ a-z\\\\d/]+[\"]?)|[\\\\w]*");
     SetValue (*instance, L"S1", L"a");
     SetValue (*instance, L"S2", L"b");
     Test (*instance, L"S", L"a X b");
@@ -568,6 +568,26 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
     SetValue (*instance, L"S", L"xXy");
     Test (*instance, L"S1", L"x");
     Test (*instance, L"S2", L"y");
+    }
+
+TEST_F(CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"pidSnippet.01.02.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECClassP ecClass = schema->GetClassP(L"BASE_REDUCER");
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    SetValue(*instance, L"LEFT_TEXT", L"left");
+    SetValue(*instance, L"RIGHT_TEXT", L"right");
+    Test(*instance, L"DISPLAY_TEXT", L"left X right");
+
+    SetValue(*instance, L"DISPLAY_TEXT", L"leftXright");
+    Test(*instance, L"LEFT_TEXT", L"left");
+    Test(*instance, L"RIGHT_TEXT", L"right");
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
