@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -81,7 +81,6 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
     {
     PRECONDITION (in != NULL && end != NULL, false);
 
-    bool inQuotes = false;
     while (in < end)
         {
         switch (*in)
@@ -89,27 +88,14 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
         case '\\':
             converted.append (1, *in++);
             break;
-        case '"':
-            inQuotes = !inQuotes;
-            break;
         case '(':
-            if (!inQuotes)
-                {
-                converted.append (1, '(');
-                depth++;
-                if (!ProcessCaptureGroup (converted, ++in, end, depth))
-                    return false;
-                //capture group processing might have already moved the in string to the last end character. So
-                //we need to check for end here again. TODO: Maybe method should be refactored to avoid having
-                //to check for end in while loop again.
-                else if (in >= end)
-                    {
-                    return true;
-                    }
-                }
+            converted.append (1, '(');
+            depth++;
+            if (!ProcessCaptureGroup (converted, ++in, end, depth))
+                return false;
             break;
         case ')':
-            if (!inQuotes && 0 < --depth)
+            if (0 < --depth)
                 return true;    // parsing an inner group
             }
 
