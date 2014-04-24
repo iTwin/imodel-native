@@ -131,15 +131,18 @@ private:
     ECClassLocater          m_classLocater;
     bool                    m_createIfNonStandard;
 
-    bool    GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName) const;
-    bool    LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const;
-    bool    LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
-    bool    GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
+    static bool GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName);
+    bool        LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const;
+    bool        LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
+
+    bool        GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
 public:
     UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard) : m_ecprop(ecprop), m_createIfNonStandard(createIfNonStandard) { }
 
-    bool    LocateUnit (UnitR unit) const;
-    bool    LocateUnitByName (UnitR unit, WCharCP unitName) const;
+    bool        LocateUnit (UnitR unit) const;
+    bool        LocateUnitByName (UnitR unit, WCharCP unitName) const;
+
+    static bool LocateUnitByName (UnitR unit, WCharCP unitName, ECClassLocater const& classLocater, bool createIfNonStandard);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,11 +178,19 @@ bool UnitLocater::LocateUnit (UnitR unit) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
     {
+    return LocateUnitByName (unit, unitName, m_classLocater, m_createIfNonStandard);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName, ECClassLocater const& classLocater, bool createIfNonStandard)
+    {
     IECInstancePtr unitAttr;
-    ECClassCP unitClass = m_classLocater.LocateClass (UNITS_SCHEMA, unitName);
+    ECClassCP unitClass = classLocater.LocateClass (UNITS_SCHEMA, unitName);
     if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES)).IsValid())
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
-    else if (m_createIfNonStandard)
+    else if (createIfNonStandard)
         {
         unit = Unit (unitName, unitName, UnitConverter (false), unitName);
         return true;
@@ -191,7 +202,7 @@ bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName) const
+bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName)
     {
     // 1. Extract conversion info
     ECValue v;
@@ -317,6 +328,15 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetUnitByName (UnitR unit, WCharCP unitName, bool createIfNotFound)
+    {
+    ECClassLocater classLocater;
+    return UnitLocater::LocateUnitByName (unit, unitName, classLocater, createIfNotFound);
     }
 
 /*---------------------------------------------------------------------------------**//**

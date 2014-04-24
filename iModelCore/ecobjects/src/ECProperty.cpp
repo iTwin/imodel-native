@@ -294,7 +294,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
     if (GetIsDisplayLabelDefined())
         propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetDisplayLabel().c_str());
-    propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->GetIsReadOnly());
+    propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
     
     WriteCustomAttributes (*propertyNode);
 
