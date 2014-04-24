@@ -295,9 +295,13 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance) const
+ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance, WCharCP accessString) const
     {
     PRECONDITION (m_expression.IsValid(), ECOBJECTS_STATUS_Error);
+
+    ECPropertyCP ecprop = instance.GetEnabler().LookupECProperty (accessString);
+    if (nullptr == ecprop)
+        return ECOBJECTS_STATUS_PropertyNotFound;
 
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
 
@@ -309,8 +313,24 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         
         ValueResultPtr valueResult;
         ECValue exprValue;
+        bool gotValue = false;
         if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
+            {
+            gotValue = true;
+            IECTypeAdapter* typeAdapter = nullptr;
+            if (ecprop->GetIsPrimitive())
+                typeAdapter = ecprop->GetAsPrimitiveProperty()->GetTypeAdapter();
+            else if (ecprop->GetIsArray())
+                typeAdapter = ecprop->GetAsArrayProperty()->GetMemberTypeAdapter();
+
+            if (nullptr != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                gotValue = false;
+            }
+
+        if (gotValue)
+            {
             newValue = exprValue;
+            }
         else
             {
             // Note that if we don't *have* a last valid value, we still return the failure value
