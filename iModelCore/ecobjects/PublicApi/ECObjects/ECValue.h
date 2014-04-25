@@ -103,13 +103,16 @@ protected:
     struct StringInfo
         {
     private:
+//__PUBLISH_SECTION_END__
         friend void ECValue::ShallowCopy (ECValueCR);
+//__PUBLISH_SECTION_START__
 
         Utf8CP              m_utf8;             
         Utf16CP             m_utf16;
 #if !defined (_WIN32)
         WCharCP             m_wchar;        // On Windows we use m_utf16. The presence of the extra pointer wouldn't hurt anything but want to ensure it's only used on unix.
 #endif
+//__PUBLISH_SECTION_END__
         void                ConvertToUtf8 (UInt8& flags);
         void                ConvertToUtf16 (UInt8& flags);
     public:
@@ -161,6 +164,7 @@ protected:
         //! @param[in] rhs  The StringInfo object to compare this object to
         //! @param[out] flags   A flag indicating whether the ECValue owns the data in the StringInfo object
         bool                Equals (StringInfo const& rhs, UInt8& flags);
+//__PUBLISH_SECTION_START__
         };
 
     struct DateTimeInfo
@@ -171,6 +175,7 @@ protected:
         DateTime::Component m_component;
         bool                m_isMetadataSet;
 
+//__PUBLISH_SECTION_END__
     public:
         void Set (::Int64 ceTicks);
         BentleyStatus Set (DateTimeCR dateTime);
@@ -185,6 +190,7 @@ protected:
         bool MetadataMatches (DateTimeInfoCR dateTimeInfo) const;
 
         WString MetadataToString () const;
+//__PUBLISH_SECTION_START__
         };
 
     //! The union storing the actual data of this ECValue
@@ -625,20 +631,38 @@ public:
         int                     m_arrayIndex;
         mutable ECPropertyCP    m_cachedProperty;
     public:
-
+        //! Constructs a Location pointing to a specific property value
+        //! @param[in]      enabler     The enabler containing the property
+        //! @param[in]      propIdx     The index of the property within the enabler
+        //! @param[in]      arrayIdx    The array index of the property value, or INDEX_ROOT.
         Location (ECEnablerCP enabler, int propIdx, int arrayIdx) : m_enabler(enabler), m_propertyIndex(propIdx), m_arrayIndex(arrayIdx), m_cachedProperty(NULL) { }
-        Location () : m_enabler(NULL), m_propertyIndex(-1), m_arrayIndex(INDEX_ROOT), m_cachedProperty(NULL) { }
-        Location (const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) { }
 
+        //! Constructs an empty Location.
+        Location () : m_enabler(NULL), m_propertyIndex(-1), m_arrayIndex(INDEX_ROOT), m_cachedProperty(NULL) { }
+
+        //! Copy-constructs a Location
+        //! @param[in]      loc         The Location to copy
+        //! @return 
+        Location (const Location& loc) : m_enabler(loc.m_enabler), m_propertyIndex(loc.m_propertyIndex), m_arrayIndex(loc.m_arrayIndex), m_cachedProperty(loc.m_cachedProperty) { }
 /*__PUBLISH_SECTION_END__*/
         void            SetPropertyIndex (int index)                { m_cachedProperty = NULL; m_propertyIndex = index; }
         void            SetArrayIndex (int index)                   { m_arrayIndex = index; }
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
 /*__PUBLISH_SECTION_START__*/
     public:
+        //! Get the enabler associated with this Location
+        //! @return     The enabler associated with this Location
         ECEnablerCP                     GetEnabler() const          { return m_enabler; }
+        //! Get the property index identifying this Location
+        //! @return     The index of the property within its enabler
         int                             GetPropertyIndex() const    { return m_propertyIndex; }
+
+        //! Gets the array index of the property value associated with this Location
+        //! @return     The array index, or INDEX_ROOT if no array index specified.
         int                             GetArrayIndex() const       { return m_arrayIndex; }
+
+        //! Gets the ECProperty associated with this Location
+        //! @return     The ECProperty, or nullptr if the ECProperty could not be evaluated.
         ECOBJECTS_EXPORT ECPropertyCP   GetECProperty() const;
         };
 
@@ -692,10 +716,13 @@ public:
     ECOBJECTS_EXPORT bool                   MatchesEnabler (UInt32 depth, ECEnablerCR other) const;
 
     //! Looks up and returns the ECProperty associated with this accessor
-    ECOBJECTS_EXPORT ECN::ECPropertyCP       GetECProperty() const;
+    ECOBJECTS_EXPORT ECN::ECPropertyCP      GetECProperty() const;
 
+    ECOBJECTS_EXPORT WString                GetDebugAccessString () const;
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Gets the depth of this Location within the ECValueAccessor.
+    //! @return     The depth of this Location within the containing ECValueAccessor.
     ECOBJECTS_EXPORT UInt32                 GetDepth() const;
 
     //! Gets the native-style access string for a given stack depth.  This access string does 
@@ -704,21 +731,54 @@ public:
     //! @return         The access string.
     //! @see            IECInstance
     ECOBJECTS_EXPORT WCharCP                GetAccessString (UInt32 depth) const;
+
+    //! Gets the native-style access string for the deepest Location in this ECValueAccessor. This access string does
+    //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.
+    //! @return     The access string
     ECOBJECTS_EXPORT WCharCP                GetAccessString () const;
 
-    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
-    ECOBJECTS_EXPORT bool  PushLocation (ECEnablerCR, WCharCP,   int arrayIndex=INDEX_ROOT);
+    //! Appends a Location pointing to the specified property value
+    //! @param[in]      enabler         The enabler containing the property
+    //! @param[in]      propertyIndex   The index of the property within its enabler
+    //! @param[in]      arrayIndex      The array index of the property value, or INDEX_ROOT if no array index
+    ECOBJECTS_EXPORT void  PushLocation (ECEnablerCR enabler, int propertyIndex, int arrayIndex=INDEX_ROOT);
 
-    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR, int propertyIndex, int arrayIndex=INDEX_ROOT);
-    ECOBJECTS_EXPORT bool  PushLocation (IECInstanceCR, WCharCP,   int arrayIndex=INDEX_ROOT);
+    //! Appends a Location pointing to the specified property value
+    //! @param[in]      enabler         The enabler containing the property
+    //! @param[in]      accessString    The access string of the property within its enabler
+    //! @param[in]      arrayIndex      The array index of the property value, or INDEX_ROOT if no array index
+    //! @return     true if the access string is valid for the enabler, otherwise false
+    ECOBJECTS_EXPORT bool  PushLocation (ECEnablerCR enabler, WCharCP accessString,   int arrayIndex=INDEX_ROOT);
 
+    //! Appends a Location pointing to the specified property value
+    //! @param[in]      instance        The IECInstance containing the property value
+    //! @param[in]      propertyIndex   The index of the property within the IECInstance's ECEnabler
+    //! @param[in]      arrayIndex      The array index of the property value, or INDEX_ROOT if no array index
+    ECOBJECTS_EXPORT void  PushLocation (IECInstanceCR instance, int propertyIndex, int arrayIndex=INDEX_ROOT);
+
+    //! Appends a Location pointing to the specified property value
+    //! @param[in]      instance     The IECInstance containing the property value
+    //! @param[in]      accessString The access string identifying the property value within the IECInstance's ECEnabler
+    //! @param[in]      arrayIndex   The array index of the property value, or INDEX_ROOT if no array index
+    //! @return     true if the access string is valid for the IECInstance, otherwise false
+    ECOBJECTS_EXPORT bool  PushLocation (IECInstanceCR instance, WCharCP accessString,   int arrayIndex=INDEX_ROOT);
+
+    //! Removes the deepest Location within this ECValueAccessor
     ECOBJECTS_EXPORT void       PopLocation ();
+
+    //! Gets the deepest Location within this ECValueAccessor
+    //! @return     The deepest Location within this ECValueAccessor
     ECOBJECTS_EXPORT Location&  DeepestLocation ();
+
+    //! Gets the deepest Location within this ECValueAccessor
+    //! @return     The deepest Location within this ECValueAccessor
     ECOBJECTS_EXPORT Location const&  DeepestLocationCR () const;
 
+    //! Clears all Locations from this ECValueAccessor
     ECOBJECTS_EXPORT void  Clear ();
 
-    ECOBJECTS_EXPORT WString               GetDebugAccessString () const;
+    //! Gets the name of the ECProperty identified by this ECValueAccessor
+    //! @return     the name of the ECProperty identified by this ECValueAccessor
     ECOBJECTS_EXPORT WString               GetPropertyName () const;
 
     //! Constructs an empty ECValueAccessor.
@@ -734,10 +794,28 @@ public:
     //! @see            ECInstanceInteropHelper
     ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
 
+    //! Performs inequality comparison against the specified ECValueAccessor
+    //! @param[in]      accessor The ECValueAccessor to compare against
+    //! @return     true if the ECValueAccessors differ
     ECOBJECTS_EXPORT bool                   operator!=(ECValueAccessorCR accessor) const;
+
+    //! Performs equality comparison against the specified ECValueAccessor
+    //! @param[in]      accessor The ECValueAccessor to compare against
+    //! @return     true if the ECValueAccessors are equivalent
     ECOBJECTS_EXPORT bool                   operator==(ECValueAccessorCR accessor) const;
 
+    //! Populates an ECValueAccessor from an IECInstance and a managed property access string.
+    //! @param[in]      va                      The ECValueAccessor to populate
+    //! @param[in]      instance                The IECInstance containing the specified property value
+    //! @param[in]      managedPropertyAccessor The managed access string relative to the specified IECInstance
+    //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor);
+
+    //! Populates an ECValueAccessor from an ECEnabler and a managed property access string.
+    //! @param[in]      va                      The ECValueAccessor to populate
+    //! @param[in]      enabler                 The ECEnabler containing the specified property
+    //! @param[in]      managedPropertyAccessor The managed access string relative to the specified ECEnabler
+    //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP managedPropertyAccessor);
     };
 
@@ -779,9 +857,16 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Gets the root IECInstance containing this ECPropertyValue
+    //! @return     the IECInstance containing this ECPropertyValue
     ECOBJECTS_EXPORT IECInstanceCR          GetInstance () const;
 
+    //! Gets the value of this ECPropertyValue
+    //! @return     an ECValue containing the value of this ECPropertyValue
     ECOBJECTS_EXPORT ECValueCR              GetValue () const;
+
+    //! Gets the ECValueAccessor identifying this property value
+    //! @return     the ECValueAccessor identifying this property value
     ECOBJECTS_EXPORT ECValueAccessorCR      GetValueAccessor () const;
     
     //! Indicates whether the value is an array or struct
@@ -790,11 +875,15 @@ public:
     //! For array and struct values, gets a virtual collection of the embedded values
     ECOBJECTS_EXPORT ECValuesCollectionPtr  GetChildValues () const;
 
-    //! Get ECPropertyValue given an access string. The access string is in the format of managed accessors
-    ECOBJECTS_EXPORT static ECPropertyValuePtr     GetPropertyValue (IECInstanceCR, WCharCP propertyAccessor);
+    //! Create an ECPropertyValue for the property of an IECInstance identified by a managed access string
+    //! @param[in]      instance         The IECInstance containing the property value
+    //! @param[in]      propertyAccessor The managed access string identifying the property value within the IECInstance
+    //! @return     an ECPropertyValue pointing to the specified property value of the IECInstance, or nullptr if the property value could not be evaluated.
+    ECOBJECTS_EXPORT static ECPropertyValuePtr     GetPropertyValue (IECInstanceCR instance, WCharCP propertyAccessor);
     };
 
 //=======================================================================================  
+//! An iterator over the ECPropertyValues contained in an ECValuesCollection
 //! @see ECValue, ECValueAccessor, ECValuesCollection
 //! @ingroup ECObjectsGroup
 //! @bsiclass 
@@ -818,12 +907,21 @@ private:
 /*__PUBLISH_SECTION_START__*/
 
 public:
+    //! Performs inequality comparison against another ECValuesCollectionIterator
+    //! @param[in]      iter The ECValuesCollectionIterator against which to compare
+    //! @return     true if the iterators differ, false if they are equivalent
     ECOBJECTS_EXPORT bool               IsDifferent(ECValuesCollectionIterator const& iter) const;
+
+    //! Advances this iterator to the next item in the collection
     ECOBJECTS_EXPORT void               MoveToNext ();
+
+    //! Gets the ECPropertyValue currently pointed to by this iterator
+    //! @return     the ECPropertyValue currently pointed to by this iterator
     ECOBJECTS_EXPORT ECPropertyValue const& GetCurrent () const;
     };
 
 //=======================================================================================    
+//! A collection of all ECPropertyValues contained in an IECInstance or an ECPropertyValue.
 //! @ingroup ECObjectsGroup
 //! @bsiclass 
 //======================================================================================= 
@@ -843,11 +941,27 @@ private:
 public:
     ECOBJECTS_EXPORT ECValuesCollection (IECInstanceCR);
 /*__PUBLISH_SECTION_START__*/
+    //! Gets an iterator pointing to the beginning of the collection
+    //! @return an iterator pointing to the beginning of this ECValuesCollection
     ECOBJECTS_EXPORT const_iterator begin () const;
+
+    //! Gets an iterator pointing just beyond the end of this collection
+    //! @return an iterator pointing just beyond the end of this ECValuesCollection
     ECOBJECTS_EXPORT const_iterator end ()   const;
 
-    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceCR);
-    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (ECPropertyValueCR);
+    //! Creates an ECValuesCollection representing all of the ECPropertyValues contained in the specified IECInstance
+    //! @param[in]      instance The IECInstance for which to create the collection
+    //! @return     A collection of ECPropertyValues contained in the specified IECInstance
+    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (IECInstanceCR instance);
+
+    //! Creates an ECValuesCollection representing all of the child ECPropertyValues contained in the specified
+    //! ECPropertyValue.
+    //! @param[in]      propertyValue The ECPropertyValue from which to obtain child property values
+    //! @return     A collection of child ECPropertyValues, or nullptr if no such collection exists.
+    ECOBJECTS_EXPORT static ECValuesCollectionPtr Create (ECPropertyValueCR propertyValue);
+
+    //! Gets the ECPropertyValue containing this collection's property values.
+    //! @return the ECPropertyValue containing this collection's property values.
     ECOBJECTS_EXPORT ECPropertyValueCR  GetParentProperty () const;
     };
 
