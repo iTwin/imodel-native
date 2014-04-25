@@ -85,9 +85,11 @@ EC_TYPEDEFS(IECSchemaRemapper);
 
 EC_TYPEDEFS (SchemaNameClassNamePair);
 
-typedef struct IStream* IStreamP;
+struct IStream;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+typedef struct IStream* IStreamP;
 
 //! Error code categories
 typedef enum ECErrorCategories
