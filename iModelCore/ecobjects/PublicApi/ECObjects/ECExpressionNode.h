@@ -283,6 +283,7 @@ public:
     
     
     T           GetInternalValue() const { return m_value; }
+    void        SetInternalValue (T const& v) { m_value = v; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -461,6 +462,7 @@ public:
     void                    PushQualifier(WCharCP rightName);
     bvector<WString> const& GetQualifiers() const { return m_qualifiers; }
     wchar_t const*          GetName() const { return m_value.c_str(); }
+    void                    SetName (WCharCP name) { m_value = name; }
     static IdentNodePtr     Create(wchar_t const*name) { return new IdentNode(name); }
 
 }; // End of struct IdentNode

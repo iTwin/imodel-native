@@ -215,7 +215,7 @@ bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue)
-  : m_expression(&expr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType)
+  : m_expression(&expr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType), m_allowTypeConversions (true)
     {
     ECValue v;
     if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"IsDefaultValueOnly") && !v.IsNull())
@@ -236,6 +236,9 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
             }
         }
 
+    if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"SuppressTypeConversions") && !v.IsNull())
+        m_allowTypeConversions = !v.GetBoolean();
+
     InstanceExpressionContextPtr thisContext = InstanceExpressionContext::Create (NULL);
     ContextSymbolPtr thisSymbol = ContextSymbol::CreateContextSymbol (L"this", *thisContext);
     SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (requiredSymbolSets);
@@ -243,6 +246,7 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
 
     m_context = symbolContext.get();
     m_thisContext = thisContext.get();
+    m_thisContext->SetAllowsTypeConversion (m_allowTypeConversions);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -324,14 +328,17 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
             {
             gotValue = true;
-            IECTypeAdapter* typeAdapter = nullptr;
-            if (ecprop->GetIsPrimitive())
-                typeAdapter = ecprop->GetAsPrimitiveProperty()->GetTypeAdapter();
-            else if (ecprop->GetIsArray())
-                typeAdapter = ecprop->GetAsArrayProperty()->GetMemberTypeAdapter();
+            if (m_allowTypeConversions)
+                {
+                IECTypeAdapter* typeAdapter = nullptr;
+                if (ecprop->GetIsPrimitive())
+                    typeAdapter = ecprop->GetAsPrimitiveProperty()->GetTypeAdapter();
+                else if (ecprop->GetIsArray())
+                    typeAdapter = ecprop->GetAsArrayProperty()->GetMemberTypeAdapter();
 
-            if (nullptr != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
-                gotValue = false;
+                if (nullptr != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                    gotValue = false;
+                }
             }
 
         if (gotValue)
