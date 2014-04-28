@@ -2,7 +2,7 @@ P*------------------------------------------------------------------------------
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -879,7 +879,7 @@ ECObjectsStatus MemoryECInstanceBase::_EvaluateCalculatedProperty (ECValueR calc
         if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
             (const_cast<MemoryECInstanceBase&> (*this)).SetIsLoadedBit (propIdx);
 
-        return spec->Evaluate (calcedValue, existingValue, thisInstance);
+        return spec->Evaluate (calcedValue, existingValue, thisInstance, propLayout.GetAccessString());
         }
     else
         return ECOBJECTS_STATUS_Error;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -316,6 +316,9 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new InstanceListExpressionContext from the list of IECInstances
+    //! @param[in]      instances A list of IECInstances to be associated with the context
+    //! @param[in]      outer     An optional ExpressionContext to contain the created context
+    //! @return     A new InstanceListExpressionContext
     ECOBJECTS_EXPORT static InstanceListExpressionContextPtr    Create (bvector<IECInstancePtr> const& instances, ExpressionContextP outer = NULL);
     };
 
@@ -330,9 +333,17 @@ private:
     InstanceExpressionContext (ExpressionContextP outer) : InstanceListExpressionContext (outer) { }
 //__PUBLISH_SECTION_START__
 public:
+    //! Creates an InstanceExpressionContext
+    //! @param[in]      outer An optional ExpressionContext which will contain the created InstanceExpressionContext
+    //! @return     A new InstanceExpressionContext
     ECOBJECTS_EXPORT static InstanceExpressionContextPtr        Create (ExpressionContextP outer = NULL);
     
+    //! Sets the IECInstance associated with this context
+    //! @param[in]      instance The IECInstance to associate with this context
     ECOBJECTS_EXPORT void           SetInstance (IECInstanceCR instance);
+
+    //! Sets the list of IECInstances associated with this context
+    //! @param[in]      instances The list of IECInstances to associate with this context
     ECOBJECTS_EXPORT void           SetInstances (ECInstanceListCR instances);
     };
 
@@ -715,18 +726,27 @@ public:
 };  //  End of ValueSymbol
 
 /*=================================================================================**//**
-*
+* Visitor interface for an in-order traversal of the Nodes of an ECExpression tree. Each
+* method can return true to continue the traversal, or false to terminate it.
 +===============+===============+===============+===============+===============+======*/
 struct          NodeVisitor 
 {
     virtual     ~NodeVisitor() {}
+    //! Invoked when an open parenthesis is encountered
     virtual bool OpenParens() = 0;
+    //! Invoked when a closing parenthesis is encountered
     virtual bool CloseParens() = 0;
+    //! Invoked when an array index is encountered
     virtual bool StartArrayIndex(NodeCR node) = 0;
+    //! Invoked after an array index is processed
     virtual bool EndArrayIndex(NodeCR node) = 0;
+    //! Invoked when the beginning of an argument list is encountered
     virtual bool StartArguments(NodeCR node) = 0;
+    //! Invoked after processing an argument list
     virtual bool EndArguments(NodeCR node) = 0;
+    //! Invoked when a comma is encountered
     virtual bool Comma() = 0;
+    //! Invoked to process a node
     virtual bool ProcessNode(NodeCR node) = 0;
 };
 
@@ -796,7 +816,8 @@ public:
 };
 
 /*=================================================================================**//**
-* 
+* An object which can optimize an ECExpression tree by resolving constant sub-expressions
+* to literal values, or perform other optimizations.
 * @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionResolver : RefCountedBase
@@ -805,25 +826,42 @@ private:
     ExpressionContextPtr m_context;
 
 protected:
+    //! Attempts to promote nodes for an arithmetic operation.
     ExpressionStatus PerformArithmeticPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    //! Attempts to promote nodes for a junction operation.
     ExpressionStatus PerformJunctionPromotion(ECN::PrimitiveType&targetType, ResolvedTypeNodePtr& left, ResolvedTypeNodePtr& right);
+    //! Attempts to promote the node to the specified primitive type.
     ExpressionStatus PromoteToType(ResolvedTypeNodePtr& node, ECN::PrimitiveType targetType);
+    //! Attempts to promote the node to a string value.
     ExpressionStatus PromoteToString(ResolvedTypeNodePtr& node);
+    //! Constructs ExpressionResolver from the specified ExpressionContext.
     ExpressionResolver(ExpressionContextR context) { m_context = &context; }
 
 public:
+    //! Returns the ExpressionContext associated with this ExpressionResolver
     ExpressionContextCR GetExpressionContext() const { return *m_context; }
+    //! Returns the ExpressionContext associated with this ExpressionResolver
     ExpressionContextR GetExpressionContextR() const { return *m_context; }
 
+    //! Attempts to resolve a PrimaryListNode
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolvePrimaryList (PrimaryListNodeR primaryList);
+    //! Attempts to resolve a unary arithmetic node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveUnaryArithmeticNode (UnaryArithmeticNodeCR node);
+    //! Attempts to resolve a multiplication node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveMultiplyNode (MultiplyNodeCR node);
+    //! Attempts to resolve a division node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveDivideNode (DivideNodeCR node);
+    //! Attempts to resolve a subtraction node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolvePlusMinusNode (PlusMinusNodeCR node);
+    //! Attempts to resolve a string concatenation node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveConcatenateNode (ConcatenateNodeCR node);
+    //! Attempts to resolve a comparison node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveComparisonNode (ComparisonNodeCR node);
+    //! Attempts to resolve a logical operation node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveLogicalNode (LogicalNodeCR node);
+    //! Attempts to resolve a shift operation node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveShiftNode (ShiftNodeCR node);
+    //! Attempts to resolve a resolve a conditional node
     ECOBJECTS_EXPORT virtual ResolvedTypeNodePtr _ResolveIIfNode (IIfNodeCR node);
 };
 

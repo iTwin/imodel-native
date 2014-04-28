@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -251,10 +251,12 @@ protected:
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
     virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
 
+    //! Returns true if callers are permitted to modify values of this IECInstance in memory. This may differ from the return value of _IsReadOnly(), which
+    //! returns true if the IECInstance is permitted to be modified persistently.
     virtual bool    _ChangeValuesAllowed() const { return ! IsReadOnly(); }
-
 public:
-
+    //! Returns true if callers are permitted to modify values of this IECInstance in memory. This may differ from the return value of IsReadOnly(), which
+    //! returns true if the IECInstance is permitted to be modified persistently.
     bool    ChangeValuesAllowed()  { return _ChangeValuesAllowed(); }
 
     //! Returns the base address for this instance

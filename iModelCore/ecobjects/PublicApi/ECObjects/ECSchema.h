@@ -836,9 +836,12 @@ public:
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
-    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
+    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the collection
+    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the collection
 
+    //! Attempts to look up an ECProperty by its display label
+    //! @param[in]      label The label of the ECProperty to find
+    //! @return     The ECProperty with the specified label, or nullptr if no such ECProperty exists
     ECOBJECTS_EXPORT ECPropertyCP   FindByDisplayLabel (WCharCP label) const;
     };
 
@@ -1483,11 +1486,15 @@ struct SchemaKeyMatchPredicate
     SchemaKeyCR     m_key;
     SchemaMatchType m_matchType;
 
-    SchemaKeyMatchPredicate(SchemaKeyCR key, SchemaMatchType matchType)
-        :m_key(key), m_matchType(matchType)
-        {}
+    //! Constructs a SchemaKeyMatchPredicate
+    //! @param[in]      key         The key to compare against
+    //! @param[in]      matchType   The type of matching to perform for comparisons
+    SchemaKeyMatchPredicate(SchemaKeyCR key, SchemaMatchType matchType) :m_key(key), m_matchType(matchType) {}
 
     typedef bpair<SchemaKey, ECSchemaPtr> MapVal;
+
+    //! Performs comparison against a MapVal
+    //! @return true if this SchemaKeyMatchPredicate is equivalent to the specified MapVal
     bool operator () (MapVal const& rhs)
         {
         return rhs.first.Matches (m_key, m_matchType);
@@ -1504,15 +1511,22 @@ public:
     WString m_schemaName;
     WString m_className;
 
+    //! Constructs a SchemaNameClassNamePair from the specified schema and class names
     SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
+    //! Constructs a SchemaNameClassNamePair from the specified schema and class names
     SchemaNameClassNamePair (WCharCP schemaName, WCharCP className) : m_schemaName (schemaName), m_className  (className) {}
+    //! Constructs an empty SchemaNameClassNamePair
     SchemaNameClassNamePair() { }
+    //! Constructs a SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
     SchemaNameClassNamePair (WStringCR schemaAndClassNameSeparatedByColon)
         {
         BeAssert (WString::npos != schemaAndClassNameSeparatedByColon.find (':'));
         Parse (schemaAndClassNameSeparatedByColon);
         }
 
+    //! Attempts to populate this SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
+    //! @param[in]      schemaAndClassNameSeparatedByColon a string of the format "SCHEMANAME:CLASSNAME"
+    //! @return true if the string was successfully parsed, false otherwise. If it returns false, this SchemaNameClassNamePair will not be modified.
     bool Parse (WStringCR schemaAndClassNameSeparatedByColon)
         {
         size_t pos = schemaAndClassNameSeparatedByColon.find (':');
@@ -1526,6 +1540,9 @@ public:
             return false;
         }
 
+    //! Performs a less-than comparison against another SchemaNameClassNamePair
+    //! @param[in]      other The SchemaNameClassNamePair against which to compare
+    //! @return true if this SchemaNameClassNamePair is considered "less than" the specified SchemaNameClassNamePair
     bool operator<(SchemaNameClassNamePair other) const
         {
         if (m_schemaName < other.m_schemaName)
@@ -1537,11 +1554,16 @@ public:
         return m_className < other.m_className;
         };
 
+    //! Performs equality comparison against another SchemaNameClassNamePair
+    //! @param[in]      rhs The SchemaNameClassNamePair against which to compare
+    //! @return true if the SchemaNameClassNamePairs are equivalent
     bool operator==(SchemaNameClassNamePair const& rhs) const
         {
         return 0 == m_schemaName.CompareTo(rhs.m_schemaName) && 0 == m_className.CompareTo(rhs.m_className);
         }
 
+    //! Concatenates the schema and class names into a single colon-separated string of the format "SCHEMANAME:CLASSNAME"
+    //! @return a string of the format "SCHEMANAME:CLASSNAME"
     WString     ToColonSeparatedString() const
         {
         WString str;
@@ -1551,7 +1573,8 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* Identifies an ECProperty by schema name, class name, and access string.
+* Identifies an ECProperty by schema name, class name, and access string. The class name
+* may refer to the ECClass containing the ECProperty, or a subclass thereof.
 * @bsistruct                                                    Paul.Connelly   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct QualifiedECAccessor
@@ -1561,20 +1584,38 @@ protected:
     WString         m_className;
     WString         m_accessString;
 public:
+    //! Constructs an empty QualifiedECAccessor
     QualifiedECAccessor() { }
+    //! Constructs a QualifiedECAccessor referring to a property of an ECClass specified by access string
     QualifiedECAccessor (WCharCP schemaName, WCharCP className, WCharCP accessString)
         : m_schemaName(schemaName), m_className(className), m_accessString(accessString) { }
 
+    //! Returns the name of the schema containing the ECClass
     WCharCP     GetSchemaName() const           { return m_schemaName.c_str(); }
+    //! Returns the name of the ECClass (or subclass thereof) containing the ECProperty
     WCharCP     GetClassName() const            { return m_className.c_str(); }
+    //! Returns the access string identifying the ECProperty within the ECClass
     WCharCP     GetAccessString() const         { return m_accessString.c_str(); }
+
+    //! Sets the name of the schema containing the ECClass
     void        SetSchemaName (WCharCP name)    { m_schemaName = name; }
+    //! Sets the name of the ECClass (or subclass thereof) containing the ECProperty
     void        SetClassName (WCharCP name)     { m_className = name; }
+    //! Sets the access string identifying the ECProperty within the ECClass
     void        SetAccessString (WCharCP acStr) { m_accessString = acStr; }
 
+    //! Returns a colon-separated string of the format "Schema:Class:AccessString"
     ECOBJECTS_EXPORT WString    ToString() const;
+    //! Attempts to initialize this QualifiedECAccessor from a colon-separated string. If the string cannot be parsed, this QualifiedECAccessor will not be modified
+    //! @param[in]      str A string of the format "Schema:Class:AccessString"
+    //! @return true if the string was successfully parsed
     ECOBJECTS_EXPORT bool       FromString (WCharCP str);
 
+    //! Attempts to initialize this QualifiedECAccessor from an access string identifying a property of the specified ECEnabler.
+    //! If the ECProperty cannot be found within the ECEnabler, this QualifiedECAccessor will not be modified
+    //! @param[in]      rootEnabler  The ECEnabler containing the desired ECProperty
+    //! @param[in]      accessString The access string identifying the ECProperty within the ECEnabler
+    //! @return true if the access string identifies a valid ECProperty within the ECEnabler
     ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, WCharCP accessString);
     };
 
@@ -1586,6 +1627,7 @@ typedef QualifiedECAccessorList const& QualifiedECAccessorListCR;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
     {
+    //! Returns an iterator to the entry in this map matching the specified key using the specified match type, or an iterator to the end of this map if no such entry exists
     SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType) const
         {
         switch (matchType)
