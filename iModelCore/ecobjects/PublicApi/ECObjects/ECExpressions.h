@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -841,8 +841,7 @@ protected:
     virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
     virtual WString     _ToString() const = 0;
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context)
         { return ExprStatus_NotImpl; }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_Unrecognized; }
@@ -905,8 +904,7 @@ public:
 
     //  Add nodes for Where, Property, Relationship, ConstantSets, Filters
 
-    ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides);
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context);
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -916,8 +914,7 @@ public:
     ECOBJECTS_EXPORT ResolvedTypeNodePtr  GetResolvedTree(ExpressionResolverR context);
 
     //! Returns the value of this expression node using the supplied context
-    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides);
+    ECOBJECTS_EXPORT ExpressionStatus GetValue(ValueResultPtr& valueResult, ExpressionContextR context);
 
     //!  Traverses in parse order
     ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor) const;

@@ -321,7 +321,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         ValueResultPtr valueResult;
         ECValue exprValue;
         bool gotValue = false;
-        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
+        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
             {
             gotValue = true;
             IECTypeAdapter* typeAdapter = nullptr;

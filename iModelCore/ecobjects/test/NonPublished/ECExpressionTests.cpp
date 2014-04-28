@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -51,7 +51,7 @@ struct ExpressionTests : ECTestFixture
         NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
         EXPECT_NOT_NULL (tree.get());
 
-        return tree->GetValue (result, *symbolContext, true, true);
+        return tree->GetValue (result, *symbolContext);
         }
 
     void                TestExpressionEquals (IECInstanceR instance, WCharCP expr, ECValueCR expectVal)

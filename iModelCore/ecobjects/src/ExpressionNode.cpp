@@ -1707,8 +1707,7 @@ ECN::PrimitiveECPropertyR primitiveProp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus PrimaryListNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus PrimaryListNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     return context.GetValue(evalResult, *this, context, 0);
     }
@@ -1797,7 +1796,7 @@ void            PrimaryListNode::AppendLambdaNode (LambdaNodeR lambdaNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus LambdaNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus LambdaNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     // Bind expression and context
     evalResult.SetLambda (*LambdaValue::Create (*this, context));
@@ -1824,11 +1823,10 @@ void IdentNode::PushQualifier(WCharCP rightName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    inputValue;
-    ExpressionStatus    status = _GetLeftP()->GetValue(inputValue, context, allowUnknown, allowOverrides);
+    ExpressionStatus    status = _GetLeftP()->GetValue(inputValue, context);
     if (ExprStatus_Success != status)
         return status;
 
@@ -1942,8 +1940,7 @@ static IECInstancePtr   getInstanceFromResult (EvaluationResultCR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     // Modifiers not implemented
     BeAssert (_GetOperation() == TOKEN_None);
@@ -1953,7 +1950,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     if (TOKEN_None != operation)
         {
         EvaluationResult    leftResult;
-        status = _GetLeftP()->GetValue(leftResult, context, allowUnknown, allowOverrides);
+        status = _GetLeftP()->GetValue(leftResult, context);
         if (ExprStatus_Success != status)
             return status;
 
@@ -1975,7 +1972,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     if (ExprStatus_Success != exprStatus)
         return exprStatus;
 
-    exprStatus = _GetRightP()->GetValue(evalResult, context, allowUnknown, allowOverrides);
+    exprStatus = _GetRightP()->GetValue(evalResult, context);
     if (ExprStatus_Success != exprStatus)
         return exprStatus;
 
@@ -2029,7 +2026,7 @@ ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& res
         {
         results.push_back(EvaluationResult());
         EvaluationResultR currValue = results.back();
-        status = (*curr)->GetValue(currValue, context, false, false);
+        status = (*curr)->GetValue(currValue, context);
         if (ExprStatus_Success != status)
             return status;
         }
@@ -2040,11 +2037,11 @@ ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& res
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    local;
 
-    ExpressionStatus    status = m_condition->GetValue(local, context, allowUnknown, allowOverrides);
+    ExpressionStatus    status = m_condition->GetValue(local, context);
     if (ExprStatus_Success != status)
         return status;
 
@@ -2054,9 +2051,9 @@ ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionCont
         return status;
 
     if (condition)
-        return m_true->GetValue(evalResult, context, allowUnknown, allowOverrides);
+        return m_true->GetValue(evalResult, context);
 
-    return m_false->GetValue(evalResult, context, allowUnknown, allowOverrides);
+    return m_false->GetValue(evalResult, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2217,7 +2214,7 @@ UnitsTypeR      unitsType
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  ArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  ArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2236,7 +2233,7 @@ ExpressionStatus  ArithmeticNode::_GetValue(EvaluationResult& evalResult, Expres
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2256,7 +2253,7 @@ ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, Expre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  ShiftNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  ShiftNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2271,7 +2268,7 @@ ExpressionStatus  ShiftNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2291,7 +2288,7 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
     case TOKEN_OrElse:
         {
         // Short-circuit operators do not evaluate righthand expression unless required.
-        status = GetLeftP()->GetValue (leftResult, context, false, true);
+        status = GetLeftP()->GetValue (leftResult, context);
 
         // Treat error as false evaluation value
         bool leftBool = false;
@@ -2301,7 +2298,7 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
         if (leftBool == (TOKEN_AndAlso == m_operatorCode))
             {
             // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
-            status = GetRightP()->GetValue (rightResult, context, false, true);
+            status = GetRightP()->GetValue (rightResult, context);
             }
 
         if (ExprStatus_Success == status)
@@ -2323,11 +2320,11 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus BinaryNode::GetOperandValues(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
-    ExpressionStatus    status = m_left->GetValue(leftResult, context, false, true);
+    ExpressionStatus    status = m_left->GetValue(leftResult, context);
     if (ExprStatus_Success != status)
         return status;
 
-    return m_right->GetValue(rightResult, context, false, true);
+    return m_right->GetValue(rightResult, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2457,8 +2454,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ExponentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus ExponentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    left;
     EvaluationResult    right;
@@ -2473,8 +2469,7 @@ ExpressionStatus ExponentNode::_GetValue(EvaluationResult& evalResult, Expressio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    left;
     EvaluationResult    right;
@@ -2489,8 +2484,7 @@ ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, Expressio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    left;
     EvaluationResult    right;
@@ -2605,8 +2599,7 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2686,21 +2679,19 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus Node::GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                    bool allowUnknown, bool allowOverrides)
+ExpressionStatus Node::GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     { 
-    return _GetValue(evalResult, context, allowUnknown, allowOverrides); 
+    return _GetValue(evalResult, context); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus Node::GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
-                                    bool allowUnknown, bool allowOverrides)
+ExpressionStatus Node::GetValue(ValueResultPtr& valueResult, ExpressionContextR context)
     {
     EvaluationResult    evalResult;
 
-    ExpressionStatus    status = GetValue(evalResult, context, allowUnknown, allowOverrides);
+    ExpressionStatus    status = GetValue(evalResult, context);
     valueResult = ValueResult::Create(evalResult);
 
     return status;
@@ -2823,7 +2814,7 @@ WString Node::ToExpressionString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     ExpressionStatus    status = ExprStatus_Success;;
     switch(m_primitiveType)
@@ -3353,7 +3344,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
                 }
 
             EvaluationResult    evalResult;
-            right->GetValue(evalResult, expContext, false, false);
+            right->GetValue(evalResult, expContext);
             return ResolvedAddConstantNode::Create(resultType, *left, *evalResult.GetECValue());
             }
 
@@ -3376,7 +3367,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
             }
 
         EvaluationResult    evalResult;
-        right->GetValue(evalResult, expContext, false, false);
+        right->GetValue(evalResult, expContext);
         ECValueR  ecValue = *evalResult.GetECValue();
         switch(resultType)
             {
@@ -4157,7 +4148,7 @@ ExpressionStatus    LambdaValue::Evaluate (IValueListResultCR valueList, LambdaV
             symbol->Set (member);
 
             EvaluationResult lambdaResult;
-            status = m_node->GetExpression().GetValue (lambdaResult, *innerContext, true, true /* these boolean params are never used, why do they exist... */);
+            status = m_node->GetExpression().GetValue (lambdaResult, *innerContext);
             if (!processor.ProcessResult (status, member, lambdaResult))
                 break;
             }
