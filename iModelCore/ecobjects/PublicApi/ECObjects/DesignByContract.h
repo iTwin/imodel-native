@@ -10,6 +10,10 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
+
+#ifndef DesignByContract_H_
+#define DesignByContract_H_
+
 /// @cond BENTLEY_SDK_Internal
 #include <ECObjects/ECObjects.h>
 
@@ -208,3 +212,5 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 /*__PUBLISH_SECTION_START__*/
 
 /// @endcond BENTLEY_SDK_Internal
+
+#endif // DesignByContract_H_

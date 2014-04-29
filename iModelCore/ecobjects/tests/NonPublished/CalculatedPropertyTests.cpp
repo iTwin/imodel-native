@@ -563,4 +563,24 @@ TEST_F (CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamed)
     Test (*instance, L"S2", L"y");
     }
 
+TEST_F(CalculatedPropertyTests, ConvertNamedCaptureGroupsToUnnamedFromFile)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"pidSnippet.01.02.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECClassP ecClass = schema->GetClassP(L"BASE_REDUCER");
+    IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    SetValue(*instance, L"LEFT_TEXT", L"left");
+    SetValue(*instance, L"RIGHT_TEXT", L"right");
+    Test(*instance, L"DISPLAY_TEXT", L"left X right");
+
+    SetValue(*instance, L"DISPLAY_TEXT", L"leftXright");
+    Test(*instance, L"LEFT_TEXT", L"left");
+    Test(*instance, L"RIGHT_TEXT", L"right");
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
