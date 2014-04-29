@@ -390,6 +390,7 @@ public:
     //! @param[in] primitiveElementType The type of primitive that this ECValue holds.
     ECOBJECTS_EXPORT BentleyStatus  SetPrimitiveType(PrimitiveType primitiveElementType);
     
+    ECOBJECTS_EXPORT bool           CanConvertToPrimitiveType (PrimitiveType type) const;
 /*__PUBLISH_SECTION_END__*/
     // Attempts to convert this ECValue's primitive value to a different primitive type.
     // Currently supported conversions (motivated by ECExpressions):

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -3098,7 +3098,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_Double:
             {
-            BeStringUtilities::Snprintf (outString, "%.13g", ecValue.GetDouble());
+            BeStringUtilities::Snprintf (outString, "%.17g", ecValue.GetDouble());
             break;
             }
 
@@ -3117,14 +3117,14 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d    point2d = ecValue.GetPoint2D();
-            BeStringUtilities::Snprintf (outString, "%.13g,%.13g", point2d.x, point2d.y);
+            BeStringUtilities::Snprintf (outString, "%.17g,%.17g", point2d.x, point2d.y);
             break;
             }
 
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d    point3d = ecValue.GetPoint3D();
-            BeStringUtilities::Snprintf (outString, "%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
+            BeStringUtilities::Snprintf (outString, "%.17g,%.17g,%.17g", point3d.x, point3d.y, point3d.z);
             break;
             }
 

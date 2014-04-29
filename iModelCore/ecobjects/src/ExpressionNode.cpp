@@ -1529,20 +1529,16 @@ ResolvedTypeNodePtr Node::_GetResolvedTree(ExpressionResolverR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateBooleanLiteral(bool literalValue)
-    {
-    return new BooleanLiteralNode(literalValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr         Node::CreateNullLiteral()                   { return new NullLiteralNode(); }
-ResolvedTypeNodePtr         Node::CreatePoint2DLiteral (DPoint2dCR pt)  { return new Point2DLiteralNode (pt); }
-ResolvedTypeNodePtr         Node::CreatePoint3DLiteral (DPoint3dCR pt)  { return new Point3DLiteralNode (pt); }
-ResolvedTypeNodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return new DateTimeLiteralNode (ticks); }
+ResolvedTypeNodePtr Node::CreateBooleanLiteral(bool literalValue)   { return LiteralNode::CreateBoolean (literalValue); }
+ResolvedTypeNodePtr Node::CreateNullLiteral()                       { return LiteralNode::CreateNull(); }
+ResolvedTypeNodePtr Node::CreatePoint2DLiteral (DPoint2dCR pt)      { return LiteralNode::CreatePoint2D (pt); }
+ResolvedTypeNodePtr Node::CreatePoint3DLiteral (DPoint3dCR pt)      { return LiteralNode::CreatePoint3D (pt); }
+ResolvedTypeNodePtr Node::CreateDateTimeLiteral (Int64 ticks)       { return LiteralNode::CreateDateTime (ticks); }
+ResolvedTypeNodePtr Node::CreateIntegerLiteral (int value)          { return LiteralNode::CreateInteger (value); }
+ResolvedTypeNodePtr Node::CreateInt64Literal(Int64 value)           { return LiteralNode::CreateLong (value); }
+ResolvedTypeNodePtr Node::CreateFloatLiteral(double value)          { return LiteralNode::CreateDouble (value); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
@@ -1550,7 +1546,7 @@ ResolvedTypeNodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return
 ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted)
     {
     if (!quoted)
-        return new StringLiteralNode(value);
+        return LiteralNode::CreateString (value);
 
     size_t      origLen = wcslen(value);
     BeAssert(origLen > 1);
@@ -1559,31 +1555,7 @@ ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
 
-    return new StringLiteralNode(buffer);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateIntegerLiteral (int value)
-    {
-    return new IntegerLiteralNode(value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateInt64Literal(Int64 value)
-    {
-    return new Int64LiteralNode(value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateFloatLiteral(double value)
-    {
-    return new DoubleLiteralNode(value);
+    return LiteralNode::CreateString (buffer);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2594,6 +2566,24 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
     //  Does not handle string equality or Like operator
     BeAssert (false);
     return false;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> static bool     PerformCompare<double> (double l, ExpressionToken op, double r)
+    {
+    bool equal = DoubleOps::AlmostEqual (l, r);
+    switch (op)
+        {
+        case TOKEN_Equal:           return equal;
+        case TOKEN_NotEqual:        return !equal;
+        case TOKEN_Less:            return !equal && l < r;
+        case TOKEN_Greater:         return !equal && l > r;
+        case TOKEN_LessEqual:       return equal || l < r;
+        case TOKEN_GreaterEqual:    return equal || l > r;
+        default:                    BeAssert (false); return false;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
