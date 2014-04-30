@@ -195,25 +195,6 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* We should truncate trailing zeros in floating point literals.
-* @bsimethod                                                    Paul.Connelly   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LiteralExpressionTests, Floats)
-    {
-    double d = 12340000.00;
-    while (d > 0.01)
-        {
-        ECValue v (d);
-        WString str;
-        EXPECT_TRUE (v.ConvertPrimitiveToECExpressionLiteral (str));
-        WString exp;
-        exp.Sprintf (L"%.17g", d);
-        EXPECT_TRUE (str.Equals (exp)) << "Expected " << exp.c_str() << " Actual " << str.c_str();
-        d /= 10.0;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * John was comparing floating point values for exact equality.
 * @bsimethod                                                    Paul.Connelly   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
