@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -51,7 +51,7 @@ struct ExpressionTests : ECTestFixture
         NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
         EXPECT_NOT_NULL (tree.get());
 
-        return tree->GetValue (result, *symbolContext, true, true);
+        return tree->GetValue (result, *symbolContext);
         }
 
     void                TestExpressionEquals (IECInstanceR instance, WCharCP expr, ECValueCR expectVal)
@@ -63,7 +63,7 @@ struct ExpressionTests : ECTestFixture
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue())
-                EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str();
+                EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
             }
         }
 
@@ -168,6 +168,54 @@ public:
         return NULL != ecClass ? ecClass->GetDefaultStandaloneEnabler()->CreateInstance() : NULL;
         }
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LiteralExpressionTests : InstanceExpressionTests
+    {
+public:
+    virtual WString GetTestSchemaXMLString() override
+        {
+        return
+            L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            L"    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
+            L"        <ECProperty propertyName=\"d\" typeName=\"double\" />"
+            L"    </ECClass>"
+            L"</ECSchema>";
+        }
+
+    IECInstancePtr  CreateInstance (double d)
+        {
+        auto instance = InstanceExpressionTests::CreateInstance (L"ClassA");
+        instance->SetValue (L"d", ECValue (d));
+        return instance;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* John was comparing floating point values for exact equality.
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (LiteralExpressionTests, FloatComparisons)
+    {
+    auto instance = CreateInstance (12.000000000001);
+    TestExpressionEquals (*instance, L"this.d = 12", ECValue (true));
+    TestExpressionEquals (*instance, L"this.d >= 12", ECValue (true));
+    TestExpressionEquals (*instance, L"this.d <= 12", ECValue (true));
+    TestExpressionEquals (*instance, L"this.d <> 12", ECValue (false));
+    TestExpressionEquals (*instance, L"this.d > 12", ECValue (false));
+    TestExpressionEquals (*instance, L"this.d < 12", ECValue (false));
+
+    instance = CreateInstance (12.1);
+    TestExpressionEquals (*instance, L"this.d = 12", ECValue (false));
+    TestExpressionEquals (*instance, L"this.d >= 12", ECValue (true));
+    TestExpressionEquals (*instance, L"this.d <= 12", ECValue (false));
+    TestExpressionEquals (*instance, L"this.d <> 12", ECValue (true));
+    TestExpressionEquals (*instance, L"this.d > 12", ECValue (true));
+    TestExpressionEquals (*instance, L"this.d < 12", ECValue (false));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/13

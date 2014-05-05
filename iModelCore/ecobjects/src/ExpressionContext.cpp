@@ -56,7 +56,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                     LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP>(primaryList.GetOperatorNode(index));
                     EvaluationResult accessorResult;
                     NodePtr accessorNode = lBracketNode->GetIndexNode();
-                    ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext, false, true);
+                    ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext);
                     if (ExprStatus_Success != exprStatus)
                         {
                         evalResult.Clear();
@@ -171,7 +171,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
             EvaluationResult    indexResult;
             NodePtr             indexNode = lBracketNode->GetIndexNode();
 
-            ExpressionStatus exprStatus = indexNode->GetValue(indexResult, globalContext, false, true);
+            ExpressionStatus exprStatus = indexNode->GetValue(indexResult, globalContext);
             if (ExprStatus_Success != exprStatus)
                 {
                 evalResult.Clear();
@@ -279,7 +279,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             LBracketNodeCP lBracketNode = static_cast<LBracketNodeCP> (primaryList.GetOperatorNode (index));
             EvaluationResult accessorResult;
             NodePtr accessorNode = lBracketNode->GetIndexNode();
-            ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext, false, true);
+            ExpressionStatus exprStatus = accessorNode->GetValue (accessorResult, globalContext);
             if (ExprStatus_Success != exprStatus)
                 { evalResult.Clear(); return exprStatus; }
             else if (accessorResult.GetValueType() != ValType_ECValue || !accessorResult.GetECValue()->IsString())
@@ -372,7 +372,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         EvaluationResult indexResult;
         NodePtr indexNode = lBracketNode->GetIndexNode();
 
-        ExpressionStatus exprStatus = indexNode->GetValue (indexResult, globalContext, false, true);
+        ExpressionStatus exprStatus = indexNode->GetValue (indexResult, globalContext);
         if (ExprStatus_Success != exprStatus)
             { evalResult.Clear(); return exprStatus; }
         else if (indexResult.GetValueType() != ValType_ECValue || !indexResult.GetECValue()->ConvertToPrimitiveType (PRIMITIVETYPE_Integer) || indexResult.GetECValue()->IsNull())
