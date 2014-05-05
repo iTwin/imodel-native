@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -65,18 +65,17 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
     {
     m_knownSchemas = ECSchemaCache::Create();
-    m_locators.insert(SchemaLocatorKey (m_knownSchemas.get(), ReaderContext));
+    m_locaters.push_back(m_knownSchemas.get());
     
     bvector<WString> searchPaths;
     if (GetStandardPaths (searchPaths))
         {
-        SchemaLocatorSet::iterator insertionPoint = m_locators.begin();
-        int priority = StandardPaths;
         for (bvector<WString>::const_iterator iter = searchPaths.begin(); iter != searchPaths.end(); ++iter)
             m_searchPaths.insert(*iter);
         
         SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-        m_locators.insert(insertionPoint, SchemaLocatorKey (locator.get(), ++priority));
+        m_locaters.push_back(locator.get());
+        m_searchPathLocatersCount++;
         m_ownedLocators.push_back(locator);
         }
     }
@@ -96,34 +95,10 @@ ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighestLocatorInRange (UInt32& priority)
+void  ECSchemaReadContext::AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& locators) 
     {
-    UInt32 category = (priority - priority % CATEGORY_PARTITION_SIZE);
-    SchemaLocatorKey dummy(NULL, category + CATEGORY_PARTITION_SIZE);
-    
-    //Find the last insertion point of external schema
-    SchemaLocatorSet::iterator iter = std::upper_bound (m_locators.begin(), m_locators.end(), dummy);
-    if (iter != m_locators.end() && iter->m_priority < dummy.m_priority)
-        priority = iter->m_priority + 1;
-    else
-        {
-        iter = m_locators.begin();
-        priority = category + 1;
-        }
-    
-    return iter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& locators) 
-    {
-    UInt32 priority = External;
-    SchemaLocatorSet::iterator iter =  GetHighestLocatorInRange (priority);
-    
     for (bvector<ECN::IECSchemaLocaterP>::const_iterator locatorIter = locators.begin(); locatorIter != locators.end(); ++locatorIter)
-        iter = m_locators.insert(iter, SchemaLocatorKey(*locatorIter, ++priority));
+        m_locaters.insert(m_locaters.begin() + ++m_userAddedLocatersCount, *locatorIter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -131,9 +106,7 @@ void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLoca
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)
     {
-    UInt32 priority = UserSpace;
-    SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
-    m_locators.insert (iter, SchemaLocatorKey(&locater, priority));
+    m_locaters.insert (m_locaters.begin() + ++m_userAddedLocatersCount, &locater);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,10 +114,13 @@ void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ECSchemaReadContext::RemoveSchemaLocater (IECSchemaLocaterR locator)
     {
-    for (SchemaLocatorSet::iterator iter = m_locators.begin(); iter != m_locators.end();)
+    for (bvector<IECSchemaLocaterP>::iterator iter = m_locaters.begin(); iter != m_locaters.end();)
         {
-        if (iter->m_locator == &locator)
-            iter = m_locators.erase(iter);
+        if (*iter == &locator)
+            {
+            iter = m_locaters.erase(iter);
+            m_userAddedLocatersCount--;
+            }
         else
             ++iter;
         }
@@ -161,15 +137,12 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
     if (m_searchPaths.end() != m_searchPaths.find (pathStr.GetName()))
         return;
 
-    UInt32 priority = UserSpace;
-    SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
-
     bvector<WString> pathVector;
     pathVector.push_back(pathStr.GetName());
     SearchPathSchemaFileLocaterPtr locator = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (pathVector);
 
     m_searchPaths.insert(pathStr.GetName());
-    m_locators.insert (iter, SchemaLocatorKey (locator.get(), priority));
+    m_locaters.insert (m_locaters.begin() + m_userAddedLocatersCount + ++m_searchPathLocatersCount, locator.get());
     m_ownedLocators.push_back(locator);
     }
 
@@ -178,9 +151,7 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchemaLocaterR locater) 
     {
-    UInt32 priority = Final;
-    SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
-    m_locators.insert (iter, SchemaLocatorKey(&locater, priority));
+    m_locaters.push_back (&locater);
     }
 
 IStandaloneEnablerLocaterP  ECSchemaReadContext::GetStandaloneEnablerLocater()       { return m_standaloneEnablerLocater;  }
@@ -193,12 +164,12 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, SchemaMatchTy
     m_knownSchemaDirtyStack.push_back(false);
     
     ECSchemaPtr schema;
-    for (SchemaLocatorSet::const_iterator iter = m_locators.begin(); iter != m_locators.end(); ++iter)
+    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
         {
-        if ( ! EXPECTED_CONDITION (NULL != iter->m_locator))
+        if ( ! EXPECTED_CONDITION (NULL != *iter))
             continue;
 
-        schema = iter->m_locator->LocateSchema(key, matchType, *this);
+        schema = (*iter)->LocateSchema(key, matchType, *this);
         if (schema.IsValid())
             break;
 
@@ -224,14 +195,14 @@ ECSchemaPtr     ECSchemaReadContext::LocateSchema (SchemaKeyR key, bset<SchemaMa
     m_knownSchemaDirtyStack.push_back(false);
     
     ECSchemaPtr schema;
-    for (SchemaLocatorSet::const_iterator iter = m_locators.begin(); iter != m_locators.end(); ++iter)
+    for (bvector<IECSchemaLocaterP>::const_iterator iter = m_locaters.begin(); iter != m_locaters.end(); ++iter)
         {
-        if ( ! EXPECTED_CONDITION (NULL != iter->m_locator))
+        if ( ! EXPECTED_CONDITION (NULL != *iter))
             continue;
 
         for (bset<SchemaMatchType>::const_iterator matchIter = matches.begin(); matchIter != matches.end(); ++matchIter)
             {
-            schema = iter->m_locator->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
+            schema = (*iter)->LocateSchema(key, *matchIter, *this); //Doing this will change m_knownSchemas
             if (schema.IsValid())
                 break;
 
