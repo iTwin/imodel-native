@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,35 +27,6 @@ struct ECSchemaReadContext : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 friend struct ECSchema;
 friend struct SearchPathSchemaFileLocater;
-    static const int CATEGORY_PARTITION_SIZE = 5000;
-    enum PriorityPartiion
-        {
-        ReaderContext   = -1* CATEGORY_PARTITION_SIZE, //Whatever we found is off highest priority
-        UserSpace       = 0*  CATEGORY_PARTITION_SIZE,
-        External        = 1*  CATEGORY_PARTITION_SIZE,
-        StandardPaths   = 2*  CATEGORY_PARTITION_SIZE,
-        Final           = 3*  CATEGORY_PARTITION_SIZE,
-        };
-
-    struct SchemaLocatorKey
-        {
-        int                 m_priority;
-        IECSchemaLocaterP   m_locator;
-
-        bool operator < (SchemaLocatorKey const & rhs) const
-            {
-            if (m_priority != rhs.m_priority)
-                return m_priority < rhs.m_priority;//Order the higher priority ones first
-
-            return m_locator < rhs.m_locator;
-            }
-
-        SchemaLocatorKey() {}
-        SchemaLocatorKey (IECSchemaLocaterP locator, int priority)
-            :m_locator(locator), m_priority(priority)
-            {}
-        };
-
     struct WStringComparer : public std::binary_function<WString, WString, bool>
         {
         bool operator()(WStringCR s1, WStringCR s2) const
@@ -67,15 +38,14 @@ private:
     IStandaloneEnablerLocaterP                              m_standaloneEnablerLocater;
     ECSchemaCachePtr                                        m_knownSchemas;
     bvector<bool>                                           m_knownSchemaDirtyStack;
-    typedef bset<SchemaLocatorKey>                          SchemaLocatorSet;
-    SchemaLocatorSet                                        m_locators;
+    bvector<IECSchemaLocaterP>                              m_locaters;
+    int                                                     m_userAddedLocatersCount;
+    int                                                     m_searchPathLocatersCount;
     typedef bset<WString, WStringComparer>                  SearchPathList;
     SearchPathList                                          m_searchPaths;
     bvector<SearchPathSchemaFileLocaterPtr>                 m_ownedLocators;
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
-
-    SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
 protected:
@@ -92,8 +62,7 @@ public:
     ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
-
-    ECOBJECTS_EXPORT void AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
+    ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
