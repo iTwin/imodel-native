@@ -67,6 +67,9 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
     m_knownSchemas = ECSchemaCache::Create();
     m_locaters.push_back(m_knownSchemas.get());
     
+    m_userAddedLocatersCount = 0;
+    m_searchPathLocatersCount = 0;
+
     bvector<WString> searchPaths;
     if (GetStandardPaths (searchPaths))
         {
