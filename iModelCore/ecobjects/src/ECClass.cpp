@@ -1199,8 +1199,8 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
     WString className;
     if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
         {
-        LOG.warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
-            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
+        LOG.warningv ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be parsed.",  
+            Utf8String (GetName()).c_str(), EC_BASE_CLASS_ELEMENT, Utf8String (qualifiedClassName).c_str());
 
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1208,16 +1208,16 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
     ECSchemaCP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        LOG.warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
-            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
+        LOG.warningv  ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            Utf8String (GetName()).c_str(), EC_BASE_CLASS_ELEMENT, Utf8String (namespacePrefix).c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
     ECClassCP baseClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == baseClass)
         {
-        LOG.warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
-            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+        LOG.warningv  ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            Utf8String (GetName ()).c_str (), EC_BASE_CLASS_ELEMENT, Utf8String (qualifiedClassName).c_str (), Utf8String (className).c_str (), Utf8String (resolvedSchema->GetName ()).c_str ());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
@@ -1241,8 +1241,8 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 
     if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
         {
-        LOG.warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
-            this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
+        LOG.warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%ls'", 
+            this->GetName().c_str(), this->GetSchema().GetName().c_str(), WString (childNodeName, BentleyCharEncoding::Utf8).c_str ());
         delete ecProperty;
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1724,24 +1724,24 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         WString className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
             {
-            LOG.warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be parsed.", 
-                CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str());
+            LOG.warningv ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be parsed.", 
+                CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (constraintClassName).c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         
         ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
-            LOG.warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a %hs attribute with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
-                CONSTRAINTCLASSNAME_ATTRIBUTE, namespacePrefix.c_str());
+            LOG.warningv  ("Invalid ECSchemaXML: ECRelationshipConstraint contains a %s attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+                CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (namespacePrefix).c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
         if (NULL == constraintClass)
             {
-            LOG.warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
-                CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+            LOG.warningv  ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+                CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (constraintClassName).c_str(), Utf8String (className).c_str(), Utf8String (resolvedSchema->GetName()).c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         AddClass(*constraintClass);
