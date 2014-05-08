@@ -30,6 +30,7 @@ private:
     PrimitiveType               m_propertyType;
     ExpressionContextPtr        m_context;
     InstanceExpressionContextP  m_thisContext;
+    bool                        m_allowTypeConversions;
 
     CalculatedPropertySpecification (NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue);
     ~CalculatedPropertySpecification();
