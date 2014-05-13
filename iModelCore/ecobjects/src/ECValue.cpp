@@ -1465,6 +1465,7 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
     switch (GetPrimitiveType())
         {
     case PRIMITIVETYPE_Binary:
+    case PRIMITIVETYPE_IGeometry:
         {
         size_t nBytes;
         byte const* bytes = GetBinary (nBytes);
