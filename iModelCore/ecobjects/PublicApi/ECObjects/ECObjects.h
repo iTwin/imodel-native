@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -94,9 +94,11 @@ EC_TYPEDEFS(IECSchemaRemapper);
 
 EC_TYPEDEFS (SchemaNameClassNamePair);
 
-typedef struct IStream* IStreamP;
+struct IStream;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+typedef struct IStream* IStreamP;
 
 //! Error code categories
 typedef enum ECErrorCategories

@@ -1480,7 +1480,7 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         str.Sprintf (L"%I64d", GetDateTimeTicks());
         break;
     case PRIMITIVETYPE_Double:
-        str.Sprintf (L"%.13g", GetDouble());
+        str.Sprintf (L"%.17g", GetDouble());
         break;
     case PRIMITIVETYPE_Integer:
         str.Sprintf (L"%d", GetInteger());
@@ -1491,13 +1491,13 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt = GetPoint2D();
-        str.Sprintf (L"%.13g,%.13g", pt.x, pt.y);
+        str.Sprintf (L"%.17g,%.17g", pt.x, pt.y);
         }
         break;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        str.Sprintf (L"%.13g,%.13g,%.13g", pt.x, pt.y, pt.z);
+        str.Sprintf (L"%.17g,%.17g,%.17g", pt.x, pt.y, pt.z);
         }
         break;
     case PRIMITIVETYPE_String:
@@ -1509,6 +1509,29 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static WString formatDouble (double d)
+    {
+    WString str;
+    str.Sprintf (L"%.17f", d);
+    auto dotPos = str.find ('.');
+    if (WString::npos != dotPos)
+        {
+        auto nonZeroPos = str.length() - 1;
+        while (nonZeroPos > dotPos && str[nonZeroPos] == '0')
+            --nonZeroPos;
+
+        if (nonZeroPos == dotPos)
+            str.erase (dotPos, WString::npos);
+        else if (nonZeroPos < str.length() - 1)
+            str.erase (nonZeroPos+1, WString::npos);
+        }
+
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1528,14 +1551,14 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         {
     case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
     case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%I64d", GetDateTimeTicks()); return true;
-    case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13f", GetDouble()); return true;
+    case PRIMITIVETYPE_Double:      expr = formatDouble (GetDouble()); return true;
     case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
     case PRIMITIVETYPE_Long:        expr.Sprintf (L"%I64d", GetLong()); return true;
-    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13f,%.13f}", GetPoint2D().x, GetPoint2D().y); return true;
+    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%ls,%ls}", formatDouble (GetPoint2D().x).c_str(), formatDouble (GetPoint2D().y).c_str()); return true;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        expr.Sprintf (L"{%.13f,%.13f,%.13f}", pt.x, pt.y, pt.z);
+        expr.Sprintf (L"{%ls,%ls,%ls}", formatDouble(pt.x).c_str(), formatDouble(pt.y).c_str(), formatDouble(pt.z).c_str());
         }
         return true;
     case PRIMITIVETYPE_String:
@@ -1679,6 +1702,15 @@ WString    ECValue::ToString () const
         str = L"<error>";
         
     return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::CanConvertToPrimitiveType (PrimitiveType type) const
+    {
+    ECValue v (*this);
+    return v.ConvertToPrimitiveType (type);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -10,6 +10,10 @@
 #include <assert.h>
 #include <stdarg.h>
 /*__PUBLISH_SECTION_START__*/
+
+#ifndef DesignByContract_H_
+#define DesignByContract_H_
+
 #include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
@@ -204,3 +208,4 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
 #endif
 
+#endif // DesignByContract_H_
