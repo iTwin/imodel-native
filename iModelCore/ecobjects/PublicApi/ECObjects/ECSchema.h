@@ -378,7 +378,9 @@ protected:
     virtual IECInstanceCP               	_GetECInstance() const = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
     virtual WCharCP                             _GetAccessString() const = 0;
+    virtual ECClassCP                           _GetECClass() const = 0;
 public:
+    ECOBJECTS_EXPORT  ECClassCP         GetECClass() const;
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
     ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;

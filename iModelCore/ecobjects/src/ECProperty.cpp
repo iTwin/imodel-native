@@ -928,6 +928,7 @@ UInt32              IECTypeAdapterContext::GetComponentIndex() const     { retur
 WCharCP             IECTypeAdapterContext::GetAccessString() const       { return _GetAccessString(); }
 bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
 IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
+ECClassCP           IECTypeAdapterContext::GetECClass() const            { return _GetECClass(); }
 ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
 
 /*---------------------------------------------------------------------------------**//**
