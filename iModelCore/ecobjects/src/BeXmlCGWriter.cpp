@@ -2,7 +2,7 @@
 |
 |  $Source: src/BeXmlCGWriter.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -611,6 +611,40 @@ void BeXmlCGWriter::WriteDgnConeDetail (BeXmlWriterR dest, DgnConeDetail data)
 
 void BeXmlCGWriter::WriteDgnBoxDetail (BeXmlWriterR dest, DgnBoxDetail data)
     {
+    Transform localToWorld;
+    double ax, ay, bx, by;
+    data.GetNonUniformTransform (localToWorld, ax, ay, bx, by);
+    DPoint3d origin;
+    DVec3d xVector, yVector, zVector;
+    localToWorld.GetOriginAndVectors (origin, xVector, yVector, zVector);
+    if (xVector.IsPerpendicularTo (yVector)
+        && xVector.IsPerpendicularTo (zVector)
+        && yVector.IsPerpendicularTo (zVector)
+        && DoubleOps::AlmostEqual (ax, bx)
+        && DoubleOps::AlmostEqual (ay, by)
+        )
+        {
+        dest.WriteElementStart ("Box");
+        DVec3d unitZ;
+        unitZ.Normalize (zVector);
+        WritePlacementZX (dest, origin, xVector, unitZ);
+        WriteXYZ (dest, "cornerA", DPoint3d::From (0,0,0));
+        WriteXYZ (dest, "cornerB", DPoint3d::From (ax, ay, zVector.Magnitude ()));
+        WriteBool (dest, "bSolidFlag", data.m_capped);
+        dest.WriteElementEnd ();
+        }
+    else
+        {
+        // ugh .. it's not a block.  make a ruled surface.
+        bvector<DPoint3d>corners;
+        data.GetCorners (corners);
+        DPoint3d cornerA[5] = {corners[0], corners[1], corners[3], corners[2], corners[0]};
+        DPoint3d cornerB[5] = {corners[4], corners[5], corners[7], corners[6], corners[4]};
+        CurveVectorPtr sectionA = CurveVector::CreateLinear (cornerA, 5, CurveVector::BOUNDARY_TYPE_Outer, false);
+        CurveVectorPtr sectionB = CurveVector::CreateLinear (cornerB, 5, CurveVector::BOUNDARY_TYPE_Outer, false);
+        DgnRuledSweepDetail ruledSurface (sectionA, sectionB, data.m_capped);
+        WriteDgnRuledSweepDetail (dest, ruledSurface);
+        }                
     }
 
 void BeXmlCGWriter::WriteDgnSphereDetail (BeXmlWriterR dest, DgnSphereDetail data)

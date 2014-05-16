@@ -2,7 +2,7 @@
 |
 |  $Source: src/BeXmlCGReader.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -444,6 +444,29 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             {
             DgnSphereDetail detail (center, axes, radius);
             result = ISolidPrimitive::CreateDgnSphere (detail);
+            return true;
+            }
+        }
+    else if (BeStringUtilities::Stricmp (name, "Box") == 0)
+        {
+        RotMatrix axes;
+        DPoint3d origin;
+        DVec3d cornerA, cornerB;
+        bool bSolid;
+        if (   FindChildPlacement (node, "placement", origin, axes)
+            && FindChildDPoint3d (node, "cornerA", cornerA)
+            && FindChildDPoint3d (node, "cornerB", cornerB)
+            && FindChildBool (node, "bSolidFlag", bSolid)
+            )
+            {
+            DVec3d vectorX, vectorY, vectorZ;
+            axes.GetColumns (vectorX, vectorY, vectorZ);
+            DPoint3d baseOrigin = DPoint3d::FromProduct (origin, axes, cornerA);
+            DPoint3d topOrigin  = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerB.z);
+            double dx = cornerB.x - cornerA.x;
+            double dy = cornerB.y - cornerA.y;
+            DgnBoxDetail detail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, bSolid);
+            result = ISolidPrimitive::CreateDgnBox (detail);
             return true;
             }
         }
