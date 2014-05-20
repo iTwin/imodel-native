@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -376,6 +376,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Point2D:
         case PRIMITIVETYPE_Point3D:
         case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_IGeometry:
             break;
                         
         default:
@@ -877,16 +878,34 @@ BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
             
     return SUCCESS;
     }
-    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+const byte * ECValue::GetIGeometry(size_t& size) const
+    {
+    return GetBinary(size);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 const byte * ECValue::GetBinary(size_t& size) const
     {
-    PRECONDITION (IsBinary() && "Tried to get binarydata from an EC::ECValue that is not binary.", NULL);
+    PRECONDITION ((IsBinary() || IsIGeometry()) && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
     size = m_binaryInfo.m_size;
     return m_binaryInfo.m_data;
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::SetIGeometry(const byte * data, size_t size, bool holdADuplicate)
+    {
+    Clear();
+
+    m_primitiveType = PRIMITIVETYPE_IGeometry;
+    return SetBinaryInternal(data, size, holdADuplicate);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
@@ -896,6 +915,11 @@ BentleyStatus ECValue::SetBinary (const byte * data, size_t size, bool holdADupl
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_Binary;
+    return SetBinaryInternal(data, size, holdADuplicate);
+    }
+
+BentleyStatus ECValue::SetBinaryInternal(const byte * data, size_t size, bool holdADuplicate)
+    {
     m_binaryInfo.m_freeWhenDone = holdADuplicate;
     
     if (NULL == data)

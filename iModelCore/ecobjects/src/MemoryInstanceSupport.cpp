@@ -2,7 +2,7 @@
 |
 |     $Source: src/MemoryInstanceSupport.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -2192,7 +2192,6 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             return ECOBJECTS_STATUS_Success;
             }
         case PRIMITIVETYPE_Binary:
-        case PRIMITIVETYPE_IGeometry:
             {
             UInt32 size;
             if (useIndex)
@@ -2204,6 +2203,20 @@ ECObjectsStatus       MemoryInstanceSupport::GetPrimitiveValueFromMemory (ECValu
             byte const*   actualBuffer = pValue+sizeof(UInt32);
 
             v.SetBinary (actualBuffer, *actualSize);
+            return ECOBJECTS_STATUS_Success;
+            }  
+        case PRIMITIVETYPE_IGeometry:
+            {
+            UInt32 size;
+            if (useIndex)
+                size = GetPropertyValueSize (propertyLayout, index);
+            else
+                size = GetPropertyValueSize (propertyLayout);
+
+            UInt32 const* actualSize   = (UInt32 const*)pValue;
+            byte const*   actualBuffer = pValue+sizeof(UInt32);
+
+            v.SetIGeometry (actualBuffer, *actualSize);
             return ECOBJECTS_STATUS_Success;
             }  
         case PRIMITIVETYPE_Boolean:
@@ -2450,7 +2463,8 @@ ECObjectsStatus       MemoryInstanceSupport::SetPrimitiveValueToMemory (ECValueC
         case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
-            if (!v.IsBinary ())
+            if ((primitiveType == PRIMITIVETYPE_Binary && !v.IsBinary ()) ||
+                (primitiveType == PRIMITIVETYPE_IGeometry && !(v.IsIGeometry() || v.IsBinary())))
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             UInt32 currentSize;

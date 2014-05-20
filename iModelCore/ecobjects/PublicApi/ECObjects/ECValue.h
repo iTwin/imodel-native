@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,6 +91,7 @@ private:
     bool                m_isReadOnly; // Really indicates that the property from which this came is readonly... not the value itself.
 
     EmbeddedInstanceCallbackP m_memoryCallback;  // used when managed code is setting value of a non-fixed size property
+    BentleyStatus       SetBinaryInternal (const byte * data, size_t size, bool holdADuplicate = false);
 
 protected:    
     typedef bvector<ECValue>  ValuesVector;
@@ -210,6 +211,11 @@ public:
     ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
     
+    //! Returns the IGeometry as binary data, and sets the size of the data, if this ECValue holds an IGeometry
+    ECOBJECTS_EXPORT const byte *   GetIGeometry (size_t& size) const;
+    //! Sets the value of this ECValue to the given IGeometry, as binary byte data.
+    ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const byte * data, size_t size, bool holdADuplicate = false);
+
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
     ECOBJECTS_EXPORT BentleyStatus  SetStruct (IECInstanceP structInstance);
         
