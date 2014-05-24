@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -227,7 +227,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::ProcessPrimitiveProperties (bset<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECWipRelationshipInstancePtr  IECRelationshipEnabler::CreateWipRelationshipInstance() const
+StandaloneECRelationshipInstancePtr  IECRelationshipEnabler::CreateWipRelationshipInstance() const
      {
      return _CreateWipRelationshipInstance ();
      }
