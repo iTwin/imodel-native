@@ -93,6 +93,9 @@ EC_TYPEDEFS(IECTypeAdapterContext);
 EC_TYPEDEFS(IECSchemaRemapper);
 
 EC_TYPEDEFS (SchemaNameClassNamePair);
+EC_TYPEDEFS (UnitSpec);
+EC_TYPEDEFS (Unit);
+EC_TYPEDEFS (UnitConverter);
 
 struct IStream;
 

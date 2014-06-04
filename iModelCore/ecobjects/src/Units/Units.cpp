@@ -72,9 +72,32 @@ double UnitConverter::FromBase (double val) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitConverter::IsEquivalent (UnitConverterCR other) const
+    {
+    if (m_type != other.m_type)
+        return false;
+
+    switch (m_type)
+        {
+        case UnitConversionType_FactorAndOffset:
+            if (!DoubleOps::AlmostEqual (m_offset, other.m_offset))
+                return false;
+            // Fall-through intentional...
+        case UnitConversionType_Factor:
+            if (!DoubleOps::AlmostEqual (m_factor, other.m_factor))
+                return false;
+            break;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::ConvertTo (double& value, UnitCR target) const
+bool UnitSpec::ConvertTo (double& value, UnitSpecCR target) const
     {
     PRECONDITION (IsCompatible (target), false);
 

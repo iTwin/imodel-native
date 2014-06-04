@@ -911,18 +911,23 @@ bool IECTypeAdapter::AllowExpandMembers() const
     // TFS#38705
     return _AllowExpandMembers();
     }
-bool IECTypeAdapter::IsTreatedAsString() const                                                      { return _IsTreatedAsString(); }
-IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const    { return _CreateDefaultFormatter (includeAllValues, forDwg); }
-IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const    { return _CondenseFormatterForSerialization (formatter); }
-IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const   { return _PopulateDefaultFormatterProperties (formatter); }
-bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context)   { return _ConvertFromString (v, str, context); }
-bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context)          { return _ConvertToExpressionType (v, context); }
-bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context)        { return _ConvertFromExpressionType (v, context); }
-bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                       { return _RequiresExpressionTypeConversion(); }
-bool IECTypeAdapter::GetDisplayType (PrimitiveType& type) const                                     { return _GetDisplayType (type); }
-bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts)   { return _ConvertToString (str, v, context, opts); }
-bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP opts)             { return _ConvertToDisplayType (v, context, opts); }
+bool IECTypeAdapter::IsTreatedAsString() const                                                          { return _IsTreatedAsString(); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const        { return _CreateDefaultFormatter (includeAllValues, forDwg); }
+IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const        { return _CondenseFormatterForSerialization (formatter); }
+IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const       { return _PopulateDefaultFormatterProperties (formatter); }
+bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const { return _ConvertFromString (v, str, context); }
+bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const        { return _ConvertToExpressionType (v, context); }
+bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const      { return _ConvertFromExpressionType (v, context); }
+bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                           { return _RequiresExpressionTypeConversion(); }
+bool IECTypeAdapter::GetDisplayType (PrimitiveType& type) const                                         { return _GetDisplayType (type); }
+bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const { return _ConvertToString (str, v, context, opts); }
+bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const           { return _ConvertToDisplayType (v, context, opts); }
+bool IECTypeAdapter::SupportsUnits() const                                                              { return _SupportsUnits(); }
+bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const                   { return _GetUnits (unit, context); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
 UInt32              IECTypeAdapterContext::GetComponentIndex() const     { return _GetComponentIndex(); }
 WCharCP             IECTypeAdapterContext::GetAccessString() const       { return _GetAccessString(); }

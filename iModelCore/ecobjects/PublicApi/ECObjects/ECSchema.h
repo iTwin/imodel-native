@@ -421,16 +421,19 @@ protected:
 
     virtual bool                _CanConvertToString (IECTypeAdapterContextCR context) const = 0;
     virtual bool                _CanConvertFromString (IECTypeAdapterContextCR context) const = 0;
-    virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
-    virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) = 0;
+    virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
+    virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const = 0;
 
     virtual bool                _RequiresExpressionTypeConversion() const = 0;
-    virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
-    virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
+    virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
+    virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
 
     virtual bool                _GetDisplayType (PrimitiveType& type) const = 0;
-    virtual bool                _ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
+    virtual bool                _ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
     virtual bool                _AllowExpandMembers() const = 0;
+
+    virtual bool                _SupportsUnits() const = 0;
+    virtual bool                _GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const = 0;
 public:
     // For DgnPlatform interop
     struct Factory
@@ -457,7 +460,7 @@ public:
     //! @param[in] context      Context in which to perform conversion
     //! @param[in] formatter    Formatting options, e.g. floating point precision, unit labels, etc.
     //! @return true if successfully converted to display type.
-    ECOBJECTS_EXPORT bool       ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter);
+    ECOBJECTS_EXPORT bool       ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -474,14 +477,14 @@ public:
     //! @param[in] context  Context under which conversion is performed
     //! @param[in] formatter Optional formatting specification, for ECFields
     //! @return true if successfully converted to string
-    ECOBJECTS_EXPORT        bool ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL);
+    ECOBJECTS_EXPORT        bool ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL) const;
 
     //! Converts from a string to the underlying ECValue type. Input string typically comes from user input
     //! @param[out] v       The converted value
     //! @param[in] str      The string to convert
     //! @param[in] context  Context under which conversion is performed
     //! @return true if conversion is successful
-    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context);
+    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const;
 
     //! @return true if the value must be converted for use in ECExpressions.
     ECOBJECTS_EXPORT        bool RequiresExpressionTypeConversion() const;
@@ -491,14 +494,14 @@ public:
     //! @param[out] v     The value to convert in-place
     //! @param[in] context  The context under which conversion is performed
     //! @returns true if successfully converted
-    ECOBJECTS_EXPORT        bool ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context);
+    ECOBJECTS_EXPORT        bool ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const;
 
     //! Converts the value from the value which should be used when evaluating ECExpressions.
     //! Typically no conversion is required. If the value has units, it should be converted from master units
     //! @param[out] v     The value to convert in-place
     //! @param[in] context  The context under which conversion is performed
     //! @returns true if successfully converted
-    ECOBJECTS_EXPORT        bool ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context);
+    ECOBJECTS_EXPORT        bool ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const;
 
     //! Create an IECInstance representing default formatting options for converting to string.
     //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
@@ -524,12 +527,21 @@ public:
     //! Given an instance representing formatting options, returns a copy of the instance optimized for serialization
     //! @param[in] formatter    The formatter instance to condense
     //! @return an IECInstance suitable for serialization, or NULL if the input formatter contained only default values in which case serialization is not necessary
-    ECOBJECTS_EXPORT ECN::IECInstancePtr   CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT ECN::IECInstancePtr    CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const;
 
     //! Given an instance containing custom formatting options, replace any null properties with their default values
     //! @param[in] formatter    The formatter instance to populate
     //! @return an IECInstance in which all null properties have been replaced by their default values
-    ECOBJECTS_EXPORT ECN::IECInstancePtr   PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT ECN::IECInstancePtr    PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const;
+
+    //! Returns true if ECProperties of the extended type handled by this type adapter may have units.
+    ECOBJECTS_EXPORT bool                   SupportsUnits() const;
+
+    //! If SupportsUnits() returns true, this method is called to obtain the units for a specific ECProperty.
+    //! @param[in]      unit       Holds the unit specification. If the ECProperty has no units, leave this default-initialized and return true.
+    //! @param[in]      context    Context in which to evaluate the units.
+    //! @return true if the unit information could be obtained, even if the unit is not specified. Return false if unit information could not be obtained.
+    ECOBJECTS_EXPORT bool                   GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const;
     };
 
 //=======================================================================================

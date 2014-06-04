@@ -182,7 +182,7 @@ void UnitsTest::TestUnitConversion (double fromVal, WCharCP fromUnitName, double
     SetUnits (fromUnitName, targetUnitName);
     Unit srcUnit, dstUnit;
     GetUnits (srcUnit, dstUnit);
-
+    
     EXPECT_TRUE (srcUnit.IsCompatible (dstUnit) && dstUnit.IsCompatible (srcUnit));
     double convertedVal = fromVal;
     EXPECT_TRUE (srcUnit.ConvertTo (convertedVal, dstUnit));
