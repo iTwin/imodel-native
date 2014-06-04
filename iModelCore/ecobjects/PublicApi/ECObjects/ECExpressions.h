@@ -12,6 +12,8 @@
 #include "ECInstanceIterable.h"
 #include "ECInstance.h"
 
+#include <ECUnits/Units.h>
+
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
             struct _name_;      \
@@ -627,6 +629,7 @@ struct          EvaluationResult
 private:
 //  Provides a list of conditions for which the shortcuts or bindings are valid
     ECN::ECValue        m_ecValue;
+    UnitSpec            m_units;
     union
         {
         IValueListResultP           m_valueList;
@@ -658,6 +661,8 @@ public:
     ECOBJECTS_EXPORT ECValueP               GetECValue();
     ECOBJECTS_EXPORT ECValueCP              GetECValue() const;
     ECOBJECTS_EXPORT ECValueR               InitECValue();
+    ECOBJECTS_EXPORT UnitSpecCR             GetUnits() const;
+    ECOBJECTS_EXPORT void                   SetUnits (UnitSpecCR units);
 
     ECOBJECTS_EXPORT ECInstanceListCP       GetInstanceList() const;
     ECOBJECTS_EXPORT void                   SetInstanceList (ECInstanceListCR instanceList, bool makeACopy);

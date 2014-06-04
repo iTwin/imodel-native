@@ -1147,10 +1147,16 @@ ECN::ECValueCP   EvaluationResult::GetECValue() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::UnitSpecCR EvaluationResult::GetUnits() const { return m_units; }
+void EvaluationResult::SetUnits (UnitSpecCR units) { m_units = units; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
-    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType)
+    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_units(rhs.m_units)
     {
     if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
         {
@@ -1184,6 +1190,7 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     Clear();
 
     m_valueType = rhs.m_valueType;
+    m_units = rhs.m_units;
     m_ecValue = rhs.m_ecValue;
     if (m_valueType == ValType_InstanceList)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
@@ -1221,6 +1228,7 @@ void            EvaluationResult::Clear()
     m_instanceList = NULL;  // and m_valueList, and m_lambda...
     m_valueList = NULL;
     m_valueType = ValType_None;
+    m_units = UnitSpec();
     }
 
 /*---------------------------------------------------------------------------------**//**
