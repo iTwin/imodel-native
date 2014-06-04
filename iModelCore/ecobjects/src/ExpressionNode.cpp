@@ -1082,7 +1082,7 @@ EvaluationResultR            rightValue
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult()
-    : m_valueList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
+    : m_valueList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None)
     {
 
     }
@@ -1150,7 +1150,7 @@ ECN::ECValueCP   EvaluationResult::GetECValue() const
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
-    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
+    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType)
     {
     if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
         {
@@ -1184,7 +1184,6 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     Clear();
 
     m_valueType = rhs.m_valueType;
-    m_unitsOrder = rhs.m_unitsOrder;
     m_ecValue = rhs.m_ecValue;
     if (m_valueType == ValType_InstanceList)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
@@ -1222,7 +1221,6 @@ void            EvaluationResult::Clear()
     m_instanceList = NULL;  // and m_valueList, and m_lambda...
     m_valueList = NULL;
     m_valueType = ValType_None;
-    m_unitsOrder = UO_Unknown;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1404,87 +1402,6 @@ void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightM
         GetAdditiveNodes(nodes, *left);
 
     nodes.push_back(&rightMost);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCR rightMost)
-    {
-    NodeCPVector  nodes;
-
-    nodes.push_back(rightMost.GetLeftCP());
-    nodes.push_back(&rightMost);
-    NodeHelpers::DetermineKnownUnitsSame(units, nodes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCPVector& nodes)
-    {
-    UnitsType   leftUnits;
-#if defined (NOTNOW)
-    bool        powerPromotionRequired = false;
-#endif
-
-    NodeCPVector::const_iterator nodeIterator = nodes.begin();
-    (*nodeIterator)->GetLeftCP()->DetermineKnownUnits(leftUnits);
-    for (; nodeIterator != nodes.end(); nodeIterator++)
-        {
-        UnitsType   rightUnits;
-        NodeCP       right = (*nodeIterator)->GetRightCP();
-        right->DetermineKnownUnits(rightUnits);
-        if (leftUnits.m_unitsOrder == rightUnits.m_unitsOrder)
-            {
-            if (!rightUnits.m_powerCanIncrease)
-                leftUnits.m_powerCanIncrease = false;
-
-            if (!rightUnits.m_powerCanDecrease)
-                leftUnits.m_powerCanDecrease = false;
-            }
-
-        if (leftUnits.m_unitsOrder != rightUnits.m_unitsOrder)
-            {
-            if (leftUnits.m_unitsOrder == UO_Unknown)
-                {
-                //  This should only happen when a symbol can't be resolved or this is a method 
-                leftUnits = rightUnits;
-                continue;
-                }
-
-            if (leftUnits.m_unitsOrder < rightUnits.m_unitsOrder)
-                {
-#if defined (NOTNOW)
-                if (!leftUnits.m_powerFixed)
-                    {
-                    powerPromotionRequired = true;
-                    leftUnits = rightUnits;
-                    continue;
-                    }
-#else
-                leftUnits = rightUnits;
-                continue;
-#endif
-                //  Place an error on the node.
-                }
-            }
-        }
-
-#if defined (NOTNOW)
-    if (powerPromotionRequired)
-        {
-        NodeVectorIterator  nodeIterator = nodes.begin();
-        (*nodeIterator)->GetLeftP()->ForceUnitsOrder(leftUnits);
-        for (; nodeIterator != nodes.end(); nodeIterator++)
-            {
-            NodeCP       right = (*nodeIterator)->GetRightCP();
-            right->ForceUnitsOrder(leftUnits);
-            }
-        }
-#endif
-
-    units = leftUnits;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2026,161 +1943,6 @@ ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionCont
         return m_true->GetValue(evalResult, context);
 
     return m_false->GetValue(evalResult, context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ArithmeticNode::_ForceUnitsOrder
-(
-UnitsTypeCR     requiredType
-)
-    {
-    if (this->IsAdditive())
-        {
-        GetLeftP()->ForceUnitsOrder(requiredType);
-        GetRightP()->ForceUnitsOrder(requiredType);
-        return;
-        }
-
-    UnitsType   leftUnits;
-    UnitsType   rightUnits;
-
-    GetLeftP()->DetermineKnownUnits(leftUnits);
-    GetRightP()->DetermineKnownUnits(rightUnits);
-
-    if (UO_Unknown == leftUnits.m_unitsOrder ||  UO_Unknown == rightUnits.m_unitsOrder)
-        return;  //  generate an error?
-
-    if (TOKEN_Star == m_operatorCode)
-        {
-        int     unitsOrder = leftUnits.m_unitsOrder * rightUnits.m_unitsOrder;
-
-        int     diff = requiredType.m_unitsOrder - unitsOrder;
-        if (0 == diff)
-            return;
-
-        if (diff < 0)
-            {
-            if (leftUnits.m_powerCanDecrease)
-                {
-                leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder/UO_Linear);
-                GetLeftP()->ForceUnitsOrder(leftUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            if (rightUnits.m_powerCanDecrease)
-                {
-                rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder/UO_Linear);
-                GetRightP()->ForceUnitsOrder(rightUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            //  Can't get it low enough. Need to report an error
-            return;
-            }
-
-        BeAssert (diff > 0);
-        if (!leftUnits.m_powerCanIncrease)
-            {
-            leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder*UO_Linear);
-            GetLeftP()->ForceUnitsOrder(leftUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        if (!rightUnits.m_powerCanIncrease)
-            {
-            rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder*UO_Linear);
-            GetRightP()->ForceUnitsOrder(rightUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        //  Can't get it high enough -- error
-        return;
-        }
-
-    if (TOKEN_Mod == m_operatorCode || TOKEN_Slash == m_operatorCode)
-        {
-
-        int     unitsOrder = leftUnits.m_unitsOrder / rightUnits.m_unitsOrder;
-        int     diff = requiredType.m_unitsOrder - unitsOrder;
-
-        if (0 == diff)
-            return;
-
-        if (diff < 0)
-            {
-            if (leftUnits.m_powerCanDecrease)
-                {
-                leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder/UO_Linear);
-                GetLeftP()->ForceUnitsOrder(leftUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            if (rightUnits.m_powerCanIncrease)
-                {
-                rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder*UO_Linear);
-                GetRightP()->ForceUnitsOrder(rightUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            //  Can't get it low enough. Need to report an error
-            return;
-            }
-
-        BeAssert (diff > 0);
-        if (!leftUnits.m_powerCanIncrease)
-            {
-            leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder*UO_Linear);
-            GetLeftP()->ForceUnitsOrder(leftUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        if (!rightUnits.m_powerCanDecrease)
-            {
-            rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder/UO_Linear);
-            GetRightP()->ForceUnitsOrder(rightUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        //  Can't get it high enough -- error
-        return;
-        }
-
-    //  Have Shift, etc. 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ArithmeticNode::_DetermineKnownUnits
-(
-UnitsTypeR      unitsType
-) const
-    {
-    if (IsAdditive())
-        {
-        NodeCPVector  additiveNodes;
-        //  Puts this node and all of the additive left children into the list.  The first node
-        //  in the list 
-        NodeHelpers::GetAdditiveNodes(additiveNodes, *this);
-        NodeHelpers::DetermineKnownUnitsSame(unitsType, additiveNodes);
-        return;
-        }
-
-    //  If additive node, then generate the list of additive nodes.
-    //  If any entry in the list can provide a known type then that is the required order for the entire
-    //  list.
-
-    //  If a multiplicative node, 
     }
 
 /*---------------------------------------------------------------------------------**//**

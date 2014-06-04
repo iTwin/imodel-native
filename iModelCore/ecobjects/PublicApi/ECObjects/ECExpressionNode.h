@@ -110,8 +110,6 @@ protected:
 
 public:
     static  void        GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCPVector& nodes);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCR rightMost);
 
 }; // NodeHelpers
 
@@ -361,8 +359,6 @@ protected:
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolvePrimaryList(*this); }
 
 public:
@@ -399,8 +395,6 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Ident; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
     void                    PushQualifier(WCharCP rightName);
@@ -437,8 +431,6 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
 
@@ -481,8 +473,6 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_LeftBracket; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 public:
     NodePtr                 GetIndexNode() const { return m_index.get(); }
     static LBracketNodePtr  Create(NodeR index) { return new LBracketNode(index); }
@@ -517,8 +507,6 @@ protected:
     virtual bool            _IsUnary () const override { return true; }
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
     virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
                 UnaryNode (ExpressionToken tokenId, NodeR left) : 
@@ -583,8 +571,6 @@ protected:
     virtual NodeP           _GetRightP () const override { return m_right.get(); }
     virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
     virtual bool            _SetRight (NodeR node) override { m_right = &node; return true; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
     ExpressionStatus        PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings);
     ExpressionStatus        GetOperandValues(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context);
@@ -605,8 +591,6 @@ public:
 struct          ArithmeticNode : BinaryNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override;
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 

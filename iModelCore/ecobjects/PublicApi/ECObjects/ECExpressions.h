@@ -59,7 +59,6 @@ EXPR_TYPEDEFS(ShiftNode)
 EXPR_TYPEDEFS(Symbol)
 EXPR_TYPEDEFS(SymbolExpressionContext)
 EXPR_TYPEDEFS(UnaryArithmeticNode)
-EXPR_TYPEDEFS(UnitsType)
 EXPR_TYPEDEFS(ValueResult)
 EXPR_TYPEDEFS(ValueSymbol)
 EXPR_TYPEDEFS(IECSymbolProvider)
@@ -140,15 +139,6 @@ enum ValueType
     ValType_InstanceList    =  3,
     ValType_ValueList       =  4,
     ValType_Lambda          =  5,
-    };
-
-enum UnitsOrder
-    {
-    UO_Unknown      = 0,
-    UO_Count        = 1,
-    UO_Linear       = 2,
-    UO_Area         = 4,
-    UO_Volume       = 8
     };
 
 /*__PUBLISH_SECTION_START__*/
@@ -528,7 +518,7 @@ enum            ExpressionToken
     TOKEN_Mod                 = 55,               //  Mod
     TOKEN_ShiftLeft           = 56,               //  <<
     TOKEN_ShiftRight          = 57,               //  >>
-    TOKEN_Colon               = 58,               //   :
+    TOKEN_Colon               = 58,               //   : ... aparently unused...?
     TOKEN_LessEqual           = 59,
     TOKEN_GreaterEqual        = 60,
     TOKEN_Less                = 61,
@@ -564,7 +554,7 @@ enum            ExpressionToken
     TOKEN_IntegerConstant     = 187,
     TOKEN_HexConstant         = 188,
     TOKEN_FloatConst          = 189,
-    TOKEN_UnitsConst          = 190,
+    TOKEN_UnitsConst          = 190,               // what is this used for...anything...?
     TOKEN_Unrecognized        = 200,
     TOKEN_BadNumber           = 201,
     TOKEN_BadOctalNumber      = 202,
@@ -575,16 +565,6 @@ enum            ExpressionToken
     };
 
 /*__PUBLISH_SECTION_END__*/
-/*=================================================================================**//**
-* @bsiclass                                                     John.Gooding    02/2011
-+===============+===============+===============+===============+===============+======*/
-struct          UnitsType : RefCountedBase
-{
-    UnitsOrder  m_unitsOrder;
-    ECN::IECInstancePtr  m_extendedType;
-    bool        m_powerCanDecrease;
-    bool        m_powerCanIncrease;
-};
 
 /*=================================================================================**//**
 * @bsiclass                                                     John.Gooding    02/2011
@@ -655,7 +635,6 @@ private:
         };
     bool                m_ownsInstanceList;
     ValueType           m_valueType;
-    UnitsOrder          m_unitsOrder;
 public:
     ValueType           GetValueType() const    { return m_valueType; }
     bool                IsInstanceList() const  { return ValType_InstanceList == m_valueType; }
@@ -897,9 +876,6 @@ protected:
     virtual NodeP           _GetRightP () const { return NULL; }
     virtual bool            _SetLeft (NodeR node) { return false; }
     virtual bool            _SetRight (NodeR node) { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType)  {}
-
 public:
     bool                    GetHasParens() const { return m_inParens; }
     void                    SetHasParens(bool hasParens) { m_inParens = hasParens; }
@@ -908,8 +884,6 @@ public:
     bool                    IsBinary ()     const  { return _IsBinary(); }
     bool                    IsConstant ()   const  { return _IsConstant (); }
 
-    void                    ForceUnitsOrder(UnitsTypeCR  knownType)  { _ForceUnitsOrder(knownType); }
-    void                    DetermineKnownUnits(UnitsTypeR unitsType) const { _DetermineKnownUnits(unitsType);  }
     ExpressionToken         GetOperation () const { return _GetOperation(); }
     bool                    SetOperation (ExpressionToken token) { return _SetOperation (token); }
 
