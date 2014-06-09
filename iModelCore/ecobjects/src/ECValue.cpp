@@ -708,6 +708,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Point2D:
         case PRIMITIVETYPE_Point3D:
         case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_IGeometry:
             break;
                         
         default:
