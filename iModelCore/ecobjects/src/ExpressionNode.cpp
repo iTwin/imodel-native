@@ -743,16 +743,68 @@ EvaluationResultR         right
     }
 
 /*---------------------------------------------------------------------------------**//**
+* For multiplication, exponenentiation, and division, at most one operand can have units.
+* The other must be a scalar. (Our current units system has no way to do analysis to figure
+* out the units of an operation involving two unitized quantities e.g. L * W = Area)
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus Operations::EnforceMultiplicativeUnits (UnitSpecR units, EvaluationResultR left, EvaluationResultR right)
+    {
+    UnitSpecCR lUnit = left.GetUnits(), rUnit = right.GetUnits();
+    if (lUnit.IsUnspecified())
+        units = rUnit;
+    else if (rUnit.IsUnspecified())
+        units = lUnit;
+    else
+        return ExprStatus_IncompatibleUnits;
+
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus Operations::EnforceLikeUnits (EvaluationResultR left, EvaluationResultR right)
+    {
+    UnitSpecCR lUnit = left.GetUnits(), rUnit = right.GetUnits();
+    if (lUnit.IsUnspecified() != rUnit.IsUnspecified())
+        return ExprStatus_Success;  // assume non-unitized operand uses same units as unitized operand
+    else if (lUnit.IsUnspecified())
+        return ExprStatus_Success;  // neither has units
+    else if (!lUnit.IsCompatible (rUnit))
+        return ExprStatus_IncompatibleUnits;
+    else if (lUnit.IsEquivalent (rUnit))
+        return ExprStatus_Success;  // units compatible and no conversion required
+
+    // Convert rhs to units of lhs
+    ECValueR rv = *right.GetECValue();
+    if (!rv.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+        return ExprStatus_UnknownError;
+
+    double rd = rv.GetDouble();
+    if (!rUnit.ConvertTo (rd, lUnit))
+        return ExprStatus_IncompatibleUnits;
+
+    rv.SetDouble (rd);
+    right.SetUnits (lUnit);
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::PerformMultiplication
 (
 EvaluationResultR           resultOut,
 EvaluationResultR           left,
-EvaluationResultR           right
+EvaluationResultR           right,
+bool                        enforceUnits
 )
     {
+    UnitSpec units;
     ExpressionStatus status = PerformArithmeticPromotion (left, right);
+    if (enforceUnits && ExprStatus_Success == status)
+        status = EnforceMultiplicativeUnits (units, left, right);
 
     if (ExprStatus_Success != status)
         return status;
@@ -785,6 +837,7 @@ EvaluationResultR           right
         }
 
     resultOut = v;
+    resultOut.SetUnits (units);
     return ExprStatus_Success;
     }
 
@@ -808,10 +861,15 @@ ExpressionStatus Operations::PerformIntegerDivision
 (
 EvaluationResultR           resultOut,
 EvaluationResultR           left,
-EvaluationResultR           right
+EvaluationResultR           right,
+bool                        enforceUnits
 )
     {
     ExpressionStatus status = PerformArithmeticPromotion (left, right);
+
+    Unit units;
+    if (enforceUnits && ExprStatus_Success == status)
+        status = EnforceMultiplicativeUnits (units, left, right);
 
     if (ExprStatus_Success != status)
         return status;
@@ -857,6 +915,7 @@ EvaluationResultR           right
         }
 
     resultOut = v;
+    resultOut.SetUnits (units);
     return ExprStatus_Success;
     }
 
@@ -867,7 +926,8 @@ ExpressionStatus Operations::PerformDivision
 (
 EvaluationResultR           resultOut,
 EvaluationResultR           left,
-EvaluationResultR           right
+EvaluationResultR           right,
+bool                        enforceUnits
 )
     {
     ExpressionStatus status = ConvertToDouble (left);
@@ -882,7 +942,16 @@ EvaluationResultR           right
     if (0 == divisor)
         return ExprStatus_DivideByZero;
 
+    UnitSpec units;
+    if (enforceUnits)
+        {
+        auto status = EnforceMultiplicativeUnits (units, left, right);
+        if (ExprStatus_Success != status)
+            return status;
+        }
+
     resultOut = ECValue (left.GetECValue()->GetDouble() / divisor);
+    resultOut.SetUnits (units);
     return ExprStatus_Success;
     }
 
@@ -2220,7 +2289,7 @@ ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, Expressio
     if (ExprStatus_Success != status)
         return status;
 
-    return Operations::PerformMultiplication(evalResult, left, right);
+    return Operations::PerformMultiplication(evalResult, left, right, context.EnforcesUnits());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2238,9 +2307,9 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
     switch(m_operatorCode)
         {
         case TOKEN_IntegerDivide:
-            return Operations::PerformIntegerDivision(evalResult, left, right);
+            return Operations::PerformIntegerDivision(evalResult, left, right, context.EnforcesUnits());
         case TOKEN_Slash:
-            return Operations::PerformDivision(evalResult, left, right);
+            return Operations::PerformDivision(evalResult, left, right, context.EnforcesUnits());
         case TOKEN_Mod:
             return Operations::PerformMod(evalResult, left, right);
         }
@@ -2255,10 +2324,15 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
     ExpressionStatus status =  PromoteCommon(leftResult, rightResult, context, true);
-    if (ExprStatus_Success == status)
-        return !leftResult.GetECValue()->IsNull() && !rightResult.GetECValue()->IsNull() ? status : ExprStatus_PrimitiveRequired;
-    else
+    if (ExprStatus_Success != status)
         return status;
+    else if (leftResult.GetECValue()->IsNull() || rightResult.GetECValue()->IsNull())
+        return ExprStatus_PrimitiveRequired;
+
+    if (context.EnforcesUnits())
+        status = Operations::EnforceLikeUnits (leftResult, rightResult);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2410,13 +2484,36 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
             case TOKEN_Less:       boolResult = intResult <  0;    break;
             case TOKEN_LessEqual:  boolResult = intResult <= 0;    break;
             case TOKEN_Greater:    boolResult = intResult >  0;    break;
-            case TOKEN_GreaterEqual: boolResult = intResult >= 0;    break;
+            case TOKEN_GreaterEqual: boolResult = intResult >= 0;  break;
             }
 
         evalResult.InitECValue().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
+    if (context.EnforcesUnits())
+        {
+        ExpressionStatus status = ExprStatus_Success;
+        switch (ecLeft.GetPrimitiveType())
+            {
+            case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_Integer:
+            case PRIMITIVETYPE_Double:
+                {
+                status = Operations::EnforceLikeUnits (leftResult, rightResult);
+                if (ExprStatus_Success == status)
+                    {
+                    // primitive types may have changed if we did unit conversion...make sure they are back in sync
+                    status = PromoteCommon (leftResult, rightResult, context, false);
+                    }
+                }
+                break;
+            }
+        
+        if (ExprStatus_Success != status)
+            return status;
+        }
+                
     switch (ecLeft.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Boolean:

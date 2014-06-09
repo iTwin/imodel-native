@@ -38,6 +38,7 @@ public:
     explicit UnitConverter (bool isSlope = false) : m_type (!isSlope ? UnitConversionType_Identity : UnitConversionType_Slope), m_factor (0.0), m_offset (0.0) { }
     explicit UnitConverter (double factor) : m_type (UnitConversionType_Factor), m_factor (factor), m_offset (0.0) { BeAssert (0.0 != factor); }
     UnitConverter (double factor, double offset) : m_type (UnitConversionType_FactorAndOffset), m_factor (factor), m_offset (offset) { BeAssert (0.0 != factor); }
+    UnitConverter (UnitConverterCR other) : m_type(other.m_type), m_factor(other.m_factor), m_offset(other.m_offset) { }
 
     ECOBJECTS_EXPORT double         ToBase (double valueInThisUnit) const;
     ECOBJECTS_EXPORT double         FromBase (double valueInBaseUnit) const;
@@ -60,6 +61,7 @@ public:
     bool                    IsCompatible (UnitSpecCR other) const   { return m_baseUnitName.Equals (other.m_baseUnitName); }
     bool                    IsEquivalent (UnitSpecCR other) const   { return m_converter.IsEquivalent (other.m_converter) && IsCompatible (other); }
     UnitConverterCR         GetConverter() const                    { return m_converter; }
+    bool                    IsUnspecified() const                   { return m_baseUnitName.empty(); }
 
     ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitSpecCR target) const;
     };

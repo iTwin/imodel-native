@@ -12,7 +12,9 @@
 #include "ECInstanceIterable.h"
 #include "ECInstance.h"
 
+/*__PUBLISH_SECTION_END__*/
 #include <ECUnits/Units.h>
+/*__PUBLISH_SECTION_START__*/
 
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
@@ -101,35 +103,6 @@ typedef NodePtrVector::iterator                     NodePtrVectorIterator;
 
 typedef bvector<EvaluationResult>                   EvaluationResultVector;
 typedef EvaluationResultVector::iterator            EvaluationResultVectorIterator;
-
-//! @ingroup ECObjectsGroup
-//! Enumerates the possible return values for evaluating an expression or its value
-enum ExpressionStatus
-    {
-    ExprStatus_Success              =   0, //!< Success
-    ExprStatus_UnknownError         =   1, //!< There as an unknown error in evaluation
-    ExprStatus_UnknownMember        =   2, //!< Returned if a property name in the expression cannot be found in the containing class
-    ExprStatus_PrimitiveRequired    =   3, //!< Returned when a primitive is expected and not found
-    ExprStatus_StructRequired       =   4, //!< Returned when a struct is expected and not found
-    ExprStatus_ArrayRequired        =   5, //!< Returned when an array is expected and not found
-    ExprStatus_UnknownSymbol        =   6, //!< Returned when the symbol in the expression cannot be resolved
-    ExprStatus_DotNotSupported      =   7,
-
-    //  Returning ExprStatus_NotImpl in base methods is the lazy approach for methods that should be 
-    //  pure virtual.  Should be eliminated after prototyping phase is done
-    ExprStatus_NotImpl              =   8,
-
-    ExprStatus_NeedsLValue          =   9, //!< Returned when the symbol needs to be an lvalue
-    ExprStatus_WrongType            =  10, //!< Returned when the symbol type is of the wrong type for the expression
-    ExprStatus_IncompatibleTypes    =  11, //!< Returned when expression uses incompatible types (ie, trying to perform arithmetic on two strings)
-    ExprStatus_MethodRequired       =  12, //!< Returned when a method token is expected and not found
-    ExprStatus_InstanceMethodRequired =  13, //!< Returned when an instance method is called, but has not been defined
-    ExprStatus_StaticMethodRequired =  14, //!< Returned when a static method is called, but has not been defined
-    ExprStatus_InvalidTypesForDivision =  15, //!< Returned when the expression tries to perform a division operation on types that cannot be divided
-    ExprStatus_DivideByZero             =  16, //!< Returned when the division operation tries to divide by zero
-    ExprStatus_WrongNumberOfArguments   =  17, //!< Returned when the number of arguments to a method in an expression do not match the number of arguments actually expected
-    ExprStatus_IndexOutOfRange          = 18, //!< Returned when array index is used which is outside the bounds of the array.
-    };
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -220,6 +193,41 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
+/*---------------------------------------------------------------------------------**//**
+* Options to be used when evaluating an ECExpression.
+* The options are specified on an ExpressionContext. Inner contexts inherit the options
+* associated with their outer context.
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+enum EvaluationOptions
+    {
+    //! Legacy behavior. IECTypeAdapter::_ConvertTo/FromExpressionType() will be invoked for each property value used in the ECExpression.
+    //! This can have undesirable results:
+    //!  -Converts linear units to dimensionsed meters
+    //!  -Converts boolean and StandardValues values to localized strings
+    //!  -etc.
+    //! This option is not appropriate for expressions intended to be persisted.
+    EVALOPT_Legacy                          = 0,
+
+    //! IECTypeAdapter::_ConvertTo/FromExpressionType() will not be invoked for property values used in the ECExpression.
+    //!  -Property values will retain their storage units
+    //!  -StandardValues values will retain their internal integer values
+    //!  -Boolean property values will be represented as non-localized true/false
+    //! This option is recommended when units are important, or if the results of the ECExpression will not be displayed to the user directly, or
+    //! if the expression will be persisted.
+    EVALOPT_SuppressTypeConversions         = 1 << 0,
+
+    //! Arithmetic, comparison, and assignment operations will check the units of their operands and:
+    //!  -Convert values to compatible units if possible, or
+    //!  -Produce an error if units are not compatible
+    //! If units are not specified for a numeric value within the ECExpression, an attempt will be made to infer the units from the other operand.
+    //! Currently, units are enforced as follows:
+    //!  -Addition, subtraction, and comparison: Units must be compatible (have same base unit).
+    //!  -Multiplication and division: Only one operand may have units; the other is a scalar.
+    //! This option implies type conversions will be suppressed.
+    EVALOPT_EnforceUnits                    = (1 << 1) | EVALOPT_SuppressTypeConversions,
+    };
+
 /*=================================================================================**//**
 * The context in which an expression is evaluated.
 * @ingroup ECObjectsGroup
@@ -230,12 +238,12 @@ struct          ExpressionContext : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 private:
     ExpressionContextPtr                m_outer;
-    bool                                m_allowsTypeConversion;
+    EvaluationOptions                   m_options;
 
 protected:
 
     virtual                     ~ExpressionContext () {}
-                                ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_allowsTypeConversion (true) { }
+                                ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_options (EVALOPT_Legacy) { }
     virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) { return ExprStatus_UnknownSymbol; }
     virtual bool                _IsNamespace() const { return false; }
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
@@ -262,12 +270,20 @@ public:
     //! By default, property values obtained from IECInstances are subject to type conversion. The ConvertToExpressionType() method of
     //! the IECTypeAdapter associated with the ECProperty will be called to perform conversion.
     //! If this ExpressionContext has an outer context, it inherits the value of the outermost context.
-    ECOBJECTS_EXPORT bool       AllowsTypeConversion() const;
+    ECOBJECTS_EXPORT bool               AllowsTypeConversion() const;
 
-    //! Enable or disable type conversion of ECProperty values.
-    //! Has no effect if this context has an outer context.
-    //! If this context serves as an outer context and has no outer context of its own, all of its inner contexts inherit the value.
-    ECOBJECTS_EXPORT void       SetAllowsTypeConversion (bool allows);
+    //! By default, units associated with property values and numeric expressions are ignored.
+    //! If this ExpressionContext has an outer context, it inherits the value of the outermost context.
+    ECOBJECTS_EXPORT bool               EnforcesUnits() const;
+
+    //! Get the options used when evaluating ECExpressions using this context.
+    //! If this ExpressionContext has an outer context, it uses the options of the outermost context.
+    ECOBJECTS_EXPORT EvaluationOptions  GetEvaluationOptions() const;
+
+    //! Sets the options used when evaluating ECExpressions using this context.
+    //! If this ExpressionContext has an outer context, it uses the options of the outermost context, so setting
+    //! the inner context's options has no effect.
+    ECOBJECTS_EXPORT void               SetEvaluationOptions (EvaluationOptions options);
 }; // End of class ExpressionContext
 
 /*=================================================================================**//**
@@ -793,6 +809,9 @@ private:
 
 public:
     static ValueResultPtr      Create(EvaluationResultR result);
+
+    EvaluationResultR           GetResult()         { return m_evalResult; }
+    EvaluationResultCR          GetResult() const   { return m_evalResult; }
 
 /*__PUBLISH_SECTION_START__*/
     //! Gets the result of the evalution

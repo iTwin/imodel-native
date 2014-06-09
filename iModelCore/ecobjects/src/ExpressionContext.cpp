@@ -342,18 +342,28 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             return ExprStatus_Success;
             }
 
+        UnitSpec units;
         ECValue ecval;
         PrimitiveECPropertyCP primProp = currentProperty->GetAsPrimitiveProperty();
         if (NULL == primProp || ECOBJECTS_STATUS_Success != instance.GetValue (ecval, accessString.c_str()))
             return ExprStatus_UnknownError;
-        else if (AllowsTypeConversion())
+        else if (AllowsTypeConversion() || EnforcesUnits())
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
-            if (NULL != typeAdapter && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
-                return ExprStatus_UnknownError;
+            if (nullptr != typeAdapter)
+                {
+                if (AllowsTypeConversion())
+                    {
+                    if (typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
+                        return ExprStatus_UnknownError;
+                    }
+                else if (typeAdapter->SupportsUnits() && !typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
+                    return ExprStatus_UnknownError;
+                }
             }
 
         evalResult = ecval;
+        evalResult.SetUnits (units);
         return ExprStatus_Success;
         }
     else if (TOKEN_LeftBracket == nextOperation)
@@ -379,18 +389,34 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             { evalResult.Clear(); return ExprStatus_PrimitiveRequired; }
 
         ECValue arrayVal;
+        UnitSpec units;
         if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (UInt32)indexResult.GetECValue()->GetInteger()))
             { evalResult.Clear(); return ExprStatus_UnknownError; }
-        else if (isPrimitive && AllowsTypeConversion())
+        else if (isPrimitive && (AllowsTypeConversion() || EnforcesUnits()))
             {
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
-            if (NULL != adapter && adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
-                { evalResult.Clear(); return ExprStatus_UnknownError; }
+            if (nullptr != adapter)
+                {
+                if (AllowsTypeConversion())
+                    {
+                    if (adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
+                        {
+                        evalResult.Clear();
+                        return ExprStatus_UnknownError;
+                        }
+                    }
+                else if (adapter->SupportsUnits() && !adapter->GetUnits (units, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
+                    {
+                    evalResult.Clear();
+                    return ExprStatus_UnknownError;
+                    }
+                }
             }
 
         if (TOKEN_None == nextOperation)
             {
             evalResult = arrayVal;
+            evalResult.SetUnits (units);
             return ExprStatus_Success;
             }
 
@@ -1021,15 +1047,31 @@ InstanceListExpressionContextPtr InstanceListExpressionContext::Create (ECInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ExpressionContext::AllowsTypeConversion() const
     {
-    return NULL != GetOuterP() ? GetOuterP()->AllowsTypeConversion() : m_allowsTypeConversion;
+    return 0 == (GetEvaluationOptions() & EVALOPT_SuppressTypeConversions);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ExpressionContext::SetAllowsTypeConversion (bool allow)
+void ExpressionContext::SetEvaluationOptions (EvaluationOptions opts)
     {
-    m_allowsTypeConversion = allow;
+    m_options = opts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionContext::EnforcesUnits() const
+    {
+    return 0 != (GetEvaluationOptions() & EVALOPT_EnforceUnits);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+EvaluationOptions ExpressionContext::GetEvaluationOptions() const
+    {
+    return nullptr != GetOuterP() ? GetOuterP()->GetEvaluationOptions() : m_options;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

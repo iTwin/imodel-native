@@ -68,7 +68,11 @@ private:
     static void        ReportInvalidJunctionOperands(EvaluationResultR left, EvaluationResultR right) {}
     static void        ReportInvalidComparisonOperands(EvaluationResultR left, EvaluationResultR right) {}
     static void        ReportInvalidUnaryArithmeticOperand(ExpressionToken operationCode, EvaluationResultR left) {}
+
+    static ExpressionStatus EnforceMultiplicativeUnits (UnitSpecR units, EvaluationResultR left, EvaluationResultR right);
 public:
+    // PRECONDITION: PromoteCommon was called, left and right are non-null and have same type and type is int, long, or double
+    static ExpressionStatus EnforceLikeUnits (EvaluationResultR left, EvaluationResultR right);
 
     static ExpressionStatus ConvertToInt32(EvaluationResultR evalResult);
     static ExpressionStatus ConvertToString(EvaluationResultR evalResult);
@@ -85,10 +89,10 @@ public:
     static ExpressionStatus PerformUnaryMinus(EvaluationResultR resultOut, EvaluationResultR left);
     static ExpressionStatus PerformUnaryNot(EvaluationResultR resultOut, EvaluationResultR left);
     static ExpressionStatus PerformShift(EvaluationResultR resultOut, ExpressionToken shiftOp, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformMultiplication(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
+    static ExpressionStatus PerformMultiplication(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
     static ExpressionStatus PerformExponentiation(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformIntegerDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
+    static ExpressionStatus PerformIntegerDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
+    static ExpressionStatus PerformDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
     static ExpressionStatus PerformMod(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
     static ExpressionStatus PerformLikeTest(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right) { return ExprStatus_NotImpl; }
     static ExpressionStatus PerformJunctionOperator(EvaluationResultR resultOut, ExpressionToken junctionOperator, EvaluationResultR left, EvaluationResultR right);
