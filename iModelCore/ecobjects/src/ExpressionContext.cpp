@@ -347,12 +347,12 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         PrimitiveECPropertyCP primProp = currentProperty->GetAsPrimitiveProperty();
         if (NULL == primProp || ECOBJECTS_STATUS_Success != instance.GetValue (ecval, accessString.c_str()))
             return ExprStatus_UnknownError;
-        else if (AllowsTypeConversion() || EnforcesUnits())
+        else if (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits())
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
             if (nullptr != typeAdapter)
                 {
-                if (AllowsTypeConversion())
+                if (globalContext.AllowsTypeConversion())
                     {
                     if (typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
                         return ExprStatus_UnknownError;
@@ -392,12 +392,12 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         UnitSpec units;
         if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (UInt32)indexResult.GetECValue()->GetInteger()))
             { evalResult.Clear(); return ExprStatus_UnknownError; }
-        else if (isPrimitive && (AllowsTypeConversion() || EnforcesUnits()))
+        else if (isPrimitive && (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits()))
             {
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
             if (nullptr != adapter)
                 {
-                if (AllowsTypeConversion())
+                if (globalContext.AllowsTypeConversion())
                     {
                     if (adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
                         {

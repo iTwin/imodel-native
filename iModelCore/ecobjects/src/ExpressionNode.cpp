@@ -600,6 +600,7 @@ EvaluationResultR           left
         }
 
     resultOut = v;
+    resultOut.SetUnits (left.GetUnits());
     return ExprStatus_Success;
     }
 
@@ -768,7 +769,15 @@ ExpressionStatus Operations::EnforceLikeUnits (EvaluationResultR left, Evaluatio
     {
     UnitSpecCR lUnit = left.GetUnits(), rUnit = right.GetUnits();
     if (lUnit.IsUnspecified() != rUnit.IsUnspecified())
-        return ExprStatus_Success;  // assume non-unitized operand uses same units as unitized operand
+        {
+        // assume non-unitized operand uses same units as unitized operand
+        if (lUnit.IsUnspecified())
+            left.SetUnits (rUnit);
+        else
+            right.SetUnits (lUnit);
+
+        return ExprStatus_Success;
+        }
     else if (lUnit.IsUnspecified())
         return ExprStatus_Success;  // neither has units
     else if (!lUnit.IsCompatible (rUnit))
@@ -2353,42 +2362,47 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
             {
             case PRIMITIVETYPE_String:
                 performConcatenation (result, left, right);
-                return ExprStatus_Success;
+                break;
 
             case PRIMITIVETYPE_Long:
                 result.SetLong(left.GetLong() + right.GetLong());
-                return ExprStatus_Success;
+                break;
 
             case PRIMITIVETYPE_Integer:
                 result.SetInteger(left.GetInteger() + right.GetInteger());
-                return ExprStatus_Success;
+                break;
 
             case PRIMITIVETYPE_Double:
                 result.SetDouble(left.GetDouble() + right.GetDouble());
-                return ExprStatus_Success;
+                break;
+            default:
+                BeAssert (false && L"unexpected types for addition");
+                return ExprStatus_UnknownError;
             }
-        BeAssert (false && L"unexpected types for addition");
-        return ExprStatus_UnknownError;
         }
-
-    switch(left.GetPrimitiveType())
+    else
         {
-        case PRIMITIVETYPE_Long:
-            result.SetLong(left.GetLong() - right.GetLong());
-            return ExprStatus_Success;
+        switch(left.GetPrimitiveType())
+            {
+            case PRIMITIVETYPE_Long:
+                result.SetLong(left.GetLong() - right.GetLong());
+                break;
 
-        case PRIMITIVETYPE_Integer:
-            result.SetInteger(left.GetInteger() - right.GetInteger());
-            return ExprStatus_Success;
+            case PRIMITIVETYPE_Integer:
+                result.SetInteger(left.GetInteger() - right.GetInteger());
+                break;
 
-        case PRIMITIVETYPE_Double:
-            result.SetDouble(left.GetDouble() - right.GetDouble());
-            return ExprStatus_Success;
+            case PRIMITIVETYPE_Double:
+                result.SetDouble(left.GetDouble() - right.GetDouble());
+                break;
+            default:
+                BeAssert (false && L"unexpected types for subtraction");
+                return ExprStatus_UnknownError;
+            }
         }
 
-    BeAssert (false && L"unexpected types for subtraction");
-
-    return ExprStatus_UnknownError;
+    evalResult.SetUnits (leftResult.GetUnits());
+    return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

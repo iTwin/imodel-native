@@ -242,6 +242,7 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
     m_context = symbolContext.get();
     m_thisContext = thisContext.get();
     m_thisContext->SetEvaluationOptions (m_evaluationOptions);
+    m_context->SetEvaluationOptions (m_evaluationOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**
