@@ -518,6 +518,36 @@ public:
 
 };  //  End of struct Unary
 
+/*---------------------------------------------------------------------------------**//**
+* Currently this only supports specifying a BASE unit, plus optionally a factor and offset.
+* Later we may enhance it so that it accepts any unit available in the Units_Schema...right
+* now we don't want to have to look up units by name in the schema, and we don't have
+* a pressing use case for arbitrary unit declarations.
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UnitSpecNode : UnaryNode
+    {
+private:
+    UnitSpec            m_units;
+
+    UnitSpecNode (NodeR left, WCharCP unitName) : UnaryNode (TOKEN_Colon, left), m_units (unitName, UnitConverter (false)) { }
+
+    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR context) override;
+    virtual bool                _Traverse (NodeVisitorR visitor) const override
+        {
+        bool ret = visitor.ProcessNode (*this);
+        if (ret)
+            ret = visitor.ProcessUnits (m_units);
+
+        return ret;
+        }
+public:
+    static UnitSpecNodePtr      Create (NodeR left, WCharCP baseUnitName);
+
+    void                        SetFactor (double factor);
+    void                        SetFactorAndOffset (double factor, double offset);
+    };
+
 /*=================================================================================**//**
 *
 * !!!Describe Class Here!!!

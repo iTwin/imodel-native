@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionHandler.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1126,13 +1126,63 @@ NodePtr         ECEvaluator::ParseUnaryArith
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+NodePtr         ECEvaluator::ParseUnitSpec()
+    {
+    NodePtr result = ParseUnaryArith();
+    if (m_lexer->GetTokenType() == TOKEN_Colon)
+        {
+        m_lexer->Advance();
+        result = UnitSpecNode::Create (*result, m_lexer->GetTokenStringCP());
+        m_lexer->Advance();
+        UInt32 nQualifiers = 0;
+        double factor = 0.0;
+        while (TOKEN_DoubleColon == m_lexer->GetTokenType())
+            {
+            m_lexer->Advance();
+            nQualifiers++;
+            double qualifier;
+            bool valid = false;
+            if (1 == swscanf(m_lexer->GetTokenStringCP (), L"%lg", &qualifier))
+                {
+                switch (nQualifiers)
+                    {
+                    case 1:
+                        if (0.0 != qualifier)
+                            {
+                            factor = qualifier;
+                            static_cast<UnitSpecNodeR>(*result).SetFactor (factor);
+                            valid = true;
+                            }
+                        break;
+                    case 2:
+                        static_cast<UnitSpecNodeR>(*result).SetFactorAndOffset (factor, qualifier);
+                        valid = true;
+                        break;
+                    }
+                }
+            
+            m_lexer->Advance();
+            if (!valid)
+                {
+                result = GetErrorNode (L"Malformed unit specification", m_lexer->GetTokenStringCP());
+                break;
+                }
+            }
+        }
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr         ECEvaluator::ParseMultiplicative
 (
 )
     {
-    NodePtr     result = ParseUnaryArith ();
+    NodePtr     result = ParseUnitSpec();
     while (m_lexer->GetTokenType() == TOKEN_Star || m_lexer->GetTokenType() == TOKEN_Slash)
         {
         ExpressionToken  op = m_lexer->GetTokenType ();

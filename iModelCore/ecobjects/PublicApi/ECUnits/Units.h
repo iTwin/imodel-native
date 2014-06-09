@@ -43,6 +43,8 @@ public:
     ECOBJECTS_EXPORT double         ToBase (double valueInThisUnit) const;
     ECOBJECTS_EXPORT double         FromBase (double valueInBaseUnit) const;
     ECOBJECTS_EXPORT bool           IsEquivalent (UnitConverterCR other) const;
+
+    WString                         ToECExpressionString() const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,7 +65,11 @@ public:
     UnitConverterCR         GetConverter() const                    { return m_converter; }
     bool                    IsUnspecified() const                   { return m_baseUnitName.empty(); }
 
+    void                    SetConverter (UnitConverterCR converter)    { m_converter = converter; }
+
     ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitSpecCR target) const;
+
+    ECOBJECTS_EXPORT WString    ToECExpressionString() const;
     };
 
 /*---------------------------------------------------------------------------------**//**

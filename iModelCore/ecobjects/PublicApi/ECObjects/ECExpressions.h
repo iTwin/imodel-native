@@ -27,6 +27,7 @@
 
 EXPR_TYPEDEFS(ArgumentTreeNode)
 EXPR_TYPEDEFS(ArithmeticNode)
+EXPR_TYPEDEFS(UnitSpecNode)
 EXPR_TYPEDEFS(BinaryNode)
 EXPR_TYPEDEFS(CallNode)
 EXPR_TYPEDEFS(LambdaNode)
@@ -80,6 +81,7 @@ typedef RefCountedPtr<IValueListResult>             IValueListResultPtr;
 typedef RefCountedPtr<LambdaValue>                  LambdaValuePtr;
 typedef RefCountedPtr<ExpressionContext>            ExpressionContextPtr;
 typedef RefCountedPtr<IdentNode>                    IdentNodePtr;
+typedef RefCountedPtr<UnitSpecNode>                 UnitSpecNodePtr;
 typedef RefCountedPtr<InstanceListExpressionContext> InstanceListExpressionContextPtr;
 typedef RefCountedPtr<InstanceExpressionContext>    InstanceExpressionContextPtr;
 typedef RefCountedPtr<LBracketNode>                 LBracketNodePtr;
@@ -536,7 +538,7 @@ enum            ExpressionToken
     TOKEN_Mod                 = 55,               //  Mod
     TOKEN_ShiftLeft           = 56,               //  <<
     TOKEN_ShiftRight          = 57,               //  >>
-    TOKEN_Colon               = 58,               //   : ... aparently unused...?
+    TOKEN_Colon               = 58,               //  : decorates a sub-expression with a unit specification ("expr:UnitName[::Factor[::Offset]]")
     TOKEN_LessEqual           = 59,
     TOKEN_GreaterEqual        = 60,
     TOKEN_Less                = 61,
@@ -748,6 +750,8 @@ struct          NodeVisitor
     virtual bool Comma() = 0;
     //! Invoked to process a node
     virtual bool ProcessNode(NodeCR node) = 0;
+    //! Invoked when a UnitSpecification is encountered
+    virtual bool ProcessUnits (UnitSpecCR units) = 0;
 };
 
 /*=================================================================================**//**
@@ -768,6 +772,7 @@ private:
 
     NodePtr         ParsePrimary();
     NodePtr         ParseUnaryArith();
+    NodePtr         ParseUnitSpec();
     NodePtr         ParseExponentiation();
     NodePtr         ParseMultiplicative();
     NodePtr         ParseIntegerDivision();

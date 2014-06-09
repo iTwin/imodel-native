@@ -2339,7 +2339,14 @@ ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, Evaluatio
         return ExprStatus_PrimitiveRequired;
 
     if (context.EnforcesUnits())
+        {
         status = Operations::EnforceLikeUnits (leftResult, rightResult);
+        if (ExprStatus_Success == status)
+            {
+            // primitive types may have changed if we did unit conversion...make sure they are back in sync
+            status = PromoteCommon (leftResult, rightResult, context, false);
+            }
+        }
 
     return status;
     }
@@ -2658,6 +2665,12 @@ protected:
             m_lastRequiredSpace = (iswalnum(curr[stringLen - 1]) || curr[stringLen - 1] == '_');
 
         m_expression += curr;
+        return true;
+        }
+
+    virtual bool ProcessUnits (UnitSpecCR units) override
+        {
+        m_expression += units.ToECExpressionString();
         return true;
         }
 
@@ -4025,6 +4038,66 @@ ExpressionStatus    LambdaValue::Evaluate (IValueListResultCR valueList, LambdaV
             }
         }
 
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitSpecNode::SetFactor (double factor)
+    {
+    m_units.SetConverter (UnitConverter (factor));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitSpecNode::SetFactorAndOffset (double factor, double offset)
+    {
+    m_units.SetConverter (UnitConverter (factor, offset));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitSpecNodePtr UnitSpecNode::Create (NodeR left, WCharCP baseUnitName)
+    {
+    return new UnitSpecNode (left, baseUnitName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus UnitSpecNode::_GetValue (EvaluationResultR result, ExpressionContextR context)
+    {
+    ExpressionStatus    status = _GetLeftP()->GetValue (result, context);
+    if (ExprStatus_Success != status || !context.EnforcesUnits())
+        return status;
+    
+    UnitSpecCR operandUnits = result.GetUnits();
+    if (operandUnits.IsUnspecified() || operandUnits.IsEquivalent (m_units))
+        {
+        // no conversion needed, set units directly
+        result.SetUnits (m_units);
+        return ExprStatus_Success;
+        }
+    else if (!operandUnits.IsCompatible (m_units))
+        return ExprStatus_IncompatibleUnits;
+
+    if (!result.IsECValue())
+        return ExprStatus_PrimitiveRequired;
+
+    ECValueR v = *result.GetECValue();
+    if (!v.IsPrimitive() || v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+        return ExprStatus_IncompatibleTypes;
+
+    // convert units
+    double rd = v.GetDouble();
+    if (!operandUnits.ConvertTo (rd, m_units))
+        return ExprStatus_IncompatibleUnits;
+
+    v.SetDouble (rd);
+    result.SetUnits (m_units);
     return ExprStatus_Success;
     }
 

@@ -445,5 +445,31 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WString UnitSpec::ToECExpressionString() const
+    {
+    WString str = m_baseUnitName;
+    str.append (m_converter.ToECExpressionString());
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WString UnitConverter::ToECExpressionString() const
+    {
+    WString str;
+    if (UnitConversionType_Factor == m_type || UnitConversionType_FactorAndOffset == m_type)
+        {
+        str.Sprintf (L"::%f", m_factor);
+        if (UnitConversionType_FactorAndOffset == m_type)
+            str.Sprintf (L"::%f", m_offset);
+        }
+
+    return str;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
