@@ -44,6 +44,10 @@ public:
     ECOBJECTS_EXPORT double         FromBase (double valueInBaseUnit) const;
     ECOBJECTS_EXPORT bool           IsEquivalent (UnitConverterCR other) const;
 
+    UnitConversionType              GetType() const             { return m_type; }
+    double                          GetFactor() const           { return UnitConversionType_Factor == m_type || UnitConversionType_FactorAndOffset == m_type ? m_factor : 1.0; }
+    double                          GetOffset() const           { return UnitConversionType_FactorAndOffset == m_type ? m_offset : 0.0; }
+
     WString                         ToECExpressionString() const;
     };
 
