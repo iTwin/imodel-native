@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/ECLocalizationProvider.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,10 +17,10 @@ struct ECPresentationLocalizationProvider : public IECPresentationProvider
     {
     protected:
         virtual ProviderType      _GetProviderType() const override {return LocalizationService;}
-        virtual WCharCP           _GetString (WCharCP rscFileName,  UInt tableId, UInt rscId) = 0;
+        virtual WString           _GetString (WCharCP rscFileName,  UInt tableId, UInt rscId) = 0;
 
     public:
-        ECOBJECTS_EXPORT WCharCP  GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
+        ECOBJECTS_EXPORT WString  GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

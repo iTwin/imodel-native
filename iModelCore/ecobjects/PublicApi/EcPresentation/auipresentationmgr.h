@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auipresentationmgr.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -101,7 +101,7 @@ struct  ECPresentationManager: public NonCopyableClass
     //!@param[in] rscFileName   Dll name which contains the resource.
     //!@param[in] tableId       Table ID form which resource shoud be taken.
     //!@param[in] rscId         Resource ID.
-    ECOBJECTS_EXPORT WCharCP                            GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
+    ECOBJECTS_EXPORT WString                            GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
 
     //! Get current selection or sub-selection.
     //!@param[in] eventHub      Event hub.
