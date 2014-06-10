@@ -278,43 +278,43 @@ ECObjectsStatus StandaloneECRelationshipInstance::SetTargetOrderId (Int64 target
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::SetSourcePropertiesString (WCharCP propertiesString) 
+ECObjectsStatus StandaloneECRelationshipInstance::SetSourceAssociatedString (WCharCP propertiesString) 
     {
     if (!propertiesString)
         return ECOBJECTS_STATUS_Error;
-    m_sourcePropertiesString = propertiesString;
+    m_sourceAssociatedString = propertiesString;
     return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP     StandaloneECRelationshipInstance::GetSourcePropertiesString() const
+WCharCP     StandaloneECRelationshipInstance::GetSourceAssociatedString() const
     {
-    if (m_sourcePropertiesString.empty())
+    if (m_sourceAssociatedString.empty())
         return NULL;
-    return m_sourcePropertiesString.c_str();
+    return m_sourceAssociatedString.c_str();
     }
 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::SetTargetPropertiesString (WCharCP propertiesString) 
+ECObjectsStatus StandaloneECRelationshipInstance::SetTargetAssociatedString (WCharCP propertiesString) 
     {
     if (!propertiesString)
         return ECOBJECTS_STATUS_Error;
-    m_targetPropertiesString = propertiesString;
+    m_targetAssociatedString = propertiesString;
     return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP     StandaloneECRelationshipInstance::GetTargetPropertiesString() const
+WCharCP     StandaloneECRelationshipInstance::GetTargetAssociatedString() const
     {
-    if (m_targetPropertiesString.empty())
+    if (m_targetAssociatedString.empty())
         return NULL;
-    return m_targetPropertiesString.c_str();
+    return m_targetAssociatedString.c_str();
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
