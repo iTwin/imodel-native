@@ -2795,9 +2795,9 @@ void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, WCharCP accessString)
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex)
     {
-    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, accessString) : NULL;
+    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, accessString, componentIndex) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**

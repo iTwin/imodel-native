@@ -247,6 +247,69 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static UInt32 getComponentIndex (NodeCP node, bool is2d)
+    {
+    UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+    IdentNodeCP ident = dynamic_cast<IdentNodeCP>(node);
+    WCharCP componentName = nullptr != ident ? ident->GetName() : nullptr;
+    if (nullptr != componentName && 0 != *componentName && 0 == *(componentName + 1))
+        {
+        switch (towlower (*componentName))
+            {
+            case 'x':
+                componentIndex = 0;
+                break;
+            case 'y':
+                componentIndex = 1;
+                break;
+            case 'z':
+                if (!is2d)
+                    componentIndex = 2;
+                break;
+            }
+        }
+
+    return componentIndex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPointProperty (bool& is2d, PrimitiveType primType)
+    {
+    switch (primType)
+        {
+        case PRIMITIVETYPE_Point3D:
+            is2d = false;
+            return true;
+        case PRIMITIVETYPE_Point2D:
+            is2d = true;
+            return true;
+        default:
+            return false;
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPointProperty (bool& is2d, ECPropertyCP prop)
+    {
+    PrimitiveECPropertyCP primProp = nullptr != prop ? prop->GetAsPrimitiveProperty() : nullptr;
+    return nullptr != primProp ? isPointProperty (is2d, primProp->GetType()) : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPointArrayProperty (bool& is2d, ECPropertyCP prop)
+    {
+    ArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    return nullptr != arrayProp && ARRAYKIND_Primitive == arrayProp->GetKind() ? isPointProperty (is2d, arrayProp->GetPrimitiveElementType()) : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance)
@@ -326,6 +389,19 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         ecClass = &currentProperty->GetAsStructProperty()->GetType();
         }
 
+    bool is2d = false;
+    UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+    if (TOKEN_Dot == nextOperation && isPointProperty (is2d, currentProperty))
+        {
+        // handle point member access
+        componentIndex = getComponentIndex (primaryList.GetOperatorNode (index), is2d);
+        if (IECTypeAdapterContext::COMPONENT_INDEX_None == componentIndex)
+            return ExprStatus_UnknownMember;
+
+        // we'll get the component value below if no more operations
+        nextOperation = primaryList.GetOperation (++index);
+        }
+
     if (TOKEN_None == nextOperation)
         {
         evalResult.Clear();
@@ -347,7 +423,18 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         PrimitiveECPropertyCP primProp = currentProperty->GetAsPrimitiveProperty();
         if (NULL == primProp || ECOBJECTS_STATUS_Success != instance.GetValue (ecval, accessString.c_str()))
             return ExprStatus_UnknownError;
-        else if (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits())
+
+        if (IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
+            {
+            if (ecval.IsNull() || (is2d && !ecval.IsPoint2D()) || (!is2d && !ecval.IsPoint3D()))
+                return ExprStatus_DotNotSupported;
+
+            DPoint3d pt = !is2d ? ecval.GetPoint3D() : DPoint3d::From (ecval.GetPoint2D().x, ecval.GetPoint2D().y, 0.0);
+            double* component = (&pt.x) + componentIndex;
+            ecval.SetDouble (*component);
+            }
+
+        if (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits())
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
             if (nullptr != typeAdapter)
@@ -376,6 +463,18 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         nextOperation = primaryList.GetOperation (index);
 
         bool isPrimitive = (ARRAYKIND_Primitive == arrayProp->GetKind());
+        bool is2d = false;
+        UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+        if (isPrimitive && TOKEN_Dot == nextOperation && isPointArrayProperty (is2d, currentProperty))
+            {
+            componentIndex = getComponentIndex (primaryList.GetOperatorNode (index), is2d);
+            if (IECTypeAdapterContext::COMPONENT_INDEX_None == componentIndex)
+                return ExprStatus_UnknownMember;
+
+            // we'll get the component value below if no more operations
+            nextOperation = primaryList.GetOperation (++index);
+            }
+
         if (isPrimitive && TOKEN_None != nextOperation)
             { evalResult.Clear(); return ExprStatus_StructRequired; }
 
@@ -392,7 +491,18 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         UnitSpec units;
         if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (UInt32)indexResult.GetECValue()->GetInteger()))
             { evalResult.Clear(); return ExprStatus_UnknownError; }
-        else if (isPrimitive && (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits()))
+
+        if (isPrimitive && IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
+            {
+            if (arrayVal.IsNull() || (is2d && !arrayVal.IsPoint3D()) || (!is2d && !arrayVal.IsPoint3D()))
+                return ExprStatus_DotNotSupported;
+
+            DPoint3d pt = !is2d ? arrayVal.GetPoint3D() : DPoint3d::From (arrayVal.GetPoint2D().x, arrayVal.GetPoint2D().y, 0.0);
+            double* component = (&pt.x) + componentIndex;
+            arrayVal.SetDouble (*component);
+            }
+
+        if (isPrimitive && (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits()))
             {
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
             if (nullptr != adapter)

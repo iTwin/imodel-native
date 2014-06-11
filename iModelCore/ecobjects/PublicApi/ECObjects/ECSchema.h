@@ -380,6 +380,7 @@ protected:
     virtual WCharCP                             _GetAccessString() const = 0;
     virtual ECClassCP                           _GetECClass() const = 0;
 public:
+
     ECOBJECTS_EXPORT  ECClassCP         GetECClass() const;
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
@@ -391,10 +392,11 @@ public:
     ECOBJECTS_EXPORT  bool              Is3d() const;
 
     //! internal use only, primarily for ECExpressions
-    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, WCharCP accessString);
+    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
-    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, WCharCP accessString);
+    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex = COMPONENT_INDEX_None);
 /*__PUBLISH_SECTION_START__*/
+    static const UInt32 COMPONENT_INDEX_None = -1;
     };
 
 typedef RefCountedPtr<IECTypeAdapterContext> IECTypeAdapterContextPtr;
