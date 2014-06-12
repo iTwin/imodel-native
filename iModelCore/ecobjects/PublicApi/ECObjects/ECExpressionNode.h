@@ -546,6 +546,7 @@ public:
 
     void                        SetFactor (double factor);
     void                        SetFactorAndOffset (double factor, double offset);
+    UnitSpecCR                  GetUnits() const { return m_units; }
     };
 
 /*=================================================================================**//**
