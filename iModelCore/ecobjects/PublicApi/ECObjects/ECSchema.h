@@ -586,13 +586,18 @@ public:
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 
-    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
-    ECOBJECTS_EXPORT bool                                IsCalculated() const;
-    //! Call this method rather than setting the custom attribute directly!
-    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
-
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
+    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+    //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
+    ECOBJECTS_EXPORT bool                                IsCalculated() const;
+    //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
+    //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
+    //! @return true if the specification was successfully updated.
+    //! @remarks Call this method rather than setting the custom attribute directly, to ensure internal state is updated.
+    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
+
     //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     // ECClass implementation will index property by name so publicly name can not be reset
