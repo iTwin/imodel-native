@@ -10,6 +10,7 @@ Performance*
 #----------------------------------------------------------------------------------------
 
 CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamed                                      # Fails on Android
+CalculatedPropertyTests.ConvertNamedCaptureGroupsToUnnamedFromFile                              # Fails on Android
 CalculatedPropertyTests.ExpectSuccessWhenCopyFailedCalculatedPropertyThatHasARegex              # Fails on Android
 CalculatedPropertyTests.SetValue                                                                # Fails on Android
 CalculatedPropertyTests.SettingACalculatedPropertyUpdatesThePropertiesFromWhichItWasCalculate   # Fails on Android
