@@ -11,9 +11,7 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
-//__PUBLISH_SECTION_END__
 #include <ECObjects/CalculatedProperty.h>
-//__PUBLISH_SECTION_START__
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
@@ -600,12 +598,14 @@ public:
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 
-/*__PUBLISH_SECTION_START__*/
-public:
     //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+
+/*__PUBLISH_SECTION_START__*/
+public:
     //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
-    ECOBJECTS_EXPORT bool                                IsCalculated() const;
+    ECOBJECTS_EXPORT bool               IsCalculated() const;
+
     //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
     //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
     //! @return true if the specification was successfully updated.
