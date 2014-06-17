@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/GroupingRule.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,15 +81,16 @@ GroupSpecification that identifies parameters on how to group ECInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupSpecification
     {
-    private:
-        WString  m_contextMenuLabel;
+private:
+    WString  m_contextMenuLabel;
+    WString  m_defaultLabel;
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
     ECOBJECTS_EXPORT GroupSpecification ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT GroupSpecification (WStringCR contextMenuLabel);
+    ECOBJECTS_EXPORT GroupSpecification (WStringCR contextMenuLabel, WCharCP defaultLabel = NULL);
 
     //! Returns XmlElement name that is used to read/save this rule information.
     ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName () = 0;
@@ -112,6 +113,9 @@ public:
 
     //! ContextMenu label of this particular grouping option. If not set ECClass or ECProperty DisplayLabel will be used.
     ECOBJECTS_EXPORT WStringCR                GetContextMenuLabel (void) const;
+
+    //! Default group label to use when the grouping property is null or empty. Optional - overrides the default.
+    ECOBJECTS_EXPORT WStringCR                GetDefaultLabel (void) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,7 +211,7 @@ struct PropertyGroup : public GroupSpecification
         ECOBJECTS_EXPORT PropertyGroup ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName);
+        ECOBJECTS_EXPORT PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName, WCharCP defaultLabel = NULL);
 
         //! Destructor.
         ECOBJECTS_EXPORT                          ~PropertyGroup (void);

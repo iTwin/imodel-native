@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/GroupingRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -145,7 +145,7 @@ GroupSpecification::GroupSpecification () : m_contextMenuLabel (L"")
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-GroupSpecification::GroupSpecification (WStringCR contextMenuLabel) : m_contextMenuLabel (contextMenuLabel)
+GroupSpecification::GroupSpecification (WStringCR contextMenuLabel, WCharCP defaultLabel) : m_contextMenuLabel (contextMenuLabel), m_defaultLabel (defaultLabel)
     {
     }
 
@@ -157,6 +157,8 @@ bool GroupSpecification::ReadXml (BeXmlNodeP xmlNode)
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_contextMenuLabel, GROUP_XML_ATTRIBUTE_MENULABEL))
         m_contextMenuLabel = L"";
+    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_defaultLabel, GROUP_XML_ATTRIBUTE_DEFAULTLABEL))
+        m_defaultLabel.clear();
 
     //Make sure we call protected override
     return _ReadXml (xmlNode);
@@ -170,6 +172,7 @@ void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
     BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
 
     specificationNode->AddAttributeStringValue  (GROUP_XML_ATTRIBUTE_MENULABEL, m_contextMenuLabel.c_str ());
+    specificationNode->AddAttributeStringValue (GROUP_XML_ATTRIBUTE_DEFAULTLABEL, m_defaultLabel.c_str());
 
     //Make sure we call protected override
     _WriteXml (specificationNode);
@@ -179,6 +182,7 @@ void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode)
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR GroupSpecification::GetContextMenuLabel (void) const  { return m_contextMenuLabel; }
+WStringCR GroupSpecification::GetDefaultLabel (void) const      { return m_defaultLabel; }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -299,8 +303,8 @@ PropertyGroup::PropertyGroup ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyGroup::PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName)
-    : GroupSpecification (contextMenuLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_propertyName (propertyName)
+PropertyGroup::PropertyGroup (WStringCR contextMenuLabel, WStringCR imageId, bool createGroupForSingleItem, WStringCR propertyName, WCharCP defaultLabel)
+    : GroupSpecification (contextMenuLabel, defaultLabel), m_imageId (imageId), m_createGroupForSingleItem (createGroupForSingleItem), m_propertyName (propertyName)
     {
     }
 

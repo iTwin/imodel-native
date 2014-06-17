@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,7 @@
 #define COMMON_XML_ATTRIBUTE_PROPERTYNAME                                             "PropertyName"
 #define COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED                                         "OnlyIfNotHandled"
 #define COMMON_XML_ATTRIBUTE_AREPOLYMORPHIC                                           "ArePolymorphic"
+#define COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING                                    "StopFurtherProcessing"
 
 #define PRESENTATION_RULE_SET_XML_NODE_NAME                                           "PresentationRuleSet"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID                                 "RuleSetId"
@@ -100,6 +101,7 @@
 #define GROUP_XML_ATTRIBUTE_IMAGEID                                                   "ImageId"
 #define GROUP_XML_ATTRIBUTE_CREATEGROUPFORSINGLEITEM                                  "CreateGroupForSingleItem"
 #define GROUP_XML_ATTRIBUTE_MENULABEL                                                 "ContextMenuLabel"
+#define GROUP_XML_ATTRIBUTE_DEFAULTLABEL                                              "DefaultGroupLabel"
 
 #define PROPERTY_RANGE_GROUP_XML_NODE_NAME                                            "Range"
 #define PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_LABEL                                      "Label"
