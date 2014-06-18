@@ -1868,13 +1868,13 @@ ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count)
+ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count, UInt32 atIndex)
     {
     IECInstancePtr resolvedInstance;
     UInt32 propertyIndex;
     ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
-        status = resolvedInstance->AddArrayElements (propertyIndex, count);
+        status = -1 == atIndex ? resolvedInstance->AddArrayElements (propertyIndex, count) : resolvedInstance->InsertArrayElements (propertyIndex, atIndex, count);
 
     return status;
     }

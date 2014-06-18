@@ -689,7 +689,7 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static ECObjectsStatus ClearArray (IECInstanceR instance, WCharCP accessString);
     ECOBJECTS_EXPORT static ECObjectsStatus RemoveArrayElement (IECInstanceR instance, WCharCP accessString, UInt32 index);
-    ECOBJECTS_EXPORT static ECObjectsStatus AddArrayElements (IECInstanceR instance, WCharCP accessString, UInt32 count);
+    ECOBJECTS_EXPORT static ECObjectsStatus AddArrayElements (IECInstanceR instance, WCharCP accessString, UInt32 count, UInt32 atIndex = -1);
     };
 
 /*---------------------------------------------------------------------------------**//**
