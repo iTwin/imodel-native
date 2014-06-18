@@ -583,16 +583,17 @@ public:
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 
-    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
-    ECOBJECTS_EXPORT bool                                IsCalculated() const;
-    //! Call this method rather than setting the custom attribute directly!
-    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert (0 == m_ecPropertyId); m_ecPropertyId = id; };
     ECOBJECTS_EXPORT bool HasId() const { return m_ecPropertyId != 0; };
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+    ECOBJECTS_EXPORT bool                                IsCalculated() const;
+    //! Call this method rather than setting the custom attribute directly!
+    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification(IECInstanceP expressionAttribute);
+
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECPropertyId       GetId() const;
     //! Returns the name of the ECClass that this property is contained within
