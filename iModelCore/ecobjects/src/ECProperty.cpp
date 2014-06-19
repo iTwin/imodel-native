@@ -708,7 +708,27 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    return (GetTypeName() == EMPTY_STRING) || (GetTypeName() == baseProperty.GetTypeName());
+    // This used to always compare GetTypeName(). Type names for struct arrays include the namespace prefix as defined in the referencing schema. That is weird and easily breaks if:
+    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
+    //  -Base property's schema declares different namespace prefix for struct class's schema than the overriding property's schema (dumb workaround: make them use the same namespace).
+    // Instead, compare the full-qualified class name.
+    auto baseArray = baseProperty.GetAsArrayProperty();
+    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+        return false;
+
+    switch (GetKind())
+        {
+        case ARRAYKIND_Struct:
+            {
+            auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
+            return nullptr != myType && nullptr != baseType && 0 == wcscmp (myType->GetFullName(), baseType->GetFullName());
+            }
+        default:
+            {
+            WString typeName = GetTypeName();
+            return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+            }
+        }
     }
     
 /*---------------------------------------------------------------------------------**//**
