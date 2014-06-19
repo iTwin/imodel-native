@@ -14,6 +14,8 @@
 
 #include <ECObjects/ECObjects.h>
 
+EC_TYPEDEFS(IECClassLocater);
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 enum UnitConversionType
