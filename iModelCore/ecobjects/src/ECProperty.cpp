@@ -714,19 +714,30 @@ bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     // Instead, compare the full-qualified class name.
     auto baseArray = baseProperty.GetAsArrayProperty();
     if (nullptr == baseArray || baseArray->GetKind() != GetKind())
-        return false;
-
-    switch (GetKind())
         {
-        case ARRAYKIND_Struct:
+        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
+        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
             {
-            auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
-            return nullptr != myType && nullptr != baseType && 0 == wcscmp (myType->GetFullName(), baseType->GetFullName());
+            auto basePrim = baseProperty.GetAsPrimitiveProperty();
+            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
             }
-        default:
+        else
+            return false;
+        }
+    else
+        {
+        switch (GetKind())
             {
-            WString typeName = GetTypeName();
-            return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+            case ARRAYKIND_Struct:
+                {
+                auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
+                return nullptr != myType && nullptr != baseType && 0 == wcscmp (myType->GetFullName(), baseType->GetFullName());
+                }
+            default:
+                {
+                WString typeName = GetTypeName();
+                return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+                }
             }
         }
     }
