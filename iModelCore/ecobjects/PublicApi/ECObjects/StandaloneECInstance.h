@@ -18,7 +18,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 #define STANDALONEENABLER_EnablerID         0xEC5E
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
-typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
@@ -199,7 +198,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct StandaloneECInstance : IECInstance
+struct StandaloneECInstance : virtual IECInstance
 //__PUBLISH_SECTION_END__
                             , MemoryECInstanceBase
 //__PUBLISH_SECTION_START__
@@ -256,42 +255,8 @@ public:
     };
 
 //=======================================================================================
-//! IECWipRelationshipInstance is used to set the name and order properties for an 
-//! ECRelationship.
-//! @ingroup ECObjectsGroup
-//=======================================================================================
-struct IECWipRelationshipInstance : StandaloneECInstance
-    {
-//__PUBLISH_SECTION_END__
-protected:
-    ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
-
-    ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
-    ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
-    ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    //! Sets the name of this IECWipRelatonshipInstance
-    //! @param[in]      name The name of the IECWipRelationshipInstance
-    //! @return SUCCESS if the name was successfully set, otherwise an error status
-    ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
-
-    //! Sets the source order ID of this IECWipRelationshipInstance
-    //! @param[in]      sourceOrderId The source order ID
-    //! @return SUCCESS if the ID was successfully set, otherwise an error status
-    ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
-
-    //! Sets the target order ID of this IECWIpRelationshipInstance
-    //! @param[in]      targetOrderId The target order ID
-    //! @return SUCCESS if the ID was successfully set, otherwise an error status
-    ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
-    };
-
-//=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
-//! @see StandaloneECInstance, ECEnabler
+//! @see StandaloneECInstance
 //! @ingroup ECObjectsGroup
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
@@ -300,10 +265,10 @@ struct StandaloneECEnabler : public ECEnabler
 private:
     ClassLayoutPtr          m_classLayout;
 
+protected:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
-protected:
     virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;

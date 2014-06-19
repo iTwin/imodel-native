@@ -184,6 +184,10 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
+typedef Int64 ECClassId;
+typedef Int64 ECPropertyId;
+typedef Int64 ECSchemaId;
+
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
@@ -559,6 +563,7 @@ friend struct ECClass;
 private:
     WString                 m_description;
     ECValidatedName         m_validatedName;
+    mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
     ECClassCR               m_class;
     ECPropertyCP            m_baseProperty;
@@ -604,9 +609,14 @@ public:
     ECOBJECTS_EXPORT bool                                IsCalculated() const;
     //! Call this method rather than setting the custom attribute directly!
     ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert(0 == m_ecPropertyId); m_ecPropertyId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecPropertyId != 0; };
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECOBJECTS_EXPORT ECPropertyId       GetId() const;
     //! Returns the name of the ECClass that this property is contained within
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     // ECClass implementation will index property by name so publicly name can not be reset
@@ -894,6 +904,7 @@ private:
     mutable WString                 m_fullName;
     WString                         m_description;
     ECValidatedName                 m_validatedName;
+    mutable ECClassId               m_ecClassId;
     bool                            m_isStruct;
     bool                            m_isCustomAttributeClass;
     bool                            m_isDomainClass;
@@ -964,9 +975,15 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
     ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
 
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert(0 == m_ecClassId); m_ecClassId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != 0; };
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECOBJECTS_EXPORT ECClassId             GetId() const;
     //! Returns the StandaloneECEnabler for this class
     ECOBJECTS_EXPORT StandaloneECEnablerP  GetDefaultStandaloneEnabler() const;
     //! Used to avoid dynamic_cast
@@ -1129,6 +1146,15 @@ public:
 
 }; // ECClass
 
+//! Used to define how the relationship OrderId is handled.
+//! @ingroup ECObjectsGroup
+enum OrderIdStorageMode: UInt8
+    {
+    ORDERIDSTORAGEMODE_None                     = 0,
+    ORDERIDSTORAGEMODE_ProvidedByPersistence    = 1,         
+    ORDERIDSTORAGEMODE_ProvidedByClient         = 2,
+    };
+
 //! Used to define which end of the relationship, source or target
 //! @ingroup ECObjectsGroup
 enum ECRelationshipEnd 
@@ -1250,7 +1276,6 @@ private:
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
 
-    ECObjectsStatus             SetCardinality(WCharCP cardinality);
     ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
 
     SchemaWriteStatus           WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const;
@@ -1297,6 +1322,9 @@ public:
 
     //! Sets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(RelationshipCardinalityCR value);
+    //! Sets the cardinality of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(WCharCP cardinality);
+
     //! Gets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT RelationshipCardinalityCR  GetCardinality() const;
 
@@ -1311,11 +1339,19 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECClassCR classConstraint);
 
     //! Returns the classes applied to the constraint.
-    ECOBJECTS_EXPORT const ECConstraintClassesList& GetClasses() const;
+    ECOBJECTS_EXPORT const                      ECConstraintClassesList& GetClasses() const;
 
     //! Copies this constraint to the destination
     ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
 
+    //! Returns whether the relationship is ordered on this constraint.
+    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
+
+    //! Returns the storage mode of the OrderId for this contraint.
+    ECOBJECTS_EXPORT OrderIdStorageMode         GetOrderIdStorageMode () const;
+
+    //! Gets the name of the OrderId property for this constraint.
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName)  const;
 };
 
 //=======================================================================================
@@ -1824,6 +1860,7 @@ public:
     ECOBJECTS_EXPORT int     GetCount(); //!< Returns the number of schemas currently in the cache
     ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
+    ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
 };
 
 
@@ -1882,6 +1919,7 @@ private:
     SchemaKey               m_key;
     WString                 m_namespacePrefix;
     WString                 m_displayLabel;
+    mutable ECSchemaId      m_ecSchemaId;
     WString                 m_description;
     ECClassContainer        m_classContainer;
 
@@ -1931,6 +1969,10 @@ protected:
 
 public:
     ECOBJECTS_EXPORT void               ReComputeCheckSum ();
+    //! Intended to be called by ECDb or a similar system
+    ECOBJECTS_EXPORT void SetId(ECSchemaId id) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
+
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, WCharCP newName);
 
@@ -1944,6 +1986,9 @@ public:
     //! @param[in] showMessages Controls whether messages are displayed during BeXml operations. Defaults to true.
     //! @param[in] doAssert Controls whether asserts should be tested or not.  Defaults to true.
     ECOBJECTS_EXPORT static void        SetErrorHandling (bool showMessages, bool doAssert);
+
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    ECOBJECTS_EXPORT ECSchemaId         GetId() const;
 
     //! Sets the name of this schema
     //! @param[in]  value   The name of the ECSchema

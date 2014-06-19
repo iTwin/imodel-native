@@ -24,6 +24,30 @@ enum UnitConversionType
     UnitConversionType_FactorAndOffset
     };
 
+typedef RefCountedPtr<IECClassLocater> IECClassLocaterPtr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                  Ramanujam.Raman   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECClassLocater : RefCountedBase, NonCopyableClass
+    {
+protected:
+    ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
+public:
+    ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
+        {
+        return _LocateClass (schemaName, className);
+        }
+
+private:
+    static IECClassLocaterPtr s_registeredClassLocater;
+public:
+    // TODO: This needs to migrate to the ECSchema implementation
+    static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
+    static ECOBJECTS_EXPORT void UnRegisterClassLocater ();
+    static IECClassLocaterP GetRegisteredClassLocater();
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * Every Unit has a UnitConverter capable of converting values to and from its base Unit.
 * @bsistruct                                                    Paul.Connelly   10/12
