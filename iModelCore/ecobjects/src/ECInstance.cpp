@@ -3477,4 +3477,35 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
 void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstanceInterface::GetInstanceValue (ECValueR v, WCharCP accessor) const { return _GetInstanceValue (v, accessor); }
+ECClassCP IECInstanceInterface::GetInstanceClass() const                                    { return _GetInstanceClass(); }
+IECInstanceCP IECInstanceInterface::ObtainECInstance() const                                { return _ObtainECInstance(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInterface::_GetInstanceValue (ECValueR v, WCharCP accessor) const
+    {
+    return ECInstanceInteropHelper::GetValue (m_instance, v, accessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECInstanceInterface::_GetInstanceClass() const
+    {
+    return &m_instance.GetClass();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceCP ECInstanceInterface::_ObtainECInstance() const
+    {
+    return &m_instance;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

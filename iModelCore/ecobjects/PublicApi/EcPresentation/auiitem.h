@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auiitem.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -11,6 +11,8 @@
 
 #include <ECObjects\ECInstanceIterable.h>
 #include "ecpresentationtypedefs.h"
+#include <ECObjects\ECInstance.h>
+
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,7 +89,7 @@ struct  IAUIDataContext
         {
         Custom                  = 0,
         InstanceID              = 1,
-        Instance                = 1<<1,
+        InstanceInterface       = 1<<1,
         ECInstanceCollection    = 1<<2,
         //TODO Move this enum to a string for repository dependant values
         DgnECInstanceCollection = 1<<3,
@@ -101,7 +103,7 @@ struct  IAUIDataContext
     virtual ContextType             _GetContextType() const = 0;
 
     //!Get the data instance that this datacontext stores.
-    virtual IECInstanceP            GetInstance () const {return NULL;}
+    virtual IECInstanceInterfaceCP  GetInstanceInterface () const {return NULL;}
     virtual void*                   GetCustomData() const {return NULL;}
     virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
     virtual WString                 GetMoniker () const {return NULL;}
@@ -135,17 +137,29 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
 template<typename InstanceType>
 struct  AUIInstanceDataContext : public IAUIDataContext
     {
-    private:
-        RefCountedPtr<InstanceType> m_instancePtr;
-        
-    public:
-        AUIInstanceDataContext (InstanceType& instance)
-            :m_instancePtr(&instance)
-            {}
-        
-        virtual ContextType     _GetContextType() const override {return IAUIDataContext::Instance;}
-        virtual IECInstanceP    GetInstance () const override {return m_instancePtr.get();}
-        InstanceType*  GetDataInstnce () const {return m_instancePtr.get();}
+private:
+    RefCountedPtr<InstanceType> m_instancePtr;
+    ECInstanceInterface         m_interface;
+public:
+    AUIInstanceDataContext (InstanceType& instance) : m_instancePtr (&instance), m_interface (instance) { }
+    
+    virtual ContextType                 _GetContextType() const override { return IAUIDataContext::InstanceInterface; }
+    virtual IECInstanceInterfaceCP      GetInstanceInterface () const override { return &m_interface; }
+    InstanceType*                       GetDataInstnce () const { return m_instancePtr.get(); }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AUIInstanceInterfaceDataContext : IAUIDataContext
+    {
+private:
+    IECInstanceInterfaceCR              m_interface;
+public:
+    AUIInstanceInterfaceDataContext (IECInstanceInterfaceCR intfc) : m_interface (intfc) { }
+
+    virtual ContextType                     _GetContextType() const override        { return InstanceInterface; }
+    virtual IECInstanceInterfaceCP          GetInstanceInterface() const override   { return &m_interface; }
     };
 
 typedef AUIInstanceDataContext<IECInstanceP>   ECInstanceDataContext;
