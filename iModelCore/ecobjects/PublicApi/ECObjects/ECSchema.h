@@ -375,21 +375,17 @@ protected:
     virtual ECPropertyCP                        _GetProperty() const = 0;
     virtual UInt32                              _GetComponentIndex() const = 0;
     virtual bool                                _Is3d() const = 0;
-    virtual IECInstanceCP               	_GetECInstance() const = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
+    virtual IECInstanceInterfaceCR              _GetInstanceInterface() const = 0;
     virtual WCharCP                             _GetAccessString() const = 0;
-    virtual ECClassCP                           _GetECClass() const = 0;
 public:
 
-    ECOBJECTS_EXPORT  ECClassCP         GetECClass() const;
-    ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
-    ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
-    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
-    ECOBJECTS_EXPORT  WCharCP           GetAccessString() const;
+    ECOBJECTS_EXPORT  IECInstanceInterfaceCR    GetInstanceInterface() const;
+    ECOBJECTS_EXPORT  ECPropertyCP              GetProperty() const;
+    ECOBJECTS_EXPORT  WCharCP                   GetAccessString() const;
 
     //! The following are relevant to adapters for point types.
-    ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
-    ECOBJECTS_EXPORT  bool              Is3d() const;
+    ECOBJECTS_EXPORT  UInt32                    GetComponentIndex() const;
+    ECOBJECTS_EXPORT  bool                      Is3d() const;
 
     //! internal use only, primarily for ECExpressions
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex);
