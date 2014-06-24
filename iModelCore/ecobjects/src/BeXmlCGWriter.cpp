@@ -808,39 +808,56 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
     {
-    CurveVectorPtr cv;
-    if (geometry.TryGetAs (cv))
-        {
-        Write (dest, *cv);
+    if (!geometry.IsValid ())
         return;
-        }
 
-    ICurvePrimitivePtr cp;
-    if (geometry.TryGetAs (cp))
+    switch (geometry->GetGeometryType ())
         {
-        Write (dest, *cp);
-        return;
-        }
+        case IGeometry::GeometryType::CurvePrimitive:
+            {
+            ICurvePrimitivePtr curvePrimitive = geometry->GetAsICurvePrimitive ();
 
-    MSBsplineCurvePtr bcurve;
-    if (geometry.TryGetAs (bcurve))
-        {
-        WriteCurve (dest, *bcurve);
-        return;
-        }
-    
-    ISolidPrimitivePtr sp;
-    if (geometry.TryGetAs (sp))
-        {
-        Write (dest, *sp);
-        return;
-        }
-    
-    MSBsplineSurfacePtr bsurface;
-    if (geometry.TryGetAs (bsurface))
-        {
-        WriteSurface (dest, *bsurface);
-        return;
+            Write (dest, *curvePrimitive);
+            return;
+            }
+
+        case IGeometry::GeometryType::CurveVector:
+            {
+            CurveVectorPtr curveVector = geometry->GetAsCurveVector ();
+
+            Write (dest, *curveVector);
+            return;
+            }
+
+        case IGeometry::GeometryType::SolidPrimitive:
+            {
+            ISolidPrimitivePtr solidPrimitive = geometry->GetAsISolidPrimitive ();
+
+            Write (dest, *solidPrimitive);
+            return;
+            }
+
+        case IGeometry::GeometryType::BsplineSurface:
+            {
+            MSBsplineSurfacePtr bSurface = geometry->GetAsMSBsplineSurface ();
+
+            WriteSurface (dest, *bSurface);
+            return;
+            }
+
+        case IGeometry::GeometryType::Polyface:
+            {
+            PolyfaceHeaderPtr polyface = geometry->GetAsPolyfaceHeader ();
+
+            WritePolyface (dest, *polyface);
+            return;
+            }
+
+        default:
+            {
+            BeAssert (false);
+            return;
+            }
         }
     }
 
