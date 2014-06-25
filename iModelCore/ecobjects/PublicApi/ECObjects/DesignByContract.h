@@ -207,5 +207,6 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
 #endif
-
+/* __PUBLISH_SECTION_START__*/
 #endif // DesignByContract_H_
+/* __PUBLISH_SECTION_END__ */
