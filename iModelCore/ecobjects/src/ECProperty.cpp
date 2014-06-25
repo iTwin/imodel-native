@@ -708,7 +708,38 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    return (GetTypeName() == EMPTY_STRING) || (GetTypeName() == baseProperty.GetTypeName());
+    // This used to always compare GetTypeName(). Type names for struct arrays include the namespace prefix as defined in the referencing schema. That is weird and easily breaks if:
+    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
+    //  -Base property's schema declares different namespace prefix for struct class's schema than the overriding property's schema (dumb workaround: make them use the same namespace).
+    // Instead, compare the full-qualified class name.
+    auto baseArray = baseProperty.GetAsArrayProperty();
+    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+        {
+        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
+        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
+            {
+            auto basePrim = baseProperty.GetAsPrimitiveProperty();
+            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
+            }
+        else
+            return false;
+        }
+    else
+        {
+        switch (GetKind())
+            {
+            case ARRAYKIND_Struct:
+                {
+                auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
+                return nullptr != myType && nullptr != baseType && 0 == wcscmp (myType->GetFullName(), baseType->GetFullName());
+                }
+            default:
+                {
+                WString typeName = GetTypeName();
+                return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+                }
+            }
+        }
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -928,25 +959,11 @@ bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
-UInt32              IECTypeAdapterContext::GetComponentIndex() const     { return _GetComponentIndex(); }
-WCharCP             IECTypeAdapterContext::GetAccessString() const       { return _GetAccessString(); }
-bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
-IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
-ECClassCP           IECTypeAdapterContext::GetECClass() const            { return _GetECClass(); }
-ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const
-    {
-    IECInstanceCP instance = GetECInstance();
-    if (NULL != instance)
-        return -1 != arrayIndex ? instance->GetValue (v, accessor, arrayIndex) : instance->GetValue (v, accessor);
-    else
-        return ECOBJECTS_STATUS_OperationNotSupported;
-    }
+ECPropertyCP            IECTypeAdapterContext::GetProperty() const          { return _GetProperty(); }
+UInt32                  IECTypeAdapterContext::GetComponentIndex() const    { return _GetComponentIndex(); }
+WCharCP                 IECTypeAdapterContext::GetAccessString() const      { return _GetAccessString(); }
+bool                    IECTypeAdapterContext::Is3d() const                 { return _Is3d(); }
+IECInstanceInterfaceCR  IECTypeAdapterContext::GetInstanceInterface() const { return _GetInstanceInterface(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13

@@ -123,6 +123,7 @@ protected:
     ECOBJECTS_EXPORT virtual bool               _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const override;
 
                      virtual IECInstanceP       _GetAsIECInstance () const = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const override;
 
     ECOBJECTS_EXPORT  ECObjectsStatus           SetValueInternal (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
 public:
