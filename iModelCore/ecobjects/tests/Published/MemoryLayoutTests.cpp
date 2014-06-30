@@ -2022,7 +2022,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     //gets lost
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (inTimeUtc.Compare (sysTime, true));
+    EXPECT_TRUE (inTimeUtc.Equals (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
@@ -2221,7 +2221,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     ECValue dateValue (nowUtc);
     EXPECT_TRUE (dateValue.IsDateTime());
     DateTime nowToo = dateValue.GetDateTime ();
-    EXPECT_TRUE (nowToo.Compare (nowUtc, true));
+    EXPECT_TRUE (nowToo.Equals (nowUtc, true));
 
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);

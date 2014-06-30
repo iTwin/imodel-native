@@ -29,7 +29,7 @@ protected:
 
         if (ignoreDateTimeInfo)
             {
-            EXPECT_TRUE (expected.Compare (actual, true)) << L"DateTimes are expected to be equal except for date time info. " << expectedActualStr.c_str ();
+            EXPECT_TRUE (expected.Equals (actual, true)) << L"DateTimes are expected to be equal except for date time info. " << expectedActualStr.c_str ();
             EXPECT_FALSE (expected == actual) << L"DateTime metadata is expected to differ. " << expectedActualStr.c_str ();
             }
         else
