@@ -301,7 +301,7 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyByIndex (UInt32 index)
+ECPropertyP ECClass::GetPropertyByIndex (UInt32 index) const
     {
     if (index >= (UInt32)m_propertyList.size())
         return NULL;
