@@ -2025,17 +2025,19 @@ bool                         IECInstance::GetInstanceLabelPropertyName (WStringR
 ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayLabel) const
     {
     WString propertyName;
-    if (!GetInstanceLabelPropertyName (propertyName))
-        return ECOBJECTS_STATUS_Error;
-
-    ECN::ECValue ecValue;
-    if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+    if (GetInstanceLabelPropertyName (propertyName))
         {
-        displayLabel = ecValue.GetString();
-        return ECOBJECTS_STATUS_Success;
+        ECN::ECValue ecValue;
+        if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+            {
+            displayLabel = ecValue.GetString();
+            return ECOBJECTS_STATUS_Success;
+            }
         }
 
-    return  ECOBJECTS_STATUS_Error;
+    // According to documentation in managed ECF, we are supposed to fallback to the class's display label
+    displayLabel = GetClass().GetDisplayLabel();
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

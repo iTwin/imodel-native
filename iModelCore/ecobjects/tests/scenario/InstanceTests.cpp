@@ -409,8 +409,9 @@ TEST_F (InstanceTests, TestSetDisplayLabel)
     IECInstancePtr m_instance = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     
     WString displayLabel;
-    EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Error);
-    
+    EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Success);
+    EXPECT_TRUE (displayLabel.Equals (m_ecClass->GetDisplayLabel()));
+
     EXPECT_EQ (m_instance->SetDisplayLabel(L"Some fancy instance label"), ECOBJECTS_STATUS_Success);
 
     EXPECT_EQ (m_instance->GetDisplayLabel (displayLabel), ECOBJECTS_STATUS_Success);
