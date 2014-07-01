@@ -206,17 +206,19 @@ public:
     ECOBJECTS_EXPORT void   InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
     ECOBJECTS_EXPORT UInt32 GetSizeOfFixedSection() const;
 
-    ECOBJECTS_EXPORT UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
-    ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus         GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
-    ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT UInt32                 GetFirstChildPropertyIndex (UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT UInt32                 GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT bool                   HasChildProperties (UInt32 parentIndex) const;
 
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
-    ECOBJECTS_EXPORT bool                    Equals (ClassLayoutCR other) const;
+    ECOBJECTS_EXPORT bool                   Equals (ClassLayoutCR other) const;
 
-    ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags, UInt32 modifierData);
-    ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
+    ECOBJECTS_EXPORT void                   AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags, UInt32 modifierData);
+    ECOBJECTS_EXPORT ECObjectsStatus        FinishLayout ();
+
+    ECOBJECTS_EXPORT ClassLayoutPtr         Clone (WCharCP name = nullptr) const;
 /*__PUBLISH_SECTION_START__*/
 private:
     //ClassLayout (){}
@@ -572,8 +574,6 @@ private:
     virtual bool                      _AcquireData (bool forWrite) const = 0;
     virtual bool                      _ReleaseData() const = 0;
 protected:
-    //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
-    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
 
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
@@ -600,12 +600,10 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout);          
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index);              
     ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, UInt32 index = 0);
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (UInt32 propIdx, UInt32 insertCount);
@@ -673,6 +671,10 @@ protected:
     ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
 
 public:
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
+    //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
+    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECObjectsStatus        GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index, int* structValueIdentifier = NULL) const;
 
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.

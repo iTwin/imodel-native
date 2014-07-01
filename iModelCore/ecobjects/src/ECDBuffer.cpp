@@ -918,6 +918,32 @@ ClassLayoutPtr    ClassLayout::CreateEmpty (WCharCP className)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutPtr  ClassLayout::Clone (WCharCP className) const
+    {
+    ClassLayoutPtr clone = CreateEmpty (nullptr != className ? className : GetECClassName().c_str());
+    for (auto const& propLayout : m_propertyLayouts)
+        {
+        UInt32 offset = 0, modFlags = 0, modData = 0, nullflagsOffset = 0, nullflagsMask = 0;
+        if (!propLayout->GetTypeDescriptor().IsStruct())
+            {
+            offset = propLayout->GetOffset();
+            modFlags = propLayout->GetModifierFlags();
+            modData = propLayout->GetModifierData();
+            nullflagsOffset = propLayout->GetNullflagsOffset();
+            nullflagsMask = propLayout->GetNullflagsBitmask();
+            }
+
+        clone->AddPropertyDirect (propLayout->GetAccessString(), propLayout->GetParentStructIndex(), propLayout->GetTypeDescriptor(),
+                                  offset, nullflagsOffset, nullflagsMask, modFlags, modData);
+        }
+
+    clone->FinishLayout();
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ClassLayout::SetClass (WCharCP className)
