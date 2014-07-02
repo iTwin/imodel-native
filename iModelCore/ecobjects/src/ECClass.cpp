@@ -1135,10 +1135,11 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (classNode, IS_STRUCT_ATTRIBUTE,           this, IsStruct)
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (classNode, IS_CUSTOMATTRIBUTE_ATTRIBUTE,  this, IsCustomAttributeClass)
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (classNode, IS_DOMAINCLASS_ATTRIBUTE,      this, IsDomainClass)
 
     // when isDomainClass is not specified in the ECSchemaXML and isCustomAttributeClass is specified and set to true, we will default to a non-domain class
-    if (this->GetIsCustomAttributeClass())
+    if (BEXML_Success == classNode.GetAttributeStringValue (value, IS_DOMAINCLASS_ATTRIBUTE))
+        setterStatus = this->SetIsDomainClass(value.c_str());
+    else if (this->GetIsCustomAttributeClass())
         this->SetIsDomainClass (false);
 
     return SCHEMA_READ_STATUS_Success;

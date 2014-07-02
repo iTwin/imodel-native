@@ -17,7 +17,7 @@ struct ValueTests : ECTestFixture
     {
     void compareDateTimes(DateTimeCR dateTime1, DateTimeCR dateTime2)
         {
-        EXPECT_TRUE (dateTime1.Compare (dateTime2, false));
+        EXPECT_TRUE (dateTime1.Equals (dateTime2, false));
         EXPECT_EQ (dateTime1.GetYear(), dateTime2.GetYear());
         EXPECT_EQ (dateTime1.GetMonth(), dateTime2.GetMonth());
         EXPECT_EQ (dateTime1.GetDay(), dateTime2.GetDay());

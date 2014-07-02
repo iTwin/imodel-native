@@ -63,11 +63,12 @@ struct InstanceLabelTest      : ECTestFixture
         if (NULL != instanceLabelPropertyValue)
             instance->SetValue (instanceLabelPropertyName, ECValue (instanceLabelPropertyValue, false));
 
-        ECObjectsStatus expectedStatus = NULL == instanceLabelPropertyValue ? ECOBJECTS_STATUS_Error : ECOBJECTS_STATUS_Success;
         WString displayLabel;
-        EXPECT_EQ (expectedStatus, instance->GetDisplayLabel (displayLabel));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->GetDisplayLabel (displayLabel));
         if (instanceLabelPropertyValue)
             EXPECT_TRUE (displayLabel.Equals (instanceLabelPropertyValue));
+        else
+            EXPECT_TRUE (displayLabel.Equals (ecClass->GetDisplayLabel()));
 
         ++s_className[0];
         }
