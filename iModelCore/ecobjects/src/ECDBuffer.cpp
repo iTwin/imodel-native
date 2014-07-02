@@ -341,12 +341,12 @@ UInt32          ClassLayout::GetChecksum () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::Equals (ClassLayoutCR other) const
+bool            ClassLayout::Equals (ClassLayoutCR other, bool compareNames) const
     {
     if (this == &other)
         return true;
     else
-        return this->GetChecksum() == other.GetChecksum() && this->m_className.Equals (other.m_className);
+        return this->GetChecksum() == other.GetChecksum() && (!compareNames || this->m_className.Equals (other.m_className));
     }
 
 /*---------------------------------------------------------------------------------**//**

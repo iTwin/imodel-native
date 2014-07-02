@@ -213,7 +213,7 @@ public:
     ECOBJECTS_EXPORT bool                   HasChildProperties (UInt32 parentIndex) const;
 
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
-    ECOBJECTS_EXPORT bool                   Equals (ClassLayoutCR other) const;
+    ECOBJECTS_EXPORT bool                   Equals (ClassLayoutCR other, bool compareNames = true) const;
 
     ECOBJECTS_EXPORT void                   AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags, UInt32 modifierData);
     ECOBJECTS_EXPORT ECObjectsStatus        FinishLayout ();
