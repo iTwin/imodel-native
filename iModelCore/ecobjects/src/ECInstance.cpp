@@ -2028,7 +2028,7 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
     if (GetInstanceLabelPropertyName (propertyName))
         {
         ECN::ECValue ecValue;
-        if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+        if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
             {
             displayLabel = ecValue.GetString();
             return ECOBJECTS_STATUS_Success;
