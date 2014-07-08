@@ -2356,45 +2356,25 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
-    {
-    ECClassCP classP = rootSchema.GetClassCP (className);
-    if (classP)
-        return classP;
-
-    ECSchemaReferenceListCR referencedScheams = rootSchema.GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator iter = referencedScheams.begin(); iter != referencedScheams.end(); ++iter) 
-        {
-        classP = getClassFromSchema (*iter->second, className);        
-        if (classP)
-            return classP;
-        }
-
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  10/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
+static ECClassCP getStructArrayClass (ECClassCR enablerClass, WCharCP propertyName)
     {
     WCharCP dotPos = wcschr (propertyName, '.');
     if (NULL != dotPos)
         {
         WString structName (propertyName, dotPos);
-        ECClassCP structClass = getPropertyFromClass (enablerClass, structName.c_str());
+        ECClassCP structClass = getStructArrayClass (enablerClass, structName.c_str());
         if (NULL == structClass)
             { BeAssert (false); return NULL; }
 
-        return getPropertyFromClass (*structClass, dotPos+1);
+        return getStructArrayClass (*structClass, dotPos+1);
         }
 
     ECPropertyP propertyP = enablerClass.GetPropertyP (propertyName);
     if (!propertyP)
         return NULL;
 
-    WString typeName = propertyP->GetTypeName();
-    return getClassFromSchema (enablerClass.GetSchema(), typeName.c_str());
+    auto arrayProp = propertyP->GetAsArrayProperty();
+    return nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2458,7 +2438,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 
     WString str = asBuffer; 
 
-    ECClassCP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
+    ECClassCP structClass = getStructArrayClass (enabler.GetClass(), asBuffer);
     if (!structClass)
         return ECOBJECTS_STATUS_Error;
 
