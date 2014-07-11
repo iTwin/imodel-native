@@ -211,6 +211,7 @@ private:
     WString                 m_instanceId;
     StandaloneECEnablerPtr  m_sharedWipEnabler;
     bool                    m_isSupportingInstance;
+    ECSchemaPtr             m_boundSchema;
 
     //! The StandaloneECInstance will take ownership of the memory
     StandaloneECInstance (StandaloneECEnablerR enabler, byte * data, UInt32 size);
@@ -247,6 +248,9 @@ public:
     // If the StandaloneECInstance is not currently part of a struct array, we don't need to make a deep copy when adding it as a supporting instance
                              bool                   IsSupportingInstance() const { return m_isSupportingInstance; }
                              void                   SetIsSupportingInstance()    { m_isSupportingInstance = true; }
+
+    // For cases in which we want the lifetime of the ECSchema bound to that of the IECInstance.
+    ECOBJECTS_EXPORT         void                   BindSchema();
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:

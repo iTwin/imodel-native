@@ -1108,6 +1108,14 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 pro
     } 
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void StandaloneECInstance::BindSchema()
+    {
+    m_boundSchema = const_cast<ECSchemaP>(&GetClass().GetSchema());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
