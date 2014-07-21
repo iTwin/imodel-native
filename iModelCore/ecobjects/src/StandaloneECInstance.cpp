@@ -342,6 +342,15 @@ ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
     } 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
+    {
+    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
+    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                MemoryECInstanceBase::_FreeAllocation ()
@@ -1098,6 +1107,14 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 pro
     return status;
     } 
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void StandaloneECInstance::BindSchema()
+    {
+    m_boundSchema = const_cast<ECSchemaP>(&GetClass().GetSchema());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -151,10 +151,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler
-//__PUBLISH_SECTION_END__
-    , public StandaloneECEnabler
-//__PUBLISH_SECTION_START__
+struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public StandaloneECEnabler
    {
 //__PUBLISH_SECTION_END__
 private:

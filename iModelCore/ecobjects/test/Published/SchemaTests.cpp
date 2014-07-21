@@ -703,6 +703,37 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaDeserializationTest, ExpectDomainClassToBeSetProperly)
+    {
+    
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, 
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
+        L"    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\" isCustomAttributeClass=\"True\">"
+        L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Project Name\" />"
+        L"    </ECClass>"
+        L"    <ECClass typeName=\"ecWidget\" description=\"Widget ECClass\" displayLabel=\"Widget\" isCustomAttributeClass=\"True\">"
+        L"       <ECProperty propertyName=\"Name\" typeName=\"string\" displayLabel=\"Widget Name\" />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
+
+    ECClassP pClass = schema->GetClassP(L"ecProject");
+    EXPECT_TRUE (pClass->GetIsCustomAttributeClass());
+    EXPECT_TRUE (pClass->GetIsDomainClass());
+
+    pClass = schema->GetClassP(L"ecWidget");
+    EXPECT_TRUE (pClass->GetIsCustomAttributeClass());
+    EXPECT_FALSE (pClass->GetIsDomainClass());
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInXml)
     {
     

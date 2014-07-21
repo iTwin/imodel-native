@@ -2,7 +2,7 @@
 |
 |     $Source: test/scenario/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -81,9 +81,9 @@ TEST_F(ECRelationshipTests, InstanceSettersAndGetters)
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
     
     EXPECT_STREQ (relationshipEnabler->GetName(), L"Bentley::ECN::StandaloneECEnabler");
-    EXPECT_STREQ (relationshipInstance->GetName(), L"");
-    relationshipInstance->SetName(L"Some name");
-    EXPECT_STREQ (relationshipInstance->GetName(), L"Some name");
+    EXPECT_STREQ (relationshipInstance->GetTargetAssociatedString(), L"");
+    relationshipInstance->SetTargetAssociatedString (L"Some name");
+    EXPECT_STREQ (relationshipInstance->GetTargetAssociatedString (), L"Some name");
     
     EXPECT_STREQ (relationshipInstance->GetRelationshipEnabler().GetECEnabler().GetClass().GetFullName(), L"RelationshipTesting:ALikesB");
     EXPECT_STREQ (relationshipInstance->GetRelationshipClass().GetFullName(), L"RelationshipTesting:ALikesB");

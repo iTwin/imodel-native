@@ -1868,13 +1868,13 @@ ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count)
+ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count, UInt32 atIndex)
     {
     IECInstancePtr resolvedInstance;
     UInt32 propertyIndex;
     ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
-        status = resolvedInstance->AddArrayElements (propertyIndex, count);
+        status = -1 == atIndex ? resolvedInstance->AddArrayElements (propertyIndex, count) : resolvedInstance->InsertArrayElements (propertyIndex, atIndex, count);
 
     return status;
     }
@@ -1996,17 +1996,19 @@ bool                         IECInstance::GetInstanceLabelPropertyName (WStringR
 ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayLabel) const
     {
     WString propertyName;
-    if (!GetInstanceLabelPropertyName (propertyName))
-        return ECOBJECTS_STATUS_Error;
-
-    ECN::ECValue ecValue;
-    if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+    if (GetInstanceLabelPropertyName (propertyName))
         {
-        displayLabel = ecValue.GetString();
-        return ECOBJECTS_STATUS_Success;
+        ECN::ECValue ecValue;
+        if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+            {
+            displayLabel = ecValue.GetString();
+            return ECOBJECTS_STATUS_Success;
+            }
         }
 
-    return  ECOBJECTS_STATUS_Error;
+    // According to documentation in managed ECF, we are supposed to fallback to the class's display label
+    displayLabel = GetClass().GetDisplayLabel();
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3449,5 +3451,36 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
 void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstanceInterface::GetInstanceValue (ECValueR v, WCharCP accessor) const { return _GetInstanceValue (v, accessor); }
+ECClassCP IECInstanceInterface::GetInstanceClass() const                                    { return _GetInstanceClass(); }
+IECInstanceCP IECInstanceInterface::ObtainECInstance() const                                { return _ObtainECInstance(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInterface::_GetInstanceValue (ECValueR v, WCharCP accessor) const
+    {
+    return ECInstanceInteropHelper::GetValue (m_instance, v, accessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECInstanceInterface::_GetInstanceClass() const
+    {
+    return &m_instance.GetClass();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceCP ECInstanceInterface::_ObtainECInstance() const
+    {
+    return &m_instance;
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

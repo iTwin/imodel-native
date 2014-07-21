@@ -341,12 +341,12 @@ UInt32          ClassLayout::GetChecksum () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::Equals (ClassLayoutCR other) const
+bool            ClassLayout::Equals (ClassLayoutCR other, bool compareNames) const
     {
     if (this == &other)
         return true;
     else
-        return this->GetChecksum() == other.GetChecksum() && this->m_className.Equals (other.m_className);
+        return this->GetChecksum() == other.GetChecksum() && (!compareNames || this->m_className.Equals (other.m_className));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -915,6 +915,32 @@ ClassLayoutPtr    ClassLayout::CreateEmpty (WCharCP className)
     classLayout->SetClass (className);
 
     return classLayout;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutPtr  ClassLayout::Clone (WCharCP className) const
+    {
+    ClassLayoutPtr clone = CreateEmpty (nullptr != className ? className : GetECClassName().c_str());
+    for (auto const& propLayout : m_propertyLayouts)
+        {
+        UInt32 offset = 0, modFlags = 0, modData = 0, nullflagsOffset = 0, nullflagsMask = 0;
+        if (!propLayout->GetTypeDescriptor().IsStruct())
+            {
+            offset = propLayout->GetOffset();
+            modFlags = propLayout->GetModifierFlags();
+            modData = propLayout->GetModifierData();
+            nullflagsOffset = propLayout->GetNullflagsOffset();
+            nullflagsMask = propLayout->GetNullflagsBitmask();
+            }
+
+        clone->AddPropertyDirect (propLayout->GetAccessString(), propLayout->GetParentStructIndex(), propLayout->GetTypeDescriptor(),
+                                  offset, nullflagsOffset, nullflagsMask, modFlags, modData);
+        }
+
+    clone->FinishLayout();
+    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3071,13 +3097,20 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
     if (ECOBJECTS_STATUS_Success != evalStatus || updatedValue.Equals (existingValue))
         return evalStatus;
 
-    // ###TODO: I don't like this cast. Calculated properties require that we modify the instance in order to store the calculated value
-    ECDBuffer& memInst = const_cast<ECDBuffer&> (*this);
-    evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex, true);
+    evalStatus = _SetCalculatedValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == evalStatus)
         existingValue = updatedValue;
 
     return evalStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
+    {
+    // Calculated properties require that we modify the instance in order to store the calculated value
+    return const_cast<ECDBuffer&>(*this).SetPrimitiveValueToMemory (v, propertyLayout, useIndex, index, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -61,6 +61,7 @@ EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipCardinality);
 EC_TYPEDEFS(IECInstance);
+EC_TYPEDEFS(IECInstanceInterface);
 EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(IECSchemaLocater);
 EC_TYPEDEFS(IECCustomAttributeContainer);

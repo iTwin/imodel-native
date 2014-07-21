@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auicommand.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -108,6 +108,9 @@ struct IUICommand : public RefCountedBase
         virtual WString             _GetDescription () const { return WString(); }
         virtual void                _SetDescription (WCharCP description) {}
         
+        virtual WString             _GetApplicatonArg () const { return WString(); }
+        virtual void                _SetApplicationArg (WCharCP arg) {}
+
         virtual ECImageKeyCP        _GetImageId () const = 0;
         virtual void                _SetImageId (ECImageKeyCR key) { }
         
@@ -154,6 +157,9 @@ struct IUICommand : public RefCountedBase
         
         ECOBJECTS_EXPORT bool               IsSeparator ()  const;
         
+        ECOBJECTS_EXPORT WString            GetApplicatonArg ()  const;
+        ECOBJECTS_EXPORT void               SetApplicationArg (WCharCP arg);
+
         ECOBJECTS_EXPORT EditActionMenuMark GetMenuMark() const;
         ECOBJECTS_EXPORT void               SetMenuMark(EditActionMenuMark mark);
 

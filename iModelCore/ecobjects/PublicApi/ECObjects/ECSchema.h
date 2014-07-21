@@ -11,9 +11,9 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
-//__PUBLISH_SECTION_END__
+/*__PUBLISH_SECTION_END__*/
 #include <ECObjects/CalculatedProperty.h>
-//__PUBLISH_SECTION_START__
+/*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
@@ -379,21 +379,17 @@ protected:
     virtual ECPropertyCP                        _GetProperty() const = 0;
     virtual UInt32                              _GetComponentIndex() const = 0;
     virtual bool                                _Is3d() const = 0;
-    virtual IECInstanceCP               	_GetECInstance() const = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
+    virtual IECInstanceInterfaceCR              _GetInstanceInterface() const = 0;
     virtual WCharCP                             _GetAccessString() const = 0;
-    virtual ECClassCP                           _GetECClass() const = 0;
 public:
 
-    ECOBJECTS_EXPORT  ECClassCP         GetECClass() const;
-    ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
-    ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
-    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
-    ECOBJECTS_EXPORT  WCharCP           GetAccessString() const;
+    ECOBJECTS_EXPORT  IECInstanceInterfaceCR    GetInstanceInterface() const;
+    ECOBJECTS_EXPORT  ECPropertyCP              GetProperty() const;
+    ECOBJECTS_EXPORT  WCharCP                   GetAccessString() const;
 
     //! The following are relevant to adapters for point types.
-    ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
-    ECOBJECTS_EXPORT  bool              Is3d() const;
+    ECOBJECTS_EXPORT  UInt32                    GetComponentIndex() const;
+    ECOBJECTS_EXPORT  bool                      Is3d() const;
 
     //! internal use only, primarily for ECExpressions
     typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex);
@@ -605,16 +601,23 @@ public:
     IECTypeAdapter*                     GetTypeAdapter() const;
     bool                                IsReadOnlyFlagSet() const { return m_readOnly; }
 
+    //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
-    ECOBJECTS_EXPORT bool                                IsCalculated() const;
-    //! Call this method rather than setting the custom attribute directly!
-    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECPropertyId id) { BeAssert(0 == m_ecPropertyId); m_ecPropertyId = id; };
     ECOBJECTS_EXPORT bool HasId() const { return m_ecPropertyId != 0; };
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
+    ECOBJECTS_EXPORT bool               IsCalculated() const;
+
+    //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
+    //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
+    //! @return true if the specification was successfully updated.
+    //! @remarks Call this method rather than setting the custom attribute directly, to ensure internal state is updated.
+    ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification (IECInstanceP expressionAttribute);
+
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     ECOBJECTS_EXPORT ECPropertyId       GetId() const;
     //! Returns the name of the ECClass that this property is contained within

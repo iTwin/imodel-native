@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -61,11 +61,12 @@ struct InstanceLabelTest      : ECTestFixture
         if (NULL != instanceLabelPropertyValue)
             instance->SetValue (instanceLabelPropertyName, ECValue (instanceLabelPropertyValue, false));
 
-        ECObjectsStatus expectedStatus = NULL == instanceLabelPropertyValue ? ECOBJECTS_STATUS_Error : ECOBJECTS_STATUS_Success;
         WString displayLabel;
-        EXPECT_EQ (expectedStatus, instance->GetDisplayLabel (displayLabel));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->GetDisplayLabel (displayLabel));
         if (instanceLabelPropertyValue)
             EXPECT_TRUE (displayLabel.Equals (instanceLabelPropertyValue));
+        else
+            EXPECT_TRUE (displayLabel.Equals (ecClass->GetDisplayLabel()));
 
         ++s_className[0];
         }
@@ -82,7 +83,7 @@ TEST_F (InstanceLabelTest, TestLabels)
     TestInstanceLabel (false, L"DisplayLabel", L"MyDisplayLabel");
     TestInstanceLabel (false, L"NAME", L"MyName");
     TestInstanceLabel (true, L"NAME", L"MyName");
-    TestInstanceLabel (false, L"ThisIsNotAnInstanceLabel", NULL);
+    TestInstanceLabel (false, L"ThisClassHasNoInstanceLabelPropertySoItUsesTheClassLabel", NULL);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
