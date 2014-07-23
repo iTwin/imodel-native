@@ -60,7 +60,7 @@ struct OrderIdEntries
         ECOBJECTS_EXPORT bool               TryGetSourceOrderId (Int64& sourceOrderId) const;
         //! Gets the target order id
         //! @param[out] targetOrderId contains the orderId of the target instance, if return value is true.
-        ECOBJECTS_EXPORT bool               TryGetTargetOrderId (Int64& sourceOrderId) const;
+        ECOBJECTS_EXPORT bool               TryGetTargetOrderId (Int64& targetOrderId) const;
         //! Gets the orderId of the next source instance in case of ordered relationship.
         //! @param[out] orderId contains the next orderId of the source instance, if return value is true.
         //! This is used by the persistence provider to get the value assigned by the client 
@@ -81,25 +81,25 @@ struct OrderIdEntries
 //! two IECInstances 
 //=======================================================================================
 struct StandaloneECRelationshipInstance : IECRelationshipInstance
-//__PUBLISH_SECTION_END__
-                                          , StandaloneECInstance
-//__PUBLISH_SECTION_START__
+    //__PUBLISH_SECTION_END__
+    , MemoryECInstanceBase
+    //__PUBLISH_SECTION_START__
     {
-//__PUBLISH_SECTION_END__
+    //__PUBLISH_SECTION_END__
     friend struct StandaloneECRelationshipEnabler;
 
 private:
     IECInstancePtr                      m_source;
     IECInstancePtr                      m_target;
-    StandaloneECRelationshipEnablerCP   m_relationshipEnabler; 
+    StandaloneECRelationshipEnablerCP   m_relationshipEnabler;
     WString                             m_instanceId;
-    Int64                               m_sourceOrderId;        
-    Int64                               m_targetOrderId; 
+    Int64                               m_sourceOrderId;
+    Int64                               m_targetOrderId;
     OrderIdEntries                      m_orderIdEntries;
     WString                             m_sourceAssociatedString;
     WString                             m_targetAssociatedString;
 
-protected:  
+protected:
     // IECRelationshipInstance
     ECOBJECTS_EXPORT virtual void            _SetSource (IECInstanceP instance);
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetSource () const;
@@ -107,15 +107,33 @@ protected:
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetTarget () const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const override;
+    // IECInstance
+    ECOBJECTS_EXPORT virtual WString             _GetInstanceId () const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId (WCharCP id) override;
+    ECOBJECTS_EXPORT virtual bool                _IsReadOnly () const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
 
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (UInt32 propIdx, UInt32 size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propIdx, UInt32 index) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (UInt32 propIdx) override;
+    ECOBJECTS_EXPORT virtual WString             _ToString (WCharCP indent) const override;
+    ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
+    ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler () const override;
+    ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
+    ECOBJECTS_EXPORT virtual size_t              _GetObjectSize () const;
+    ECOBJECTS_EXPORT virtual size_t              _GetOffsetToIECInstance () const;
     // MemoryECInstanceBase
     ECOBJECTS_EXPORT virtual IECInstanceP            _GetAsIECInstance () const;
 
-    ECOBJECTS_EXPORT StandaloneECRelationshipInstance (StandaloneECRelationshipEnablerR relationshipEnabler);
-    ECOBJECTS_EXPORT ~StandaloneECRelationshipInstance();
+    ECOBJECTS_EXPORT StandaloneECRelationshipInstance (StandaloneECRelationshipEnablerCR relationshipEnabler);
+    ECOBJECTS_EXPORT ~StandaloneECRelationshipInstance ();
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
+    //__PUBLISH_CLASS_VIRTUAL__
+    //__PUBLISH_SECTION_START__
 public:
     //! Sets the source order Id.
     //! @param[in] sourceOrderId Contains the orderId to set for the source instance
@@ -124,27 +142,24 @@ public:
     //! @param[in] targetOrderId Contains the orderId to set for the target instance
     ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetOrderId (Int64 targetOrderId);
     //! Returns the RelationshipEnabler for the RelationshipClass that this RelationshipInstance represents
-    ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler() const;  
+    ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler () const;
     //! Returns the RelationshipClass that this Instance is an instance of
     ECOBJECTS_EXPORT ECRelationshipClassCR              GetRelationshipClass () const;
     //! Gets the source property string of this RelationshipInstance. 
     //! This is a string associated to the relationship and that is parsed/encoded by the client.
-    ECOBJECTS_EXPORT WCharCP                            GetSourceAssociatedString() const; 
+    ECOBJECTS_EXPORT WCharCP                            GetSourceAssociatedString () const;
     //! Sets the source property string of this RelationshipInstance
     //! This is a string associated to the relationship and that is parsed/encoded by the client.
-    ECOBJECTS_EXPORT ECObjectsStatus                    SetSourceAssociatedString (WCharCP propertiesString); 
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetSourceAssociatedString (WCharCP propertiesString);
     //! Gets the target property string of this RelationshipInstance. 
     //! This is a string associated to the relationship and that is parsed/encoded by the client.
-    ECOBJECTS_EXPORT WCharCP                            GetTargetAssociatedString() const; 
+    ECOBJECTS_EXPORT WCharCP                            GetTargetAssociatedString () const;
     //! Sets the target property string of this RelationshipInstance
     //! This is a string associated to the relationship and that is parsed/encoded by the client.
-    ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetAssociatedString (WCharCP propertiesString); 
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetAssociatedString (WCharCP propertiesString);
     //! Gets orderId entries associated to the relationship instance.
     //! This is used upon persistence to provide to the ECProvider the necessary informationto compute the orderId.
-    ECOBJECTS_EXPORT OrderIdEntries&                    OrderIdEntries();
-    //! Gets orderId entries associated to the relationship instance.
-    //! This is used upon persistence to provide to the ECProvider the necessary informationto compute the orderId.
-    //ECOBJECTS_EXPORT OrderIdEntries&                    OrderIdEntries();
+    ECOBJECTS_EXPORT OrderIdEntries&                    OrderIdEntries ();
     };
 
 //=======================================================================================
@@ -175,7 +190,7 @@ public:
     //! Given an ECRelationshipClass, will create an enabler for that class
     //! @param[in]  ecClass The relationship class which to create an enabler for
     //! @param[in]  classLayout for the ecClass
-    //! @param[in]  enablerLocater
+    //! @param[in]  structStandaloneEnablerLocater
     //! @returns The StandaloneECRelationshipEnabler for the given class.
     ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr  CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     //! Creates an instance of the supported ECRelationshipClass

@@ -1223,17 +1223,6 @@ bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) co
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/        
-/*StandaloneECInstanceP   StandaloneECEnabler::CreateInstanceFromUninitializedMemory (byte * data, UInt32 size)
-    {
-    StandaloneECInstanceP instance = new StandaloneECInstance (*this, data, size);
-    instance->ClearValues();
-    
-    return instance;
-    }*/
-    
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const

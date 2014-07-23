@@ -199,7 +199,7 @@ public:
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct StandaloneECInstance : virtual IECInstance
+struct StandaloneECInstance : IECInstance
 //__PUBLISH_SECTION_END__
                             , MemoryECInstanceBase
 //__PUBLISH_SECTION_START__
