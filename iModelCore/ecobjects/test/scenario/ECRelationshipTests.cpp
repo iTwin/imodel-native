@@ -81,7 +81,7 @@ TEST_F(ECRelationshipTests, InstanceSettersAndGetters)
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
     
     EXPECT_STREQ (relationshipEnabler->GetName(), L"Bentley::ECN::StandaloneECEnabler");
-    //EXPECT_STREQ (relationshipInstance->GetTargetAssociatedString(), L"");
+    EXPECT_STREQ (relationshipInstance->GetTargetAssociatedString(), L"");
     relationshipInstance->SetTargetAssociatedString (L"Some name");
     EXPECT_STREQ (relationshipInstance->GetTargetAssociatedString (), L"Some name");
     

@@ -417,8 +417,8 @@ ECObjectsStatus StandaloneECRelationshipInstance::SetTargetOrderId (Int64 target
      return true;
      }
 
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StandaloneECRelationshipInstance::SetSourceAssociatedString (WCharCP propertiesString) 
     {
@@ -429,17 +429,15 @@ ECObjectsStatus StandaloneECRelationshipInstance::SetSourceAssociatedString (WCh
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
+* @bsimethod                                    Sylvain.Pucci                  07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP     StandaloneECRelationshipInstance::GetSourceAssociatedString() const
     {
-    if (m_sourceAssociatedString.empty())
-        return NULL;
     return m_sourceAssociatedString.c_str();
     }
 
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus StandaloneECRelationshipInstance::SetTargetAssociatedString (WCharCP propertiesString) 
     {
@@ -450,12 +448,10 @@ ECObjectsStatus StandaloneECRelationshipInstance::SetTargetAssociatedString (WCh
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
+* @bsimethod                                    Sylvain.Pucci                  07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP     StandaloneECRelationshipInstance::GetTargetAssociatedString() const
     {
-    if (m_targetAssociatedString.empty())
-        return NULL;
     return m_targetAssociatedString.c_str();
     }
 
