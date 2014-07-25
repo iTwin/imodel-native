@@ -436,6 +436,8 @@ protected:
 
     virtual bool                _SupportsUnits() const = 0;
     virtual bool                _GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const = 0;
+
+    virtual bool                _GetPropertyNotSetValue (ECValueR v) const { return false; }
 public:
     // For DgnPlatform interop
     struct Factory
@@ -463,6 +465,10 @@ public:
     //! @param[in] formatter    Formatting options, e.g. floating point precision, unit labels, etc.
     //! @return true if successfully converted to display type.
     ECOBJECTS_EXPORT bool       ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const;
+
+    //! Some extended types have a sigil value like -1 which is treated as if the property is not set from the user's perspective - often displayed to
+    //! the user as "(None)" in UI. If this type adapter has such a sigil value, set it in the ECValue and return true; else return false;
+    ECOBJECTS_EXPORT bool       GetPropertyNotSetValue (ECValueR v) const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
