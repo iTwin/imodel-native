@@ -721,6 +721,7 @@ protected:
     virtual ECObjectsStatus         _GetInstanceValue (ECValueR v, WCharCP managedAccessor) const = 0;
     virtual ECClassCP               _GetInstanceClass() const = 0;
     virtual IECInstanceCP           _ObtainECInstance() const = 0;
+    virtual WString                 _GetInstanceId() const = 0;
 
 public:
     virtual ~IECInstanceInterface() { }
@@ -737,6 +738,9 @@ public:
     //! Attempts to obtain the underlying IECInstance. This method may be expensive to call in some contexts.
     //! @return The IECInstance represented by this interface, or nullptr if the IECInstance could not be obtained.
     ECOBJECTS_EXPORT IECInstanceCP      ObtainECInstance() const;
+
+    //! Returns the instance ID of the underlying IECInstance
+    ECOBJECTS_EXPORT WString            GetInstanceId() const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -750,6 +754,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus            _GetInstanceValue (ECValueR v, WCharCP managedAccessor) const override;
     ECOBJECTS_EXPORT virtual ECClassCP                  _GetInstanceClass() const override;
     ECOBJECTS_EXPORT virtual IECInstanceCP              _ObtainECInstance() const override;
+    ECOBJECTS_EXPORT virtual WString                    _GetInstanceId() const override;
 public:
     ECInstanceInterface (IECInstanceCR instance) : m_instance (instance) { }
     };

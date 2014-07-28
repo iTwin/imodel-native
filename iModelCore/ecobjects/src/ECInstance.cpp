@@ -3485,6 +3485,7 @@ void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) cons
 ECObjectsStatus IECInstanceInterface::GetInstanceValue (ECValueR v, WCharCP accessor) const { return _GetInstanceValue (v, accessor); }
 ECClassCP IECInstanceInterface::GetInstanceClass() const                                    { return _GetInstanceClass(); }
 IECInstanceCP IECInstanceInterface::ObtainECInstance() const                                { return _ObtainECInstance(); }
+WString IECInstanceInterface::GetInstanceId() const                                         { return _GetInstanceId(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
@@ -3508,6 +3509,14 @@ ECClassCP ECInstanceInterface::_GetInstanceClass() const
 IECInstanceCP ECInstanceInterface::_ObtainECInstance() const
     {
     return &m_instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ECInstanceInterface::_GetInstanceId() const
+    {
+    return m_instance.GetInstanceId();
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
