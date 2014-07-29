@@ -768,8 +768,8 @@ private:
     void*               operator new (size_t);
     void*               operator new[] (size_t);
 public:
-    ECOBJECTS_EXPORT ECDBufferScope (ECDBufferCR buffer);
-    ECOBJECTS_EXPORT ECDBufferScope (IECInstanceCR instance);
+    ECOBJECTS_EXPORT explicit ECDBufferScope (ECDBufferCR buffer);
+    ECOBJECTS_EXPORT explicit ECDBufferScope (IECInstanceCR instance);
     ECOBJECTS_EXPORT ~ECDBufferScope();
     };
 
