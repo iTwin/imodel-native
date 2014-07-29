@@ -339,6 +339,15 @@ UInt32          ClassLayout::GetChecksum () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassLayout::SetPropertyLayoutModifierData (PropertyLayoutCR layout, UInt32 data)
+    {
+    const_cast<PropertyLayoutR>(layout).m_modifierData = data;
+    m_checkSum = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ClassLayout::Equals (ClassLayoutCR other, bool compareNames) const

@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECRelationshipInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -20,11 +20,10 @@ StandaloneECRelationshipInstance::StandaloneECRelationshipInstance (StandaloneEC
     {
     m_relationshipEnabler = &relationshipEnabler;
     m_relationshipEnabler->AddRef();   // make sure relationship enabler stays around
-
     m_target = NULL;
     m_source = NULL;
     m_sourceOrderId = 0;
-    m_targetOrderId = 0;
+    m_targetOrderId = 0; 
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -45,10 +44,8 @@ size_t                StandaloneECRelationshipInstance::_GetOffsetToIECInstance 
     ECN::IECInstanceCP iecInstanceP   = dynamic_cast<ECN::IECInstanceCP>(this);
     byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
     byte const* baseAddressOfConcrete = (byte const *)this;
-
     return (size_t)(baseAddressOfIECInstance - baseAddressOfConcrete);
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -58,18 +55,12 @@ size_t                StandaloneECRelationshipInstance::_GetObjectSize () const
     size_t primaryInstanceDataSize = (size_t)_GetBytesAllocated(); //GetBytesUsed();
     size_t perPropertyDataSize = sizeof(UInt32) * GetPerPropertyFlagsSize();
     size_t supportingInstanceDataSize = 0; // CalculateSupportingInstanceDataSize ();
-
     return objectSize+primaryInstanceDataSize+perPropertyDataSize+supportingInstanceDataSize;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  12/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
 IECInstanceP      StandaloneECRelationshipInstance::_GetAsIECInstance () const
     {
     return const_cast<StandaloneECRelationshipInstance*>(this);
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -77,7 +68,6 @@ MemoryECInstanceBase* StandaloneECRelationshipInstance::_GetAsMemoryECInstance (
     {
     return const_cast<StandaloneECRelationshipInstance*>(this);
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -85,7 +75,6 @@ ECEnablerCR         StandaloneECRelationshipInstance::_GetEnabler() const
     {
     return *m_relationshipEnabler;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -93,7 +82,6 @@ WString        StandaloneECRelationshipInstance::_GetInstanceId() const
     {
     return m_instanceId;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
@@ -102,7 +90,6 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetInstanceId (WCharCP instan
     m_instanceId = instanceId;
     return ECOBJECTS_STATUS_Success;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -227,16 +214,6 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetSource () const
     {
     return m_source;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (Int64& sourceOrderId) const 
-    {
-    sourceOrderId = m_sourceOrderId;
-    return ECOBJECTS_STATUS_Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -283,31 +260,200 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetTarget () const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
+* @bsimethod                                    Sylvain.Pucci                 12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (Int64& targetOrderId) const 
+OrderIdEntries& StandaloneECRelationshipInstance::OrderIdEntries()
+    {
+    return m_orderIdEntries;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (Int64& sourceOrderId) const
+    {
+    sourceOrderId = m_sourceOrderId;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (Int64& targetOrderId) const
     {
     targetOrderId = m_targetOrderId;
     return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP     StandaloneECRelationshipInstance::GetName() 
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/        
+OrderIdEntries::OrderIdEntries () 
     {
-    return m_name.c_str();
+    Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void     StandaloneECRelationshipInstance::SetName (WCharCP name) 
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/        
+ECObjectsStatus OrderIdEntries::Clear () 
     {
-    if (name)
-        m_name = name;
+    m_sourceOrderId = 0;
+    m_targetOrderId = 0; 
+    m_isSourceOrderIdDefined = false;
+    m_isTargetOrderIdDefined = false;
+    m_sourceNextOrderId = 0;
+    m_isSourceNextOrderIdDefined = false;
+    m_targetNextOrderId = 0;
+    m_isTargetNextOrderIdDefined = false;
+    return ECOBJECTS_STATUS_Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OrderIdEntries::TryGetSourceOrderId (Int64& sourceOrderId) const
+    {
+    sourceOrderId = 0;
+     if (!m_isSourceOrderIdDefined)
+         return false;
+    sourceOrderId = m_sourceOrderId;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OrderIdEntries::TryGetTargetOrderId (Int64& targetOrderId) const
+    {
+    targetOrderId = 0;
+     if (!m_isTargetOrderIdDefined)
+         return false;
+    targetOrderId = m_targetOrderId;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus OrderIdEntries::SetSourceOrderId (Int64 sourceOrderId)
+    {
+    m_isSourceNextOrderIdDefined = false;
+    m_isSourceOrderIdDefined = true;
+    m_sourceOrderId = sourceOrderId;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus OrderIdEntries::SetTargetOrderId (Int64 targetOrderId)
+    {
+    m_isTargetNextOrderIdDefined = false;
+    m_isTargetOrderIdDefined = true;
+    m_targetOrderId = targetOrderId;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
+    {
+    m_sourceOrderId = sourceOrderId;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                 12/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
+    {
+    m_targetOrderId = targetOrderId;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ ECObjectsStatus OrderIdEntries::SetSourceNextOrderId (Int64 sourceOrderId)
+     {
+     m_isSourceOrderIdDefined = false;
+     m_isSourceNextOrderIdDefined = true;
+     m_sourceNextOrderId = sourceOrderId;
+     return ECOBJECTS_STATUS_Success;
+     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ ECObjectsStatus OrderIdEntries::SetTargetNextOrderId (Int64 sourceOrderId)
+     {
+     m_isSourceOrderIdDefined = false;
+     m_isTargetNextOrderIdDefined = true;
+     m_targetNextOrderId = sourceOrderId;
+     return ECOBJECTS_STATUS_Success;
+     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ bool OrderIdEntries::TryGetSourceNextOrderId (Int64& orderId) const
+     {
+     if (!m_isSourceNextOrderIdDefined)
+         return false;
+     orderId = m_sourceNextOrderId;
+     return true;
+     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  11/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+ bool OrderIdEntries::TryGetTargetNextOrderId (Int64& orderId) const
+     {
+     if (!m_isTargetNextOrderIdDefined)
+         return false;
+     orderId = m_targetNextOrderId;
+     return true;
+     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::SetSourceAssociatedString (WCharCP propertiesString) 
+    {
+    if (!propertiesString)
+        return ECOBJECTS_STATUS_Error;
+    m_sourceAssociatedString = propertiesString;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP     StandaloneECRelationshipInstance::GetSourceAssociatedString() const
+    {
+    return m_sourceAssociatedString.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus StandaloneECRelationshipInstance::SetTargetAssociatedString (WCharCP propertiesString) 
+    {
+    if (!propertiesString)
+        return ECOBJECTS_STATUS_Error;
+    m_targetAssociatedString = propertiesString;
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sylvain.Pucci                  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP     StandaloneECRelationshipInstance::GetTargetAssociatedString() const
+    {
+    return m_targetAssociatedString.c_str();
+    }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // StandaloneECRelationshipEnabler
@@ -315,18 +461,10 @@ void     StandaloneECRelationshipInstance::SetName (WCharCP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationshipClassCR ecClass) :
-    ECEnabler (ecClass, NULL),
+StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater) :
+    StandaloneECEnabler (ecClass, classLayout, structStandaloneEnablerLocater),
     m_relationshipClass (ecClass)
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCR StandaloneECRelationshipEnabler::GetClassLayout() const
-    {
-    return GetClass().GetDefaultStandaloneEnabler()->GetClassLayout();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -339,32 +477,7 @@ StandaloneECRelationshipEnabler::~StandaloneECRelationshipEnabler ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP           StandaloneECRelationshipEnabler::_GetName() const
-    {
-    return L"Bentley::ECN::StandaloneECEnabler";
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndex(UInt32& propertyIndex, WCharCP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
-ECObjectsStatus StandaloneECRelationshipEnabler::_GetAccessString(WCharCP& accessString, UInt32 propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
-UInt32          StandaloneECRelationshipEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
-UInt32          StandaloneECRelationshipEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
-ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Paul.Connelly                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            StandaloneECRelationshipEnabler::_HasChildProperties (UInt32 parentIndex) const
-    {
-    return GetClassLayout().HasChildProperties (parentIndex);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECWipRelationshipInstancePtr StandaloneECRelationshipEnabler::_CreateWipRelationshipInstance () const
+StandaloneECRelationshipInstancePtr StandaloneECRelationshipEnabler::_CreateWipRelationshipInstance () const
     {
     // not supported
     return  NULL;
@@ -391,13 +504,21 @@ ECEnablerCR StandaloneECRelationshipEnabler::GetECEnabler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass)
     {
-    return new StandaloneECRelationshipEnabler (ecClass);
+    return new StandaloneECRelationshipEnabler (ecClass, ecClass.GetDefaultStandaloneEnabler()->GetClassLayout(), NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECRelationshipInstancePtr       StandaloneECRelationshipEnabler::CreateRelationshipInstance () const
+StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)
+    {
+    return new StandaloneECRelationshipEnabler (ecClass, classLayout, structStandaloneEnablerLocater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECRelationshipInstancePtr       StandaloneECRelationshipEnabler::CreateRelationshipInstance ()
     {
     return new StandaloneECRelationshipInstance (*this);
     }

@@ -2188,6 +2188,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
             case PRIMITIVETYPE_Double:
             case PRIMITIVETYPE_Integer:
             case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_DateTime:
                 return ExprStatus_Success;
             case PRIMITIVETYPE_String:
                 return allowStrings ? ExprStatus_Success : ExprStatus_WrongType;
@@ -2548,6 +2549,9 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
             return ExprStatus_Success;
         case PRIMITIVETYPE_Long:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetLong(), m_operatorCode, ecRight.GetLong()));
+            return ExprStatus_Success;
+        case PRIMITIVETYPE_DateTime:
+            evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetDateTimeTicks(), m_operatorCode, ecRight.GetDateTimeTicks()));
             return ExprStatus_Success;
         }
     

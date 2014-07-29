@@ -219,6 +219,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        FinishLayout ();
 
     ECOBJECTS_EXPORT ClassLayoutPtr         Clone (WCharCP name = nullptr) const;
+    ECOBJECTS_EXPORT void                   SetPropertyLayoutModifierData (PropertyLayoutCR layout, UInt32 modifierData);
 /*__PUBLISH_SECTION_START__*/
 private:
     //ClassLayout (){}

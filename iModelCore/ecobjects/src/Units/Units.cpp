@@ -11,6 +11,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+IECClassLocaterPtr IECClassLocater::s_registeredClassLocater = NULL;
+
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
 static WCharCP const  DIMENSION_SCHEMA                  = L"Dimension_Schema";
@@ -103,6 +105,30 @@ bool UnitSpec::ConvertTo (double& value, UnitSpecCR target) const
 
     value = target.GetConverter().FromBase (this->GetConverter().ToBase (value));
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater) 
+    {
+    s_registeredClassLocater = IECClassLocaterPtr (&classLocater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECClassLocater::UnRegisterClassLocater ()
+    {
+    s_registeredClassLocater = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 
+    {
+    return s_registeredClassLocater.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
