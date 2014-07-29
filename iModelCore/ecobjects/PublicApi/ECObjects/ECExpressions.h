@@ -493,22 +493,20 @@ public:
 /*=================================================================================**//**
 * Provides a set of Symbols
 +===============+===============+===============+===============+===============+======*/
-struct      IECSymbolProvider : RefCountedBase
+struct      IECSymbolProvider
     {
     typedef void (* ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<WString> const&);
 protected:
     virtual WCharCP                 _GetName() const = 0;
-    virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) = 0;
+    virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const = 0;
 public:
     ECOBJECTS_EXPORT WCharCP        GetName() const
                                         { return _GetName(); }
-    ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets)
+    ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const
                                         { return _PublishSymbols (context, requestedSymbolSets); }
 
     ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
     };
-
-typedef RefCountedPtr<IECSymbolProvider> IECSymbolProviderPtr;
 
 /*__PUBLISH_SECTION_START__*/
 
