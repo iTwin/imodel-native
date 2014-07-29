@@ -506,8 +506,10 @@ typedef ECDHeader_v0 ECDHeader;
 struct ECDBuffer
     {
     friend  struct ArrayResizer;
+    friend  struct ECDBufferScope;
 private:
     mutable bool        m_allowWritingDirectlyToInstanceMemory;
+    mutable bool        m_allPropertiesCalculated;
 
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/
@@ -746,6 +748,30 @@ public:
     };   
 
 /*__PUBLISH_SECTION_END__*/
+
+/*---------------------------------------------------------------------------------**//**
+* "Pins" the internal memory buffer used by the ECDBuffer such that:
+*   a) all calculated property values will be exactly once, when scope is constructed; and
+*   b) addresses of all property values will not change for lifetime of scope.
+* To be used in conjunction with ECValue::SetAllowsPointersIntoInstanceMemory() to ensure
+* pointers remain valid for lifetime of scope.
+* @bsistruct                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECDBufferScope
+    {
+private:
+    ECDBufferCP         m_buffer;
+    bool                m_initialState;
+
+    void                Init();
+
+    void*               operator new (size_t);
+    void*               operator new[] (size_t);
+public:
+    ECOBJECTS_EXPORT ECDBufferScope (ECDBufferCR buffer);
+    ECOBJECTS_EXPORT ECDBufferScope (IECInstanceCR instance);
+    ECOBJECTS_EXPORT ~ECDBufferScope();
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * Exposed here solely for interop with managed code...
