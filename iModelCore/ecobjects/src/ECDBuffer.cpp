@@ -2185,7 +2185,8 @@ ECObjectsStatus     ECDBuffer::Compress()
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDBuffer::ECDBuffer (bool allowWritingDirectlyToInstanceMemory) :
-    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory)
+    m_allowWritingDirectlyToInstanceMemory (allowWritingDirectlyToInstanceMemory),
+    m_allPropertiesCalculated (false)
     {
     }
         
@@ -2571,7 +2572,7 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
             }
         }
 
-    if (ECOBJECTS_STATUS_Success == status && propertyLayout.HoldsCalculatedProperty())
+    if (ECOBJECTS_STATUS_Success == status && propertyLayout.HoldsCalculatedProperty() && !m_allPropertiesCalculated)
         status = EvaluateCalculatedProperty (propertyLayout, v, useIndex, index);
 
     return status;
@@ -3852,6 +3853,50 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBufferScope::ECDBufferScope (ECDBufferCR buffer)
+    : m_buffer (&buffer)
+    {
+    Init();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBufferScope::ECDBufferScope (IECInstanceCR instance)
+    : m_buffer (instance.GetECDBuffer())
+    {
+    Init();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDBufferScope::Init()
+    {
+    m_initialState = true;
+    if (nullptr != m_buffer)
+        {
+        m_initialState = m_buffer->m_allPropertiesCalculated;
+        if (!m_initialState)
+            {
+            const_cast<ECDBufferR>(*m_buffer).EvaluateAllCalculatedProperties();
+            m_buffer->m_allPropertiesCalculated = true;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDBufferScope::~ECDBufferScope()
+    {
+    if (nullptr != m_buffer)
+        m_buffer->m_allPropertiesCalculated = m_initialState;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
