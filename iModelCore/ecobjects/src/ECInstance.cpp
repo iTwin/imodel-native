@@ -2001,8 +2001,11 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
         ECN::ECValue ecValue;
         if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
             {
-            displayLabel = ecValue.GetString();
-            return ECOBJECTS_STATUS_Success;
+            if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !WString::IsNullOrEmpty (ecValue.GetString()))
+                {
+                displayLabel = ecValue.GetString();
+                return ECOBJECTS_STATUS_Success;
+                }
             }
         }
 
