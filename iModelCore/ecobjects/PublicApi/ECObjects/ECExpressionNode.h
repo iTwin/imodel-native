@@ -281,7 +281,7 @@ private:
         {
         ECValue v (m_value);
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_DateTime) ? ExprStatus_Success : ExprStatus_WrongType;
-        return SUCCESS == status ? v.GetDouble() : 0;
+        return SUCCESS == status ? (::Int64) v.GetDouble() : 0;
         }
     virtual ExpressionStatus _GetStringValue(ECValueR v, ExpressionContextR context)
         {

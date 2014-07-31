@@ -573,17 +573,17 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, 
     size_t count = 0;
     if (TryParse (node, curvePrimitive))
         {
-        geometry.push_back (IGeometryPtr (curvePrimitive));
+        geometry.push_back (IGeometry::Create (curvePrimitive));
         count = 1;
         }
     else if (TryParse (node, solidPrimitive))
         {
-        geometry.push_back (IGeometryPtr (solidPrimitive));
+        geometry.push_back (IGeometry::Create (solidPrimitive));
         count = 1;
         }
     else if (TryParse (node, surface))
         {
-        geometry.push_back (IGeometryPtr (surface));
+        geometry.push_back (IGeometry::Create (surface));
         count = 1;
         }
     else if (maxDepth == 0)
