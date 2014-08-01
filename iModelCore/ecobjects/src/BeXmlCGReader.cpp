@@ -539,7 +539,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             {
             DSegment3d segment;
             DEllipse3d arc;
-            if (0 != railCurve->TryGetLine (segment))
+            if (railCurve->TryGetLine (segment))
                 {
                 DVec3d vector = DVec3d::FromStartEnd (segment.point[0], segment.point[1]);
                 result = ISolidPrimitive::CreateDgnExtrusion (DgnExtrusionDetail (
@@ -547,7 +547,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
                                 vector, false));
                 return true;
                 }
-            else if (0 != railCurve->TryGetArc (arc))
+            else if (railCurve->TryGetArc (arc))
                 {
                 DVec3d normal = DVec3d::FromNormalizedCrossProduct (arc.vector0, arc.vector90);
                 result = ISolidPrimitive::CreateDgnRotationalSweep (DgnRotationalSweepDetail (
@@ -573,17 +573,17 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, 
     size_t count = 0;
     if (TryParse (node, curvePrimitive))
         {
-        geometry.push_back (IGeometryPtr::Create(curvePrimitive));
+        geometry.push_back (IGeometry::Create (curvePrimitive));
         count = 1;
         }
     else if (TryParse (node, solidPrimitive))
         {
-        geometry.push_back (IGeometryPtr::Create(solidPrimitive));
+        geometry.push_back (IGeometry::Create (solidPrimitive));
         count = 1;
         }
     else if (TryParse (node, surface))
         {
-        geometry.push_back (IGeometryPtr::Create (surface));
+        geometry.push_back (IGeometry::Create (surface));
         count = 1;
         }
     else if (maxDepth == 0)
