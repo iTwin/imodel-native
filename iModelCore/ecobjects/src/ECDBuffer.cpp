@@ -3855,36 +3855,44 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   07/14
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDBufferScope::ECDBufferScope ()
+: m_buffer (nullptr), m_initialState (true)
+    {
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDBufferScope::ECDBufferScope (ECDBufferCR buffer)
-    : m_buffer (&buffer)
+: m_buffer (nullptr), m_initialState (true)
     {
-    Init();
+    Init (&buffer);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDBufferScope::ECDBufferScope (IECInstanceCR instance)
-    : m_buffer (instance.GetECDBuffer())
+: m_buffer (nullptr), m_initialState (true)
     {
-    Init();
+    Init (instance.GetECDBuffer ());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDBufferScope::Init()
+void ECDBufferScope::Init (ECDBufferCP buffer)
     {
-    m_initialState = true;
-    if (nullptr != m_buffer)
+    m_buffer = buffer;
+    if (m_buffer != nullptr)
         {
         m_initialState = m_buffer->m_allPropertiesCalculated;
         if (!m_initialState)
             {
-            const_cast<ECDBufferR>(*m_buffer).EvaluateAllCalculatedProperties();
+            const_cast<ECDBufferR>(*m_buffer).EvaluateAllCalculatedProperties ();
             m_buffer->m_allPropertiesCalculated = true;
             }
         }

@@ -78,7 +78,7 @@ TEST_F(ValueTests, ECValueToString)
     EXPECT_STREQ (value.ToString().c_str(), L"2013-02-14T09:58:17.456Z");  //Fix if conversion is region specific
     
     EXPECT_EQ (value.SetDouble(3.14159265359), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.ToString().c_str(), L"3.14159265359");
+    EXPECT_STREQ (value.ToString().c_str(), L"3.1415926535900001");
     
     EXPECT_EQ (value.SetInteger(-255), ECOBJECTS_STATUS_Success);
     EXPECT_STREQ (value.ToString().c_str(), L"-255");
@@ -87,10 +87,10 @@ TEST_F(ValueTests, ECValueToString)
     EXPECT_STREQ (value.ToString().c_str(), L"1234567890");
     
     EXPECT_EQ (value.SetPoint2D(point2d), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.ToString().c_str(), L"123.456,456.789");
+    EXPECT_STREQ (value.ToString().c_str(), L"123.456,456.78899999999999");
     
     EXPECT_EQ (value.SetPoint3D(point3d), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.ToString().c_str(), L"1.2,-3.4,5.6");
+    EXPECT_STREQ (value.ToString().c_str(), L"1.2,-3.3999999999999999,5.5999999999999996");
     };
     
 /*---------------------------------------------------------------------------------**//**

@@ -710,6 +710,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
         case PRIMITIVETYPE_Point2D:
         case PRIMITIVETYPE_Point3D:
         case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_IGeometry:
             break;
                         
         default:
@@ -1362,7 +1363,7 @@ const byte * ECValue::GetIGeometry(size_t& size) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const byte * ECValue::GetBinary(size_t& size) const
     {
-    PRECONDITION (IsBinary() && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
+    PRECONDITION ((IsBinary() || IsIGeometry()) && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
     size = m_binaryInfo.m_size;
     return m_binaryInfo.m_data;
     };
@@ -1467,6 +1468,7 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
     switch (GetPrimitiveType())
         {
     case PRIMITIVETYPE_Binary:
+    case PRIMITIVETYPE_IGeometry:
         {
         size_t nBytes;
         byte const* bytes = GetBinary (nBytes);
@@ -1481,7 +1483,7 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         str.Sprintf (L"%I64d", GetDateTimeTicks());
         break;
     case PRIMITIVETYPE_Double:
-        str.Sprintf (L"%.13g", GetDouble());
+        str.Sprintf (L"%.17g", GetDouble());
         break;
     case PRIMITIVETYPE_Integer:
         str.Sprintf (L"%d", GetInteger());
@@ -1492,13 +1494,13 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt = GetPoint2D();
-        str.Sprintf (L"%.13g,%.13g", pt.x, pt.y);
+        str.Sprintf (L"%.17g,%.17g", pt.x, pt.y);
         }
         break;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        str.Sprintf (L"%.13g,%.13g,%.13g", pt.x, pt.y, pt.z);
+        str.Sprintf (L"%.17g,%.17g,%.17g", pt.x, pt.y, pt.z);
         }
         break;
     case PRIMITIVETYPE_String:
@@ -1510,6 +1512,29 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static WString formatDouble (double d)
+    {
+    WString str;
+    str.Sprintf (L"%.17f", d);
+    auto dotPos = str.find ('.');
+    if (WString::npos != dotPos)
+        {
+        auto nonZeroPos = str.length() - 1;
+        while (nonZeroPos > dotPos && str[nonZeroPos] == '0')
+            --nonZeroPos;
+
+        if (nonZeroPos == dotPos)
+            str.erase (dotPos, WString::npos);
+        else if (nonZeroPos < str.length() - 1)
+            str.erase (nonZeroPos+1, WString::npos);
+        }
+
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1529,14 +1554,14 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
         {
     case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
     case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%I64d", GetDateTimeTicks()); return true;
-    case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13f", GetDouble()); return true;
+    case PRIMITIVETYPE_Double:      expr = formatDouble (GetDouble()); return true;
     case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
     case PRIMITIVETYPE_Long:        expr.Sprintf (L"%I64d", GetLong()); return true;
-    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13f,%.13f}", GetPoint2D().x, GetPoint2D().y); return true;
+    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%ls,%ls}", formatDouble (GetPoint2D().x).c_str(), formatDouble (GetPoint2D().y).c_str()); return true;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        expr.Sprintf (L"{%.13f,%.13f,%.13f}", pt.x, pt.y, pt.z);
+        expr.Sprintf (L"{%ls,%ls,%ls}", formatDouble(pt.x).c_str(), formatDouble(pt.y).c_str(), formatDouble(pt.z).c_str());
         }
         return true;
     case PRIMITIVETYPE_String:
@@ -1680,6 +1705,15 @@ WString    ECValue::ToString () const
         str = L"<error>";
         
     return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECValue::CanConvertToPrimitiveType (PrimitiveType type) const
+    {
+    ECValue v (*this);
+    return v.ConvertToPrimitiveType (type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1987,13 +2021,6 @@ bool            ArrayInfo::IsStructArray() const
     {        
     return GetKind() == VALUEKIND_Struct; 
     }  
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnablerCP ECValueAccessor::Location::GetEnabler() const { return m_enabler; }
-int ECValueAccessor::Location::GetPropertyIndex() const { return m_propertyIndex; }
-int ECValueAccessor::Location::GetArrayIndex() const { return m_arrayIndex; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
@@ -2331,45 +2358,25 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP getClassFromSchema (ECSchemaCR rootSchema, WCharCP className)
-    {
-    ECClassCP classP = rootSchema.GetClassCP (className);
-    if (classP)
-        return classP;
-
-    ECSchemaReferenceListCR referencedScheams = rootSchema.GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator iter = referencedScheams.begin(); iter != referencedScheams.end(); ++iter) 
-        {
-        classP = getClassFromSchema (*iter->second, className);        
-        if (classP)
-            return classP;
-        }
-
-    return NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  10/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP getPropertyFromClass (ECClassCR enablerClass, WCharCP propertyName)
+static ECClassCP getStructArrayClass (ECClassCR enablerClass, WCharCP propertyName)
     {
     WCharCP dotPos = wcschr (propertyName, '.');
     if (NULL != dotPos)
         {
         WString structName (propertyName, dotPos);
-        ECClassCP structClass = getPropertyFromClass (enablerClass, structName.c_str());
+        ECClassCP structClass = getStructArrayClass (enablerClass, structName.c_str());
         if (NULL == structClass)
             { BeAssert (false); return NULL; }
 
-        return getPropertyFromClass (*structClass, dotPos+1);
+        return getStructArrayClass (*structClass, dotPos+1);
         }
 
     ECPropertyP propertyP = enablerClass.GetPropertyP (propertyName);
     if (!propertyP)
         return NULL;
 
-    WString typeName = propertyP->GetTypeName();
-    return getClassFromSchema (enablerClass.GetSchema(), typeName.c_str());
+    auto arrayProp = propertyP->GetAsArrayProperty();
+    return nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2433,7 +2440,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 
     WString str = asBuffer; 
 
-    ECClassCP structClass = getPropertyFromClass (enabler.GetClass(), asBuffer);
+    ECClassCP structClass = getStructArrayClass (enabler.GetClass(), asBuffer);
     if (!structClass)
         return ECOBJECTS_STATUS_Error;
 
@@ -2452,50 +2459,19 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor)
     {
+    return PopulateValueAccessor (va, instance.GetEnabler(), managedPropertyAccessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP accessor)
+    {
     wchar_t         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
     wchar_t         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
     va.Clear ();
-    return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, instance.GetEnabler(), managedPropertyAccessor);
+    return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, enabler, accessor);
     }
-
-#ifdef NO_MORE
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  01/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::GetECValue (ECValue& v, IECInstanceCR instance)
-    {
-    ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
-    IECInstanceCP  currentInstance    = &instance;
-    IECInstancePtr structInstancePtr;
-    for (UInt32 depth = 0; depth < GetDepth(); depth ++)
-        {
-        Location loc = m_locationVector[depth];
-
-        if (!(loc.GetEnabler() == &currentInstance->GetEnabler()))
-            return ECOBJECTS_STATUS_Error;
-
-        if (-1 != loc.GetArrayIndex())
-            status = instance.GetValue (v, loc.GetPropertyIndex(), loc.GetArrayIndex());
-        else
-            status = instance.GetValue (v, loc.GetPropertyIndex());
-
-        if (ECOBJECTS_STATUS_Success != status)
-            return status;
-
-        if (v.IsStruct() && 0 <= loc.GetArrayIndex())
-            {
-            structInstancePtr = v.GetStruct();
-            if (structInstancePtr.IsNull())
-                return ECOBJECTS_STATUS_Error;
-
-            // get property and next location
-            currentInstance = structInstancePtr.get();
-            }
-        }
-
-    return status;
-    }
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //  ECPropertyValue
@@ -2579,6 +2555,22 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
     m_instance (&instance), m_accessor (accessor), m_ecValue (v), m_evaluated (true)
     {
     //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECPropertyValue::Initialize (IECInstanceCR instance, WCharCP accessString, ECValueCR v)
+    {
+    ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (m_accessor, instance, accessString);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        m_instance = &instance;
+        m_ecValue = v;
+        m_evaluated = true;
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,9 +17,9 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
-typedef RefCountedPtr<ECEnabler>                  ECEnablerPtr;
-typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
+typedef RefCountedPtr<StandaloneECEnabler>              StandaloneECEnablerPtr;
+typedef RefCountedPtr<ECEnabler>                        ECEnablerPtr;
+typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
 
 #define INVALID_PROPERTY_INDEX  0;
 
@@ -226,14 +226,14 @@ public:
  {
 protected:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
+    virtual StandaloneECRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
 
     //! Returns the relationship class that this enabler 'enables'
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
+    ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr  CreateWipRelationshipInstance() const;
     //! Returns the relationship class that this enabler 'enables'
     ECOBJECTS_EXPORT ECN::ECRelationshipClassCR      GetRelationshipClass() const;
  };

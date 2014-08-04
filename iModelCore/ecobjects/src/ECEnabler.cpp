@@ -229,7 +229,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::ProcessPrimitiveProperties (bset<
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECWipRelationshipInstancePtr  IECRelationshipEnabler::CreateWipRelationshipInstance() const
+StandaloneECRelationshipInstancePtr  IECRelationshipEnabler::CreateWipRelationshipInstance() const
      {
      return _CreateWipRelationshipInstance ();
      }

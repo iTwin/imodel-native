@@ -80,6 +80,7 @@
 // This is used for matching incoming types to any common geometry type
 #define ECXML_TYPENAME_IGEOMETRY_GENERIC  L"Bentley.GeometryNET.Common"
 #define ECXML_TYPENAME_IGEOMETRY_LEGACY   L"Bentley.Geometry.Common"
+#define ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC L"Bentley.Geometry.Common.IGeometry";
 #define EMPTY_STRING L""
 
 #define ECXML_STRENGTH_REFERENCING        L"referencing"

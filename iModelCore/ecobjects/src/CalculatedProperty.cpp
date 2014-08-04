@@ -193,7 +193,7 @@ bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue)
-  : m_expression(&expr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType)
+  : m_expression(&expr), m_parserRegex(regex), m_failureValue(failureValue), m_isDefaultOnly(false), m_useLastValidOnFailure(false), m_propertyType(primType), m_evaluationOptions (EVALOPT_Legacy)
     {
     ECValue v;
     if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"IsDefaultValueOnly") && !v.IsNull())
@@ -214,6 +214,11 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
             }
         }
 
+    if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"EnforceUnits") && !v.IsNull() && v.GetBoolean())
+        m_evaluationOptions = EVALOPT_EnforceUnits;
+    else if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"SuppressTypeConversions") && !v.IsNull() && v.GetBoolean())
+        m_evaluationOptions = EVALOPT_SuppressTypeConversions;
+
     InstanceExpressionContextPtr thisContext = InstanceExpressionContext::Create (NULL);
     ContextSymbolPtr thisSymbol = ContextSymbol::CreateContextSymbol (L"this", *thisContext);
     SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (requiredSymbolSets);
@@ -221,6 +226,8 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
 
     m_context = symbolContext.get();
     m_thisContext = thisContext.get();
+    m_thisContext->SetEvaluationOptions (m_evaluationOptions);
+    m_context->SetEvaluationOptions (m_evaluationOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -284,9 +291,13 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance) const
+ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance, WCharCP accessString) const
     {
     PRECONDITION (m_expression.IsValid(), ECOBJECTS_STATUS_Error);
+
+    ECPropertyCP ecprop = instance.GetEnabler().LookupECProperty (accessString);
+    if (nullptr == ecprop)
+        return ECOBJECTS_STATUS_PropertyNotFound;
 
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
 
@@ -298,8 +309,62 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
         
         ValueResultPtr valueResult;
         ECValue exprValue;
-        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context, false, true) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
+        bool gotValue = false;
+        if (ExprStatus_Success == m_expression->GetValue (valueResult, *m_context) && ExprStatus_Success == valueResult->GetECValue (exprValue) && !exprValue.IsNull() && exprValue.ConvertToPrimitiveType (m_propertyType))
+            {
+            gotValue = true;
+            bool allowTypeConversions = (0 == (m_evaluationOptions & EVALOPT_SuppressTypeConversions));
+            bool convertUnits = !allowTypeConversions && (0 != (m_evaluationOptions & EVALOPT_EnforceUnits));
+            if (allowTypeConversions || convertUnits)
+                {
+                IECTypeAdapter* typeAdapter = nullptr;
+                if (ecprop->GetIsPrimitive())
+                    typeAdapter = ecprop->GetAsPrimitiveProperty()->GetTypeAdapter();
+                else if (ecprop->GetIsArray())
+                    typeAdapter = ecprop->GetAsArrayProperty()->GetMemberTypeAdapter();
+
+                if (nullptr != typeAdapter)
+                    {
+                    if (allowTypeConversions && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                        {
+                        gotValue = false;
+                        }
+                    else if (convertUnits && typeAdapter->SupportsUnits())
+                        {
+                        gotValue = false;
+                        UnitSpec units;
+
+                        // We only care about units if the ECProperty is unitized...otherwise ignore units of expression result
+                        if (typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                            {
+                            if (units.IsUnspecified())
+                                gotValue = true;    // not unitized
+                            else
+                                {
+                                // If expression result has no units, assume same units as ECProperty.
+                                UnitSpecCR exprUnits = valueResult->GetResult().GetUnits();
+                                if (exprUnits.IsUnspecified() || exprUnits.IsEquivalent (units))
+                                    gotValue = true;
+                                else if (units.IsCompatible (exprUnits) && exprValue.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+                                    {
+                                    double dv = exprValue.GetDouble();
+                                    if (exprUnits.ConvertTo (dv, units))
+                                        {
+                                        exprValue.SetDouble (dv);
+                                        gotValue = exprValue.ConvertToPrimitiveType (m_propertyType);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        if (gotValue)
+            {
             newValue = exprValue;
+            }
         else
             {
             // Note that if we don't *have* a last valid value, we still return the failure value

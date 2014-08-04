@@ -92,4 +92,20 @@ TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     EXPECT_TRUE(testSchema->GetVersionMinor()==6);
     }
 
-END_BENTLEY_ECN_TEST_NAMESPACE
+TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key(L"MasterSchema", 1, 0);
+    testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
+    EXPECT_TRUE(testSchema->IsSupplemented());
+
+    }
+
+END_BENTLEY_ECOBJECT_NAMESPACE

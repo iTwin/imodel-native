@@ -68,7 +68,11 @@ private:
     static void        ReportInvalidJunctionOperands(EvaluationResultR left, EvaluationResultR right) {}
     static void        ReportInvalidComparisonOperands(EvaluationResultR left, EvaluationResultR right) {}
     static void        ReportInvalidUnaryArithmeticOperand(ExpressionToken operationCode, EvaluationResultR left) {}
+
+    static ExpressionStatus EnforceMultiplicativeUnits (UnitSpecR units, EvaluationResultR left, EvaluationResultR right);
 public:
+    // PRECONDITION: PromoteCommon was called, left and right are non-null and have same type and type is int, long, or double
+    static ExpressionStatus EnforceLikeUnits (EvaluationResultR left, EvaluationResultR right);
 
     static ExpressionStatus ConvertToInt32(EvaluationResultR evalResult);
     static ExpressionStatus ConvertToString(EvaluationResultR evalResult);
@@ -85,10 +89,10 @@ public:
     static ExpressionStatus PerformUnaryMinus(EvaluationResultR resultOut, EvaluationResultR left);
     static ExpressionStatus PerformUnaryNot(EvaluationResultR resultOut, EvaluationResultR left);
     static ExpressionStatus PerformShift(EvaluationResultR resultOut, ExpressionToken shiftOp, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformMultiplication(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
+    static ExpressionStatus PerformMultiplication(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
     static ExpressionStatus PerformExponentiation(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformIntegerDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
-    static ExpressionStatus PerformDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
+    static ExpressionStatus PerformIntegerDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
+    static ExpressionStatus PerformDivision(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right, bool enforceUnits);
     static ExpressionStatus PerformMod(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right);
     static ExpressionStatus PerformLikeTest(EvaluationResultR resultOut, EvaluationResultR left, EvaluationResultR right) { return ExprStatus_NotImpl; }
     static ExpressionStatus PerformJunctionOperator(EvaluationResultR resultOut, ExpressionToken junctionOperator, EvaluationResultR left, EvaluationResultR right);
@@ -110,8 +114,6 @@ protected:
 
 public:
     static  void        GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightMost);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCPVector& nodes);
-    static  void        DetermineKnownUnitsSame (UnitsTypeR units, NodeCR rightMost);
 
 }; // NodeHelpers
 
@@ -156,7 +158,7 @@ private:
     ECN::PrimitiveType       m_primitiveType;
 
 protected:
-    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
     ResolvedTypeNode(ECN::PrimitiveType primitiveType) : m_primitiveType(primitiveType) {}
     //!  Optimization provided as alternative to dynamic_cast
     virtual ResolvedTypeNodeP _GetAsResolvedTypeNodeP () override { return this; }
@@ -170,6 +172,8 @@ protected:
     void CheckInteger() {BeAssert(PRIMITIVETYPE_Integer == m_primitiveType); }
     void CheckLong() {BeAssert(PRIMITIVETYPE_Long == m_primitiveType); }
     void CheckString() {BeAssert(PRIMITIVETYPE_String == m_primitiveType); }
+
+    void SetPrimitiveType (PrimitiveType type) { m_primitiveType = type; }
 public:
     enum SupportedGetTypes
         {
@@ -198,184 +202,126 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   09/13
+* @bsistruct                                                    Paul.Connelly   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LiteralNode : ResolvedTypeNode
     {
 private:
-    virtual WString             _ToString() const override      { return _GetECValue().ToString(); }
-    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool) override
-        {
-        evalResult = _GetECValue();
-        return ExprStatus_Success;
-        }
-protected:
-    virtual ECValue             _GetECValue() const = 0;
-    virtual bool                _IsConstant () const override { return true; }
-    LiteralNode(ECN::PrimitiveType primtiveType) : ResolvedTypeNode(primtiveType) {}
-public:
-    ECValue                     GetECValue() const { return _GetECValue(); }
-    };
+    ECValue         m_value;
 
-/*=================================================================================**//**
-*
-* !!!Describe Class Here!!!
-*
-* @bsiclass                                                     John.Gooding    02/2011
-+===============+===============+===============+===============+===============+======*/
-struct          StringLiteralNode : LiteralNode
-{
-private:
-    WString     m_value;
+    LiteralNode (ECValueCR v) : ResolvedTypeNode (v.GetPrimitiveType()), m_value (v) { }
 
-protected:
-    virtual WString     _ToString() const override 
-        { 
-        WString retval = L"\"";
-        retval.append (m_value);
-        retval.append (L"\"");
-        return retval;
-        }
-
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override
-        {
-        evalResult = ECN::ECValue(m_value.c_str(), false);
-
-        return ExprStatus_Success;
-        }
-
-    virtual ExpressionToken _GetOperation () const override { return TOKEN_StringConst; }
-    virtual bool            _IsConstant () const override { return true; }
-    virtual ECValue         _GetECValue() const override { return ECValue (m_value.c_str()); }
-public:
-    virtual ExpressionStatus _GetStringValue(ECValueR result, ExpressionContextR context) override
-        {
-        result.SetString(m_value.c_str(), false);
-        return ExprStatus_Success;
-        }
-
-    wchar_t const*   GetInternalValue () const { return m_value.c_str(); }
-
-                StringLiteralNode (wchar_t const* literalValue) : LiteralNode(PRIMITIVETYPE_String)
-        {
-        m_value = literalValue;
-        }
-
-}; // End of struct StringLiteralNode
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, ExpressionToken TOKEN, ECN::PrimitiveType typeID>
-struct          BaseLiteralNode : LiteralNode
-    {
-protected:
-    T           m_value;
-
-
-    virtual ExpressionToken     _GetOperation() const override  { return TOKEN; }
-    virtual ECValue             _GetECValue() const { return ECValue (m_value); }
-    virtual bool                _IsConstant () const override { return true; }
-    virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return this; }
-
-public:
-    BaseLiteralNode (T const& value) : LiteralNode(typeID), m_value(value) { }
-    
-    
-    T           GetInternalValue() const { return m_value; }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct IntegerLiteralNode : BaseLiteralNode< ::Int32, TOKEN_IntegerConstant, PRIMITIVETYPE_Integer>
-    {
-protected:
-    virtual bool _SupportsGetBooleanValue() override { return true; }
-    virtual bool _SupportsGetDoubleValue() override { return true; }
-    virtual bool _SupportsGetLongValue() override { return true; }
-public:
-    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
-    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    IntegerLiteralNode(::Int32 value) : BaseLiteralNode(value) {}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                                      John.Gooding    09/2013
-+===============+===============+===============+===============+===============+======*/
-struct Int64LiteralNode : BaseLiteralNode<Int64, TOKEN_IntegerConstant, PRIMITIVETYPE_Long>
-    {
-protected:
-    virtual bool _SupportsGetBooleanValue() override { return true; }
-    virtual bool _SupportsGetDoubleValue() override { return true; }
-    virtual bool _SupportsGetIntegerValue() override { return true; }
-public:
-    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value != 0; }
-    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
-    virtual ::Int64 _GetLongValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return (double)m_value; }
-    Int64LiteralNode(::Int64 value) : BaseLiteralNode(value) {}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                                      John.Gooding    09/2013
-+===============+===============+===============+===============+===============+======*/
-struct DoubleLiteralNode : BaseLiteralNode<double, TOKEN_FloatConst, PRIMITIVETYPE_Double>
-    {
-public:
-    virtual double _GetDoubleValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    DoubleLiteralNode(double value) : BaseLiteralNode(value) {}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                                      John.Gooding    09/2013
-+===============+===============+===============+===============+===============+======*/
-struct BooleanLiteralNode : BaseLiteralNode<bool, TOKEN_True, PRIMITIVETYPE_Boolean>
-    {
-protected:
-    virtual bool _SupportsGetIntegerValue() override { return true; }
-public:
-    virtual ::Int32 _GetIntegerValue(ExpressionStatus& status, ExpressionContextR context) override { return (::Int32)m_value; }
-    virtual bool _GetBooleanValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    BooleanLiteralNode(bool value) : BaseLiteralNode(value) {}
-    };
-
-typedef BaseLiteralNode<DPoint2d, TOKEN_PointConst, PRIMITIVETYPE_Point2D>     Point2DLiteralNode;
-typedef BaseLiteralNode<DPoint3d, TOKEN_PointConst, PRIMITIVETYPE_Point3D>     Point3DLiteralNode;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DateTimeLiteralNode : BaseLiteralNode<Int64, TOKEN_DateTimeConst, PRIMITIVETYPE_DateTime>
-    {
-protected:
-    virtual ECValue         _GetECValue() const override { ECValue v; v.SetDateTimeTicks (GetInternalValue()); return v; }
-public:
-    DateTimeLiteralNode (Int64 ticks) : BaseLiteralNode<Int64, TOKEN_DateTimeConst, PRIMITIVETYPE_DateTime>(ticks) { }
-    virtual ::Int64 _GetDateTimeValue(ExpressionStatus& status, ExpressionContextR context) override { return m_value; }
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct          NullLiteralNode : LiteralNode
-    {
-protected:
-    virtual WString             _ToString() const override { return L"Null"; }
-    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR, bool, bool)
-        {
-        evalResult = ECN::ECValue (/*null*/);
-        return ExprStatus_Success;
-        }
-    virtual ExpressionToken     _GetOperation () const override { return TOKEN_Null; }
-    virtual ECValue             _GetECValue() const override { return ECValue (/*null*/); }
-public:
-    //  If we don't provide some type code it can't be a ResolvedTypeNode preventing the entire
+    //  John: If we don't provide some type code it can't be a ResolvedTypeNode preventing the entire
     //  tree above it from being ResolvedTypeNode.  Nothing should match PRIMITIVETYPE_Binary.
-    NullLiteralNode() : LiteralNode(PRIMITIVETYPE_Binary) { }
+    LiteralNode() : ResolvedTypeNode (PRIMITIVETYPE_Binary), m_value (PRIMITIVETYPE_Binary) { }
+
+    virtual WString             _ToString() const override
+        {
+        WString str;
+        m_value.ConvertPrimitiveToECExpressionLiteral (str);
+        return str;
+        }
+
+    virtual ExpressionStatus    _GetValue (EvaluationResult& result, ExpressionContextR) override
+        {
+        result = m_value;
+        return ExprStatus_Success;
+        }
+
+    virtual bool                _IsConstant() const override { return true; }
+    virtual ExpressionToken     _GetOperation() const override
+        {
+        if (m_value.IsNull())
+            return TOKEN_Null;
+
+        switch (m_value.GetPrimitiveType())
+            {
+            case PRIMITIVETYPE_String:      return TOKEN_StringConst;
+            case PRIMITIVETYPE_Integer:     return TOKEN_IntegerConstant;
+            case PRIMITIVETYPE_Long:        return TOKEN_IntegerConstant;
+            case PRIMITIVETYPE_Double:      return TOKEN_FloatConst;
+            case PRIMITIVETYPE_Boolean:     return TOKEN_True;
+            case PRIMITIVETYPE_DateTime:    return TOKEN_DateTimeConst;
+            default:                        BeAssert (false); return TOKEN_Null;
+            }
+        }
+
+    virtual bool    _SupportsGetBooleanValue() override { return !m_value.IsNull() && m_value.CanConvertToPrimitiveType (PRIMITIVETYPE_Boolean); }
+    virtual bool    _SupportsGetDoubleValue() override  { return !m_value.IsNull() && m_value.CanConvertToPrimitiveType (PRIMITIVETYPE_Double); }
+    virtual bool    _SupportsGetIntegerValue() override { return !m_value.IsNull() && m_value.CanConvertToPrimitiveType (PRIMITIVETYPE_Integer); }
+    virtual bool    _SupportsGetLongValue() override    { return !m_value.IsNull() && m_value.CanConvertToPrimitiveType (PRIMITIVETYPE_Long); }
+    virtual bool    _SupportsGetStringValue() override  { return !m_value.IsNull() && m_value.CanConvertToPrimitiveType (PRIMITIVETYPE_String); }
+    virtual bool    _SupportsGetDateTimeValue() override{ return !m_value.IsNull() && m_value.CanConvertToPrimitiveType (PRIMITIVETYPE_DateTime); }
+
+    virtual bool    _GetBooleanValue (ExpressionStatus& status, ExpressionContextR context) override
+        {
+        ECValue v (m_value);
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Boolean) ? ExprStatus_Success : ExprStatus_WrongType;
+        return SUCCESS == status ? v.GetBoolean() : false;
+        }
+    virtual ::Int32 _GetIntegerValue (ExpressionStatus& status, ExpressionContextR) override
+        {
+        ECValue v (m_value);
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Integer) ? ExprStatus_Success : ExprStatus_WrongType;
+        return SUCCESS == status ? v.GetInteger() : 0;
+        }
+    virtual ::Int64 _GetLongValue (ExpressionStatus& status, ExpressionContextR) override
+        {
+        ECValue v (m_value);
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Long) ? ExprStatus_Success : ExprStatus_WrongType;
+        return SUCCESS == status ? v.GetLong() : 0;
+        }
+    virtual double  _GetDoubleValue (ExpressionStatus& status, ExpressionContextR) override
+        {
+        ECValue v (m_value);
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) ? ExprStatus_Success : ExprStatus_WrongType;
+        return SUCCESS == status ? v.GetDouble() : 0.0;
+        }
+    virtual ::Int64 _GetDateTimeValue (ExpressionStatus& status, ExpressionContextR) override
+        {
+        ECValue v (m_value);
+        status = v.ConvertToPrimitiveType (PRIMITIVETYPE_DateTime) ? ExprStatus_Success : ExprStatus_WrongType;
+        return SUCCESS == status ? (::Int64) v.GetDouble() : 0;
+        }
+    virtual ExpressionStatus _GetStringValue(ECValueR v, ExpressionContextR context)
+        {
+        if (m_value.GetPrimitiveType() == PRIMITIVETYPE_String)
+            {
+            v = m_value;
+            return ExprStatus_Success;
+            }
+        else
+            return ExprStatus_WrongType;
+        }
+public:
+    ECValueCR   GetInternalValue() const { return m_value; }
+    bool        SetInternalValue (ECValueCR v)
+        {
+        if (v.IsNull())
+            m_value = ECValue (PRIMITIVETYPE_Binary);
+        else if (v.IsPrimitive())
+            m_value = v;
+        else
+            return false;
+
+        SetPrimitiveType (m_value.GetPrimitiveType());
+        return true;
+        }
+
+    static ResolvedTypeNodePtr      CreateString (WCharCP v)        { return new LiteralNode (ECValue (v, false)); }
+    static ResolvedTypeNodePtr      CreateInteger (::Int32 v)       { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreateDouble (double v)         { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreateLong (::Int64 v)          { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreateBoolean (bool v)          { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreatePoint3D (DPoint3dCR v)    { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreatePoint2D (DPoint2dCR v)    { return new LiteralNode (ECValue (v)); }
+    static ResolvedTypeNodePtr      CreateNull()                    { return new LiteralNode(); }
+    static ResolvedTypeNodePtr      CreateDateTime (::Int64 ticks)
+        {
+        ECValue v;
+        v.SetDateTimeTicks (ticks);
+        return new LiteralNode (v);
+        }
     };
 
 /*=================================================================================**//**
@@ -414,12 +360,9 @@ protected:
         }
 
     virtual ExpressionToken _GetOperation () const override { return TOKEN_PrimaryList; }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolvePrimaryList(*this); }
 
 public:
@@ -456,13 +399,12 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Ident; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
     void                    PushQualifier(WCharCP rightName);
     bvector<WString> const& GetQualifiers() const { return m_qualifiers; }
     wchar_t const*          GetName() const { return m_value.c_str(); }
+    void                    SetName (WCharCP name) { m_value = name; }
     static IdentNodePtr     Create(wchar_t const*name) { return new IdentNode(name); }
 
 }; // End of struct IdentNode
@@ -493,12 +435,10 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
 
-    wchar_t const*   GetMemberName() { return m_memberName.c_str(); }
+    wchar_t const*   GetMemberName() const { return m_memberName.c_str(); }
 
                 DotNode (wchar_t const* memberName) : IdentNode(memberName), m_memberName(memberName) {}
     static DotNodePtr Create(wchar_t const* memberName) { return new DotNode(memberName); }
@@ -537,8 +477,6 @@ protected:
     virtual ExpressionToken _GetOperation () const override { return TOKEN_LeftBracket; }
 
     virtual bool            _HasError () override { return false; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 public:
     NodePtr                 GetIndexNode() const { return m_index.get(); }
     static LBracketNodePtr  Create(NodeR index) { return new LBracketNode(index); }
@@ -573,14 +511,43 @@ protected:
     virtual bool            _IsUnary () const override { return true; }
     virtual NodeP           _GetLeftP () const override { return m_left.get(); }
     virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
 public:
                 UnaryNode (ExpressionToken tokenId, NodeR left) : 
                                     m_operator(tokenId), m_left(&left) {}
 
 };  //  End of struct Unary
+
+/*---------------------------------------------------------------------------------**//**
+* Currently this only supports specifying a BASE unit, plus optionally a factor and offset.
+* Later we may enhance it so that it accepts any unit available in the Units_Schema...right
+* now we don't want to have to look up units by name in the schema, and we don't have
+* a pressing use case for arbitrary unit declarations.
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UnitSpecNode : UnaryNode
+    {
+private:
+    UnitSpec            m_units;
+
+    UnitSpecNode (NodeR left, WCharCP unitName) : UnaryNode (TOKEN_Colon, left), m_units (unitName, UnitConverter (false)) { }
+
+    virtual ExpressionStatus    _GetValue (EvaluationResult& evalResult, ExpressionContextR context) override;
+    virtual bool                _Traverse (NodeVisitorR visitor) const override
+        {
+        bool ret = visitor.ProcessNode (*this);
+        if (ret)
+            ret = visitor.ProcessUnits (m_units);
+
+        return ret;
+        }
+public:
+    static UnitSpecNodePtr      Create (NodeR left, WCharCP baseUnitName);
+
+    void                        SetFactor (double factor);
+    void                        SetFactorAndOffset (double factor, double offset);
+    UnitSpecCR                  GetUnits() const { return m_units; }
+    };
 
 /*=================================================================================**//**
 *
@@ -592,8 +559,7 @@ struct          UnaryArithmeticNode : UnaryNode
 {
 protected:
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveUnaryArithmeticNode(*this); }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
 public:
                 UnaryArithmeticNode (ExpressionToken tokenId, NodeR left) : UnaryNode (tokenId, left) {}
@@ -640,8 +606,6 @@ protected:
     virtual NodeP           _GetRightP () const override { return m_right.get(); }
     virtual bool            _SetLeft (NodeR node) override { m_left = &node; return true; }
     virtual bool            _SetRight (NodeR node) override { m_right = &node; return true; }
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override { }
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override {}
 
     ExpressionStatus        PromoteCommon(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context, bool allowStrings);
     ExpressionStatus        GetOperandValues(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context);
@@ -662,11 +626,8 @@ public:
 struct          ArithmeticNode : BinaryNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual void            _DetermineKnownUnits(UnitsTypeR unitsType) const override;
-    virtual void            _ForceUnitsOrder(UnitsTypeCR  knownType) override;
 
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides);
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
 
     virtual ExpressionStatus _Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, 
@@ -697,8 +658,7 @@ public:
 struct          ExponentNode : ArithmeticNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
 public:
                 ExponentNode(NodeR left, NodeR right) 
@@ -715,8 +675,7 @@ public:
 struct          MultiplyNode : ArithmeticNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveMultiplyNode(*this); }
 
 public:
@@ -733,8 +692,7 @@ public:
 struct          DivideNode : ArithmeticNode  //  No modifiers -- see ModifierNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveDivideNode(*this); }
 public:
@@ -776,8 +734,7 @@ public:
 struct          ConcatenateNode : ArithmeticNode 
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveConcatenateNode(*this); }
 public:
@@ -795,8 +752,7 @@ public:
 struct          ShiftNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveShiftNode(*this); }
 
 public:
@@ -814,8 +770,7 @@ public:
 struct          ComparisonNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveComparisonNode(*this); }
 
@@ -834,8 +789,7 @@ public:
 struct          LogicalNode : BinaryNode
 {
 protected:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveLogicalNode(*this); }
     virtual bool            _SetOperation (ExpressionToken operatorCode) override
         {
@@ -867,8 +821,7 @@ private:
     static ExpressionStatus PerformModifier (ExpressionToken  modifier, EvaluationResultR left, EvaluationResultR right);
 
 public:
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 
                 AssignmentNode(NodeR left, NodeR right, ExpressionToken assignmentSubtype) 
                                 : BinaryNode (assignmentSubtype, left, right) {}
@@ -999,7 +952,7 @@ protected:
         }
 
     virtual ExpressionToken     _GetOperation() const override { return TOKEN_Lambda; }
-    virtual ExpressionStatus    _GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides) override;
+    virtual ExpressionStatus    _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 public:
     WCharCP             GetSymbolName() const { return m_symbolName.c_str(); }
     NodeR               GetExpression() const { return *m_lambdaExpression; }
@@ -1075,8 +1028,7 @@ protected:
         }
 
     virtual ExpressionToken _GetOperation () const { return TOKEN_IIf; }
-    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides);
+    virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
     virtual ResolvedTypeNodePtr _GetResolvedTree(ExpressionResolverR context) override { return context._ResolveIIfNode(*this); }
 
 public:

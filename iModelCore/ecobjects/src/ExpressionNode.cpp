@@ -600,6 +600,7 @@ EvaluationResultR           left
         }
 
     resultOut = v;
+    resultOut.SetUnits (left.GetUnits());
     return ExprStatus_Success;
     }
 
@@ -743,16 +744,76 @@ EvaluationResultR         right
     }
 
 /*---------------------------------------------------------------------------------**//**
+* For multiplication, exponenentiation, and division, at most one operand can have units.
+* The other must be a scalar. (Our current units system has no way to do analysis to figure
+* out the units of an operation involving two unitized quantities e.g. L * W = Area)
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus Operations::EnforceMultiplicativeUnits (UnitSpecR units, EvaluationResultR left, EvaluationResultR right)
+    {
+    UnitSpecCR lUnit = left.GetUnits(), rUnit = right.GetUnits();
+    if (lUnit.IsUnspecified())
+        units = rUnit;
+    else if (rUnit.IsUnspecified())
+        units = lUnit;
+    else
+        return ExprStatus_IncompatibleUnits;
+
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus Operations::EnforceLikeUnits (EvaluationResultR left, EvaluationResultR right)
+    {
+    UnitSpecCR lUnit = left.GetUnits(), rUnit = right.GetUnits();
+    if (lUnit.IsUnspecified() != rUnit.IsUnspecified())
+        {
+        // assume non-unitized operand uses same units as unitized operand
+        if (lUnit.IsUnspecified())
+            left.SetUnits (rUnit);
+        else
+            right.SetUnits (lUnit);
+
+        return ExprStatus_Success;
+        }
+    else if (lUnit.IsUnspecified())
+        return ExprStatus_Success;  // neither has units
+    else if (!lUnit.IsCompatible (rUnit))
+        return ExprStatus_IncompatibleUnits;
+    else if (lUnit.IsEquivalent (rUnit))
+        return ExprStatus_Success;  // units compatible and no conversion required
+
+    // Convert rhs to units of lhs
+    ECValueR rv = *right.GetECValue();
+    if (!rv.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+        return ExprStatus_UnknownError;
+
+    double rd = rv.GetDouble();
+    if (!rUnit.ConvertTo (rd, lUnit))
+        return ExprStatus_IncompatibleUnits;
+
+    rv.SetDouble (rd);
+    right.SetUnits (lUnit);
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus Operations::PerformMultiplication
 (
 EvaluationResultR           resultOut,
 EvaluationResultR           left,
-EvaluationResultR           right
+EvaluationResultR           right,
+bool                        enforceUnits
 )
     {
+    UnitSpec units;
     ExpressionStatus status = PerformArithmeticPromotion (left, right);
+    if (enforceUnits && ExprStatus_Success == status)
+        status = EnforceMultiplicativeUnits (units, left, right);
 
     if (ExprStatus_Success != status)
         return status;
@@ -785,6 +846,7 @@ EvaluationResultR           right
         }
 
     resultOut = v;
+    resultOut.SetUnits (units);
     return ExprStatus_Success;
     }
 
@@ -808,10 +870,15 @@ ExpressionStatus Operations::PerformIntegerDivision
 (
 EvaluationResultR           resultOut,
 EvaluationResultR           left,
-EvaluationResultR           right
+EvaluationResultR           right,
+bool                        enforceUnits
 )
     {
     ExpressionStatus status = PerformArithmeticPromotion (left, right);
+
+    Unit units;
+    if (enforceUnits && ExprStatus_Success == status)
+        status = EnforceMultiplicativeUnits (units, left, right);
 
     if (ExprStatus_Success != status)
         return status;
@@ -857,6 +924,7 @@ EvaluationResultR           right
         }
 
     resultOut = v;
+    resultOut.SetUnits (units);
     return ExprStatus_Success;
     }
 
@@ -867,7 +935,8 @@ ExpressionStatus Operations::PerformDivision
 (
 EvaluationResultR           resultOut,
 EvaluationResultR           left,
-EvaluationResultR           right
+EvaluationResultR           right,
+bool                        enforceUnits
 )
     {
     ExpressionStatus status = ConvertToDouble (left);
@@ -882,7 +951,16 @@ EvaluationResultR           right
     if (0 == divisor)
         return ExprStatus_DivideByZero;
 
+    UnitSpec units;
+    if (enforceUnits)
+        {
+        auto status = EnforceMultiplicativeUnits (units, left, right);
+        if (ExprStatus_Success != status)
+            return status;
+        }
+
     resultOut = ECValue (left.GetECValue()->GetDouble() / divisor);
+    resultOut.SetUnits (units);
     return ExprStatus_Success;
     }
 
@@ -1082,7 +1160,7 @@ EvaluationResultR            rightValue
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult()
-    : m_valueList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None), m_unitsOrder (UO_Unknown)
+    : m_valueList (NULL), m_ownsInstanceList (false), m_valueType (ValType_None)
     {
 
     }
@@ -1147,10 +1225,16 @@ ECN::ECValueCP   EvaluationResult::GetECValue() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::UnitSpecCR EvaluationResult::GetUnits() const { return m_units; }
+void EvaluationResult::SetUnits (UnitSpecCR units) { m_units = units; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
-    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_unitsOrder(rhs.m_unitsOrder)
+    : m_valueList(NULL), m_ownsInstanceList(false), m_valueType(rhs.m_valueType), m_units(rhs.m_units)
     {
     if (ValType_InstanceList == rhs.m_valueType && NULL != rhs.m_instanceList)
         {
@@ -1184,7 +1268,7 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     Clear();
 
     m_valueType = rhs.m_valueType;
-    m_unitsOrder = rhs.m_unitsOrder;
+    m_units = rhs.m_units;
     m_ecValue = rhs.m_ecValue;
     if (m_valueType == ValType_InstanceList)
         SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
@@ -1222,7 +1306,7 @@ void            EvaluationResult::Clear()
     m_instanceList = NULL;  // and m_valueList, and m_lambda...
     m_valueList = NULL;
     m_valueType = ValType_None;
-    m_unitsOrder = UO_Unknown;
+    m_units = UnitSpec();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1409,87 +1493,6 @@ void            NodeHelpers::GetAdditiveNodes(NodeCPVector& nodes, NodeCR rightM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCR rightMost)
-    {
-    NodeCPVector  nodes;
-
-    nodes.push_back(rightMost.GetLeftCP());
-    nodes.push_back(&rightMost);
-    NodeHelpers::DetermineKnownUnitsSame(units, nodes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            NodeHelpers::DetermineKnownUnitsSame(UnitsTypeR units, NodeCPVector& nodes)
-    {
-    UnitsType   leftUnits;
-#if defined (NOTNOW)
-    bool        powerPromotionRequired = false;
-#endif
-
-    NodeCPVector::const_iterator nodeIterator = nodes.begin();
-    (*nodeIterator)->GetLeftCP()->DetermineKnownUnits(leftUnits);
-    for (; nodeIterator != nodes.end(); nodeIterator++)
-        {
-        UnitsType   rightUnits;
-        NodeCP       right = (*nodeIterator)->GetRightCP();
-        right->DetermineKnownUnits(rightUnits);
-        if (leftUnits.m_unitsOrder == rightUnits.m_unitsOrder)
-            {
-            if (!rightUnits.m_powerCanIncrease)
-                leftUnits.m_powerCanIncrease = false;
-
-            if (!rightUnits.m_powerCanDecrease)
-                leftUnits.m_powerCanDecrease = false;
-            }
-
-        if (leftUnits.m_unitsOrder != rightUnits.m_unitsOrder)
-            {
-            if (leftUnits.m_unitsOrder == UO_Unknown)
-                {
-                //  This should only happen when a symbol can't be resolved or this is a method 
-                leftUnits = rightUnits;
-                continue;
-                }
-
-            if (leftUnits.m_unitsOrder < rightUnits.m_unitsOrder)
-                {
-#if defined (NOTNOW)
-                if (!leftUnits.m_powerFixed)
-                    {
-                    powerPromotionRequired = true;
-                    leftUnits = rightUnits;
-                    continue;
-                    }
-#else
-                leftUnits = rightUnits;
-                continue;
-#endif
-                //  Place an error on the node.
-                }
-            }
-        }
-
-#if defined (NOTNOW)
-    if (powerPromotionRequired)
-        {
-        NodeVectorIterator  nodeIterator = nodes.begin();
-        (*nodeIterator)->GetLeftP()->ForceUnitsOrder(leftUnits);
-        for (; nodeIterator != nodes.end(); nodeIterator++)
-            {
-            NodeCP       right = (*nodeIterator)->GetRightCP();
-            right->ForceUnitsOrder(leftUnits);
-            }
-        }
-#endif
-
-    units = leftUnits;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
 WString         Node::ToString() const
     {
     return _ToString();
@@ -1529,20 +1532,16 @@ ResolvedTypeNodePtr Node::_GetResolvedTree(ExpressionResolverR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateBooleanLiteral(bool literalValue)
-    {
-    return new BooleanLiteralNode(literalValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr         Node::CreateNullLiteral()                   { return new NullLiteralNode(); }
-ResolvedTypeNodePtr         Node::CreatePoint2DLiteral (DPoint2dCR pt)  { return new Point2DLiteralNode (pt); }
-ResolvedTypeNodePtr         Node::CreatePoint3DLiteral (DPoint3dCR pt)  { return new Point3DLiteralNode (pt); }
-ResolvedTypeNodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return new DateTimeLiteralNode (ticks); }
+ResolvedTypeNodePtr Node::CreateBooleanLiteral(bool literalValue)   { return LiteralNode::CreateBoolean (literalValue); }
+ResolvedTypeNodePtr Node::CreateNullLiteral()                       { return LiteralNode::CreateNull(); }
+ResolvedTypeNodePtr Node::CreatePoint2DLiteral (DPoint2dCR pt)      { return LiteralNode::CreatePoint2D (pt); }
+ResolvedTypeNodePtr Node::CreatePoint3DLiteral (DPoint3dCR pt)      { return LiteralNode::CreatePoint3D (pt); }
+ResolvedTypeNodePtr Node::CreateDateTimeLiteral (Int64 ticks)       { return LiteralNode::CreateDateTime (ticks); }
+ResolvedTypeNodePtr Node::CreateIntegerLiteral (int value)          { return LiteralNode::CreateInteger (value); }
+ResolvedTypeNodePtr Node::CreateInt64Literal(Int64 value)           { return LiteralNode::CreateLong (value); }
+ResolvedTypeNodePtr Node::CreateFloatLiteral(double value)          { return LiteralNode::CreateDouble (value); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
@@ -1550,7 +1549,7 @@ ResolvedTypeNodePtr         Node::CreateDateTimeLiteral (Int64 ticks)   { return
 ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted)
     {
     if (!quoted)
-        return new StringLiteralNode(value);
+        return LiteralNode::CreateString (value);
 
     size_t      origLen = wcslen(value);
     BeAssert(origLen > 1);
@@ -1559,31 +1558,7 @@ ResolvedTypeNodePtr Node::CreateStringLiteral (wchar_t const* value, bool quoted
     BeStringUtilities::Wcsncpy(buffer, origLen, value+1);
     buffer[origLen-2] = 0;
 
-    return new StringLiteralNode(buffer);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateIntegerLiteral (int value)
-    {
-    return new IntegerLiteralNode(value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateInt64Literal(Int64 value)
-    {
-    return new Int64LiteralNode(value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedTypeNodePtr Node::CreateFloatLiteral(double value)
-    {
-    return new DoubleLiteralNode(value);
+    return LiteralNode::CreateString (buffer);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1707,8 +1682,7 @@ ECN::PrimitiveECPropertyR primitiveProp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus PrimaryListNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus PrimaryListNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     return context.GetValue(evalResult, *this, context, 0);
     }
@@ -1797,7 +1771,7 @@ void            PrimaryListNode::AppendLambdaNode (LambdaNodeR lambdaNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus LambdaNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus LambdaNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     // Bind expression and context
     evalResult.SetLambda (*LambdaValue::Create (*this, context));
@@ -1824,11 +1798,10 @@ void IdentNode::PushQualifier(WCharCP rightName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus UnaryArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    inputValue;
-    ExpressionStatus    status = _GetLeftP()->GetValue(inputValue, context, allowUnknown, allowOverrides);
+    ExpressionStatus    status = _GetLeftP()->GetValue(inputValue, context);
     if (ExprStatus_Success != status)
         return status;
 
@@ -1942,8 +1915,7 @@ static IECInstancePtr   getInstanceFromResult (EvaluationResultCR result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     // Modifiers not implemented
     BeAssert (_GetOperation() == TOKEN_None);
@@ -1953,7 +1925,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     if (TOKEN_None != operation)
         {
         EvaluationResult    leftResult;
-        status = _GetLeftP()->GetValue(leftResult, context, allowUnknown, allowOverrides);
+        status = _GetLeftP()->GetValue(leftResult, context);
         if (ExprStatus_Success != status)
             return status;
 
@@ -1975,7 +1947,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
     if (ExprStatus_Success != exprStatus)
         return exprStatus;
 
-    exprStatus = _GetRightP()->GetValue(evalResult, context, allowUnknown, allowOverrides);
+    exprStatus = _GetRightP()->GetValue(evalResult, context);
     if (ExprStatus_Success != exprStatus)
         return exprStatus;
 
@@ -2029,7 +2001,7 @@ ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& res
         {
         results.push_back(EvaluationResult());
         EvaluationResultR currValue = results.back();
-        status = (*curr)->GetValue(currValue, context, false, false);
+        status = (*curr)->GetValue(currValue, context);
         if (ExprStatus_Success != status)
             return status;
         }
@@ -2040,11 +2012,11 @@ ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& res
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    local;
 
-    ExpressionStatus    status = m_condition->GetValue(local, context, allowUnknown, allowOverrides);
+    ExpressionStatus    status = m_condition->GetValue(local, context);
     if (ExprStatus_Success != status)
         return status;
 
@@ -2054,170 +2026,15 @@ ExpressionStatus IIfNode::_GetValue(EvaluationResult& evalResult, ExpressionCont
         return status;
 
     if (condition)
-        return m_true->GetValue(evalResult, context, allowUnknown, allowOverrides);
+        return m_true->GetValue(evalResult, context);
 
-    return m_false->GetValue(evalResult, context, allowUnknown, allowOverrides);
+    return m_false->GetValue(evalResult, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ArithmeticNode::_ForceUnitsOrder
-(
-UnitsTypeCR     requiredType
-)
-    {
-    if (this->IsAdditive())
-        {
-        GetLeftP()->ForceUnitsOrder(requiredType);
-        GetRightP()->ForceUnitsOrder(requiredType);
-        return;
-        }
-
-    UnitsType   leftUnits;
-    UnitsType   rightUnits;
-
-    GetLeftP()->DetermineKnownUnits(leftUnits);
-    GetRightP()->DetermineKnownUnits(rightUnits);
-
-    if (UO_Unknown == leftUnits.m_unitsOrder ||  UO_Unknown == rightUnits.m_unitsOrder)
-        return;  //  generate an error?
-
-    if (TOKEN_Star == m_operatorCode)
-        {
-        int     unitsOrder = leftUnits.m_unitsOrder * rightUnits.m_unitsOrder;
-
-        int     diff = requiredType.m_unitsOrder - unitsOrder;
-        if (0 == diff)
-            return;
-
-        if (diff < 0)
-            {
-            if (leftUnits.m_powerCanDecrease)
-                {
-                leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder/UO_Linear);
-                GetLeftP()->ForceUnitsOrder(leftUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            if (rightUnits.m_powerCanDecrease)
-                {
-                rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder/UO_Linear);
-                GetRightP()->ForceUnitsOrder(rightUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            //  Can't get it low enough. Need to report an error
-            return;
-            }
-
-        BeAssert (diff > 0);
-        if (!leftUnits.m_powerCanIncrease)
-            {
-            leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder*UO_Linear);
-            GetLeftP()->ForceUnitsOrder(leftUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        if (!rightUnits.m_powerCanIncrease)
-            {
-            rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder*UO_Linear);
-            GetRightP()->ForceUnitsOrder(rightUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        //  Can't get it high enough -- error
-        return;
-        }
-
-    if (TOKEN_Mod == m_operatorCode || TOKEN_Slash == m_operatorCode)
-        {
-
-        int     unitsOrder = leftUnits.m_unitsOrder / rightUnits.m_unitsOrder;
-        int     diff = requiredType.m_unitsOrder - unitsOrder;
-
-        if (0 == diff)
-            return;
-
-        if (diff < 0)
-            {
-            if (leftUnits.m_powerCanDecrease)
-                {
-                leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder/UO_Linear);
-                GetLeftP()->ForceUnitsOrder(leftUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            if (rightUnits.m_powerCanIncrease)
-                {
-                rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder*UO_Linear);
-                GetRightP()->ForceUnitsOrder(rightUnits);
-                ForceUnitsOrder(requiredType);
-                return;
-                }
-
-            //  Can't get it low enough. Need to report an error
-            return;
-            }
-
-        BeAssert (diff > 0);
-        if (!leftUnits.m_powerCanIncrease)
-            {
-            leftUnits.m_unitsOrder = (UnitsOrder)(leftUnits.m_unitsOrder*UO_Linear);
-            GetLeftP()->ForceUnitsOrder(leftUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        if (!rightUnits.m_powerCanDecrease)
-            {
-            rightUnits.m_unitsOrder = (UnitsOrder)(rightUnits.m_unitsOrder/UO_Linear);
-            GetRightP()->ForceUnitsOrder(rightUnits);
-            ForceUnitsOrder(requiredType);
-            return;
-            }
-
-        //  Can't get it high enough -- error
-        return;
-        }
-
-    //  Have Shift, etc. 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ArithmeticNode::_DetermineKnownUnits
-(
-UnitsTypeR      unitsType
-) const
-    {
-    if (IsAdditive())
-        {
-        NodeCPVector  additiveNodes;
-        //  Puts this node and all of the additive left children into the list.  The first node
-        //  in the list 
-        NodeHelpers::GetAdditiveNodes(additiveNodes, *this);
-        NodeHelpers::DetermineKnownUnitsSame(unitsType, additiveNodes);
-        return;
-        }
-
-    //  If additive node, then generate the list of additive nodes.
-    //  If any entry in the list can provide a known type then that is the required order for the entire
-    //  list.
-
-    //  If a multiplicative node, 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  ArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  ArithmeticNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2236,7 +2053,7 @@ ExpressionStatus  ArithmeticNode::_GetValue(EvaluationResult& evalResult, Expres
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2256,7 +2073,7 @@ ExpressionStatus  ConcatenateNode::_GetValue(EvaluationResult& evalResult, Expre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  ShiftNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  ShiftNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2271,7 +2088,7 @@ ExpressionStatus  ShiftNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2291,15 +2108,17 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
     case TOKEN_OrElse:
         {
         // Short-circuit operators do not evaluate righthand expression unless required.
-        status = GetLeftP()->GetValue (leftResult, context, false, true);
+        status = GetLeftP()->GetValue (leftResult, context);
+
+        // Treat error as false evaluation value
         bool leftBool = false;
-        if (ExprStatus_Success == status && ExprStatus_Success == (status = leftResult.GetBoolean (leftBool, false)))
+        if (ExprStatus_Success != status || ExprStatus_Success != (status = leftResult.GetBoolean (leftBool, false)))
+            leftBool = false;
+
+        if (leftBool == (TOKEN_AndAlso == m_operatorCode))
             {
-            if (leftBool == (TOKEN_AndAlso == m_operatorCode))
-                {
-                // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
-                status = GetRightP()->GetValue (rightResult, context, false, true);
-                }
+            // OrElse and lefthand expr is false, or AndAlso and righthand expr is true.
+            status = GetRightP()->GetValue (rightResult, context);
             }
 
         if (ExprStatus_Success == status)
@@ -2321,11 +2140,11 @@ ExpressionStatus  LogicalNode::_GetValue(EvaluationResult& evalResult, Expressio
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus BinaryNode::GetOperandValues(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
-    ExpressionStatus    status = m_left->GetValue(leftResult, context, false, true);
+    ExpressionStatus    status = m_left->GetValue(leftResult, context);
     if (ExprStatus_Success != status)
         return status;
 
-    return m_right->GetValue(rightResult, context, false, true);
+    return m_right->GetValue(rightResult, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2369,6 +2188,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
             case PRIMITIVETYPE_Double:
             case PRIMITIVETYPE_Integer:
             case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_DateTime:
                 return ExprStatus_Success;
             case PRIMITIVETYPE_String:
                 return allowStrings ? ExprStatus_Success : ExprStatus_WrongType;
@@ -2455,8 +2275,7 @@ ExpressionStatus BinaryNode::PromoteCommon(EvaluationResult& leftResult, Evaluat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ExponentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus ExponentNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    left;
     EvaluationResult    right;
@@ -2471,8 +2290,7 @@ ExpressionStatus ExponentNode::_GetValue(EvaluationResult& evalResult, Expressio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    left;
     EvaluationResult    right;
@@ -2481,14 +2299,13 @@ ExpressionStatus MultiplyNode::_GetValue(EvaluationResult& evalResult, Expressio
     if (ExprStatus_Success != status)
         return status;
 
-    return Operations::PerformMultiplication(evalResult, left, right);
+    return Operations::PerformMultiplication(evalResult, left, right, context.EnforcesUnits());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    left;
     EvaluationResult    right;
@@ -2500,9 +2317,9 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
     switch(m_operatorCode)
         {
         case TOKEN_IntegerDivide:
-            return Operations::PerformIntegerDivision(evalResult, left, right);
+            return Operations::PerformIntegerDivision(evalResult, left, right, context.EnforcesUnits());
         case TOKEN_Slash:
-            return Operations::PerformDivision(evalResult, left, right);
+            return Operations::PerformDivision(evalResult, left, right, context.EnforcesUnits());
         case TOKEN_Mod:
             return Operations::PerformMod(evalResult, left, right);
         }
@@ -2517,10 +2334,22 @@ ExpressionStatus DivideNode::_GetValue(EvaluationResult& evalResult, ExpressionC
 ExpressionStatus PlusMinusNode::_Promote(EvaluationResult& leftResult, EvaluationResult& rightResult, ExpressionContextR context)
     {
     ExpressionStatus status =  PromoteCommon(leftResult, rightResult, context, true);
-    if (ExprStatus_Success == status)
-        return !leftResult.GetECValue()->IsNull() && !rightResult.GetECValue()->IsNull() ? status : ExprStatus_PrimitiveRequired;
-    else
+    if (ExprStatus_Success != status)
         return status;
+    else if (leftResult.GetECValue()->IsNull() || rightResult.GetECValue()->IsNull())
+        return ExprStatus_PrimitiveRequired;
+
+    if (context.EnforcesUnits())
+        {
+        status = Operations::EnforceLikeUnits (leftResult, rightResult);
+        if (ExprStatus_Success == status)
+            {
+            // primitive types may have changed if we did unit conversion...make sure they are back in sync
+            status = PromoteCommon (leftResult, rightResult, context, false);
+            }
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2541,42 +2370,47 @@ ExpressionStatus PlusMinusNode::_PerformOperation(EvaluationResultR evalResult, 
             {
             case PRIMITIVETYPE_String:
                 performConcatenation (result, left, right);
-                return ExprStatus_Success;
+                break;
 
             case PRIMITIVETYPE_Long:
                 result.SetLong(left.GetLong() + right.GetLong());
-                return ExprStatus_Success;
+                break;
 
             case PRIMITIVETYPE_Integer:
                 result.SetInteger(left.GetInteger() + right.GetInteger());
-                return ExprStatus_Success;
+                break;
 
             case PRIMITIVETYPE_Double:
                 result.SetDouble(left.GetDouble() + right.GetDouble());
-                return ExprStatus_Success;
+                break;
+            default:
+                BeAssert (false && L"unexpected types for addition");
+                return ExprStatus_UnknownError;
             }
-        BeAssert (false && L"unexpected types for addition");
-        return ExprStatus_UnknownError;
         }
-
-    switch(left.GetPrimitiveType())
+    else
         {
-        case PRIMITIVETYPE_Long:
-            result.SetLong(left.GetLong() - right.GetLong());
-            return ExprStatus_Success;
+        switch(left.GetPrimitiveType())
+            {
+            case PRIMITIVETYPE_Long:
+                result.SetLong(left.GetLong() - right.GetLong());
+                break;
 
-        case PRIMITIVETYPE_Integer:
-            result.SetInteger(left.GetInteger() - right.GetInteger());
-            return ExprStatus_Success;
+            case PRIMITIVETYPE_Integer:
+                result.SetInteger(left.GetInteger() - right.GetInteger());
+                break;
 
-        case PRIMITIVETYPE_Double:
-            result.SetDouble(left.GetDouble() - right.GetDouble());
-            return ExprStatus_Success;
+            case PRIMITIVETYPE_Double:
+                result.SetDouble(left.GetDouble() - right.GetDouble());
+                break;
+            default:
+                BeAssert (false && L"unexpected types for subtraction");
+                return ExprStatus_UnknownError;
+            }
         }
 
-    BeAssert (false && L"unexpected types for subtraction");
-
-    return ExprStatus_UnknownError;
+    evalResult.SetUnits (leftResult.GetUnits());
+    return ExprStatus_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2601,10 +2435,27 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> static bool     PerformCompare<double> (double l, ExpressionToken op, double r)
+    {
+    bool equal = DoubleOps::AlmostEqual (l, r);
+    switch (op)
+        {
+        case TOKEN_Equal:           return equal;
+        case TOKEN_NotEqual:        return !equal;
+        case TOKEN_Less:            return !equal && l < r;
+        case TOKEN_Greater:         return !equal && l > r;
+        case TOKEN_LessEqual:       return equal || l < r;
+        case TOKEN_GreaterEqual:    return equal || l > r;
+        default:                    BeAssert (false); return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                        bool allowUnknown, bool allowOverrides)
+ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     EvaluationResult    leftResult;
     EvaluationResult    rightResult;
@@ -2655,13 +2506,36 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
             case TOKEN_Less:       boolResult = intResult <  0;    break;
             case TOKEN_LessEqual:  boolResult = intResult <= 0;    break;
             case TOKEN_Greater:    boolResult = intResult >  0;    break;
-            case TOKEN_GreaterEqual: boolResult = intResult >= 0;    break;
+            case TOKEN_GreaterEqual: boolResult = intResult >= 0;  break;
             }
 
         evalResult.InitECValue().SetBoolean(boolResult);
         return ExprStatus_Success;
         }
 
+    if (context.EnforcesUnits())
+        {
+        ExpressionStatus status = ExprStatus_Success;
+        switch (ecLeft.GetPrimitiveType())
+            {
+            case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_Integer:
+            case PRIMITIVETYPE_Double:
+                {
+                status = Operations::EnforceLikeUnits (leftResult, rightResult);
+                if (ExprStatus_Success == status)
+                    {
+                    // primitive types may have changed if we did unit conversion...make sure they are back in sync
+                    status = PromoteCommon (leftResult, rightResult, context, false);
+                    }
+                }
+                break;
+            }
+        
+        if (ExprStatus_Success != status)
+            return status;
+        }
+                
     switch (ecLeft.GetPrimitiveType())
         {
         case PRIMITIVETYPE_Boolean:
@@ -2676,6 +2550,9 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
         case PRIMITIVETYPE_Long:
             evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetLong(), m_operatorCode, ecRight.GetLong()));
             return ExprStatus_Success;
+        case PRIMITIVETYPE_DateTime:
+            evalResult.InitECValue().SetBoolean(PerformCompare(ecLeft.GetDateTimeTicks(), m_operatorCode, ecRight.GetDateTimeTicks()));
+            return ExprStatus_Success;
         }
     
     return ExprStatus_WrongType;
@@ -2684,21 +2561,19 @@ ExpressionStatus ComparisonNode::_GetValue(EvaluationResult& evalResult, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus Node::GetValue(EvaluationResult& evalResult, ExpressionContextR context, 
-                                    bool allowUnknown, bool allowOverrides)
+ExpressionStatus Node::GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     { 
-    return _GetValue(evalResult, context, allowUnknown, allowOverrides); 
+    return _GetValue(evalResult, context); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus Node::GetValue(ValueResultPtr& valueResult, ExpressionContextR context, 
-                                    bool allowUnknown, bool allowOverrides)
+ExpressionStatus Node::GetValue(ValueResultPtr& valueResult, ExpressionContextR context)
     {
     EvaluationResult    evalResult;
 
-    ExpressionStatus    status = GetValue(evalResult, context, allowUnknown, allowOverrides);
+    ExpressionStatus    status = GetValue(evalResult, context);
     valueResult = ValueResult::Create(evalResult);
 
     return status;
@@ -2797,6 +2672,12 @@ protected:
         return true;
         }
 
+    virtual bool ProcessUnits (UnitSpecCR units) override
+        {
+        m_expression += units.ToECExpressionString();
+        return true;
+        }
+
 public:
     ParseTreeTraverser () : m_lastRequiredSpace(false) {}
     WString Traverse (NodeCR node)
@@ -2821,7 +2702,7 @@ WString Node::ToExpressionString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context, bool allowUnknown, bool allowOverrides)
+ExpressionStatus ResolvedTypeNode::_GetValue(EvaluationResult& evalResult, ExpressionContextR context)
     {
     ExpressionStatus    status = ExprStatus_Success;;
     switch(m_primitiveType)
@@ -3351,7 +3232,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
                 }
 
             EvaluationResult    evalResult;
-            right->GetValue(evalResult, expContext, false, false);
+            right->GetValue(evalResult, expContext);
             return ResolvedAddConstantNode::Create(resultType, *left, *evalResult.GetECValue());
             }
 
@@ -3374,7 +3255,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolvePlusMinusNode (PlusMinusNodeCR n
             }
 
         EvaluationResult    evalResult;
-        right->GetValue(evalResult, expContext, false, false);
+        right->GetValue(evalResult, expContext);
         ECValueR  ecValue = *evalResult.GetECValue();
         switch(resultType)
             {
@@ -3989,7 +3870,7 @@ private:
         if (ECOBJECTS_STATUS_Success == instance.GetValue (v, propIdx) && v.IsArray())
             m_count = v.GetArrayInfo().GetCount();
         else
-            BeAssert (false);
+            m_count = 0;
         }
 
     virtual UInt32              _GetCount() const override
@@ -4155,12 +4036,72 @@ ExpressionStatus    LambdaValue::Evaluate (IValueListResultCR valueList, LambdaV
             symbol->Set (member);
 
             EvaluationResult lambdaResult;
-            status = m_node->GetExpression().GetValue (lambdaResult, *innerContext, true, true /* these boolean params are never used, why do they exist... */);
+            status = m_node->GetExpression().GetValue (lambdaResult, *innerContext);
             if (!processor.ProcessResult (status, member, lambdaResult))
                 break;
             }
         }
 
+    return ExprStatus_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitSpecNode::SetFactor (double factor)
+    {
+    m_units.SetConverter (UnitConverter (factor));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitSpecNode::SetFactorAndOffset (double factor, double offset)
+    {
+    m_units.SetConverter (UnitConverter (factor, offset));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitSpecNodePtr UnitSpecNode::Create (NodeR left, WCharCP baseUnitName)
+    {
+    return new UnitSpecNode (left, baseUnitName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus UnitSpecNode::_GetValue (EvaluationResultR result, ExpressionContextR context)
+    {
+    ExpressionStatus    status = _GetLeftP()->GetValue (result, context);
+    if (ExprStatus_Success != status || !context.EnforcesUnits())
+        return status;
+    
+    UnitSpecCR operandUnits = result.GetUnits();
+    if (operandUnits.IsUnspecified() || operandUnits.IsEquivalent (m_units))
+        {
+        // no conversion needed, set units directly
+        result.SetUnits (m_units);
+        return ExprStatus_Success;
+        }
+    else if (!operandUnits.IsCompatible (m_units))
+        return ExprStatus_IncompatibleUnits;
+
+    if (!result.IsECValue())
+        return ExprStatus_PrimitiveRequired;
+
+    ECValueR v = *result.GetECValue();
+    if (!v.IsPrimitive() || v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+        return ExprStatus_IncompatibleTypes;
+
+    // convert units
+    double rd = v.GetDouble();
+    if (!operandUnits.ConvertTo (rd, m_units))
+        return ExprStatus_IncompatibleUnits;
+
+    v.SetDouble (rd);
+    result.SetUnits (m_units);
     return ExprStatus_Success;
     }
 

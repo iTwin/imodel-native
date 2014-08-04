@@ -2877,11 +2877,79 @@ void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance)
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex)
     {
-    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance) : NULL;
+    return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, accessString, componentIndex) : NULL;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WString QualifiedECAccessor::ToString() const
+    {
+    WString str;
+    str.Sprintf (L"%ls:%ls:%ls", m_schemaName.c_str(), m_className.c_str(), m_accessString.c_str());
+    return str;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::FromString (WCharCP str)
+    {
+    bvector<WString> tokens;
+    BeStringUtilities::Split (str, L":", tokens);
+    if (3 != tokens.size())
+        return false;
+
+    m_schemaName = tokens[0];
+    m_className = tokens[1];
+    m_accessString = tokens[2];
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::FromAccessString (ECEnablerCR enabler, WCharCP accessString)
+    {
+    ECValueAccessor va;
+    if (ECValueAccessor::PopulateValueAccessor (va, enabler, accessString) && 0 < va.GetDepth() && nullptr != va[0].GetECProperty())
+        {
+        ECClassCR rootClass = va[0].GetECProperty()->GetClass();
+        m_schemaName = rootClass.GetSchema().GetName();
+        m_className = rootClass.GetName();
+        m_accessString = accessString;
+        return true;
+        }
+    else
+        return false;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Ramanujam.Raman                 12/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater) 
+//    {
+//    s_registeredClassLocater = IECClassLocaterPtr (&classLocater);
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Sam.Wilson                      03/2013
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//void IECClassLocater::UnRegisterClassLocater ()
+//    {
+//    s_registeredClassLocater = nullptr;
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Ramanujam.Raman                 12/2012
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 
+//    {
+//    return s_registeredClassLocater.get();
+//    }
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 

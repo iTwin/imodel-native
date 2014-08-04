@@ -44,11 +44,11 @@ public:
 
     //! Initializes a new instance of the DateTimeInfo type.
     ECOBJECTS_EXPORT DateTimeInfo ();
-    
+
     //! Initializes a new instance of the DateTimeInfo type.
     //! @param[in] metadata object from which the DateTimeInfo will be initialized.
     ECOBJECTS_EXPORT explicit DateTimeInfo (DateTime::Info const& metadata);
-    
+
     //__PUBLISH_SECTION_END__
     DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component); 
     //__PUBLISH_SECTION_START__

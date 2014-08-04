@@ -1897,13 +1897,13 @@ ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count)
+ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count, UInt32 atIndex)
     {
     IECInstancePtr resolvedInstance;
     UInt32 propertyIndex;
     ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
-        status = resolvedInstance->AddArrayElements (propertyIndex, count);
+        status = -1 == atIndex ? resolvedInstance->AddArrayElements (propertyIndex, count) : resolvedInstance->InsertArrayElements (propertyIndex, atIndex, count);
 
     return status;
     }
@@ -2123,33 +2123,6 @@ ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (Int64
  ECObjectsStatus                IECRelationshipInstance::GetTargetOrderId (Int64& targetOrderId) const
     {
     return _GetTargetOrderId (targetOrderId);
-    }
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//   IECWipRelationshipInstance
-///////////////////////////////////////////////////////////////////////////////////////////////
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetName (WCharCP name)   
-    {
-    return _SetName (name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
-    {
-    return _SetSourceOrderId (sourceOrderId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
-    {
-    return _SetTargetOrderId (targetOrderId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3135,7 +3108,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_Double:
             {
-            BeStringUtilities::Snprintf (outString, "%.13g", ecValue.GetDouble());
+            BeStringUtilities::Snprintf (outString, "%.17g", ecValue.GetDouble());
             break;
             }
 
@@ -3154,14 +3127,14 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
         case PRIMITIVETYPE_Point2D:
             {
             DPoint2d    point2d = ecValue.GetPoint2D();
-            BeStringUtilities::Snprintf (outString, "%.13g,%.13g", point2d.x, point2d.y);
+            BeStringUtilities::Snprintf (outString, "%.17g,%.17g", point2d.x, point2d.y);
             break;
             }
 
         case PRIMITIVETYPE_Point3D:
             {
             DPoint3d    point3d = ecValue.GetPoint3D();
-            BeStringUtilities::Snprintf (outString, "%.13g,%.13g,%.13g", point3d.x, point3d.y, point3d.z);
+            BeStringUtilities::Snprintf (outString, "%.17g,%.17g,%.17g", point3d.x, point3d.y, point3d.z);
             break;
             }
 
@@ -3529,5 +3502,45 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
 void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstanceInterface::GetInstanceValue (ECValueR v, WCharCP accessor) const { return _GetInstanceValue (v, accessor); }
+ECClassCP IECInstanceInterface::GetInstanceClass() const                                    { return _GetInstanceClass(); }
+IECInstanceCP IECInstanceInterface::ObtainECInstance() const                                { return _ObtainECInstance(); }
+WString IECInstanceInterface::GetInstanceId() const                                         { return _GetInstanceId(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECInstanceInterface::_GetInstanceValue (ECValueR v, WCharCP accessor) const
+    {
+    return ECInstanceInteropHelper::GetValue (m_instance, v, accessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECInstanceInterface::_GetInstanceClass() const
+    {
+    return &m_instance.GetClass();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstanceCP ECInstanceInterface::_ObtainECInstance() const
+    {
+    return &m_instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ECInstanceInterface::_GetInstanceId() const
+    {
+    return m_instance.GetInstanceId();
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

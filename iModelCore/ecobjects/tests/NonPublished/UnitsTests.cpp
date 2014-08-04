@@ -216,7 +216,7 @@ void UnitsTest::TestUnitFormatting (WCharCP propName, double storedValue, WCharC
     ECPropertyCP ecprop = m_schema->GetClassP (L"UnitSpecClass")->GetPropertyP (propName);
 
     WString formatted;
-    EXPECT_TRUE (Unit::FormatValue (formatted, ECValue (storedValue), *ecprop, NULL));
+    EXPECT_TRUE (Unit::FormatValue (formatted, ECValue (storedValue), *ecprop, NULL, propName));
     EXPECT_TRUE (formatted.Equals (formattedValue)) << L"Expected: " << formattedValue << L" Actual: " << formatted.c_str();
     }
 

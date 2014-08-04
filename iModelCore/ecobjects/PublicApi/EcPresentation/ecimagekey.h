@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/ecimagekey.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -18,6 +18,8 @@ typedef Int32           RscId;              /* Resource Id */
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* ECImageKey holds an image information that can be used to get an actual image using
+* image services.
 * @bsiclass                                     Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECImageKey
@@ -38,12 +40,12 @@ struct ECImageKey
         MdlDesc*    m_mdlDesc;
 
     public:
-        //Constructor for generic icon
+        //! Constructor for generic icon
         ECImageKey (WStringCR name, ImageType type)
             :m_name(name), m_type(type), m_iconType(0), m_iconId(0)
             {}
 
-        //Constructor for rsc icon
+        //! Constructor for rsc icon
         ECImageKey (long iconId, UInt32 iconType, MdlDesc* mdlDesc)
             :m_type(RscIcon), m_iconType(iconType), m_iconId(iconId), m_mdlDesc(mdlDesc)
             {}

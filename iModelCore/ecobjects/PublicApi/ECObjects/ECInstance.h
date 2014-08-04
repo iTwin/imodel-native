@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstance.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -228,10 +228,12 @@ protected:
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
     virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
 
+    //! Returns true if callers are permitted to modify values of this IECInstance in memory. This may differ from the return value of _IsReadOnly(), which
+    //! returns true if the IECInstance is permitted to be modified persistently.
     virtual bool    _ChangeValuesAllowed() const { return ! IsReadOnly(); }
-
 public:
-
+    //! Returns true if callers are permitted to modify values of this IECInstance in memory. This may differ from the return value of IsReadOnly(), which
+    //! returns true if the IECInstance is permitted to be modified persistently.
     bool    ChangeValuesAllowed()  { return _ChangeValuesAllowed(); }
 
     //! Returns the base address for this instance
@@ -665,7 +667,7 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static ECObjectsStatus ClearArray (IECInstanceR instance, WCharCP accessString);
     ECOBJECTS_EXPORT static ECObjectsStatus RemoveArrayElement (IECInstanceR instance, WCharCP accessString, UInt32 index);
-    ECOBJECTS_EXPORT static ECObjectsStatus AddArrayElements (IECInstanceR instance, WCharCP accessString, UInt32 count);
+    ECOBJECTS_EXPORT static ECObjectsStatus AddArrayElements (IECInstanceR instance, WCharCP accessString, UInt32 count, UInt32 atIndex = -1);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -683,6 +685,56 @@ public:
     ECOBJECTS_EXPORT void       ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const;
     //! Given a serialized class name, return the name of the possibly renamed class in the specified ECSchema
     ECOBJECTS_EXPORT void       ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Wrapper interface for a context that represents an IECInstance. Used by native
+* presentation system and in interop contexts in which the IECInstance may not be
+* available, or loaded only on demand.
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECInstanceInterface
+    {
+protected:
+    virtual ECObjectsStatus         _GetInstanceValue (ECValueR v, WCharCP managedAccessor) const = 0;
+    virtual ECClassCP               _GetInstanceClass() const = 0;
+    virtual IECInstanceCP           _ObtainECInstance() const = 0;
+    virtual WString                 _GetInstanceId() const = 0;
+
+public:
+    virtual ~IECInstanceInterface() { }
+
+    //! Get a property value 
+    //! @param[out]     v               Holds the property value after successful return
+    //! @param[in]      managedAccessor The managed-style access string (e.g. including array indices: "MyStructs[0].Property"...)
+    //! @return ECOBJECTS_STATUS_Success if the value was retrieved, or an error code
+    ECOBJECTS_EXPORT ECObjectsStatus    GetInstanceValue (ECValueR v, WCharCP managedAccessor) const;
+
+    //! @return The schema and class name of the IECInstance
+    ECOBJECTS_EXPORT ECClassCP          GetInstanceClass() const;
+
+    //! Attempts to obtain the underlying IECInstance. This method may be expensive to call in some contexts.
+    //! @return The IECInstance represented by this interface, or nullptr if the IECInstance could not be obtained.
+    ECOBJECTS_EXPORT IECInstanceCP      ObtainECInstance() const;
+
+    //! Returns the instance ID of the underlying IECInstance
+    ECOBJECTS_EXPORT WString            GetInstanceId() const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECInstanceInterface : IECInstanceInterface
+    {
+private:
+    IECInstanceCR           m_instance;
+protected:
+    ECOBJECTS_EXPORT virtual ECObjectsStatus            _GetInstanceValue (ECValueR v, WCharCP managedAccessor) const override;
+    ECOBJECTS_EXPORT virtual ECClassCP                  _GetInstanceClass() const override;
+    ECOBJECTS_EXPORT virtual IECInstanceCP              _ObtainECInstance() const override;
+    ECOBJECTS_EXPORT virtual WString                    _GetInstanceId() const override;
+public:
+    ECInstanceInterface (IECInstanceCR instance) : m_instance (instance) { }
     };
 
 /*__PUBLISH_SECTION_START__*/

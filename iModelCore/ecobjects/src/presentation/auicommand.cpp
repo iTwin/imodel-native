@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auicommand.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -162,4 +162,20 @@ IUICommand::EditActionPriority IUICommand::GetPriority () const
 void            IUICommand::SetPriority (EditActionPriority priority)
     {
     _SetPriority(priority);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WString         IUICommand::GetApplicatonArg ()  const
+    {
+    return _GetApplicatonArg();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  07/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void            IUICommand::SetApplicationArg (WCharCP arg)
+    {
+    _SetApplicationArg(arg);
     }
