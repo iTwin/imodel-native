@@ -663,7 +663,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"Bentley.GeometryNET.Common.IGeometry", pProperty->GetTypeName().c_str());
+    EXPECT_STREQ (L"Bentley.Geometry.Common.IGeometry", pProperty->GetTypeName().c_str());
     EXPECT_TRUE (PRIMITIVETYPE_IGeometry == pProperty->GetAsPrimitiveProperty()->GetType());
     EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined());
     EXPECT_STREQ (L"Geometry", pProperty->GetDisplayLabel().c_str());
@@ -677,7 +677,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_TRUE (pProperty->GetIsPrimitive());
     EXPECT_FALSE (pProperty->GetIsStruct());
     EXPECT_FALSE (pProperty->GetIsArray());
-    EXPECT_STREQ (L"Bentley.GeometryNET.Common.IGeometry", pProperty->GetTypeName().c_str());
+    EXPECT_STREQ (L"Bentley.Geometry.Common.IGeometry", pProperty->GetTypeName().c_str());
     EXPECT_TRUE (PRIMITIVETYPE_IGeometry == pProperty->GetAsPrimitiveProperty()->GetType());
     EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined());
     EXPECT_STREQ (L"Line Segment", pProperty->GetDisplayLabel().c_str());
@@ -1098,41 +1098,41 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
     EXPECT_EQ(0, refSchema->GetName().CompareTo(L"Bentley_Standard_CustomAttributes"));
     }
 
-TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    schemaContext->AddSchemaPath(seedPath.c_str());
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Bentley_Plant.06.00.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_EQ (SCHEMA_READ_STATUS_Success, status);
-    ASSERT_TRUE( schema.IsValid() );
-    bvector<ECSchemaP> schemasToImport;
-    schema->FindAllSchemasInGraph (schemasToImport, true);
-    bvector<WCharCP> expectedPrefixes;
-    expectedPrefixes.push_back(L"iipmdbca");
-    expectedPrefixes.push_back(L"rdlca");
-    expectedPrefixes.push_back(L"beca");
-    expectedPrefixes.push_back(L"bsca");
-    expectedPrefixes.push_back(L"bsm");
-    expectedPrefixes.push_back(L"bjca");
-    expectedPrefixes.push_back(L"jclass");
-    expectedPrefixes.push_back(L"dmd");
-    expectedPrefixes.push_back(L"stepmd");
-    expectedPrefixes.push_back(L"bjeca");
-    expectedPrefixes.push_back(L"bpca");
-    expectedPrefixes.push_back(L"bp");
-
-    EXPECT_EQ(schemasToImport.size(), expectedPrefixes.size());
-    int counter = 0;
-    for (ECSchemaP testSchema: schemasToImport)
-        {
-        WString prefix = testSchema->GetNamespacePrefix();
-        EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter]));
-        counter++;
-        }
-    }
+//TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
+//    {
+//    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+//    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
+//    schemaContext->AddSchemaPath(seedPath.c_str());
+//
+//    ECSchemaPtr schema;
+//    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"Bentley_Plant.06.00.ecschema.xml").c_str(), *schemaContext);
+//    ASSERT_EQ (SCHEMA_READ_STATUS_Success, status);
+//    ASSERT_TRUE( schema.IsValid() );
+//    bvector<ECSchemaP> schemasToImport;
+//    schema->FindAllSchemasInGraph (schemasToImport, true);
+//    bvector<WCharCP> expectedPrefixes;
+//    expectedPrefixes.push_back(L"iipmdbca");
+//    expectedPrefixes.push_back(L"rdlca");
+//    expectedPrefixes.push_back(L"beca");
+//    expectedPrefixes.push_back(L"bsca");
+//    expectedPrefixes.push_back(L"bsm");
+//    expectedPrefixes.push_back(L"bjca");
+//    expectedPrefixes.push_back(L"jclass");
+//    expectedPrefixes.push_back(L"dmd");
+//    expectedPrefixes.push_back(L"stepmd");
+//    expectedPrefixes.push_back(L"bjeca");
+//    expectedPrefixes.push_back(L"bpca");
+//    expectedPrefixes.push_back(L"bp");
+//
+//    EXPECT_EQ(schemasToImport.size(), expectedPrefixes.size());
+//    int counter = 0;
+//    for (ECSchemaP testSchema: schemasToImport)
+//        {
+//        WString prefix = testSchema->GetNamespacePrefix();
+//        EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter]));
+//        counter++;
+//        }
+//    }
 
 TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     {

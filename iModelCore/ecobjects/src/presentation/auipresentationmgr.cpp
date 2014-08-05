@@ -294,12 +294,12 @@ IECNativeImagePtr ECPresentationManager::GetImage (ECImageKeyCR imageKey, DPoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP         ECPresentationManager::GetString (WCharCP rscFileName, UInt tableId, UInt rscId)
+WString         ECPresentationManager::GetString (WCharCP rscFileName, UInt tableId, UInt rscId)
     {
     for (T_LocalizationProviderSet::const_iterator iter = m_localizationProviders.begin(); iter != m_localizationProviders.end(); ++iter)
         {
-        WCharCP localizedString = (*iter)->GetString (rscFileName, tableId, rscId);
-        if (!WString::IsNullOrEmpty (localizedString))
+        WString localizedString = (*iter)->GetString (rscFileName, tableId, rscId);
+        if (!WString::IsNullOrEmpty (localizedString.c_str()))
             return localizedString;
         }
     return NULL;

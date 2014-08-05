@@ -10,9 +10,9 @@
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/ECObjects.h>
-//__PUBLISH_SECTION_END__
+/*__PUBLISH_SECTION_END__*/
 #include <ECObjects/CalculatedProperty.h>
-//__PUBLISH_SECTION_START__
+/*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
@@ -21,6 +21,8 @@
 
 #define DEFAULT_VERSION_MAJOR   1
 #define DEFAULT_VERSION_MINOR   0
+
+EC_TYPEDEFS(QualifiedECAccessor);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -367,22 +369,6 @@ public:
 struct PrimitiveECProperty;
 
 /*=================================================================================**//**
-* @bsistruct                                                  Ramanujam.Raman   12/12
-+===============+===============+===============+===============+===============+======*/
-struct IECClassLocater
-    {
-protected:
-    ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
-public:
-    ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
-        {
-        return _LocateClass (schemaName, className);
-        }
-    };
-    
-typedef IECClassLocater& IECClassLocaterR;
-
-/*=================================================================================**//**
 Base class for an object which provides the context for an IECTypeAdapter
 @ingroup ECObjectsGroup
 @bsiclass
@@ -398,22 +384,24 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
     ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
 public:
+
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
     ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
 
     //! The following are relevant to adapters for point types.
-    ECOBJECTS_EXPORT  UInt32            GetComponentIndex() const;
-    ECOBJECTS_EXPORT  bool              Is3d() const;
+    ECOBJECTS_EXPORT  UInt32                    GetComponentIndex() const;
+    ECOBJECTS_EXPORT  bool                      Is3d() const;
 
     IECClassLocaterR                    GetUnitsECClassLocater() const {return _GetUnitsECClassLocater();}
 
     //! internal use only, primarily for ECExpressions
-    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance);
+    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, UInt32 componentIndex);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
-    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance);
+    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, UInt32 componentIndex = COMPONENT_INDEX_None);
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
+    static const UInt32 COMPONENT_INDEX_None = -1;
     };
 
 typedef RefCountedPtr<IECTypeAdapterContext> IECTypeAdapterContextPtr;
@@ -429,7 +417,6 @@ struct IECTypeAdapter : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
     // Note that the implementation of the extended type system is implemented in DgnPlatform in IDgnECTypeAdapter, which subclasses IECTypeAdapter and makes
     // use of IDgnECTypeAdapterContext which provides dgn-specific context such as file, model, and element.
-    // We may want to see if it is worthwhile to factor out the non-dgn-specific context and move it down to the ECObjects layer.
 protected:
     virtual bool                _HasStandardValues() const = 0;
     virtual bool                _IsStruct() const = 0;
@@ -439,14 +426,23 @@ protected:
     virtual IECInstancePtr      _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const = 0;
     virtual IECInstancePtr      _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
 
-    virtual bool                _CanConvertToString() const = 0;
-    virtual bool                _CanConvertFromString() const = 0;
-    virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) = 0;
-    virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) = 0;
+    virtual bool                _CanConvertToString (IECTypeAdapterContextCR context) const = 0;
+    virtual bool                _CanConvertFromString (IECTypeAdapterContextCR context) const = 0;
+    virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
+    virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const = 0;
 
     virtual bool                _RequiresExpressionTypeConversion() const = 0;
-    virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
-    virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) = 0;
+    virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
+    virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
+
+    virtual bool                _GetDisplayType (PrimitiveType& type) const = 0;
+    virtual bool                _ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
+    virtual bool                _AllowExpandMembers() const = 0;
+
+    virtual bool                _SupportsUnits() const = 0;
+    virtual bool                _GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const = 0;
+
+    virtual bool                _GetPropertyNotSetValue (ECValueR v) const { return false; }
 public:
     // For DgnPlatform interop
     struct Factory
@@ -455,14 +451,38 @@ public:
         virtual IECTypeAdapter& GetForArrayMember (ArrayECPropertyCR ecproperty) const = 0;
         };
     ECOBJECTS_EXPORT static void          SetFactory (Factory const& factory);
+
+    //! "Display Type" refers to the type that the user would associate with the displayed value of the property.
+    //! For example, a value of type "Area" may be stored as a double in UORs, with a string representation in working units with unit label.
+    //! In some contexts the user wants to operate on the displayed value as a double, but in working units. In this case the "display type"
+    //! matches the stored type but not the stored value.
+    //! Similarly a property with StandardValues custom attribute is stored as an integer but presented as a string. In this case the "display type"
+    //! is also a string as the integer values have no meaning to the user.
+    //! If the type adapter returns true from CanConvertToString(), it should also return true from GetDisplayType().
+    //! @param[out] type      Will be initialized to the display type if one exists.
+    //! @return true if the type adapter has a display type.
+    ECOBJECTS_EXPORT bool       GetDisplayType (PrimitiveType& type) const;
+
+    //! Converts a stored value to a value of the display type.
+    //! For example, if the same arguments passed to ConvertToString() would return "44.5 Square Meters", this method should return 44.5
+    //! @param[out] v           The stored value, to be converted in-place to display type.
+    //! @param[in] context      Context in which to perform conversion
+    //! @param[in] formatter    Formatting options, e.g. floating point precision, unit labels, etc.
+    //! @return true if successfully converted to display type.
+    ECOBJECTS_EXPORT bool       ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const;
+
+    //! Some extended types have a sigil value like -1 which is treated as if the property is not set from the user's perspective - often displayed to
+    //! the user as "(None)" in UI. If this type adapter has such a sigil value, set it in the ECValue and return true; else return false;
+    ECOBJECTS_EXPORT bool       GetPropertyNotSetValue (ECValueR v) const;
+
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! @return true if it is possible to convert the underlying type to a string
-    ECOBJECTS_EXPORT bool                 CanConvertToString () const;
+    ECOBJECTS_EXPORT bool                 CanConvertToString (IECTypeAdapterContextCR context) const;
 
     //! @return true if it is possible to extract the underlying type from a string
-    ECOBJECTS_EXPORT bool                 CanConvertFromString () const;
+    ECOBJECTS_EXPORT bool                 CanConvertFromString (IECTypeAdapterContextCR context) const;
 
     //! Converts the ECValue to a display string
     //! @param[out] str     The string representation of the value
@@ -470,14 +490,14 @@ public:
     //! @param[in] context  Context under which conversion is performed
     //! @param[in] formatter Optional formatting specification, for ECFields
     //! @return true if successfully converted to string
-    ECOBJECTS_EXPORT        bool ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL);
+    ECOBJECTS_EXPORT        bool ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL) const;
 
     //! Converts from a string to the underlying ECValue type. Input string typically comes from user input
     //! @param[out] v       The converted value
     //! @param[in] str      The string to convert
     //! @param[in] context  Context under which conversion is performed
     //! @return true if conversion is successful
-    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context);
+    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const;
 
     //! @return true if the value must be converted for use in ECExpressions.
     ECOBJECTS_EXPORT        bool RequiresExpressionTypeConversion() const;
@@ -487,14 +507,14 @@ public:
     //! @param[out] v     The value to convert in-place
     //! @param[in] context  The context under which conversion is performed
     //! @returns true if successfully converted
-    ECOBJECTS_EXPORT        bool ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context);
+    ECOBJECTS_EXPORT        bool ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const;
 
     //! Converts the value from the value which should be used when evaluating ECExpressions.
     //! Typically no conversion is required. If the value has units, it should be converted from master units
     //! @param[out] v     The value to convert in-place
     //! @param[in] context  The context under which conversion is performed
     //! @returns true if successfully converted
-    ECOBJECTS_EXPORT        bool ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context);
+    ECOBJECTS_EXPORT        bool ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const;
 
     //! Create an IECInstance representing default formatting options for converting to string.
     //! @param[in] includeAllValues If false, property values will be left NULL to save space; otherwise they will be initialized with default values
@@ -505,11 +525,11 @@ public:
     //! @return true if this type adapter provides a finite set of permissible values for the property it represents
     ECOBJECTS_EXPORT bool                 HasStandardValues() const;
 
-    //! @return true if the underlying type is a struct.
 /*__PUBLISH_SECTION_END__*/
-    // Note that type adapters representing structs will not be invoked from managed code, as managed callers cannot always
-    // provide the native struct ECInstance, and doing so would be expensive.
+    ECOBJECTS_EXPORT bool                 AllowExpandMembers() const;
 /*__PUBLISH_SECTION_START__*/
+
+    //! @return true if the underlying type is a struct.
     ECOBJECTS_EXPORT bool                 IsStruct() const;
 
     //! Indicates if the value is intended to be interpreted as a string by the user, regardless of the underlying property type.
@@ -520,12 +540,21 @@ public:
     //! Given an instance representing formatting options, returns a copy of the instance optimized for serialization
     //! @param[in] formatter    The formatter instance to condense
     //! @return an IECInstance suitable for serialization, or NULL if the input formatter contained only default values in which case serialization is not necessary
-    ECOBJECTS_EXPORT ECN::IECInstancePtr   CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT ECN::IECInstancePtr    CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const;
 
     //! Given an instance containing custom formatting options, replace any null properties with their default values
     //! @param[in] formatter    The formatter instance to populate
     //! @return an IECInstance in which all null properties have been replaced by their default values
-    ECOBJECTS_EXPORT ECN::IECInstancePtr   PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const;
+    ECOBJECTS_EXPORT ECN::IECInstancePtr    PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const;
+
+    //! Returns true if ECProperties of the extended type handled by this type adapter may have units.
+    ECOBJECTS_EXPORT bool                   SupportsUnits() const;
+
+    //! If SupportsUnits() returns true, this method is called to obtain the units for a specific ECProperty.
+    //! @param[in]      unit       Holds the unit specification. If the ECProperty has no units, leave this default-initialized and return true.
+    //! @param[in]      context    Context in which to evaluate the units.
+    //! @return true if the unit information could be obtained, even if the unit is not specified. Return false if unit information could not be obtained.
+    ECOBJECTS_EXPORT bool                   GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const;
     };
 
 //=======================================================================================
@@ -589,9 +618,15 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 public:
+    //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
-    ECOBJECTS_EXPORT bool                                IsCalculated() const;
-    //! Call this method rather than setting the custom attribute directly!
+    //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
+    ECOBJECTS_EXPORT bool               IsCalculated() const;
+
+    //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
+    //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
+    //! @return true if the specification was successfully updated.
+    //! @remarks Call this method rather than setting the custom attribute directly, to ensure internal state is updated.
     ECOBJECTS_EXPORT bool                                SetCalculatedPropertySpecification(IECInstanceP expressionAttribute);
 
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
@@ -845,8 +880,13 @@ public:
         };
 
 public:
-    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
-    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
+    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the collection
+    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the collection
+
+    //! Attempts to look up an ECProperty by its display label
+    //! @param[in]      label The label of the ECProperty to find
+    //! @return     The ECProperty with the specified label, or nullptr if no such ECProperty exists
+    ECOBJECTS_EXPORT ECPropertyCP   FindByDisplayLabel (WCharCP label) const;
     };
 
 typedef bvector<ECClassP> ECBaseClassesList;
@@ -951,6 +991,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);
     ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
+    ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
 
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert (0 == m_ecClassId); m_ecClassId = id; };
@@ -1126,6 +1167,15 @@ public:
 
 
 }; // ECClass
+
+//! Used to define how the relationship OrderId is handled.
+//! @ingroup ECObjectsGroup
+enum OrderIdStorageMode: UInt8
+    {
+    ORDERIDSTORAGEMODE_None                     = 0,
+    ORDERIDSTORAGEMODE_ProvidedByPersistence    = 1,         
+    ORDERIDSTORAGEMODE_ProvidedByClient         = 2,
+    };
 
 //! Used to define which end of the relationship, source or target
 //! @ingroup ECObjectsGroup
@@ -1311,11 +1361,19 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECClassCR classConstraint);
 
     //! Returns the classes applied to the constraint.
-    ECOBJECTS_EXPORT const ECConstraintClassesList& GetClasses() const;
+    ECOBJECTS_EXPORT const                      ECConstraintClassesList& GetClasses() const;
 
     //! Copies this constraint to the destination
     ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
 
+    //! Returns whether the relationship is ordered on this constraint.
+    ECOBJECTS_EXPORT bool                       GetIsOrdered () const;
+
+    //! Returns the storage mode of the OrderId for this contraint.
+    ECOBJECTS_EXPORT OrderIdStorageMode         GetOrderIdStorageMode () const;
+
+    //! Gets the name of the OrderId property for this constraint.
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName)  const;
 };
 
 //=======================================================================================
@@ -1509,11 +1567,15 @@ struct SchemaKeyMatchPredicate
     SchemaKeyCR     m_key;
     SchemaMatchType m_matchType;
 
-    SchemaKeyMatchPredicate(SchemaKeyCR key, SchemaMatchType matchType)
-        :m_key(key), m_matchType(matchType)
-        {}
+    //! Constructs a SchemaKeyMatchPredicate
+    //! @param[in]      key         The key to compare against
+    //! @param[in]      matchType   The type of matching to perform for comparisons
+    SchemaKeyMatchPredicate(SchemaKeyCR key, SchemaMatchType matchType) :m_key(key), m_matchType(matchType) {}
 
     typedef bpair<SchemaKey, ECSchemaPtr> MapVal;
+
+    //! Performs comparison against a MapVal
+    //! @return true if this SchemaKeyMatchPredicate is equivalent to the specified MapVal
     bool operator () (MapVal const& rhs)
         {
         return rhs.first.Matches (m_key, m_matchType);
@@ -1530,15 +1592,22 @@ public:
     WString m_schemaName;
     WString m_className;
 
+    //! Constructs a SchemaNameClassNamePair from the specified schema and class names
     SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
+    //! Constructs a SchemaNameClassNamePair from the specified schema and class names
     SchemaNameClassNamePair (WCharCP schemaName, WCharCP className) : m_schemaName (schemaName), m_className  (className) {}
+    //! Constructs an empty SchemaNameClassNamePair
     SchemaNameClassNamePair() { }
+    //! Constructs a SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
     SchemaNameClassNamePair (WStringCR schemaAndClassNameSeparatedByColon)
         {
         BeAssert (WString::npos != schemaAndClassNameSeparatedByColon.find (':'));
         Parse (schemaAndClassNameSeparatedByColon);
         }
 
+    //! Attempts to populate this SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
+    //! @param[in]      schemaAndClassNameSeparatedByColon a string of the format "SCHEMANAME:CLASSNAME"
+    //! @return true if the string was successfully parsed, false otherwise. If it returns false, this SchemaNameClassNamePair will not be modified.
     bool Parse (WStringCR schemaAndClassNameSeparatedByColon)
         {
         size_t pos = schemaAndClassNameSeparatedByColon.find (':');
@@ -1552,6 +1621,9 @@ public:
             return false;
         }
 
+    //! Performs a less-than comparison against another SchemaNameClassNamePair
+    //! @param[in]      other The SchemaNameClassNamePair against which to compare
+    //! @return true if this SchemaNameClassNamePair is considered "less than" the specified SchemaNameClassNamePair
     bool operator<(SchemaNameClassNamePair other) const
         {
         if (m_schemaName < other.m_schemaName)
@@ -1563,11 +1635,16 @@ public:
         return m_className < other.m_className;
         };
 
+    //! Performs equality comparison against another SchemaNameClassNamePair
+    //! @param[in]      rhs The SchemaNameClassNamePair against which to compare
+    //! @return true if the SchemaNameClassNamePairs are equivalent
     bool operator==(SchemaNameClassNamePair const& rhs) const
         {
         return 0 == m_schemaName.CompareTo(rhs.m_schemaName) && 0 == m_className.CompareTo(rhs.m_className);
         }
 
+    //! Concatenates the schema and class names into a single colon-separated string of the format "SCHEMANAME:CLASSNAME"
+    //! @return a string of the format "SCHEMANAME:CLASSNAME"
     WString     ToColonSeparatedString() const
         {
         WString str;
@@ -1577,10 +1654,61 @@ public:
     };
 
 /*---------------------------------------------------------------------------------**//**
+* Identifies an ECProperty by schema name, class name, and access string. The class name
+* may refer to the ECClass containing the ECProperty, or a subclass thereof.
+* @bsistruct                                                    Paul.Connelly   09/13
++---------------+---------------+---------------+---------------+---------------+------*/
+struct QualifiedECAccessor
+    {
+protected:
+    WString         m_schemaName;
+    WString         m_className;
+    WString         m_accessString;
+public:
+    //! Constructs an empty QualifiedECAccessor
+    QualifiedECAccessor() { }
+    //! Constructs a QualifiedECAccessor referring to a property of an ECClass specified by access string
+    QualifiedECAccessor (WCharCP schemaName, WCharCP className, WCharCP accessString)
+        : m_schemaName(schemaName), m_className(className), m_accessString(accessString) { }
+
+    //! Returns the name of the schema containing the ECClass
+    WCharCP     GetSchemaName() const           { return m_schemaName.c_str(); }
+    //! Returns the name of the ECClass (or subclass thereof) containing the ECProperty
+    WCharCP     GetClassName() const            { return m_className.c_str(); }
+    //! Returns the access string identifying the ECProperty within the ECClass
+    WCharCP     GetAccessString() const         { return m_accessString.c_str(); }
+
+    //! Sets the name of the schema containing the ECClass
+    void        SetSchemaName (WCharCP name)    { m_schemaName = name; }
+    //! Sets the name of the ECClass (or subclass thereof) containing the ECProperty
+    void        SetClassName (WCharCP name)     { m_className = name; }
+    //! Sets the access string identifying the ECProperty within the ECClass
+    void        SetAccessString (WCharCP acStr) { m_accessString = acStr; }
+
+    //! Returns a colon-separated string of the format "Schema:Class:AccessString"
+    ECOBJECTS_EXPORT WString    ToString() const;
+    //! Attempts to initialize this QualifiedECAccessor from a colon-separated string. If the string cannot be parsed, this QualifiedECAccessor will not be modified
+    //! @param[in]      str A string of the format "Schema:Class:AccessString"
+    //! @return true if the string was successfully parsed
+    ECOBJECTS_EXPORT bool       FromString (WCharCP str);
+
+    //! Attempts to initialize this QualifiedECAccessor from an access string identifying a property of the specified ECEnabler.
+    //! If the ECProperty cannot be found within the ECEnabler, this QualifiedECAccessor will not be modified
+    //! @param[in]      rootEnabler  The ECEnabler containing the desired ECProperty
+    //! @param[in]      accessString The access string identifying the ECProperty within the ECEnabler
+    //! @return true if the access string identifies a valid ECProperty within the ECEnabler
+    ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, WCharCP accessString);
+    };
+
+typedef bvector<QualifiedECAccessor> QualifiedECAccessorList;
+typedef QualifiedECAccessorList const& QualifiedECAccessorListCR;
+
+/*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SCHEMAMATCHTYPE_Exact> >
     {
+    //! Returns an iterator to the entry in this map matching the specified key using the specified match type, or an iterator to the end of this map if no such entry exists
     SchemaMapExact::const_iterator Find (SchemaKeyCR key, SchemaMatchType matchType) const
         {
         switch (matchType)
@@ -1869,7 +1997,6 @@ private:
     SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlNodeR parentNode, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
-    void                                ReComputeCheckSum ();
 
     bool                                IsSupplementalSchema();
 
@@ -1877,10 +2004,11 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
 public:
+    ECOBJECTS_EXPORT void               ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
     ECOBJECTS_EXPORT void SetId(ECSchemaId id) { BeAssert (0 == m_ecSchemaId); m_ecSchemaId = id; };
     ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
-    
+
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
     ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, WCharCP newName);
 
@@ -2230,6 +2358,32 @@ public:
     //!Set the schema to be immutable. Immutable schema cannot be modified.
     ECOBJECTS_EXPORT void   SetImmutable();
 }; // ECSchema
+
+//typedef RefCountedPtr<IECClassLocater> IECClassLocaterPtr;
+
+//*=================================================================================**//**
+//* @bsistruct                                                  Ramanujam.Raman   12/12
+//+===============+===============+===============+===============+===============+======*/
+struct IECClassLocater /*: RefCountedBase*/
+    {
+    protected:
+        ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
+    public:
+        ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
+            {
+            return _LocateClass (schemaName, className);
+            }
+
+        //private:
+        //    static IECClassLocaterPtr s_registeredClassLocater;
+        //public:
+        //    // TODO: This needs to migrate to the ECSchema implementation
+        //    static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
+        //    static ECOBJECTS_EXPORT void UnRegisterClassLocater ();
+        //    static IECClassLocaterP GetRegisteredClassLocater();
+    };
+
+typedef IECClassLocater& IECClassLocaterR;
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

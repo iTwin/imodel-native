@@ -1804,6 +1804,26 @@ TEST_F (ECDBufferTests, ClearArray)
     } 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDBufferTests, MoreClearArrayTests)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"Test", 1, 0);
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, L"Test");
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, L"Strings", PRIMITIVETYPE_String);
+    PrimitiveECPropertyP primProp;
+    ecClass->CreatePrimitiveProperty (primProp, L"Stringy", PRIMITIVETYPE_String);
+
+    IECInstancePtr inst = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    inst->AddArrayElements (L"Strings", 1);
+    inst->SetValue (L"Strings", ECValue (L"String", false), 0);
+    inst->ClearArray (L"Strings");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Test the ECValue flag that returns strings as pointers into instance data rather than
 * making a copy.
 * @bsimethod                                                    Paul.Connelly   05/13

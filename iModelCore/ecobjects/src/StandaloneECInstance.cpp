@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -340,6 +340,15 @@ ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
 
     return ECOBJECTS_STATUS_Success;
     } 
+//
+////*---------------------------------------------------------------------------------**//**
+////* @bsimethod                                                    Paul.Connelly   06/14
+////+---------------+---------------+---------------+---------------+---------------+------*/
+//ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
+//    {
+//    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
+//    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -879,7 +888,7 @@ ECObjectsStatus MemoryECInstanceBase::_EvaluateCalculatedProperty (ECValueR calc
         if (ECOBJECTS_STATUS_Success == GetClassLayout().GetPropertyLayoutIndex (propIdx, propLayout))
             (const_cast<MemoryECInstanceBase&> (*this)).SetIsLoadedBit (propIdx);
 
-        return spec->Evaluate (calcedValue, existingValue, thisInstance);
+        return spec->Evaluate (calcedValue, existingValue, thisInstance, propLayout.GetAccessString());
         }
     else
         return ECOBJECTS_STATUS_Error;
@@ -1099,6 +1108,14 @@ ECObjectsStatus           StandaloneECInstance::_InsertArrayElements (UInt32 pro
     } 
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void StandaloneECInstance::BindSchema()
+    {
+    m_boundSchema = const_cast<ECSchemaP>(&GetClass().GetSchema());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           StandaloneECInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
@@ -1205,17 +1222,6 @@ bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) co
     return GetClassLayout().HasChildProperties (parentIndex);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     09/09
-+---------------+---------------+---------------+---------------+---------------+------*/        
-/*StandaloneECInstanceP   StandaloneECEnabler::CreateInstanceFromUninitializedMemory (byte * data, UInt32 size)
-    {
-    StandaloneECInstanceP instance = new StandaloneECInstance (*this, data, size);
-    instance->ClearValues();
-    
-    return instance;
-    }*/
-    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/

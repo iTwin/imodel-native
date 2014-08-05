@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/CalculatedProperty.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,12 +30,13 @@ private:
     PrimitiveType               m_propertyType;
     ExpressionContextPtr        m_context;
     InstanceExpressionContextP  m_thisContext;
+    EvaluationOptions           m_evaluationOptions;
 
     CalculatedPropertySpecification (NodeR expr, ParserRegexP regex, IECInstanceCR customAttr, PrimitiveType primType, ECValueCR failureValue);
     ~CalculatedPropertySpecification();
 public:
     // Attempts to evaluate the property value. Regardless of the return value, newValue will contain the proper result based on flags like UseLastValidOnFailure, FailureValue, and IsDefaultValueOnly
-    ECOBJECTS_EXPORT ECObjectsStatus    Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    Evaluate (ECValueR newValue, ECValueCR existingValue, IECInstanceCR instance, WCharCP accessString) const;
 
     // Attempts to apply the ParserRegularExpression attribute to dependent properties when setting the calculated property to a new value
     ECOBJECTS_EXPORT ECObjectsStatus    UpdateDependentProperties (ECValueCR calculatedValue, IECInstanceR instance) const;

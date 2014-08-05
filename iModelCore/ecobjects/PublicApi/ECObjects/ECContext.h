@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,9 +56,9 @@ protected:
 
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
-    IStandaloneEnablerLocaterP  GetStandaloneEnablerLocater();
-    ECObjectsStatus     AddSchema(ECSchemaR schema);
-    void                RemoveSchema(ECSchemaR schema);
+    IStandaloneEnablerLocaterP          GetStandaloneEnablerLocater();
+    ECOBJECTS_EXPORT ECObjectsStatus    AddSchema(ECSchemaR schema);
+    void                                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
@@ -151,6 +151,7 @@ public:
     PrimitiveType           GetSerializedPrimitiveArrayType (ArrayECPropertyCR ecprop) const { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveArrayType (ecprop) : ecprop.GetPrimitiveElementType(); }
 
     void                    SetSchemaRemapper (IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
+    void                    SetTypeResolver (IPrimitiveTypeResolver const* resolver) { m_typeResolver = resolver; }
     void                    ResolveSerializedPropertyName (WStringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
     void                    ResolveSerializedClassName (WStringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
 

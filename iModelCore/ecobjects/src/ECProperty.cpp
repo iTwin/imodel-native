@@ -295,15 +295,15 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
 
     propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
 
-    if (m_originalTypeName.size() > 0)
+    if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains(L"GeometryNET"))
         propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
     else
-    	propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+        propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
         
     propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
     if (GetIsDisplayLabelDefined())
         propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetDisplayLabel().c_str());
-    propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->GetIsReadOnly());
+    propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
     
     WriteCustomAttributes (*propertyNode);
 
@@ -717,7 +717,38 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    return (GetTypeName() == EMPTY_STRING) || (GetTypeName() == baseProperty.GetTypeName());
+    // This used to always compare GetTypeName(). Type names for struct arrays include the namespace prefix as defined in the referencing schema. That is weird and easily breaks if:
+    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
+    //  -Base property's schema declares different namespace prefix for struct class's schema than the overriding property's schema (dumb workaround: make them use the same namespace).
+    // Instead, compare the full-qualified class name.
+    auto baseArray = baseProperty.GetAsArrayProperty();
+    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+        {
+        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
+        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
+            {
+            auto basePrim = baseProperty.GetAsPrimitiveProperty();
+            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
+            }
+        else
+            return false;
+        }
+    else
+        {
+        switch (GetKind())
+            {
+            case ARRAYKIND_Struct:
+                {
+                auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
+                return nullptr != myType && nullptr != baseType && 0 == wcscmp (myType->GetFullName(), baseType->GetFullName());
+                }
+            default:
+                {
+                WString typeName = GetTypeName();
+                return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+                }
+            }
+        }
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -911,22 +942,35 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECTypeAdapter::HasStandardValues() const                                                                       { return _HasStandardValues(); }
-bool IECTypeAdapter::CanConvertFromString () const                                                                   { return _CanConvertFromString (); }
-bool IECTypeAdapter::CanConvertToString () const                                                                     { return _CanConvertToString (); }
-bool IECTypeAdapter::IsStruct() const                                                                                { return _IsStruct(); }
-bool IECTypeAdapter::IsTreatedAsString() const                                                                       { return _IsTreatedAsString(); }
-IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const                     { return _CreateDefaultFormatter (includeAllValues, forDwg); }
-IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const                     { return _CondenseFormatterForSerialization (formatter); }
-IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const                    { return _PopulateDefaultFormatterProperties (formatter); }
-bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) { return _ConvertToString (str, v, context, opts); }
-bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context)                    { return _ConvertFromString (v, str, context); }
-bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context)                           { return _ConvertToExpressionType (v, context); }
-bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context)                         { return _ConvertFromExpressionType (v, context); }
-bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                                        { return _RequiresExpressionTypeConversion(); }
+bool IECTypeAdapter::HasStandardValues() const                                                      { return _HasStandardValues(); }
+bool IECTypeAdapter::CanConvertFromString (IECTypeAdapterContextCR context) const                   { return _CanConvertFromString (context); }
+bool IECTypeAdapter::CanConvertToString (IECTypeAdapterContextCR context) const                     { return _CanConvertToString (context); }
+bool IECTypeAdapter::IsStruct() const                                                               { return _IsStruct(); }
+bool IECTypeAdapter::AllowExpandMembers() const
+    {
+    // TFS#38705
+    return _AllowExpandMembers();
+    }
+bool IECTypeAdapter::IsTreatedAsString() const                                                          { return _IsTreatedAsString(); }
+IECInstancePtr IECTypeAdapter::CreateDefaultFormatter (bool includeAllValues, bool forDwg) const        { return _CreateDefaultFormatter (includeAllValues, forDwg); }
+IECInstancePtr IECTypeAdapter::CondenseFormatterForSerialization (IECInstanceCR formatter) const        { return _CondenseFormatterForSerialization (formatter); }
+IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR formatter) const       { return _PopulateDefaultFormatterProperties (formatter); }
+bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const { return _ConvertFromString (v, str, context); }
+bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const        { return _ConvertToExpressionType (v, context); }
+bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const      { return _ConvertFromExpressionType (v, context); }
+bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                           { return _RequiresExpressionTypeConversion(); }
+bool IECTypeAdapter::GetDisplayType (PrimitiveType& type) const                                         { return _GetDisplayType (type); }
+bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const { return _ConvertToString (str, v, context, opts); }
+bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const           { return _ConvertToDisplayType (v, context, opts); }
+bool IECTypeAdapter::GetPropertyNotSetValue (ECValueR v) const                                          { return _GetPropertyNotSetValue (v); }
+bool IECTypeAdapter::SupportsUnits() const                                                              { return _SupportsUnits(); }
+bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const                   { return _GetUnits (unit, context); }
 
-ECPropertyCP        IECTypeAdapterContext::GetProperty() const           { return _GetProperty(); }
-UInt32              IECTypeAdapterContext::GetComponentIndex() const     { return _GetComponentIndex(); }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyCP            IECTypeAdapterContext::GetProperty() const          { return _GetProperty(); }
+UInt32                  IECTypeAdapterContext::GetComponentIndex() const    { return _GetComponentIndex(); }
 bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
 IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
 ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
