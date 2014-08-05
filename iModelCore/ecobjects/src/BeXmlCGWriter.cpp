@@ -606,6 +606,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (BeXmlWriterR dest, DgnConeDetail data)
         }
     }
 
+
 void BeXmlCGWriter::WriteDgnBoxDetail (BeXmlWriterR dest, DgnBoxDetail data)
     {
     Transform localToWorld;
@@ -803,9 +804,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR primitive)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+
 void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
     {
     if (!geometry.IsValid ())
@@ -860,7 +859,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
             }
         }
     }
-
+    
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

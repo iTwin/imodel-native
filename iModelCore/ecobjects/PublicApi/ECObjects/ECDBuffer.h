@@ -763,13 +763,17 @@ private:
     ECDBufferCP         m_buffer;
     bool                m_initialState;
 
-    void                Init();
-
     void*               operator new (size_t);
     void*               operator new[] (size_t);
 public:
+    //! Use the default constructor in combination with Init if 
+    //! it is not clear at construction time whether the evaluation of calculated
+    //! properties should be done or not.
+    ECOBJECTS_EXPORT ECDBufferScope ();
     ECOBJECTS_EXPORT explicit ECDBufferScope (ECDBufferCR buffer);
     ECOBJECTS_EXPORT explicit ECDBufferScope (IECInstanceCR instance);
+    ECOBJECTS_EXPORT void Init (ECDBufferCP buffer);
+
     ECOBJECTS_EXPORT ~ECDBufferScope();
     };
 

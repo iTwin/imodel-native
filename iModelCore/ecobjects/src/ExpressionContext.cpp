@@ -539,6 +539,13 @@ ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR eval
             ExpressionStatus instanceStatus = GetInstanceValue (valueResult, index, primaryList, globalContext, *evalResult.GetInstanceList());
             if (ExprStatus_Success != instanceStatus)
                 {
+                if (0 == startIndex && 0 == index)
+                    {
+                    ExpressionContextP  outer = GetOuterP();
+                    if (NULL != outer)
+                        return outer->GetValue(evalResult, primaryList, globalContext, startIndex);
+                    }
+
                 evalResult.Clear();
                 return instanceStatus;
                 }
