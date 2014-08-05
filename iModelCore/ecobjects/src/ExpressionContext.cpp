@@ -441,10 +441,10 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 {
                 if (globalContext.AllowsTypeConversion())
                     {
-                    if (typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
+                    if (typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance)))
                         return ExprStatus_UnknownError;
                     }
-                else if (typeAdapter->SupportsUnits() && !typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
+                else if (typeAdapter->SupportsUnits() && !typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*primProp, instance)))
                     return ExprStatus_UnknownError;
                 }
             }
@@ -509,13 +509,13 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 {
                 if (globalContext.AllowsTypeConversion())
                     {
-                    if (adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
+                    if (adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance)))
                         {
                         evalResult.Clear();
                         return ExprStatus_UnknownError;
                         }
                     }
-                else if (adapter->SupportsUnits() && !adapter->GetUnits (units, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
+                else if (adapter->SupportsUnits() && !adapter->GetUnits (units, *IECTypeAdapterContext::Create (*arrayProp, instance)))
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;

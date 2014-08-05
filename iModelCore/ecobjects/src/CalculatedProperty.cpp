@@ -325,7 +325,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
 
                 if (nullptr != typeAdapter)
                     {
-                    if (allowTypeConversions && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                    if (allowTypeConversions && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance)))
                         {
                         gotValue = false;
                         }
@@ -335,7 +335,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
                         UnitSpec units;
 
                         // We only care about units if the ECProperty is unitized...otherwise ignore units of expression result
-                        if (typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                        if (typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*ecprop, instance)))
                             {
                             if (units.IsUnspecified())
                                 gotValue = true;    // not unitized

@@ -971,9 +971,21 @@ bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP            IECTypeAdapterContext::GetProperty() const          { return _GetProperty(); }
 UInt32                  IECTypeAdapterContext::GetComponentIndex() const    { return _GetComponentIndex(); }
-WCharCP                 IECTypeAdapterContext::GetAccessString() const      { return _GetAccessString(); }
-bool                    IECTypeAdapterContext::Is3d() const                 { return _Is3d(); }
-IECInstanceInterfaceCR  IECTypeAdapterContext::GetInstanceInterface() const { return _GetInstanceInterface(); }
+bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
+IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
+ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const
+    {
+    IECInstanceCP instance = GetECInstance();
+    if (NULL != instance)
+        return -1 != arrayIndex ? instance->GetValue (v, accessor, arrayIndex) : instance->GetValue (v, accessor);
+    else
+        return ECOBJECTS_STATUS_OperationNotSupported;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13

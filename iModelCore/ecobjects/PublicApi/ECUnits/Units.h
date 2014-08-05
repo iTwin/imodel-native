@@ -27,32 +27,6 @@ enum UnitConversionType
     UnitConversionType_FactorAndOffset
     };
 
-//typedef RefCountedPtr<IECClassLocater> IECClassLocaterPtr;
-
-//*=================================================================================**//**
-//* @bsistruct                                                  Ramanujam.Raman   12/12
-//+===============+===============+===============+===============+===============+======*/
-struct IECClassLocater /*: RefCountedBase*/
-    {
-protected:
-    ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
-public:
-    ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
-        {
-        return _LocateClass (schemaName, className);
-        }
-
-//private:
-//    static IECClassLocaterPtr s_registeredClassLocater;
-//public:
-//    // TODO: This needs to migrate to the ECSchema implementation
-//    static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
-//    static ECOBJECTS_EXPORT void UnRegisterClassLocater ();
-//    static IECClassLocaterP GetRegisteredClassLocater();
-    };
-    
-typedef IECClassLocater& IECClassLocaterR;
-
 /*---------------------------------------------------------------------------------**//**
 * Every Unit has a UnitConverter capable of converting values to and from its base Unit.
 * @bsistruct                                                    Paul.Connelly   10/12
@@ -131,8 +105,8 @@ public:
     // If instance is non-null and an IECTypeAdapter can be located to perform the formatting, the IECTypeAdapter::ConvertToString() method will be used
     // The numeric value will be formatted according to the DisplayFormatString property of any DisplayUnitSpecification custom attribute on the ECProperty
     // Returns false if no UnitSpecification present or if an error occurs
-    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString, IECClassLocaterR unitsECClassLocater);
-    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString);
+    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance, IECClassLocaterR unitsECClassLocater);
+    ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance);
 
     };
 

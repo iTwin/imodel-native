@@ -380,14 +380,14 @@ protected:
     virtual ECPropertyCP                        _GetProperty() const = 0;
     virtual UInt32                              _GetComponentIndex() const = 0;
     virtual bool                                _Is3d() const = 0;
-    virtual IECInstanceInterfaceCR              _GetInstanceInterface() const = 0;
-    virtual WCharCP                             _GetAccessString() const = 0;
+    virtual IECInstanceCP                       _GetECInstance() const = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
     ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
 public:
 
-    ECOBJECTS_EXPORT  IECInstanceInterfaceCR    GetInstanceInterface() const;
-    ECOBJECTS_EXPORT  ECPropertyCP              GetProperty() const;
-    ECOBJECTS_EXPORT  WCharCP                   GetAccessString() const;
+    ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
+    ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
+    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
 
     //! The following are relevant to adapters for point types.
     ECOBJECTS_EXPORT  UInt32                    GetComponentIndex() const;
@@ -396,9 +396,9 @@ public:
     IECClassLocaterR                    GetUnitsECClassLocater() const {return _GetUnitsECClassLocater();}
 
     //! internal use only, primarily for ECExpressions
-    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex);
+    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, UInt32 componentIndex);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
-    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, WCharCP accessString, UInt32 componentIndex = COMPONENT_INDEX_None);
+    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, UInt32 componentIndex = COMPONENT_INDEX_None);
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
     static const UInt32 COMPONENT_INDEX_None = -1;
@@ -2358,6 +2358,32 @@ public:
     //!Set the schema to be immutable. Immutable schema cannot be modified.
     ECOBJECTS_EXPORT void   SetImmutable();
 }; // ECSchema
+
+//typedef RefCountedPtr<IECClassLocater> IECClassLocaterPtr;
+
+//*=================================================================================**//**
+//* @bsistruct                                                  Ramanujam.Raman   12/12
+//+===============+===============+===============+===============+===============+======*/
+struct IECClassLocater /*: RefCountedBase*/
+    {
+    protected:
+        ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
+    public:
+        ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
+            {
+            return _LocateClass (schemaName, className);
+            }
+
+        //private:
+        //    static IECClassLocaterPtr s_registeredClassLocater;
+        //public:
+        //    // TODO: This needs to migrate to the ECSchema implementation
+        //    static ECOBJECTS_EXPORT void RegisterClassLocater (IECClassLocaterR classLocater);
+        //    static ECOBJECTS_EXPORT void UnRegisterClassLocater ();
+        //    static IECClassLocaterP GetRegisteredClassLocater();
+    };
+
+typedef IECClassLocater& IECClassLocaterR;
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

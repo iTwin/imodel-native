@@ -474,10 +474,10 @@ bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR dis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString)
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
     {
     ECUnitsClassLocaterPtr unitsECClassLocater =  ECUnitsClassLocater::Create();
-    return FormatValue (formatted, inputVal, ecprop, instance, accessString, *unitsECClassLocater);
+    return FormatValue (formatted, inputVal, ecprop, instance, *unitsECClassLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,7 +489,7 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
 * schemas present in the instance's DgnFile).
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString, IECClassLocaterR unitsECClassLocater)
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance, IECClassLocaterR unitsECClassLocater)
     {
     Unit storedUnit;
     ECValue v (inputVal);
@@ -501,7 +501,7 @@ bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecp
     // See if we've got a registered ECUnitsTypeAdapter from DgnPlatform
     IECTypeAdapter* typeAdapter;
     if (NULL != instance && NULL != (typeAdapter = ecprop.GetTypeAdapter()))
-        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance, accessString));
+        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance));
 
     // No TypeAdapter
     WCharCP label = storedUnit.GetShortLabel();
