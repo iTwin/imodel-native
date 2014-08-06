@@ -2125,6 +2125,33 @@ ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (Int64
     return _GetTargetOrderId (targetOrderId);
     }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//   IECWipRelationshipInstance
+///////////////////////////////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   IECWipRelationshipInstance::SetName (WCharCP name)   
+    {
+    return _SetName (name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   IECWipRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
+    {
+    return _SetSourceOrderId (sourceOrderId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
+    {
+    return _SetTargetOrderId (targetOrderId);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/

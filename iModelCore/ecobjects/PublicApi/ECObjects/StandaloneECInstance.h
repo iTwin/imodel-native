@@ -22,6 +22,7 @@ typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
 
 /** @cond BENTLEY_SDK_Internal */
+typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
@@ -263,6 +264,31 @@ public:
     ECOBJECTS_EXPORT static StandaloneECInstancePtr Duplicate(IECInstanceCR instance);
     };
 
+/** @cond BENTLEY_SDK_Internal */
+//=======================================================================================
+//! IECWipRelationshipInstance is used to set the name and order properties for an
+//! ECRelationship.
+//! @ingroup ECObjectsGroup
+//=======================================================================================
+struct IECWipRelationshipInstance : StandaloneECInstance
+    {
+//__PUBLISH_SECTION_END__
+    protected:
+        ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
+
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (Int64 sourceOrderId) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (Int64 targetOrderId) = 0;
+
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+    public:
+        ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
+        ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (Int64 targetOrderId);
+    };
+/** @endcond */
+
 //=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
 //! @see StandaloneECInstance
@@ -274,10 +300,10 @@ struct StandaloneECEnabler : public ECEnabler
 private:
     ClassLayoutPtr          m_classLayout;
 
-protected:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
+protected:
     virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;

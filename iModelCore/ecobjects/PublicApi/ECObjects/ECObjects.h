@@ -59,7 +59,7 @@ EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceReadContext);
 EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(ECPropertyValue);
-EC_TYPEDEFS(StandaloneECRelationshipInstance);
+EC_TYPEDEFS(IECWipRelationshipInstance);
 EC_TYPEDEFS(ECRelationshipInstanceHolder);
 
 EC_TYPEDEFS(ECEnabler);
