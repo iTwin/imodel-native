@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -104,7 +104,8 @@ ECPresentationRulesHeaders = $(ecpresentationRulesPublicAPISrc)PresentationRules
                              $(ECPresentationHeaders)
 
 
-ECUnitsHeaders = $(ecunitsPublicAPISrc)Units.h
+ECUnitsHeaders = $(ecunitsPublicAPISrc)Units.h \
+                 $(ecunitsPublicAPISrc)ECUnitsClassLocater.h
 
 # ECObjects
 
@@ -243,6 +244,8 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 # ECUnits
 
 $(o)units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+
+$(o)ECUnitsClassLocater$(oext)                                           : $(baseDir)Units/ECUnitsClassLocater.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

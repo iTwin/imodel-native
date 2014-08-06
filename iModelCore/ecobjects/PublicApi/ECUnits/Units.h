@@ -15,7 +15,6 @@
 #include <ECObjects/ECObjects.h>
 
 EC_TYPEDEFS(IECClassLocater);
-EC_TYPEDEFS (ECUnitsClassLocater);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
