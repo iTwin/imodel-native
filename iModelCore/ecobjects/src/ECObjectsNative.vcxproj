@@ -88,6 +88,7 @@
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
+    <ClCompile Include="Units\ECUnitsClassLocater.cpp" />
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +120,7 @@
     <ClInclude Include="..\PublicApi\EcPresentation\eccontentdefinition.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ECResourceProvider.h" />
     <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h" />
+    <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h" />
     <ClInclude Include="..\PublicApi\ECUnits\Units.h" />
     <ClInclude Include="DateTimeInfoAccessor.h" />
     <ClInclude Include="ecobjectsnativelog.h" />

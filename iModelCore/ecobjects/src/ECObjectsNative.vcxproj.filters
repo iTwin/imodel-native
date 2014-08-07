@@ -149,6 +149,9 @@
     <ClCompile Include="Units\Units.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Units\ECUnitsClassLocater.cpp">
+      <Filter>ECUnits\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -257,6 +260,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECUnits\Units.h">
+      <Filter>ECUnits\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h">
       <Filter>ECUnits\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
