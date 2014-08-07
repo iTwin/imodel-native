@@ -2437,7 +2437,7 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<> static bool     PerformCompare<double> (double l, ExpressionToken op, double r)
+template<> /*static*/ bool     PerformCompare<double> (double l, ExpressionToken op, double r) // Android compiler gives error "explicit template specialization cannot have a storage class" with the static keyword
     {
     bool equal = DoubleOps::AlmostEqual (l, r);
     switch (op)
