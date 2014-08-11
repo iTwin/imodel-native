@@ -129,7 +129,7 @@ public:
     ECOBJECTS_EXPORT ClassLayoutCR                              GetClassLayout() const;
     };
 
-#pragma warning(default:4250)
+//#pragma warning(default:4250)
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
