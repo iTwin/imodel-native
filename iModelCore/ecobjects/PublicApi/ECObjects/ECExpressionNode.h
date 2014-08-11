@@ -257,31 +257,31 @@ private:
         {
         ECValue v (m_value);
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Boolean) ? ExprStatus_Success : ExprStatus_WrongType;
-        return SUCCESS == status ? v.GetBoolean() : false;
+        return ExprStatus_Success == status ? v.GetBoolean() : false;
         }
     virtual ::Int32 _GetIntegerValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Integer) ? ExprStatus_Success : ExprStatus_WrongType;
-        return SUCCESS == status ? v.GetInteger() : 0;
+        return ExprStatus_Success == status ? v.GetInteger() : 0;
         }
     virtual ::Int64 _GetLongValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Long) ? ExprStatus_Success : ExprStatus_WrongType;
-        return SUCCESS == status ? v.GetLong() : 0;
+        return ExprStatus_Success == status ? v.GetLong() : 0;
         }
     virtual double  _GetDoubleValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) ? ExprStatus_Success : ExprStatus_WrongType;
-        return SUCCESS == status ? v.GetDouble() : 0.0;
+        return ExprStatus_Success == status ? v.GetDouble() : 0.0;
         }
     virtual ::Int64 _GetDateTimeValue (ExpressionStatus& status, ExpressionContextR) override
         {
         ECValue v (m_value);
         status = v.ConvertToPrimitiveType (PRIMITIVETYPE_DateTime) ? ExprStatus_Success : ExprStatus_WrongType;
-        return SUCCESS == status ? (::Int64) v.GetDouble() : 0;
+        return ExprStatus_Success == status ? (::Int64) v.GetDouble() : 0;
         }
     virtual ExpressionStatus _GetStringValue(ECValueR v, ExpressionContextR context)
         {

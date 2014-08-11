@@ -2017,7 +2017,7 @@ ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (WS
         {
         ECN::ECValue value;
         WCharCP propertyName=L"OrderIdProperty";
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             {
             propertyName = value.GetString ();
             return ECOBJECTS_STATUS_Success;
