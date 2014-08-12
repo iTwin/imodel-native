@@ -243,7 +243,7 @@ $(o)CommonTools$(oext)                                     : $(baseDir)presentat
 
 # ECUnits
 
-$(o)units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
+$(o)Units$(oext)                                           : $(baseDir)Units/Units.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
 $(o)ECUnitsClassLocater$(oext)                                           : $(baseDir)Units/ECUnitsClassLocater.cpp $(ECUnitsHeaders) ${MultiCompileDepends}
 
