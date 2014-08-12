@@ -114,7 +114,6 @@ private:
 #if !defined (_WIN32)
         WCharCP             m_wchar;        // On Windows we use m_utf16. The presence of the extra pointer wouldn't hurt anything but want to ensure it's only used on unix.
 #endif
-//__PUBLISH_SECTION_END__
         void                ConvertToUtf8 (UInt8& flags);
         void                ConvertToUtf16 (UInt8& flags);
     public:
@@ -166,7 +165,6 @@ private:
         //! @param[in] rhs  The StringInfo object to compare this object to
         //! @param[out] flags   A flag indicating whether the ECValue owns the data in the StringInfo object
         bool                Equals (StringInfo const& rhs, UInt8& flags);
-//__PUBLISH_SECTION_START__
         };
 
     struct DateTimeInfo
@@ -177,7 +175,6 @@ private:
         DateTime::Component m_component;
         bool                m_isMetadataSet;
 
-//__PUBLISH_SECTION_END__
     public:
         void Set (::Int64 ceTicks);
         BentleyStatus Set (DateTimeCR dateTime);
@@ -192,7 +189,6 @@ private:
         bool MetadataMatches (DateTimeInfoCR dateTimeInfo) const;
 
         WString MetadataToString () const;
-//__PUBLISH_SECTION_START__
         };
 
     //! The union storing the actual data of this ECValue
