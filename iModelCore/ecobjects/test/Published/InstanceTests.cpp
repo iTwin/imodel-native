@@ -80,7 +80,7 @@ TEST_F (InstanceLabelTest, TestLabels)
     CreateSchema();
 
     TestInstanceLabel (true, L"InstanceLabelProperty", L"MyLabel");
-    TestInstanceLabel (false, L"DisplayLabel", L"MyDisplayLabel");
+    TestInstanceLabel (false, L"DisplayLabel", NULL);   // Bill added DisplayLabel and variants as hard-coded property names to use for label if no specification present; managed does not do this; reverted it.
     TestInstanceLabel (false, L"NAME", L"MyName");
     TestInstanceLabel (true, L"NAME", L"MyName");
     TestInstanceLabel (false, L"ThisClassHasNoInstanceLabelPropertySoItUsesTheClassLabel", NULL);
