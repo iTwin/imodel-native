@@ -1992,7 +1992,7 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
 // ordered by precedence
 static const WCharCP s_standardInstanceLabelPropertyNames[] =
     {
-    L"DisplayLabel", L"DISPLAYLABEL", L"displaylabel", L"Name", L"NAME", L"name", NULL
+     L"Name", L"NAME", NULL
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2025,7 +2025,7 @@ bool                         IECInstance::GetInstanceLabelPropertyName (WStringR
 ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayLabel) const
     {
     WString propertyName;
-    if (GetInstanceLabelPropertyName (propertyName))
+    if (GetInstanceLabelPropertyName (propertyName) && 0 < propertyName.length())   // empty property name => always use class label, don't look for "NAME" or "Name"
         {
         ECN::ECValue ecValue;
         if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
