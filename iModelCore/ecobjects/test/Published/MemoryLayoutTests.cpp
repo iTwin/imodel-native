@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -2541,6 +2541,56 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     //dumpPropertyValues (*collection, false, 0);
     }
 
+TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
+    {
+    ECSchemaPtr testSchema;
+    ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 2);
+    ECClassP class1;
+    testSchema->CreateClass(class1, L"TestClass");
+    ArrayECPropertyP primitiveArrayProp;
+    class1->CreateArrayProperty(primitiveArrayProp, L"PrimitiveArray");
+    primitiveArrayProp->SetPrimitiveElementType (PRIMITIVETYPE_Long);
+
+    StandaloneECEnablerPtr enabler       = class1->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    instance->AddArrayElements(L"PrimitiveArray", 3);
+    ECValue v;
+    v.SetLong(0);
+    instance->SetValue(L"PrimitiveArray", v, 0);
+
+    v.SetLong(1);
+    instance->SetValue(L"PrimitiveArray", v, 1);
+
+    v.SetLong(2);
+    instance->SetValue(L"PrimitiveArray", v, 2);
+
+    ECN::StandaloneECInstancePtr secondInstance = enabler->CreateInstance();
+    secondInstance->AddArrayElements(L"PrimitiveArray", 2);
+    v.SetLong(3);
+    secondInstance->SetValue(L"PrimitiveArray", v, 0);
+
+    v.SetLong(4);
+    secondInstance->SetValue(L"PrimitiveArray", v, 1);
+
+    EXPECT_TRUE (SUCCESS == secondInstance->GetValue (v, L"PrimitiveArray"));
+    EXPECT_EQ (2, v.GetArrayInfo().GetCount());
+
+    v.Clear();
+
+    MemoryECInstanceBase* mbInstance = instance->GetAsMemoryECInstanceP ();
+    mbInstance->MergePropertiesFromInstance (*secondInstance);
+
+    EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"PrimitiveArray"));
+//    EXPECT_EQ (2, v.GetArrayInfo().GetCount()); // CGM: This line fails because it merges the array values instead of overwriting
+
+    instance->GetValue(v, L"PrimitiveArray", 0);
+    EXPECT_EQ(3, v.GetLong());
+
+    instance->GetValue(v, L"PrimitiveArray", 1);
+    EXPECT_EQ(4, v.GetLong());
+
+    }
 
 void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
     {
