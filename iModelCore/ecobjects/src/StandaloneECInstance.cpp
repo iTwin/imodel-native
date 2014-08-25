@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -721,6 +721,23 @@ static void     mergeProperties (IECInstanceR target, ECValuesCollectionCR sourc
 
         if (prop.HasChildValues())
             {
+            auto ecprop = prop.GetValueAccessor().GetECProperty();
+            if (nullptr != ecprop && ecprop->GetIsArray())
+                {
+                // TFS#128233: overwrite the entire array, adjusting size if necessary.
+                ECValue targetArray;
+                if (prop.GetValue().IsArray() && ECOBJECTS_STATUS_Success == target.GetValueUsingAccessor (targetArray, prop.GetValueAccessor()))
+                    {
+                    UInt32 nArrayElements = prop.GetValue().GetArrayInfo().GetCount();
+                    if (nArrayElements != targetArray.GetArrayInfo().GetCount())
+                        {
+                        auto accessString = prop.GetValueAccessor().GetManagedAccessString();
+                        if (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::ClearArray (target, accessString.c_str()))
+                            ECInstanceInteropHelper::AddArrayElements (target, accessString.c_str(), nArrayElements);
+                        }
+                    }
+                }
+
             mergeProperties (target, *prop.GetChildValues(), sourceIsMemoryBased);
             continue;
             }
