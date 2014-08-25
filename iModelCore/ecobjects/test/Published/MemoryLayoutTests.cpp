@@ -2582,7 +2582,9 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     mbInstance->MergePropertiesFromInstance (*secondInstance);
 
     EXPECT_TRUE (SUCCESS == instance->GetValue (v, L"PrimitiveArray"));
-//    EXPECT_EQ (2, v.GetArrayInfo().GetCount()); // CGM: This line fails because it merges the array values instead of overwriting
+
+    // TFS#128233
+    EXPECT_EQ (2, v.GetArrayInfo().GetCount()); // CGM: This line fails because it merges the array values instead of overwriting
 
     instance->GetValue(v, L"PrimitiveArray", 0);
     EXPECT_EQ(3, v.GetLong());
