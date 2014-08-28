@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPublishedTests", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsPerformanceTests", "..\test\PerformanceTests.vcxproj", "{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ECObjectsScenarioTests", "..\test\scenarioTests.vcxproj", "{D602B019-D582-4049-8184-82C7ED1041F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -33,6 +35,10 @@ Global
 		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Debug|Win32.Build.0 = Debug|Win32
 		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.ActiveCfg = Release|Win32
 		{7AC30F13-7E43-4D7C-9BC7-3C7727FAF808}.Release|Win32.Build.0 = Release|Win32
+		{D602B019-D582-4049-8184-82C7ED1041F0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D602B019-D582-4049-8184-82C7ED1041F0}.Debug|Win32.Build.0 = Debug|Win32
+		{D602B019-D582-4049-8184-82C7ED1041F0}.Release|Win32.ActiveCfg = Release|Win32
+		{D602B019-D582-4049-8184-82C7ED1041F0}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

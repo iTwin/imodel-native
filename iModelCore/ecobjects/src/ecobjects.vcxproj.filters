@@ -137,6 +137,15 @@
     <ClCompile Include="Units\Units.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BeXmlCGReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BeXmlCGWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DateTimeInfoAccessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -237,6 +246,9 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECUnits\Units.h">
       <Filter>ECUnits\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
