@@ -121,13 +121,28 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
     {
     private:
     ECInstanceIterable m_data;
+    WString m_location;
+
     virtual ContextType             _GetContextType() const override {return ECInstanceCollection;}
     public:
         ECInstanceIterableDataContext (ECInstanceIterable const& data)
-            :m_data(data)
+            :m_data(data), m_location(L"") 
+            {}
+
+        ECInstanceIterableDataContext (ECInstanceIterable const& data, WString location)
+            :m_data(data), m_location(location) 
             {}
         
         virtual ECInstanceIterableCP    GetInstanceIterable () const override{return &m_data;}
+
+        bool GetLocation (WString outVal) 
+            {
+            if (m_location.empty ())
+                return false;
+
+            outVal.append (m_location);
+            return true;
+            }
     };
 
 /*---------------------------------------------------------------------------------**//**
