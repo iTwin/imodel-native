@@ -1938,7 +1938,7 @@ WString                         IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClassCR ecClass)
+static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClassCR ecClass, bool& alwaysUseClassLabel)
     {
     IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"InstanceLabelSpecification");
     if (caInstance.IsValid())
@@ -1951,10 +1951,18 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
             }
         }
 
+    if (ecClass.GetCustomAttribute (L"ClassLabelIsInstanceLabel").IsValid())
+        {
+        alwaysUseClassLabel = true;
+        return false;
+        }
+
     for (ECClassCP baseClass: ecClass.GetBaseClasses())
         {
-        if (getInstanceLabelPropertyNameFromClass (propertyName, *baseClass))
+        if (getInstanceLabelPropertyNameFromClass (propertyName, *baseClass, alwaysUseClassLabel))
             return true;
+        else if (alwaysUseClassLabel)
+            return false;
         }
 
     return false;
@@ -1972,8 +1980,11 @@ static const WCharCP s_standardInstanceLabelPropertyNames[] =
 bool                         IECInstance::GetInstanceLabelPropertyName (WStringR propName) const
     {
     ECClassCR ecClass = GetClass();
-    if (getInstanceLabelPropertyNameFromClass (propName, ecClass))
+    bool alwaysUseClassLabel = false;
+    if (getInstanceLabelPropertyNameFromClass (propName, ecClass, alwaysUseClassLabel))
         return true;
+    else if (alwaysUseClassLabel)
+        return false;
 
     const WCharCP* standardName = s_standardInstanceLabelPropertyNames;
     while (*standardName)
@@ -1996,7 +2007,7 @@ bool                         IECInstance::GetInstanceLabelPropertyName (WStringR
 ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayLabel) const
     {
     WString propertyName;
-    if (GetInstanceLabelPropertyName (propertyName) && 0 < propertyName.length())   // empty property name => always use class label, don't look for "NAME" or "Name"
+    if (GetInstanceLabelPropertyName (propertyName))
         {
         ECN::ECValue ecValue;
         if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
