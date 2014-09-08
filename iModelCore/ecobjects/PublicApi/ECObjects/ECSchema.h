@@ -2139,9 +2139,10 @@ public:
     //!
     //! // The schemaContext supplies an IECSchemaOwner to control the lifetime of read ECSchemas and a
     //! // IStandaloneEnablerLocater to locate enablers for ECCustomAttributes in the ECSchema
-    //! ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(*schemaOwner);
+    //! ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     //!
-    //! ECSchemaP schema;
+    //! ECSchemaPtr schema;
+    //! WCharCP ecSchemaFilename = L"ECSchema file path";
     //! SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ecSchemaFilename, *schemaContext);
     //! if (SCHEMA_READ_STATUS_Success != status)
     //!     return ERROR;
