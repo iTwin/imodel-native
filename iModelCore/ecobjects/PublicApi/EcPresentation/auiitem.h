@@ -135,7 +135,7 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
         
         virtual ECInstanceIterableCP    GetInstanceIterable () const override{return &m_data;}
 
-        bool GetLocation (WString outVal) 
+        bool GetLocation (WString& outVal) 
             {
             if (m_location.empty ())
                 return false;
