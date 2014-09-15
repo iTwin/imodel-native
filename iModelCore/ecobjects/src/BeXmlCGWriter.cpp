@@ -557,6 +557,7 @@ void BeXmlCGWriter::WriteDgnTorusPipeDetail (BeXmlWriterR dest, DgnTorusPipeDeta
         WriteDouble (dest, "radiusB", radiusB);
         WriteDouble (dest, "startAngle", 0.0);
         WriteDouble (dest, "sweepAngle", Angle::RadiansToDegrees (sweepAngle));
+        WriteBool   (dest, "bSolidFlag", data.m_capped);
         dest.WriteElementEnd ();
         }
     }
