@@ -33,7 +33,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     rootDir.AppendSeparator();
     searchPaths.push_back (rootDir.GetName());
     
-    rootDir.AppendToPath (L"ECSchemas");
+    rootDir.AppendToPath (L"ECSchemasG");
 
     BeFileName standardPath = rootDir;
     standardPath.AppendToPath (L"Standard");
