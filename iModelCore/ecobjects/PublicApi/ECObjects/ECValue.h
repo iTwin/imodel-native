@@ -483,6 +483,31 @@ public:
     //! Returns the string value as a Utf16CP, if this ECValue holds a string
     ECOBJECTS_EXPORT Utf16CP        GetUtf16CP () const;    // the only real caller of this should be ECDBuffer
 
+    //__PUBLISH_SECTION_END__
+
+    //! Indicates whether the ECValue instance owns the memory of WCharCP returned by ECValue::GetString.
+    //! @remarks Can get return true, even if ECValue::SetString was called with holdADuplicate = false, as 
+    //! ECValue does implicit encoding conversions when the requested encoding is different than the one used at set time.
+    //! In those cases the ECValue always owns the converted string.
+    //! @return bool if ECValue owns the WChar string value, false otherwise
+    ECOBJECTS_EXPORT bool           OwnsString () const;
+
+    //! Indicates whether the ECValue instance owns the memory of Utf8CP returned by ECValue::GetUtf8CP.
+    //! @remarks Can get return true, even if ECValue::SetUtf8CP was called with holdADuplicate = false, as 
+    //! ECValue does implicit encoding conversions when the requested encoding is different than the one used at set time.
+    //! In those cases the ECValue always owns the converted string.
+    //! @return bool if ECValue owns the Utf8CP value, false otherwise
+    ECOBJECTS_EXPORT bool           OwnsUtf8CP () const;
+
+    //! Indicates whether the ECValue instance owns the memory of Utf16CP returned by ECValue::GetUtf16CP.
+    //! @remarks Can get return true, even if ECValue::SetUtf16CP was called with holdADuplicate = false, as 
+    //! ECValue does implicit encoding conversions when the requested encoding is different than the one used at set time.
+    //! In those cases the ECValue always owns the converted string.
+    //! @return bool if ECValue owns the Utf16CP value, false otherwise
+    ECOBJECTS_EXPORT bool           OwnsUtf16CP () const;
+    
+    //__PUBLISH_SECTION_START__
+
     //! Sets the value of this ECValue to the given string
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
     //! @param[in] string           The value to set
