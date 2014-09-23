@@ -234,7 +234,16 @@ ECSchema::~ECSchema ()
     #pragma clang diagnostic ignored "-Wsizeof-pointer-memaccess"
 #endif // defined (__clang__)
 
+#if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wsizeof-pointer-memaccess"
+#endif
+
     memset (this, 0xececdead, sizeof(this));
+
+#if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
+    #pragma GCC diagnostic pop
+#endif
 
 #if defined (__clang__)
     #pragma clang diagnostic pop

@@ -2205,7 +2205,7 @@ ECObjectsStatus       ECDBuffer::ShiftValueData(byte * propertyData, UInt32 byte
     SecondaryOffset * pAdjusting = (SecondaryOffset*)(propertyData + propertyLayout.GetOffset());
     SecondaryOffset * pCurrent = pAdjusting + 1; // start at the one AFTER the property whose value's size is adjusting
     DEBUG_EXPECT (pCurrent <= pLast);
-    DEBUG_EXPECT ((*pCurrent - *pAdjusting + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
+    DEBUG_EXPECT (((Int32)(*pCurrent - *pAdjusting) + shiftBy) >= 0 && "shiftBy cannot be such that it would cause the adjusting property to shrink to a negative size");
     
     UInt32 bytesToMove = *pLast - *pCurrent;
     if (bytesToMove > 0)
@@ -2512,11 +2512,11 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
             case PRIMITIVETYPE_Binary:
             case PRIMITIVETYPE_IGeometry:
                 {
-                UInt32 size;
-                if (useIndex)
-                    size = GetPropertyValueSize (propertyLayout, index);
-                else
-                    size = GetPropertyValueSize (propertyLayout);
+                // UInt32 size;
+                // if (useIndex)
+                //     size = GetPropertyValueSize (propertyLayout, index);
+                // else
+                //     size = GetPropertyValueSize (propertyLayout);
 
                 UInt32 const* actualSize   = (UInt32 const*)pValue;
                 byte const*   actualBuffer = pValue+sizeof(UInt32);
