@@ -1281,6 +1281,31 @@ WCharCP ECValue::GetString() const
     return IsNull() ? NULL : m_stringInfo.GetWChar (m_ownershipFlags);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECValue::OwnsString () const
+    {
+    if (!IsString ())
+        {
+        BeAssert (false && L"<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
+        return false;
+        }
+
+    if (IsNull ())
+        return false;
+
+    
+#if defined (_WIN32)
+    const ECValueOwnedDataFlags flags = ECVALUE_DATA_Utf16;
+#else
+    const ECValueOwnedDataFlags flags = ECVALUE_DATA_WChar;
+#endif
+
+    return isDataOwned (m_ownershipFlags, flags);
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1295,6 +1320,20 @@ Utf8CP  ECValue::GetUtf8CP() const
     return IsNull() ? NULL : m_stringInfo.GetUtf8 (m_ownershipFlags);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECValue::OwnsUtf8CP () const
+    {
+    if (!IsString ())
+        {
+        BeAssert (false && L"<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
+        return false;
+        }
+
+    return IsNull () ? false : isDataOwned (m_ownershipFlags, ECVALUE_DATA_Utf8);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1307,6 +1346,20 @@ Utf16CP ECValue::GetUtf16CP() const
         }
 
     return IsNull() ? NULL : m_stringInfo.GetUtf16 (m_ownershipFlags);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECValue::OwnsUtf16CP () const
+    {
+    if (!IsString ())
+        {
+        BeAssert (false && L"<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
+        return false;
+        }
+
+    return IsNull () ? false : isDataOwned (m_ownershipFlags, ECVALUE_DATA_Utf16);
     }
 
 /*---------------------------------------------------------------------------------**//**
