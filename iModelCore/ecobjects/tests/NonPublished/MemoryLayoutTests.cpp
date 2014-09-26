@@ -2060,4 +2060,88 @@ TEST_F (ECDBufferTests, ArraysAreNotNull)
     EXPECT_FALSE (v.IsNull());
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertStringOwnership (WCharCP strW, Utf8CP strUtf8, bool makeCopy, bool expectedOwnsString, bool expectedOwnsUtf8CP)
+    {
+    ASSERT_TRUE (!WString::IsNullOrEmpty (strW) || !Utf8String::IsNullOrEmpty (strUtf8));
+    enum class OriginalECValueStringEncoding
+        {
+        WChar,
+        Utf8
+        };
+
+    auto createECValue = [] (ECValueR value, WCharCP strW, Utf8CP strUtf8, bool makeCopy)
+        {
+        if (strW != nullptr)
+            {
+            value.SetString (strW, makeCopy);
+            return OriginalECValueStringEncoding::WChar;
+            }
+        else
+            {
+            value.SetUtf8CP (strUtf8, makeCopy);
+            return OriginalECValueStringEncoding::Utf8;
+            }
+        };
+
+    ECValue v1;
+    createECValue (v1, strW, strUtf8, makeCopy);
+    ASSERT_EQ (expectedOwnsString, v1.OwnsString ());
+    ASSERT_EQ (expectedOwnsUtf8CP, v1.OwnsUtf8CP ());
+
+    //now call GetXX methods which changes ownership
+    //(use a new ECValue for each as it changes its state)
+    ECValue v2;
+    auto encodingWhenCreated = createECValue (v2, strW, strUtf8, makeCopy);
+    v2.GetString ();
+    if (encodingWhenCreated == OriginalECValueStringEncoding::WChar)
+        //if value was created with WChar, ownership depends on makecopy flag used at creation time
+        ASSERT_EQ (makeCopy, v2.OwnsString ());
+    else
+        ASSERT_TRUE (v2.OwnsString ());
+
+    //other encodings should not be affected yet
+    ASSERT_EQ (expectedOwnsUtf8CP, v2.OwnsUtf8CP ());
+
+    ECValue v3;
+    encodingWhenCreated = createECValue (v3, strW, strUtf8, makeCopy);
+    v3.GetUtf8CP ();
+    if (encodingWhenCreated == OriginalECValueStringEncoding::Utf8)
+        //if value was created with Utf8, ownership depends on makecopy flag used at creation time
+        ASSERT_EQ (makeCopy, v3.OwnsUtf8CP ());
+    else
+        ASSERT_TRUE (v3.OwnsUtf8CP ());
+
+    //other encodings should not be affected yet
+    ASSERT_EQ (expectedOwnsString, v3.OwnsString ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   09/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (ECValueTests, StringOwnership)
+    {
+    //This ATP does only test the WChar and Utf8CP ownerships. It doesn't include
+    //the Utf16CP flavor because the behavior for it is platform-dependent.
+    //The main use case is to test UTF-8 ownership anyways.
+    WCharCP strW = L"WChar";
+    AssertStringOwnership (strW, nullptr, false, //create ECValue which doesn't own the string
+                           false, //expected value for OwnsString
+                           false);//expected value for OwnsUtf8CP
+    AssertStringOwnership (strW, nullptr, true, //create ECValue which owns the string
+                           true, //expected value for OwnsString
+                           false);//expected value for OwnsUtf8CP
+
+    Utf8CP strUtf8 = "Utf8CP";
+    AssertStringOwnership (nullptr, strUtf8, false, //create ECValue which doesn't own the string
+                           false, //expected value for OwnsString
+                           false); // expected value for OwnsUtf8CP
+    AssertStringOwnership (nullptr, strUtf8, true, //create ECValue which owns the string
+                           false, //expected value for OwnsString
+                           true); //expected value for OwnsUtf8CP
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
