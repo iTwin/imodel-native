@@ -23,7 +23,7 @@ TEST(CGBinarySerializationTests, WriterTest)
     ASSERT_EQ(true, originalArc->GetArcCP()->IsCircular());
 
     bvector<byte> bytes;
-    BeXmlCGWriter::WriteBytes(bytes, *(originalArc.get()));
+//    BeXmlCGWriter::WriteBytes(bytes, *(originalArc.get()));
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
