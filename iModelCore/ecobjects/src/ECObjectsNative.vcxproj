@@ -84,6 +84,7 @@
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="MemoryInstanceSupport.cpp" />
+    <ClCompile Include="MSXmlBinary\MSXmlBinaryWriter.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="presentation\auicommand.cpp" />
@@ -135,6 +136,8 @@
     <ClInclude Include="FileUtilities.h" />
     <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="MSXmlBinary\MSXmlEnums.h" />
+    <ClInclude Include="MSXmlBinary\MSXmlBinaryWriter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

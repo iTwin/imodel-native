@@ -2,7 +2,7 @@
 #
 #     $Source: src/ecobjects.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile      = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
@@ -56,7 +56,8 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(baseDir)FileUtilities.h \
                     $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                     $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
-                    $(baseDir)DateTimeInfoAccessor.h
+                    $(baseDir)DateTimeInfoAccessor.h \
+                    $(baseDir)MSXmlBinary\MSXmlBinaryWriter.h \
                     
 
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
@@ -154,6 +155,9 @@ $(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardC
 $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SchemaDiff$(oext)                                      : $(baseDir)SchemaDiff.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SchemaDiff.h ${MultiCompileDepends}
+
+# MSXml
+$(o)MSXmlBinaryWriter$(oext)                                : $(baseDir)MSXmlBinary/MSXmlBinaryWriter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 

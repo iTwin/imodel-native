@@ -65,6 +65,7 @@
   <ItemGroup>
     <ClCompile Include="ECObjectsTestPCH.cpp" />
     <ClCompile Include="NonPublished\CalculatedPropertyTests.cpp" />
+    <ClCompile Include="NonPublished\CGBinarySerializationTests.cpp" />
     <ClCompile Include="NonPublished\ECSchemaUnitsManagerTests.cpp" />
     <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />
     <ClCompile Include="NonPublished\NonPublishedSchemaTests.cpp" />

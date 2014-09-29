@@ -33,7 +33,8 @@ GUNIT_TEST_VERSION = 1.3
 libsUsed = \
         $(BuildContext)SubParts/Libs/ECObjects.lib \
         $(BuildContext)SubParts/Libs/Bentley.lib \
-        $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+        $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
+        $(BuildContext)SubParts/Libs/BentleyGeom.lib
 
 #----------------------------------------------------------------------
 #       Create output directories

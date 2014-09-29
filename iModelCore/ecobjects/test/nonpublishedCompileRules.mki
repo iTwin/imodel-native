@@ -2,7 +2,7 @@
 #
 #  $Source: test/nonpublishedCompileRules.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -27,5 +27,7 @@ $(o)UnitsTestBase$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cp
 
 $(o)ECExpressionTests$(oext)        : $(baseDir)NonPublished/ECExpressionTests.cpp          $(PCHHeaderDependency) ${MultiCompileDepends}
 
-
 $(o)ECSchemaUnitsManagerTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
+
+$(o)CGBinarySerializationTests$(oext)  : $(baseDir)NonPublished/CGBinarySerializationTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+

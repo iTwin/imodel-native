@@ -6,11 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include "MSXmlBinary\MSXmlBinaryWriter.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 static const double s_nearZero = 9.0e-16;
 static const size_t s_maxIndexPerLine = 5;
-static const wchar_t *sNamespaceAttribute = L"xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"";
 
 static double SuppressNearZeroCoordinate (double x, double refValue)
     {
@@ -18,11 +18,11 @@ static double SuppressNearZeroCoordinate (double x, double refValue)
     return fabs (x) < tol ? 0.0 : x;
     }
 
-static void Indent (BeXmlWriterR dest)
+static void Indent (IBeXmlWriterR dest)
     {
     }
 
-void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<DPoint3d> const & data, Utf8CP listName, Utf8CP itemName)
+void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DPoint3d> const & data, Utf8CP listName, Utf8CP itemName)
     {
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
@@ -30,7 +30,7 @@ void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<DPoint3d> const & data
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<DVec3d> const & data, Utf8CP listName, Utf8CP itemName)
+void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DVec3d> const & data, Utf8CP listName, Utf8CP itemName)
     {
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
@@ -45,7 +45,7 @@ void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<DVec3d> const & data, 
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP itemName)
+void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP itemName)
     {
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
@@ -56,7 +56,7 @@ void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<RgbFactor> const & dat
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP itemName)
+void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP itemName)
     {
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
@@ -70,7 +70,7 @@ void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<DPoint2d> const & data
     }
 
 
-void BeXmlCGWriter::WriteIndexList (BeXmlWriterR dest, bvector<int> const & data, Utf8CP listName, Utf8CP itemName)
+void BeXmlCGWriter::WriteIndexList (IBeXmlWriterR dest, bvector<int> const & data, Utf8CP listName, Utf8CP itemName)
     {
     dest.WriteElementStart (listName);
     size_t numThisLine = 0;
@@ -87,7 +87,7 @@ void BeXmlCGWriter::WriteIndexList (BeXmlWriterR dest, bvector<int> const & data
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<double> const & data, Utf8CP listName, Utf8CP itemName)
+void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<double> const & data, Utf8CP listName, Utf8CP itemName)
     {
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
@@ -97,7 +97,7 @@ void BeXmlCGWriter::WriteList (BeXmlWriterR dest, bvector<double> const & data, 
 
 void BeXmlCGWriter::WritePlacementZX
 (
-BeXmlWriterR dest,
+IBeXmlWriterR dest,
 DPoint3dCR origin,
 DVec3dCR vectorZ,
 DVec3dCR vectorX
@@ -116,7 +116,7 @@ DVec3dCR vectorX
 
 void BeXmlCGWriter::WritePlacementZX
 (
-BeXmlWriterR dest,
+IBeXmlWriterR dest,
 DPoint3dCR origin,
 RotMatrixCR axes
 )
@@ -135,7 +135,7 @@ RotMatrixCR axes
     }
 
 
-void BeXmlCGWriter::WritePlacementXY (BeXmlWriterR dest, DPoint3dCR origin, DVec3dCR vectorX, DVec3dCR vectorY)
+void BeXmlCGWriter::WritePlacementXY (IBeXmlWriterR dest, DPoint3dCR origin, DVec3dCR vectorX, DVec3dCR vectorY)
     {
     DVec3d unitNormal, unitX;
     unitNormal.NormalizedCrossProduct (vectorX, vectorY);
@@ -143,7 +143,7 @@ void BeXmlCGWriter::WritePlacementXY (BeXmlWriterR dest, DPoint3dCR origin, DVec
     WritePlacementZX (dest, origin, unitNormal, unitX);
     }
 
-void BeXmlCGWriter::WriteXYZ (BeXmlWriterR dest, Utf8CP name, DPoint3dCR xyz)
+void BeXmlCGWriter::WriteXYZ (IBeXmlWriterR dest, Utf8CP name, DPoint3dCR xyz)
     {
     wchar_t buffer[1024];
     BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g,%.15g,%.15g", xyz.x, xyz.y, xyz.z);
@@ -152,7 +152,7 @@ void BeXmlCGWriter::WriteXYZ (BeXmlWriterR dest, Utf8CP name, DPoint3dCR xyz)
     dest.WriteElementEnd (); 
     }
 
-void BeXmlCGWriter::WriteText (BeXmlWriterR dest, Utf8CP name, wchar_t const *data)
+void BeXmlCGWriter::WriteText (IBeXmlWriterR dest, Utf8CP name, wchar_t const *data)
     {
     dest.WriteElementStart (name);
     dest.WriteText (data);
@@ -160,7 +160,7 @@ void BeXmlCGWriter::WriteText (BeXmlWriterR dest, Utf8CP name, wchar_t const *da
     }
 
 
-void BeXmlCGWriter::WriteXY (BeXmlWriterR dest, Utf8CP name, double x, double y)
+void BeXmlCGWriter::WriteXY (IBeXmlWriterR dest, Utf8CP name, double x, double y)
     {
     wchar_t buffer[1024];
     BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g,%.15g,%.15g", x, y);
@@ -169,7 +169,7 @@ void BeXmlCGWriter::WriteXY (BeXmlWriterR dest, Utf8CP name, double x, double y)
     dest.WriteElementEnd (); 
     }
 
-void BeXmlCGWriter::WriteXYZ (BeXmlWriterR dest, Utf8CP name, double x, double y, double z)
+void BeXmlCGWriter::WriteXYZ (IBeXmlWriterR dest, Utf8CP name, double x, double y, double z)
     {
     wchar_t buffer[1024];
     BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g,%.15g,%.15g", x, y, z);
@@ -178,7 +178,7 @@ void BeXmlCGWriter::WriteXYZ (BeXmlWriterR dest, Utf8CP name, double x, double y
     dest.WriteElementEnd (); 
     }
 
-void BeXmlCGWriter::WriteDouble (BeXmlWriterR dest, Utf8CP name, double data)
+void BeXmlCGWriter::WriteDouble (IBeXmlWriterR dest, Utf8CP name, double data)
     {
     wchar_t buffer[1024];
     BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g", data);
@@ -187,7 +187,7 @@ void BeXmlCGWriter::WriteDouble (BeXmlWriterR dest, Utf8CP name, double data)
     dest.WriteElementEnd (); 
     }
 
-void BeXmlCGWriter::WriteInt (BeXmlWriterR dest, Utf8CP name, int data)
+void BeXmlCGWriter::WriteInt (IBeXmlWriterR dest, Utf8CP name, int data)
     {
     wchar_t buffer[1024];
     BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%d", data);
@@ -197,7 +197,7 @@ void BeXmlCGWriter::WriteInt (BeXmlWriterR dest, Utf8CP name, int data)
     }
 
 
-void BeXmlCGWriter::WriteBool (BeXmlWriterR dest, Utf8CP name, bool data)
+void BeXmlCGWriter::WriteBool (IBeXmlWriterR dest, Utf8CP name, bool data)
     {
     dest.WriteElementStart (name);
     if (data)
@@ -208,7 +208,7 @@ void BeXmlCGWriter::WriteBool (BeXmlWriterR dest, Utf8CP name, bool data)
     }
 
 
-void BeXmlCGWriter::WriteSegment (BeXmlWriterR dest, DSegment3dCR data)
+void BeXmlCGWriter::WriteSegment (IBeXmlWriterR dest, DSegment3dCR data)
     {
     dest.WriteElementStart ("LineSegment");
     WriteXYZ (dest, "startPoint", data.point[0]);
@@ -216,7 +216,7 @@ void BeXmlCGWriter::WriteSegment (BeXmlWriterR dest, DSegment3dCR data)
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WriteArc (BeXmlWriterR dest, DEllipse3dCR arc)
+void BeXmlCGWriter::WriteArc (IBeXmlWriterR dest, DEllipse3dCR arc)
     {
     if (arc.IsCircular ())
         {
@@ -241,7 +241,7 @@ void BeXmlCGWriter::WriteArc (BeXmlWriterR dest, DEllipse3dCR arc)
         }
     }
 
-void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
+void BeXmlCGWriter::WriteDisk (IBeXmlWriterR dest, DEllipse3dCR arc)
     {
     double direction = arc.sweep > 0.0 ? 1.0 : -1.0;
     DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
@@ -265,9 +265,8 @@ void BeXmlCGWriter::WriteDisk (BeXmlWriterR dest, DEllipse3dCR arc)
     }
 
 
-void BeXmlCGWriter::WritePolyface (BeXmlWriterR dest, PolyfaceHeader &mesh)
+void BeXmlCGWriter::WritePolyface (IBeXmlWriterR dest, PolyfaceHeader &mesh)
     {
-    static const int s_coordinatePhase = 2;
     dest.WriteElementStart ("IndexedMesh");
     WriteList (dest, mesh.Point (), "ListOfCoord", "xyz");
 
@@ -292,7 +291,7 @@ void BeXmlCGWriter::WritePolyface (BeXmlWriterR dest, PolyfaceHeader &mesh)
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WriteCurve (BeXmlWriterR dest, MSBsplineCurveCR curve)
+void BeXmlCGWriter::WriteCurve (IBeXmlWriterR dest, MSBsplineCurveCR curve)
     {
     dest.WriteElementStart ("BsplineCurve");
 
@@ -319,7 +318,7 @@ void BeXmlCGWriter::WriteCurve (BeXmlWriterR dest, MSBsplineCurveCR curve)
     }
 
 
-void BeXmlCGWriter::WriteSurface (BeXmlWriterR dest, MSBsplineSurfaceCR surface)
+void BeXmlCGWriter::WriteSurface (IBeXmlWriterR dest, MSBsplineSurfaceCR surface)
     {
     dest.WriteElementStart ("BsplineSurface");
 
@@ -359,7 +358,7 @@ void BeXmlCGWriter::WriteSurface (BeXmlWriterR dest, MSBsplineSurfaceCR surface)
 
 void BeXmlCGWriter::WriteTextPlacement
 (
-BeXmlWriterR dest,
+IBeXmlWriterR dest,
 DPoint3dCR xyz,
 wchar_t const *data,
 double charSize
@@ -376,14 +375,14 @@ double charSize
     }
 
 
-void BeXmlCGWriter::WriteLineString (BeXmlWriterR dest, bvector<DPoint3d> const &points)
+void BeXmlCGWriter::WriteLineString (IBeXmlWriterR dest, bvector<DPoint3d> const &points)
     {
     dest.WriteElementStart ("LineString");
     WriteList (dest, points, "ListOfPoint", "xyz");
     dest.WriteElementEnd ();
     }
 
-void BeXmlCGWriter::WritePolygon (BeXmlWriterR dest, bvector<DPoint3d> const &points)
+void BeXmlCGWriter::WritePolygon (IBeXmlWriterR dest, bvector<DPoint3d> const &points)
     {
     dest.WriteElementStart ("Polygon");
     WriteList (dest, points, "ListOfPoint", "xyz");
@@ -391,7 +390,7 @@ void BeXmlCGWriter::WritePolygon (BeXmlWriterR dest, bvector<DPoint3d> const &po
     }
 
 
-void BeXmlCGWriter::Write (BeXmlWriterR dest, ICurvePrimitiveCR curve)
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve)
     {
     switch (curve.GetCurvePrimitiveType ())
         {
@@ -420,12 +419,12 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, ICurvePrimitiveCR curve)
     }
 
 
-void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector)
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, CurveVectorCR curveVector)
     {
     Write (dest, curveVector, true);
     }
 
-void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool preferMostCompactPrimitives)
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, CurveVectorCR curveVector, bool preferMostCompactPrimitives)
     {
     switch (curveVector.GetBoundaryType ())
         {
@@ -544,7 +543,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, CurveVectorCR curveVector, bool pr
 
 
 
-void BeXmlCGWriter::WriteDgnTorusPipeDetail (BeXmlWriterR dest, DgnTorusPipeDetail data)
+void BeXmlCGWriter::WriteDgnTorusPipeDetail (IBeXmlWriterR dest, DgnTorusPipeDetail data)
     {
     DPoint3d center;
     RotMatrix axes;
@@ -562,7 +561,7 @@ void BeXmlCGWriter::WriteDgnTorusPipeDetail (BeXmlWriterR dest, DgnTorusPipeDeta
         }
     }
 
-void BeXmlCGWriter::WriteDgnConeDetail (BeXmlWriterR dest, DgnConeDetail data)
+void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
     {
     DPoint3d centerA, centerB;
     RotMatrix axes;
@@ -610,7 +609,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (BeXmlWriterR dest, DgnConeDetail data)
     }
 
 
-void BeXmlCGWriter::WriteDgnBoxDetail (BeXmlWriterR dest, DgnBoxDetail data)
+void BeXmlCGWriter::WriteDgnBoxDetail (IBeXmlWriterR dest, DgnBoxDetail data)
     {
     Transform localToWorld;
     double ax, ay, bx, by;
@@ -648,7 +647,7 @@ void BeXmlCGWriter::WriteDgnBoxDetail (BeXmlWriterR dest, DgnBoxDetail data)
         }                
     }
 
-void BeXmlCGWriter::WriteDgnSphereDetail (BeXmlWriterR dest, DgnSphereDetail data)
+void BeXmlCGWriter::WriteDgnSphereDetail (IBeXmlWriterR dest, DgnSphereDetail data)
     {
     DPoint3d center;
     RotMatrix axes;
@@ -664,7 +663,7 @@ void BeXmlCGWriter::WriteDgnSphereDetail (BeXmlWriterR dest, DgnSphereDetail dat
         }
     }
 
-void BeXmlCGWriter::WriteDgnExtrusionDetail (BeXmlWriterR dest, DgnExtrusionDetail data)
+void BeXmlCGWriter::WriteDgnExtrusionDetail (IBeXmlWriterR dest, DgnExtrusionDetail data)
     {
     DPoint3d curveStart, curveEnd;
     if (data.m_baseCurve->GetStartEnd (curveStart, curveEnd))
@@ -729,7 +728,7 @@ double sweepAngle
     }
 
 
-void BeXmlCGWriter::WriteDgnRotationalSweepDetail (BeXmlWriterR dest, DgnRotationalSweepDetail data)
+void BeXmlCGWriter::WriteDgnRotationalSweepDetail (IBeXmlWriterR dest, DgnRotationalSweepDetail data)
     {
     Transform localToWorld, worldToLocal;    
     if (data.GetTransforms (localToWorld, worldToLocal))
@@ -746,12 +745,12 @@ void BeXmlCGWriter::WriteDgnRotationalSweepDetail (BeXmlWriterR dest, DgnRotatio
         }
     }
 
-void BeXmlCGWriter::WriteDgnRuledSweepDetail (BeXmlWriterR dest, DgnRuledSweepDetail data)
+void BeXmlCGWriter::WriteDgnRuledSweepDetail (IBeXmlWriterR dest, DgnRuledSweepDetail data)
     {
     }
 
 
-void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR primitive)
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, ISolidPrimitiveR primitive)
     {
     switch (primitive.GetSolidPrimitiveType ())
         {
@@ -808,7 +807,7 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, ISolidPrimitiveR primitive)
     }
 
 
-void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, IGeometryPtr geometry)
     {
     if (!geometry.IsValid ())
         return;
@@ -862,4 +861,67 @@ void BeXmlCGWriter::Write (BeXmlWriterR dest, IGeometryPtr geometry)
             }
         }
     }
+    
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ICurvePrimitiveCR curve)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), curve);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, CurveVectorCR curve)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), curve, false);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, CurveVectorCR curve, bool preferMostCompactPrimitives)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), curve, preferMostCompactPrimitives);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, ISolidPrimitiveR data)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), data);
+    xmlDom->ToString(cgBeXml);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
+    {
+    cgBeXml.clear();
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    Write(*xmlDom.get(), data);
+    xmlDom->ToString(cgBeXml);
+    }
+
+void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, ICurvePrimitiveCR data)
+    {
+    MSXmlBinaryWriter* writer = new MSXmlBinaryWriter();
+    Write(*writer, data);
+    writer->GetBytes(bytes);
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
