@@ -66,6 +66,89 @@ struct CGSerializationTests : ::testing::Test
         ASSERT_EQ(ellipseData.vector0.z, arc.vector0.z) << L"arc->vector0.z not as expected";
 
         }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                        Ahmed.Rizwan               09/14
+    //---------------------------------------------------------------------------------------
+    void CurveVectorRoundTripDisk (DEllipse3d ellipseData, bool isCircular)
+        {
+        CurveVectorPtr originalDisk = CurveVector::CreateDisk (ellipseData);
+        ASSERT_EQ (isCircular, ellipseData.IsCircular ());
+        Utf8String cgBeXml;
+        //Serialize the ellipseData
+        BeXmlCGWriter::Write (cgBeXml, *(originalDisk.get ()));
+        ICurvePrimitivePtr result;
+        //Parse the data written
+        ASSERT_TRUE (BeXmlCGParser::TryParse (cgBeXml.c_str (), result));
+        ASSERT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector, result->GetCurvePrimitiveType ());
+        CurveVectorCR curveVector = *(result->GetChildCurveVectorCP ());
+        ASSERT_TRUE (originalDisk->IsSameStructureAndGeometry (curveVector, 0.0)) << L"DEllipse3d Structure and Geometry not as expected";
+        }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                        Ahmed.Rizwan               09/14
+    //---------------------------------------------------------------------------------------
+    void CurveVectorCompactRoundTripDisk (DEllipse3d ellipseData, bool isCircular, bool isCompact)
+        {
+        CurveVectorPtr originalDisk = CurveVector::CreateDisk (ellipseData);
+        ASSERT_EQ (isCircular, ellipseData.IsCircular ());
+        Utf8String cgBeXml;
+        //Serialize the ellipseData
+        BeXmlCGWriter::Write (cgBeXml, *(originalDisk.get ()), isCompact);
+        ICurvePrimitivePtr result;
+        //Parse the data written
+        ASSERT_TRUE (BeXmlCGParser::TryParse (cgBeXml.c_str (), result));
+        ASSERT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector, result->GetCurvePrimitiveType ());
+        CurveVectorCR curveVector = *(result->GetChildCurveVectorCP ());
+        ASSERT_TRUE (originalDisk->IsSameStructureAndGeometry (curveVector, 0.0)) << L"DEllipse3d Structure and Geometry not as expected";
+        }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                        Ahmed.Rizwan               09/14
+    //---------------------------------------------------------------------------------------
+    void ISolidPrimitiveDgnBoxDetail (DgnBoxDetail dgnBoxDetailData)
+        {
+        ISolidPrimitivePtr originalDgnBoxPtr = ISolidPrimitive::CreateDgnBox (dgnBoxDetailData);
+        Utf8String cgBeXml;
+        //Serialize
+        BeXmlCGWriter::Write (cgBeXml, *(originalDgnBoxPtr.get ()));
+        ISolidPrimitivePtr result;
+        ASSERT_TRUE (BeXmlCGParser::TryParse (cgBeXml.c_str (), result));
+        //Verify Type, Structure and Geometry of the DgnBox
+        ASSERT_EQ (SolidPrimitiveType::SolidPrimitiveType_DgnBox, (result->GetSolidPrimitiveType ())) << L"Type mismatch";
+
+        DgnBoxDetail dgnResult;
+        result->TryGetDgnBoxDetail (dgnResult);
+
+        ASSERT_TRUE (originalDgnBoxPtr->IsSameStructureAndGeometry (*ISolidPrimitive::CreateDgnBox (dgnResult).get (), 0.0)) << L"DgnBox Structure and Geometry not as expected";
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                        Ahmed.Rizwan               09/14
+    //---------------------------------------------------------------------------------------
+    void RoundTripDgnCone (ISolidPrimitivePtr cone)
+    {
+        Utf8String cgBeXml;
+        ISolidPrimitiveR iSolidPrimitiveR = *cone;
+        BeXmlCGWriter::Write (cgBeXml, iSolidPrimitiveR);
+        ISolidPrimitivePtr result;
+        ASSERT_TRUE (BeXmlCGParser::TryParse (cgBeXml.c_str (), result));
+        //Print out the contents of the xml
+        //EXPECT_TRUE (false) << cgBeXml.c_str ();
+        ASSERT_EQ (SolidPrimitiveType::SolidPrimitiveType_DgnCone, (result->GetSolidPrimitiveType ())) << L"Type mismatch";
+    }
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                        Ahmed.Rizwan               09/14
+    //---------------------------------------------------------------------------------------
+    void IGeometryRoundTripArc (DEllipse3d ellipseData, bool isCircular)
+        {
+        ICurvePrimitivePtr originalArc = ICurvePrimitive::CreateArc (ellipseData);
+        ASSERT_EQ (isCircular, originalArc->GetArcCP ()->IsCircular ());
+        IGeometryPtr iGeometryPtr = IGeometry::Create (originalArc);
+        Utf8String cgBeXml;
+        BeXmlCGWriter::Write (cgBeXml, iGeometryPtr);
+        ICurvePrimitivePtr result;
+        ASSERT_TRUE (BeXmlCGParser::TryParse (cgBeXml.c_str (), result));
+        ASSERT_EQ (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, result->GetCurvePrimitiveType ());
+        ASSERT_TRUE (originalArc->IsSameStructureAndGeometry (*result.get (), 0.0)) << L"DEllipse3d Structure and Geometry not as expected";
+        }
     };
 
 TEST_F(CGSerializationTests, RoundTripEllipticArc)
@@ -97,4 +180,77 @@ TEST_F(CGSerializationTests, RoundTripCircularDisk)
     RoundTripDisk(ellipseData, true);
 
     }
+//---------------------------------------------------------------------------------------
+// Tests the IGeometryPtr Xml Writer method with Circular Ellipse
+//
+// @bsimethod                                        Ahmed.Rizwan               09/14
+//---------------------------------------------------------------------------------------
+TEST_F (CGSerializationTests, RoundTripIGeometryCircularArc)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0,
+                                               1.0, 0.0, 0.0,
+                                               0.0, 1.0, 0.0,
+                                               0.0, Angle::TwoPi ());
+    IGeometryRoundTripArc (ellipseData, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// Tests the IGeometryPtr Xml Writer method with Non-Circular Ellipse
+//
+// @bsimethod                                        Ahmed.Rizwan               09/14
+//---------------------------------------------------------------------------------------
+TEST_F (CGSerializationTests, RoundTripIGeometryEllipticArc)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From (1, 2, 3,
+                                               0, 0, 2,
+                                               0, 3, 0,
+                                               0.0, Angle::TwoPi ());
+    IGeometryRoundTripArc (ellipseData, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// Tests the CurveVector Xml Writer method with Circular Ellipse
+//
+// @bsimethod                                        Ahmed.Rizwan               09/14
+//---------------------------------------------------------------------------------------
+TEST_F (CGSerializationTests, RoundTripCurveVectorCompactCircularDisk)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0,
+                                               1.0, 0.0, 0.0,
+                                               0.0, 1.0, 0.0,
+                                               0.0, Angle::TwoPi ());
+    CurveVectorRoundTripDisk (ellipseData, true);
+    CurveVectorCompactRoundTripDisk (ellipseData, true, true);
+    CurveVectorCompactRoundTripDisk (ellipseData, true, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// Tests the CurveVector Xml Writer method with Non Circular Ellipse
+//
+// @bsimethod                                        Ahmed.Rizwan               09/14
+//---------------------------------------------------------------------------------------
+TEST_F (CGSerializationTests, RoundTripCurveVectorCompactEllipticDisk)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From (1, 2, 3,
+                                               0, 0, 2,
+                                               0, 3, 0,
+                                               0.0, Angle::TwoPi ());
+    CurveVectorRoundTripDisk (ellipseData, false);
+    CurveVectorCompactRoundTripDisk (ellipseData, false, true);
+    CurveVectorCompactRoundTripDisk (ellipseData, false, false);
+    }
+//---------------------------------------------------------------------------------------
+// Tests the ISolidPrimitive Xml Writer method with DgnCone
+//
+// @bsimethod                                        Ahmed.Rizwan               09/14
+//---------------------------------------------------------------------------------------
+TEST_F (CGSerializationTests, RoundTripDgnCone)
+    {
+    DgnConeDetail coneDetail (DPoint3d::From (1, 2, 2), DPoint3d::From (3, 2, 1), 1, 2, true);
+    coneDetail.m_vector0 = DVec3d::From (1, 0, 0);
+    coneDetail.m_vector90 = DVec3d::From (0, 1, 1);
+    ISolidPrimitivePtr cone = ISolidPrimitive::CreateDgnCone (coneDetail);
+    RoundTripDgnCone (cone);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

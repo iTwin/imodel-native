@@ -1565,7 +1565,7 @@ UInt32 upperLimit
 )
     {
     EXPECTED_CONDITION (lowerLimit <= upperLimit);
-    EXPECTED_CONDITION (lowerLimit >= 0);
+    //EXPECTED_CONDITION (lowerLimit >= 0); -- always true of a UInt32
     EXPECTED_CONDITION (upperLimit > 0);
     m_lowerLimit = lowerLimit;
     m_upperLimit = upperLimit;
