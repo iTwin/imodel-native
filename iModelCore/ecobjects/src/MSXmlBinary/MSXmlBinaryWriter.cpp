@@ -92,7 +92,7 @@ void MSXmlBinaryWriter::WriteByte(char c)
 
 void MSXmlBinaryWriter::WriteName(Utf8CP name)
     {
-    for (int i = 0; i < strlen(name); i++)
+    for (size_t i = 0; i < strlen(name); i++)
         {
         WriteByte((byte) name[i]);
         }
@@ -113,7 +113,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
     {
     StartContent(text);
 
-    for (int i = 0; i < strlen(text); i++)
+    for (size_t i = 0; i < strlen(text); i++)
         {
         WriteByte((byte) text[i]);
         }
@@ -173,9 +173,9 @@ void MSXmlBinaryWriter::WriteEndStartElement(bool isEmpty)
 MSXmlBinaryWriter::Element* MSXmlBinaryWriter::EnterScope()
     {
     m_depth++;
-    if (m_depth > m_elements.size())
+    if ((size_t)m_depth > m_elements.size())
         {
-        while (m_elements.size() < m_depth)
+        while (m_elements.size() < (size_t)m_depth)
             m_elements.push_back(nullptr);
         m_elements[m_depth] = new MSXmlBinaryWriter::Element();
         }
