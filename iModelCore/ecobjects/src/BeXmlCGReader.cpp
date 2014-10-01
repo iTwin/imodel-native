@@ -126,7 +126,7 @@ bool GetPoints (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<DP
 bool GetDoubles (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<double> &values)
     {
     BeXmlNodeP listNode = FindChild (parent, listName);
-    if (NULL == listName)
+    if (NULL == listNode)
         return false;
     double value;
     for (BeXmlNodeP child = listNode->GetFirstChild (BEXMLNODE_Any); NULL != child;
@@ -230,7 +230,6 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
         if (   FindChildPlacement (node, "placement", origin, axes)
             && FindChildDouble (node, "radiusA", radiusA)
             && FindChildDouble (node, "radiusB", radiusB)
-            && FindChildDouble (node, "startAngle", startDegrees)
             && FindChildDouble (node, "startAngle", startDegrees)
             && FindChildDouble (node, "sweepAngle", sweepDegrees)
             )
