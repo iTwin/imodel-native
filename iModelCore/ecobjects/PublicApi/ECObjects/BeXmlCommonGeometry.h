@@ -246,6 +246,8 @@ public:
 
     ECOBJECTS_EXPORT static void WriteBytes (bvector<byte>& bytes, ICurvePrimitiveCR data);
 
+    ECOBJECTS_EXPORT static void WriteBytes (bvector<byte>& bytes, IGeometryPtr data);
+
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

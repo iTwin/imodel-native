@@ -24,6 +24,9 @@ static void Indent (IBeXmlWriterR dest)
 
 void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DPoint3d> const & data, Utf8CP listName, Utf8CP itemName)
     {
+    if (0 == data.size())
+        return;
+
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
         WriteXYZ (dest, itemName, data[i]);
@@ -32,6 +35,9 @@ void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DPoint3d> const & dat
 
 void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DVec3d> const & data, Utf8CP listName, Utf8CP itemName)
     {
+    if (0 == data.size())
+        return;
+
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
         {
@@ -47,6 +53,9 @@ void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DVec3d> const & data,
 
 void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP itemName)
     {
+    if (0 == data.size())
+        return;
+
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
         {
@@ -58,6 +67,9 @@ void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<RgbFactor> const & da
 
 void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP itemName)
     {
+    if (0 == data.size())
+        return;
+
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
         {
@@ -72,6 +84,9 @@ void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<DPoint2d> const & dat
 
 void BeXmlCGWriter::WriteIndexList (IBeXmlWriterR dest, bvector<int> const & data, Utf8CP listName, Utf8CP itemName)
     {
+    if (0 == data.size())
+        return;
+
     dest.WriteElementStart (listName);
     size_t numThisLine = 0;
     for (size_t i = 0 ; i < data.size (); i++)
@@ -89,6 +104,9 @@ void BeXmlCGWriter::WriteIndexList (IBeXmlWriterR dest, bvector<int> const & dat
 
 void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<double> const & data, Utf8CP listName, Utf8CP itemName)
     {
+    if (0 == data.size())
+        return;
+
     dest.WriteElementStart (listName);
     for (size_t i = 0 ; i < data.size (); i++)
         WriteDouble (dest, itemName, data[i]);
@@ -146,7 +164,7 @@ void BeXmlCGWriter::WritePlacementXY (IBeXmlWriterR dest, DPoint3dCR origin, DVe
 void BeXmlCGWriter::WriteXYZ (IBeXmlWriterR dest, Utf8CP name, DPoint3dCR xyz)
     {
     wchar_t buffer[1024];
-    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g,%.15g,%.15g", xyz.x, xyz.y, xyz.z);
+    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G,%.17G,%.17G", xyz.x, xyz.y, xyz.z);
     dest.WriteElementStart (name);
     dest.WriteText (buffer);
     dest.WriteElementEnd (); 
@@ -163,7 +181,7 @@ void BeXmlCGWriter::WriteText (IBeXmlWriterR dest, Utf8CP name, wchar_t const *d
 void BeXmlCGWriter::WriteXY (IBeXmlWriterR dest, Utf8CP name, double x, double y)
     {
     wchar_t buffer[1024];
-    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g,%.15g,%.15g", x, y);
+    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G,%.17G,%.17G", x, y);
     dest.WriteElementStart (name);
     dest.WriteText (buffer);
     dest.WriteElementEnd (); 
@@ -172,7 +190,7 @@ void BeXmlCGWriter::WriteXY (IBeXmlWriterR dest, Utf8CP name, double x, double y
 void BeXmlCGWriter::WriteXYZ (IBeXmlWriterR dest, Utf8CP name, double x, double y, double z)
     {
     wchar_t buffer[1024];
-    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g,%.15g,%.15g", x, y, z);
+    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G,%.17G,%.17G", x, y, z);
     dest.WriteElementStart (name);
     dest.WriteText (buffer);
     dest.WriteElementEnd (); 
@@ -180,19 +198,31 @@ void BeXmlCGWriter::WriteXYZ (IBeXmlWriterR dest, Utf8CP name, double x, double 
 
 void BeXmlCGWriter::WriteDouble (IBeXmlWriterR dest, Utf8CP name, double data)
     {
-    wchar_t buffer[1024];
-    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.15g", data);
     dest.WriteElementStart (name);
-    dest.WriteText (buffer);
+    MSXmlBinaryWriter* binWriter = dynamic_cast<MSXmlBinaryWriter*>(&dest);
+    if (nullptr == binWriter)
+        {
+        wchar_t buffer[1024];
+        BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G", data);
+        dest.WriteText (buffer);
+        }
+    else
+        binWriter->WriteDoubleText(data);
     dest.WriteElementEnd (); 
     }
 
 void BeXmlCGWriter::WriteInt (IBeXmlWriterR dest, Utf8CP name, int data)
     {
-    wchar_t buffer[1024];
-    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%d", data);
     dest.WriteElementStart (name);
-    dest.WriteText (buffer);
+    MSXmlBinaryWriter* binWriter = dynamic_cast<MSXmlBinaryWriter*>(&dest);
+    if (nullptr == binWriter)
+        {
+        wchar_t buffer[1024];
+        BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%d", data);
+        dest.WriteText (buffer);
+        }
+    else
+        binWriter->WriteInt32Text(data);
     dest.WriteElementEnd (); 
     }
 
@@ -200,10 +230,16 @@ void BeXmlCGWriter::WriteInt (IBeXmlWriterR dest, Utf8CP name, int data)
 void BeXmlCGWriter::WriteBool (IBeXmlWriterR dest, Utf8CP name, bool data)
     {
     dest.WriteElementStart (name);
-    if (data)
-        dest.WriteText (L"true");
+    MSXmlBinaryWriter* binWriter = dynamic_cast<MSXmlBinaryWriter*>(&dest);
+    if (nullptr == binWriter)
+        {
+        if (data)
+            dest.WriteText (L"true");
+        else
+            dest.WriteText (L"false");
+        }
     else
-        dest.WriteText (L"false");
+        binWriter->WriteBoolText(data);
     dest.WriteElementEnd (); 
     }
 
@@ -322,18 +358,18 @@ void BeXmlCGWriter::WriteSurface (IBeXmlWriterR dest, MSBsplineSurfaceCR surface
     {
     dest.WriteElementStart ("BsplineSurface");
 
-    WriteInt (dest, "orderU", surface.uParams.order);
-    WriteInt (dest, "numUControlPoint", surface.uParams.numPoles);
-    WriteBool (dest, "closedU", surface.uParams.closed ? true : false);
+    WriteInt (dest, "OrderU", surface.uParams.order);
+    WriteBool (dest, "ClosedU", surface.uParams.closed ? true : false);
+    WriteInt (dest, "NumUControlPoint", surface.uParams.numPoles);
 
-    WriteInt (dest, "orderV", surface.vParams.order);
-    WriteInt (dest, "numVControlPoint", surface.vParams.numPoles);
-    WriteBool (dest, "closedV", surface.vParams.closed ? true : false);
+    WriteInt (dest, "OrderV", surface.vParams.order);
+    WriteBool (dest, "ClosedV", surface.vParams.closed ? true : false);
+    WriteInt (dest, "NumVControlPoint", surface.vParams.numPoles);
 
     size_t totalPoles = (size_t)surface.uParams.numPoles * (size_t)surface.vParams.numPoles;
     bvector<DPoint3d> poles;
     poles.assign (surface.poles, surface.poles + totalPoles);
-    WriteList (dest, poles, "ListOfControlPoint", "ControlPoint");
+    WriteList (dest, poles, "ListOfControlPoint", "xyz");
     
     if (surface.rational)
         {
@@ -509,10 +545,13 @@ void BeXmlCGWriter::Write (IBeXmlWriterR dest, CurveVectorCR curveVector, bool p
                     }
                 }
 
-            dest.WriteElementStart ("ListOfHoleLoop");
-            for (size_t i=0; i<holeLoop.size (); i++)
-                Write (dest, *holeLoop[i]->GetChildCurveVectorCP (), false);
-            dest.WriteElementEnd ();
+            if (holeLoop.size() > 0)
+                {
+                dest.WriteElementStart ("ListOfHoleLoop");
+                for (size_t i=0; i<holeLoop.size (); i++)
+                    Write (dest, *holeLoop[i]->GetChildCurveVectorCP (), false);
+                dest.WriteElementEnd ();
+                }
             dest.WriteElementEnd ();
             break;
             }
@@ -924,4 +963,18 @@ void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, ICurvePrimitiveCR data)
     writer->GetBytes(bytes);
     }
 
+void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryPtr data)
+    {
+#if defined (_WIN32)
+    unsigned int oldFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
+    MSXmlBinaryWriter* writer = new MSXmlBinaryWriter();
+    Write(*writer, data);
+#if defined (_WIN32)
+    _set_output_format(oldFormat);
+#endif
+
+    writer->GetBytes(bytes);
+    delete writer;
+    }
 END_BENTLEY_ECOBJECT_NAMESPACE
