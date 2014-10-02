@@ -175,6 +175,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
         FindChildBool (node, "closedV", closedV);   // optional !!
         GetDoubles (node, "ListOfKnotU", "knotU", knotsU);
         GetDoubles (node, "ListOfKnotU", "knotV", knotsV);
+        GetDoubles (node, "ListOfWeight", "weight", weights);
         MSBsplineSurfacePtr surface = MSBsplineSurface::CreatePtr ();
         if (SUCCESS == surface->Populate (points,
                 weights.size () > 0 ? &weights : NULL,
