@@ -73,6 +73,13 @@ bool GetBool (BeXmlNodeP element, bool &value)
 
 
 bool FindChildBool (BeXmlNodeP parent, CharCP name, bool &value) {return GetBool (FindChild (parent, name), value);}
+bool FindChildBool (BeXmlNodeP parent, CharCP nameA, CharCP nameB, bool &value)
+    {
+    return GetBool (FindChild (parent, nameA), value)
+        || GetBool (FindChild (parent, nameB), value);
+    }
+
+
 bool FindChildDPoint3d (BeXmlNodeP parent, CharCP name, DPoint3dR xyz){return GetDPoint3d (FindChild (parent, name), xyz);}
 bool FindChildDouble (BeXmlNodeP parent, CharCP name, double &value) {return GetDouble (FindChild (parent, name), value);}
 
@@ -378,6 +385,16 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
+    else if (BeStringUtilities::Stricmp (node->GetName (), "Coordinate") == 0)
+        {
+        DPoint3d xyz;
+        if (   FindChildDPoint3d (node, "xyz", xyz))
+            {
+            result = ICurvePrimitive::CreatePointString (&xyz, 1);
+            return true;
+            }        
+        }     
+
     result = ICurvePrimitivePtr ();
     return false;
     }
@@ -391,11 +408,12 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
         DPoint3d centerA, centerB;
         double radiusA, radiusB, height;
         bool capped;
+        FindChildBool (node, "bSolidFlag", "capped", capped);
+
         if (   FindChildPlacement (node, "placement", centerA, axes)
             && FindChildDouble (node, "radiusA", radiusA)
             && FindChildDouble (node, "radiusB", radiusB)
             && FindChildDouble (node, "height", height)
-            && FindChildBool (node, "bSolidFlag", capped)
             )
             {
             DVec3d vectorX, vectorY, vectorZ;
@@ -415,11 +433,11 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
         DPoint3d centerA, centerB;
         double radiusA, radiusB;
         bool capped;
+        FindChildBool (node, "bSolidFlag", "capped", capped);
         if (   FindChildPlacement (node, "placement", centerA, axes)
             && FindChildDouble (node, "radiusA", radiusA)
             && FindChildDouble (node, "radiusB", radiusB)
             && FindChildDPoint3d (node, "centerB", centerB)
-            && FindChildBool (node, "bSolidFlag", capped)
             )
             {
             DVec3d vectorX, vectorY, vectorZ;
@@ -446,7 +464,9 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (BeStringUtilities::Stricmp (name, "Box") == 0)
+    else if (   BeStringUtilities::Stricmp (name, "Box") == 0
+             || BeStringUtilities::Stricmp (name, "Block") == 0
+            )
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -455,7 +475,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
         if (   FindChildPlacement (node, "placement", origin, axes)
             && FindChildDPoint3d (node, "cornerA", cornerA)
             && FindChildDPoint3d (node, "cornerB", cornerB)
-            && FindChildBool (node, "bSolidFlag", bSolid)
+            && FindChildBool (node, "bSolidFlag", "capped", bSolid)
             )
             {
             DVec3d vectorX, vectorY, vectorZ;
@@ -476,7 +496,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
         double radius;
         double height;
         bool capped = false;
-        FindChildBool (node, "bSolidFlag", capped);
+        FindChildBool (node, "bSolidFlag", "capped", capped);
         if (   FindChildPlacement (node, "placement", centerA, axes)
             && FindChildDouble (node, "radius", radius)
             && FindChildDouble (node, "height", height)
@@ -500,7 +520,7 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
         double radiusA, radiusB;
         double sweepDegrees = 360.0, startDegrees = 0.0;
         bool capped = false;
-        FindChildBool (node, "bSolidFlag", capped);
+        FindChildBool (node, "bSolidFlag", "capped", capped);
         FindChildDouble (node, "startAngle", startDegrees);
         FindChildDouble (node, "sweepAngle", sweepDegrees);
         if (   FindChildPlacement (node, "placement", center, axes)

@@ -199,10 +199,20 @@ private:
     //! @param [in] data ruled sweep data
     static void WriteDgnRuledSweepDetail (IBeXmlWriterR dest, DgnRuledSweepDetail data);
 
+    //! @param [in] dest xml receiver
+    //! @param [in] point coordinates
+    static void WriteCoordinate (IBeXmlWriterR dest, DPoint3dCR point);
+
+    //! @param [in] dest xml receiver
+    //! @param [in] points coordinates
+    static void WritePointString (IBeXmlWriterR dest, bvector<DPoint3d> const &points, bool preferMostCompactPrimitives);
 
     //! Write common geometry xml for curve primitive.
     //! @param [in] dest xml receiver
     static void Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve);
+    //! Write common geometry xml for curve primitive.
+    //! @param [in] dest xml receiver
+    static void Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve, bool preferMostCompactPrimitives);    
     //! Write common geometry xml for curve vector.
     //! @param [in] dest xml receiver
     static void Write (IBeXmlWriterR dest, CurveVectorCR curve);
@@ -212,9 +222,13 @@ private:
     static void Write (IBeXmlWriterR dest, CurveVectorCR curves, bool preferMostCompactPrimitives);
 
     //! @param [in] dest xml receiver
+    //! @param [in] data any solid primitive
     static void Write (IBeXmlWriterR dest, ISolidPrimitiveR data);
     //! @param [in] dest xml receiver
+    //! @param [in] data any geometry type.
     static void Write (IBeXmlWriterR dest, IGeometryPtr data);
+
+
 
     /*__PUBLISH_SECTION_START__*/
 public:

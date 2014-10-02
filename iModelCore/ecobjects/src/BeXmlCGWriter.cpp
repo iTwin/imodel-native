@@ -382,6 +382,31 @@ void BeXmlCGWriter::WriteLineString (IBeXmlWriterR dest, bvector<DPoint3d> const
     dest.WriteElementEnd ();
     }
 
+void BeXmlCGWriter::WriteCoordinate (IBeXmlWriterR dest, DPoint3dCR point)
+    {
+    dest.WriteElementStart ("Coordinate");
+    WriteXYZ (dest, "xyz", point);
+    dest.WriteElementEnd ();    
+    }
+
+void BeXmlCGWriter::WritePointString (IBeXmlWriterR dest, bvector<DPoint3d> const &points, bool preferMostCompactPrimitives)
+    {
+    if (points.size () == 1 && preferMostCompactPrimitives)
+        {
+        WriteCoordinate (dest, points[0]);
+        }
+    else
+        {
+        dest.WriteElementStart ("PointChain");
+        dest.WriteElementStart ("ListOfPoint");
+        for (size_t i = 0; i < points.size (); i++)
+            WriteCoordinate (dest, points[0]);
+        dest.WriteElementEnd ();
+        dest.WriteElementEnd ();
+        }
+    }
+
+
 void BeXmlCGWriter::WritePolygon (IBeXmlWriterR dest, bvector<DPoint3d> const &points)
     {
     dest.WriteElementStart ("Polygon");
@@ -390,7 +415,7 @@ void BeXmlCGWriter::WritePolygon (IBeXmlWriterR dest, bvector<DPoint3d> const &p
     }
 
 
-void BeXmlCGWriter::Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve)
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve, bool preferMostCompactPrimitives)
     {
     switch (curve.GetCurvePrimitiveType ())
         {
@@ -413,11 +438,20 @@ void BeXmlCGWriter::Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve)
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
             Write (dest, *curve.GetChildCurveVectorCP ());
             break;
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            WritePointString (dest, *curve.GetPointStringCP (), preferMostCompactPrimitives);
+            break;
+
         default:
             return;
         }
     }
 
+void BeXmlCGWriter::Write (IBeXmlWriterR dest, ICurvePrimitiveCR curve)
+    {
+    Write (dest, curve, true);
+    }
 
 void BeXmlCGWriter::Write (IBeXmlWriterR dest, CurveVectorCR curveVector)
     {
@@ -556,7 +590,7 @@ void BeXmlCGWriter::WriteDgnTorusPipeDetail (IBeXmlWriterR dest, DgnTorusPipeDet
         WriteDouble (dest, "radiusB", radiusB);
         WriteDouble (dest, "startAngle", 0.0);
         WriteDouble (dest, "sweepAngle", Angle::RadiansToDegrees (sweepAngle));
-        WriteBool   (dest, "bSolidFlag", data.m_capped);
+        WriteBool   (dest, "capped", data.m_capped);
         dest.WriteElementEnd ();
         }
     }
@@ -581,7 +615,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
                 WritePlacementZX (dest, centerA, unitZ, unitX);
                 WriteDouble (dest, "radius", radiusA);
                 WriteDouble (dest, "height", height);
-                WriteBool (dest, "bSolidFlag", data.m_capped);
+                WriteBool (dest, "capped", data.m_capped);
                 dest.WriteElementEnd ();
                 }
             else
@@ -591,7 +625,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
                 WriteDouble (dest, "radiusA", radiusA);
                 WriteDouble (dest, "radiusB", radiusB);
                 WriteDouble (dest, "height", height);
-                WriteBool (dest, "bSolidFlag", data.m_capped);
+                WriteBool (dest, "capped", data.m_capped);
                 dest.WriteElementEnd ();
                 }
             }
@@ -602,7 +636,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
             WriteXYZ (dest, "centerB", centerB);
             WriteDouble (dest, "radiusA", radiusA);
             WriteDouble (dest, "radiusB", radiusB);
-            WriteBool (dest, "bSolidFlag", data.m_capped);
+            WriteBool (dest, "capped", data.m_capped);
             dest.WriteElementEnd ();
             }
         }
@@ -624,13 +658,13 @@ void BeXmlCGWriter::WriteDgnBoxDetail (IBeXmlWriterR dest, DgnBoxDetail data)
         && DoubleOps::AlmostEqual (ay, by)
         )
         {
-        dest.WriteElementStart ("Box");
+        dest.WriteElementStart ("Block");
         DVec3d unitZ;
         unitZ.Normalize (zVector);
         WritePlacementZX (dest, origin, xVector, unitZ);
         WriteXYZ (dest, "cornerA", DPoint3d::From (0,0,0));
         WriteXYZ (dest, "cornerB", DPoint3d::From (ax, ay, zVector.Magnitude ()));
-        WriteBool (dest, "bSolidFlag", data.m_capped);
+        WriteBool (dest, "capped", data.m_capped);
         dest.WriteElementEnd ();
         }
     else
