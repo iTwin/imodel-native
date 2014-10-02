@@ -1,0 +1,1595 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- GCS Description string -->
+  <data name="GeoCoordSystem" xml:space="preserve">
+    <value>Geographic Coordinate System</value>
+  </data>
+
+  <data name="SYSTM34-01" xml:space="preserve">
+    <value>Danish System 1934/1945 (KMS 2001 Polynomials)</value>
+  </data>
+  <data name="EDCYL-E" xml:space="preserve">
+    <value>Equidistant Cylindrical Projection (Ellipsoidal or Spherical)</value>
+  </data>
+  <data name="PCARREE" xml:space="preserve">
+    <value>Plate Carree / Simple Cylindrical</value>
+  </data>
+  <data name="MRCAT-PV" xml:space="preserve">
+    <value>Popular Visualization Pseudo Mercator</value>
+  </data>
+  <data name="Foot" xml:space="preserve">
+    <value>US Survey Foot</value>
+  </data>
+  <data name="IFoot" xml:space="preserve">
+    <value>International Foot</value>
+  </data>
+
+  <data name="NewGroup" xml:space="preserve">
+    <value>New Subgroup</value>
+  </data>
+  <data name="DeleteGroup" xml:space="preserve">
+    <value>Delete Group</value>
+  </data>
+
+  <data name="Ok" xml:space="preserve">
+    <value>Ok</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="GroupName" xml:space="preserve">
+    <value>Group Name:</value>
+  </data>
+  <data name="GroupDescr" xml:space="preserve">
+    <value>Description:</value>
+  </data>
+  <data name="NeedGroupName" xml:space="preserve">
+    <value>The Group Name cannot be empty</value>
+  </data>
+  <data name="NeedUniqueGroupName" xml:space="preserve">
+    <value>The Group Name must be unique</value>
+  </data>
+  <data name="Uncategorized" xml:space="preserve">
+    <value>Uncategorized - Coordinate Systems not in any group</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Cut" xml:space="preserve">
+    <value>Cut</value>
+  </data>
+  <data name="Paste" xml:space="preserve">
+    <value>Paste</value>
+  </data>
+  <data name="DeleteMember" xml:space="preserve">
+    <value>Delete from Group</value>
+  </data>
+  <data name="DeleteFromLibrary" xml:space="preserve">
+    <value>Delete from Library</value>
+  </data>
+  <data name="EditProperties" xml:space="preserve">
+    <value>Edit Coordinate System Properties</value>
+  </data>
+  <data name="Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="AddToFavorites" xml:space="preserve">
+    <value>Add To Favorites</value>
+  </data>
+  <data name="KeyName" xml:space="preserve">
+    <value>Key Name</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Units" xml:space="preserve">
+    <value>Units</value>
+  </data>
+  <data name="Projection" xml:space="preserve">
+    <value>Projection</value>
+  </data>
+  <data name="EPSG" xml:space="preserve">
+    <value>EPSG Code</value>
+  </data>
+  <data name="Datum" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="Ellipsoid" xml:space="preserve">
+    <value>Ellipsoid</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Properties...</value>
+  </data>
+  <data name="Select" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="SearchText" xml:space="preserve">
+    <value>Search Text</value>
+  </data>
+  <data name="FindNow" xml:space="preserve">
+    <value>Find Now</value>
+  </data>
+  <data name="StopSearch" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="AnyWord" xml:space="preserve">
+    <value>Any Word</value>
+  </data>
+  <data name="AllWords" xml:space="preserve">
+    <value>All Words</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>Library</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="SelectSystem" xml:space="preserve">
+    <value>Select Geographic Coordinate System</value>
+  </data>
+  <data name="GCSProperties" xml:space="preserve">
+    <value>Geographic Coordinate System Properties</value>
+  </data>
+  <data name="GeoCoordinateSettings" xml:space="preserve">
+    <value>Reprojection Settings</value>
+  </data>
+  <data name="DefaultReferenceReprojection" xml:space="preserve">
+    <value>Reference</value>
+  </data>
+  <data name="DefaultReprojection" xml:space="preserve">
+    <value>Active Model</value>
+  </data>
+  <data name="ConstructorFailure" xml:space="preserve">
+    <value>Unable to construct Coordinate System '{0}' : {1}</value>
+  </data>
+  <data name="EditGCS" xml:space="preserve">
+    <value>Edit Geographic Coordinate System</value>
+  </data>
+  <data name="GCSGroupProperties" xml:space="preserve">
+    <value>Group Properties</value>
+  </data>
+
+  <!-- For ReprojectionSettings form-->
+  <data name="RefReprojectionSettings" xml:space="preserve">
+    <value>Reference Reprojection Settings</value>
+  </data>
+  <data name="ReprojectionSettings" xml:space="preserve">
+    <value>Reprojection Settings</value>
+  </data>
+  <data name="StrokeTolerance" xml:space="preserve">
+    <value>Stroke Tolerance</value>
+  </data>
+  <data name="CellElements" xml:space="preserve">
+    <value>Reproject Cell components individually</value>
+  </data>
+  <data name="MultilineTextElements" xml:space="preserve">
+    <value>Reproject Multiline Text components individually</value>
+  </data>
+  <data name="RotateCells" xml:space="preserve">
+    <value>Rotate Cells</value>
+  </data>
+  <data name="ScaleCells" xml:space="preserve">
+    <value>Scale Cells</value>
+  </data>
+  <data name="RotateText" xml:space="preserve">
+    <value>Rotate Text Elements</value>
+  </data>
+  <data name="ScaleText" xml:space="preserve">
+    <value>Scale Text Elements</value>
+  </data>
+  <data name="StrokeArcs" xml:space="preserve">
+    <value>Stroke Arcs to Line Strings</value>
+  </data>
+  <data name="StrokeEllipses" xml:space="preserve">
+    <value>Stroke Ellipses to Line Strings</value>
+  </data>
+  <data name="StrokeCurves" xml:space="preserve">
+    <value>Stroke Curves to Line Strings</value>
+  </data>
+  <data name="PostStrokeLinear" xml:space="preserve">
+    <value>Add Points If Needed</value>
+  </data>
+  <data name="ReprojectElevation" xml:space="preserve">
+    <value>Reproject Elevations</value>
+  </data>
+  <data name="DisplayErrors" xml:space="preserve">
+    <value>Display Errors to Message Center</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Always" xml:space="preserve">
+    <value>Always</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="IfLarge" xml:space="preserve">
+    <value>If Spatially Large</value>
+  </data>
+
+  <!-- For GeoCoordinate System settings panel-->
+  <data name="CoordinateSystem" xml:space="preserve">
+    <value>Coordinate System</value>
+  </data>
+  <data name="Datum" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="VerticalDatum" xml:space="preserve">
+    <value>Vertical Datum</value>
+  </data>
+  <data name="NGVD29" xml:space="preserve">
+    <value>National Geodetic Vertical Datum of 1929</value>
+  </data>
+  <data name="NAVD88" xml:space="preserve">
+    <value>North American Vertical Datum of 1988</value>
+  </data>
+  <data name="FromDatum" xml:space="preserve">
+    <value>Matches Datum</value>
+  </data>
+  <data name="Ellipsoid" xml:space="preserve">
+    <value>Ellipsoid</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Units" xml:space="preserve">
+    <value>Units</value>
+  </data>
+  <data name="StandardParallel1" xml:space="preserve">
+    <value>First Standard Parallel</value>
+  </data>
+  <data name="StandardParallel2" xml:space="preserve">
+    <value>Second Standard Parallel</value>
+  </data>
+  <data name="OriginLongitude" xml:space="preserve">
+    <value>Origin Longitude</value>
+  </data>
+  <data name="OriginLatitude" xml:space="preserve">
+    <value>Origin Latitude</value>
+  </data>
+  <data name="FalseEasting" xml:space="preserve">
+    <value>False Easting</value>
+  </data>
+  <data name="FalseNorthing" xml:space="preserve">
+    <value>False Northing</value>
+  </data>
+  <data name="Quadrant" xml:space="preserve">
+    <value>Quadrant</value>
+  </data>
+  <data name="MinimumLongitude" xml:space="preserve">
+    <value>Minimum Longitude</value>
+  </data>
+  <data name="MinimumLatitude" xml:space="preserve">
+    <value>Minimum Latitude</value>
+  </data>
+  <data name="MaximumLongitude" xml:space="preserve">
+    <value>Maximum Longitude</value>
+  </data>
+  <data name="MaximumLatitude" xml:space="preserve">
+    <value>Maximum Latitude</value>
+  </data>
+  <data name="EquatorRadius" xml:space="preserve">
+    <value>Equatorial Radius</value>
+  </data>
+  <data name="PolarRadius" xml:space="preserve">
+    <value>Polar Radius</value>
+  </data>
+  <data name="Eccentricity" xml:space="preserve">
+    <value>Eccentricity</value>
+  </data>
+  <data name="CentralMeridian" xml:space="preserve">
+    <value>Central Meridian</value>
+  </data>
+  <data name="EasternMeridian" xml:space="preserve">
+    <value>Eastern Meridian</value>
+  </data>
+  <data name="ScaleReduction" xml:space="preserve">
+    <value>Scale Reduction</value>
+  </data>
+  <data name="GeoidSeparation" xml:space="preserve">
+    <value>Separation from Geoid</value>
+  </data>
+  <data name="ElevationAboveGeoid" xml:space="preserve">
+    <value>Elevation Above Geoid</value>
+  </data>
+  <data name="UTMZone" xml:space="preserve">
+    <value>UTM Zone</value>
+  </data>
+  <data name="Hemisphere" xml:space="preserve">
+    <value>Hemisphere</value>
+  </data>
+  <data name="ReferenceParallel" xml:space="preserve">
+    <value>Reference Parallel</value>
+  </data>
+  <data name="Azimuth" xml:space="preserve">
+    <value>Azimuth</value>
+  </data>
+  <data name="Region" xml:space="preserve">
+    <value>Region</value>
+  </data>
+  <data name="CentralPointLongitude" xml:space="preserve">
+    <value>Central Point Longitude</value>
+  </data>
+  <data name="CentralPointLatitude" xml:space="preserve">
+    <value>Central Point Latitude</value>
+  </data>
+  <data name="Point1Longitude" xml:space="preserve">
+    <value>First Point Longitude</value>
+  </data>
+  <data name="Point1Latitude" xml:space="preserve">
+    <value>First Point Latitude</value>
+  </data>
+  <data name="Point2Longitude" xml:space="preserve">
+    <value>Second Point Longitude</value>
+  </data>
+  <data name="Point2Latitude" xml:space="preserve">
+    <value>Second Point Latitude</value>
+  </data>
+  <data name="PoleLongitude" xml:space="preserve">
+    <value>Pole Longitude</value>
+  </data>
+  <data name="PoleLatitude" xml:space="preserve">
+    <value>Pole Latitude</value>
+  </data>
+  <data name="Point2Longitude" xml:space="preserve">
+    <value>Second Point Longitude</value>
+  </data>
+  <data name="AffineA0" xml:space="preserve">
+    <value>Affine A0 Parameter</value>
+  </data>
+  <data name="AffineA1" xml:space="preserve">
+    <value>Affine A1 Parameter</value>
+  </data>
+  <data name="AffineA2" xml:space="preserve">
+    <value>Affine A2 Parameter</value>
+  </data>
+  <data name="AffineB0" xml:space="preserve">
+    <value>Affine B0 Parameter</value>
+  </data>
+  <data name="AffineB1" xml:space="preserve">
+    <value>Affine B1 Parameter</value>
+  </data>
+  <data name="AffineB2" xml:space="preserve">
+    <value>Affine B2 Parameter</value>
+  </data>
+  <data name="GaussianParallel" xml:space="preserve">
+    <value>Gaussian ParallelPoint Latitude</value>
+  </data>
+  <data name="Northern" xml:space="preserve">
+    <value>Northern</value>
+  </data>
+  <data name="Southern" xml:space="preserve">
+    <value>Southern</value>
+  </data>
+  <data name="jylland" xml:space="preserve">
+    <value>Jylland</value>
+  </data>
+  <data name="sjaelland" xml:space="preserve">
+    <value>SJaelland</value>
+  </data>
+  <data name="bornholm" xml:space="preserve">
+    <value>Bornholm</value>
+  </data>
+  <data name="quad1" xml:space="preserve">
+    <value>Positive X and Y</value>
+  </data>
+  <data name="quad2" xml:space="preserve">
+    <value>Negative X, Positive Y</value>
+  </data>
+  <data name="quad3" xml:space="preserve">
+    <value>Negative X and Y</value>
+  </data>
+  <data name="quad4" xml:space="preserve">
+    <value>PositiveX, Negative Y</value>
+  </data>
+  <data name="quad-1" xml:space="preserve">
+    <value>Positive X and Y; X Y Interchanged</value>
+  </data>
+  <data name="quad-2" xml:space="preserve">
+    <value>Negative X, Positive Y;  X Y Interchanged</value>
+  </data>
+  <data name="quad-3" xml:space="preserve">
+    <value>Negative X and Y;  X Y Interchanged</value>
+  </data>
+  <data name="quad-4" xml:space="preserve">
+    <value>PositiveX, Negative Y;  X Y Interchanged</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>No Datum</value>
+  </data>
+  <data name="NonCSMap" xml:space="preserve">
+    <value>Coordinate System Modifiers</value>
+  </data>
+  <data name="Transform" xml:space="preserve">
+    <value>Local Transform Type</value>
+  </data>
+  <data name="Notransform" xml:space="preserve">
+    <value>No Transform</value>
+  </data>
+  <data name="Helmert" xml:space="preserve">
+    <value>Helmert Transform</value>
+  </data>
+  <data name="SecondOrderConformal" xml:space="preserve">
+    <value>Second Order Conformal</value>
+  </data>
+  <data name="HelmertA" xml:space="preserve">
+    <value>Helmert A</value>
+  </data>
+  <data name="HelmertB" xml:space="preserve">
+    <value>Helmert B</value>
+  </data>
+  <data name="HelmertC" xml:space="preserve">
+    <value>Offset X</value>
+  </data>
+  <data name="HelmertD" xml:space="preserve">
+    <value>Offset Y</value>
+  </data>
+  <data name="HelmertE" xml:space="preserve">
+    <value>Offset Z</value>
+  </data>
+
+  <!-- For Datum Display and Editing -->
+  <data name="EditDatums" xml:space="preserve">
+    <value>Edit Datums</value>
+  </data>
+  <data name="EditDatum" xml:space="preserve">
+    <value>Edit Datum Properties</value>
+  </data>
+
+  <data name="MOLO" xml:space="preserve">
+    <value>DMA Molodensky Transformation</value>
+  </data>
+  <data name="MREG" xml:space="preserve">
+    <value>DMA Multiple Regression</value>
+  </data>
+  <data name="NAD27" xml:space="preserve">
+    <value>NAD27 &lt;-&gt; NAD83 via NADCON/NTv2</value>
+  </data>
+  <data name="NAD83" xml:space="preserve">
+    <value>NAD83 - no shift required</value>
+  </data>
+  <data name="WGS84" xml:space="preserve">
+    <value>WGS84 - no shift required</value>
+  </data>
+  <data name="GDA94" xml:space="preserve">
+    <value>GDA94 - no shift required</value>
+  </data>
+  <data name="NZGD2000" xml:space="preserve">
+    <value>NZGD2000 - no shift required</value>
+  </data>
+  <data name="ETRF89" xml:space="preserve">
+    <value>ETRF89 - no shift required</value>
+  </data>
+  <data name="CSRS" xml:space="preserve">
+    <value>CSRS &lt;-&gt; NAD83 via Grid Files</value>
+  </data>
+  <data name="WGS72" xml:space="preserve">
+    <value>WGS72 &lt;-&gt; WGS84 via DMA Formula</value>
+  </data>
+  <data name="HPGN" xml:space="preserve">
+    <value>HARN &lt;-&gt; NAD83 via NADCON</value>
+  </data>
+  <data name="AGD66" xml:space="preserve">
+    <value>AGD66 &lt;-&gt; GDA94 via Grid Files</value>
+  </data>
+  <data name="AGD84" xml:space="preserve">
+    <value>AGD84 &lt;-&gt; GDA94 via Grid Files</value>
+  </data>
+  <data name="ED50" xml:space="preserve">
+    <value>ED50 &lt;-&gt; ETRF89 via Grid Files</value>
+  </data>
+  <data name="DHDN" xml:space="preserve">
+    <value>DHDN &lt;-&gt; ETRF89 via Grid Files</value>
+  </data>
+  <data name="NZGD49" xml:space="preserve">
+    <value>NZGD40 &lt;-&gt; NZGD2000 via Grid Files</value>
+  </data>
+  <data name="ATS77" xml:space="preserve">
+    <value>Grid Shift Files</value>
+  </data>
+  <data name="TOKYO" xml:space="preserve">
+    <value>TOKYO &lt;-&gt; JGD2000 via Grid File</value>
+  </data>
+  <data name="RGF93" xml:space="preserve">
+    <value>NTF &lt;-&gt; RGF93 via Grid File</value>
+  </data>
+  <data name="GEOCTR" xml:space="preserve">
+    <value>Geocentric Translation</value>
+  </data>
+  <data name="BURS" xml:space="preserve">
+    <value>Bursa/Wolf Transformation</value>
+  </data>
+  <data name="3PARM" xml:space="preserve">
+    <value>Three Parameter Transformation</value>
+  </data>
+  <data name="6PARM" xml:space="preserve">
+    <value>Six Parameter Transformation</value>
+  </data>
+  <data name="7PARM" xml:space="preserve">
+    <value>Seven Parameter Transformation</value>
+  </data>
+  <data name="4PARM" xml:space="preserve">
+    <value>Four Parameter Transformation</value>
+  </data>
+  <data name="6PARM" xml:space="preserve">
+    <value>Six Parameter Transformation</value>
+  </data>
+  <data name="CHENYX" xml:space="preserve">
+    <value>CH1903 &lt;-&gt; WGS84 via CHENyx.gsb</value>
+  </data>
+  <data name="GENGRID" xml:space="preserve">
+    <value>Grid Shift Files</value>
+  </data>
+
+
+  <data name="ConvertType" xml:space="preserve">
+    <value>Conversion Method</value>
+  </data>
+
+  <data name="DeltaX" xml:space="preserve">
+    <value>Delta X</value>
+  </data>
+  <data name="DeltaY" xml:space="preserve">
+    <value>Delta Y</value>
+  </data>
+  <data name="DeltaZ" xml:space="preserve">
+    <value>Delta Z</value>
+  </data>
+
+  <data name="RotationX" xml:space="preserve">
+    <value>X Rotation</value>
+  </data>
+  <data name="RotationY" xml:space="preserve">
+    <value>Y Rotation</value>
+  </data>
+  <data name="RotationZ" xml:space="preserve">
+    <value>Z Rotation</value>
+  </data>
+
+  <data name="Scale" xml:space="preserve">
+    <value>Scale</value>
+  </data>
+
+  <data name="User" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+
+  <data name="DatumInSystemLibrary" xml:space="preserve">
+    <value>There is already a datum with that name in the Sytem Library.</value>
+  </data>
+  <data name="DatumInUserLibrary" xml:space="preserve">
+    <value>There is already a datum with that name in this libraryfile.</value>
+  </data>
+  <data name="SelectAnotherDatumName" xml:space="preserve">
+    <value>Please use a different Datum name.</value>
+  </data>
+  <data name="UserDefined" xml:space="preserve">
+    <value>User Defined</value>
+  </data>
+
+  <data name="Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+
+  <data name="CannotDeleteDatumTitle" xml:space="preserve">
+    <value>The Datum cannot be deleted</value>
+  </data>
+  <data name="DatumInUse" xml:space="preserve">
+    <value>The Datum is used by one or more of the Geographic Coordinate Systems in the Library and cannot be deleted.</value>
+  </data>
+  <data name="LibraryReadOnly" xml:space="preserve">
+    <value>Cannot obtain write access to the Library File.</value>
+  </data>
+
+  <data name="CannotAddDatumTitle" xml:space="preserve">
+    <value>The Datum cannot be added to the library</value>
+  </data>
+  <data name="IllegalDatumName" xml:space="preserve">
+    <value>The Datum Name contains an illegal character.</value>
+  </data>
+  <data name="MaxUserDatums" xml:space="preserve">
+    <value>The limit of 200 User-defined Datums is exceeded.</value>
+  </data>
+
+  <data name="CannotReplaceDatumTitle" xml:space="preserve">
+    <value>The Datum modification cannot be written to the library</value>
+  </data>
+
+  <!-- For Datum Display and Editing -->
+  <data name="EditEllipsoids" xml:space="preserve">
+    <value>Edit Ellipsoids</value>
+  </data>
+  <data name="EditEllipsoid" xml:space="preserve">
+    <value>Edit Ellipsoid Properties</value>
+  </data>
+
+  <data name="CannotDeleteEllipsoidTitle" xml:space="preserve">
+    <value>The Ellipsoid cannot be deleted</value>
+  </data>
+  <data name="EllipsoidInUse" xml:space="preserve">
+    <value>The Ellipsoid is used by one or more of the Geographic Coordinate Systems or Datums in the Library and cannot be deleted.</value>
+  </data>
+
+  <data name="CannotAddEllipsoidTitle" xml:space="preserve">
+    <value>The Ellipsoid cannot be added to the library</value>
+  </data>
+  <data name="IllegalEllipsoidName" xml:space="preserve">
+    <value>The Ellipsoid Name contains an illegal character.</value>
+  </data>
+  <data name="MaxUserEllipsoids" xml:space="preserve">
+    <value>The limit of 200 User-defined Ellipsoids is exceeded.</value>
+  </data>
+
+  <data name="CannotReplaceEllipsoidTitle" xml:space="preserve">
+    <value>The Ellipsoid modification cannot be written to the library</value>
+  </data>
+																		  
+
+<!-- List of country names and group tree names for the Organization file of the system library. To check
+     if all names are present, the values below should be martianized and the whole tree nodes checked in the 
+     Select geographic coordinate system dialog.
+     The entries have been placed in alphabetical orders of key. Alphabetical order is not essential and need not be
+     maintained in future versions. A few entries below are based on acronyms. These need not be translated. -->
+  <data name="Afghanistan" xml:space="preserve">
+    <value>Afghanistan</value>
+  </data>
+  <data name="Africa" xml:space="preserve">
+    <value>Africa</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="AGD66" xml:space="preserve">
+    <value>AGD66 (Australian Map Grid)</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="AGD84" xml:space="preserve">
+    <value>AGD84 (Australian Map Grid and others)</value>
+  </data>
+  <data name="Alabama" xml:space="preserve">
+    <value>Alabama</value>
+  </data>
+  <data name="Alaska " xml:space="preserve">
+    <value>Alaska </value>
+  </data>
+  <data name="Alberta" xml:space="preserve">
+    <value>Alberta</value>
+  </data>
+  <data name="Algeria" xml:space="preserve">
+    <value>Algeria</value>
+  </data>
+  <data name="Angola" xml:space="preserve">
+    <value>Angola</value>
+  </data>
+  <data name="Anguilla" xml:space="preserve">
+    <value>Anguilla</value>
+  </data>
+  <data name="Antarctica" xml:space="preserve">
+    <value>Antarctica</value>
+  </data>
+  <data name="Antigua and Barbuda" xml:space="preserve">
+    <value>Antigua and Barbuda</value>
+  </data>
+  <data name="Argentina" xml:space="preserve">
+    <value>Argentina</value>
+  </data>
+  <data name="Arizona" xml:space="preserve">
+    <value>Arizona</value>
+  </data>
+  <data name="Arkansas" xml:space="preserve">
+    <value>Arkansas</value>
+  </data>
+  <data name="Asia" xml:space="preserve">
+    <value>Asia</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="ASTRLA66" xml:space="preserve">
+    <value>ASTRLA66</value>
+  </data>
+  <data name="Atlantic Islands" xml:space="preserve">
+    <value>Atlantic Islands</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="ATS77" xml:space="preserve">
+    <value>ATS77</value>
+  </data>
+  <data name="Australia" xml:space="preserve">
+    <value>Australia</value>
+  </data>
+  <data name="Austria" xml:space="preserve">
+    <value>Austria</value>
+  </data>
+  <data name="Azores" xml:space="preserve">
+    <value>Azores</value>
+  </data>
+  <data name="Bahrain" xml:space="preserve">
+    <value>Bahrain</value>
+  </data>
+  <data name="Bangladesh" xml:space="preserve">
+    <value>Bangladesh</value>
+  </data>
+  <data name="Barbados" xml:space="preserve">
+    <value>Barbados</value>
+  </data>
+  <data name="Belgium" xml:space="preserve">
+    <value>Belgium</value>
+  </data>
+  <data name="Bermuda" xml:space="preserve">
+    <value>Bermuda (Placed here for ease of use ...)</value>
+  </data>
+  <data name="Bhutan" xml:space="preserve">
+    <value>Bhutan</value>
+  </data>
+  <data name="Borneo" xml:space="preserve">
+    <value>Borneo (Includes coordinate systems from Malaysia, Indonesia, Brunei)</value>
+  </data>
+  <data name="Brazil" xml:space="preserve">
+    <value>Brazil</value>
+  </data>
+  <data name="British Columbia" xml:space="preserve">
+    <value>British Columbia</value>
+  </data>
+  <data name="Brunei" xml:space="preserve">
+    <value>Brunei</value>
+  </data>
+  <data name="California" xml:space="preserve">
+    <value>California</value>
+  </data>
+  <data name="Cameroon" xml:space="preserve">
+    <value>Cameroon</value>
+  </data>
+  <data name="Canada" xml:space="preserve">
+    <value>Canada</value>
+  </data>
+  <data name="Cayman Islands" xml:space="preserve">
+    <value>Cayman Islands</value>
+  </data>
+  <data name="Central America and Caribbeans" xml:space="preserve">
+    <value>Central America and Caribbeans</value>
+  </data>
+  <data name="China" xml:space="preserve">
+    <value>China</value>
+  </data>
+  <data name="Colorado" xml:space="preserve">
+    <value>Colorado</value>
+  </data>
+  <data name="Columbia" xml:space="preserve">
+    <value>Columbia</value>
+  </data>
+  <data name="Connecticut" xml:space="preserve">
+    <value>Connecticut</value>
+  </data>
+  <data name="Coordinate Systems Based upon Unknown datums" xml:space="preserve">
+    <value>Coordinate Systems Based upon Unknown datums</value>
+  </data>
+  <data name="Cote d'Ivoire" xml:space="preserve">
+    <value>Cote d'Ivoire</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="CSRS (NAD83-CSRS)" xml:space="preserve">
+    <value>CSRS (NAD83-CSRS)</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="CSRS98 (NAD83-98)" xml:space="preserve">
+    <value>CSRS98 (NAD83-98)</value>
+  </data>
+  <data name="Cuba" xml:space="preserve">
+    <value>Cuba</value>
+  </data>
+  <data name="Czechoslovakia" xml:space="preserve">
+    <value>Czechoslovakia</value>
+  </data>
+  <data name="Danish System 1934-1945 2001 variation" xml:space="preserve">
+    <value>Danish System 1934/1945 (2001 variation)</value>
+  </data>
+  <data name="Danish System 1934-1945 1999 variation" xml:space="preserve">
+    <value>Danish System 1934/1945 (November 1999 variation)</value>
+  </data>
+  <data name="Danish System 1934-1945" xml:space="preserve">
+    <value>Danish System 1934/1945</value>
+  </data>
+  <data name="Delaware" xml:space="preserve">
+    <value>Delaware</value>
+  </data>
+  <data name="Denmark" xml:space="preserve">
+    <value>Denmark</value>
+  </data>
+  <data name="Djibouti" xml:space="preserve">
+    <value>Djibouti</value>
+  </data>
+  <data name="Dominica" xml:space="preserve">
+    <value>Dominica</value>
+  </data>
+  <data name="Egypt" xml:space="preserve">
+    <value>Egypt</value>
+  </data>
+  <data name="Eritrea" xml:space="preserve">
+    <value>Eritrea</value>
+  </data>
+  <data name="Estonia" xml:space="preserve">
+    <value>Estonia</value>
+  </data>
+  <data name="Ethiopia" xml:space="preserve">
+    <value>Ethiopia</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="ETRS89" xml:space="preserve">
+    <value>ETRS89</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="EUROP50" xml:space="preserve">
+    <value>EUROP50 (ERP50-W)</value>
+  </data>
+  <data name="Europe" xml:space="preserve">
+    <value>Europe</value>
+  </data>
+  <data name="Finland" xml:space="preserve">
+    <value>Finland</value>
+  </data>
+  <data name="Florida" xml:space="preserve">
+    <value>Florida</value>
+  </data>
+  <data name="Programmatic operations" xml:space="preserve">
+    <value>For programmatic operations (WKT, WMS, Connector)</value>
+  </data>
+  <data name="France" xml:space="preserve">
+    <value>France</value>
+  </data>
+  <data name="French Guiana" xml:space="preserve">
+    <value>French Guiana</value>
+  </data>
+  <data name="Gabon" xml:space="preserve">
+    <value>Gabon</value>
+  </data>
+  <!-- Note to translators: Gauss Kruger refers to names of persons and need not be translated. -->
+  <data name="Gauss Kruger Zones" xml:space="preserve">
+    <value>Gauss Kruger Zones</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="GDA 94" xml:space="preserve">
+    <value>GDA 94</value>
+  </data>
+  <data name="Geographic" xml:space="preserve">
+    <value>Geographic (latitude, longitude)</value>
+  </data>
+  <data name="Georgia" xml:space="preserve">
+    <value>Georgia</value>
+  </data>
+  <data name="Germany" xml:space="preserve">
+    <value>Germany</value>
+  </data>
+  <data name="Ghana" xml:space="preserve">
+    <value>Ghana</value>
+  </data>
+  <data name="Greece" xml:space="preserve">
+    <value>Greece</value>
+  </data>
+  <data name="Greenland" xml:space="preserve">
+    <value>Greenland</value>
+  </data>
+  <data name="Grenada" xml:space="preserve">
+    <value>Grenada</value>
+  </data>
+  <data name="Guadeloupe" xml:space="preserve">
+    <value>Guadeloupe</value>
+  </data>
+  <data name="Guatemala" xml:space="preserve">
+    <value>Guatemala</value>
+  </data>
+  <data name="Guinea-Bissau" xml:space="preserve">
+    <value>Guinea-Bissau</value>
+  </data>
+  <data name="Guinea" xml:space="preserve">
+    <value>Guinea</value>
+  </data>
+  <data name="Hawaii" xml:space="preserve">
+    <value>Hawaii</value>
+  </data>
+  <data name="Hong Kong" xml:space="preserve">
+    <value>Hong Kong</value>
+  </data>
+  <data name="Hungary" xml:space="preserve">
+    <value>Hungary</value>
+  </data>
+  <data name="Iceland" xml:space="preserve">
+    <value>Iceland</value>
+  </data>
+  <data name="Idaho" xml:space="preserve">
+    <value>Idaho</value>
+  </data>
+  <data name="Illinois" xml:space="preserve">
+    <value>Illinois</value>
+  </data>
+  <data name="India" xml:space="preserve">
+    <value>India</value>
+  </data>
+  <data name="Indian 1960" xml:space="preserve">
+    <value>Indian 1960</value>
+  </data>
+  <data name="Indian Ocean" xml:space="preserve">
+    <value>Indian Ocean</value>
+  </data>
+  <data name="Indiana" xml:space="preserve">
+    <value>Indiana</value>
+  </data>
+  <data name="Indonesia" xml:space="preserve">
+    <value>Indonesia</value>
+  </data>
+  <data name="International Foot" xml:space="preserve">
+    <value>International Foot</value>
+  </data>
+  <data name="Iowa" xml:space="preserve">
+    <value>Iowa</value>
+  </data>
+  <data name="Iran" xml:space="preserve">
+    <value>Iran</value>
+  </data>
+  <data name="Iraq" xml:space="preserve">
+    <value>Iraq</value>
+  </data>
+  <data name="Ireland" xml:space="preserve">
+    <value>Ireland</value>
+  </data>
+  <data name="Israel" xml:space="preserve">
+    <value>Israel</value>
+  </data>
+  <data name="Italy" xml:space="preserve">
+    <value>Italy</value>
+  </data>
+  <data name="Jamaica" xml:space="preserve">
+    <value>Jamaica</value>
+  </data>
+  <data name="Japan" xml:space="preserve">
+    <value>Japan</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="JGD2000" xml:space="preserve">
+    <value>JGD2000</value>
+  </data>
+  <data name="Jordan" xml:space="preserve">
+    <value>Jordan</value>
+  </data>
+  <data name="Kansas" xml:space="preserve">
+    <value>Kansas</value>
+  </data>
+  <data name="Kentucky" xml:space="preserve">
+    <value>Kentucky</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="KKJ" xml:space="preserve">
+    <value>KKJ</value>
+  </data>
+  <data name="Korea" xml:space="preserve">
+    <value>Korea</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="KP2000" xml:space="preserve">
+    <value>KP2000</value>
+  </data>
+  <data name="Kuwait" xml:space="preserve">
+    <value>Kuwait</value>
+  </data>
+  <data name="Laos" xml:space="preserve">
+    <value>Laos</value>
+  </data>
+  <data name="Latvia" xml:space="preserve">
+    <value>Latvia</value>
+  </data>
+  <data name="Legacy" xml:space="preserve">
+    <value>Legacy</value>
+  </data>
+  <data name="Liberia" xml:space="preserve">
+    <value>Liberia</value>
+  </data>
+  <data name="Library" xml:space="preserve">
+    <value>Library</value>
+  </data>
+  <data name="Libya" xml:space="preserve">
+    <value>Libya</value>
+  </data>
+  <data name="Liechtenstein" xml:space="preserve">
+    <value>Liechtenstein</value>
+  </data>
+  <data name="Lithuania" xml:space="preserve">
+    <value>Lithuania</value>
+  </data>
+  <data name="Louisiana" xml:space="preserve">
+    <value>Louisiana</value>
+  </data>
+  <data name="Luxembourg" xml:space="preserve">
+    <value>Luxembourg</value>
+  </data>
+  <data name="Macau" xml:space="preserve">
+    <value>Macau</value>
+  </data>
+  <data name="Madagascar" xml:space="preserve">
+    <value>Madagascar</value>
+  </data>
+  <data name="Maine" xml:space="preserve">
+    <value>Maine</value>
+  </data>
+  <data name="Malaysia" xml:space="preserve">
+    <value>Malaysia</value>
+  </data>
+  <data name="Maldives" xml:space="preserve">
+    <value>Maldives</value>
+  </data>
+  <!-- Note to translators: The following entry referes to the Canadian provinces located upon the Atlantic Ocean. -->
+  <data name="Maritime provinces" xml:space="preserve">
+    <value>Maritime provinces</value>
+  </data>
+  <data name="Martinique" xml:space="preserve">
+    <value>Martinique</value>
+  </data>
+  <data name="Maryland" xml:space="preserve">
+    <value>Maryland</value>
+  </data>
+  <data name="Massachusetts" xml:space="preserve">
+    <value>Massachusetts</value>
+  </data>
+  <data name="Mauritania" xml:space="preserve">
+    <value>Mauritania</value>
+  </data>
+  <data name="Mayotte" xml:space="preserve">
+    <value>Mayotte</value>
+  </data>
+  <data name="Meter" xml:space="preserve">
+    <value>Meter</value>
+  </data>
+  <data name="Michigan" xml:space="preserve">
+    <value>Michigan</value>
+  </data>
+  <data name="Middle East" xml:space="preserve">
+    <value>Middle East</value>
+  </data>
+  <!-- Note to translators: DOT refers to 'Department of Transformation' and probably need not be translated. -->
+  <data name="Minnesota DOT Counties" xml:space="preserve">
+    <value>Minnesota DOT Counties</value>
+  </data>
+  <data name="Minnesota" xml:space="preserve">
+    <value>Minnesota</value>
+  </data>
+  <data name="Mississippi" xml:space="preserve">
+    <value>Mississippi</value>
+  </data>
+  <data name="Missouri" xml:space="preserve">
+    <value>Missouri</value>
+  </data>
+  <data name="Montana" xml:space="preserve">
+    <value>Montana</value>
+  </data>
+  <data name="Montserrat" xml:space="preserve">
+    <value>Montserrat</value>
+  </data>
+  <data name="Morocco" xml:space="preserve">
+    <value>Morocco</value>
+  </data>
+  <data name="Mozambique" xml:space="preserve">
+    <value>Mozambique</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NAD 27(CGQ77)" xml:space="preserve">
+    <value>NAD 27(CGQ77)</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NAD 27" xml:space="preserve">
+    <value>NAD 27</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NAD 83" xml:space="preserve">
+    <value>NAD 83</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NAD83-CSRS" xml:space="preserve">
+    <value>NAD83-CSRS</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NAD83-CSRS98" xml:space="preserve">
+    <value>NAD83-CSRS98</value>
+  </data>
+  <data name="Namibia" xml:space="preserve">
+    <value>Namibia</value>
+  </data>
+  <data name="Nebraska" xml:space="preserve">
+    <value>Nebraska</value>
+  </data>
+  <data name="Netherlands" xml:space="preserve">
+    <value>Netherlands</value>
+  </data>
+  <data name="Nevada" xml:space="preserve">
+    <value>Nevada</value>
+  </data>
+  <data name="New Brunswick" xml:space="preserve">
+    <value>New Brunswick</value>
+  </data>
+  <data name="New Hampshire" xml:space="preserve">
+    <value>New Hampshire</value>
+  </data>
+  <data name="New Jersey" xml:space="preserve">
+    <value>New Jersey</value>
+  </data>
+  <data name="New Mexico" xml:space="preserve">
+    <value>New Mexico</value>
+  </data>
+  <data name="New York" xml:space="preserve">
+    <value>New York</value>
+  </data>
+  <data name="New Zealand Grid Circuits" xml:space="preserve">
+    <value>New Zealand Grid Circuits</value>
+  </data>
+  <data name="New Zealand" xml:space="preserve">
+    <value>New Zealand</value>
+  </data>
+  <data name="Niger" xml:space="preserve">
+    <value>Niger</value>
+  </data>
+  <data name="Nigeria" xml:space="preserve">
+    <value>Nigeria</value>
+  </data>
+  <data name="North America" xml:space="preserve">
+    <value>North America</value>
+  </data>
+  <data name="North Carolina" xml:space="preserve">
+    <value>North Carolina</value>
+  </data>
+  <data name="North Dakota" xml:space="preserve">
+    <value>North Dakota</value>
+  </data>
+  <data name="Norway" xml:space="preserve">
+    <value>Norway</value>
+  </data>
+  <data name="Nova Scotia" xml:space="preserve">
+    <value>Nova Scotia</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NZGD2000 " xml:space="preserve">
+    <value>NZGD2000 </value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="NZGD49 " xml:space="preserve">
+    <value>NZGD49 </value>
+  </data>
+  <data name="Oceania" xml:space="preserve">
+    <value>Oceania (Australia, New Zealand,...)</value>
+  </data>
+  <data name="Ohio" xml:space="preserve">
+    <value>Ohio</value>
+  </data>
+  <data name="Oklahoma" xml:space="preserve">
+    <value>Oklahoma</value>
+  </data>
+  <data name="Older System" xml:space="preserve">
+    <value>Older System</value>
+  </data>
+  <data name="Oman" xml:space="preserve">
+    <value>Oman</value>
+  </data>
+  <data name="Ontario" xml:space="preserve">
+    <value>Ontario</value>
+  </data>
+  <data name="Oregon" xml:space="preserve">
+    <value>Oregon</value>
+  </data>
+  <data name="Others-Unclassified" xml:space="preserve">
+    <value>Others/Unclassified</value>
+  </data>
+  <data name="Others" xml:space="preserve">
+    <value>Others</value>
+  </data>
+  <data name="Pacific Islands" xml:space="preserve">
+    <value>Pacific Islands</value>
+  </data>
+  <data name="Pakistan" xml:space="preserve">
+    <value>Pakistan</value>
+  </data>
+  <data name="Palestine" xml:space="preserve">
+    <value>Palestine</value>
+  </data>
+  <data name="Paraguay" xml:space="preserve">
+    <value>Paraguay</value>
+  </data>
+  <data name="Pennsylvania" xml:space="preserve">
+    <value>Pennsylvania</value>
+  </data>
+  <data name="Peru" xml:space="preserve">
+    <value>Peru</value>
+  </data>
+  <data name="Philippines" xml:space="preserve">
+    <value>Philippines</value>
+  </data>
+  <data name="Poland" xml:space="preserve">
+    <value>Poland</value>
+  </data>
+  <data name="Portugal" xml:space="preserve">
+    <value>Portugal</value>
+  </data>
+  <data name="Prince Edward Island" xml:space="preserve">
+    <value>Prince Edward Island</value>
+  </data>
+  <data name="Projected" xml:space="preserve">
+    <value>Projected (northing, easting, ...)</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="PSAD56" xml:space="preserve">
+    <value>PSAD56</value>
+  </data>
+  <data name="Puerto Rico and Virgin Islands" xml:space="preserve">
+    <value>Puerto Rico and Virgin Islands</value>
+  </data>
+  <data name="Puerto Rico" xml:space="preserve">
+    <value>Puerto Rico</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="Pulkovo 1942-1958" xml:space="preserve">
+    <value>Pulkovo 1942(1958)</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="Pulkovo 1942-1983" xml:space="preserve">
+    <value>Pulkovo 1942(1983)</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="Pulkovo 1942" xml:space="preserve">
+    <value>Pulkovo 1942</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="Pulkovo 1995" xml:space="preserve">
+    <value>Pulkovo 1995</value>
+  </data>
+  <data name="Qatar" xml:space="preserve">
+    <value>Qatar</value>
+  </data>
+  <data name="Quebec" xml:space="preserve">
+    <value>Quebec</value>
+  </data>
+  <data name="Reunion" xml:space="preserve">
+    <value>Reunion</value>
+  </data>
+  <data name="Rhode Island" xml:space="preserve">
+    <value>Rhode Island</value>
+  </data>
+  <data name="Romania" xml:space="preserve">
+    <value>Romania</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="RT90" xml:space="preserve">
+    <value>RT90</value>
+  </data>
+  <data name="Russia" xml:space="preserve">
+    <value>Russia</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="SA1969" xml:space="preserve">
+    <value>SA1969</value>
+  </data>
+  <data name="Saint Kitts and Nevis" xml:space="preserve">
+    <value>Saint Kitts and Nevis</value>
+  </data>
+  <data name="Saint-Pierre et Miquelon" xml:space="preserve">
+    <value>Saint-Pierre et Miquelon</value>
+  </data>
+  <data name="Saudi Arabia" xml:space="preserve">
+    <value>Saudi Arabia</value>
+  </data>
+  <data name="SCRS-New system" xml:space="preserve">
+    <value>SCRS (New system)</value>
+  </data>
+  <data name="SCRS County System" xml:space="preserve">
+    <value>SCRS County System</value>
+  </data>
+  <data name="Senegal" xml:space="preserve">
+    <value>Senegal</value>
+  </data>
+  <data name="Sierra Leone" xml:space="preserve">
+    <value>Sierra Leone</value>
+  </data>
+  <data name="Singapore" xml:space="preserve">
+    <value>Singapore</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="SIRGAS" xml:space="preserve">
+    <value>SIRGAS</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="SIRGAS2000" xml:space="preserve">
+    <value>SIRGAS2000</value>
+  </data>
+  <data name="Slovenia" xml:space="preserve">
+    <value>Slovenia</value>
+  </data>
+  <data name="Somalia" xml:space="preserve">
+    <value>Somalia</value>
+  </data>
+  <data name="South Africa" xml:space="preserve">
+    <value>South Africa</value>
+  </data>
+  <data name="South America" xml:space="preserve">
+    <value>South America</value>
+  </data>
+  <data name="South Carolina" xml:space="preserve">
+    <value>South Carolina</value>
+  </data>
+  <data name="South Dakota" xml:space="preserve">
+    <value>South Dakota</value>
+  </data>
+  <data name="Spain" xml:space="preserve">
+    <value>Spain</value>
+  </data>
+  <data name="Sri Lanka" xml:space="preserve">
+    <value>Sri Lanka</value>
+  </data>
+  <data name="St Lucia" xml:space="preserve">
+    <value>St Lucia</value>
+  </data>
+  <data name="St-Martin, St-Barthelemy" xml:space="preserve">
+    <value>St-Martin, St-Barthelemy</value>
+  </data>
+  <data name="St-Vincent and the Grenadines" xml:space="preserve">
+    <value>St-Vincent and the Grenadines</value>
+  </data>
+  <data name="Sudan" xml:space="preserve">
+    <value>Sudan</value>
+  </data>
+  <data name="Suriname" xml:space="preserve">
+    <value>Suriname</value>
+  </data>
+  <data name="Sweden" xml:space="preserve">
+    <value>Sweden</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="SWEREF99" xml:space="preserve">
+    <value>SWEREF99</value>
+  </data>
+  <data name="Switzerland" xml:space="preserve">
+    <value>Switzerland</value>
+  </data>
+  <data name="Syria" xml:space="preserve">
+    <value>Syria</value>
+  </data>
+  <data name="Tennessee" xml:space="preserve">
+    <value>Tennessee</value>
+  </data>
+  <!-- Note to translators: 'Tete' here refers to a city of Mozambique. I guess no translation is required -->
+  <data name="Tete" xml:space="preserve">
+    <value>Tete</value>
+  </data>
+  <data name="Texas" xml:space="preserve">
+    <value>Texas</value>
+  </data>
+  <data name="Togo" xml:space="preserve">
+    <value>Togo</value>
+  </data>
+  <data name="Trinidad and Tobago" xml:space="preserve">
+    <value>Trinidad and Tobago</value>
+  </data>
+  <data name="Tunisia" xml:space="preserve">
+    <value>Tunisia</value>
+  </data>
+  <data name="Turkey" xml:space="preserve">
+    <value>Turkey</value>
+  </data>
+  <!-- Note to translators: UK, refers here to 'United Kingdom' and appropriate translation may be required. -->
+  <data name="UK" xml:space="preserve">
+    <value>UK</value>
+  </data>
+  <data name="United Arab Emirates" xml:space="preserve">
+    <value>United Arab Emirates</value>
+  </data>
+  <data name="United Mexican States (Mexico)" xml:space="preserve">
+    <value>United Mexican States (Mexico)</value>
+  </data>
+  <data name="United States of America" xml:space="preserve">
+    <value>United States of America</value>
+  </data>
+  <!-- Note to translators: 'Clarke refers to the name of a person and needs not be tranlated. -->
+  <data name="Unreferenced Clarke 66" xml:space="preserve">
+    <value>Unreferenced based upon Clarke 66 Ellipsoid</value>
+  </data>
+  <data name="Unreferenced International 1924" xml:space="preserve">
+    <value>Unreferenced based upon International 1924</value>
+  </data>
+  <data name="Uruguay" xml:space="preserve">
+    <value>Uruguay</value>
+  </data>
+  <data name="US Survey Foot" xml:space="preserve">
+    <value>US Survey Foot</value>
+  </data>
+  <data name="Utah" xml:space="preserve">
+    <value>Utah</value>
+  </data>
+  <!-- Note to translators: UTM stands for 'Universal Transverse Mercator'. I do not think it needs be translated. -->
+  <data name="UTM (Nad 83)" xml:space="preserve">
+    <value>UTM (Nad 83)</value>
+  </data>
+  <!-- Note to translators: UTM stands for 'Universal Transverse Mercator', TM for Transverse Mercator and GK for Gauss Kruger. I do not think either needs be translated. -->
+  <data name="UTM-TM-GK Zones" xml:space="preserve">
+    <value>UTM / TM / GK Zones</value>
+  </data>
+  <!-- Note to translators: UTM stands for 'Universal Transverse Mercator'. I do not think it needs be translated. -->
+  <data name="UTM Based" xml:space="preserve">
+    <value>UTM Based</value>
+  </data>
+  <!-- Note to translators: UTM stands for 'Universal Transverse Mercator'. I do not think it needs be translated. -->
+  <data name="UTM" xml:space="preserve">
+    <value>UTM</value>
+  </data>
+  <data name="Venezuela" xml:space="preserve">
+    <value>Venezuela</value>
+  </data>
+  <data name="Vermont" xml:space="preserve">
+    <value>Vermont</value>
+  </data>
+  <data name="Vietnam" xml:space="preserve">
+    <value>Vietnam</value>
+  </data>
+  <data name="Virginia" xml:space="preserve">
+    <value>Virginia</value>
+  </data>
+  <data name="Washington" xml:space="preserve">
+    <value>Washington</value>
+  </data>
+  <data name="West Virginia" xml:space="preserve">
+    <value>West Virginia</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="WGS72 BE" xml:space="preserve">
+    <value>WGS72 BE</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="WGS72" xml:space="preserve">
+    <value>WGS72</value>
+  </data>
+  <!-- Note to translators: no need to translate entry below. -->
+  <data name="WGS84" xml:space="preserve">
+    <value>WGS84</value>
+  </data>
+  <data name="Wisconsin County System" xml:space="preserve">
+    <value>Wisconsin County System</value>
+  </data>
+  <data name="Wisconsin" xml:space="preserve">
+    <value>Wisconsin</value>
+  </data>
+  <data name="World UTM and others" xml:space="preserve">
+    <value>World (UTM and others)</value>
+  </data>
+  <data name="World" xml:space="preserve">
+    <value>World</value>
+  </data>
+  <data name="Wyoming" xml:space="preserve">
+    <value>Wyoming</value>
+  </data>
+  <data name="Yemen" xml:space="preserve">
+    <value>Yemen</value>
+  </data>
+ 
+</root>

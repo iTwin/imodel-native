@@ -1,0 +1,155 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BaseGeoCoord/BaseManagedGeoCoord.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName         = baseManaged
+sAppName        = baseManaged
+baseDir         = $(_MakeFilePath)
+
+publicAPISrc    = $(baseDir)PublicApi/
+
+PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
+%include mdl.mki
+
+#----------------------------------------------------------------------
+#
+#   Define __BASEGEOCOORD_BUILD__ symbol, so that class declarations will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#
+#----------------------------------------------------------------------
+nameToDefine=__BASEGEOCOORD_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#  Create output directories
+#----------------------------------------------------------------------
+o               = $(dgnGeoCoordObj)
+
+always:
+    !~mkdir $(o)
+
+#---------------------------------------------
+#        Define TOTAL_SPECIAL
+#---------------------------------------------
+nameToDefine = TOTAL_SPECIAL
+%include cdefapnd.mki
+
+#---------------------------------------------
+# Define GEOCOORD_ENHANCEMENT
+#---------------------------------------------
+nameToDefine = GEOCOORD_ENHANCEMENT
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#        Now build the managed DLL
+#--------------------------------------------------------------------------------------
+assemblyName        = Bentley.GeoCoord
+
+nameToDefine=__BASEMANAGEDGCS_BUILD__
+%include cdefapnd.mki
+
+assemDirToSearch    = $(BuildContextSubPartsAssemblies)
+%include cincapnd.mki
+
+assemDirToSearch    = $(o)
+%include cincapnd.mki
+
+objList = $(o)baseManagedGCS$(oext) \
+          $(o)GeoCoordExceptions$(DLM_REVISION).netmodule
+
+#---------------------------------------------
+#        Compile the C# source files for the DLM
+#---------------------------------------------
+ASSEMBLY_MODULE                 = 1
+ASSEMBLY_NAME                   = GeoCoordExceptions$(DLM_REVISION)
+RIGHTSCOMPLIANT                 = true
+ASSEMBLY_SOURCE_LIST            = $(baseDir)GeoCoordExceptions.cs
+ASSEMBLY_NO_VERSION_RESOURCE    = 1
+ASSEMBLY_PLATFORM               = anycpu
+%include mkcsharp.mki
+%undef ASSEMBLY_MODULE
+%undef ASSEMBLY_TARGET_DIRECTORY
+%undef ASSEMBLY_NAME
+%undef ASSEMBLY_SOURCE_LIST
+%undef ASSEMBLY_NO_VERSION_RESOURCE
+
+#---------------------------------------------
+#        Compile C++/CLI source files for the DLM
+#---------------------------------------------
+%include CompileForCLRStart.mki
+
+$(o)baseManagedGCS$(oext):     $(baseDir)baseManagedGCS.cpp  $(baseDir)DatumEditingPanel.cpp $(baseDir)EllipsoidEditingPanel.cpp $(PublicAPISrc)basegeocoord.h
+
+%include CompileForCLRStop.mki
+
+#---------------------------------------------
+#        Make the localizable strings module.
+#---------------------------------------------
+ASSEMBLY_RES_TO_ADD = LocalizableStrings
+ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)transkitManaged/LocalizableStrings.resx
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD = Bentley.GeoCoordinatesNET.SearchSelectionControl
+ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)transkitManaged/SearchSelectionControl.resx
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = FolderClosed.ico
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)
+%include assemblyResourceAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = GeoCoord.ico
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)
+%include assemblyResourceAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = GeoCoordDatum.ico
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)
+%include assemblyResourceAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = GeoCoordEllipsoid.ico
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(baseDir)
+%include assemblyResourceAppend.mki
+
+#----------------------------------------------------------------------
+#   Link the mixed assembly
+#----------------------------------------------------------------------
+ASSEMBLY_TITLE          = $(assemblyName)
+ASSEMBLY_DESCRIPTION    = Geo Coordinate System
+ASSEMBLY_STRONGNAME     = 1
+ASSEMBLY_VERSION        = 1.0.0.0
+
+DLM_OBJECT_DEST         = $(o)
+DLM_EXPORT_DEST         = $(o)
+DLM_NAME                = $(assemblyName)
+RIGHTSCOMPLIANT         = true
+DLM_DEST                = $(o)
+DLM_OBJECT_FILES        = $(objList)
+LINKER_LIBRARIES        = $(rmgrExportLib) $(BuildContextSubPartsLib)$(BaseGeocoordLib)
+
+DLM_NO_DEF              = 1
+DLM_NO_IMPLIB           = 1
+DLM_NO_DLS              = 1
+DLM_NOMSBUILTINS        = 1
+
+%include $(sharedmki)CommonCompileLinkPolicy.mki
+
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_PRODUCT_NAME   =  Base GeoCoord
+ASSEMBLY_COMPANY_NAME   = $(companyName)
+ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE    =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+%include linkMixedAssembly.mki
+
+#----------------------------------------------------------------------
+# Expose our transkit directory for the transkit to see
+#----------------------------------------------------------------------
+always:
+    @CreateSymLinks.py  -d"$(ContextDeliveryDir)GeoCoordManaged\Transkit=$(baseDir)transkitManaged"
+

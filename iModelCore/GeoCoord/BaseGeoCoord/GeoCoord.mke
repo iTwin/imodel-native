@@ -1,0 +1,102 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BaseGeoCoord/GeoCoord.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName         = basegeocoord
+sAppName        = basegeocoord
+baseDir         = $(_MakeFilePath)
+
+publicAPISrc    = $(baseDir)PublicApi/
+
+PolicyFile = $(SrcRoot)GeoCoord/mki/GeoCoordPolicy.mki
+%include mdl.mki
+
+maName          = basegeocoord
+dllName         = basegeocoord
+alternateMkiName= $(sAppName)rsc
+
+nameToDefine    = STANDALONE_BSI
+%include cdefapnd.mki
+
+o = $(build)$(appname)/
+
+always:
+    !~mkdir $(o)
+    ~mkdir $(symbolsDllDir)
+    ~mkdir $(mapsDir)
+
+#----------------------------------------------------------------------
+#
+#   Define __BASEGEOCOORD_BUILD__ symbol, so that class declarations will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#
+#----------------------------------------------------------------------
+nameToDefine=__BASEGEOCOORD_BUILD__
+%include cdefapnd.mki
+
+#---------------------------------------------
+#        Define TOTAL_SPECIAL
+#---------------------------------------------
+nameToDefine = TOTAL_SPECIAL
+%include cdefapnd.mki
+
+#---------------------------------------------
+# Define GEOCOORD_ENHANCEMENT
+#---------------------------------------------
+nameToDefine = GEOCOORD_ENHANCEMENT
+%include cdefapnd.mki
+
+#---------------------------------------------
+#        Define the object file list
+#---------------------------------------------
+dlmObjs     = $(o)basegeocoord$(oext)
+
+
+#---------------------------------------------
+#        Compile the source files for the DLM
+#---------------------------------------------
+$(o)basegeocoord$(oext):     $(baseDir)basegeocoord.cpp  $(baseDir)GCSlibrary.cpp $(PublicAPISrc)BaseGeoCoord.h $(PublicAPISrc)GCSlibrary.h
+
+
+#--------------------------------------------------------------
+#        Make the DLL
+#--------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+# Use dlmlink.mki to link the DLM.
+#----------------------------------------------------------------------------------------
+DLM_OBJECT_DEST             = $(o)
+DLM_LIBDEF_SRC              = $(baseDir)
+DLM_NAME                    = $(appName)
+RIGHTSCOMPLIANT             = true
+DLM_OBJECT_FILES            = $(dlmObjs)
+DLM_NOENTRY                 = 1
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NO_DLS                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_SPECIAL_LINKOPT         = -Fixed:no
+LINKER_LIBRARIES            = $(rmgrExportLib) $(BuildContext)SubParts/Libs/$(stlibprefix)BeCsmap$(stlibext)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+
+%include $(sharedmki)CommonCompileLinkPolicy.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# REMOVE_BASE_ADDRESS -- Remove base address when xp support is dropped
+# See http://bsw-wiki.bentley.com/default.aspx/Development/RemovalOfBaseAddressingInBeijing.html (specifically the 'Caveats' section)
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_BASE_ADDRESS = 0x53020000
+
+%include $(sharedMki)linkLibrary.mki
+
+%undef DLM_BASE_ADDRESS
+
+NO_MUI_HARVEST=1
+MuiBaseName = $(appName)$(DLM_API_NUMBER).dll
+MuiTranskitDeliveryDir = $(ContextDeliveryDir)GeoCoord/TransKit/
+
+%include $(SharedMki)CreateAndSymlinkMui.mki
