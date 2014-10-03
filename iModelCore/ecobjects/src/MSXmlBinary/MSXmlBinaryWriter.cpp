@@ -94,7 +94,7 @@ void MSXmlBinaryWriter::WriteByte(char c)
 void MSXmlBinaryWriter::WriteName(Utf8CP name)
     {
     WriteByte((byte) strlen(name));
-    for (int i = 0; i < strlen(name); i++)
+    for (size_t i = 0; i < strlen(name); i++)
         {
         WriteByte((byte) name[i]);
         }
@@ -118,7 +118,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
     m_textNodeOffset = (int) m_buffer.size();
     WriteByte((byte) XmlBinaryNodeType::Chars8Text);
     m_buffer.push_back((byte) strlen(text));
-    for (int i = 0; i < strlen(text); i++)
+    for (size_t i = 0; i < strlen(text); i++)
         {
         WriteByte((byte) text[i]);
         }
@@ -138,7 +138,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
         m_textNodeOffset = (int) m_buffer.size();
         WriteByte((byte)XmlBinaryNodeType::DoubleText);
         byte* bytes = reinterpret_cast<byte*>(&data);
-        for (int i = 0; i < sizeof(double); i++)
+        for (size_t i = 0; i < sizeof(double); i++)
             WriteByte(bytes[i]);
         EndContent();
         }
@@ -283,9 +283,9 @@ MSXmlBinaryWriter::Element* MSXmlBinaryWriter::EnterScope()
     {
     m_nsMgr.EnterScope();
     m_depth++;
-    if (m_depth >= m_elements.size())
+    if ((size_t)m_depth >= m_elements.size())
         {
-        while (m_elements.size() < m_depth)
+        while (m_elements.size() < (size_t)m_depth)
             m_elements.push_back(nullptr);
         m_elements.push_back(new MSXmlBinaryWriter::Element());
         }
