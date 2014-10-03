@@ -652,8 +652,8 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
                 {
                 dest.WriteElementStart ("CircularCylinder");
                 WritePlacementZX (dest, centerA, unitZ, unitX);
-                WriteDouble (dest, "radius", radiusA);
                 WriteDouble (dest, "height", height);
+                WriteDouble (dest, "radius", radiusA);
                 WriteBool (dest, "capped", data.m_capped);
                 dest.WriteElementEnd ();
                 }
