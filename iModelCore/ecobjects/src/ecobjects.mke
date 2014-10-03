@@ -140,6 +140,8 @@ $(o)DesignByContract$(oext)                                : $(baseDir)DesignByC
 
 $(o)BeXmlCGReader$(oext)                                   : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
+$(o)BeXmlCGStreamReader$(oext)                                   : $(baseDir)BeXmlCGStreamReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+
 $(o)BeXmlCGWriter$(oext)                                   : $(baseDir)BeXmlCGWriter.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
 $(o)ecprovider$(oext)                                      : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
