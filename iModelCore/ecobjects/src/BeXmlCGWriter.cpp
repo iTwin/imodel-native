@@ -337,7 +337,7 @@ void BeXmlCGWriter::WriteCurve (IBeXmlWriterR dest, MSBsplineCurveCR curve)
 
     bvector<DPoint3d> poles;
     poles.assign (curve.poles, curve.poles + curve.NumberAllocatedPoles ());
-    WriteList (dest, poles, "ListOfControlPoint", "ControlPoint");
+    WriteList (dest, poles, "ListOfControlPoint", "xyz");
     
     if (curve.rational)
         {
