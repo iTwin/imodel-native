@@ -63,7 +63,7 @@ struct MSXmlBinaryWriter : IBeXmlWriter
                     {
                     if (m_depth >= m_nsCount)
                         {
-                        while (m_namespaces.size() < m_nsCount)
+                        while ((int) m_namespaces.size() < m_nsCount)
                             m_namespaces.push_back(new Namespace());
                         m_namespaces.push_back(new Namespace());
                         }
