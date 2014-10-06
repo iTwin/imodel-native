@@ -9,8 +9,8 @@
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-typedef struct IPlacement const &IPlacementCR;
-typedef struct IPlacement &IPlacementR;
+typedef struct PlacementOriginZX const &PlacementOriginZXCR;
+typedef struct PlacementOriginZX &PlacementOriginZXR;
 
 // mappings from managed idioms to native
 #define DVector3d DVec3d
@@ -19,7 +19,7 @@ typedef struct IPlacement &IPlacementR;
 #define InputParamTypeFor_DPoint3d DPoint3dCR
 #define InputParamTypeFor_DPoint2d DPoint2dCR
 #define InputParamTypeFor_DVector3d DVec3dCR
-#define InputParamTypeFor_IPlacement IPlacementCR
+#define InputParamTypeFor_IPlacement PlacementOriginZXCR
 
 #define InputParamTypeFor_double double
 #define InputParamTypeFor_Angle Angle
@@ -27,7 +27,7 @@ typedef struct IPlacement &IPlacementR;
 #define InputParamTypeFor_bool bool
 #define InputParamTypeFor_String Utf8StringCR
 
-struct IPlacement
+struct PlacementOriginZX
 {
 DPoint3d m_origin;
 DVec3d   m_vectorZ;
@@ -40,14 +40,22 @@ void InitIdentity ()
     m_vectorZ = DVec3d::From (0,0,1);
     }
     
-IPlacement ()
+void InitOriginVectorZVectorX (DPoint3dCR origin, DVec3dCR vectorZ, DVec3dCR vectorX)
+    {    
+    m_origin = origin;
+    m_vectorZ = vectorZ;
+    m_vectorX = vectorX;
+    }
+
+
+PlacementOriginZX ()
     {
     InitIdentity ();
     }
     
-static IPlacement FromIdentity ()
+static PlacementOriginZX FromIdentity ()
     {
-    IPlacement value;
+    PlacementOriginZX value;
     return value;
     }
 
@@ -73,8 +81,9 @@ double sweepRadians = msGeomConst_2pi
 };
 
 
-
+#define IPlacement PlacementOriginZX
 #include "nativeCGFactoryH.h"
+#undef IPlacement
 
 
 
@@ -113,6 +122,27 @@ InputParamTypeFor_Angle sweepAngle
     return IGeometry::Create (cp);
     }
 
+/// <summary>
+/// factory base class placeholder to create a EllipticArc from explicit args.
+virtual IGeometryPtr CreateCircularArc
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double radius,
+InputParamTypeFor_Angle startAngle,
+InputParamTypeFor_Angle sweepAngle
+) override
+    {
+    DEllipse3d ellipse = placement.AsDEllipse3d
+        (
+        radius,
+        radius,
+        startAngle.Radians (),
+        sweepAngle.Radians ()
+        );
+    ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (ellipse);
+    return IGeometry::Create (cp);
+    }
+
 
 };
 
@@ -124,8 +154,8 @@ static double   s_default_double   = 0.0;
 static int      s_default_int      = 0;
 static bool     s_default_bool     = false;
 static Angle     s_default_Angle    = Angle::FromRadians (0.0);
-static IPlacement s_default_IPlacement = IPlacement::FromIdentity ();
 static Utf8String s_default_String = Utf8String ();
+static PlacementOriginZX s_default_IPlacement = PlacementOriginZX::FromIdentity ();
 
 
 
@@ -145,7 +175,7 @@ static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::
     return vector;
     }
 
-static int s_defaultDebug = 10;
+static int s_defaultDebug = 0;
 struct BeXmlCGStreamReaderImplementation
 {
 BeXmlReader &m_reader;
@@ -180,12 +210,29 @@ bool ReadToChild ()
     return true;
     }
 
+void ReadOverWhiteSpace ()
+    {
+    BeXmlReader::NodeType nodeType;
+    for (;;)
+        {
+        m_reader.Read ();
+        nodeType = m_reader.GetCurrentNodeType ();
+        if (nodeType == BeXmlReader::NODE_TYPE_SignificantWhitespace)
+            continue;
+        if (nodeType == BeXmlReader::NODE_TYPE_Whitespace)
+            continue;
+        break;
+        }
+    if (nodeType == BeXmlReader::NODE_TYPE_Element)
+        m_reader.GetCurrentNodeName (m_currentElementName);
+    }
 
 bool ReadEndElement ()
     {
     assert(m_reader.GetCurrentNodeType () == BeXmlReader::NODE_TYPE_EndElement);
     if (m_debug > 9)
         Show ("ReadEndElement");
+    ReadOverWhiteSpace ();
     return false;
     }
 bool IsStartElement ()
@@ -210,11 +257,18 @@ bool SkipUnexpectedTag ()
 bool AdvanceAfterContentExtraction ()
     {
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_EndElement);
-    m_reader.Read ();
-    m_reader.GetCurrentNodeName (m_currentElementName);
-    // assert?  we have advanced to a sibling or to end of the 
-    //  containing element.
-    return true;
+    ReadOverWhiteSpace ();
+    BeXmlReader::NodeType nodeType = m_reader.GetCurrentNodeType ();
+    if (nodeType == BeXmlReader::NODE_TYPE_Element)
+        {
+        m_reader.GetCurrentNodeName (m_currentElementName);
+        return true;
+        }
+    else if (nodeType == BeXmlReader::NODE_TYPE_EndElement)
+        {
+        return true;
+        }
+    return false;
     }
 
 bool ReadToElement ()
@@ -263,7 +317,6 @@ bool ReadTagDPoint2d (CharCP name, DPoint2dR value)
 
 bool ReadTagDVector3d(CharCP name, DVec3dR value)
     {
-    {
     if (!CurrentElementNameMatch (name))
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
@@ -272,10 +325,42 @@ bool ReadTagDVector3d(CharCP name, DVec3dR value)
               "%lf,%lf,%lf", &value.x, &value.y, &value.z);
     AdvanceAfterContentExtraction ();
     return stat;
-    }    }
+    }
 
 bool ReadTagbool(CharCP name, bool &value)
     {
+    if (!CurrentElementNameMatch (name))
+        {
+        // allow bSolidFlag as synonym for capped ...
+        if (0 != stricmp (name, "capped")
+            || !CurrentElementNameMatch ("bSolidFlag")
+            )
+            return false;
+        }
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = false;
+    if (0 == m_currentValue8.CompareTo ("true"))
+        {
+        value = true;
+        stat = true;
+        }
+    if (0 == m_currentValue8.CompareTo ("false"))
+        {
+        value = false;
+        stat = true;
+        }
+    if (0 == m_currentValue8.CompareTo ("1"))
+        {
+        value = true;
+        stat = true;
+        }
+    if (0 == m_currentValue8.CompareTo ("0"))
+        {
+        value = false;
+        stat = true;
+        }
+    AdvanceAfterContentExtraction ();        
     return false;
     }
 
@@ -286,7 +371,7 @@ bool ReadTagdouble(CharCP name, double &value)
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
-    bool stat = 3 == sscanf (&m_currentValue8[0],
+    bool stat = 1 == sscanf (&m_currentValue8[0],
               "%lf", &value);
     AdvanceAfterContentExtraction ();
     return stat;
@@ -299,14 +384,41 @@ bool ReadTagint(CharCP name, int &value)
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
-    bool stat = 3 == sscanf (&m_currentValue8[0],
+    bool stat = 1 == sscanf (&m_currentValue8[0],
               "%d", &value);
     AdvanceAfterContentExtraction ();
     return stat;
     }    }
 
-bool ReadTagIPlacement (CharCP name, IPlacement &value)
+bool ReadTagIPlacement (CharCP name, PlacementOriginZX &value)
     {
+    if (CurrentElementNameMatch ("placement")
+        && ReadToChild ())
+        {
+        // Start with the system default for each field ....
+        DPoint3d origin = s_default_DPoint3d;
+        DVec3d vectorZ = s_default_DVector3d;
+        DVec3d vectorX = s_default_DVector3d;
+
+        for (;IsStartElement ();)
+            {
+            if (ReadTagDPoint3d ("origin", origin))
+                continue;
+
+            if (ReadTagDPoint3d ("vectorZ", vectorZ))
+                continue;
+
+            if (ReadTagDPoint3d ("vectorX", vectorX))
+                continue;
+
+            if (!SkipUnexpectedTag ())
+                return false;
+            }
+        // Get out of the primary element ..
+        ReadEndElement ();
+        value.InitOriginVectorZVectorX (origin, vectorZ, vectorX);
+        return true;
+        }
     return false;
     }
 
@@ -321,7 +433,9 @@ bool ReadTagAngle (CharCP name, Angle &value)
     return false;
     }
 
+#define IPlacement PlacementOriginZX
 #include "nativeCGReaderH.h"
+#undef IPlacement
 
 
 BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
