@@ -75,6 +75,12 @@ public:
     
 };
 
+struct BeXmlCGStreamReader
+{
+private: BeXmlCGStreamReader ();
+public: static ECOBJECTS_EXPORT bool TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, size_t maxDepth = INT_MAX);
+};
+
 //! static methods to add common geometry content to xml file.
 struct BeXmlCGWriter
 {

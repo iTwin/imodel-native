@@ -9,6 +9,126 @@
 #include "ECObjectsPch.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+typedef struct IPlacement const &IPlacementCR;
+typedef struct IPlacement &IPlacementR;
+
+// mappings from managed idioms to native
+#define DVector3d DVec3d
+#define String Utf8String
+
+#define InputParamTypeFor_DPoint3d DPoint3dCR
+#define InputParamTypeFor_DPoint2d DPoint2dCR
+#define InputParamTypeFor_DVector3d DVec3dCR
+#define InputParamTypeFor_IPlacement IPlacementCR
+
+#define InputParamTypeFor_double double
+#define InputParamTypeFor_Angle Angle
+#define InputParamTypeFor_int int
+#define InputParamTypeFor_bool bool
+#define InputParamTypeFor_String Utf8StringCR
+
+struct IPlacement
+{
+DPoint3d m_origin;
+DVec3d   m_vectorZ;
+DVec3d   m_vectorX;
+
+void InitIdentity ()
+    {    
+    m_origin = DPoint3d::From (0,0,0);
+    m_vectorX = DVec3d::From (1,0,0);
+    m_vectorZ = DVec3d::From (0,0,1);
+    }
+    
+IPlacement ()
+    {
+    InitIdentity ();
+    }
+    
+static IPlacement FromIdentity ()
+    {
+    IPlacement value;
+    return value;
+    }
+
+// compute unit vectors. package as DEllipse3d.
+DEllipse3d AsDEllipse3d
+(
+double radius0  = 1.0,
+double radius90 = 1.0,
+double startRadians = 0.0,
+double sweepRadians = msGeomConst_2pi
+) const
+    {
+    DVec3d unitY = DVec3d::FromNormalizedCrossProduct (m_vectorZ, m_vectorX);
+    DVec3d unitX = DVec3d::FromNormalizedCrossProduct (unitY, m_vectorZ);
+    DEllipse3d ellipse;
+    ellipse.center = m_origin;
+    ellipse.vector0.Scale (unitX, radius0);
+    ellipse.vector90.Scale (unitY, radius90);
+    ellipse.start = startRadians;
+    ellipse.sweep = sweepRadians;
+    return ellipse;
+    }
+};
+
+
+
+#include "nativeCGFactoryH.h"
+
+
+
+struct IGeometryCGFactory : ICGFactory
+{
+public:
+virtual IGeometryPtr CreateLineSegment
+(
+InputParamTypeFor_DPoint3d startPoint,
+InputParamTypeFor_DPoint3d endPoint
+) override
+    {
+    ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (startPoint, endPoint));
+    return IGeometry::Create (cp);
+    }
+
+/// <summary>
+/// factory base class placeholder to create a EllipticArc from explicit args.
+virtual IGeometryPtr CreateEllipticArc
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double radiusA,
+InputParamTypeFor_double radiusB,
+InputParamTypeFor_Angle startAngle,
+InputParamTypeFor_Angle sweepAngle
+) override
+    {
+    DEllipse3d ellipse = placement.AsDEllipse3d
+        (
+        radiusA,
+        radiusB,
+        startAngle.Radians (),
+        sweepAngle.Radians ()
+        );
+    ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (ellipse);
+    return IGeometry::Create (cp);
+    }
+
+
+};
+
+
+static DPoint3d s_default_DPoint3d = DPoint3d::From (0,0,0);
+static DPoint2d s_default_DPoint2d = DPoint2d::From (0,0);
+static DVec3d   s_default_DVector3d = DVec3d::From (0,0,0);
+static double   s_default_double   = 0.0;
+static int      s_default_int      = 0;
+static bool     s_default_bool     = false;
+static Angle     s_default_Angle    = Angle::FromRadians (0.0);
+static IPlacement s_default_IPlacement = IPlacement::FromIdentity ();
+static Utf8String s_default_String = Utf8String ();
+
+
+
 // If primitve has a child curve vector, just extract it.
 // Otherwise put the primitive in a new curve vector.
 static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::BoundaryType btype)
@@ -25,15 +145,183 @@ static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::
     return vector;
     }
 
-struct BeXmlCGStreamReader
+static int s_defaultDebug = 10;
+struct BeXmlCGStreamReaderImplementation
 {
 BeXmlReader &m_reader;
-
-BeXmlCGStreamReader::BeXmlCGStreamReader (BeXmlReader &reader)
-    : m_reader(reader)
+ICGFactory &m_factory;
+int m_debug;
+void Show (CharCP name)
+    {
+    printf ("%s (NodeType %d)\n", name, m_reader.GetCurrentNodeType ());
+    }
+BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (BeXmlReader &reader, ICGFactory &factory)
+    : m_reader(reader), m_factory(factory), m_debug (s_defaultDebug)
     {
     }
 
+bool TagMatch (CharCP name)
+    {
+    if (m_debug > 9)
+        Show ("TagMatch");
+    return false;
+    }
+
+// On input: XML reader at element start.
+//           XML reader at first child element.
+bool ReadToChild ()
+    {
+    if (m_debug > 9)
+        Show ("ReadToChild");
+    BeXmlReader::ReadResult status = m_reader.ReadTo (BeXmlReader::NODE_TYPE_Element);
+    if (status != BeXmlReader::READ_RESULT_Success)
+        return false;
+    m_reader.GetCurrentNodeName (m_currentElementName);
+    return true;
+    }
+
+
+bool ReadEndElement ()
+    {
+    assert(m_reader.GetCurrentNodeType () == BeXmlReader::NODE_TYPE_EndElement);
+    if (m_debug > 9)
+        Show ("ReadEndElement");
+    return false;
+    }
+bool IsStartElement ()
+    {
+    if (m_debug > 9)
+        Show ("IsStartElement");
+    return m_reader.GetCurrentNodeType () == BeXmlReader::NODE_TYPE_Element;
+    }
+bool SkipUnexpectedTag ()
+    {
+    if (m_debug > 9)
+        Show ("SkipUnexpectedTag");
+    return false;
+    }
+
+    // This is assigned by ReadToElement ...
+    Utf8String m_currentElementName;
+    // For reuse by all readers.
+    WString m_currentValueW;
+    Utf8String m_currentValue8;
+
+bool AdvanceAfterContentExtraction ()
+    {
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_EndElement);
+    m_reader.Read ();
+    m_reader.GetCurrentNodeName (m_currentElementName);
+    // assert?  we have advanced to a sibling or to end of the 
+    //  containing element.
+    return true;
+    }
+
+bool ReadToElement ()
+    {
+    BeXmlReader::ReadResult status = m_reader.ReadTo (BeXmlReader::NODE_TYPE_Element);
+    if (status != BeXmlReader::READ_RESULT_Success)
+        return false;
+    m_reader.GetCurrentNodeName (m_currentElementName);
+    return true;
+    }
+
+bool CurrentElementNameMatch (CharCP name)
+    {
+    return 0 == m_currentElementName.CompareTo (name);
+    }
+
+
+bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = 3 == sscanf (&m_currentValue8[0],
+              "%lf,%lf,%lf", &value.x, &value.y, &value.z);
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }
+
+bool ReadTagString (CharCP name, Utf8StringR)
+    {
+    return false;
+    }
+
+bool ReadTagDPoint2d (CharCP name, DPoint2dR value)
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = 2 == sscanf (&m_currentValue8[0],
+              "%lf,%lf", &value.x, &value.y);
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }
+
+bool ReadTagDVector3d(CharCP name, DVec3dR value)
+    {
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = 3 == sscanf (&m_currentValue8[0],
+              "%lf,%lf,%lf", &value.x, &value.y, &value.z);
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }    }
+
+bool ReadTagbool(CharCP name, bool &value)
+    {
+    return false;
+    }
+
+bool ReadTagdouble(CharCP name, double &value)
+    {
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = 3 == sscanf (&m_currentValue8[0],
+              "%lf", &value);
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }    }
+    
+bool ReadTagint(CharCP name, int &value)
+    {
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = 3 == sscanf (&m_currentValue8[0],
+              "%d", &value);
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }    }
+
+bool ReadTagIPlacement (CharCP name, IPlacement &value)
+    {
+    return false;
+    }
+
+bool ReadTagAngle (CharCP name, Angle &value)
+    {
+    double degrees;
+    if (ReadTagdouble (name, degrees))
+        {
+        value = Angle::FromDegrees (degrees);
+        return true;
+        }
+    return false;
+    }
+
+#include "nativeCGReaderH.h"
 
 
 BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
@@ -81,8 +369,6 @@ bool GetBool (BeXmlNodeP element, bool &value)
         && BEXML_Success == text->GetContentBooleanValue (value);
     }
 
-
-
 bool FindChildBool (BeXmlNodeP parent, CharCP name, bool &value) {return GetBool (FindChild (parent, name), value);}
 bool FindChildBool (BeXmlNodeP parent, CharCP nameA, CharCP nameB, bool &value)
     {
@@ -90,8 +376,8 @@ bool FindChildBool (BeXmlNodeP parent, CharCP nameA, CharCP nameB, bool &value)
         || GetBool (FindChild (parent, nameB), value);
     }
 
-
-bool FindChildDPoint3d (CharCP name, DPoint3dR xyz){return GetDPoint3d (FindChild (parent, name), xyz);}
+bool FindChildDPoint3d (CharCP name, DPoint3dR xyz){return GetDPoint3d (FindChild (nullptr, name), xyz);}
+bool FindChildDPoint3d (BeXmlNodeP parent, CharCP name, DPoint3dR xyz){return GetDPoint3d (FindChild (parent, name), xyz);}
 bool FindChildDouble (BeXmlNodeP parent, CharCP name, double &value) {return GetDouble (FindChild (parent, name), value);}
 
 bool FindChildInt (BeXmlNodeP parent, CharCP name, int &value)
@@ -205,72 +491,23 @@ public: bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
 
 public: bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
     {
-    Utf8String name;
-    m_reader.GetCurrentNodeName (name);
-    return TryParse (node, name, result);
-    }
-    
-public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &result)
-    {
-    if (name.CompareTo ("LineSegment") == 0)
+    IGeometryPtr geometry;
+    if (ReadILineSegment (geometry))
         {
-        DSegment3d segment;
-        if (   FindChildDPoint3d (node, "StartPoint", segment.point[0])
-            && FindChildDPoint3d (node, "EndPoint", segment.point[1]))
-            {
-            result = ICurvePrimitive::CreateLine (segment);
-            return true;
-            }
+        result = geometry->GetAsICurvePrimitive ();
+        return result.IsValid ();
         }
-    else if (name.CompareTo ("CircularArc") == 0)
+    else if (ReadICircularArc (geometry))
         {
-        RotMatrix axes;
-        DPoint3d origin;
-        double radius = 0.0;
-        double startDegrees = 0.0;
-        double sweepDegrees = 0.0;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDouble (node, "radius", radius)
-            && FindChildDouble (node, "startAngle", startDegrees)
-            && FindChildDouble (node, "sweepAngle", sweepDegrees)
-            )
-            {
-            result = ICurvePrimitive::CreateArc (
-                        DEllipse3d::FromScaledRotMatrix (
-                                origin, axes,
-                                radius, radius,
-                                Angle::DegreesToRadians (startDegrees),
-                                Angle::DegreesToRadians (sweepDegrees)
-                                ));
-            return true;
-            }
+        result = geometry->GetAsICurvePrimitive ();
+        return result.IsValid ();
         }
-    else if (name.CompareTo ("EllipticArc") == 0)
+    else if (ReadIEllipticArc (geometry))
         {
-        RotMatrix axes;
-        DPoint3d origin;
-        double radiusA = 0.0;
-        double radiusB = 0.0;
-        double startDegrees = 0.0;
-        double sweepDegrees = 0.0;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDouble (node, "radiusA", radiusA)
-            && FindChildDouble (node, "radiusB", radiusB)
-            && FindChildDouble (node, "startAngle", startDegrees)
-            && FindChildDouble (node, "sweepAngle", sweepDegrees)
-            )
-            {
-            result = ICurvePrimitive::CreateArc (
-                        DEllipse3d::FromScaledRotMatrix (
-                                origin, axes,
-                                radiusA, radiusB,
-                                Angle::DegreesToRadians (startDegrees),
-                                Angle::DegreesToRadians (sweepDegrees)
-                                ));
-            return true;
-            }
+        result = geometry->GetAsICurvePrimitive ();
+        return result.IsValid ();
         }
-    else if (name.CompareTo ("SurfacePatch") == 0)
+    else if (CurrentElementNameMatch ("SurfacePatch"))
         {
         BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
         BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
@@ -303,7 +540,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
                 }
             }
         }
-    else if (name.CompareTo ("CurveChain") == 0)
+    else if (CurrentElementNameMatch ("CurveChain"))
         {
         BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
         CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
@@ -317,7 +554,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
         result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*curves);
         return true;
         }
-    else if (name.CompareTo ("Linestring") == 0)
+    else if (CurrentElementNameMatch ("Linestring"))
         {
         bvector<DPoint3d> points;
         if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
@@ -326,7 +563,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("Polygon") == 0)
+    else if (CurrentElementNameMatch ("Polygon"))
         {
         bvector<DPoint3d> points;
         if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
@@ -339,7 +576,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("CircularDisk") == 0)
+    else if (CurrentElementNameMatch ("CircularDisk"))
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -360,7 +597,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("EllipticDisk") == 0)
+    else if (CurrentElementNameMatch ("EllipticDisk"))
         {
         RotMatrix axes;
         DPoint3d origin;
@@ -382,7 +619,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("BsplineCurve") == 0)
+    else if (CurrentElementNameMatch ("BsplineCurve"))
         {
         int order;
         bool closed = false;
@@ -404,7 +641,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("Coordinate") == 0)
+    else if (CurrentElementNameMatch ("Coordinate"))
         {
         DPoint3d xyz;
         if (   FindChildDPoint3d (node, "xyz", xyz))
@@ -418,9 +655,9 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ICurvePrimitivePtr &r
     }
 
 
-public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &result)
+public: bool TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
     {
-    if (name.CompareTo ("CircularCone") == 0)
+    if (CurrentElementNameMatch ("CircularCone"))
         {
         RotMatrix axes;
         DPoint3d centerA, centerB;
@@ -445,7 +682,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("SkewedCone") == 0)
+    else if (CurrentElementNameMatch ("SkewedCone"))
         {
         RotMatrix axes;
         DPoint3d centerA, centerB;
@@ -468,7 +705,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("Sphere") == 0)
+    else if (CurrentElementNameMatch ("Sphere"))
         {
         RotMatrix axes;
         DPoint3d center;
@@ -482,8 +719,8 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
             return true;
             }
         }
-    else if (   name.CompareTo ("Box") == 0
-             || name.CompareTo ("Block") == 0
+    else if (   CurrentElementNameMatch ("Box") == 0
+             || CurrentElementNameMatch ("Block") == 0
             )
         {
         RotMatrix axes;
@@ -507,7 +744,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("CircularCylinder") == 0)
+    else if (CurrentElementNameMatch ("CircularCylinder"))
         {
         RotMatrix axes;
         DPoint3d centerA, centerB;
@@ -531,7 +768,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("TorusPipe") == 0)
+    else if (CurrentElementNameMatch ("TorusPipe"))
         {
         RotMatrix axes;
         DPoint3d center;
@@ -562,7 +799,7 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
             return true;
             }
         }
-    else if (name.CompareTo ("SurfaceBySweptCurve") == 0)
+    else if (CurrentElementNameMatch ("SurfaceBySweptCurve"))
         {
         BeXmlNodeP baseGeometryNode = FindChild (node, "BaseGeometry");
         BeXmlNodeP railCurveNode    = FindChild (node, "RailCurve");
@@ -601,20 +838,20 @@ public: bool TryParse (BeXmlNodeP node, Utf8StringCR name, ISolidPrimitivePtr &r
 
 public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
-    Utf8String name;
-    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Element);
-    m_reader.GetCurrentNodeName (name);
+    if (!ReadToElement ())
+        return false;
+
     ICurvePrimitivePtr curvePrimitive;
     ISolidPrimitivePtr solidPrimitive;
     MSBsplineSurfacePtr surface;
     size_t count = 0;
     BeXmlNodeP node = NULL;
-    if (TryParse (node, name, curvePrimitive))
+    if (TryParse (node, curvePrimitive))
         {
         geometry.push_back (IGeometry::Create (curvePrimitive));
         count = 1;
         }
-    else if (TryParse (node, name, solidPrimitive))
+    else if (TryParse (node, solidPrimitive))
         {
         geometry.push_back (IGeometry::Create (solidPrimitive));
         count = 1;
@@ -641,9 +878,9 @@ public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     }
 };
 #ifdef abc
-bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, ICurvePrimitivePtr &result)
+bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, ICurvePrimitivePtr &result)
     {
-    BeXmlCGStreamReader parser;
+    BeXmlCGStreamReaderImplementation parser;
     size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;
     BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
@@ -652,9 +889,9 @@ bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, ICurvePrimitivePtr &re
     return parser.TryParse(child, result);
     }
 
-bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, ISolidPrimitivePtr &result)
+bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, ISolidPrimitivePtr &result)
     {
-    BeXmlCGStreamReader parser;
+    BeXmlCGStreamReaderImplementation parser;
     size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;
     BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
@@ -663,9 +900,9 @@ bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, ISolidPrimitivePtr &re
     return parser.TryParse(child, result);
     }
 
-bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, MSBsplineSurfacePtr &result)
+bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, MSBsplineSurfacePtr &result)
     {
-    BeXmlCGStreamReader parser;
+    BeXmlCGStreamReaderImplementation parser;
     size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
     BeXmlStatus xmlStatus;
     BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
@@ -674,11 +911,12 @@ bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, MSBsplineSurfacePtr &r
     return parser.TryParse(child, result);
     }
 #endif
-bool BeXmlCGStreamReader__TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, size_t maxDepth)
+bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
     BeXmlStatus status;
+    IGeometryCGFactory factory;
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString (status, beXmlCGString);
-    BeXmlCGStreamReader parser (*reader);
+    BeXmlCGStreamReaderImplementation parser (*reader, factory);
     return parser.TryParse(geometry, maxDepth);
     }
 
