@@ -176,6 +176,35 @@ static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::
     }
 
 static int s_defaultDebug = 0;
+
+static char const * s_nodeTypeNames[] =
+    {
+    "None",
+    "Element",
+    "Attribute",
+    "Text",
+    "CDATA",
+    "EntityReference",
+    "Entity",
+    "ProcessingInstruction",
+    "Comment",
+    "Document",
+    "DocumentType",
+    "DocumentFragment",
+    "Notation",
+    "{w}", //"Whitespace",
+    "{W}", //"SignificantWhitespace",
+    "EndElement",
+    "EndEntity",
+    "XmlDeclaration"
+    };
+
+static char const *GetBeXmlNodeTypeString (BeXmlReader::NodeType nodeType)
+    {
+    if (nodeType < BeXmlReader::NODE_TYPE_XmlDeclaration)
+        return s_nodeTypeNames[(Int32)nodeType];
+    return "(Unknown BeXmlReader::NodeType)";
+    }
 struct BeXmlCGStreamReaderImplementation
 {
 BeXmlReader &m_reader;
@@ -183,7 +212,8 @@ ICGFactory &m_factory;
 int m_debug;
 void Show (CharCP name)
     {
-    printf ("%s (NodeType %d)\n", name, m_reader.GetCurrentNodeType ());
+    BeXmlReader::NodeType nodeType = m_reader.GetCurrentNodeType ();
+    printf ("%s (NodeType %s)\n", name, GetBeXmlNodeTypeString (nodeType));
     }
 BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (BeXmlReader &reader, ICGFactory &factory)
     : m_reader(reader), m_factory(factory), m_debug (s_defaultDebug)
@@ -574,7 +604,7 @@ public: bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
     bvector<double>   weights;
 
 
-    if (0 == BeStringUtilities::Stricmp (node->GetName (), "BsplineSurface")
+    if (CurrentElementNameMatch ("BsplineSurface")
         && FindChildInt (node, "orderU", orderU)
         && FindChildInt (node, "numUControlPoint", numPolesU)
         && FindChildInt (node, "orderV", orderV)
@@ -833,8 +863,8 @@ public: bool TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
             return true;
             }
         }
-    else if (   CurrentElementNameMatch ("Box") == 0
-             || CurrentElementNameMatch ("Block") == 0
+    else if (   CurrentElementNameMatch ("Box")
+             || CurrentElementNameMatch ("Block")
             )
         {
         RotMatrix axes;
@@ -1025,8 +1055,43 @@ bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, MSBsplin
     return parser.TryParse(child, result);
     }
 #endif
+
+void ShowAllNodeTypes (Utf8CP beXmlCGString)
+    {
+    BeXmlStatus status;
+    BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString (status, beXmlCGString);
+    printf ("<XMLNodes>\n");
+    int depth = 0;
+    for (;BeXmlReader::READ_RESULT_Success == reader->Read ();)
+        {
+        BeXmlReader::NodeType nodeType = reader->GetCurrentNodeType();
+        if (nodeType == BeXmlReader::NODE_TYPE_EndElement)
+            depth--;
+        if (nodeType == BeXmlReader::NODE_TYPE_Whitespace
+            || nodeType == BeXmlReader::NODE_TYPE_SignificantWhitespace
+            || nodeType == BeXmlReader::NODE_TYPE_Text
+            )
+            {
+            // (inline)
+            }
+        else
+            {
+            printf ("\n");
+            for (int i = 0; i < depth; i++)
+                printf ("  ");
+            }
+        printf (" %s", GetBeXmlNodeTypeString (nodeType));
+        if (nodeType == BeXmlReader::NODE_TYPE_Element)
+            depth++;
+        }
+    printf ("\n</XMLNodes>");
+    }
+
 bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
+    static int s_preview = 0;
+    if (s_preview)
+        ShowAllNodeTypes (beXmlCGString);
     BeXmlStatus status;
     IGeometryCGFactory factory;
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString (status, beXmlCGString);
