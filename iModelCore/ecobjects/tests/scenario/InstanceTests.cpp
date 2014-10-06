@@ -45,7 +45,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     EXPECT_EQ (13, ecValue.GetInteger());
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BooleanMember"));
-    EXPECT_EQ (false, ecValue.GetBoolean());
+    EXPECT_FALSE (ecValue.GetBoolean());
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DoubleMember"));
     EXPECT_EQ (456.789, ecValue.GetDouble());
@@ -73,7 +73,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     EXPECT_EQ (6.6, ecValue.GetPoint3D().z);
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1BoolMember"));
-    EXPECT_EQ (false, ecValue.GetBoolean());
+    EXPECT_FALSE (ecValue.GetBoolean());
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1IntMember"));
     EXPECT_EQ (4, ecValue.GetInteger());
@@ -85,7 +85,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     EXPECT_EQ (531992, ecValue.GetInteger());
     
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3BoolMember"));
-    EXPECT_EQ (true, ecValue.GetBoolean());
+    EXPECT_TRUE (ecValue.GetBoolean());
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
     for (UInt32 index=0; index < _countof (expectedInts); index++)
@@ -172,7 +172,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
         ECValue         structArrayMember;
         EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray", index));
         IECInstancePtr  structArrayInstance = structArrayMember.GetStruct();
-        EXPECT_EQ (true, structArrayInstance.IsValid());
+        EXPECT_TRUE (structArrayInstance.IsValid());
         
         if (struct2ExpectedValues[index].struct2StringMemberNull)
             {
@@ -205,7 +205,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
             ECValue     nestedArrayMember;
             EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray", nestedIndex));
             IECInstancePtr  nestedInstance = nestedArrayMember.GetStruct();
-            EXPECT_EQ (true, nestedInstance.IsValid());
+            EXPECT_TRUE (nestedInstance.IsValid());
             
             EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1BoolMember"));
             EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean());
