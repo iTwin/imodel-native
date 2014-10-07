@@ -184,13 +184,17 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
     EXPECT_TRUE (type == PRIMITIVETYPE_DateTime);
     EXPECT_SUCCESS (adhocs.GetValue (v, propIdx));
     EXPECT_EQ (v.GetDateTimeTicks(), 1234);
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (AdhocPropertyTest, ValuesIteration)
-    {
-    // ###TODO...
+    // Test accessing ad-hocs using ECValueAccessor
+    ECValueAccessor va;
+    EXPECT_STATUS (PropertyNotFound, ECValueAccessor::PopulateValueAccessor (va, instance->GetEnabler(), L"onestring"));
+    EXPECT_STATUS (PropertyNotFound, ECValueAccessor::PopulateValueAccessor (va, *instance, L"onestring", false));
+    EXPECT_SUCCESS (ECValueAccessor::PopulateValueAccessor (va, *instance, L"onestring", true));
+
+    EXPECT_SUCCESS (instance->SetValueUsingAccessor (va, ECValue (L"set using accessor", false)));
+    EXPECT_SUCCESS (instance->GetValueUsingAccessor (v, va));
+    EXPECT_EQ (0, wcscmp (v.GetString(), L"set using accessor"));
+
+    // ###TODO test removing ad-hoc property
     }
 

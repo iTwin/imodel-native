@@ -2479,7 +2479,16 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IEC
     auto status = PopulateValueAccessor (va, instance, accessor);
     if (ECOBJECTS_STATUS_PropertyNotFound == status && includeAdhocs)
         {
-        // ###TODO
+        // Find the array index of the ad-hoc property value with the specified name
+        va.Clear();
+        AdhocPropertyQuery adhoc (instance);
+        UInt32 arrayIndex;
+        if (adhoc.GetPropertyIndex (arrayIndex, accessor))
+            {
+            va.PushLocation (instance.GetEnabler(), adhoc.GetContainerPropertyIndex(), arrayIndex);
+            va.m_isAdhoc = true;
+            return ECOBJECTS_STATUS_Success;
+            }
         }
 
     return status;

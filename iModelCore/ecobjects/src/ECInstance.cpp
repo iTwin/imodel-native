@@ -771,9 +771,21 @@ static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, E
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const
     {
+    if (accessor.IsAdhocProperty())
+        {
+        // The array index is already pointing to the index of the desired ad-hoc property
+        if (1 != accessor.GetDepth() || ECValueAccessor::INDEX_ROOT == accessor[0].GetArrayIndex())
+            {
+            BeAssert (false);
+            return ECOBJECTS_STATUS_Error;
+            }
+
+        AdhocPropertyQuery adhoc (*this);
+        return adhoc.GetValue (v, accessor[0].GetArrayIndex());
+        }
+
     ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance   = const_cast <IECInstance*> (this);
-
     for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
         {
         v.Clear();
@@ -802,6 +814,19 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
+    if (accessor.IsAdhocProperty())
+        {
+        // The array index is already pointing to the index of the desired ad-hoc property
+        if (1 != accessor.GetDepth() || ECValueAccessor::INDEX_ROOT == accessor[0].GetArrayIndex())
+            {
+            BeAssert (false);
+            return ECOBJECTS_STATUS_Error;
+            }
+
+        AdhocPropertyEdit adhoc (*this);
+        return adhoc.SetValue (accessor[0].GetArrayIndex(), valueToSet);
+        }
+
     ECObjectsStatus status          = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance = this;
 

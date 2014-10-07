@@ -614,7 +614,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AdhocPropertyMetadata
     {
-public:
+protected:
     enum class Index
         {
         Name        = 0,
