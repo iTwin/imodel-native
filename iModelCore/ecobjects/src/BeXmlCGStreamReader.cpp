@@ -78,6 +78,24 @@ double sweepRadians = msGeomConst_2pi
     ellipse.sweep = sweepRadians;
     return ellipse;
     }
+
+bool GetFrame (DPoint3dR origin, RotMatrixR axes) const
+    {
+    DVec3d vectorY;
+    vectorY.CrossProduct (m_vectorZ, m_vectorX);
+    axes = RotMatrix::FromColumnVectors (m_vectorX, vectorY, m_vectorZ);
+    bool stat = axes.SquareAndNormalizeColumns (axes, 2, 0);
+    origin = m_origin;
+    return stat;
+    }
+
+bool GetFrame (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis, DVec3dR zAxis) const
+    {
+    RotMatrix axes;
+    bool stat = GetFrame (origin, axes);
+    axes.GetColumns (xAxis, yAxis, zAxis);
+    return stat;
+    }
 };
 
 
@@ -90,6 +108,20 @@ double sweepRadians = msGeomConst_2pi
 struct IGeometryCGFactory : ICGFactory
 {
 public:
+
+// ===================================================================================
+/// <summary>
+/// factory base class placeholder to create a Coordinate from explicit args.
+virtual IGeometryPtr CreateCoordinate
+(
+InputParamTypeFor_DPoint3d xyz
+) override
+    {
+    return IGeometry::Create(ICurvePrimitive::CreatePointString (&xyz, 1));
+    }
+
+// ===================================================================================
+
 virtual IGeometryPtr CreateLineSegment
 (
 InputParamTypeFor_DPoint3d startPoint,
@@ -121,6 +153,31 @@ InputParamTypeFor_Angle sweepAngle
     ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (ellipse);
     return IGeometry::Create (cp);
     }
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a EllipticDisk from explicit args.
+virtual IGeometryPtr CreateEllipticDisk
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double radiusA,
+InputParamTypeFor_double radiusB
+)
+    {
+    DPoint3d origin;
+    RotMatrix axes;
+    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
+                DEllipse3d::FromScaledRotMatrix (
+                        origin, axes,
+                        radiusA, radiusB,
+                        0.0, Angle::TwoPi ()));
+    CurveVectorPtr area = CurveVector::Create
+                (CurveVector::BOUNDARY_TYPE_Outer);
+    area->push_back (arc);
+    return IGeometry::Create(ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area));
+    }
+
+// ===================================================================================
 
 /// <summary>
 /// factory base class placeholder to create a EllipticArc from explicit args.
@@ -143,6 +200,184 @@ InputParamTypeFor_Angle sweepAngle
     return IGeometry::Create (cp);
     }
 
+// ===================================================================================
+/// <summary>
+/// factory base class placeholder to create a CircularDisk from explicit args.
+virtual IGeometryPtr CreateCircularDisk
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double radius
+)
+    {
+    DPoint3d origin;
+    RotMatrix axes;
+    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
+                DEllipse3d::FromScaledRotMatrix (
+                        origin, axes,
+                        radius, radius,
+                        0.0, Angle::TwoPi ()));
+    CurveVectorPtr area = CurveVector::Create
+                (CurveVector::BOUNDARY_TYPE_Outer);
+    area->push_back (arc);
+    return IGeometry::Create(ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area));
+    }
+
+// ===================================================================================
+/// <summary>
+/// factory base class placeholder to create a SkewedCone from explicit args.
+virtual IGeometryPtr CreateSkewedCone
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_DPoint3d centerB,
+InputParamTypeFor_double radiusA,
+InputParamTypeFor_double radiusB,
+InputParamTypeFor_bool capped
+) override
+    {
+    RotMatrix axes;
+    DPoint3d centerA;
+    placement.GetFrame (centerA, axes);
+    DgnConeDetail coneDetail (centerA, centerB,
+                axes, 
+                radiusA, radiusB,
+                capped);
+    ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
+    return IGeometry::Create (sp);
+    }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a CircularCone from explicit args.
+virtual IGeometryPtr CreateCircularCone
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double height,
+InputParamTypeFor_double radiusA,
+InputParamTypeFor_double radiusB,
+InputParamTypeFor_bool capped
+) override
+    {
+    RotMatrix axes;
+    DVec3d vectorZ;
+    DPoint3d centerA;
+    placement.GetFrame (centerA, axes);
+    axes.GetColumn (vectorZ, 2);
+    DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, height);
+    DgnConeDetail coneDetail (centerA, centerB,
+                axes, 
+                radiusA, radiusB,
+                capped);
+    ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
+    return IGeometry::Create (sp);
+    }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a CircularCylinder from explicit args.
+virtual IGeometryPtr CreateCircularCylinder
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double height,
+InputParamTypeFor_double radius,
+InputParamTypeFor_bool capped
+) override
+    {
+    RotMatrix axes;
+    DVec3d vectorZ;
+    DPoint3d centerA;
+    placement.GetFrame (centerA, axes);
+    axes.GetColumn (vectorZ, 2);
+    DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, height);
+    DgnConeDetail coneDetail (centerA, centerB,
+                axes, 
+                radius, radius,
+                capped);
+    ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
+    return IGeometry::Create (sp);
+    }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Block from explicit args.
+virtual IGeometryPtr CreateBlock
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_DPoint3d cornerA,
+InputParamTypeFor_DPoint3d cornerB,
+InputParamTypeFor_bool capped
+) override
+    {
+    DPoint3d origin;
+    RotMatrix axes;
+    DVec3d vectorX, vectorY, vectorZ;
+    placement.GetFrame (origin, axes);
+    axes.GetColumns (vectorX, vectorY, vectorZ);
+    DPoint3d baseOrigin = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerA.z);
+    DPoint3d topOrigin  = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerB.z);
+    double dx = cornerB.x - cornerA.x;
+    double dy = cornerB.y - cornerA.y;
+    DgnBoxDetail detail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, capped);
+    ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnBox (detail);
+    return IGeometry::Create (sp);
+    }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Sphere from explicit args.
+virtual IGeometryPtr CreateSphere
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double radius
+) override
+    {
+    DPoint3d center;
+    RotMatrix axes;
+    placement.GetFrame (center, axes);
+    DgnSphereDetail detail (center, axes, radius);
+    return IGeometry::Create(ISolidPrimitive::CreateDgnSphere (detail));
+    }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a TorusPipe from explicit args.
+virtual IGeometryPtr CreateTorusPipe
+(
+InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_double radiusA,
+InputParamTypeFor_double radiusB,
+InputParamTypeFor_Angle startAngle,
+InputParamTypeFor_Angle sweepAngle,
+InputParamTypeFor_bool capped
+) override
+    {
+    DPoint3d center;
+    RotMatrix axes;
+    placement.GetFrame (center, axes);
+    DVec3d vectorX, vectorY, vectorZ;
+    axes.GetColumns (vectorX, vectorY, vectorZ);
+    DVec3d vector0 = vectorX;
+    DVec3d vector90 = vectorY;
+    double startRadians = startAngle.Radians ();
+    double sweepRadians = sweepAngle.Radians ();
+    if (startRadians != 0.0)
+        {
+        double c = cos (startRadians);
+        double s = sin (startRadians);
+        vector0.SumOf  (vectorX,  c, vectorY, s);
+        vector90.SumOf (vectorX, -s, vectorY, c);
+        }
+    DgnTorusPipeDetail detail (center,
+                vector0, vector90, 
+                radiusA, radiusB,
+                sweepRadians,
+                capped);
+    return IGeometry::Create(ISolidPrimitive::CreateDgnTorusPipe (detail));
+    }
 
 };
 
@@ -158,7 +393,7 @@ static Utf8String s_default_String = Utf8String ();
 static PlacementOriginZX s_default_IPlacement = PlacementOriginZX::FromIdentity ();
 
 
-
+#ifdef abc
 // If primitve has a child curve vector, just extract it.
 // Otherwise put the primitive in a new curve vector.
 static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::BoundaryType btype)
@@ -174,7 +409,7 @@ static CurveVectorPtr CurveVectorOf (ICurvePrimitivePtr primitive, CurveVector::
     vector->push_back (primitive);
     return vector;
     }
-
+#endif
 static int s_defaultDebug = 0;
 
 static char const * s_nodeTypeNames[] =
@@ -633,26 +868,24 @@ public: bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
     return false;
     }
 
-public: bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
+public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
     {
     IGeometryPtr geometry;
-    if (ReadILineSegment (geometry))
+    if (ReadILineSegment (result))
         {
-        result = geometry->GetAsICurvePrimitive ();
         return result.IsValid ();
         }
-    else if (ReadICircularArc (geometry))
+    else if (ReadICircularArc (result))
         {
-        result = geometry->GetAsICurvePrimitive ();
         return result.IsValid ();
         }
-    else if (ReadIEllipticArc (geometry))
+    else if (ReadIEllipticArc (result))
         {
-        result = geometry->GetAsICurvePrimitive ();
         return result.IsValid ();
         }
     else if (CurrentElementNameMatch ("SurfacePatch"))
         {
+#ifdef abc
         BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
         BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
         if (NULL != exteriorLoop)
@@ -683,9 +916,11 @@ public: bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
                 return true;
                 }
             }
+#endif
         }
     else if (CurrentElementNameMatch ("CurveChain"))
         {
+#ifdef abc
         BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
         CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
         for (BeXmlNodeP child = curveList->GetFirstChild (BEXMLNODE_Element); NULL != child;
@@ -697,13 +932,14 @@ public: bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             }
         result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*curves);
         return true;
+#endif
         }
     else if (CurrentElementNameMatch ("Linestring"))
         {
         bvector<DPoint3d> points;
         if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
             {
-            result = ICurvePrimitive::CreateLineString (points);
+            result = IGeometry::Create(ICurvePrimitive::CreateLineString (points));
             return true;
             }
         }
@@ -716,52 +952,17 @@ public: bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             CurveVectorPtr area = CurveVector::Create
                         (CurveVector::BOUNDARY_TYPE_Outer);
             area->push_back (linestring);
-            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
+            result = IGeometry::Create(ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area));
             return true;
             }
         }
-    else if (CurrentElementNameMatch ("CircularDisk"))
+    else if (ReadICircularDisk(result))
         {
-        RotMatrix axes;
-        DPoint3d origin;
-        double radius;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDouble (node, "radius", radius)
-            )
-            {
-            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
-                        DEllipse3d::FromScaledRotMatrix (
-                                origin, axes,
-                                radius, radius,
-                                0.0, Angle::TwoPi ()));
-            CurveVectorPtr area = CurveVector::Create
-                        (CurveVector::BOUNDARY_TYPE_Outer);
-            area->push_back (arc);
-            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
-            return true;
-            }
+        return result.IsValid ();
         }
-    else if (CurrentElementNameMatch ("EllipticDisk"))
+    else if (ReadIEllipticDisk(result))
         {
-        RotMatrix axes;
-        DPoint3d origin;
-        double radiusA, radiusB;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDouble (node, "radiusA", radiusA)
-            && FindChildDouble (node, "radiusB", radiusB)
-            )
-            {
-            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
-                        DEllipse3d::FromScaledRotMatrix (
-                                origin, axes,
-                                radiusA, radiusB,
-                                0.0, Angle::TwoPi ()));
-            CurveVectorPtr area = CurveVector::Create
-                        (CurveVector::BOUNDARY_TYPE_Outer);
-            area->push_back (arc);
-            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
-            return true;
-            }
+        return result.IsValid ();
         }
     else if (CurrentElementNameMatch ("BsplineCurve"))
         {
@@ -781,170 +982,48 @@ public: bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
                             weights.size () > 0 ? &weights : NULL,
                             knots.size () > 0 ? &knots : NULL,
                             order, closed, true);
-            result = ICurvePrimitive::CreateBsplineCurve (*bcurve);
+            result = IGeometry::Create(ICurvePrimitive::CreateBsplineCurve (*bcurve));
             return true;
             }
         }
-    else if (CurrentElementNameMatch ("Coordinate"))
+    else if (ReadICoordinate (result))
         {
-        DPoint3d xyz;
-        if (   FindChildDPoint3d (node, "xyz", xyz))
-            {
-            result = ICurvePrimitive::CreatePointString (&xyz, 1);
-            return true;
-            }        
-        }     
-    result = ICurvePrimitivePtr ();
+        return result.IsValid ();
+        }
+    result = nullptr;
     return false;
     }
 
 
-public: bool TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
+public: bool TryParseSolidPrimitive (BeXmlNodeP node, IGeometryPtr &result)
     {
-    if (CurrentElementNameMatch ("CircularCone"))
+    if (ReadICircularCylinder (result))
         {
-        RotMatrix axes;
-        DPoint3d centerA, centerB;
-        double radiusA, radiusB, height;
-        bool capped;
-        FindChildBool (node, "bSolidFlag", "capped", capped);
-
-        if (   FindChildPlacement (node, "placement", centerA, axes)
-            && FindChildDouble (node, "radiusA", radiusA)
-            && FindChildDouble (node, "radiusB", radiusB)
-            && FindChildDouble (node, "height", height)
-            )
-            {
-            DVec3d vectorX, vectorY, vectorZ;
-            axes.GetColumns (vectorX, vectorY, vectorZ);
-            centerB.SumOf (centerA, vectorZ, height);
-            DgnConeDetail coneDetail (centerA, centerB,
-                        axes, 
-                        radiusA, radiusB,
-                        capped);
-            result = ISolidPrimitive::CreateDgnCone (coneDetail);
-            return true;
-            }
+        return result.IsValid ();
         }
-    else if (CurrentElementNameMatch ("SkewedCone"))
+    else if (ReadICircularCone (result))
         {
-        RotMatrix axes;
-        DPoint3d centerA, centerB;
-        double radiusA, radiusB;
-        bool capped;
-        FindChildBool (node, "bSolidFlag", "capped", capped);
-        if (   FindChildPlacement (node, "placement", centerA, axes)
-            && FindChildDouble (node, "radiusA", radiusA)
-            && FindChildDouble (node, "radiusB", radiusB)
-            && FindChildDPoint3d (node, "centerB", centerB)
-            )
-            {
-            DVec3d vectorX, vectorY, vectorZ;
-            axes.GetColumns (vectorX, vectorY, vectorZ);
-            DgnConeDetail coneDetail (centerA, centerB,
-                        axes, 
-                        radiusA, radiusB,
-                        capped);
-            result = ISolidPrimitive::CreateDgnCone (coneDetail);
-            return true;
-            }
+        return result.IsValid ();
         }
-    else if (CurrentElementNameMatch ("Sphere"))
+    else if (ReadISkewedCone (result))
         {
-        RotMatrix axes;
-        DPoint3d center;
-        double radius;
-        if (   FindChildPlacement (node, "placement", center, axes)
-            && FindChildDouble (node, "radius", radius)
-            )
-            {
-            DgnSphereDetail detail (center, axes, radius);
-            result = ISolidPrimitive::CreateDgnSphere (detail);
-            return true;
-            }
+        return result.IsValid ();
         }
-    else if (   CurrentElementNameMatch ("Box")
-             || CurrentElementNameMatch ("Block")
-            )
+    else if (ReadISphere (result))
         {
-        RotMatrix axes;
-        DPoint3d origin;
-        DVec3d cornerA, cornerB;
-        bool bSolid;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDPoint3d (node, "cornerA", cornerA)
-            && FindChildDPoint3d (node, "cornerB", cornerB)
-            && FindChildBool (node, "bSolidFlag", "capped", bSolid)
-            )
-            {
-            DVec3d vectorX, vectorY, vectorZ;
-            axes.GetColumns (vectorX, vectorY, vectorZ);
-            DPoint3d baseOrigin = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerA.z);
-            DPoint3d topOrigin  = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerB.z);
-            double dx = cornerB.x - cornerA.x;
-            double dy = cornerB.y - cornerA.y;
-            DgnBoxDetail detail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, bSolid);
-            result = ISolidPrimitive::CreateDgnBox (detail);
-            return true;
-            }
+        return result.IsValid ();
         }
-    else if (CurrentElementNameMatch ("CircularCylinder"))
+    else if (ReadIBlock (result))   // ???? Should allow "Box"??
         {
-        RotMatrix axes;
-        DPoint3d centerA, centerB;
-        double radius;
-        double height;
-        bool capped = false;
-        FindChildBool (node, "bSolidFlag", "capped", capped);
-        if (   FindChildPlacement (node, "placement", centerA, axes)
-            && FindChildDouble (node, "radius", radius)
-            && FindChildDouble (node, "height", height)
-            )
-            {
-            DVec3d vectorX, vectorY, vectorZ;
-            axes.GetColumns (vectorX, vectorY, vectorZ);
-            centerB.SumOf (centerA, vectorZ, height);
-            DgnConeDetail coneDetail (centerA, centerB,
-                        axes, 
-                        radius, radius,
-                        capped);
-            result = ISolidPrimitive::CreateDgnCone (coneDetail);
-            return true;
-            }
+        return result.IsValid ();
         }
-    else if (CurrentElementNameMatch ("TorusPipe"))
+    else if (ReadITorusPipe (result))
         {
-        RotMatrix axes;
-        DPoint3d center;
-        double radiusA, radiusB;
-        double sweepDegrees = 360.0, startDegrees = 0.0;
-        bool capped = false;
-        FindChildBool (node, "bSolidFlag", "capped", capped);
-        FindChildDouble (node, "startAngle", startDegrees);
-        FindChildDouble (node, "sweepAngle", sweepDegrees);
-        if (   FindChildPlacement (node, "placement", center, axes)
-            && FindChildDouble (node, "radiusA", radiusA)
-            && FindChildDouble (node, "radiusB", radiusB)
-            )
-            {
-            DVec3d vectorX, vectorY, vectorZ, vector0;
-            axes.GetColumns (vectorX, vectorY, vectorZ);
-            vector0 = vectorX;
-            double startRadians = Angle::DegreesToRadians (startDegrees);
-            double sweepRadians = Angle::DegreesToRadians (sweepDegrees);
-            if (startDegrees != 0.0)
-                vector0.SumOf (vectorX, cos (startRadians), vectorY, sin(startRadians));
-            DgnTorusPipeDetail detail (center,
-                        vectorX, vectorY, 
-                        radiusA, radiusB,
-                        sweepRadians,
-                        capped);
-            result = ISolidPrimitive::CreateDgnTorusPipe (detail);
-            return true;
-            }
+        return result.IsValid ();
         }
     else if (CurrentElementNameMatch ("SurfaceBySweptCurve"))
         {
+#ifdef abc
         BeXmlNodeP baseGeometryNode = FindChild (node, "BaseGeometry");
         BeXmlNodeP railCurveNode    = FindChild (node, "RailCurve");
         ICurvePrimitivePtr baseGeometry;
@@ -974,6 +1053,7 @@ public: bool TryParse (BeXmlNodeP node, ISolidPrimitivePtr &result)
                 return true;
                 }
             }
+#endif
         }
     return false;
     }
@@ -985,19 +1065,19 @@ public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     if (!ReadToElement ())
         return false;
 
-    ICurvePrimitivePtr curvePrimitive;
-    ISolidPrimitivePtr solidPrimitive;
+    IGeometryPtr g;
     MSBsplineSurfacePtr surface;
     size_t count = 0;
     BeXmlNodeP node = NULL;
-    if (TryParse (node, curvePrimitive))
+    // This sequencing is just for clarity -- no actual type requirements.
+    if (TryParseCurvePrimitive (node, g))
         {
-        geometry.push_back (IGeometry::Create (curvePrimitive));
+        geometry.push_back (g);
         count = 1;
         }
-    else if (TryParse (node, solidPrimitive))
+    else if (TryParseSolidPrimitive (node, g))
         {
-        geometry.push_back (IGeometry::Create (solidPrimitive));
+        geometry.push_back (g);
         count = 1;
         }
     else if (TryParse (node, surface))
