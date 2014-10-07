@@ -128,7 +128,6 @@ struct IECInstance : RefCountedBase
     {
 private:
     ECObjectsStatus ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
-    ECObjectsStatus GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const;
 
     bool                        GetInstanceLabelPropertyName (WString& propertyName) const;
 
@@ -281,6 +280,13 @@ public:
     //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString) const;    
+//__PUBLISH_SECTION_END__
+    //! Gets the value stored in the specified ECProperty, optionally including ad-hoc property values. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  propertyAccessString Name of the property to retrieve
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdhoc (ECValueR v, WCharCP propertyAccessString) const;    
+//__PUBLISH_SECTION_START__
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v                       If successful, will contain the value of the property
     //! @param[in]  propertyAccessString    Name of the property to retrieve
@@ -305,6 +311,13 @@ public:
     //! @param[in]  v                    The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_END__
+    //! Sets the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v                    The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdhoc (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_START__
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
@@ -330,6 +343,13 @@ public:
     //! @param[in]  v                       The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_END__
+    //! Change the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[in]  propertyAccessString    The name of the property to set the value of
+    //! @param[in]  v                       The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValueOrAdhoc (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_START__
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
@@ -416,6 +436,12 @@ public:
     //! @param[in] accessString The access string to the property to check the read-only state for
     //! @returns true if the property is read-only
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
+//__PUBLISH_SECTION_END__
+    //! Given an access string, returns whether that property is readonly. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[in] accessString The access string to the property to check the read-only state for
+    //! @returns true if the property is read-only
+    ECOBJECTS_EXPORT bool               IsPropertyOrAdhocReadOnly (WCharCP accessString) const;
+//__PUBLISH_SECTION_START__
 
     //! Given the propertyIndex (into the ClassLayout) of a property, returns whether that property is readonly
     //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check
@@ -757,6 +783,85 @@ protected:
     ECOBJECTS_EXPORT virtual WString                    _GetInstanceId() const override;
 public:
     ECInstanceInterface (IECInstanceCR instance) : m_instance (instance) { }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Provides read-only access to ad-hoc properties defined on an IECInstance.
+* Ad-hoc properties are name-value pairs stored in a struct array property on an IECInstance.
+* In order for an IECInstance to support ad-hoc properties, its ECClass must define an
+* AdhocPropertySpecification custom attribute containing the name of a struct array property
+* with an attached AdhocPropertyContainerDefinition custom attribute specifying, at minimum,
+* the names of properties to hold the name and value of each ad-hoc property. Additional
+* property names can specify metadata like primitive type, dispaly label, extended type,
+* EC unit name, and read-only state.
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AdhocPropertyQuery
+    {
+protected:
+    enum class MetadataIndex
+        {
+        Name        = 0,
+        DisplayLabel,
+        Value,
+        Type,
+        Unit,
+        ExtendType,
+        IsReadOnly,
+        MAX
+        };
+
+    WCharCP                 GetPropertyName (MetadataIndex index) const;
+    IECInstancePtr          GetEntry (UInt32 index) const;
+    UInt32                  GetContainerIndex() const { return m_containerIndex; }
+    ECObjectsStatus         GetString (WStringR str, UInt32 index, MetadataIndex which) const;
+    ECObjectsStatus         GetValue (ECValueR v, UInt32 index, MetadataIndex which) const;
+    ECObjectsStatus         GetValue (ECValueR v, IECInstanceCR instance, MetadataIndex which) const;
+
+    static bool             IsRequiredMetadata (MetadataIndex index);
+    static bool             PrimitiveTypeForCode (PrimitiveType& primType, Int32 code);
+    static bool             CodeForPrimitiveType (Int32& code, PrimitiveType primType);
+private:
+    IECInstanceCR           m_host;
+    WString                 m_metadataPropertyNames[MetadataIndex::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
+    UInt32                  m_containerIndex;                               // the property index of the struct array holding ad-hoc properties within the host's ECClass
+public:
+    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host);
+
+    IECInstanceCR           GetHost() const { return m_host; }
+
+    ECOBJECTS_EXPORT bool               GetPropertyIndex (UInt32& index, WCharCP accessString) const;
+    ECOBJECTS_EXPORT UInt32             GetCount() const;
+    ECOBJECTS_EXPORT bool               IsSupported() const;
+
+    ECOBJECTS_EXPORT ECObjectsStatus    GetName (WStringR name, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WStringR label, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetPrimitiveType (PrimitiveType& type, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (WStringR typeName, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (WStringR unitName, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    IsReadOnly (bool& isReadOnly, UInt32 index) const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Provides read-write access to ad-hoc properties defined on an IECInstance.
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AdhocPropertyEdit : AdhocPropertyQuery
+    {
+public:
+    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host);
+
+    IECInstanceR            GetHostR()  { return const_cast<IECInstanceR>(GetHost()); }
+
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName (UInt32 index, WCharCP name);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (UInt32 index, WCharCP displayLabel, bool andSetName = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, ECValueCR v);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (UInt32 index, bool isReadOnly);
+
+    ECOBJECTS_EXPORT ECObjectsStatus    Add (WCharCP name, ECValueCR v, WCharCP displayLabel = nullptr, WCharCP unitName = nullptr, WCharCP extendedTypeName = nullptr, bool isReadOnly = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    Remove (UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    Clear();
     };
 
 /*__PUBLISH_SECTION_START__*/

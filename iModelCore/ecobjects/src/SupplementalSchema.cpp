@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1177,7 +1177,7 @@ IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     StandaloneECEnablerPtr memberEnabler = classEnabler->GetEnablerForStructArrayMember (schemaNameAndPurpose->GetSchema().GetSchemaKey(), schemaNameAndPurpose->GetName().c_str()); 
 
     SchemaNamePurposeMap::const_iterator iter;
-    int arrayIndex = 0;
+    UInt32 arrayIndex = 0;
     for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
         {
         bpair<WString, WString>const& entry = *iter;

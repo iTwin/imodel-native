@@ -28,6 +28,14 @@ static  bool        s_noAssert      = false;
 static  bool        s_showMessages  = false;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::IsValidName (WCharCP name)
+    {
+    return RESULT_Valid == Validate (name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECNameValidation::ValidationResult ECNameValidation::Validate (WCharCP name)
