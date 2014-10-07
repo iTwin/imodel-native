@@ -99,6 +99,7 @@ EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
 
 //__PUBLISH_SECTION_END__
+EC_TYPEDEFS (AdhocPropertyMetadata);
 EC_TYPEDEFS (AdhocPropertyQuery);
 EC_TYPEDEFS (AdhocPropertyEdit);
 //__PUBLISH_SECTION_START__

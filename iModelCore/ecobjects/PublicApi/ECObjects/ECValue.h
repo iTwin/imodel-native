@@ -607,6 +607,107 @@ public:
     ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
     };
 
+//__PUBLISH_SECTION_END__
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AdhocPropertyMetadata
+    {
+public:
+    enum class Index
+        {
+        Name        = 0,
+        DisplayLabel,
+        Value,
+        Type,
+        Unit,
+        ExtendType,
+        IsReadOnly,
+        MAX
+        };
+private:
+    friend struct AdhocPropertyQuery;
+    friend struct AdhocPropertyEdit;
+
+    WString                 m_metadataPropertyNames[Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
+    UInt32                  m_containerIndex;                               // the property index of the struct array holding ad-hoc properties within the host's ECClass
+protected:
+    WCharCP                 GetPropertyName (Index index) const;
+
+    static bool             IsRequiredMetadata (Index index);
+    static bool             PrimitiveTypeForCode (PrimitiveType& primType, Int32 code);
+    static bool             CodeForPrimitiveType (Int32& code, PrimitiveType primType);
+public:
+    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler);
+
+    ECOBJECTS_EXPORT bool   IsSupported() const;
+    UInt32                  GetContainerPropertyIndex() const { return m_containerIndex; }
+
+    ECOBJECTS_EXPORT static bool    GetContainerPropertyIndex (UInt32& propertyIndex, ECEnablerCR enabler);
+    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Provides read-only access to ad-hoc properties defined on an IECInstance.
+* Ad-hoc properties are name-value pairs stored in a struct array property on an IECInstance.
+* In order for an IECInstance to support ad-hoc properties, its ECClass must define an
+* AdhocPropertySpecification custom attribute containing the name of a struct array property
+* with an attached AdhocPropertyContainerDefinition custom attribute specifying, at minimum,
+* the names of properties to hold the name and value of each ad-hoc property. Additional
+* property names can specify metadata like primitive type, dispaly label, extended type,
+* EC unit name, and read-only state.
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AdhocPropertyQuery : AdhocPropertyMetadata
+    {
+protected:
+    IECInstancePtr          GetEntry (UInt32 index) const;
+    ECObjectsStatus         GetString (WStringR str, UInt32 index, Index which) const;
+    ECObjectsStatus         GetValue (ECValueR v, UInt32 index, Index which) const;
+    ECObjectsStatus         GetValue (ECValueR v, IECInstanceCR instance, Index which) const;
+private:
+    IECInstanceCR           m_host;
+public:
+    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host);
+
+    IECInstanceCR                       GetHost() const { return m_host; }
+
+    ECOBJECTS_EXPORT bool               GetPropertyIndex (UInt32& index, WCharCP accessString) const;
+    ECOBJECTS_EXPORT UInt32             GetCount() const;
+
+    ECOBJECTS_EXPORT ECObjectsStatus    GetName (WStringR name, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WStringR label, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetPrimitiveType (PrimitiveType& type, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (WStringR typeName, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (WStringR unitName, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    IsReadOnly (bool& isReadOnly, UInt32 index) const;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Provides read-write access to ad-hoc properties defined on an IECInstance.
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AdhocPropertyEdit : AdhocPropertyQuery
+    {
+public:
+    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host);
+
+    IECInstanceR            GetHostR()  { return const_cast<IECInstanceR>(GetHost()); }
+
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName (UInt32 index, WCharCP name);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (UInt32 index, WCharCP displayLabel, bool andSetName = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, ECValueCR v);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (UInt32 index, bool isReadOnly);
+
+    ECOBJECTS_EXPORT ECObjectsStatus    Add (WCharCP name, ECValueCR v, WCharCP displayLabel = nullptr, WCharCP unitName = nullptr, WCharCP extendedTypeName = nullptr, bool isReadOnly = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    Remove (UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    Clear();
+    };
+
+//__PUBLISH_SECTION_START__
+
 //=======================================================================================    
 //! A structure used for describing the complete location of an ECValue within an ECInstance.
 //! They can be thought of as the equivalent to access strings, but generally do not require
@@ -677,10 +778,13 @@ public:
 private:
     //"BACK" OF VECTOR IS DEEPEST ELEMENT
     LocationVector          m_locationVector;
+    bool                    m_isAdhoc;
 /*__PUBLISH_SECTION_END__*/
     const LocationVector&   GetLocationVector() const;
 
 public:
+    bool                                IsAdhocProperty() const { return m_isAdhoc; }
+
     ECOBJECTS_EXPORT Location&          operator[] (UInt32 depth);
 
     //! Constructs an ECValueAccessor for a given instance.
@@ -702,10 +806,6 @@ public:
     //! Clone an existing ECValueAccessor. Any existing locations are clear so the resulting accessor refers to the same property.
     //! @param[in]      accessor          The accessor to clone.
     ECOBJECTS_EXPORT void Clone (ECValueAccessorCR accessor);
-
-    //! For use by the iterator.  Does not make valid accessors.
-    ECOBJECTS_EXPORT ECValueAccessor (IECInstanceCR instance);
-    ECOBJECTS_EXPORT ECValueAccessor (ECEnablerCR layout);
 
     ECOBJECTS_EXPORT const Location&        operator[] (UInt32 depth) const;
     ECOBJECTS_EXPORT ECEnablerCR            GetEnabler (UInt32 depth) const;
@@ -783,7 +883,7 @@ public:
     ECOBJECTS_EXPORT WString               GetPropertyName () const;
 
     //! Constructs an empty ECValueAccessor.
-    ECOBJECTS_EXPORT ECValueAccessor () { }
+    ECOBJECTS_EXPORT ECValueAccessor () : m_isAdhoc (false) { }
 
     //! Constructs a copy of a ECValueAccessor.
     //! @param[in]      accessor         The accessor to be copied.
@@ -818,6 +918,9 @@ public:
     //! @param[in]      managedPropertyAccessor The managed access string relative to the specified ECEnabler
     //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP managedPropertyAccessor);
+//__PUBLISH_SECTION_END__
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor, bool includeAdhocs);
+//__PUBLISH_SECTION_START__
     };
 
 /*__PUBLISH_SECTION_END__*/
