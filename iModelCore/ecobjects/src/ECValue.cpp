@@ -2149,6 +2149,7 @@ void                                            ECValueAccessor::PopLocation()
 void                                            ECValueAccessor::Clear ()
     {
     m_locationVector.clear();
+    m_isAdhoc = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
