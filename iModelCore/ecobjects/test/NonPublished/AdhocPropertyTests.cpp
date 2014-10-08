@@ -195,6 +195,15 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
     EXPECT_SUCCESS (instance->GetValueUsingAccessor (v, va));
     EXPECT_EQ (0, wcscmp (v.GetString(), L"set using accessor"));
 
-    // ###TODO test removing ad-hoc property
+    // Test removing an entry
+    EXPECT_EQ (3, adhocs.GetCount());
+    EXPECT_SUCCESS (adhocs.Remove (propIdx));
+    EXPECT_EQ (2, adhocs.GetCount());
+    EXPECT_FALSE (adhocs.GetPropertyIndex (propIdx, L"time"));
+    EXPECT_TRUE (adhocs.GetPropertyIndex (propIdx, L"onestring"));
+
+    // Test removing all entries
+    EXPECT_SUCCESS (adhocs.Clear());
+    EXPECT_EQ (0, adhocs.GetCount());
     }
 
