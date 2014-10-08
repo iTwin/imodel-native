@@ -31,3 +31,5 @@ $(o)ECSchemaUnitsManagerTests$(oext)               : $(baseDir)NonPublished/ECSc
 
 $(o)CGBinarySerializationTests$(oext)  : $(baseDir)NonPublished/CGBinarySerializationTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)AdhocPropertyTests$(oext)       : $(baseDir)NonPublished/AdhocPropertyTests.cpp $(PCHHeaderDependency) ${MultiCompileDepends}
+

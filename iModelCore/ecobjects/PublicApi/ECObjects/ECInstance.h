@@ -128,7 +128,6 @@ struct IECInstance : RefCountedBase
     {
 private:
     ECObjectsStatus ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex);
-    ECObjectsStatus GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const;
 
     bool                        GetInstanceLabelPropertyName (WString& propertyName) const;
 
@@ -281,6 +280,13 @@ public:
     //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString) const;    
+//__PUBLISH_SECTION_END__
+    //! Gets the value stored in the specified ECProperty, optionally including ad-hoc property values. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[out] v   If successful, will contain the value of the property
+    //! @param[in]  propertyAccessString Name of the property to retrieve
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdhoc (ECValueR v, WCharCP propertyAccessString) const;    
+//__PUBLISH_SECTION_START__
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v                       If successful, will contain the value of the property
     //! @param[in]  propertyAccessString    Name of the property to retrieve
@@ -305,6 +311,13 @@ public:
     //! @param[in]  v                    The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_END__
+    //! Sets the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[in]  propertyAccessString The name of the property to set the value of
+    //! @param[in]  v                    The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdhoc (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_START__
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
@@ -330,6 +343,13 @@ public:
     //! @param[in]  v                       The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_END__
+    //! Change the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[in]  propertyAccessString    The name of the property to set the value of
+    //! @param[in]  v                       The value to set onto the property
+    //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValueOrAdhoc (WCharCP propertyAccessString, ECValueCR v);    
+//__PUBLISH_SECTION_START__
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
@@ -416,6 +436,12 @@ public:
     //! @param[in] accessString The access string to the property to check the read-only state for
     //! @returns true if the property is read-only
     ECOBJECTS_EXPORT bool               IsPropertyReadOnly (WCharCP accessString) const;
+//__PUBLISH_SECTION_END__
+    //! Given an access string, returns whether that property is readonly. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
+    //! @param[in] accessString The access string to the property to check the read-only state for
+    //! @returns true if the property is read-only
+    ECOBJECTS_EXPORT bool               IsPropertyOrAdhocReadOnly (WCharCP accessString) const;
+//__PUBLISH_SECTION_START__
 
     //! Given the propertyIndex (into the ClassLayout) of a property, returns whether that property is readonly
     //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check

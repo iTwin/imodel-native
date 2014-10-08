@@ -2023,7 +2023,7 @@ bool            ArrayInfo::IsStructArray() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValueAccessor::ECValueAccessor (IECInstanceCR instance, int newPropertyIndex, int newArrayIndex)
+ECValueAccessor::ECValueAccessor (IECInstanceCR instance, int newPropertyIndex, int newArrayIndex) : m_isAdhoc (false)
     {
     PushLocation (instance, newPropertyIndex, newArrayIndex);
     }
@@ -2031,7 +2031,7 @@ ECValueAccessor::ECValueAccessor (IECInstanceCR instance, int newPropertyIndex, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValueAccessor::ECValueAccessor (ECEnablerCR enabler, int newPropertyIndex, int newArrayIndex)
+ECValueAccessor::ECValueAccessor (ECEnablerCR enabler, int newPropertyIndex, int newArrayIndex) : m_isAdhoc (false)
     {
     PushLocation (enabler, newPropertyIndex, newArrayIndex);
     }
@@ -2040,7 +2040,7 @@ ECValueAccessor::ECValueAccessor (ECEnablerCR enabler, int newPropertyIndex, int
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueAccessor::ECValueAccessor (ECValueAccessorCR accessor)
-    : m_locationVector (accessor.GetLocationVector())
+    : m_locationVector (accessor.GetLocationVector()), m_isAdhoc (accessor.IsAdhocProperty())
     {
     }
 
@@ -2149,6 +2149,7 @@ void                                            ECValueAccessor::PopLocation()
 void                                            ECValueAccessor::Clear ()
     {
     m_locationVector.clear();
+    m_isAdhoc = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2469,6 +2470,29 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECE
     wchar_t         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
     va.Clear ();
     return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, enabler, accessor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP accessor, bool includeAdhocs)
+    {
+    auto status = PopulateValueAccessor (va, instance, accessor);
+    if (ECOBJECTS_STATUS_PropertyNotFound == status && includeAdhocs)
+        {
+        // Find the array index of the ad-hoc property value with the specified name
+        va.Clear();
+        AdhocPropertyQuery adhoc (instance);
+        UInt32 arrayIndex;
+        if (adhoc.GetPropertyIndex (arrayIndex, accessor))
+            {
+            va.PushLocation (instance.GetEnabler(), adhoc.GetContainerPropertyIndex(), arrayIndex);
+            va.m_isAdhoc = true;
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+
+    return status;
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -3473,6 +3497,623 @@ bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
         BeAssert (false && L"Call ECValue::SupportsDotNetFormatting() to determine if this ECValue can be formatted");
         return false;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host)
+    : AdhocPropertyMetadata (host.GetEnabler()), m_host (host)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::GetContainerPropertyIndex (UInt32& propIdx, ECEnablerCR enabler)
+    {
+    propIdx = 0;
+    IECInstancePtr attr = enabler.GetClass().GetCustomAttribute (L"AdhocPropertySpecification");
+    ECValue v;
+    v.SetAllowsPointersIntoInstanceMemory (true);
+    if (attr.IsNull() || SUCCESS != attr->GetValue (v, L"AdhocPropertyContainer") || v.IsNull() || SUCCESS != enabler.GetPropertyIndex (propIdx, v.GetString()))
+        return false;
+
+    BeAssert (0 != propIdx);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler)
+    {
+    UInt32 propIdx;
+    return GetContainerPropertyIndex (propIdx, enabler);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler)
+    : m_containerIndex (0)
+    {
+    UInt32 containerIndex = 0;
+    if (!GetContainerPropertyIndex (containerIndex, enabler))
+        return; // no ad-hoc property specification, or cannot find container property
+
+    ECValue v;
+    v.SetAllowsPointersIntoInstanceMemory (true);
+    ECPropertyCP prop = enabler.LookupECProperty (containerIndex);
+    ArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    ECClassCP structClass = nullptr;
+    if (nullptr == arrayProp || ARRAYKIND_Struct != arrayProp->GetKind() || nullptr == (structClass = arrayProp->GetStructElementType()))
+        return;
+
+    IECInstancePtr attr = structClass->GetCustomAttribute (L"AdhocPropertyContainerDefinition");
+    if (attr.IsNull())
+        return;
+
+    static const WCharCP s_propertyNames[Index::MAX] =
+        {
+        L"NameProperty", L"DisplayLabelProperty", L"ValueProperty", L"TypeProperty", L"UnitProperty", L"ExtendTypeProperty", L"IsReadOnlyProperty"
+        };
+
+    for (size_t i = 0; i < _countof (s_propertyNames); i++)
+        {
+        if (SUCCESS == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
+            {
+            prop = structClass->GetPropertyP (v.GetString());
+            if (nullptr != prop)
+                m_metadataPropertyNames[i] = v.GetString(); 
+            else
+                return;
+            }
+        else if (IsRequiredMetadata (static_cast<Index>(i)))
+            return;
+        }
+
+    // only considered valid when m_containerIndex set to non-zero
+    m_containerIndex = containerIndex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::IsRequiredMetadata (Index index)
+    {
+    return Index::Name == index || Index::Value == index;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* From managed...See ECAdhocProperties::GetKnownTypeForCode
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class PrimitiveTypeCode
+    {
+    String  = 0,
+    Integer,
+    Long,
+    Double,
+    DateTime,
+    Boolean,
+    Binary,
+    Point2D,
+    Point3D
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::PrimitiveTypeForCode (PrimitiveType& type, Int32 code)
+    {
+    switch (code)
+        {
+        case PrimitiveTypeCode::String:     type = PRIMITIVETYPE_String; return true;
+        case PrimitiveTypeCode::Integer:    type = PRIMITIVETYPE_Integer; return true;
+        case PrimitiveTypeCode::Long:       type = PRIMITIVETYPE_Long; return true;
+        case PrimitiveTypeCode::Double:     type = PRIMITIVETYPE_Double; return true;
+        case PrimitiveTypeCode::DateTime:   type = PRIMITIVETYPE_DateTime; return true;
+        case PrimitiveTypeCode::Boolean:    type = PRIMITIVETYPE_Boolean; return true;
+        case PrimitiveTypeCode::Point2D:    type = PRIMITIVETYPE_Point2D; return true;
+        case PrimitiveTypeCode::Point3D:    type = PRIMITIVETYPE_Point3D; return true;
+        default:                            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::CodeForPrimitiveType (Int32& code, PrimitiveType type)
+    {
+    switch (type)
+        {
+        case PRIMITIVETYPE_String:      code = static_cast<Int32> (PrimitiveTypeCode::String); return true;
+        case PRIMITIVETYPE_Integer:     code = static_cast<Int32> (PrimitiveTypeCode::Integer); return true;
+        case PRIMITIVETYPE_Long:        code = static_cast<Int32> (PrimitiveTypeCode::Long); return true;
+        case PRIMITIVETYPE_Double:      code = static_cast<Int32> (PrimitiveTypeCode::Double); return true;
+        case PRIMITIVETYPE_DateTime:    code = static_cast<Int32> (PrimitiveTypeCode::DateTime); return true;
+        case PRIMITIVETYPE_Boolean:     code = static_cast<Int32> (PrimitiveTypeCode::Boolean); return true;
+        case PRIMITIVETYPE_Point2D:     code = static_cast<Int32> (PrimitiveTypeCode::Point2D); return true;
+        case PRIMITIVETYPE_Point3D:     code = static_cast<Int32> (PrimitiveTypeCode::Point3D); return true;
+        default:                        return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::IsSupported() const
+    {
+    return 0 != m_containerIndex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP AdhocPropertyMetadata::GetPropertyName (Index index) const
+    {
+    auto const& name = m_metadataPropertyNames[static_cast<size_t> (index)];
+    return !name.empty() ? name.c_str() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr AdhocPropertyQuery::GetEntry (UInt32 index) const
+    {
+    if (!IsSupported())
+        return nullptr;
+
+    ECValue v;
+    if (SUCCESS != m_host.GetValue (v, GetContainerPropertyIndex(), index) || v.IsNull())
+        return nullptr;
+    else if (!v.IsStruct())
+        {
+        BeAssert (false);
+        return nullptr;
+        }
+    else
+        return v.GetStruct();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyQuery::GetPropertyIndex (UInt32& index, WCharCP accessString) const
+    {
+    if (!IsSupported())
+        return false;
+
+    ECValue v;
+    if (SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+        {
+        UInt32 count = v.GetArrayInfo().GetCount();
+        for (UInt32 i = 0; i < count; i++)
+            if (SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
+                {
+                IECInstancePtr instance = v.GetStruct();
+                v.SetAllowsPointersIntoInstanceMemory (true);
+                if (SUCCESS == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == wcscmp (accessString, v.GetString()))
+                    {
+                    index = i;
+                    return true;
+                    }
+                }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 AdhocPropertyQuery::GetCount() const
+    {
+    ECValue v;
+    if (IsSupported() && SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+        return v.GetArrayInfo().GetCount();
+    else
+        return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetName (WStringR name, UInt32 index) const { return GetString (name, index, Index::Name); }
+ECObjectsStatus AdhocPropertyQuery::GetExtendedTypeName (WStringR name, UInt32 index) const { return GetString (name, index, Index::ExtendType); }
+ECObjectsStatus AdhocPropertyQuery::GetUnitName (WStringR name, UInt32 index) const { return GetString (name, index, Index::Unit); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel (WStringR label, UInt32 index) const
+    {
+    auto status = GetString (label, index, Index::DisplayLabel);
+    if (SUCCESS != status)
+        {
+        WString name;
+        status = GetName (name, index);
+        if (SUCCESS == status)
+            ECNameValidation::DecodeFromValidName (label, name);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetPrimitiveType (PrimitiveType& type, UInt32 index) const
+    {
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    WCharCP propName = GetPropertyName (Index::Type);
+    if (nullptr == propName)
+        {
+        // defaults to string if no property to specify otherwise
+        type = PRIMITIVETYPE_String;
+        return ECOBJECTS_STATUS_Success;
+        }
+
+    ECValue v;
+    if (SUCCESS != entry->GetValue (v, propName) || !v.IsInteger())
+        return ECOBJECTS_STATUS_Error;
+    else if (v.IsNull())
+        {
+        type = PRIMITIVETYPE_String;
+        return ECOBJECTS_STATUS_Success;
+        }
+    else
+        return PrimitiveTypeForCode (type, v.GetInteger()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, UInt32 index) const
+    {
+    // avoid looking up the struct instance repeatedly.
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    // get value type
+    PrimitiveType type = PRIMITIVETYPE_String;
+    WCharCP propName = GetPropertyName (Index::Type);
+    ECValue v;
+    if (nullptr != propName)
+        {
+        auto status = entry->GetValue (v, propName);
+        if (SUCCESS == status)
+            {
+            // null => use default type (string)
+            if (!v.IsNull() && (!v.IsInteger() || !PrimitiveTypeForCode (type, v.GetInteger())))
+                status = ECOBJECTS_STATUS_Error;
+            }
+
+        if (SUCCESS != status)
+            return status;
+        }
+
+    // get value
+    auto status = GetValue (propertyValue, *entry, Index::Value);
+    if (SUCCESS != status)
+        return status;
+    else if (!propertyValue.IsString() && !propertyValue.IsNull())
+        {
+        BeAssert (false);
+        return ECOBJECTS_STATUS_Error;
+        }
+
+    // convert string value to desired type
+    return propertyValue.ConvertToPrimitiveType (type) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::IsReadOnly (bool& isReadOnly, UInt32 index) const
+    {
+    ECValue v;
+    auto status = GetValue (v, index, Index::IsReadOnly);
+    isReadOnly = false;
+    if (SUCCESS == status && v.IsBoolean() && !v.IsNull())
+        isReadOnly = v.GetBoolean();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, UInt32 index, Index which) const
+    {
+    str.clear();
+    ECValue v;
+    v.SetAllowsPointersIntoInstanceMemory (true);
+    auto status = GetValue (v, index, which);
+    if (SUCCESS == status && v.IsString())
+        str = v.GetString();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, UInt32 index, Index which) const
+    {
+    auto entry = GetEntry (index);
+    return entry.IsValid() ? GetValue (v, *entry, which) : ECOBJECTS_STATUS_PropertyNotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, IECInstanceCR instance, Index which) const
+    {
+    WCharCP propName = GetPropertyName (which);
+    if (nullptr == propName)
+        {
+        if (IsRequiredMetadata (which))
+            return ECOBJECTS_STATUS_Error;
+
+        v.Clear();
+        return ECOBJECTS_STATUS_Success;
+        }
+    else
+        return instance.GetValue (v, propName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host)
+    : AdhocPropertyQuery (host)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::SetName (UInt32 index, WCharCP name)
+    {
+    if (!ECNameValidation::IsValidName (name))
+        return ECOBJECTS_STATUS_Error;
+
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+    else
+        return entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (UInt32 index, WCharCP label, bool andSetName)
+    {
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    auto propName = GetPropertyName (Index::DisplayLabel);
+    if (nullptr == propName)
+        {
+        if (!andSetName)
+            return ECOBJECTS_STATUS_Error;
+        }
+    else
+        {
+        auto status = entry->SetValue (propName, ECValue (label, false));
+        if (SUCCESS != status)
+            return status;
+        }
+
+    if (andSetName)
+        {
+        WString name;
+        ECNameValidation::EncodeToValidName (name, label);
+        return entry->SetValue (GetPropertyName (Index::Name), ECValue (name.c_str(), false));
+        }
+    else
+        return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::SetValue (UInt32 index, ECValueCR inputV)
+    {
+    PrimitiveType type;
+    auto status = GetPrimitiveType (type, index);
+    if (SUCCESS != status)
+        return status;
+
+    ECValue v (inputV);
+    WString strRep;
+    if (!v.ConvertToPrimitiveType (type) || !v.ConvertPrimitiveToString (strRep))
+        return ECOBJECTS_STATUS_DataTypeMismatch;
+
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    return entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::SetIsReadOnly (UInt32 index, bool isReadOnly)
+    {
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    auto propName = GetPropertyName (Index::IsReadOnly);
+    if (nullptr == propName)
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    return entry->SetValue (propName, ECValue (isReadOnly));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct RevertAdhocProperty
+    {
+private:
+    AdhocPropertyEdit&  m_edit;
+    UInt32              m_index;
+    bool                m_revert;
+public:
+    RevertAdhocProperty (AdhocPropertyEdit& edit) : m_edit (edit), m_index (edit.GetCount()), m_revert (true) { }
+    ~RevertAdhocProperty()
+        {
+        if (m_revert)
+            m_edit.Remove (m_index);
+        }
+
+    void                Clear() { m_revert = false; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displayLabel, WCharCP unitName, WCharCP extendedTypeName, bool isReadOnly)
+    {
+    if (!IsSupported())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    if (!ECNameValidation::IsValidName (name))
+        return ECOBJECTS_STATUS_Error;
+
+    auto type = PRIMITIVETYPE_String;
+    if (!v.IsNull())
+        {
+        if (!v.IsPrimitive())
+            return ECOBJECTS_STATUS_DataTypeMismatch;
+
+        type = v.GetPrimitiveType();
+        if (nullptr == GetPropertyName (Index::Type) && type != PRIMITIVETYPE_String)
+            return ECOBJECTS_STATUS_OperationNotSupported;  // no property to hold type, so all properties are strings.
+        }
+
+    if (PRIMITIVETYPE_String != type && nullptr == GetPropertyName (Index::Type))
+        return ECOBJECTS_STATUS_DataTypeMismatch;   // need a property to hold the type if it's not string...
+
+    WString strRep;
+    ECValue vAsStr (v);
+    if (!vAsStr.ConvertPrimitiveToString (strRep))
+        return ECOBJECTS_STATUS_DataTypeMismatch;
+
+    if (nullptr != unitName)
+        {
+        switch (type)
+            {
+            case PRIMITIVETYPE_Integer:
+            case PRIMITIVETYPE_Long:
+            case PRIMITIVETYPE_Double:
+                break;
+            default:
+                return ECOBJECTS_STATUS_OperationNotSupported;  // type does not support units.
+            }
+        }
+
+    auto status = GetHostR().AddArrayElements (GetContainerPropertyIndex(), 1);
+    if (SUCCESS != status)
+        return status;
+
+    BeAssert (GetCount() > 0);
+
+    // Ensure that if anything below fails, we remove the new struct array member.
+    RevertAdhocProperty revert (*this);
+
+    // Create a new struct array instance.
+    auto prop = GetHost().GetEnabler().LookupECProperty (GetContainerPropertyIndex());
+    auto arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    auto structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
+    if (nullptr == structClass)
+        {
+        BeAssert (false);
+        return ECOBJECTS_STATUS_Error;
+        }
+
+    auto enabler = GetHost().GetEnablerR().GetEnablerForStructArrayMember (structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str());
+    auto entry = enabler.IsValid() ? enabler->CreateInstance() : nullptr;
+    if (entry.IsNull())
+        {
+        BeAssert (false);
+        return ECOBJECTS_STATUS_Error;
+        }
+
+    // If a property already exists by the same name, we want to replace it (as per managed implementation).
+    // But it is less messy to add a new one and remove the old one if successful.
+    UInt32 existingPropertyIndex = 0;
+    bool replacing = GetPropertyIndex (existingPropertyIndex, name);
+
+    if (SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false))) ||
+        SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false))))
+        return status;
+
+    if (nullptr != displayLabel && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::DisplayLabel), ECValue (displayLabel, false))))
+        return status;
+
+    if (nullptr != unitName && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Unit), ECValue (unitName, false))))
+        return status;
+
+    if (nullptr != extendedTypeName && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::ExtendType), ECValue (extendedTypeName, false))))
+        return status;
+
+    if (isReadOnly && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::IsReadOnly), ECValue (isReadOnly))))
+        return status;
+
+    Int32 typeCode;
+    if (PRIMITIVETYPE_String != type && (!CodeForPrimitiveType (typeCode, type) || SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Type), ECValue (typeCode)))))
+        return status;
+
+    // set the struct to the array
+    ECValue structV;
+    structV.SetStruct (entry.get());
+    status = GetHostR().SetValue (GetContainerPropertyIndex(), structV, GetCount() - 1);
+    if (SUCCESS != status)
+        {
+        BeAssert (false);
+        return status;
+        }
+
+    revert.Clear();
+    if (replacing)
+        Remove (existingPropertyIndex);
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::Remove (UInt32 index)
+    {
+    if (!IsSupported())
+        return ECOBJECTS_STATUS_OperationNotSupported;
+    else if (index >= GetCount())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+    else
+        return GetHostR().RemoveArrayElement (GetContainerPropertyIndex(), index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::Clear()
+    {
+    return IsSupported() ? GetHostR().ClearArray (GetContainerPropertyIndex()) : ECOBJECTS_STATUS_OperationNotSupported;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

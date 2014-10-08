@@ -138,7 +138,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
         m_textNodeOffset = (int) m_buffer.size();
         WriteByte((byte)XmlBinaryNodeType::DoubleText);
         byte* bytes = reinterpret_cast<byte*>(&data);
-        for (int i = 0; i < sizeof(double); i++)
+        for (size_t i = 0; i < sizeof(double); i++)
             WriteByte(bytes[i]);
         EndContent();
         }
