@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__PUBLISH_SECTION_START__*/
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //-------------------------------------------------------------------------------------
@@ -234,6 +233,47 @@ enum class WriteState {
 
     // Writer is in error state.
     Error,
+    };
+
+enum class XmlNodeFlags
+    {
+    None = 0x00,
+    CanGetAttribute = 0x01,
+    CanMoveToElement = 0x02,
+    HasValue = 0x04,
+    AtomicValue = 0x08,
+    SkipValue = 0x10,
+    HasContent = 0x20
+    };
+
+enum class ValueHandleType
+    {
+    Empty,
+    True,
+    False,
+    Zero,
+    One,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    UInt64,
+    Single,
+    Double,
+    Decimal,
+    DateTime,
+    TimeSpan,
+    Guid,
+    UniqueId,
+    UTF8,
+    EscapedUTF8,
+    Base64,
+    Dictionary,
+    List,
+    Char,
+    Unicode,
+    QName,
+    ConstString
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
