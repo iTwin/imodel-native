@@ -824,7 +824,7 @@ bool GetDoubles (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<d
     }
 
 
-
+#ifdef useOldCases
 public: bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
     {
     int orderU = 0;
@@ -874,7 +874,7 @@ public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
     IGeometryPtr geometry;
     ParseMethod parseMethod = s_parseTable[m_currentElementName];
     if (parseMethod != nullptr)
-        return (*this.*parseMethod)(result);
+        return (this->*parseMethod)(result);
 
 #ifdef abc
     if (ReadILineSegment (result))
@@ -1069,7 +1069,7 @@ public: bool TryParseSolidPrimitive (BeXmlNodeP node, IGeometryPtr &result)
     return false;
     }
 
-
+#endif
 
 public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
@@ -1081,7 +1081,7 @@ public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     if (parseMethod != nullptr)
         {
         IGeometryPtr result;
-        (*this.*parseMethod)(result);
+        (this->*parseMethod)(result);
         geometry.push_back (result);
         count = 1;
         }
