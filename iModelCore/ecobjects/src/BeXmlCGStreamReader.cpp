@@ -293,6 +293,7 @@ BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (BeXmlReade
     : m_reader(reader), m_factory(factory), m_debug (s_defaultDebug)
     {
     InitParseTable ();
+    ReadToElement ();
     }
 
 // On input: XML reader at element start.
@@ -704,386 +705,37 @@ bool ReadTagAngle (CharCP name, Angle &value)
 #include "nativeCGReaderH.h"
 
 
-BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
-    {
-    for (BeXmlNodeP child = parent->GetFirstChild (BEXMLNODE_Any); NULL != child;
-                child = child->GetNextSibling (BEXMLNODE_Any))
-        {
-        if (0 == BeStringUtilities::Stricmp (child->GetName (), name))
-            return child;
-        }
-    return NULL;
-    }
-
-bool GetDPoint3d (BeXmlNodeP element, DPoint3dR xyz)
-    {
-    BeXmlNodeP text;
-    bvector<double> doubles;
-    if (   NULL != element
-        && NULL != (text = element->GetFirstChild (BEXMLNODE_Any))
-        && BEXML_Success == text->GetContentDoubleValues (doubles)
-        && doubles.size () == 3)
-        {
-        xyz.x = doubles[0];
-        xyz.y = doubles[1];
-        xyz.z = doubles[2];
-        return true;
-        }
-    return false;
-    }
-
-bool GetDouble (BeXmlNodeP element, double &value)
-    {
-    BeXmlNodeP text;
-    return NULL != element
-        && NULL != (text = element->GetFirstChild (BEXMLNODE_Any))
-        && BEXML_Success == text->GetContentDoubleValue (value);
-    }
-
-
-bool GetBool (BeXmlNodeP element, bool &value)
-    {
-    BeXmlNodeP text;
-    return NULL != element
-        && NULL != (text = element->GetFirstChild (BEXMLNODE_Any))
-        && BEXML_Success == text->GetContentBooleanValue (value);
-    }
-
-bool FindChildBool (BeXmlNodeP parent, CharCP name, bool &value) {return GetBool (FindChild (parent, name), value);}
-bool FindChildBool (BeXmlNodeP parent, CharCP nameA, CharCP nameB, bool &value)
-    {
-    return GetBool (FindChild (parent, nameA), value)
-        || GetBool (FindChild (parent, nameB), value);
-    }
-
-bool FindChildDPoint3d (CharCP name, DPoint3dR xyz){return GetDPoint3d (FindChild (nullptr, name), xyz);}
-bool FindChildDPoint3d (BeXmlNodeP parent, CharCP name, DPoint3dR xyz){return GetDPoint3d (FindChild (parent, name), xyz);}
-bool FindChildDouble (BeXmlNodeP parent, CharCP name, double &value) {return GetDouble (FindChild (parent, name), value);}
-
-bool FindChildInt (BeXmlNodeP parent, CharCP name, int &value)
-    {
-    BeXmlNodeP child = FindChild (parent, name);
-    if (NULL != child
-        && BEXML_Success == child->GetContentInt32Value (value))
-        {
-        return true;
-        }
-    return false;
-    }
-
-bool FindChildPlacement (BeXmlNodeP parent, CharCP name, DPoint3dR origin, RotMatrixR axes)
-    {
-    BeXmlNodeP child = FindChild (parent, name);
-    DVec3d vectorX, vectorZ;
-    if (NULL != child
-        && FindChildDPoint3d (child, "origin", origin)
-        && FindChildDPoint3d (child, "vectorZ", vectorZ)    // DVec3d has DPoint3d base class !!!
-        && FindChildDPoint3d (child, "vectorX", vectorX)
-        )
-        {
-        DVec3d vectorY;
-        vectorY.CrossProduct (vectorZ, vectorX);
-        axes = RotMatrix::FromColumnVectors (vectorX, vectorY, vectorZ);
-        axes.SquareAndNormalizeColumns (axes, 2, 0);
-        return true;
-        }
-    return false;
-    }
-
-bool GetPoints (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<DPoint3d> &points)
-    {
-    BeXmlNodeP listNode = FindChild (parent, listName);
-    if (NULL == listNode)
-        return false;
-    DPoint3d xyz;
-    for (BeXmlNodeP child = listNode->GetFirstChild (BEXMLNODE_Element); NULL != child;
-                child = child->GetNextSibling (BEXMLNODE_Element))
-        {
-        if ((NULL == pointName
-             || 0 == BeStringUtilities::Stricmp (child->GetName (), pointName))
-            && GetDPoint3d (child, xyz))
-            points.push_back (xyz);
-        }
-    return true;
-    }
-
-bool GetDoubles (BeXmlNodeP parent, CharCP listName, CharCP pointName, bvector<double> &values)
-    {
-    BeXmlNodeP listNode = FindChild (parent, listName);
-    if (NULL == listNode)
-        return false;
-    double value;
-    for (BeXmlNodeP child = listNode->GetFirstChild (BEXMLNODE_Any); NULL != child;
-                child = child->GetNextSibling (BEXMLNODE_Any))
-        {
-        if (0 == BeStringUtilities::Stricmp (child->GetName (), pointName)
-            && GetDouble (child, value))
-            values.push_back (value);
-        }
-    return true;
-    }
-
-
-#ifdef useOldCases
-public: bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
-    {
-    int orderU = 0;
-    int orderV = 0;
-    bool closedU = false;
-    bool closedV = false;
-    int numPolesU = 0;
-    int numPolesV = 0;
-
-    bvector<DPoint3d> points;
-    bvector<double>   knotsU;
-    bvector<double>   knotsV;
-    bvector<double>   weights;
-
-
-    if (CurrentElementNameMatch ("BsplineSurface")
-        && FindChildInt (node, "orderU", orderU)
-        && FindChildInt (node, "numUControlPoint", numPolesU)
-        && FindChildInt (node, "orderV", orderV)
-        && FindChildInt (node, "numVControlPoint", numPolesV)
-        && GetPoints (node, "ListOfControlPoint", NULL, points)
-        )
-        {
-        FindChildBool (node, "closedU", closedU);   // optional !!
-        FindChildBool (node, "closedV", closedV);   // optional !!
-        GetDoubles (node, "ListOfKnotU", "knotU", knotsU);
-        GetDoubles (node, "ListOfKnotV", "knotV", knotsV);
-        GetDoubles (node, "ListOfWeight", "weight", weights);
-        MSBsplineSurfacePtr surface = MSBsplineSurface::CreatePtr ();
-        if (SUCCESS == surface->Populate (points,
-                weights.size () > 0 ? &weights : NULL,
-                knotsU.size () > 0 ? &knotsU : NULL, orderU, numPolesU, closedU,
-                knotsV.size () > 0 ? &knotsV : NULL, orderV, numPolesV, closedV,
-                true
-                ))
-            {
-            result = surface;
-            return true;
-            }
-        return true;
-        }
-    return false;
-    }
-
-public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
-    {
-    IGeometryPtr geometry;
-    ParseMethod parseMethod = s_parseTable[m_currentElementName];
-    if (parseMethod != nullptr)
-        return (this->*parseMethod)(result);
-
-#ifdef abc
-    if (ReadILineSegment (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadICircularArc (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadIEllipticArc (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadILineString (result))
-        {
-        return result.IsValid ();
-        }        
-    else if (CurrentElementNameMatch ("SurfacePatch"))
-        {
-        BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
-        BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
-        if (NULL != exteriorLoop)
-            {
-            ICurvePrimitivePtr exteriorChild;
-            CurveVectorPtr loops = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
-            if (TryParse (exteriorLoop->GetFirstChild (BEXMLNODE_Element), exteriorChild))
-                {
-                loops->push_back (exteriorChild);
-                if (NULL != holeLoops)
-                    {
-                    for (BeXmlNodeP child = holeLoops->GetFirstChild (BEXMLNODE_Element); NULL != child;
-                                child = child->GetNextSibling (BEXMLNODE_Element))
-                        {
-                        ICurvePrimitivePtr hole;
-                        if (TryParse (child, hole))
-                            {
-                            loops->push_back (hole);
-                            size_t index = loops->size () - 1;
-                            CurveVector::BoundaryType boundaryType;
-                            if (loops->GetChildBoundaryType (index, boundaryType))
-                                loops->SetChildBoundaryType (index, CurveVector::BOUNDARY_TYPE_Inner);
-                            }
-                        }
-                    }
-                result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*loops);
-                // hmm.. how to verify/announce validity (closed curve as child)???
-                return true;
-                }
-            }
-        }
-    else if (CurrentElementNameMatch ("CurveChain"))
-        {
-        BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
-        CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-        for (BeXmlNodeP child = curveList->GetFirstChild (BEXMLNODE_Element); NULL != child;
-                    child = child->GetNextSibling (BEXMLNODE_Element))
-            {
-            ICurvePrimitivePtr segment;
-            TryParse (child, segment);
-            curves->push_back (segment);
-            }
-        result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*curves);
-        return true;
-        }
-    else if (CurrentElementNameMatch ("Linestring"))
-        {
-        bvector<DPoint3d> points;
-        if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
-            {
-            result = IGeometry::Create(ICurvePrimitive::CreateLineString (points));
-            return true;
-            }
-        }
-    else if (CurrentElementNameMatch ("Polygon"))
-        {
-        bvector<DPoint3d> points;
-        if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
-            {
-            ICurvePrimitivePtr linestring = ICurvePrimitive::CreateLineString (points);
-            CurveVectorPtr area = CurveVector::Create
-                        (CurveVector::BOUNDARY_TYPE_Outer);
-            area->push_back (linestring);
-            result = IGeometry::Create(ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area));
-            return true;
-            }
-        }
-    else if (ReadICircularDisk(result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadIEllipticDisk(result))
-        {
-        return result.IsValid ();
-        }
-    else if (CurrentElementNameMatch ("BsplineCurve"))
-        {
-        int order;
-        bool closed = false;
-        bvector<DPoint3d> points;
-        bvector<double>   knots;
-        bvector<double>   weights;
-        if (FindChildInt (node, "order", order)
-            && GetPoints (node, "ListOfControlPoint", NULL, points)) // "ControlPoint" ???
-            {
-            MSBsplineCurvePtr bcurve = MSBsplineCurve::CreatePtr ();
-            GetDoubles (node, "ListOfKnot", "knot", knots);
-            GetDoubles (node, "ListOfWeight", "weight", weights);
-            FindChildBool (node, "closed", closed);
-            bcurve->Populate (points,
-                            weights.size () > 0 ? &weights : NULL,
-                            knots.size () > 0 ? &knots : NULL,
-                            order, closed, true);
-            result = IGeometry::Create(ICurvePrimitive::CreateBsplineCurve (*bcurve));
-            return true;
-            }
-        }
-    else if (ReadICoordinate (result))
-        {
-        return result.IsValid ();
-        }
-#endif
-    result = nullptr;
-    return false;
-    }
-
-
-public: bool TryParseSolidPrimitive (BeXmlNodeP node, IGeometryPtr &result)
-    {
-    if (ReadICircularCylinder (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadICircularCone (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadISkewedCone (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadISphere (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadIBlock (result))   // ???? Should allow "Box"??
-        {
-        return result.IsValid ();
-        }
-    else if (ReadITorusPipe (result))
-        {
-        return result.IsValid ();
-        }
-    else if (ReadIIndexedMesh (result))
-        {
-        return result.IsValid ();
-        }
-    else if (CurrentElementNameMatch ("SurfaceBySweptCurve"))
-        {
-#ifdef abc
-        BeXmlNodeP baseGeometryNode = FindChild (node, "BaseGeometry");
-        BeXmlNodeP railCurveNode    = FindChild (node, "RailCurve");
-        ICurvePrimitivePtr baseGeometry;
-        ICurvePrimitivePtr railCurve;
-        if (   NULL != baseGeometryNode
-            && NULL != railCurveNode
-            && TryParse (baseGeometryNode->GetFirstChild (), baseGeometry)
-            && TryParse (railCurveNode->GetFirstChild (), railCurve)
-           )
-            {
-            DSegment3d segment;
-            DEllipse3d arc;
-            if (railCurve->TryGetLine (segment))
-                {
-                DVec3d vector = DVec3d::FromStartEnd (segment.point[0], segment.point[1]);
-                result = ISolidPrimitive::CreateDgnExtrusion (DgnExtrusionDetail (
-                        CurveVectorOf (baseGeometry, CurveVector::BOUNDARY_TYPE_Open),
-                                vector, false));
-                return true;
-                }
-            else if (railCurve->TryGetArc (arc))
-                {
-                DVec3d normal = DVec3d::FromNormalizedCrossProduct (arc.vector0, arc.vector90);
-                result = ISolidPrimitive::CreateDgnRotationalSweep (DgnRotationalSweepDetail (
-                        CurveVectorOf (baseGeometry, CurveVector::BOUNDARY_TYPE_Open),
-                                arc.center, normal, arc.sweep, false));
-                return true;
-                }
-            }
-#endif
-        }
-    return false;
-    }
-
-#endif
-
 public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
-    if (!ReadToElement ())
-        return false;
     size_t count = 0;
 
-    ParseMethod parseMethod = s_parseTable[m_currentElementName];
-    if (parseMethod != nullptr)
+    for (;IsStartElement ();)
         {
-        IGeometryPtr result;
-        (this->*parseMethod)(result);
-        geometry.push_back (result);
-        count = 1;
+        ParseMethod parseMethod = s_parseTable[m_currentElementName];
+        if (parseMethod == nullptr)
+            {
+            if (maxDepth > 0)
+                {
+                ReadToElement ();
+                if (!TryParse (geometry, maxDepth - 1))
+                  break;
+                AdvanceAfterContentExtraction ();
+                }
+            break;
+            }
+        else
+            {
+            IGeometryPtr result;
+            if ((this->*parseMethod)(result))
+                {
+                geometry.push_back (result);
+                count++;
+                }
+            else
+                {
+                break;
+                }
+            }
         }
     return count > 0;
     }
