@@ -25,7 +25,7 @@ InputParamTypeFor_DPoint3d endPoint
 /// factory base class placeholder to create a CircularArc from explicit args.
 virtual IGeometryPtr CreateCircularArc
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radius,
 InputParamTypeFor_Angle startAngle,
 InputParamTypeFor_Angle sweepAngle
@@ -125,7 +125,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a Block from explicit args.
 virtual IGeometryPtr CreateBlock
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_DPoint3d cornerA,
 InputParamTypeFor_DPoint3d cornerB,
 InputParamTypeFor_bool capped
@@ -142,7 +142,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a CircularCone from explicit args.
 virtual IGeometryPtr CreateCircularCone
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double height,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
@@ -160,7 +160,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a CircularCylinder from explicit args.
 virtual IGeometryPtr CreateCircularCylinder
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double height,
 InputParamTypeFor_double radius,
 InputParamTypeFor_bool capped
@@ -177,7 +177,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a CircularDisk from explicit args.
 virtual IGeometryPtr CreateCircularDisk
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radius
 )
     {
@@ -206,7 +206,7 @@ InputParamTypeFor_DPoint3d xyz
 /// factory base class placeholder to create a EllipticArc from explicit args.
 virtual IGeometryPtr CreateEllipticArc
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
 InputParamTypeFor_Angle startAngle,
@@ -224,7 +224,7 @@ InputParamTypeFor_Angle sweepAngle
 /// factory base class placeholder to create a EllipticDisk from explicit args.
 virtual IGeometryPtr CreateEllipticDisk
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB
 )
@@ -240,7 +240,7 @@ InputParamTypeFor_double radiusB
 /// factory base class placeholder to create a SingleLineText from explicit args.
 virtual IGeometryPtr CreateSingleLineText
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_String textString,
 InputParamTypeFor_String fontName,
 InputParamTypeFor_double characterXSize,
@@ -259,7 +259,7 @@ InputParamTypeFor_int justification
 /// factory base class placeholder to create a SkewedCone from explicit args.
 virtual IGeometryPtr CreateSkewedCone
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_DPoint3d centerB,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
@@ -277,7 +277,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a Sphere from explicit args.
 virtual IGeometryPtr CreateSphere
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radius
 )
     {
@@ -292,7 +292,7 @@ InputParamTypeFor_double radius
 /// factory base class placeholder to create a TorusPipe from explicit args.
 virtual IGeometryPtr CreateTorusPipe
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
 InputParamTypeFor_Angle startAngle,
@@ -320,7 +320,511 @@ InputParamTypeFor_DVector3d vector
 
 
 
-//before expandAllNodeTypes
-//<expandFileLater>in\expandAllNodeTypes.in</expandFileLater>
-//after expandAllNodeTypes
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a IndexedMesh from explicit args.
+virtual IGeometryPtr CreateIndexedMesh
+(
+bvector<DPoint3d> const &CoordArray,
+bvector<int> const &CoordIndexArray,
+bvector<DPoint2d> const &ParamArray,
+bvector<int> const &ParamIndexArray,
+bvector<DVector3d> const &NormalArray,
+bvector<int> const &NormalIndexArray,
+bvector<DVector3d> const &ColorArray,
+bvector<int> const &ColorIndexArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a AdjacentSurfacePatches from explicit args.
+virtual IGeometryPtr CreateAdjacentSurfacePatches
+(
+bvector<IGeometryPtr> const &PatchArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a BsplineCurve from explicit args.
+virtual IGeometryPtr CreateBsplineCurve
+(
+InputParamTypeFor_int order,
+InputParamTypeFor_bool closed,
+bvector<DPoint3d> const &ControlPointArray,
+bvector<double> const &WeightArray,
+bvector<double> const &KnotArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a BsplineSurface from explicit args.
+virtual IGeometryPtr CreateBsplineSurface
+(
+InputParamTypeFor_int orderU,
+InputParamTypeFor_bool closedU,
+InputParamTypeFor_int numUControlPoint,
+InputParamTypeFor_int orderV,
+InputParamTypeFor_bool closedV,
+InputParamTypeFor_int numVControlPoint,
+bvector<DPoint3d> const &ControlPointArray,
+bvector<double> const &WeightArray,
+bvector<double> const &KnotUArray,
+bvector<double> const &KnotVArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a CurveChain from explicit args.
+virtual IGeometryPtr CreateCurveChain
+(
+bvector<IGeometryPtr> const &CurveArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a CurveGroup from explicit args.
+virtual IGeometryPtr CreateCurveGroup
+(
+bvector<IGeometryPtr> const &CurveArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a CurveReference from explicit args.
+virtual IGeometryPtr CreateCurveReference
+(
+InputParamTypeFor_bool reversed,
+InputParamTypeFor_ICurve parentCurve
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Group from explicit args.
+virtual IGeometryPtr CreateGroup
+(
+bvector<IGeometryPtr> const &MemberArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a InterpolatingCurve from explicit args.
+virtual IGeometryPtr CreateInterpolatingCurve
+(
+InputParamTypeFor_int endConditionCode,
+InputParamTypeFor_int knotCode,
+InputParamTypeFor_DVector3d startVector,
+InputParamTypeFor_DVector3d endVector,
+bvector<DPoint3d> const &PointArray,
+bvector<double> const &KnotArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a LineString from explicit args.
+virtual IGeometryPtr CreateLineString
+(
+bvector<DPoint3d> const &PointArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Operation from explicit args.
+virtual IGeometryPtr CreateOperation
+(
+InputParamTypeFor_String name,
+bvector<IGeometryPtr> const &MemberArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a ParametricSurfacePatch from explicit args.
+virtual IGeometryPtr CreateParametricSurfacePatch
+(
+InputParamTypeFor_LoopType loopType,
+InputParamTypeFor_IParametricSurface surface,
+bvector<IGeometryPtr> const &CurveChainArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a PointChain from explicit args.
+virtual IGeometryPtr CreatePointChain
+(
+bvector<IGeometryPtr> const &PointArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a PointGroup from explicit args.
+virtual IGeometryPtr CreatePointGroup
+(
+bvector<IGeometryPtr> const &MemberArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Polygon from explicit args.
+virtual IGeometryPtr CreatePolygon
+(
+bvector<DPoint3d> const &PointArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a PrimitiveCurveReference from explicit args.
+virtual IGeometryPtr CreatePrimitiveCurveReference
+(
+InputParamTypeFor_bool reversed,
+InputParamTypeFor_IPrimitiveCurve parentCurve
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SharedGroupDef from explicit args.
+virtual IGeometryPtr CreateSharedGroupDef
+(
+InputParamTypeFor_String name,
+InputParamTypeFor_IGeometry geometry
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SharedGroupInstance from explicit args.
+virtual IGeometryPtr CreateSharedGroupInstance
+(
+InputParamTypeFor_String sharedGroupName,
+InputParamTypeFor_Transform transform
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a ShelledSolid from explicit args.
+virtual IGeometryPtr CreateShelledSolid
+(
+InputParamTypeFor_ISurface BoundingSurface
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SolidBySweptSurface from explicit args.
+virtual IGeometryPtr CreateSolidBySweptSurface
+(
+InputParamTypeFor_ISurface baseGeometry,
+InputParamTypeFor_ICurve railCurve
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SolidByRuledSweep from explicit args.
+virtual IGeometryPtr CreateSolidByRuledSweep
+(
+bvector<IGeometryPtr> const &SectionArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SurfaceByRuledSweep from explicit args.
+virtual IGeometryPtr CreateSurfaceByRuledSweep
+(
+bvector<IGeometryPtr> const &SectionArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SolidGroup from explicit args.
+virtual IGeometryPtr CreateSolidGroup
+(
+bvector<IGeometryPtr> const &SolidArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Spiral from explicit args.
+virtual IGeometryPtr CreateSpiral
+(
+InputParamTypeFor_String spiralType,
+InputParamTypeFor_DPoint3d startPoint,
+InputParamTypeFor_Angle startBearing,
+InputParamTypeFor_double startCurvature,
+InputParamTypeFor_DPoint3d endPoint,
+InputParamTypeFor_Angle endBearing,
+InputParamTypeFor_double endCurvature,
+InputParamTypeFor_IGeometry geometry
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SurfaceBySweptCurve from explicit args.
+virtual IGeometryPtr CreateSurfaceBySweptCurve
+(
+InputParamTypeFor_ICurve baseGeometry,
+InputParamTypeFor_ICurve railCurve
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SurfaceGroup from explicit args.
+virtual IGeometryPtr CreateSurfaceGroup
+(
+bvector<IGeometryPtr> const &SurfaceArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a SurfacePatch from explicit args.
+virtual IGeometryPtr CreateSurfacePatch
+(
+InputParamTypeFor_ICurveChain exteriorLoop,
+bvector<IGeometryPtr> const &HoleLoopArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a TransformedGeometry from explicit args.
+virtual IGeometryPtr CreateTransformedGeometry
+(
+InputParamTypeFor_Transform transform,
+InputParamTypeFor_IGeometry geometry
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a DgnExtrusion from explicit args.
+virtual IGeometryPtr CreateDgnExtrusion
+(
+InputParamTypeFor_DVector3d extrusionVector,
+InputParamTypeFor_bool capped,
+InputParamTypeFor_ISweepable baseGeometry
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a DgnRotationalSweep from explicit args.
+virtual IGeometryPtr CreateDgnRotationalSweep
+(
+InputParamTypeFor_DPoint3d center,
+InputParamTypeFor_DVector3d axis,
+InputParamTypeFor_bool capped,
+InputParamTypeFor_ISweepable baseGeometry
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a DgnRuledSweep from explicit args.
+virtual IGeometryPtr CreateDgnRuledSweep
+(
+InputParamTypeFor_bool capped,
+bvector<IGeometryPtr> const &ContourArray
+)
+    {
+    return nullptr;
+    }
+
+
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a TransitionSpiral from explicit args.
+virtual IGeometryPtr CreateTransitionSpiral
+(
+InputParamTypeFor_String spiralType,
+InputParamTypeFor_PlacementOriginZX placement,
+InputParamTypeFor_Angle startBearing,
+InputParamTypeFor_double startRadius,
+InputParamTypeFor_Angle endBearing,
+InputParamTypeFor_double endRadius,
+InputParamTypeFor_double activeStartFraction,
+InputParamTypeFor_double activeEndFraction,
+InputParamTypeFor_IGeometry geometry
+)
+    {
+    return nullptr;
+    }
+
+
 };

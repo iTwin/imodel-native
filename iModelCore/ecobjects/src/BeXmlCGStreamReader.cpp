@@ -17,15 +17,58 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 #define String Utf8String
 
 #define InputParamTypeFor_DPoint3d DPoint3dCR
+#define InputParamTypeFor_Transform TransformCR
+
 #define InputParamTypeFor_DPoint2d DPoint2dCR
 #define InputParamTypeFor_DVector3d DVec3dCR
-#define InputParamTypeFor_IPlacement PlacementOriginZXCR
+#define InputParamTypeFor_PlacementOriginZX PlacementOriginZXCR
 
 #define InputParamTypeFor_double double
 #define InputParamTypeFor_Angle Angle
 #define InputParamTypeFor_int int
 #define InputParamTypeFor_bool bool
 #define InputParamTypeFor_String Utf8StringCR
+#define InputParamTypeFor_LoopType int
+
+#define InputParamTypeFor_IPoint IGeometryPtr
+#define InputParamTypeFor_ISinglePoint IGeometryPtr
+#define InputParamTypeFor_IPrimitiveCurve IGeometryPtr
+#define InputParamTypeFor_ICurve IGeometryPtr
+#define InputParamTypeFor_ICurveChain IGeometryPtr
+#define InputParamTypeFor_ISurface IGeometryPtr
+#define InputParamTypeFor_ISurfacePatch IGeometryPtr
+#define InputParamTypeFor_IParametricSurface IGeometryPtr
+#define InputParamTypeFor_ISweepable IGeometryPtr
+#define InputParamTypeFor_ISolid IGeometryPtr
+#define InputParamTypeFor_IGeometry IGeometryPtr
+
+#define ReaderTypeFor_ICurve IGeometryPtr
+#define ReaderTypeFor_ICurveChain IGeometryPtr
+#define ReaderTypeFor_IGeometry IGeometryPtr
+#define ReaderTypeFor_IParametricSurface IGeometryPtr
+#define ReaderTypeFor_IPrimitiveCurve IGeometryPtr
+#define ReaderTypeFor_ISurface IGeometryPtr
+#define ReaderTypeFor_ISweepable IGeometryPtr
+
+#define s_default_ICurve nullptr
+#define s_default_ICurveChain nullptr
+#define s_default_IGeometry nullptr
+#define s_default_IParametricSurface nullptr
+#define s_default_IPrimitiveCurve nullptr
+#define s_default_ISurface nullptr
+#define s_default_ISweepable nullptr
+
+#define s_default_LoopType 0
+typedef int LoopType;
+
+template<typename T, typename TBlocked>
+static void CopyToBlockedVector (bvector<T> const &source, TBlocked &dest)
+    {
+    dest.clear ();
+    dest.reserve (source.size ());
+    for (T const &x : source)
+        dest.push_back (x);
+    }
 
 struct PlacementOriginZX
 {
@@ -99,9 +142,7 @@ bool GetFrame (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis, DVec3dR zAxis) co
 };
 
 
-#define IPlacement PlacementOriginZX
 #include "nativeCGFactoryH.h"
-#undef IPlacement
 
 
 
@@ -136,7 +177,7 @@ InputParamTypeFor_DPoint3d endPoint
 /// factory base class placeholder to create a EllipticArc from explicit args.
 virtual IGeometryPtr CreateEllipticArc
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
 InputParamTypeFor_Angle startAngle,
@@ -159,7 +200,7 @@ InputParamTypeFor_Angle sweepAngle
 /// factory base class placeholder to create a EllipticDisk from explicit args.
 virtual IGeometryPtr CreateEllipticDisk
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB
 )
@@ -183,7 +224,7 @@ InputParamTypeFor_double radiusB
 /// factory base class placeholder to create a EllipticArc from explicit args.
 virtual IGeometryPtr CreateCircularArc
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radius,
 InputParamTypeFor_Angle startAngle,
 InputParamTypeFor_Angle sweepAngle
@@ -205,7 +246,7 @@ InputParamTypeFor_Angle sweepAngle
 /// factory base class placeholder to create a CircularDisk from explicit args.
 virtual IGeometryPtr CreateCircularDisk
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radius
 )
     {
@@ -227,7 +268,7 @@ InputParamTypeFor_double radius
 /// factory base class placeholder to create a SkewedCone from explicit args.
 virtual IGeometryPtr CreateSkewedCone
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_DPoint3d centerB,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
@@ -251,7 +292,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a CircularCone from explicit args.
 virtual IGeometryPtr CreateCircularCone
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double height,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
@@ -278,7 +319,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a CircularCylinder from explicit args.
 virtual IGeometryPtr CreateCircularCylinder
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double height,
 InputParamTypeFor_double radius,
 InputParamTypeFor_bool capped
@@ -304,7 +345,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a Block from explicit args.
 virtual IGeometryPtr CreateBlock
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_DPoint3d cornerA,
 InputParamTypeFor_DPoint3d cornerB,
 InputParamTypeFor_bool capped
@@ -330,7 +371,7 @@ InputParamTypeFor_bool capped
 /// factory base class placeholder to create a Sphere from explicit args.
 virtual IGeometryPtr CreateSphere
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radius
 ) override
     {
@@ -347,7 +388,7 @@ InputParamTypeFor_double radius
 /// factory base class placeholder to create a TorusPipe from explicit args.
 virtual IGeometryPtr CreateTorusPipe
 (
-InputParamTypeFor_IPlacement placement,
+InputParamTypeFor_PlacementOriginZX placement,
 InputParamTypeFor_double radiusA,
 InputParamTypeFor_double radiusB,
 InputParamTypeFor_Angle startAngle,
@@ -379,6 +420,56 @@ InputParamTypeFor_bool capped
     return IGeometry::Create(ISolidPrimitive::CreateDgnTorusPipe (detail));
     }
 
+// ===================================================================================
+virtual IGeometryPtr CreateLineString
+(
+bvector<DPoint3d> const &points
+) override
+    {
+    return IGeometry::Create(ICurvePrimitive::CreateLineString(points));
+    }
+#define CGFactory_CreateLineString
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a IndexedMesh from explicit args.
+virtual IGeometryPtr CreateIndexedMesh
+(
+bvector<DPoint3d> const &CoordArray,
+bvector<int> const &CoordIndexArray,
+bvector<DPoint2d> const &ParamArray,
+bvector<int> const &ParamIndexArray,
+bvector<DVector3d> const &NormalArray,
+bvector<int> const &NormalIndexArray,
+bvector<DVector3d> const &ColorArray,
+bvector<int> const &ColorIndexArray
+) override
+    {
+    PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed ();
+
+    CopyToBlockedVector (CoordArray, polyface->Point ());
+    CopyToBlockedVector (CoordIndexArray, polyface->PointIndex ());
+
+    CopyToBlockedVector (ParamArray, polyface->Param ());
+    CopyToBlockedVector (ParamIndexArray, polyface->ParamIndex ());
+
+    CopyToBlockedVector (NormalArray, polyface->Normal ());
+    CopyToBlockedVector (NormalIndexArray, polyface->NormalIndex ());
+
+    // Colors have to be reformatted ...
+    if (ColorArray.size () > 0)
+        {
+        bvector<RgbFactor> dest = polyface->DoubleColor ();
+        dest.reserve (ColorArray.size ());
+        for (DVec3d const &data : ColorArray)
+            {
+            dest.push_back (RgbFactor::From (data));
+            }
+        }
+    CopyToBlockedVector (ColorIndexArray, polyface->ColorIndex ());
+
+    return IGeometry::Create (polyface);
+    }
 };
 
 
@@ -390,8 +481,8 @@ static int      s_default_int      = 0;
 static bool     s_default_bool     = false;
 static Angle     s_default_Angle    = Angle::FromRadians (0.0);
 static Utf8String s_default_String = Utf8String ();
-static PlacementOriginZX s_default_IPlacement = PlacementOriginZX::FromIdentity ();
-
+static PlacementOriginZX s_default_PlacementOriginZX = PlacementOriginZX::FromIdentity ();
+static Transform s_default_Transform = Transform::FromIdentity ();
 
 #ifdef abc
 // If primitve has a child curve vector, just extract it.
@@ -448,7 +539,15 @@ int m_debug;
 void Show (CharCP name)
     {
     BeXmlReader::NodeType nodeType = m_reader.GetCurrentNodeType ();
-    printf ("%s (NodeType %s)\n", name, GetBeXmlNodeTypeString (nodeType));
+    printf ("%s (%s)", name, GetBeXmlNodeTypeString (nodeType));
+    Utf8String elementName;
+    if (nodeType == BeXmlReader::NODE_TYPE_Element
+        || nodeType == BeXmlReader::NODE_TYPE_EndElement)
+        {
+        m_reader.GetCurrentNodeName (elementName);
+        printf ("%s", elementName);
+        }
+    printf ("\n");
     }
 BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (BeXmlReader &reader, ICGFactory &factory)
     : m_reader(reader), m_factory(factory), m_debug (s_defaultDebug)
@@ -553,7 +652,7 @@ bool CurrentElementNameMatch (CharCP name)
 
 bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
     {
-    if (!CurrentElementNameMatch (name))
+    if (name != nullptr && !CurrentElementNameMatch (name))
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
@@ -563,6 +662,176 @@ bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
     return stat;
     }
 
+bool ReadTagTransform (CharCP name, TransformR value)
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    bool stat = 9 == sscanf (&m_currentValue8[0],
+              "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
+              &value.form3d[0][0], &value.form3d[0][1], &value.form3d[0][2], &value.form3d[0][3],
+              &value.form3d[1][0], &value.form3d[1][1], &value.form3d[1][2], &value.form3d[1][3],
+              &value.form3d[2][0], &value.form3d[1][1], &value.form3d[2][2], &value.form3d[2][3]);
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }
+    
+bool ReadTagLoopType (CharCP name, LoopType value)
+    {
+    if (!CurrentElementNameMatch (name))
+        return false;
+    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    // TODO: find the magic strings
+    bool stat = true;
+    value = 0;
+    AdvanceAfterContentExtraction ();
+    return stat;
+    }
+
+
+bool ReadListOfDPoint3d (CharCP listName, CharCP componentName, bvector<DPoint3d> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    DPoint3d xyz;
+    while (IsStartElement ()
+            && ReadTagDPoint3d (nullptr, xyz))
+        {
+        values.push_back (xyz);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+bool ReadListOfint (CharCP listName, CharCP componentName, bvector<int> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    int xyz;
+    while (IsStartElement ()
+            && ReadTagint (nullptr, xyz))
+        {
+        values.push_back (xyz);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+bool ReadListOfdouble (CharCP listName, CharCP componentName, bvector<double> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    double xyz;
+    while (IsStartElement ()
+            && ReadTagdouble (nullptr, xyz))
+        {
+        values.push_back (xyz);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+bool ReadListOfDPoint2d (CharCP listName, CharCP componentName, bvector<DPoint2d> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    DPoint2d xyz;
+    while (IsStartElement ()
+            && ReadTagDPoint2d (nullptr, xyz))
+        {
+        values.push_back (xyz);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+
+//=======================================================================================
+bool ReadListOfDVector3d (CharCP listName, CharCP componentName, bvector<DVector3d> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    DVector3d xyz;
+    while (IsStartElement ()
+            && ReadTagDVector3d (nullptr, xyz))
+        {
+        values.push_back (xyz);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+
+//=======================================================================================
+bool ReadListOfISurfacePatch (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfISweepable (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfICurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfICurveChain (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfISolid (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfISurface (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+
+
+
+
+
+bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+
+
+
+
+
+bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    return false;
+    }
+
+
+
+
+
+
+//=======================================================================================
 bool ReadTagString (CharCP name, Utf8StringR)
     {
     return false;
@@ -570,7 +839,7 @@ bool ReadTagString (CharCP name, Utf8StringR)
 
 bool ReadTagDPoint2d (CharCP name, DPoint2dR value)
     {
-    if (!CurrentElementNameMatch (name))
+    if (nullptr != name  && !CurrentElementNameMatch (name))
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
@@ -582,7 +851,7 @@ bool ReadTagDPoint2d (CharCP name, DPoint2dR value)
 
 bool ReadTagDVector3d(CharCP name, DVec3dR value)
     {
-    if (!CurrentElementNameMatch (name))
+    if (nullptr != name  && !CurrentElementNameMatch (name))
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
@@ -594,7 +863,7 @@ bool ReadTagDVector3d(CharCP name, DVec3dR value)
 
 bool ReadTagbool(CharCP name, bool &value)
     {
-    if (!CurrentElementNameMatch (name))
+    if (nullptr != name  && !CurrentElementNameMatch (name))
         {
         // allow bSolidFlag as synonym for capped ...
         if (0 != stricmp (name, "capped")
@@ -632,7 +901,7 @@ bool ReadTagbool(CharCP name, bool &value)
 bool ReadTagdouble(CharCP name, double &value)
     {
     {
-    if (!CurrentElementNameMatch (name))
+    if (nullptr != name  && !CurrentElementNameMatch (name))
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
@@ -645,7 +914,7 @@ bool ReadTagdouble(CharCP name, double &value)
 bool ReadTagint(CharCP name, int &value)
     {
     {
-    if (!CurrentElementNameMatch (name))
+    if (nullptr != name  && !CurrentElementNameMatch (name))
         return false;
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
@@ -655,7 +924,7 @@ bool ReadTagint(CharCP name, int &value)
     return stat;
     }    }
 
-bool ReadTagIPlacement (CharCP name, PlacementOriginZX &value)
+bool ReadTagPlacementOriginZX (CharCP name, PlacementOriginZX &value)
     {
     if (CurrentElementNameMatch ("placement")
         && ReadToChild ())
@@ -698,9 +967,7 @@ bool ReadTagAngle (CharCP name, Angle &value)
     return false;
     }
 
-#define IPlacement PlacementOriginZX
 #include "nativeCGReaderH.h"
-#undef IPlacement
 
 
 BeXmlNodeP FindChild (BeXmlNodeP parent, CharCP name)
@@ -883,6 +1150,10 @@ public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
         {
         return result.IsValid ();
         }
+    else if (ReadILineString (result))
+        {
+        return result.IsValid ();
+        }        
     else if (CurrentElementNameMatch ("SurfacePatch"))
         {
 #ifdef abc
@@ -1018,6 +1289,10 @@ public: bool TryParseSolidPrimitive (BeXmlNodeP node, IGeometryPtr &result)
         return result.IsValid ();
         }
     else if (ReadITorusPipe (result))
+        {
+        return result.IsValid ();
+        }
+    else if (ReadIIndexedMesh (result))
         {
         return result.IsValid ();
         }
