@@ -1455,7 +1455,7 @@ bool ReadICurveChain (IGeometryPtr &result)
         && ReadToChild ())
         {
         // Gather children
-        bvector<IGeometryPtr> CurveArray;
+        bvector<ICurvePrimitivePtr> CurveArray;
 
         // Read children in any order ...
         for (;IsStartElement ();)

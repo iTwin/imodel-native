@@ -12,7 +12,7 @@ struct IGeometryCGFactory : ICGFactory
 {
 public:
 
-// ===================================================================================
+// ===================================================  ================================
 /// <summary>
 /// factory base class placeholder to create a Coordinate from explicit args.
 virtual IGeometryPtr CreateCoordinate
@@ -332,4 +332,67 @@ bvector<int> const &ColorIndexArray
 
     return IGeometry::Create (polyface);
     }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a CurveChain from explicit args.
+virtual IGeometryPtr CreateCurveChain
+(
+bvector<ICurvePrimitivePtr> const &CurveArray
+)
+    {
+    CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    for (ICurvePrimitivePtr const & cp : CurveArray)
+        cv->push_back (cp);
+    return IGeometry::Create (cv);
+    }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a BsplineSurface from explicit args.
+virtual IGeometryPtr CreateBsplineSurface
+(
+InputParamTypeFor_int orderU,
+InputParamTypeFor_bool closedU,
+InputParamTypeFor_int numUControlPoint,
+InputParamTypeFor_int orderV,
+InputParamTypeFor_bool closedV,
+InputParamTypeFor_int numVControlPoint,
+bvector<DPoint3d> const &ControlPointArray,
+bvector<double> const &WeightArray,
+bvector<double> const &KnotUArray,
+bvector<double> const &KnotVArray
+)
+    {
+    return nullptr;
+    }
+
+
+// ===================================================================================
+/// <summary>
+/// factory base class placeholder to create a BsplineCurve from explicit args.
+virtual IGeometryPtr CreateBsplineCurve
+(
+InputParamTypeFor_int order,
+InputParamTypeFor_bool closed,
+bvector<DPoint3d> const &ControlPointArray,
+bvector<double> const &WeightArray,
+bvector<double> const &KnotArray
+)
+    {
+    MSBsplineCurvePtr bcurve = MSBsplineCurve::CreateFromPolesAndOrder
+          (
+          ControlPointArray, &WeightArray, &KnotArray, order, closed, true
+          );
+    if (bcurve.IsValid ())
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateBsplineCurveSwapFromSource (*bcurve);
+        return IGeometry::Create (cp);
+        }
+    return nullptr;
+    }
+
+
 };
