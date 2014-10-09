@@ -349,28 +349,6 @@ bvector<ICurvePrimitivePtr> const &CurveArray
     }
 
 // ===================================================================================
-
-/// <summary>
-/// factory base class placeholder to create a BsplineSurface from explicit args.
-virtual IGeometryPtr CreateBsplineSurface
-(
-InputParamTypeFor_int orderU,
-InputParamTypeFor_bool closedU,
-InputParamTypeFor_int numUControlPoint,
-InputParamTypeFor_int orderV,
-InputParamTypeFor_bool closedV,
-InputParamTypeFor_int numVControlPoint,
-bvector<DPoint3d> const &ControlPointArray,
-bvector<double> const &WeightArray,
-bvector<double> const &KnotUArray,
-bvector<double> const &KnotVArray
-)
-    {
-    return nullptr;
-    }
-
-
-// ===================================================================================
 /// <summary>
 /// factory base class placeholder to create a BsplineCurve from explicit args.
 virtual IGeometryPtr CreateBsplineCurve
@@ -394,5 +372,35 @@ bvector<double> const &KnotArray
     return nullptr;
     }
 
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a BsplineSurface from explicit args.
+virtual IGeometryPtr CreateBsplineSurface
+(
+InputParamTypeFor_int orderU,
+InputParamTypeFor_bool closedU,
+InputParamTypeFor_int numUControlPoint,
+InputParamTypeFor_int orderV,
+InputParamTypeFor_bool closedV,
+InputParamTypeFor_int numVControlPoint,
+bvector<DPoint3d> const &ControlPointArray,
+bvector<double> const &WeightArray,
+bvector<double> const &KnotUArray,
+bvector<double> const &KnotVArray
+)
+    {
+    MSBsplineSurfacePtr bSurface = MSBsplineSurface::CreateFromPolesAndOrder
+          (
+          ControlPointArray, &WeightArray,
+          &KnotUArray, orderU, numUControlPoint, closedU,
+          &KnotVArray, orderV, numVControlPoint, closedV,
+          true);
+    if (bSurface.IsValid ())
+        {
+        return IGeometry::Create (bSurface);
+        }
+    return nullptr;
+    }
 
 };
