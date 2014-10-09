@@ -203,8 +203,70 @@ static char const *GetBeXmlNodeTypeString (BeXmlReader::NodeType nodeType)
         return s_nodeTypeNames[(Int32)nodeType];
     return "(Unknown BeXmlReader::NodeType)";
     }
+
 struct BeXmlCGStreamReaderImplementation
 {
+typedef bool (BeXmlCGStreamReaderImplementation::*ParseMethod)(IGeometryPtr &);
+typedef bmap <Utf8String, ParseMethod> ParseDictionary;
+
+static ParseDictionary s_parseTable;
+
+static void InitParseTable ()
+    {
+    if (s_parseTable.empty ())
+        {
+        s_parseTable[Utf8String("LineSegment")] = &ReadILineSegment;
+        s_parseTable[Utf8String("CircularArc")] = &ReadICircularArc;
+        s_parseTable[Utf8String("DgnBox")] = &ReadIDgnBox;
+        s_parseTable[Utf8String("DgnSphere")] = &ReadIDgnSphere;
+        s_parseTable[Utf8String("DgnCone")] = &ReadIDgnCone;
+        s_parseTable[Utf8String("DgnTorusPipe")] = &ReadIDgnTorusPipe;
+        s_parseTable[Utf8String("Block")] = &ReadIBlock;
+        s_parseTable[Utf8String("CircularCone")] = &ReadICircularCone;
+        s_parseTable[Utf8String("CircularCylinder")] = &ReadICircularCylinder;
+        s_parseTable[Utf8String("CircularDisk")] = &ReadICircularDisk;
+        s_parseTable[Utf8String("Coordinate")] = &ReadICoordinate;
+        s_parseTable[Utf8String("EllipticArc")] = &ReadIEllipticArc;
+        s_parseTable[Utf8String("EllipticDisk")] = &ReadIEllipticDisk;
+        s_parseTable[Utf8String("SingleLineText")] = &ReadISingleLineText;
+        s_parseTable[Utf8String("SkewedCone")] = &ReadISkewedCone;
+        s_parseTable[Utf8String("Sphere")] = &ReadISphere;
+        s_parseTable[Utf8String("TorusPipe")] = &ReadITorusPipe;
+        s_parseTable[Utf8String("Vector")] = &ReadIVector;
+        s_parseTable[Utf8String("IndexedMesh")] = &ReadIIndexedMesh;
+        s_parseTable[Utf8String("AdjacentSurfacePatches")] = &ReadIAdjacentSurfacePatches;
+        s_parseTable[Utf8String("BsplineCurve")] = &ReadIBsplineCurve;
+        s_parseTable[Utf8String("BsplineSurface")] = &ReadIBsplineSurface;
+        s_parseTable[Utf8String("CurveChain")] = &ReadICurveChain;
+        s_parseTable[Utf8String("CurveGroup")] = &ReadICurveGroup;
+        s_parseTable[Utf8String("CurveReference")] = &ReadICurveReference;
+        s_parseTable[Utf8String("Group")] = &ReadIGroup;
+        s_parseTable[Utf8String("InterpolatingCurve")] = &ReadIInterpolatingCurve;
+        s_parseTable[Utf8String("LineString")] = &ReadILineString;
+        s_parseTable[Utf8String("Operation")] = &ReadIOperation;
+        s_parseTable[Utf8String("ParametricSurfacePatch")] = &ReadIParametricSurfacePatch;
+        s_parseTable[Utf8String("PointChain")] = &ReadIPointChain;
+        s_parseTable[Utf8String("PointGroup")] = &ReadIPointGroup;
+        s_parseTable[Utf8String("Polygon")] = &ReadIPolygon;
+        s_parseTable[Utf8String("PrimitiveCurveReference")] = &ReadIPrimitiveCurveReference;
+        s_parseTable[Utf8String("SharedGroupDef")] = &ReadISharedGroupDef;
+        s_parseTable[Utf8String("SharedGroupInstance")] = &ReadISharedGroupInstance;
+        s_parseTable[Utf8String("ShelledSolid")] = &ReadIShelledSolid;
+        s_parseTable[Utf8String("SolidBySweptSurface")] = &ReadISolidBySweptSurface;
+        s_parseTable[Utf8String("SolidByRuledSweep")] = &ReadISolidByRuledSweep;
+        s_parseTable[Utf8String("SurfaceByRuledSweep")] = &ReadISurfaceByRuledSweep;
+        s_parseTable[Utf8String("SolidGroup")] = &ReadISolidGroup;
+        s_parseTable[Utf8String("Spiral")] = &ReadISpiral;
+        s_parseTable[Utf8String("SurfaceBySweptCurve")] = &ReadISurfaceBySweptCurve;
+        s_parseTable[Utf8String("SurfaceGroup")] = &ReadISurfaceGroup;
+        s_parseTable[Utf8String("SurfacePatch")] = &ReadISurfacePatch;
+        s_parseTable[Utf8String("TransformedGeometry")] = &ReadITransformedGeometry;
+        s_parseTable[Utf8String("DgnExtrusion")] = &ReadIDgnExtrusion;
+        s_parseTable[Utf8String("DgnRotationalSweep")] = &ReadIDgnRotationalSweep;
+        s_parseTable[Utf8String("DgnRuledSweep")] = &ReadIDgnRuledSweep;
+        s_parseTable[Utf8String("TransitionSpiral")] = &ReadITransitionSpiral;
+        }
+    }
 BeXmlReader &m_reader;
 ICGFactory &m_factory;
 int m_debug;
@@ -230,6 +292,7 @@ void Show (CharCP name)
 BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (BeXmlReader &reader, ICGFactory &factory)
     : m_reader(reader), m_factory(factory), m_debug (s_defaultDebug)
     {
+    InitParseTable ();
     }
 
 // On input: XML reader at element start.
@@ -809,6 +872,11 @@ public: bool TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
 public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
     {
     IGeometryPtr geometry;
+    ParseMethod parseMethod = s_parseTable[m_currentElementName];
+    if (parseMethod != nullptr)
+        return (*this.*parseMethod)(result);
+
+#ifdef abc
     if (ReadILineSegment (result))
         {
         return result.IsValid ();
@@ -827,7 +895,6 @@ public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
         }        
     else if (CurrentElementNameMatch ("SurfacePatch"))
         {
-#ifdef abc
         BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
         BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
         if (NULL != exteriorLoop)
@@ -858,11 +925,9 @@ public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
                 return true;
                 }
             }
-#endif
         }
     else if (CurrentElementNameMatch ("CurveChain"))
         {
-#ifdef abc
         BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
         CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
         for (BeXmlNodeP child = curveList->GetFirstChild (BEXMLNODE_Element); NULL != child;
@@ -874,7 +939,6 @@ public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
             }
         result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*curves);
         return true;
-#endif
         }
     else if (CurrentElementNameMatch ("Linestring"))
         {
@@ -932,6 +996,7 @@ public: bool TryParseCurvePrimitive (BeXmlNodeP node, IGeometryPtr &result)
         {
         return result.IsValid ();
         }
+#endif
     result = nullptr;
     return false;
     }
@@ -1010,77 +1075,20 @@ public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
     if (!ReadToElement ())
         return false;
-
-    IGeometryPtr g;
-    MSBsplineSurfacePtr surface;
     size_t count = 0;
-    BeXmlNodeP node = NULL;
-    // This sequencing is just for clarity -- no actual type requirements.
-    if (TryParseCurvePrimitive (node, g))
+
+    ParseMethod parseMethod = s_parseTable[m_currentElementName];
+    if (parseMethod != nullptr)
         {
-        geometry.push_back (g);
+        IGeometryPtr result;
+        (*this.*parseMethod)(result);
+        geometry.push_back (result);
         count = 1;
-        }
-    else if (TryParseSolidPrimitive (node, g))
-        {
-        geometry.push_back (g);
-        count = 1;
-        }
-    else if (TryParse (node, surface))
-        {
-        geometry.push_back (IGeometry::Create (surface));
-        count = 1;
-        }
-    else if (maxDepth == 0)
-        {
-        }
-    else
-        {
-#if seachChildren        
-        for (BeXmlNodeP child = node->GetFirstChild (BEXMLNODE_Element); NULL != child;
-                    child = child->GetNextSibling (BEXMLNODE_Element))
-            {
-            count += TryParse (child, geometry, maxDepth - 1);
-            }
-#endif            
         }
     return count > 0;
     }
 };
-#ifdef abc
-bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, ICurvePrimitivePtr &result)
-    {
-    BeXmlCGStreamReaderImplementation parser;
-    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
 
-    BeXmlNodeP child(pXmlDom->GetRootElement());
-    return parser.TryParse(child, result);
-    }
-
-bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, ISolidPrimitivePtr &result)
-    {
-    BeXmlCGStreamReaderImplementation parser;
-    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
-
-    BeXmlNodeP child(pXmlDom->GetRootElement());
-    return parser.TryParse(child, result);
-    }
-
-bool BeXmlCGStreamReaderImplementation__TryParse (Utf8CP beXmlCGString, MSBsplineSurfacePtr &result)
-    {
-    BeXmlCGStreamReaderImplementation parser;
-    size_t stringByteCount = strlen (beXmlCGString) * sizeof(Utf8Char);
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr pXmlDom(BeXmlDom::CreateAndReadFromString (xmlStatus, beXmlCGString, stringByteCount));
-
-    BeXmlNodeP child(pXmlDom->GetRootElement());
-    return parser.TryParse(child, result);
-    }
-#endif
 
 void ShowAllNodeTypes (Utf8CP beXmlCGString)
     {
@@ -1124,5 +1132,7 @@ bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> 
     BeXmlCGStreamReaderImplementation parser (*reader, factory);
     return parser.TryParse(geometry, maxDepth);
     }
+
+BeXmlCGStreamReaderImplementation::ParseDictionary BeXmlCGStreamReaderImplementation::s_parseTable;
 
 END_BENTLEY_ECOBJECT_NAMESPACE
