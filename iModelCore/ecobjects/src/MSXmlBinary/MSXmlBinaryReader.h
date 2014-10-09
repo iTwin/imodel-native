@@ -152,8 +152,8 @@ struct MSXmlBinaryReader : public IBeXmlReader
         int ReadMultiByteUInt31();
 
     public:
-        MSXmlBinaryReader(byte* bytes, int length);
-        ~MSXmlBinaryReader();
+        ECOBJECTS_EXPORT MSXmlBinaryReader(byte* bytes, int length);
+        ECOBJECTS_EXPORT ~MSXmlBinaryReader();
 
         XmlNodeType MoveToContent();
 

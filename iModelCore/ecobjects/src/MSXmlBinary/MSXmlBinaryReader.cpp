@@ -155,6 +155,8 @@ Utf8String MSXmlBinaryReader::ValueHandle::GetString()
             return Utf8PrintfString("%lu", GetInt64());
         case ValueHandleType::Single:
             return Utf8PrintfString("%f", GetFloat());
+        case ValueHandleType::Double:
+            return Utf8PrintfString("%.17G", GetDouble());
         case ValueHandleType::UTF8:
             return GetCharsText();
         }

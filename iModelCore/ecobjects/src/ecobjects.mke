@@ -58,6 +58,7 @@ ECObjectsHeaders =  $(ecobjectsPublicAPISrc)ECObjects.h \
                     $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                     $(baseDir)DateTimeInfoAccessor.h \
                     $(baseDir)MSXmlBinary\MSXmlBinaryWriter.h \
+                    $(baseDir)MSXmlBinary\MSXmlBinaryReader.h \
                     
 
 ECPresentationHeaders = $(ecpresentationPublicAPISrc)auicommand.h \
@@ -160,6 +161,8 @@ $(o)SchemaDiff$(oext)                                      : $(baseDir)SchemaDif
 
 # MSXml
 $(o)MSXmlBinaryWriter$(oext)                                : $(baseDir)MSXmlBinary/MSXmlBinaryWriter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)MSXmlBinaryReader$(oext)                                : $(baseDir)MSXmlBinary/MSXmlBinaryReader.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentation
 

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#include "MSXmlBinary\MSXmlBinaryReader.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef struct PlacementOriginZX const &PlacementOriginZXCR;
@@ -533,7 +534,7 @@ static char const *GetBeXmlNodeTypeString (BeXmlReader::NodeType nodeType)
     }
 struct BeXmlCGStreamReaderImplementation
 {
-BeXmlReader &m_reader;
+IBeXmlReader &m_reader;
 ICGFactory &m_factory;
 int m_debug;
 void Show (CharCP name)
@@ -549,7 +550,7 @@ void Show (CharCP name)
         }
     printf ("\n");
     }
-BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (BeXmlReader &reader, ICGFactory &factory)
+BeXmlCGStreamReaderImplementation::BeXmlCGStreamReaderImplementation (IBeXmlReader &reader, ICGFactory &factory)
     : m_reader(reader), m_factory(factory), m_debug (s_defaultDebug)
     {
     }
@@ -1451,6 +1452,14 @@ bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> 
     IGeometryCGFactory factory;
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString (status, beXmlCGString);
     BeXmlCGStreamReaderImplementation parser (*reader, factory);
+    return parser.TryParse(geometry, maxDepth);
+    }
+
+bool BeXmlCGStreamReader::TryParse (byte* buffer, int bufferLength, bvector<IGeometryPtr> &geometry, size_t maxDepth)
+    {
+    IGeometryCGFactory factory;
+    MSXmlBinaryReader reader(buffer, bufferLength);
+    BeXmlCGStreamReaderImplementation parser (reader, factory);
     return parser.TryParse(geometry, maxDepth);
     }
 
