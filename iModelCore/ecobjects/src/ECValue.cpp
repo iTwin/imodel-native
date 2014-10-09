@@ -1531,7 +1531,7 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         str = GetBoolean() ? L"True" : L"False";
         break;
     case PRIMITIVETYPE_DateTime:
-        str.Sprintf (L"%I64d", GetDateTimeTicks());
+        str.Sprintf (L"%lld", GetDateTimeTicks());
         break;
     case PRIMITIVETYPE_Double:
         str.Sprintf (L"%.13g", GetDouble());
@@ -1540,7 +1540,7 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         str.Sprintf (L"%d", GetInteger());
         break;
     case PRIMITIVETYPE_Long:
-        str.Sprintf (L"%I64d", GetLong());
+        str.Sprintf (L"%lld", GetLong());
         break;
     case PRIMITIVETYPE_Point2D:
         {
@@ -1581,10 +1581,10 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
     switch (GetPrimitiveType())
         {
     case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
-    case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%I64d", GetDateTimeTicks()); return true;
+    case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%lld", GetDateTimeTicks()); return true;
     case PRIMITIVETYPE_Double:      expr.Sprintf (L"%.13f", GetDouble()); return true;
     case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
-    case PRIMITIVETYPE_Long:        expr.Sprintf (L"%I64d", GetLong()); return true;
+    case PRIMITIVETYPE_Long:        expr.Sprintf (L"%lld", GetLong()); return true;
     case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%.13f,%.13f}", GetPoint2D().x, GetPoint2D().y); return true;
     case PRIMITIVETYPE_Point3D:
         {
