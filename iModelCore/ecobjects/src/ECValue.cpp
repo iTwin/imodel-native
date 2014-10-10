@@ -3557,7 +3557,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler)
 
     static const WCharCP s_propertyNames[Index::MAX] =
         {
-        L"NameProperty", L"DisplayLabelProperty", L"ValueProperty", L"TypeProperty", L"UnitProperty", L"ExtendTypeProperty", L"IsReadOnlyProperty"
+        L"NameProperty", L"DisplayLabelProperty", L"ValueProperty", L"TypeProperty", L"UnitProperty", L"ExtendTypeProperty", L"IsReadOnlyProperty", L"IsHiddenProperty"
         };
 
     for (size_t i = 0; i < _countof (s_propertyNames); i++)
@@ -3676,6 +3676,15 @@ IECInstancePtr AdhocPropertyQuery::GetEntry (UInt32 index) const
         }
     else
         return v.GetStruct();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, UInt32 index, WCharCP accessor) const
+    {
+    auto entry = GetEntry (index);
+    return entry.IsValid() ? entry->GetValue (v, accessor) : ECOBJECTS_STATUS_PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3830,6 +3839,20 @@ ECObjectsStatus AdhocPropertyQuery::IsReadOnly (bool& isReadOnly, UInt32 index) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyQuery::IsHidden (bool& isHidden, UInt32 index) const
+    {
+    ECValue v;
+    auto status = GetValue (v, index, Index::IsHidden);
+    isHidden = false;
+    if (SUCCESS == status && v.IsBoolean() && !v.IsNull())
+        isHidden = v.GetBoolean();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, UInt32 index, Index which) const
     {
     str.clear();
@@ -3876,6 +3899,15 @@ AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host)
     : AdhocPropertyQuery (host)
     {
     //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::SetValue (UInt32 index, WCharCP accessor, ECValueCR v)
+    {
+    auto entry = GetEntry (index);
+    return entry.IsValid() ? entry->SetValue (accessor, v) : ECOBJECTS_STATUS_PropertyNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3964,6 +3996,22 @@ ECObjectsStatus AdhocPropertyEdit::SetIsReadOnly (UInt32 index, bool isReadOnly)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::SetIsHidden (UInt32 index, bool isHidden)
+    {
+    auto entry = GetEntry (index);
+    if (entry.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    auto propName = GetPropertyName (Index::IsHidden);
+    if (nullptr == propName)
+        return ECOBJECTS_STATUS_OperationNotSupported;
+
+    return entry->SetValue (propName, ECValue (isHidden));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RevertAdhocProperty
@@ -3986,7 +4034,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displayLabel, WCharCP unitName, WCharCP extendedTypeName, bool isReadOnly)
+ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displayLabel, WCharCP unitName, WCharCP extendedTypeName, bool isReadOnly, bool hidden)
     {
     if (!IsSupported())
         return ECOBJECTS_STATUS_OperationNotSupported;
@@ -4072,6 +4120,9 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
         return status;
 
     if (isReadOnly && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::IsReadOnly), ECValue (isReadOnly))))
+        return status;
+
+    if (hidden && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::IsHidden), ECValue (hidden))))
         return status;
 
     Int32 typeCode;
