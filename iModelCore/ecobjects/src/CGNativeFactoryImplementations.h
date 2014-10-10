@@ -69,6 +69,7 @@ InputParamTypeFor_double radiusB
     {
     DPoint3d origin;
     RotMatrix axes;
+    placement.GetFrame (origin, axes);
     ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
                 DEllipse3d::FromScaledRotMatrix (
                         origin, axes,
@@ -114,6 +115,7 @@ InputParamTypeFor_double radius
     {
     DPoint3d origin;
     RotMatrix axes;
+    placement.GetFrame (origin, axes);
     ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
                 DEllipse3d::FromScaledRotMatrix (
                         origin, axes,
@@ -401,6 +403,19 @@ bvector<double> const &KnotVArray
         return IGeometry::Create (bSurface);
         }
     return nullptr;
+    }
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a Polygon from explicit args.
+virtual IGeometryPtr CreatePolygon
+(
+bvector<DPoint3d> const &PointArray
+)
+    {
+    CurveVectorPtr cv = CurveVector::CreateLinear (PointArray,
+            CurveVector::BOUNDARY_TYPE_Outer, false);
+    return IGeometry::Create (cv);
     }
 
 };

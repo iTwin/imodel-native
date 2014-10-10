@@ -345,6 +345,7 @@ bool SkipUnexpectedTag ()
     {
     if (m_debug > 9)
         Show ("SkipUnexpectedTag");
+    AdvanceAfterContentExtraction ();
     return false;
     }
 
@@ -385,6 +386,11 @@ bool CurrentElementNameMatch (CharCP name)
     return 0 == m_currentElementName.CompareToI (name);
     }
 
+bool CurrentElementNameMatch (CharCP nameA, CharCP nameB)
+    {
+    return 0 == m_currentElementName.CompareToI (nameA)
+        || 0 == m_currentElementName.CompareToI (nameB);
+    }
 
 bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
     {
