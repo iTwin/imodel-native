@@ -17,8 +17,13 @@ void MSXmlBinaryReader::ValueHandle::SetValue(byte* buffer, ValueHandleType type
     m_valueType = type;
     m_length = length;
     m_offset = offset;
-
     }
+
+void MSXmlBinaryReader::ValueHandle::SetValue(ValueHandleType type)
+    {
+    m_valueType = type;
+    }
+
 Int32 MSXmlBinaryReader::ValueHandle::GetInt8()
     {
     return (char) (m_buffer[m_offset]);
@@ -180,6 +185,11 @@ void MSXmlBinaryReader::XmlNode::SetValueHandle(byte* buffer, ValueHandleType ty
     m_value.SetValue(buffer, type, length, offset);
     }
 
+void MSXmlBinaryReader::XmlNode::SetValueHandle(ValueHandleType type)
+    {
+    m_value.SetValue(type);
+    }
+
 void MSXmlBinaryReader::ReadAttributes()
     {
     XmlBinaryNodeType nodeType = GetBinaryNodeType();
@@ -232,22 +242,22 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadNode()
 
         case XmlBinaryNodeType::ZeroTextWithEndElement:
             {
-
+            MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::Zero);
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::OneTextWithEndElement:
             {
-
+            MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::One);
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::TrueTextWithEndElement:
             {
-
+            MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::True);
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::FalseTextWithEndElement:
             {
-
+            MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::False);
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::Chars8TextWithEndElement:

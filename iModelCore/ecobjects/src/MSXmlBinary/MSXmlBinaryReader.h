@@ -59,6 +59,7 @@ struct MSXmlBinaryReader : public IBeXmlReader
             public:
                 ValueHandle(byte* buffer) : m_valueType(ValueHandleType::Empty), m_buffer(buffer) {};
                 void SetValue(byte* buffer, ValueHandleType type, int length, int offset);
+                void SetValue(ValueHandleType type);
                 Utf8String GetString();
                 Int32 ToInt();
             };
@@ -93,6 +94,7 @@ struct MSXmlBinaryReader : public IBeXmlReader
                 void SetLocalName(Utf8String localName);
                 Utf8CP GetLocalName() { return m_localName.c_str();}
                 void SetValueHandle(byte* buffer, ValueHandleType type, int length, int offset);
+                void SetValueHandle(ValueHandleType type);
                 Utf8String ValueAsString() { return m_value.GetString(); }
             };
 

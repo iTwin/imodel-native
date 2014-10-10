@@ -631,7 +631,7 @@ bool ReadTagbool(CharCP name, bool &value)
         stat = true;
         }
     AdvanceAfterContentExtraction ();        
-    return false;
+    return stat;
     }
 
 bool ReadTagdouble(CharCP name, double &value)
