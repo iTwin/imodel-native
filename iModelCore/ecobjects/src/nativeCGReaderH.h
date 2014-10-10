@@ -180,7 +180,7 @@ bool ReadIDgnBox (IGeometryPtr &result)
                 && ReadTagdouble ("topY", topY))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -263,7 +263,7 @@ bool ReadIDgnSphere (IGeometryPtr &result)
                 && ReadTagAngle ("latitudeSweep", latitudeSweep))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -340,7 +340,7 @@ bool ReadIDgnCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -417,7 +417,7 @@ bool ReadIDgnTorusPipe (IGeometryPtr &result)
                 && ReadTagAngle ("sweepAngle", sweepAngle))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -476,7 +476,7 @@ bool ReadIBlock (IGeometryPtr &result)
                 && ReadTagDPoint3d ("cornerB", cornerB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -541,7 +541,7 @@ bool ReadICircularCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -600,7 +600,7 @@ bool ReadICircularCylinder (IGeometryPtr &result)
                 && ReadTagdouble ("radius", radius))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -942,7 +942,7 @@ bool ReadISkewedCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -1060,7 +1060,7 @@ bool ReadITorusPipe (IGeometryPtr &result)
                 && ReadTagAngle ("sweepAngle", sweepAngle))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("capped", capped))
                 continue;
 
@@ -1455,7 +1455,7 @@ bool ReadICurveChain (IGeometryPtr &result)
         && ReadToChild ())
         {
         // Gather children
-        bvector<IGeometryPtr> CurveArray;
+        bvector<ICurvePrimitivePtr> CurveArray;
 
         // Read children in any order ...
         for (;IsStartElement ();)

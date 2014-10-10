@@ -405,7 +405,7 @@ bvector<double> const &KnotVArray
 /// factory base class placeholder to create a CurveChain from explicit args.
 virtual IGeometryPtr CreateCurveChain
 (
-bvector<IGeometryPtr> const &CurveArray
+bvector<ICurvePrimitivePtr> const &CurveArray
 )
     {
     return nullptr;

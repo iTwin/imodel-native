@@ -268,6 +268,7 @@ static void InitParseTable ()
         s_parseTable[Utf8String("TransitionSpiral")] = &ReadITransitionSpiral;
         }
     }
+
 IBeXmlReader &m_reader;
 ICGFactory &m_factory;
 int m_debug;
@@ -345,6 +346,7 @@ bool SkipUnexpectedTag ()
     {
     if (m_debug > 9)
         Show ("SkipUnexpectedTag");
+    AdvanceAfterContentExtraction ();
     return false;
     }
 
@@ -385,6 +387,11 @@ bool CurrentElementNameMatch (CharCP name)
     return 0 == m_currentElementName.CompareToI (name);
     }
 
+bool CurrentElementNameMatch (CharCP nameA, CharCP nameB)
+    {
+    return 0 == m_currentElementName.CompareToI (nameA)
+        || 0 == m_currentElementName.CompareToI (nameB);
+    }
 
 bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
     {
@@ -519,10 +526,24 @@ bool ReadListOfISweepable (CharCP listName, CharCP componentName, bvector<IGeome
     {
     return false;
     }
-bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+
+bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<ICurvePrimitivePtr> &values)
     {
-    return false;
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    ICurvePrimitivePtr cp;
+    while (IsStartElement ()
+            && ReadTag_AnyCurvePrimitive (cp)
+            && cp.IsValid ())
+        {
+        values.push_back (cp);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
     }
+
 bool ReadListOfICurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
     return false;
@@ -610,22 +631,22 @@ bool ReadTagbool(CharCP name, bool &value)
     m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
     m_reader.GetCurrentNodeValue (m_currentValue8);
     bool stat = false;
-    if (0 == m_currentValue8.CompareTo ("true"))
+    if (0 == m_currentValue8.CompareToI ("true"))
         {
         value = true;
         stat = true;
         }
-    if (0 == m_currentValue8.CompareTo ("false"))
+    if (0 == m_currentValue8.CompareToI ("false"))
         {
         value = false;
         stat = true;
         }
-    if (0 == m_currentValue8.CompareTo ("1"))
+    if (0 == m_currentValue8.CompareToI ("1"))
         {
         value = true;
         stat = true;
         }
-    if (0 == m_currentValue8.CompareTo ("0"))
+    if (0 == m_currentValue8.CompareToI ("0"))
         {
         value = false;
         stat = true;
@@ -704,6 +725,33 @@ bool ReadTagAngle (CharCP name, Angle &value)
     }
 
 #include "nativeCGReaderH.h"
+
+bool ReadTag_AnyGeometry (IGeometryPtr &value)
+    {
+    ParseMethod parseMethod = s_parseTable[m_currentElementName];
+    if (parseMethod != nullptr)
+        {
+        if ((this->*parseMethod)(value))
+            {
+            return true;
+            }
+        }
+    return false;
+    }
+
+bool ReadTag_AnyCurvePrimitive (ICurvePrimitivePtr &value)
+    {
+    IGeometryPtr geometry;
+    if (ReadTag_AnyGeometry (geometry)
+        && geometry.IsValid ())
+        {
+        value = geometry->GetAsICurvePrimitive ();
+        return value.IsValid ();
+        }
+    return false;
+    }
+
+
 
 
 public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
