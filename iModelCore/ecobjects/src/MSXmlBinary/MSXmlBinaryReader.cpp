@@ -176,8 +176,8 @@ MSXmlBinaryReader::XmlAtomicTextNode* MSXmlBinaryReader::MoveToAtomicTextWithEnd
 
 MSXmlBinaryReader::XmlAtomicTextNode* MSXmlBinaryReader::MoveToAtomicText()
     {
-    MoveToNode(m_atomicTextNode);
-    return m_atomicTextNode;
+    MoveToNode(&m_atomicTextNode);
+    return &m_atomicTextNode;
     }
 
 void MSXmlBinaryReader::XmlNode::SetValueHandle(byte* buffer, ValueHandleType type, int length, int offset)
@@ -219,17 +219,15 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadNode()
 
     if (m_offset >= m_length)
         {
-        MoveToNode(m_endElementNode);
+        MoveToNode(&m_endElementNode);
         return READ_RESULT_Error;
         }
 
-    XmlElementNode* xmlNode = nullptr;
     switch(nodeType)
         {
         case XmlBinaryNodeType::ShortElement:
             {
-            xmlNode = EnterScope();
-            ReadName(xmlNode);
+            ReadName(EnterScope());
             ReadAttributes();
             return READ_RESULT_Success;
             }
@@ -302,7 +300,7 @@ XmlBinaryNodeType MSXmlBinaryReader::GetBinaryNodeType()
     return (XmlBinaryNodeType)GetByte();
     }
 
-MSXmlBinaryReader::XmlElementNode* MSXmlBinaryReader::EnterScope()
+MSXmlBinaryReader::XmlElementNode& MSXmlBinaryReader::EnterScope()
     {
     if (0 == m_depth)
         m_rootElement = true;
@@ -312,10 +310,14 @@ MSXmlBinaryReader::XmlElementNode* MSXmlBinaryReader::EnterScope()
     if (m_depth >= (int) m_elementNodes.size())
         {
         while ((int) m_elementNodes.size() < m_depth)
-            m_elementNodes.push_back(nullptr);
-        m_elementNodes.push_back(new MSXmlBinaryReader::XmlElementNode(m_bytes));
+            {
+            MSXmlBinaryReader::XmlElementNode el(nullptr);
+            m_elementNodes.push_back(el);
+            }
+        MSXmlBinaryReader::XmlElementNode el(m_bytes);
+        m_elementNodes.push_back(el);
         }
-    MoveToNode(m_elementNodes[m_depth]);
+    MoveToNode(&m_elementNodes[m_depth]);
     return m_elementNodes[m_depth];
     }
 
@@ -327,29 +329,24 @@ void MSXmlBinaryReader::ExitScope()
 void MSXmlBinaryReader::MoveToNode(XmlNode* node)
     {
     this->m_node = node;
-    this->m_localName = nullptr;
+    this->m_localName.AssignOrClear(nullptr);
     }
 
 void MSXmlBinaryReader::ReadName(Utf8StringR name)
     {
     int length = ReadMultiByteUInt31();
-    Utf8Char *chars = new Utf8Char[length+1];
+    name.AssignOrClear(nullptr);
     for (int i = 0; i < length; i++)
         {
-        chars[i] = (Utf8Char) GetByte();
+        Utf8Char c = (Utf8Char) GetByte();
+        name.append(&c, 1);
         SkipByte();
         }
-    chars[length] = '\0';
-    Utf8String utf(chars);
-    name = utf;
-    delete chars;
     }
 
-void MSXmlBinaryReader::ReadName(XmlElementNode* node)
+void MSXmlBinaryReader::ReadName(XmlElementNode& node)
     {
-    Utf8String name;
-    ReadName(name);
-    node->SetLocalName(name);
+    ReadName(node.GetLocalNameR());
     }
 
 int MSXmlBinaryReader::ReadMultiByteUInt31()
@@ -389,43 +386,21 @@ int MSXmlBinaryReader::ReadMultiByteUInt31()
 
     }
 
-MSXmlBinaryReader::XmlNode::XmlNode(XmlNodeType nodeType, byte* buffer, UInt32 nodeFlags) : m_value(buffer)
+MSXmlBinaryReader::XmlNode::XmlNode(XmlNodeType nodeType, byte* buffer, UInt32 nodeFlags) : m_value(buffer), m_nodeType(nodeType), m_isEmptyElement(false)
     {
-    m_nodeType = nodeType;
     m_hasContent = ((nodeFlags & (UInt32) XmlNodeFlags::HasContent) != 0);
     m_hasValue = ((nodeFlags & (UInt32) XmlNodeFlags::HasValue) != 0);
     m_canGetAttribute = ((nodeFlags & (UInt32) XmlNodeFlags::CanGetAttribute) != 0);
     m_canMoveToElement = ((nodeFlags & (UInt32)XmlNodeFlags::CanMoveToElement) != 0);
-    m_isEmptyElement = false;
+    m_localName.AssignOrClear(nullptr);
     }
 
-void MSXmlBinaryReader::XmlNode::SetLocalName(Utf8String localName)
+MSXmlBinaryReader::MSXmlBinaryReader(byte* bytes, int length) 
+    : m_bytes(bytes), m_length(length), m_depth(0), m_offset(0), m_rootElement(false), m_isTextWithEndElement(false), 
+        m_atomicTextNode(bytes), m_initialNode(bytes), m_endElementNode()
     {
-    m_localName = localName;
-    }
-
-MSXmlBinaryReader::MSXmlBinaryReader(byte* bytes, int length) : m_bytes(bytes), m_length(length)
-    {
-    m_depth = 0;
-    m_localName = nullptr;
-    m_offset = 0;
-    m_rootElement = false;
-    m_isTextWithEndElement = false;
-    m_atomicTextNode = new XmlAtomicTextNode(bytes);
-    m_initialNode = new XmlInitialNode(bytes);
-    m_endElementNode = new XmlEndElementNode();
-
-    m_node = m_initialNode;
-    }
-
-MSXmlBinaryReader::~MSXmlBinaryReader()
-    {
-    for (auto element : m_elementNodes)
-        delete element;
-    delete m_bytes;
-    delete m_atomicTextNode;
-    delete m_initialNode;
-    delete m_endElementNode;
+    m_localName.AssignOrClear(nullptr);
+    m_node = &m_initialNode;
     }
 
 MSXmlBinaryReader::XmlNodeType MSXmlBinaryReader::MoveToContent()
@@ -476,7 +451,7 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadTo(IBeXmlReader::NodeType nodeTy
             {
             m_isTextWithEndElement = false;
             m_depth--;
-            m_node = m_endElementNode;
+            m_node = &m_endElementNode;
             }
         }
     else if (NODE_TYPE_Text == nodeType)

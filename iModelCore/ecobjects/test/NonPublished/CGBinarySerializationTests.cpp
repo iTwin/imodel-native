@@ -28,15 +28,16 @@ struct CGBinarySerializationTests : ECTestFixture
         BeXmlCGWriter::WriteBytes(bytes, geoms[0]);
 
         bvector<IGeometryPtr> geoms2;
-        byte *buffer = new byte[bytes.size()];
-        for (int i = 0; i < (int) bytes.size(); i++)
-            buffer[i] = bytes[i];
-        ASSERT_TRUE(BeXmlCGStreamReader::TryParse(buffer, (int) bytes.size(), geoms2, 0)) << "Failed binary deserialization of " << xml.c_str();
+        ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes.data(), (int) bytes.size(), geoms2, 0)) << "Failed binary deserialization of " << xml.c_str();
         ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms.size() << " for " << xml.c_str();
         ASSERT_TRUE(geoms[0]->IsSameStructureAndGeometry(*geoms2[0])) << "Did not get same structure for " << xml.c_str();
         }
     };
 
+TEST_F(CGBinarySerializationTests, TestSpecific)
+    {
+    Roundtrip(Utf8String("<BsplineCurve xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><Order>2</Order><Closed>false</Closed><ListOfControlPoint><xyz>1,0,0</xyz><xyz>0.86602540378443871,0.49999999999999994,0</xyz></ListOfControlPoint><ListOfKnot><Knot>0</Knot><Knot>0</Knot><Knot>1</Knot><Knot>1</Knot></ListOfKnot></BsplineCurve>"));
+    }
 TEST_F(CGBinarySerializationTests, WriterTest)
     {
     DEllipse3d ellipseData = DEllipse3d::From (0.0, 0.0, 0.0, 

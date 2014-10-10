@@ -382,7 +382,7 @@ bool ReadToElement ()
 
 bool CurrentElementNameMatch (CharCP name)
     {
-    return 0 == m_currentElementName.CompareTo (name);
+    return 0 == m_currentElementName.CompareToI (name);
     }
 
 
