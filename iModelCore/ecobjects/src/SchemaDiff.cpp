@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaDiff.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -211,7 +211,7 @@ WString ECDiffValue::ToString() const
     case VALUETYPE_Int32:
         WString::Sprintf (out, L"%d", m_valueInt32); break;
     case VALUETYPE_Int64:
-        WString::Sprintf (out, L"%ld", m_valueInt64); break;
+        WString::Sprintf (out, L"%lld", m_valueInt64); break;
     case VALUETYPE_String:
         WString::Sprintf (out, L"\"%ls\"", m_valueString.c_str()); break;
     case VALUETYPE_Nil:

@@ -85,7 +85,7 @@ ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue)
             wcscpy (buffer, ecValue.GetBoolean() ?  L"true"  : L"false");
             break;
         case PRIMITIVETYPE_Long:
-            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%ld", ecValue.GetLong());
+            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%lld", ecValue.GetLong());
             break;
         case PRIMITIVETYPE_Double:
             //  TODO -- needs locale, extended type.
