@@ -16,50 +16,7 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 #define DVector3d DVec3d
 #define String Utf8String
 
-#define InputParamTypeFor_DPoint3d DPoint3dCR
-#define InputParamTypeFor_Transform TransformCR
 
-#define InputParamTypeFor_DPoint2d DPoint2dCR
-#define InputParamTypeFor_DVector3d DVec3dCR
-#define InputParamTypeFor_PlacementOriginZX PlacementOriginZXCR
-
-#define InputParamTypeFor_double double
-#define InputParamTypeFor_Angle Angle
-#define InputParamTypeFor_int int
-#define InputParamTypeFor_bool bool
-#define InputParamTypeFor_String Utf8StringCR
-#define InputParamTypeFor_LoopType int
-
-#define InputParamTypeFor_IPoint IGeometryPtr
-#define InputParamTypeFor_ISinglePoint IGeometryPtr
-#define InputParamTypeFor_IPrimitiveCurve ICurvePrimitivePtr
-#define InputParamTypeFor_ICurve IGeometryPtr
-#define InputParamTypeFor_ICurveChain IGeometryPtr
-#define InputParamTypeFor_ISurface IGeometryPtr
-#define InputParamTypeFor_ISurfacePatch IGeometryPtr
-#define InputParamTypeFor_IParametricSurface IGeometryPtr
-#define InputParamTypeFor_ISolid IGeometryPtr
-#define InputParamTypeFor_IGeometry IGeometryPtr
-
-#define InputParamTypeFor_ISweepable CurveVectorPtr
-
-
-
-#define ReaderTypeFor_ICurve IGeometryPtr
-#define ReaderTypeFor_ICurveChain IGeometryPtr
-#define ReaderTypeFor_IGeometry IGeometryPtr
-#define ReaderTypeFor_IParametricSurface IGeometryPtr
-#define ReaderTypeFor_IPrimitiveCurve IGeometryPtr
-#define ReaderTypeFor_ISurface IGeometryPtr
-
-#define s_default_ICurve nullptr
-#define s_default_ICurveChain nullptr
-#define s_default_IGeometry nullptr
-#define s_default_IParametricSurface nullptr
-#define s_default_IPrimitiveCurve nullptr
-#define s_default_ISurface nullptr
-
-#define s_default_LoopType 0
 typedef int LoopType;
 
 template<typename T, typename TBlocked>
@@ -147,16 +104,6 @@ bool GetFrame (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis, DVec3dR zAxis) co
 #include "CGNativeFactoryImplementations.h"
 
 
-static DPoint3d s_default_DPoint3d = DPoint3d::From (0,0,0);
-static DPoint2d s_default_DPoint2d = DPoint2d::From (0,0);
-static DVec3d   s_default_DVector3d = DVec3d::From (0,0,0);
-static double   s_default_double   = 0.0;
-static int      s_default_int      = 0;
-static bool     s_default_bool     = false;
-static Angle     s_default_Angle    = Angle::FromRadians (0.0);
-static Utf8String s_default_String = Utf8String ();
-static PlacementOriginZX s_default_PlacementOriginZX = PlacementOriginZX::FromIdentity ();
-static Transform s_default_Transform = Transform::FromIdentity ();
 
 #ifdef abc
 // If primitve has a child curve vector, just extract it.
@@ -716,9 +663,9 @@ bool ReadTagPlacementOriginZX (CharCP name, PlacementOriginZX &value)
         && ReadToChild ())
         {
         // Start with the system default for each field ....
-        DPoint3d origin = s_default_DPoint3d;
-        DVec3d vectorZ = s_default_DVector3d;
-        DVec3d vectorX = s_default_DVector3d;
+        DPoint3d origin = DPoint3d::FromZero ();
+        DVec3d vectorZ = DVec3d::From (0,0,0);
+        DVec3d vectorX = DVec3d::From (0,0,0);
 
         for (;IsStartElement ();)
             {
