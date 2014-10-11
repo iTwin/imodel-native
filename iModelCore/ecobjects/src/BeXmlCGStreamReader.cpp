@@ -32,15 +32,18 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 
 #define InputParamTypeFor_IPoint IGeometryPtr
 #define InputParamTypeFor_ISinglePoint IGeometryPtr
-#define InputParamTypeFor_IPrimitiveCurve IGeometryPtr
+#define InputParamTypeFor_IPrimitiveCurve ICurvePrimitivePtr
 #define InputParamTypeFor_ICurve IGeometryPtr
 #define InputParamTypeFor_ICurveChain IGeometryPtr
 #define InputParamTypeFor_ISurface IGeometryPtr
 #define InputParamTypeFor_ISurfacePatch IGeometryPtr
 #define InputParamTypeFor_IParametricSurface IGeometryPtr
-#define InputParamTypeFor_ISweepable IGeometryPtr
 #define InputParamTypeFor_ISolid IGeometryPtr
 #define InputParamTypeFor_IGeometry IGeometryPtr
+
+#define InputParamTypeFor_ISweepable CurveVectorPtr
+
+
 
 #define ReaderTypeFor_ICurve IGeometryPtr
 #define ReaderTypeFor_ICurveChain IGeometryPtr
@@ -48,7 +51,6 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 #define ReaderTypeFor_IParametricSurface IGeometryPtr
 #define ReaderTypeFor_IPrimitiveCurve IGeometryPtr
 #define ReaderTypeFor_ISurface IGeometryPtr
-#define ReaderTypeFor_ISweepable IGeometryPtr
 
 #define s_default_ICurve nullptr
 #define s_default_ICurveChain nullptr
@@ -56,7 +58,6 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 #define s_default_IParametricSurface nullptr
 #define s_default_IPrimitiveCurve nullptr
 #define s_default_ISurface nullptr
-#define s_default_ISweepable nullptr
 
 #define s_default_LoopType 0
 typedef int LoopType;
@@ -141,6 +142,7 @@ bool GetFrame (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis, DVec3dR zAxis) co
     }
 };
 
+#include "nativeCGClasses.h"
 
 #include "CGNativeFactoryImplementations.h"
 
@@ -519,21 +521,18 @@ bool ReadListOfDVector3d (CharCP listName, CharCP componentName, bvector<DVector
 //=======================================================================================
 bool ReadListOfISurfacePatch (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    return false;
-    }
-bool ReadListOfISweepable (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
-    {
+    assert(false);
     return false;
     }
 
-bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<ICurvePrimitivePtr> &values)
+bool ReadListOf_AnyCurveVector (CharCP listName, CharCP componentName, bvector<CurveVectorPtr> &values)
     {
     if (!CurrentElementNameMatch (listName))
         return false;
     ReadToChild ();
-    ICurvePrimitivePtr cp;
+    CurveVectorPtr cp;
     while (IsStartElement ()
-            && ReadTag_AnyCurvePrimitive (cp)
+            && ReadTag_AnyCurveVector (componentName, cp)
             && cp.IsValid ())
         {
         values.push_back (cp);
@@ -543,24 +542,52 @@ bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<I
     return true;
     }
 
+
+bool ReadListOf_AnyICurvePrimitive (CharCP listName, CharCP componentName, bvector<ICurvePrimitivePtr> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChild ();
+    ICurvePrimitivePtr cp;
+    while (IsStartElement ()
+            && ReadTag_AnyICurvePrimitive (cp)    // ignore the component name !!!
+            && cp.IsValid ())
+        {
+        values.push_back (cp);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+bool ReadListOf_AnyICurveChain (CharCP listName, CharCP componentName, bvector<CurveVectorPtr> &values)
+    {
+    return ReadListOf_AnyCurveVector (listName, componentName, values);
+    }
+
 bool ReadListOfICurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 bool ReadListOfICurveChain (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 bool ReadListOfISolid (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 bool ReadListOfISurface (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 
@@ -570,6 +597,7 @@ bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryP
 
 bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 
@@ -579,6 +607,7 @@ bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeomet
 
 bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    assert(false);
     return false;
     }
 
@@ -590,6 +619,7 @@ bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeo
 //=======================================================================================
 bool ReadTagString (CharCP name, Utf8StringR)
     {
+    assert(false);
     return false;
     }
 
@@ -738,7 +768,95 @@ bool ReadTag_AnyGeometry (IGeometryPtr &value)
     return false;
     }
 
-bool ReadTag_AnyCurvePrimitive (ICurvePrimitivePtr &value)
+bool ReadTag_AnyGeometry (CharCP name, IGeometryPtr &value)
+    {
+    IGeometryPtr geometry;
+    bool stat = true;
+    if (CurrentElementNameMatch (name))
+        {
+        ParseMethod parseMethod = s_parseTable[m_currentElementName];
+        if (parseMethod != nullptr)
+            {
+            if ((this->*parseMethod)(value))
+                stat = true;
+            }
+        ReadEndElement ();
+        }
+    return stat;
+    }
+
+static bool IsAnySurface (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::BsplineSurface)
+        stat = true;
+    else if (type == IGeometry::GeometryType::SolidPrimitive)
+        stat = true;
+    else if (type == IGeometry::GeometryType::CurveVector)
+        stat = value.GetAsCurveVector ()->IsAnyRegionType ();
+    return stat;
+    }
+
+static bool IsParametricSurface (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::BsplineSurface)
+        stat = true;
+    return stat;
+    }
+
+static bool IsAnyCurve (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::CurvePrimitive)
+        stat = true;
+    if (type == IGeometry::GeometryType::CurveVector)
+        stat = true;
+    return stat;
+    }
+
+static bool IsAnyCurveChain (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::CurveVector)
+        {
+        CurveVectorPtr cv = value.GetAsCurveVector ();
+        stat = cv->IsOpenPath ()
+            || cv->IsClosedPath ();
+        stat = true;
+        }
+    return stat;
+    }
+
+bool ReadTag_AnySurface (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsAnySurface (*value);
+    }
+
+bool ReadTag_AnyCurve (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsAnyCurve (*value);
+    }
+
+bool ReadTag_AnyParametricSurface (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsParametricSurface (*value);
+    }
+
+bool ReadTag_AnyCurveChain (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsAnyCurveChain (*value);
+    }
+
+bool ReadTag_AnyICurvePrimitive (ICurvePrimitivePtr &value)
     {
     IGeometryPtr geometry;
     if (ReadTag_AnyGeometry (geometry)
@@ -750,7 +868,39 @@ bool ReadTag_AnyCurvePrimitive (ICurvePrimitivePtr &value)
     return false;
     }
 
+bool ReadTag_AnyCurveVector (CharCP name, CurveVectorPtr &value)
+    {
+    IGeometryPtr geometry;
+    bool stat = false;
+    if (CurrentElementNameMatch (name)
+        && ReadToChild ())
+        {
+        if (ReadTag_AnyGeometry (geometry))
+            {
+            value = geometry->GetAsCurveVector ();
+            stat = value.IsValid ();
+            ReadEndElement ();
+            }
+        }
+    return stat;
+    }
 
+bool ReadTag_AnyICurvePrimitive (CharCP name, ICurvePrimitivePtr &value)
+    {
+    IGeometryPtr geometry;
+    bool stat = false;
+    if (CurrentElementNameMatch (name)
+        && ReadToChild ())
+        {
+        if (ReadTag_AnyGeometry (geometry))
+            {
+            value = geometry->GetAsICurvePrimitive ();
+            stat = value.IsValid ();
+            ReadEndElement ();
+            }
+        }
+    return stat;
+    }
 
 
 public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
