@@ -734,9 +734,10 @@ bool ReadTag_AnyGeometry (IGeometryPtr &value)
 bool ReadTag_AnyGeometry (CharCP name, IGeometryPtr &value)
     {
     IGeometryPtr geometry;
-    bool stat = true;
+    bool stat = false;
     if (CurrentElementNameMatch (name))
         {
+        ReadToElement ();
         ParseMethod parseMethod = s_parseTable[m_currentElementName];
         if (parseMethod != nullptr)
             {

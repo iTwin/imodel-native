@@ -315,7 +315,7 @@ virtual IGeometryPtr Create(CGDgnExtrusionDetail &cgDetail) override
     }
 
 /// <summary>
-/// factory base class placeholder to create a dgnExtrusion from explicit args.
+/// factory base class placeholder to create a DgnBox from explicit args.
 virtual IGeometryPtr Create(CGDgnBoxDetail &cgDetail) override
     {
     DgnBoxDetail dgnDetail (
@@ -331,4 +331,94 @@ virtual IGeometryPtr Create(CGDgnBoxDetail &cgDetail) override
       );
     return IGeometry::Create (ISolidPrimitive::CreateDgnBox (dgnDetail));
     }
+
+/// <summary>
+/// factory base class placeholder to create a DgnSphere from explicit args.
+virtual IGeometryPtr Create(CGDgnSphereDetail &cgDetail) override
+    {
+    DgnSphereDetail dgnDetail (
+      cgDetail.center,
+      cgDetail.vectorX,
+      cgDetail.vectorZ,
+      cgDetail.radiusXY,
+      cgDetail.radiusZ,
+      cgDetail.startLatitude.Radians (),
+      cgDetail.latitudeSweep.Radians (),
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnSphere (dgnDetail));
+    }
+
+static bool GetSweepVectorFromRailCurve (IGeometryPtr &source, DVec3dR vector)
+    {
+    ICurvePrimitivePtr cp;
+    if (source.IsValid ())
+        {
+        cp = source->GetAsICurvePrimitive ();
+        DSegment3d segment;
+        if (cp.IsValid ()
+            && cp->TryGetLine (segment))
+            {
+            vector = DVec3d::FromStartEnd (segment.point[0], segment.point[1]);
+            return true;
+            }
+        }
+    return false;
+    }
+
+static bool GetRotationAxisFromRailCurve (IGeometryPtr &source, DRay3dR axis, double &sweepRadians)
+    {
+    ICurvePrimitivePtr cp;
+    if (source.IsValid ())
+        {
+        cp = source->GetAsICurvePrimitive ();
+        DEllipse3d arc;
+        if (cp.IsValid ()
+            && cp->TryGetArc (arc)
+            && arc.IsCircular()
+            )
+            {
+            axis.origin = arc.center;
+            axis.direction = DVec3d::FromNormalizedCrossProduct (
+                  arc.vector0, arc.vector90);
+            sweepRadians = arc.sweep;
+            return true;
+            }
+        }
+    return false;
+    }
+
+
+/// <summary> Create DgnRotationalSweep or DgnExtrusion from explicit args.</summary>
+static IGeometryPtr Create(IGeometryPtr &baseGeometry, IGeometryPtr &railCurve, bool capped)
+    {
+    DVec3d vector;
+    DRay3d axis;
+    double sweepRadians;
+    if (baseGeometry.IsValid ()
+        && railCurve.IsValid ()
+        )
+        {
+        CurveVectorPtr cv = baseGeometry->GetAsCurveVector ();
+        if (!cv.IsValid ())
+            {
+            }
+        else if (GetSweepVectorFromRailCurve (railCurve, vector))
+            {
+            DgnExtrusionDetail dgnDetail (cv, vector, true);
+            return IGeometry::Create (ISolidPrimitive::CreateDgnExtrusion (dgnDetail));
+            }
+        else if (GetRotationAxisFromRailCurve (railCurve, axis, sweepRadians))
+            {
+            DgnRotationalSweepDetail dgnDetail (cv, axis.origin, axis.direction, sweepRadians, true);
+            return IGeometry::Create (ISolidPrimitive::CreateDgnRotationalSweep (dgnDetail));
+            }
+        }
+    //return IGeometry::Create (ISolidPrimitive::CreateDgnSphere (dgnDetail));
+    return nullptr;
+    }
+
+virtual IGeometryPtr Create(CGSolidBySweptSurfaceDetail &cgDetail) override {return Create (cgDetail.baseGeometry, cgDetail.railCurve, true);}
+virtual IGeometryPtr Create(CGSurfaceBySweptCurveDetail &cgDetail) override {return Create (cgDetail.baseGeometry, cgDetail.railCurve, false);}
+
 };
