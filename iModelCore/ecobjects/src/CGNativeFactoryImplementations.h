@@ -300,4 +300,35 @@ virtual IGeometryPtr Create(CGPolygonDetail &cgDetail) override
     return IGeometry::Create (cv);
     }
 
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a dgnExtrusion from explicit args.
+virtual IGeometryPtr Create(CGDgnExtrusionDetail &cgDetail) override
+    {
+    if (cgDetail.baseGeometry.IsValid())
+        {
+        DgnExtrusionDetail dgnDetail (cgDetail.baseGeometry, cgDetail.extrusionVector, cgDetail.capped);
+        return IGeometry::Create (ISolidPrimitive::CreateDgnExtrusion (dgnDetail));
+        }
+    return nullptr;
+    }
+
+/// <summary>
+/// factory base class placeholder to create a dgnExtrusion from explicit args.
+virtual IGeometryPtr Create(CGDgnBoxDetail &cgDetail) override
+    {
+    DgnBoxDetail dgnDetail (
+      cgDetail.topOrigin,
+      cgDetail.baseOrigin,
+      cgDetail.vectorX,
+      cgDetail.vectorY,
+      cgDetail.baseX,
+      cgDetail.baseY,
+      cgDetail.topX,
+      cgDetail.topY,
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnBox (dgnDetail));
+    }
 };

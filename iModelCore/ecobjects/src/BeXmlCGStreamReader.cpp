@@ -259,6 +259,19 @@ bool ReadToChild ()
     return true;
     }
 
+bool ReadToText ()
+    {
+    if (m_debug > 9)
+        Show ("ReadToText");
+    BeXmlReader::ReadResult status = m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    if (status != BeXmlReader::READ_RESULT_Success)
+        return false;
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    if (m_debug > 9)
+        Show ("Text");
+    return true;
+    }
+
 void ReadOverWhiteSpace ()
     {
     BeXmlReader::NodeType nodeType;
@@ -278,7 +291,7 @@ void ReadOverWhiteSpace ()
 
 bool ReadEndElement ()
     {
-    assert(m_reader.GetCurrentNodeType () == BeXmlReader::NODE_TYPE_EndElement);
+    BeAssert(m_reader.GetCurrentNodeType () == BeXmlReader::NODE_TYPE_EndElement);
     if (m_debug > 9)
         Show ("ReadEndElement");
     ReadOverWhiteSpace ();
@@ -345,11 +358,13 @@ bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
     {
     if (name != nullptr && !CurrentElementNameMatch (name))
         return false;
-    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
-    m_reader.GetCurrentNodeValue (m_currentValue8);
-    bool stat = 3 == sscanf (&m_currentValue8[0],
-              "%lf,%lf,%lf", &value.x, &value.y, &value.z);
-    AdvanceAfterContentExtraction ();
+    bool stat = false;
+    if (ReadToText ())
+        {
+        stat = 3 == sscanf (&m_currentValue8[0],
+                  "%lf,%lf,%lf", &value.x, &value.y, &value.z);
+        AdvanceAfterContentExtraction ();
+        }
     return stat;
     }
 
@@ -468,7 +483,7 @@ bool ReadListOfDVector3d (CharCP listName, CharCP componentName, bvector<DVector
 //=======================================================================================
 bool ReadListOfISurfacePatch (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 
@@ -514,27 +529,27 @@ bool ReadListOf_AnyICurveChain (CharCP listName, CharCP componentName, bvector<C
 
 bool ReadListOfICurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 bool ReadListOfICurveChain (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 bool ReadListOfISolid (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 bool ReadListOfISurface (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 
@@ -544,7 +559,7 @@ bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryP
 
 bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 
@@ -554,7 +569,7 @@ bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeomet
 
 bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 
@@ -566,7 +581,7 @@ bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeo
 //=======================================================================================
 bool ReadTagString (CharCP name, Utf8StringR)
     {
-    assert(false);
+    BeAssert(false);
     return false;
     }
 
@@ -604,30 +619,31 @@ bool ReadTagbool(CharCP name, bool &value)
             )
             return false;
         }
-    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
-    m_reader.GetCurrentNodeValue (m_currentValue8);
     bool stat = false;
-    if (0 == m_currentValue8.CompareToI ("true"))
+    if (ReadToText ())
         {
-        value = true;
-        stat = true;
+        if (0 == m_currentValue8.CompareToI ("true"))
+            {
+            value = true;
+            stat = true;
+            }
+        if (0 == m_currentValue8.CompareToI ("false"))
+            {
+            value = false;
+            stat = true;
+            }
+        if (0 == m_currentValue8.CompareToI ("1"))
+            {
+            value = true;
+            stat = true;
+            }
+        if (0 == m_currentValue8.CompareToI ("0"))
+            {
+            value = false;
+            stat = true;
+            }
+        AdvanceAfterContentExtraction ();
         }
-    if (0 == m_currentValue8.CompareToI ("false"))
-        {
-        value = false;
-        stat = true;
-        }
-    if (0 == m_currentValue8.CompareToI ("1"))
-        {
-        value = true;
-        stat = true;
-        }
-    if (0 == m_currentValue8.CompareToI ("0"))
-        {
-        value = false;
-        stat = true;
-        }
-    AdvanceAfterContentExtraction ();        
     return stat;
     }
 
