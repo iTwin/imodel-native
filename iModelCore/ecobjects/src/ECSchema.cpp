@@ -229,11 +229,11 @@ ECSchema::~ECSchema ()
 
     m_refSchemaList.clear();
 
-    memset (this, 0xececdead, 4);   // Replaced sizeof(this) with 4. There is no great value 
-                                    // in trying to make this logic "correct" for a 64-bit build. 
-                                    // This is clearly just a quick trick to aid in debugging. 
-                                    // Attempting to use this object with the high 4 bytes of the vtable 
-                                    // pointer set to 0xececdead will crash just as reliably.
+    memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value 
+                                        // in trying to make this logic "correct" for a 64-bit build. 
+                                        // This memset is clearly just intended to aid in debugging. 
+                                        // Attempting to use this object with the high 4 bytes of the vtable 
+                                        // pointer set to 0xececdead will crash just as reliably.
     }
 
 //---------------------------------------------------------------------------------------
