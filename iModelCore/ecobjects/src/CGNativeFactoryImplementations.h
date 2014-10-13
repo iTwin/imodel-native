@@ -162,9 +162,7 @@ virtual IGeometryPtr Create (CGBlockDetail &detail) override
     }
 
 // ===================================================================================
-
-/// <summary>
-/// factory base class placeholder to create a Sphere from explicit args.
+/// <summary> factory base class placeholder to create a Sphere from explicit args.</summary>
 virtual IGeometryPtr Create (CGSphereDetail &detail) override
     {
     DPoint3d center;
@@ -175,7 +173,6 @@ virtual IGeometryPtr Create (CGSphereDetail &detail) override
     }
 
 // ===================================================================================
-
 /// <summary>
 /// factory base class placeholder to create a TorusPipe from explicit args.
 virtual IGeometryPtr Create (CGTorusPipeDetail &detail) override
@@ -332,8 +329,7 @@ virtual IGeometryPtr Create(CGDgnBoxDetail &cgDetail) override
     return IGeometry::Create (ISolidPrimitive::CreateDgnBox (dgnDetail));
     }
 
-/// <summary>
-/// factory base class placeholder to create a DgnSphere from explicit args.
+/// <summary> factory base class placeholder to create a DgnSphere from explicit args.</summary>
 virtual IGeometryPtr Create(CGDgnSphereDetail &cgDetail) override
     {
     DgnSphereDetail dgnDetail (
@@ -347,6 +343,36 @@ virtual IGeometryPtr Create(CGDgnSphereDetail &cgDetail) override
       cgDetail.capped
       );
     return IGeometry::Create (ISolidPrimitive::CreateDgnSphere (dgnDetail));
+    }
+
+/// <summary> factory base class placeholder to create a DgnCone from explicit args.</summary>
+virtual IGeometryPtr Create(CGDgnConeDetail &cgDetail) override
+    {
+    DgnConeDetail dgnDetail (
+      cgDetail.centerA,
+      cgDetail.centerB,
+      cgDetail.vectorX,
+      cgDetail.vectorY,
+      cgDetail.radiusA,
+      cgDetail.radiusB,
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnCone (dgnDetail));
+    }
+
+/// <summary> factory base class placeholder to create a DgnTorusPipe from explicit args.</summary>
+virtual IGeometryPtr Create(CGDgnTorusPipeDetail &cgDetail) override
+    {
+    DgnTorusPipeDetail dgnDetail (
+      cgDetail.center,
+      cgDetail.vectorX,
+      cgDetail.vectorY,
+      cgDetail.majorRadius,
+      cgDetail.minorRadius,
+      cgDetail.sweepAngle.Radians (),
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnTorusPipe (dgnDetail));
     }
 
 static bool GetSweepVectorFromRailCurve (IGeometryPtr &source, DVec3dR vector)
@@ -414,7 +440,6 @@ static IGeometryPtr Create(IGeometryPtr &baseGeometry, IGeometryPtr &railCurve, 
             return IGeometry::Create (ISolidPrimitive::CreateDgnRotationalSweep (dgnDetail));
             }
         }
-    //return IGeometry::Create (ISolidPrimitive::CreateDgnSphere (dgnDetail));
     return nullptr;
     }
 
