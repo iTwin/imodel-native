@@ -13,6 +13,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
 
 // In many of the DgnPlatform libraries we redefine the below macros based on __cplusplus.  This is because there
 // are existing C callers that we can not get rid of.  I've spoken to Sam and he recommends that for any new libraries we
@@ -39,6 +40,14 @@
             typedef _name_ const&    _name_##CR; \
         END_BENTLEY_ECOBJECT_NAMESPACE
 
+#define EC_REF_COUNTED_PTR(_name_) \
+    BEGIN_BENTLEY_ECOBJECT_NAMESPACE \
+        struct _name_ ; \
+        typedef RefCountedPtr<ECN:: _name_ > _name_ ## Ptr; \
+    END_BENTLEY_ECOBJECT_NAMESPACE \
+
+EC_REF_COUNTED_PTR(StandaloneECInstance);
+EC_REF_COUNTED_PTR(StandaloneECEnabler);
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
 EC_TYPEDEFS(ECValueAccessorPair);
@@ -72,6 +81,7 @@ EC_TYPEDEFS(StandaloneECRelationshipInstance);
 EC_TYPEDEFS(ECRelationshipInstanceHolder);
 
 EC_TYPEDEFS(ECEnabler);
+EC_TYPEDEFS(StandaloneECEnabler);
 EC_TYPEDEFS(IStandaloneEnablerLocater);
 EC_TYPEDEFS(IArrayManipulator);
 
