@@ -10,6 +10,22 @@
 #include "nativeCGFactoryH.h"
 struct IGeometryCGFactory : ICGFactory
 {
+private:
+static bool TryGetAsCurveVector (IGeometryPtr &geometry, CurveVectorPtr &cv)
+    {
+    cv = geometry->GetAsCurveVector ();
+    if (cv.IsValid ())
+        return true;
+    ICurvePrimitivePtr cp = geometry->GetAsICurvePrimitive ();
+    if (cp.IsValid ())
+        {
+        cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        cv->push_back (cp);
+        return true;
+        }
+    cv = nullptr;
+    return false;
+    }
 public:
 
 // ===================================================  ================================
@@ -415,6 +431,16 @@ static bool GetRotationAxisFromRailCurve (IGeometryPtr &source, DRay3dR axis, do
     }
 
 
+
+virtual IGeometryPtr Create(CGDgnRotationalSweepDetail &cgDetail) override
+    {
+    DgnRotationalSweepDetail dgnDetail
+            (cgDetail.baseGeometry,
+            cgDetail.center, cgDetail.axis,
+            cgDetail.sweepAngle.Radians (), cgDetail.capped
+            );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnRotationalSweep (dgnDetail));
+    }
 /// <summary> Create DgnRotationalSweep or DgnExtrusion from explicit args.</summary>
 static IGeometryPtr Create(IGeometryPtr &baseGeometry, IGeometryPtr &railCurve, bool capped)
     {
@@ -445,5 +471,65 @@ static IGeometryPtr Create(IGeometryPtr &baseGeometry, IGeometryPtr &railCurve, 
 
 virtual IGeometryPtr Create(CGSolidBySweptSurfaceDetail &cgDetail) override {return Create (cgDetail.baseGeometry, cgDetail.railCurve, true);}
 virtual IGeometryPtr Create(CGSurfaceBySweptCurveDetail &cgDetail) override {return Create (cgDetail.baseGeometry, cgDetail.railCurve, false);}
+
+/// <summary> Create DgnRotationalSweep or DgnExtrusion from explicit args.</summary>
+static IGeometryPtr Create(bvector<IGeometryPtr> &sections, bool capped)
+    {
+    bvector<CurveVectorPtr> cvSections;
+    CurveVectorPtr cv;
+
+    DgnRuledSweepDetail dgnDetail;
+    dgnDetail.m_capped = capped;
+    for (size_t i = 0; i < sections.size (); i++)
+        {
+        if (TryGetAsCurveVector (sections[i], cv))
+            dgnDetail.m_sectionCurves.push_back (cv);
+        }
+    if (dgnDetail.m_sectionCurves.size () > 0)
+        {
+        return IGeometry::Create (ISolidPrimitive::CreateDgnRuledSweep (dgnDetail));
+        }
+    return nullptr;
+    }
+
+virtual IGeometryPtr Create(CGSurfaceByRuledSweepDetail &cgDetail) override {return Create (cgDetail.SectionArray, false);}
+virtual IGeometryPtr Create(CGSolidByRuledSweepDetail &cgDetail) override {return Create (cgDetail.SectionArray, true);}
+
+virtual IGeometryPtr Create(CGDgnRuledSweepDetail &cgDetail) override
+    {
+    DgnRuledSweepDetail dgnDetail (cgDetail.contourArray, cgDetail.capped);
+    return IGeometry::Create (ISolidPrimitive::CreateDgnRuledSweep (dgnDetail));
+    }
+
+
+virtual IGeometryPtr Create (CGSurfacePatchDetail &detail) override
+    {
+    CurveVectorPtr cv;
+    if (TryGetAsCurveVector (detail.exteriorLoop, cv))
+        {
+        if (detail.holeLoopArray.size () == 0)
+            {
+            cv->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Outer);
+            return IGeometry::Create (cv);
+            }
+        else
+            {
+            auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+            parityRegion->Add (cv);
+            for (IGeometryPtr &g : detail.holeLoopArray)
+                {
+                CurveVectorPtr hole;
+                if (TryGetAsCurveVector (g, hole))
+                    {
+                    hole->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Inner);
+                    parityRegion->Add (hole);
+                    }
+                }
+            return IGeometry::Create (parityRegion);
+            }
+        }
+    return nullptr;
+    }
+
 
 };

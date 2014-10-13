@@ -20,7 +20,7 @@ bool ReadILineSegment (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("LineSegment")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGLineSegmentDetail detail;
 
@@ -67,7 +67,7 @@ bool ReadICircularArc (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularArc")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCircularArcDetail detail;
 
@@ -127,7 +127,7 @@ bool ReadIDgnBox (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnBox")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnBoxDetail detail;
 
@@ -206,7 +206,7 @@ bool ReadIDgnSphere (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnSphere")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnSphereDetail detail;
 
@@ -280,7 +280,7 @@ bool ReadIDgnCone (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnCone")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnConeDetail detail;
 
@@ -350,7 +350,7 @@ bool ReadIDgnTorusPipe (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnTorusPipe")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnTorusPipeDetail detail;
 
@@ -417,7 +417,7 @@ bool ReadIBlock (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Block")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGBlockDetail detail;
 
@@ -473,7 +473,7 @@ bool ReadICircularCone (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularCone")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCircularConeDetail detail;
 
@@ -532,7 +532,7 @@ bool ReadICircularCylinder (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularCylinder")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCircularCylinderDetail detail;
 
@@ -585,7 +585,7 @@ bool ReadICircularDisk (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularDisk")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCircularDiskDetail detail;
 
@@ -629,7 +629,7 @@ bool ReadICoordinate (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Coordinate")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCoordinateDetail detail;
 
@@ -673,7 +673,7 @@ bool ReadIEllipticArc (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("EllipticArc")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGEllipticArcDetail detail;
 
@@ -731,7 +731,7 @@ bool ReadIEllipticDisk (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("EllipticDisk")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGEllipticDiskDetail detail;
 
@@ -784,7 +784,7 @@ bool ReadISingleLineText (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SingleLineText")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSingleLineTextDetail detail;
 
@@ -848,7 +848,7 @@ bool ReadISkewedCone (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SkewedCone")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSkewedConeDetail detail;
 
@@ -905,7 +905,7 @@ bool ReadISphere (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Sphere")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSphereDetail detail;
 
@@ -954,7 +954,7 @@ bool ReadITorusPipe (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("TorusPipe")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGTorusPipeDetail detail;
 
@@ -1015,7 +1015,7 @@ bool ReadIVector (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Vector")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGVectorDetail detail;
 
@@ -1083,7 +1083,7 @@ bool ReadIIndexedMesh (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("IndexedMesh")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGIndexedMeshDetail detail;
 
@@ -1140,7 +1140,7 @@ bool ReadIAdjacentSurfacePatches (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("AdjacentSurfacePatches")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGAdjacentSurfacePatchesDetail detail;
 
@@ -1191,7 +1191,7 @@ bool ReadIBsplineCurve (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("BsplineCurve")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGBsplineCurveDetail detail;
 
@@ -1257,7 +1257,7 @@ bool ReadIBsplineSurface (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("BsplineSurface")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGBsplineSurfaceDetail detail;
 
@@ -1318,7 +1318,7 @@ bool ReadICurveChain (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CurveChain")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCurveChainDetail detail;
 
@@ -1361,7 +1361,7 @@ bool ReadICurveGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CurveGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCurveGroupDetail detail;
 
@@ -1403,7 +1403,7 @@ bool ReadICurveReference (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CurveReference")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGCurveReferenceDetail detail;
 
@@ -1449,7 +1449,7 @@ bool ReadIGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Group")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGGroupDetail detail;
 
@@ -1499,7 +1499,7 @@ bool ReadIInterpolatingCurve (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("InterpolatingCurve")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGInterpolatingCurveDetail detail;
 
@@ -1552,7 +1552,7 @@ bool ReadILineString (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("LineString")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGLineStringDetail detail;
 
@@ -1596,7 +1596,7 @@ bool ReadIOperation (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Operation")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGOperationDetail detail;
 
@@ -1643,7 +1643,7 @@ bool ReadIParametricSurfacePatch (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("ParametricSurfacePatch")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGParametricSurfacePatchDetail detail;
 
@@ -1691,7 +1691,7 @@ bool ReadIPointChain (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("PointChain")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGPointChainDetail detail;
 
@@ -1734,7 +1734,7 @@ bool ReadIPointGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("PointGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGPointGroupDetail detail;
 
@@ -1777,7 +1777,7 @@ bool ReadIPolygon (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Polygon")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGPolygonDetail detail;
 
@@ -1819,7 +1819,7 @@ bool ReadIPrimitiveCurveReference (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("PrimitiveCurveReference")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGPrimitiveCurveReferenceDetail detail;
 
@@ -1864,7 +1864,7 @@ bool ReadISharedGroupDef (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SharedGroupDef")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSharedGroupDefDetail detail;
 
@@ -1909,7 +1909,7 @@ bool ReadISharedGroupInstance (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SharedGroupInstance")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSharedGroupInstanceDetail detail;
 
@@ -1952,7 +1952,7 @@ bool ReadIShelledSolid (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("ShelledSolid")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGShelledSolidDetail detail;
 
@@ -1995,7 +1995,7 @@ bool ReadISolidBySweptSurface (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SolidBySweptSurface")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSolidBySweptSurfaceDetail detail;
 
@@ -2042,14 +2042,14 @@ bool ReadISolidByRuledSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SolidByRuledSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSolidByRuledSweepDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfISurface ("ListOfSection", "Section", detail.SectionArray))
+            if (ReadListOf_AnyGeometry ("ListOfSection", "Section", detail.SectionArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2085,14 +2085,14 @@ bool ReadISurfaceByRuledSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfaceByRuledSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSurfaceByRuledSweepDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfICurve ("ListOfSection", "Section", detail.SectionArray))
+            if (ReadListOf_AnyGeometry ("ListOfSection", "Section", detail.SectionArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2128,7 +2128,7 @@ bool ReadISolidGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SolidGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSolidGroupDetail detail;
 
@@ -2176,7 +2176,7 @@ bool ReadISpiral (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Spiral")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSpiralDetail detail;
 
@@ -2233,7 +2233,7 @@ bool ReadISurfaceBySweptCurve (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfaceBySweptCurve")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSurfaceBySweptCurveDetail detail;
 
@@ -2280,7 +2280,7 @@ bool ReadISurfaceGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfaceGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSurfaceGroupDetail detail;
 
@@ -2324,7 +2324,7 @@ bool ReadISurfacePatch (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfacePatch")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGSurfacePatchDetail detail;
 
@@ -2369,7 +2369,7 @@ bool ReadITransformedGeometry (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("TransformedGeometry")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGTransformedGeometryDetail detail;
 
@@ -2415,7 +2415,7 @@ bool ReadIDgnExtrusion (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnExtrusion")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnExtrusionDetail detail;
 
@@ -2454,6 +2454,7 @@ bool ReadIDgnExtrusion (IGeometryPtr &result)
 ///  &lt;DgnRotationalSweep&gt;
 ///    &lt;Center&gt;... &lt;/Center&gt;
 ///    &lt;Axis&gt;... &lt;/Axis&gt;
+///    &lt;SweepAngle&gt;... &lt;/SweepAngle&gt;
 ///    &lt;Capped&gt;... &lt;/Capped&gt;
 ///    &lt;BaseGeometry&gt;... &lt;/BaseGeometry&gt;
 ///  &lt;/DgnRotationalSweep&gt;
@@ -2464,7 +2465,7 @@ bool ReadIDgnRotationalSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnRotationalSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnRotationalSweepDetail detail;
 
@@ -2474,6 +2475,8 @@ bool ReadIDgnRotationalSweep (IGeometryPtr &result)
             if (ReadTagDPoint3d ("center", detail.center))
                 continue;
             if (ReadTagDVector3d ("axis", detail.axis))
+                continue;
+            if (ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
             if (ReadTagbool ("capped", detail.capped))
                 continue;
@@ -2515,7 +2518,7 @@ bool ReadIDgnRuledSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnRuledSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGDgnRuledSweepDetail detail;
 
@@ -2566,7 +2569,7 @@ bool ReadITransitionSpiral (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("TransitionSpiral")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         CGTransitionSpiralDetail detail;
 

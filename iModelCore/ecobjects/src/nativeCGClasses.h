@@ -514,6 +514,7 @@ struct CGDgnRotationalSweepDetail
 {
 DPoint3d center;
 DVector3d axis;
+Angle sweepAngle;
 bool capped;
 CurveVectorPtr baseGeometry;
 };
