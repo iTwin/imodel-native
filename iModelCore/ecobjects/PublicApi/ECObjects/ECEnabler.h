@@ -326,6 +326,7 @@ public:
     ECOBJECTS_EXPORT PropertyIndexFlatteningIterator (ECEnablerCR enabler);
     ECOBJECTS_EXPORT bool   GetCurrent (UInt32& propertyIndex) const;
     ECOBJECTS_EXPORT bool   MoveNext();
+    ECEnablerCR             GetEnabler() const { return m_enabler; }
     };
 
  /*__PUBLISH_SECTION_START__*/

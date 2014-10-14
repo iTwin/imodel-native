@@ -4245,7 +4245,9 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
             }
 
         auto newEntry = enabler->CreateInstance();
-        if (newEntry.IsNull() || SUCCESS != newEntry->CopyValues (*from))
+        ECValue v;
+        v.SetStruct (newEntry.get());
+        if (newEntry.IsNull() || SUCCESS != newEntry->CopyValues (*from) || SUCCESS != GetHostR().SetValue (GetContainerPropertyIndex(), v, i))
             {
             GetHostR().RemoveArrayElement (GetContainerPropertyIndex(), i);
             continue;
