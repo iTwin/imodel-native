@@ -2351,7 +2351,7 @@ ClassLayoutCR ECDBuffer::GetClassLayout() const                             { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source, bool ignoreErrors)
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
@@ -2360,8 +2360,8 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         if (prop.HasChildValues())
             {
             // Stupid PropertyValueMatchesNoChange return value is stupid.
-            if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues())))
-                if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+            if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues(), ignoreErrors)))
+                if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
 
             continue;
@@ -2370,7 +2370,7 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
             if (NULL != ecProp && ecProp->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
-                if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+                if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
             }
         }
@@ -2394,7 +2394,25 @@ ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
     
     // Not ECD-based, or incompatible layouts. Copy property-by-property
     ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
-    return duplicateProperties (*this, *srcValues);
+    return duplicateProperties (*this, *srcValues, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::CopyCommonValues (IECInstanceCR source)
+    {
+    if (GetClass().GetName().Equals (source.GetClass().GetName()))
+        {
+        // If both are ECD-based, try copying the buffers first - it's cheaper.
+        ECDBuffer* thisBuffer = this->GetECDBufferP();
+        ECDBuffer const* srcBuffer;
+        if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECOBJECTS_STATUS_Success == thisBuffer->CopyFromBuffer (*srcBuffer))
+            return ECOBJECTS_STATUS_Success;
+        }
+
+    ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
+    return duplicateProperties (*this, *srcValues, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
