@@ -1293,6 +1293,15 @@ bool ClassLayout::HasChildProperties (UInt32 parentIndex) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 ClassLayout::GetParentPropertyIndex (UInt32 childIndex) const
+    {
+    PropertyLayoutCP propertyLayout;
+    return ECOBJECTS_STATUS_Success == GetPropertyLayoutByIndex (propertyLayout, childIndex) ? propertyLayout->GetParentStructIndex() : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const

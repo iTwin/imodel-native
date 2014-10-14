@@ -274,6 +274,7 @@ protected:
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
+    virtual UInt32                      _GetParentPropertyIndex (UInt32 childIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
     virtual bool                        _IsPropertyReadOnly (UInt32 propertyIndex) const override;
 //__PUBLISH_CLASS_VIRTUAL__

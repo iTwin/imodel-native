@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -100,6 +100,7 @@ protected:
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 #endif
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
+    virtual UInt32                  _GetParentPropertyIndex (UInt32 childIndex) const = 0;
 
 
 public:
@@ -145,6 +146,11 @@ public:
     //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
     //! @return True if the specified property has child properties (i.e., is a struct property)
     ECOBJECTS_EXPORT bool                       HasChildProperties (UInt32 parentIndex) const;
+
+    //! If childIndex refers to a member of a struct, returns the index of the struct property which contains it
+    //! @param[in]      childIndex The index of the child property
+    //! @return The index of the parent property, or 0 if the child property has no parent (i.e. is not a member of a struct)
+    ECOBJECTS_EXPORT UInt32                     GetParentPropertyIndex (UInt32 childIndex) const;
 
     //! Get vector of all property indices for property defined by parent index.
     //! @param[out]     indices         Vector to hold the property indices.
@@ -209,6 +215,7 @@ private:
         { return m_enabler->ProcessPrimitiveProperties (failedClasses, instance, primType, processor, opts); }
 #endif
     virtual bool                    _HasChildProperties (UInt32 parentIndex) const { return m_enabler->HasChildProperties (parentIndex); }
+    virtual UInt32                  _GetParentPropertyIndex (UInt32 childIndex) const override { return m_enabler->GetParentPropertyIndex (childIndex); }
 public:
     static ECEnablerPtr Create (ECEnablerR enabler) { return new ECWrappedEnabler (enabler); }
     };
@@ -284,6 +291,7 @@ protected:
         virtual UInt32          _GetFirstPropertyIndex (UInt32 parentIndex) const override {return 1;}
 
         virtual bool            _HasChildProperties (UInt32 parentIndex) const override {return false;}
+        virtual UInt32          _GetParentPropertyIndex (UInt32 childIndex) const override { return 0; }
 
     protected:
         PropertyIndexedEnabler (ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)

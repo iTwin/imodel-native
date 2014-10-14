@@ -211,6 +211,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
     ECOBJECTS_EXPORT ECObjectsStatus        GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
     ECOBJECTS_EXPORT bool                   HasChildProperties (UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT UInt32                 GetParentPropertyIndex (UInt32 childIndex) const;
 
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
     ECOBJECTS_EXPORT bool                   Equals (ClassLayoutCR other, bool compareNames = true) const;
