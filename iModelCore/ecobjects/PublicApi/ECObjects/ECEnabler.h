@@ -299,6 +299,35 @@ protected:
             {}
     };
 
+/*---------------------------------------------------------------------------------**//**
+* Flattens out the non-struct property indices of an ECEnabler such that property indices
+* are returned in order, recursing into struct members.
+* Does not return property indices which represent structs.
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PropertyIndexFlatteningIterator
+    {
+private:
+    struct State
+        {
+        bvector<UInt32>     m_propertyIndices;
+        UInt32              m_listIndex;
+
+        bool                Init (ECEnablerCR enabler, UInt32 parentPropertyIndex);
+        UInt32              GetPropertyIndex() const { return m_propertyIndices[m_listIndex]; }
+        bool                IsEnd() const { return m_listIndex >= m_propertyIndices.size(); }
+        };
+
+    ECEnablerCR         m_enabler;
+    bvector<State>      m_states;
+
+    bool                InitForCurrent();
+public:
+    ECOBJECTS_EXPORT PropertyIndexFlatteningIterator (ECEnablerCR enabler);
+    ECOBJECTS_EXPORT bool   GetCurrent (UInt32& propertyIndex) const;
+    ECOBJECTS_EXPORT bool   MoveNext();
+    };
+
  /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE

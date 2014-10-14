@@ -308,7 +308,85 @@ ECN::ECRelationshipClassCR       IECRelationshipEnabler::GetRelationshipClass() 
 //    return false;
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+PropertyIndexFlatteningIterator::PropertyIndexFlatteningIterator (ECEnablerCR enabler)
+    : m_enabler (enabler)
+    {
+    m_states.push_back (State());
+    m_states.back().Init (m_enabler, 0);
+    InitForCurrent();
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyIndexFlatteningIterator::InitForCurrent()
+    {
+    if (m_states.back().IsEnd())
+        {
+        m_states.pop_back();
+        if (m_states.empty())
+            return false;
+
+        ++m_states.back().m_listIndex;
+        return InitForCurrent();
+        }
+    
+    UInt32 curPropIdx = m_states.back().GetPropertyIndex();
+    if (!m_enabler.HasChildProperties (curPropIdx))
+        return true;
+
+    m_states.push_back (State());
+    if (!m_states.back().Init (m_enabler, curPropIdx))
+        {
+        m_states.pop_back();
+        if (m_states.empty())
+            return false;
+
+        ++m_states.back().m_listIndex;
+        return InitForCurrent();
+        }
+    else
+        return InitForCurrent();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyIndexFlatteningIterator::GetCurrent (UInt32& propIdx) const
+    {
+    if (m_states.empty())
+        return false;
+    else
+        {
+        propIdx = m_states.back().GetPropertyIndex();
+        return true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyIndexFlatteningIterator::MoveNext()
+    {
+    if (m_states.empty()) // no more property indices
+        return false;
+
+    ++m_states.back().m_listIndex;
+    return InitForCurrent();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyIndexFlatteningIterator::State::Init (ECEnablerCR enabler, UInt32 parentPropertyIndex)
+    {
+    m_listIndex = 0;
+    m_propertyIndices.clear();
+    return ECOBJECTS_STATUS_Success == enabler.GetPropertyIndices (m_propertyIndices, parentPropertyIndex) && !m_propertyIndices.empty();
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
     
