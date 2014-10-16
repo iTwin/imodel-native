@@ -10,70 +10,61 @@
 #include "nativeCGFactoryH.h"
 struct IGeometryCGFactory : ICGFactory
 {
+private:
+static bool TryGetAsCurveVector (IGeometryPtr &geometry, CurveVectorPtr &cv)
+    {
+    cv = geometry->GetAsCurveVector ();
+    if (cv.IsValid ())
+        return true;
+    ICurvePrimitivePtr cp = geometry->GetAsICurvePrimitive ();
+    if (cp.IsValid ())
+        {
+        cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        cv->push_back (cp);
+        return true;
+        }
+    cv = nullptr;
+    return false;
+    }
 public:
 
 // ===================================================  ================================
-/// <summary>
-/// factory base class placeholder to create a Coordinate from explicit args.
-virtual IGeometryPtr CreateCoordinate
-(
-InputParamTypeFor_DPoint3d xyz
-) override
+virtual IGeometryPtr Create (CGCoordinateDetail &detail) override
     {
-    return IGeometry::Create(ICurvePrimitive::CreatePointString (&xyz, 1));
+    return IGeometry::Create(ICurvePrimitive::CreatePointString (&detail.xyz, 1));
     }
 
 // ===================================================================================
-
-virtual IGeometryPtr CreateLineSegment
-(
-InputParamTypeFor_DPoint3d startPoint,
-InputParamTypeFor_DPoint3d endPoint
-) override
+virtual IGeometryPtr Create (CGLineSegmentDetail &detail) override
     {
-    ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (startPoint, endPoint));
+    ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (detail.startPoint, detail.endPoint));
     return IGeometry::Create (cp);
     }
 
-/// <summary>
-/// factory base class placeholder to create a EllipticArc from explicit args.
-virtual IGeometryPtr CreateEllipticArc
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double radiusA,
-InputParamTypeFor_double radiusB,
-InputParamTypeFor_Angle startAngle,
-InputParamTypeFor_Angle sweepAngle
-) override
+// ===================================================================================
+virtual IGeometryPtr Create (CGEllipticArcDetail &detail) override
     {
-    DEllipse3d ellipse = placement.AsDEllipse3d
+    DEllipse3d ellipse = detail.placement.AsDEllipse3d
         (
-        radiusA,
-        radiusB,
-        startAngle.Radians (),
-        sweepAngle.Radians ()
+        detail.radiusA,
+        detail.radiusB,
+        detail.startAngle.Radians (),
+        detail.sweepAngle.Radians ()
         );
     ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (ellipse);
     return IGeometry::Create (cp);
     }
-// ===================================================================================
 
-/// <summary>
-/// factory base class placeholder to create a EllipticDisk from explicit args.
-virtual IGeometryPtr CreateEllipticDisk
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double radiusA,
-InputParamTypeFor_double radiusB
-)
+// ===================================================================================
+virtual IGeometryPtr Create (CGEllipticDiskDetail &detail) override
     {
     DPoint3d origin;
     RotMatrix axes;
-    placement.GetFrame (origin, axes);
+    detail.placement.GetFrame (origin, axes);
     ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
                 DEllipse3d::FromScaledRotMatrix (
                         origin, axes,
-                        radiusA, radiusB,
+                        detail.radiusA, detail.radiusB,
                         0.0, Angle::TwoPi ()));
     CurveVectorPtr area = CurveVector::Create
                 (CurveVector::BOUNDARY_TYPE_Outer);
@@ -82,44 +73,29 @@ InputParamTypeFor_double radiusB
     }
 
 // ===================================================================================
-
-/// <summary>
-/// factory base class placeholder to create a EllipticArc from explicit args.
-virtual IGeometryPtr CreateCircularArc
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double radius,
-InputParamTypeFor_Angle startAngle,
-InputParamTypeFor_Angle sweepAngle
-) override
+virtual IGeometryPtr Create (CGCircularArcDetail &detail) override
     {
-    DEllipse3d ellipse = placement.AsDEllipse3d
+    DEllipse3d ellipse = detail.placement.AsDEllipse3d
         (
-        radius,
-        radius,
-        startAngle.Radians (),
-        sweepAngle.Radians ()
+        detail.radius,
+        detail.radius,
+        detail.startAngle.Radians (),
+        detail.sweepAngle.Radians ()
         );
     ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (ellipse);
     return IGeometry::Create (cp);
     }
 
 // ===================================================================================
-/// <summary>
-/// factory base class placeholder to create a CircularDisk from explicit args.
-virtual IGeometryPtr CreateCircularDisk
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double radius
-)
+virtual IGeometryPtr Create (CGCircularDiskDetail &detail) override
     {
     DPoint3d origin;
     RotMatrix axes;
-    placement.GetFrame (origin, axes);
+    detail.placement.GetFrame (origin, axes);
     ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
                 DEllipse3d::FromScaledRotMatrix (
                         origin, axes,
-                        radius, radius,
+                        detail.radius, detail.radius,
                         0.0, Angle::TwoPi ()));
     CurveVectorPtr area = CurveVector::Create
                 (CurveVector::BOUNDARY_TYPE_Outer);
@@ -128,24 +104,15 @@ InputParamTypeFor_double radius
     }
 
 // ===================================================================================
-/// <summary>
-/// factory base class placeholder to create a SkewedCone from explicit args.
-virtual IGeometryPtr CreateSkewedCone
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_DPoint3d centerB,
-InputParamTypeFor_double radiusA,
-InputParamTypeFor_double radiusB,
-InputParamTypeFor_bool capped
-) override
+virtual IGeometryPtr Create (CGSkewedConeDetail &detail) override
     {
     RotMatrix axes;
     DPoint3d centerA;
-    placement.GetFrame (centerA, axes);
-    DgnConeDetail coneDetail (centerA, centerB,
+    detail.placement.GetFrame (centerA, axes);
+    DgnConeDetail coneDetail (centerA, detail.centerB,
                 axes, 
-                radiusA, radiusB,
-                capped);
+                detail.radiusA, detail.radiusB,
+                detail.capped);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
     return IGeometry::Create (sp);
     }
@@ -154,25 +121,18 @@ InputParamTypeFor_bool capped
 
 /// <summary>
 /// factory base class placeholder to create a CircularCone from explicit args.
-virtual IGeometryPtr CreateCircularCone
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double height,
-InputParamTypeFor_double radiusA,
-InputParamTypeFor_double radiusB,
-InputParamTypeFor_bool capped
-) override
+virtual IGeometryPtr Create (CGCircularConeDetail &detail) override
     {
     RotMatrix axes;
     DVec3d vectorZ;
     DPoint3d centerA;
-    placement.GetFrame (centerA, axes);
+    detail.placement.GetFrame (centerA, axes);
     axes.GetColumn (vectorZ, 2);
-    DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, height);
+    DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, detail.height);
     DgnConeDetail coneDetail (centerA, centerB,
                 axes, 
-                radiusA, radiusB,
-                capped);
+                detail.radiusA, detail.radiusB,
+                detail.capped);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
     return IGeometry::Create (sp);
     }
@@ -181,24 +141,18 @@ InputParamTypeFor_bool capped
 
 /// <summary>
 /// factory base class placeholder to create a CircularCylinder from explicit args.
-virtual IGeometryPtr CreateCircularCylinder
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double height,
-InputParamTypeFor_double radius,
-InputParamTypeFor_bool capped
-) override
+virtual IGeometryPtr Create(CGCircularCylinderDetail &detail) override
     {
     RotMatrix axes;
     DVec3d vectorZ;
     DPoint3d centerA;
-    placement.GetFrame (centerA, axes);
+    detail.placement.GetFrame (centerA, axes);
     axes.GetColumn (vectorZ, 2);
-    DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, height);
+    DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, detail.height);
     DgnConeDetail coneDetail (centerA, centerB,
                 axes, 
-                radius, radius,
-                capped);
+                detail.radius, detail.radius,
+                detail.capped);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
     return IGeometry::Create (sp);
     }
@@ -207,68 +161,47 @@ InputParamTypeFor_bool capped
 
 /// <summary>
 /// factory base class placeholder to create a Block from explicit args.
-virtual IGeometryPtr CreateBlock
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_DPoint3d cornerA,
-InputParamTypeFor_DPoint3d cornerB,
-InputParamTypeFor_bool capped
-) override
+virtual IGeometryPtr Create (CGBlockDetail &detail) override
     {
     DPoint3d origin;
     RotMatrix axes;
     DVec3d vectorX, vectorY, vectorZ;
-    placement.GetFrame (origin, axes);
+    detail.placement.GetFrame (origin, axes);
     axes.GetColumns (vectorX, vectorY, vectorZ);
-    DPoint3d baseOrigin = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerA.z);
-    DPoint3d topOrigin  = DPoint3d::FromProduct (origin, axes, cornerA.x, cornerA.y, cornerB.z);
-    double dx = cornerB.x - cornerA.x;
-    double dy = cornerB.y - cornerA.y;
-    DgnBoxDetail detail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, capped);
-    ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnBox (detail);
+    DPoint3d baseOrigin = DPoint3d::FromProduct (origin, axes, detail.cornerA.x, detail.cornerA.y, detail.cornerA.z);
+    DPoint3d topOrigin  = DPoint3d::FromProduct (origin, axes, detail.cornerA.x, detail.cornerA.y, detail.cornerB.z);
+    double dx = detail.cornerB.x - detail.cornerA.x;
+    double dy = detail.cornerB.y - detail.cornerA.y;
+    DgnBoxDetail boxDetail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, detail.capped);
+    ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnBox (boxDetail);
     return IGeometry::Create (sp);
     }
 
 // ===================================================================================
-
-/// <summary>
-/// factory base class placeholder to create a Sphere from explicit args.
-virtual IGeometryPtr CreateSphere
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double radius
-) override
+/// <summary> factory base class placeholder to create a Sphere from explicit args.</summary>
+virtual IGeometryPtr Create (CGSphereDetail &detail) override
     {
     DPoint3d center;
     RotMatrix axes;
-    placement.GetFrame (center, axes);
-    DgnSphereDetail detail (center, axes, radius);
-    return IGeometry::Create(ISolidPrimitive::CreateDgnSphere (detail));
+    detail.placement.GetFrame (center, axes);
+    DgnSphereDetail sphereDetail (center, axes, detail.radius);
+    return IGeometry::Create(ISolidPrimitive::CreateDgnSphere (sphereDetail));
     }
 
 // ===================================================================================
-
 /// <summary>
 /// factory base class placeholder to create a TorusPipe from explicit args.
-virtual IGeometryPtr CreateTorusPipe
-(
-InputParamTypeFor_PlacementOriginZX placement,
-InputParamTypeFor_double radiusA,
-InputParamTypeFor_double radiusB,
-InputParamTypeFor_Angle startAngle,
-InputParamTypeFor_Angle sweepAngle,
-InputParamTypeFor_bool capped
-) override
+virtual IGeometryPtr Create (CGTorusPipeDetail &detail) override
     {
     DPoint3d center;
     RotMatrix axes;
-    placement.GetFrame (center, axes);
+    detail.placement.GetFrame (center, axes);
     DVec3d vectorX, vectorY, vectorZ;
     axes.GetColumns (vectorX, vectorY, vectorZ);
     DVec3d vector0 = vectorX;
     DVec3d vector90 = vectorY;
-    double startRadians = startAngle.Radians ();
-    double sweepRadians = sweepAngle.Radians ();
+    double startRadians = detail.startAngle.Radians ();
+    double sweepRadians = detail.sweepAngle.Radians ();
     if (startRadians != 0.0)
         {
         double c = cos (startRadians);
@@ -276,61 +209,48 @@ InputParamTypeFor_bool capped
         vector0.SumOf  (vectorX,  c, vectorY, s);
         vector90.SumOf (vectorX, -s, vectorY, c);
         }
-    DgnTorusPipeDetail detail (center,
+    DgnTorusPipeDetail dgnDetail (center,
                 vector0, vector90, 
-                radiusA, radiusB,
+                detail.radiusA, detail.radiusB,
                 sweepRadians,
-                capped);
-    return IGeometry::Create(ISolidPrimitive::CreateDgnTorusPipe (detail));
+                detail.capped);
+    return IGeometry::Create(ISolidPrimitive::CreateDgnTorusPipe (dgnDetail));
     }
 
 // ===================================================================================
-virtual IGeometryPtr CreateLineString
-(
-bvector<DPoint3d> const &points
-) override
+virtual IGeometryPtr Create (CGLineStringDetail &cgDetail) override
     {
-    return IGeometry::Create(ICurvePrimitive::CreateLineString(points));
+    return IGeometry::Create(ICurvePrimitive::CreateLineString(cgDetail.PointArray));
     }
-#define CGFactory_CreateLineString
+
 // ===================================================================================
 
 /// <summary>
 /// factory base class placeholder to create a IndexedMesh from explicit args.
-virtual IGeometryPtr CreateIndexedMesh
-(
-bvector<DPoint3d> const &CoordArray,
-bvector<int> const &CoordIndexArray,
-bvector<DPoint2d> const &ParamArray,
-bvector<int> const &ParamIndexArray,
-bvector<DVector3d> const &NormalArray,
-bvector<int> const &NormalIndexArray,
-bvector<DVector3d> const &ColorArray,
-bvector<int> const &ColorIndexArray
-) override
+virtual IGeometryPtr Create (CGIndexedMeshDetail &cgDetail) override
     {
     PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed ();
 
-    CopyToBlockedVector (CoordArray, polyface->Point ());
-    CopyToBlockedVector (CoordIndexArray, polyface->PointIndex ());
+    CopyToBlockedVector (cgDetail.xyzArray, polyface->Point ());
+    CopyToBlockedVector (cgDetail.coordIndexArray, polyface->PointIndex ());
 
-    CopyToBlockedVector (ParamArray, polyface->Param ());
-    CopyToBlockedVector (ParamIndexArray, polyface->ParamIndex ());
+    CopyToBlockedVector (cgDetail.uvArray, polyface->Param ());
+    CopyToBlockedVector (cgDetail.paramIndexArray, polyface->ParamIndex ());
 
-    CopyToBlockedVector (NormalArray, polyface->Normal ());
-    CopyToBlockedVector (NormalIndexArray, polyface->NormalIndex ());
+    CopyToBlockedVector (cgDetail.normalArray, polyface->Normal ());
+    CopyToBlockedVector (cgDetail.normalIndexArray, polyface->NormalIndex ());
 
     // Colors have to be reformatted ...
-    if (ColorArray.size () > 0)
+    if (cgDetail.colorArray.size () > 0)
         {
-        bvector<RgbFactor> dest = polyface->DoubleColor ();
-        dest.reserve (ColorArray.size ());
-        for (DVec3d const &data : ColorArray)
+        bvector<RgbFactor> &dest = polyface->DoubleColor ();
+        dest.reserve (cgDetail.colorArray.size ());
+        for (DVec3d const &data : cgDetail.colorArray)
             {
             dest.push_back (RgbFactor::From (data));
             }
         }
-    CopyToBlockedVector (ColorIndexArray, polyface->ColorIndex ());
+    CopyToBlockedVector (cgDetail.colorIndexArray, polyface->ColorIndex ());
 
     return IGeometry::Create (polyface);
     }
@@ -339,13 +259,10 @@ bvector<int> const &ColorIndexArray
 
 /// <summary>
 /// factory base class placeholder to create a CurveChain from explicit args.
-virtual IGeometryPtr CreateCurveChain
-(
-bvector<ICurvePrimitivePtr> const &CurveArray
-)
+virtual IGeometryPtr Create (CGCurveChainDetail &cgDetail) override
     {
     CurveVectorPtr cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-    for (ICurvePrimitivePtr const & cp : CurveArray)
+    for (ICurvePrimitivePtr const & cp : cgDetail.curveArray)
         cv->push_back (cp);
     return IGeometry::Create (cv);
     }
@@ -353,18 +270,11 @@ bvector<ICurvePrimitivePtr> const &CurveArray
 // ===================================================================================
 /// <summary>
 /// factory base class placeholder to create a BsplineCurve from explicit args.
-virtual IGeometryPtr CreateBsplineCurve
-(
-InputParamTypeFor_int order,
-InputParamTypeFor_bool closed,
-bvector<DPoint3d> const &ControlPointArray,
-bvector<double> const &WeightArray,
-bvector<double> const &KnotArray
-)
+virtual IGeometryPtr Create (CGBsplineCurveDetail &cgDetail ) override
     {
     MSBsplineCurvePtr bcurve = MSBsplineCurve::CreateFromPolesAndOrder
           (
-          ControlPointArray, &WeightArray, &KnotArray, order, closed, true
+          cgDetail.controlPointArray, &cgDetail.weightArray, &cgDetail.knotArray, cgDetail.order, cgDetail.closed, true
           );
     if (bcurve.IsValid ())
         {
@@ -378,25 +288,13 @@ bvector<double> const &KnotArray
 
 /// <summary>
 /// factory base class placeholder to create a BsplineSurface from explicit args.
-virtual IGeometryPtr CreateBsplineSurface
-(
-InputParamTypeFor_int orderU,
-InputParamTypeFor_bool closedU,
-InputParamTypeFor_int numUControlPoint,
-InputParamTypeFor_int orderV,
-InputParamTypeFor_bool closedV,
-InputParamTypeFor_int numVControlPoint,
-bvector<DPoint3d> const &ControlPointArray,
-bvector<double> const &WeightArray,
-bvector<double> const &KnotUArray,
-bvector<double> const &KnotVArray
-)
+virtual IGeometryPtr Create (CGBsplineSurfaceDetail &cgDetail) override
     {
     MSBsplineSurfacePtr bSurface = MSBsplineSurface::CreateFromPolesAndOrder
           (
-          ControlPointArray, &WeightArray,
-          &KnotUArray, orderU, numUControlPoint, closedU,
-          &KnotVArray, orderV, numVControlPoint, closedV,
+          cgDetail.controlPointArray, &cgDetail.weightArray,
+          &cgDetail.knotUArray, cgDetail.orderU, cgDetail.numUControlPoint, cgDetail.closedU,
+          &cgDetail.knotVArray, cgDetail.orderV, cgDetail.numVControlPoint, cgDetail.closedV,
           true);
     if (bSurface.IsValid ())
         {
@@ -408,14 +306,230 @@ bvector<double> const &KnotVArray
 
 /// <summary>
 /// factory base class placeholder to create a Polygon from explicit args.
-virtual IGeometryPtr CreatePolygon
-(
-bvector<DPoint3d> const &PointArray
-)
+virtual IGeometryPtr Create(CGPolygonDetail &cgDetail) override
     {
-    CurveVectorPtr cv = CurveVector::CreateLinear (PointArray,
+    CurveVectorPtr cv = CurveVector::CreateLinear (cgDetail.pointArray,
             CurveVector::BOUNDARY_TYPE_Outer, false);
     return IGeometry::Create (cv);
     }
+
+// ===================================================================================
+
+/// <summary>
+/// factory base class placeholder to create a dgnExtrusion from explicit args.
+virtual IGeometryPtr Create(CGDgnExtrusionDetail &cgDetail) override
+    {
+    if (cgDetail.baseGeometry.IsValid())
+        {
+        DgnExtrusionDetail dgnDetail (cgDetail.baseGeometry, cgDetail.extrusionVector, cgDetail.capped);
+        return IGeometry::Create (ISolidPrimitive::CreateDgnExtrusion (dgnDetail));
+        }
+    return nullptr;
+    }
+
+/// <summary>
+/// factory base class placeholder to create a DgnBox from explicit args.
+virtual IGeometryPtr Create(CGDgnBoxDetail &cgDetail) override
+    {
+    DgnBoxDetail dgnDetail (
+      cgDetail.topOrigin,
+      cgDetail.baseOrigin,
+      cgDetail.vectorX,
+      cgDetail.vectorY,
+      cgDetail.baseX,
+      cgDetail.baseY,
+      cgDetail.topX,
+      cgDetail.topY,
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnBox (dgnDetail));
+    }
+
+/// <summary> factory base class placeholder to create a DgnSphere from explicit args.</summary>
+virtual IGeometryPtr Create(CGDgnSphereDetail &cgDetail) override
+    {
+    DgnSphereDetail dgnDetail (
+      cgDetail.center,
+      cgDetail.vectorX,
+      cgDetail.vectorZ,
+      cgDetail.radiusXY,
+      cgDetail.radiusZ,
+      cgDetail.startLatitude.Radians (),
+      cgDetail.latitudeSweep.Radians (),
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnSphere (dgnDetail));
+    }
+
+/// <summary> factory base class placeholder to create a DgnCone from explicit args.</summary>
+virtual IGeometryPtr Create(CGDgnConeDetail &cgDetail) override
+    {
+    DgnConeDetail dgnDetail (
+      cgDetail.centerA,
+      cgDetail.centerB,
+      cgDetail.vectorX,
+      cgDetail.vectorY,
+      cgDetail.radiusA,
+      cgDetail.radiusB,
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnCone (dgnDetail));
+    }
+
+/// <summary> factory base class placeholder to create a DgnTorusPipe from explicit args.</summary>
+virtual IGeometryPtr Create(CGDgnTorusPipeDetail &cgDetail) override
+    {
+    DgnTorusPipeDetail dgnDetail (
+      cgDetail.center,
+      cgDetail.vectorX,
+      cgDetail.vectorY,
+      cgDetail.majorRadius,
+      cgDetail.minorRadius,
+      cgDetail.sweepAngle.Radians (),
+      cgDetail.capped
+      );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnTorusPipe (dgnDetail));
+    }
+
+static bool GetSweepVectorFromRailCurve (IGeometryPtr &source, DVec3dR vector)
+    {
+    ICurvePrimitivePtr cp;
+    if (source.IsValid ())
+        {
+        cp = source->GetAsICurvePrimitive ();
+        DSegment3d segment;
+        if (cp.IsValid ()
+            && cp->TryGetLine (segment))
+            {
+            vector = DVec3d::FromStartEnd (segment.point[0], segment.point[1]);
+            return true;
+            }
+        }
+    return false;
+    }
+
+static bool GetRotationAxisFromRailCurve (IGeometryPtr &source, DRay3dR axis, double &sweepRadians)
+    {
+    ICurvePrimitivePtr cp;
+    if (source.IsValid ())
+        {
+        cp = source->GetAsICurvePrimitive ();
+        DEllipse3d arc;
+        if (cp.IsValid ()
+            && cp->TryGetArc (arc)
+            && arc.IsCircular()
+            )
+            {
+            axis.origin = arc.center;
+            axis.direction = DVec3d::FromNormalizedCrossProduct (
+                  arc.vector0, arc.vector90);
+            sweepRadians = arc.sweep;
+            return true;
+            }
+        }
+    return false;
+    }
+
+
+
+virtual IGeometryPtr Create(CGDgnRotationalSweepDetail &cgDetail) override
+    {
+    DgnRotationalSweepDetail dgnDetail
+            (cgDetail.baseGeometry,
+            cgDetail.center, cgDetail.axis,
+            cgDetail.sweepAngle.Radians (), cgDetail.capped
+            );
+    return IGeometry::Create (ISolidPrimitive::CreateDgnRotationalSweep (dgnDetail));
+    }
+/// <summary> Create DgnRotationalSweep or DgnExtrusion from explicit args.</summary>
+static IGeometryPtr Create(IGeometryPtr &baseGeometry, IGeometryPtr &railCurve, bool capped)
+    {
+    DVec3d vector;
+    DRay3d axis;
+    double sweepRadians;
+    if (baseGeometry.IsValid ()
+        && railCurve.IsValid ()
+        )
+        {
+        CurveVectorPtr cv = baseGeometry->GetAsCurveVector ();
+        if (!cv.IsValid ())
+            {
+            }
+        else if (GetSweepVectorFromRailCurve (railCurve, vector))
+            {
+            DgnExtrusionDetail dgnDetail (cv, vector, true);
+            return IGeometry::Create (ISolidPrimitive::CreateDgnExtrusion (dgnDetail));
+            }
+        else if (GetRotationAxisFromRailCurve (railCurve, axis, sweepRadians))
+            {
+            DgnRotationalSweepDetail dgnDetail (cv, axis.origin, axis.direction, sweepRadians, true);
+            return IGeometry::Create (ISolidPrimitive::CreateDgnRotationalSweep (dgnDetail));
+            }
+        }
+    return nullptr;
+    }
+
+virtual IGeometryPtr Create(CGSolidBySweptSurfaceDetail &cgDetail) override {return Create (cgDetail.baseGeometry, cgDetail.railCurve, true);}
+virtual IGeometryPtr Create(CGSurfaceBySweptCurveDetail &cgDetail) override {return Create (cgDetail.baseGeometry, cgDetail.railCurve, false);}
+
+/// <summary> Create DgnRotationalSweep or DgnExtrusion from explicit args.</summary>
+static IGeometryPtr Create(bvector<IGeometryPtr> &sections, bool capped)
+    {
+    bvector<CurveVectorPtr> cvSections;
+    CurveVectorPtr cv;
+
+    DgnRuledSweepDetail dgnDetail;
+    dgnDetail.m_capped = capped;
+    for (size_t i = 0; i < sections.size (); i++)
+        {
+        if (TryGetAsCurveVector (sections[i], cv))
+            dgnDetail.m_sectionCurves.push_back (cv);
+        }
+    if (dgnDetail.m_sectionCurves.size () > 0)
+        {
+        return IGeometry::Create (ISolidPrimitive::CreateDgnRuledSweep (dgnDetail));
+        }
+    return nullptr;
+    }
+
+virtual IGeometryPtr Create(CGSurfaceByRuledSweepDetail &cgDetail) override {return Create (cgDetail.SectionArray, false);}
+virtual IGeometryPtr Create(CGSolidByRuledSweepDetail &cgDetail) override {return Create (cgDetail.SectionArray, true);}
+
+virtual IGeometryPtr Create(CGDgnRuledSweepDetail &cgDetail) override
+    {
+    DgnRuledSweepDetail dgnDetail (cgDetail.contourArray, cgDetail.capped);
+    return IGeometry::Create (ISolidPrimitive::CreateDgnRuledSweep (dgnDetail));
+    }
+
+
+virtual IGeometryPtr Create (CGSurfacePatchDetail &detail) override
+    {
+    CurveVectorPtr cv;
+    if (TryGetAsCurveVector (detail.exteriorLoop, cv))
+        {
+        if (detail.holeLoopArray.size () == 0)
+            {
+            cv->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Outer);
+            return IGeometry::Create (cv);
+            }
+        else
+            {
+            auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+            parityRegion->Add (cv);
+            for (IGeometryPtr &g : detail.holeLoopArray)
+                {
+                CurveVectorPtr hole;
+                if (TryGetAsCurveVector (g, hole))
+                    {
+                    hole->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Inner);
+                    parityRegion->Add (hole);
+                    }
+                }
+            return IGeometry::Create (parityRegion);
+            }
+        }
+    return nullptr;
+    }
+
 
 };

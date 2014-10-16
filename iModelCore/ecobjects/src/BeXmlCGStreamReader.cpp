@@ -17,49 +17,7 @@ typedef struct PlacementOriginZX &PlacementOriginZXR;
 #define DVector3d DVec3d
 #define String Utf8String
 
-#define InputParamTypeFor_DPoint3d DPoint3dCR
-#define InputParamTypeFor_Transform TransformCR
 
-#define InputParamTypeFor_DPoint2d DPoint2dCR
-#define InputParamTypeFor_DVector3d DVec3dCR
-#define InputParamTypeFor_PlacementOriginZX PlacementOriginZXCR
-
-#define InputParamTypeFor_double double
-#define InputParamTypeFor_Angle Angle
-#define InputParamTypeFor_int int
-#define InputParamTypeFor_bool bool
-#define InputParamTypeFor_String Utf8StringCR
-#define InputParamTypeFor_LoopType int
-
-#define InputParamTypeFor_IPoint IGeometryPtr
-#define InputParamTypeFor_ISinglePoint IGeometryPtr
-#define InputParamTypeFor_IPrimitiveCurve IGeometryPtr
-#define InputParamTypeFor_ICurve IGeometryPtr
-#define InputParamTypeFor_ICurveChain IGeometryPtr
-#define InputParamTypeFor_ISurface IGeometryPtr
-#define InputParamTypeFor_ISurfacePatch IGeometryPtr
-#define InputParamTypeFor_IParametricSurface IGeometryPtr
-#define InputParamTypeFor_ISweepable IGeometryPtr
-#define InputParamTypeFor_ISolid IGeometryPtr
-#define InputParamTypeFor_IGeometry IGeometryPtr
-
-#define ReaderTypeFor_ICurve IGeometryPtr
-#define ReaderTypeFor_ICurveChain IGeometryPtr
-#define ReaderTypeFor_IGeometry IGeometryPtr
-#define ReaderTypeFor_IParametricSurface IGeometryPtr
-#define ReaderTypeFor_IPrimitiveCurve IGeometryPtr
-#define ReaderTypeFor_ISurface IGeometryPtr
-#define ReaderTypeFor_ISweepable IGeometryPtr
-
-#define s_default_ICurve nullptr
-#define s_default_ICurveChain nullptr
-#define s_default_IGeometry nullptr
-#define s_default_IParametricSurface nullptr
-#define s_default_IPrimitiveCurve nullptr
-#define s_default_ISurface nullptr
-#define s_default_ISweepable nullptr
-
-#define s_default_LoopType 0
 typedef int LoopType;
 
 template<typename T, typename TBlocked>
@@ -142,20 +100,11 @@ bool GetFrame (DPoint3dR origin, DVec3dR xAxis, DVec3dR yAxis, DVec3dR zAxis) co
     }
 };
 
+#include "nativeCGClasses.h"
 
 #include "CGNativeFactoryImplementations.h"
 
 
-static DPoint3d s_default_DPoint3d = DPoint3d::From (0,0,0);
-static DPoint2d s_default_DPoint2d = DPoint2d::From (0,0);
-static DVec3d   s_default_DVector3d = DVec3d::From (0,0,0);
-static double   s_default_double   = 0.0;
-static int      s_default_int      = 0;
-static bool     s_default_bool     = false;
-static Angle     s_default_Angle    = Angle::FromRadians (0.0);
-static Utf8String s_default_String = Utf8String ();
-static PlacementOriginZX s_default_PlacementOriginZX = PlacementOriginZX::FromIdentity ();
-static Transform s_default_Transform = Transform::FromIdentity ();
 
 #ifdef abc
 // If primitve has a child curve vector, just extract it.
@@ -311,6 +260,32 @@ bool ReadToChild ()
     return true;
     }
 
+// On input: XML reader at element start.
+//           XML reader at first child element, or immediate end element.
+bool ReadToChildOrEnd ()
+    {
+    if (m_debug > 9)
+        Show ("ReadToChildOrEnd");
+    ReadOverWhiteSpace ();
+    auto nodeType = m_reader.GetCurrentNodeType ();
+    return nodeType == BeXmlReader::NODE_TYPE_Element
+        || nodeType == BeXmlReader::NODE_TYPE_EndElement;
+    }
+
+
+bool ReadToText ()
+    {
+    if (m_debug > 9)
+        Show ("ReadToText");
+    BeXmlReader::ReadResult status = m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
+    if (status != BeXmlReader::READ_RESULT_Success)
+        return false;
+    m_reader.GetCurrentNodeValue (m_currentValue8);
+    if (m_debug > 9)
+        Show ("Text");
+    return true;
+    }
+
 void ReadOverWhiteSpace ()
     {
     BeXmlReader::NodeType nodeType;
@@ -330,7 +305,9 @@ void ReadOverWhiteSpace ()
 
 bool ReadEndElement ()
     {
-    assert(m_reader.GetCurrentNodeType () == BeXmlReader::NODE_TYPE_EndElement);
+    auto nodeType = m_reader.GetCurrentNodeType ();
+
+    BeAssert(nodeType == BeXmlReader::NODE_TYPE_EndElement || nodeType == BeXmlReader::NODE_TYPE_None);
     if (m_debug > 9)
         Show ("ReadEndElement");
     ReadOverWhiteSpace ();
@@ -397,11 +374,13 @@ bool ReadTagDPoint3d (CharCP name, DPoint3dR value)
     {
     if (name != nullptr && !CurrentElementNameMatch (name))
         return false;
-    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
-    m_reader.GetCurrentNodeValue (m_currentValue8);
-    bool stat = 3 == sscanf (&m_currentValue8[0],
-              "%lf,%lf,%lf", &value.x, &value.y, &value.z);
-    AdvanceAfterContentExtraction ();
+    bool stat = false;
+    if (ReadToText ())
+        {
+        stat = 3 == sscanf (&m_currentValue8[0],
+                  "%lf,%lf,%lf", &value.x, &value.y, &value.z);
+        AdvanceAfterContentExtraction ();
+        }
     return stat;
     }
 
@@ -438,7 +417,7 @@ bool ReadListOfDPoint3d (CharCP listName, CharCP componentName, bvector<DPoint3d
     {
     if (!CurrentElementNameMatch (listName))
         return false;
-    ReadToChild ();
+    ReadToChildOrEnd ();
     DPoint3d xyz;
     while (IsStartElement ()
             && ReadTagDPoint3d (nullptr, xyz))
@@ -454,7 +433,7 @@ bool ReadListOfint (CharCP listName, CharCP componentName, bvector<int> &values)
     {
     if (!CurrentElementNameMatch (listName))
         return false;
-    ReadToChild ();
+    ReadToChildOrEnd ();
     int xyz;
     while (IsStartElement ()
             && ReadTagint (nullptr, xyz))
@@ -470,7 +449,7 @@ bool ReadListOfdouble (CharCP listName, CharCP componentName, bvector<double> &v
     {
     if (!CurrentElementNameMatch (listName))
         return false;
-    ReadToChild ();
+    ReadToChildOrEnd ();
     double xyz;
     while (IsStartElement ()
             && ReadTagdouble (nullptr, xyz))
@@ -486,7 +465,7 @@ bool ReadListOfDPoint2d (CharCP listName, CharCP componentName, bvector<DPoint2d
     {
     if (!CurrentElementNameMatch (listName))
         return false;
-    ReadToChild ();
+    ReadToChildOrEnd ();
     DPoint2d xyz;
     while (IsStartElement ()
             && ReadTagDPoint2d (nullptr, xyz))
@@ -504,7 +483,7 @@ bool ReadListOfDVector3d (CharCP listName, CharCP componentName, bvector<DVector
     {
     if (!CurrentElementNameMatch (listName))
         return false;
-    ReadToChild ();
+    ReadToChildOrEnd ();
     DVector3d xyz;
     while (IsStartElement ()
             && ReadTagDVector3d (nullptr, xyz))
@@ -520,21 +499,18 @@ bool ReadListOfDVector3d (CharCP listName, CharCP componentName, bvector<DVector
 //=======================================================================================
 bool ReadListOfISurfacePatch (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    return false;
-    }
-bool ReadListOfISweepable (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
-    {
+    BeAssert(false);
     return false;
     }
 
-bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<ICurvePrimitivePtr> &values)
+bool ReadListOf_AnyCurveVector (CharCP listName, CharCP componentName, bvector<CurveVectorPtr> &values)
     {
     if (!CurrentElementNameMatch (listName))
         return false;
-    ReadToChild ();
-    ICurvePrimitivePtr cp;
+    ReadToChildOrEnd ();
+    CurveVectorPtr cp;
     while (IsStartElement ()
-            && ReadTag_AnyCurvePrimitive (cp)
+            && ReadTag_AnyCurveVector (componentName, cp)
             && cp.IsValid ())
         {
         values.push_back (cp);
@@ -544,24 +520,83 @@ bool ReadListOfIPrimitiveCurve (CharCP listName, CharCP componentName, bvector<I
     return true;
     }
 
+
+bool ReadListOf_AnyGeometry (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChildOrEnd ();
+    IGeometryPtr cp;
+    while (IsStartElement ()
+            && ReadTag_AnyGeometry (componentName, cp)
+            && cp.IsValid ())
+        {
+        values.push_back (cp);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+
+bool ReadListOf_AnyICurvePrimitive (CharCP listName, CharCP componentName, bvector<ICurvePrimitivePtr> &values)
+    {
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChildOrEnd ();
+    ICurvePrimitivePtr cp;
+    while (IsStartElement ()
+            && ReadTag_AnyICurvePrimitive (cp)    // ignore the component name !!!
+            && cp.IsValid ())
+        {
+        values.push_back (cp);
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
+    }
+
+bool ReadListOf_AnyICurveChain (CharCP listName, CharCP componentName, bvector<CurveVectorPtr> &values)
+    {
+    return ReadListOf_AnyCurveVector (listName, componentName, values);
+    }
+
 bool ReadListOfICurve (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    BeAssert(false);
     return false;
     }
 bool ReadListOfICurveChain (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
-    return false;
+    if (!CurrentElementNameMatch (listName))
+        return false;
+    ReadToChildOrEnd ();
+    IGeometryPtr chain;
+    while (IsStartElement ()
+            && ReadICurveChain (chain))
+        {
+        CurveVectorPtr cv = chain->GetAsCurveVector ();
+        if (cv.IsValid ())
+          values.push_back (IGeometry::Create (cv));
+        }
+    // Get out of the primary element ..
+    ReadEndElement ();
+    return true;
     }
+
 bool ReadListOfISolid (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    BeAssert(false);
     return false;
     }
 bool ReadListOfISurface (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    BeAssert(false);
     return false;
     }
 bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    BeAssert(false);
     return false;
     }
 
@@ -571,6 +606,7 @@ bool ReadListOfIPoint (CharCP listName, CharCP componentName, bvector<IGeometryP
 
 bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    BeAssert(false);
     return false;
     }
 
@@ -580,6 +616,7 @@ bool ReadListOfIGeometry (CharCP listName, CharCP componentName, bvector<IGeomet
 
 bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeometryPtr> &values)
     {
+    BeAssert(false);
     return false;
     }
 
@@ -591,6 +628,7 @@ bool ReadListOfISinglePoint (CharCP listName, CharCP componentName, bvector<IGeo
 //=======================================================================================
 bool ReadTagString (CharCP name, Utf8StringR)
     {
+    BeAssert(false);
     return false;
     }
 
@@ -628,30 +666,31 @@ bool ReadTagbool(CharCP name, bool &value)
             )
             return false;
         }
-    m_reader.ReadTo (BeXmlReader::NODE_TYPE_Text);
-    m_reader.GetCurrentNodeValue (m_currentValue8);
     bool stat = false;
-    if (0 == m_currentValue8.CompareToI ("true"))
+    if (ReadToText ())
         {
-        value = true;
-        stat = true;
+        if (0 == m_currentValue8.CompareToI ("true"))
+            {
+            value = true;
+            stat = true;
+            }
+        if (0 == m_currentValue8.CompareToI ("false"))
+            {
+            value = false;
+            stat = true;
+            }
+        if (0 == m_currentValue8.CompareToI ("1"))
+            {
+            value = true;
+            stat = true;
+            }
+        if (0 == m_currentValue8.CompareToI ("0"))
+            {
+            value = false;
+            stat = true;
+            }
+        AdvanceAfterContentExtraction ();
         }
-    if (0 == m_currentValue8.CompareToI ("false"))
-        {
-        value = false;
-        stat = true;
-        }
-    if (0 == m_currentValue8.CompareToI ("1"))
-        {
-        value = true;
-        stat = true;
-        }
-    if (0 == m_currentValue8.CompareToI ("0"))
-        {
-        value = false;
-        stat = true;
-        }
-    AdvanceAfterContentExtraction ();        
     return stat;
     }
 
@@ -684,12 +723,12 @@ bool ReadTagint(CharCP name, int &value)
 bool ReadTagPlacementOriginZX (CharCP name, PlacementOriginZX &value)
     {
     if (CurrentElementNameMatch ("placement")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
         // Start with the system default for each field ....
-        DPoint3d origin = s_default_DPoint3d;
-        DVec3d vectorZ = s_default_DVector3d;
-        DVec3d vectorX = s_default_DVector3d;
+        DPoint3d origin = DPoint3d::FromZero ();
+        DVec3d vectorZ = DVec3d::From (0,0,0);
+        DVec3d vectorX = DVec3d::From (0,0,0);
 
         for (;IsStartElement ();)
             {
@@ -739,7 +778,96 @@ bool ReadTag_AnyGeometry (IGeometryPtr &value)
     return false;
     }
 
-bool ReadTag_AnyCurvePrimitive (ICurvePrimitivePtr &value)
+bool ReadTag_AnyGeometry (CharCP name, IGeometryPtr &value)
+    {
+    IGeometryPtr geometry;
+    bool stat = false;
+    if (CurrentElementNameMatch (name))
+        {
+        ReadToElement ();
+        ParseMethod parseMethod = s_parseTable[m_currentElementName];
+        if (parseMethod != nullptr)
+            {
+            if ((this->*parseMethod)(value))
+                stat = true;
+            }
+        ReadEndElement ();
+        }
+    return stat;
+    }
+
+static bool IsAnySurface (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::BsplineSurface)
+        stat = true;
+    else if (type == IGeometry::GeometryType::SolidPrimitive)
+        stat = true;
+    else if (type == IGeometry::GeometryType::CurveVector)
+        stat = value.GetAsCurveVector ()->IsAnyRegionType ();
+    return stat;
+    }
+
+static bool IsParametricSurface (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::BsplineSurface)
+        stat = true;
+    return stat;
+    }
+
+static bool IsAnyCurve (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::CurvePrimitive)
+        stat = true;
+    if (type == IGeometry::GeometryType::CurveVector)
+        stat = true;
+    return stat;
+    }
+
+static bool IsAnyCurveChain (IGeometryCR value)
+    {
+    IGeometry::GeometryType type = value.GetGeometryType ();
+    bool stat = false;
+    if (type == IGeometry::GeometryType::CurveVector)
+        {
+        CurveVectorPtr cv = value.GetAsCurveVector ();
+        stat = cv->IsOpenPath ()
+            || cv->IsClosedPath ();
+        stat = true;
+        }
+    return stat;
+    }
+
+bool ReadTag_AnySurface (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsAnySurface (*value);
+    }
+
+bool ReadTag_AnyCurve (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsAnyCurve (*value);
+    }
+
+bool ReadTag_AnyParametricSurface (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsParametricSurface (*value);
+    }
+
+bool ReadTag_AnyCurveChain (CharCP name, IGeometryPtr &value)
+    {
+    return ReadTag_AnyGeometry (name,value)
+        && IsAnyCurveChain (*value);
+    }
+
+bool ReadTag_AnyICurvePrimitive (ICurvePrimitivePtr &value)
     {
     IGeometryPtr geometry;
     if (ReadTag_AnyGeometry (geometry)
@@ -751,7 +879,50 @@ bool ReadTag_AnyCurvePrimitive (ICurvePrimitivePtr &value)
     return false;
     }
 
+bool ReadTag_AnyCurveVector (CharCP name, CurveVectorPtr &value)
+    {
+    IGeometryPtr geometry;
+    bool stat = false;
+    if (CurrentElementNameMatch (name)
+        && ReadToChildOrEnd ())
+        {
+        if (ReadTag_AnyGeometry (geometry))
+            {
+            value = geometry->GetAsCurveVector ();
+            if (value.IsValid ())
+                stat = true;
+            else
+                {
+                ICurvePrimitivePtr cp = geometry->GetAsICurvePrimitive ();
+                if (cp.IsValid ())
+                    {
+                    stat = true;
+                    value = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+                    value->push_back (cp);
+                    }
+                }
+            ReadEndElement ();
+            }
+        }
+    return stat;
+    }
 
+bool ReadTag_AnyICurvePrimitive (CharCP name, ICurvePrimitivePtr &value)
+    {
+    IGeometryPtr geometry;
+    bool stat = false;
+    if (CurrentElementNameMatch (name)
+        && ReadToChildOrEnd ())
+        {
+        if (ReadTag_AnyGeometry (geometry))
+            {
+            value = geometry->GetAsICurvePrimitive ();
+            stat = value.IsValid ();
+            ReadEndElement ();
+            }
+        }
+    return stat;
+    }
 
 
 public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
@@ -796,6 +967,7 @@ void ShowAllNodeTypes (Utf8CP beXmlCGString)
     BeXmlStatus status;
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString (status, beXmlCGString);
     printf ("<XMLNodes>\n");
+    Utf8String s;
     int depth = 0;
     for (;BeXmlReader::READ_RESULT_Success == reader->Read ();)
         {
@@ -816,6 +988,16 @@ void ShowAllNodeTypes (Utf8CP beXmlCGString)
                 printf ("  ");
             }
         printf (" %s", GetBeXmlNodeTypeString (nodeType));
+        if (nodeType == BeXmlReader::NODE_TYPE_Element)
+            {
+            reader->GetCurrentNodeName (s);
+            printf (" %s", s);
+            }
+        else if (nodeType == BeXmlReader::NODE_TYPE_Text)
+            {
+            reader->GetCurrentNodeValue (s);
+            printf (" %s", s);
+            }
         if (nodeType == BeXmlReader::NODE_TYPE_Element)
             depth++;
         }

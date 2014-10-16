@@ -50,24 +50,21 @@ private:
 public:
     //! Try to read a curve primitive
     //! @return false if this node is not a curve primitive.
-    //! @param [in] node xml node
     //! @param [out] result curve primitive.
     static ECOBJECTS_EXPORT bool TryParse (Utf8CP beXmlCGString, ICurvePrimitivePtr &result);
     //! Try to read a solid primitive
     //! @return false if this node is not a solid primitive.
-    //! @param [in] node xml node
     //! @param [out] result solid primitive.
     static ECOBJECTS_EXPORT bool TryParse (Utf8CP beXmlCGString, ISolidPrimitivePtr &result);
 
     //! Try to read a bspline surface
     //! @return false if this node is not a bspline surface
-    //! @param [in] node xml node
     //! @param [out] result bspline surface
     static ECOBJECTS_EXPORT bool TryParse (Utf8CP beXmlCGString, MSBsplineSurfacePtr &result);
 
     //! Try to read any geometry types, optionally recursing through the xml tree
     //!    to find geometry items.
-    //! @param [in] Utf8 string containing the serialized IGeometry object in BeXml.
+    //! @param [in] beXmlCGString string containing the serialized IGeometry object in BeXml.
     //! @param [in,out] vector to receive geometry.
     //! @param [in] maxDepth max number of recursions for search.  0 means only look at the node itself.
     //! @return true if any geometry found
