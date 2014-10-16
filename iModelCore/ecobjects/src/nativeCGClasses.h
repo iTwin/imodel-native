@@ -95,7 +95,7 @@ struct CGBlockDetail
 PlacementOriginZX placement;
 DPoint3d cornerA;
 DPoint3d cornerB;
-bool capped;
+bool bSolidFlag;
 };
 
 
@@ -108,7 +108,7 @@ PlacementOriginZX placement;
 double height;
 double radiusA;
 double radiusB;
-bool capped;
+bool bSolidFlag;
 };
 
 
@@ -120,7 +120,7 @@ struct CGCircularCylinderDetail
 PlacementOriginZX placement;
 double height;
 double radius;
-bool capped;
+bool bSolidFlag;
 };
 
 
@@ -190,7 +190,7 @@ PlacementOriginZX placement;
 DPoint3d centerB;
 double radiusA;
 double radiusB;
-bool capped;
+bool bSolidFlag;
 };
 
 
@@ -214,7 +214,7 @@ double radiusA;
 double radiusB;
 Angle startAngle;
 Angle sweepAngle;
-bool capped;
+bool bSolidFlag;
 };
 
 

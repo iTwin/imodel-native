@@ -408,7 +408,7 @@ bool ReadIDgnTorusPipe (IGeometryPtr &result)
 ///    &lt;placement&gt;... &lt;/placement&gt;
 ///    &lt;cornerA&gt;... &lt;/cornerA&gt;
 ///    &lt;cornerB&gt;... &lt;/cornerB&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/Block&gt;
 /// </code>
 /// </summary>
@@ -435,8 +435,8 @@ bool ReadIBlock (IGeometryPtr &result)
                 && ReadTagDPoint3d ("cornerB", detail.cornerB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
-                && ReadTagbool ("capped", detail.capped))
+            if (   CurrentElementNameMatch ("bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -444,7 +444,7 @@ bool ReadIBlock (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.Create (detail);//Block(detail.placement,detail.cornerA,detail.cornerB,detail.capped);
+        result = m_factory.Create (detail);//Block(detail.placement,detail.cornerA,detail.cornerB,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -464,7 +464,7 @@ bool ReadIBlock (IGeometryPtr &result)
 ///    &lt;height&gt;... &lt;/height&gt;
 ///    &lt;radiusA&gt;... &lt;/radiusA&gt;
 ///    &lt;radiusB&gt;... &lt;/radiusB&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/CircularCone&gt;
 /// </code>
 /// </summary>
@@ -495,8 +495,8 @@ bool ReadICircularCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
-                && ReadTagbool ("capped", detail.capped))
+            if (   CurrentElementNameMatch ("bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -504,7 +504,7 @@ bool ReadICircularCone (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.Create (detail);//CircularCone(detail.placement,detail.height,detail.radiusA,detail.radiusB,detail.capped);
+        result = m_factory.Create (detail);//CircularCone(detail.placement,detail.height,detail.radiusA,detail.radiusB,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -523,7 +523,7 @@ bool ReadICircularCone (IGeometryPtr &result)
 ///    &lt;placement&gt;... &lt;/placement&gt;
 ///    &lt;height&gt;... &lt;/height&gt;
 ///    &lt;radius&gt;... &lt;/radius&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/CircularCylinder&gt;
 /// </code>
 /// </summary>
@@ -550,8 +550,8 @@ bool ReadICircularCylinder (IGeometryPtr &result)
                 && ReadTagdouble ("radius", detail.radius))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
-                && ReadTagbool ("capped", detail.capped))
+            if (   CurrentElementNameMatch ("bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -559,7 +559,7 @@ bool ReadICircularCylinder (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.Create (detail);//CircularCylinder(detail.placement,detail.height,detail.radius,detail.capped);
+        result = m_factory.Create (detail);//CircularCylinder(detail.placement,detail.height,detail.radius,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -839,7 +839,7 @@ bool ReadISingleLineText (IGeometryPtr &result)
 ///    &lt;centerB&gt;... &lt;/centerB&gt;
 ///    &lt;radiusA&gt;... &lt;/radiusA&gt;
 ///    &lt;radiusB&gt;... &lt;/radiusB&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/SkewedCone&gt;
 /// </code>
 /// </summary>
@@ -870,8 +870,8 @@ bool ReadISkewedCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
-                && ReadTagbool ("capped", detail.capped))
+            if (   CurrentElementNameMatch ("bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -879,7 +879,7 @@ bool ReadISkewedCone (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.Create (detail);//SkewedCone(detail.placement,detail.centerB,detail.radiusA,detail.radiusB,detail.capped);
+        result = m_factory.Create (detail);//SkewedCone(detail.placement,detail.centerB,detail.radiusA,detail.radiusB,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -945,7 +945,7 @@ bool ReadISphere (IGeometryPtr &result)
 ///    &lt;radiusB&gt;... &lt;/radiusB&gt;
 ///    &lt;startAngle&gt;... &lt;/startAngle&gt;
 ///    &lt;sweepAngle&gt;... &lt;/sweepAngle&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/TorusPipe&gt;
 /// </code>
 /// </summary>
@@ -980,8 +980,8 @@ bool ReadITorusPipe (IGeometryPtr &result)
                 && ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
-                && ReadTagbool ("capped", detail.capped))
+            if (   CurrentElementNameMatch ("bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -989,7 +989,7 @@ bool ReadITorusPipe (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.Create (detail);//TorusPipe(detail.placement,detail.radiusA,detail.radiusB,detail.startAngle,detail.sweepAngle,detail.capped);
+        result = m_factory.Create (detail);//TorusPipe(detail.placement,detail.radiusA,detail.radiusB,detail.startAngle,detail.sweepAngle,detail.bSolidFlag);
         return true;
         }
     return false;

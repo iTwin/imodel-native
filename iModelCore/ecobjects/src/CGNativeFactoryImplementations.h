@@ -112,7 +112,7 @@ virtual IGeometryPtr Create (CGSkewedConeDetail &detail) override
     DgnConeDetail coneDetail (centerA, detail.centerB,
                 axes, 
                 detail.radiusA, detail.radiusB,
-                detail.capped);
+                detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
     return IGeometry::Create (sp);
     }
@@ -132,7 +132,7 @@ virtual IGeometryPtr Create (CGCircularConeDetail &detail) override
     DgnConeDetail coneDetail (centerA, centerB,
                 axes, 
                 detail.radiusA, detail.radiusB,
-                detail.capped);
+                detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
     return IGeometry::Create (sp);
     }
@@ -152,7 +152,7 @@ virtual IGeometryPtr Create(CGCircularCylinderDetail &detail) override
     DgnConeDetail coneDetail (centerA, centerB,
                 axes, 
                 detail.radius, detail.radius,
-                detail.capped);
+                detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
     return IGeometry::Create (sp);
     }
@@ -172,7 +172,7 @@ virtual IGeometryPtr Create (CGBlockDetail &detail) override
     DPoint3d topOrigin  = DPoint3d::FromProduct (origin, axes, detail.cornerA.x, detail.cornerA.y, detail.cornerB.z);
     double dx = detail.cornerB.x - detail.cornerA.x;
     double dy = detail.cornerB.y - detail.cornerA.y;
-    DgnBoxDetail boxDetail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, detail.capped);
+    DgnBoxDetail boxDetail (baseOrigin, topOrigin, vectorX, vectorY, dx, dy, dx, dy, detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnBox (boxDetail);
     return IGeometry::Create (sp);
     }
@@ -213,7 +213,7 @@ virtual IGeometryPtr Create (CGTorusPipeDetail &detail) override
                 vector0, vector90, 
                 detail.radiusA, detail.radiusB,
                 sweepRadians,
-                detail.capped);
+                detail.bSolidFlag);
     return IGeometry::Create(ISolidPrimitive::CreateDgnTorusPipe (dgnDetail));
     }
 
