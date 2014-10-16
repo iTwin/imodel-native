@@ -22,12 +22,6 @@ MSXmlBinaryWriter::MSXmlBinaryWriter()
     m_textNodeOffset = -1;
     }
 
-MSXmlBinaryWriter::~MSXmlBinaryWriter()
-    {
-    for (auto element : m_elements)
-        delete element;
-    }
-
 BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name)
     {
     return WriteElementStart(name, m_depth == 0 ? s_defaultNamespace : nullptr);
@@ -260,10 +254,10 @@ void MSXmlBinaryWriter::AutoComplete(WriteState writeState)
 void MSXmlBinaryWriter::StartElement(Utf8StringCR localName, Utf8StringCR nameSpace)
     {
     AutoComplete(WriteState::Element);
-    Element* element = EnterScope();
+    Element& element = EnterScope();
     if (!Utf8String::IsNullOrEmpty(nameSpace.c_str()))
         m_nsMgr.AddNamespace(nameSpace);
-    element->LocalName = localName;
+    element.LocalName = localName;
 
     }
 
@@ -279,22 +273,24 @@ void MSXmlBinaryWriter::WriteEndStartElement(bool isEmpty)
         WriteElementEnd();
     }
 
-MSXmlBinaryWriter::Element* MSXmlBinaryWriter::EnterScope()
+MSXmlBinaryWriter::Element& MSXmlBinaryWriter::EnterScope()
     {
     m_nsMgr.EnterScope();
     m_depth++;
     if (m_depth >= (int) m_elements.size())
         {
-        while ((int) m_elements.size() < m_depth)
-            m_elements.push_back(nullptr);
-        m_elements.push_back(new MSXmlBinaryWriter::Element());
+        while ((int) m_elements.size() <= m_depth)
+            {
+            Element el;
+            m_elements.push_back(el);
+            }
         }
     return m_elements[m_depth];
     }
 
 void MSXmlBinaryWriter::ExitScope()
     {
-    m_elements[m_depth]->Clear();
+    m_elements[m_depth].Clear();
     m_depth--;
     }
 

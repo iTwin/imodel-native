@@ -63,6 +63,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BeXmlCGReader.cpp" />
+    <ClCompile Include="BeXmlCGStreamReader.cpp" />
     <ClCompile Include="BeXmlCGWriter.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
@@ -84,6 +85,7 @@
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="MemoryInstanceSupport.cpp" />
+    <ClCompile Include="MSXmlBinary\MSXmlBinaryReader.cpp" />
     <ClCompile Include="MSXmlBinary\MSXmlBinaryWriter.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
@@ -136,6 +138,7 @@
     <ClInclude Include="FileUtilities.h" />
     <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="MSXmlBinary\MSXmlBinaryReader.h" />
     <ClInclude Include="MSXmlBinary\MSXmlEnums.h" />
     <ClInclude Include="MSXmlBinary\MSXmlBinaryWriter.h" />
   </ItemGroup>

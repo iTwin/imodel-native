@@ -166,6 +166,12 @@
     <ClCompile Include="MSXmlBinary\MSXmlBinaryWriter.cpp">
       <Filter>MSXml\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MSXmlBinary\MSXmlBinaryReader.cpp">
+      <Filter>MSXml\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BeXmlCGStreamReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -274,6 +280,9 @@
       <Filter>MSXml\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MSXmlBinary\MSXmlEnums.h">
+      <Filter>MSXml\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MSXmlBinary\MSXmlBinaryReader.h">
       <Filter>MSXml\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
