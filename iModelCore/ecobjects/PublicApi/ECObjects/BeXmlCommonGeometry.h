@@ -26,6 +26,12 @@ private:
     //! @param [in] node xml node
     //! @param [out] result curve primitive.
     static bool TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result);
+
+    //! Try to read a curve vector
+    //! @return false if this node is not a curve vector
+    //! @param [in] node xml node
+    //! @param [out] result curve vector
+    static bool TryParse (BeXmlNodeP node, CurveVectorPtr &result);
     //! Try to read a solid primitive
     //! @return false if this node is not a solid primitive.
     //! @param [in] node xml node

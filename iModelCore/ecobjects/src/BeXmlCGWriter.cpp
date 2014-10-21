@@ -698,9 +698,10 @@ void BeXmlCGWriter::WriteDgnBoxDetail (IBeXmlWriterR dest, DgnBoxDetail data)
         )
         {
         dest.WriteElementStart ("Block");
-        DVec3d unitZ;
+        DVec3d unitZ, unitX;
         unitZ.Normalize (zVector);
-        WritePlacementZX (dest, origin, xVector, unitZ);
+        unitX.Normalize (xVector);
+        WritePlacementZX (dest, origin, unitZ, unitX);
         WriteXYZ (dest, "cornerA", DPoint3d::From (0,0,0));
         WriteXYZ (dest, "cornerB", DPoint3d::From (ax, ay, zVector.Magnitude ()));
         WriteBool (dest, "bSolidFlag", data.m_capped);

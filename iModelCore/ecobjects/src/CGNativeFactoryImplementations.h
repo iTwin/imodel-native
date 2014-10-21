@@ -69,7 +69,7 @@ virtual IGeometryPtr Create (CGEllipticDiskDetail &detail) override
     CurveVectorPtr area = CurveVector::Create
                 (CurveVector::BOUNDARY_TYPE_Outer);
     area->push_back (arc);
-    return IGeometry::Create(ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area));
+    return IGeometry::Create(area);
     }
 
 // ===================================================================================
@@ -100,7 +100,7 @@ virtual IGeometryPtr Create (CGCircularDiskDetail &detail) override
     CurveVectorPtr area = CurveVector::Create
                 (CurveVector::BOUNDARY_TYPE_Outer);
     area->push_back (arc);
-    return IGeometry::Create(ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area));
+    return IGeometry::Create(area);
     }
 
 // ===================================================================================
