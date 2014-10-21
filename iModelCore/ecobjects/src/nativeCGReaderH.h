@@ -435,7 +435,7 @@ bool ReadIBlock (IGeometryPtr &result)
                 && ReadTagDPoint3d ("cornerB", detail.cornerB))
                 continue;
 
-            if (   CurrentElementNameMatch ("bSolidFlag")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
@@ -495,7 +495,7 @@ bool ReadICircularCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("bSolidFlag")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
@@ -550,7 +550,7 @@ bool ReadICircularCylinder (IGeometryPtr &result)
                 && ReadTagdouble ("radius", detail.radius))
                 continue;
 
-            if (   CurrentElementNameMatch ("bSolidFlag")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
@@ -870,7 +870,7 @@ bool ReadISkewedCone (IGeometryPtr &result)
                 && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("bSolidFlag")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
@@ -980,7 +980,7 @@ bool ReadITorusPipe (IGeometryPtr &result)
                 && ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
 
-            if (   CurrentElementNameMatch ("bSolidFlag")
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
                 && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 

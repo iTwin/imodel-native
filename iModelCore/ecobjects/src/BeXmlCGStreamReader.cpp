@@ -661,9 +661,15 @@ bool ReadTagbool(CharCP name, bool &value)
     if (nullptr != name  && !CurrentElementNameMatch (name))
         {
         // allow bSolidFlag as synonym for capped ...
-        if (0 != stricmp (name, "capped")
-            || !CurrentElementNameMatch ("bSolidFlag")
-            )
+        if (0 == stricmp (name, "capped") && CurrentElementNameMatch ("bSolidFlag"))
+            {
+            // accept substitute.
+            }
+        else if (0 == stricmp (name, "bSolidFlag") && CurrentElementNameMatch ("capped"))
+            {
+            // accept substitute.
+            }
+        else
             return false;
         }
     bool stat = false;
