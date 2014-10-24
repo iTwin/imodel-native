@@ -32,7 +32,7 @@ struct  ECPresentationManager: public NonCopyableClass
         T_ContentProviderSet      m_contentProviders;
         T_ImageProviderSet        m_imageProviders;
         T_LocalizationProviderSet m_localizationProviders;
-        T_SelectionListeners      m_selecitonListeners;
+        T_SelectionListeners      m_selectionListeners;
 
         ECPresentationManager ();
         
