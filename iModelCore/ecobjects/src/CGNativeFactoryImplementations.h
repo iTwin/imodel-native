@@ -243,8 +243,10 @@ virtual IGeometryPtr Create (CGIndexedMeshDetail &cgDetail) override
     // Colors have to be reformatted ...
     if (cgDetail.colorArray.size () > 0)
         {
-        bvector<RgbFactor> &dest = polyface->DoubleColor ();
+        BlockedVectorRgbFactorR &dest = polyface->DoubleColor ();
         dest.reserve (cgDetail.colorArray.size ());
+        if (cgDetail.colorArray.size () > 0)
+            dest.SetActive (true);
         for (DVec3d const &data : cgDetail.colorArray)
             {
             dest.push_back (RgbFactor::From (data));
@@ -451,18 +453,18 @@ static IGeometryPtr Create(IGeometryPtr &baseGeometry, IGeometryPtr &railCurve, 
         && railCurve.IsValid ()
         )
         {
-        CurveVectorPtr cv = baseGeometry->GetAsCurveVector ();
-        if (!cv.IsValid ())
+        CurveVectorPtr cv;
+        if (!TryGetAsCurveVector (baseGeometry, cv))
             {
             }
         else if (GetSweepVectorFromRailCurve (railCurve, vector))
             {
-            DgnExtrusionDetail dgnDetail (cv, vector, true);
+            DgnExtrusionDetail dgnDetail (cv, vector, capped);
             return IGeometry::Create (ISolidPrimitive::CreateDgnExtrusion (dgnDetail));
             }
         else if (GetRotationAxisFromRailCurve (railCurve, axis, sweepRadians))
             {
-            DgnRotationalSweepDetail dgnDetail (cv, axis.origin, axis.direction, sweepRadians, true);
+            DgnRotationalSweepDetail dgnDetail (cv, axis.origin, axis.direction, sweepRadians, capped);
             return IGeometry::Create (ISolidPrimitive::CreateDgnRotationalSweep (dgnDetail));
             }
         }
