@@ -4108,7 +4108,12 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
             }
         }
 
-    auto status = GetHostR().AddArrayElements (GetContainerPropertyIndex(), 1);
+    // If a property already exists by the same name, we want to replace it (as per managed implementation).
+    // And we want to preserve order within array, because that controls order in which ad-hocs are displayed in UI.
+    UInt32 existingPropertyIndex = 0;
+    bool replacing = GetPropertyIndex (existingPropertyIndex, name);
+
+    auto status = replacing ? ECOBJECTS_STATUS_Success : GetHostR().AddArrayElements (GetContainerPropertyIndex(), 1);
     if (SUCCESS != status)
         return status;
 
@@ -4125,11 +4130,6 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
         BeAssert (false);
         return ECOBJECTS_STATUS_Error;
         }
-
-    // If a property already exists by the same name, we want to replace it (as per managed implementation).
-    // But it is less messy to add a new one and remove the old one if successful.
-    UInt32 existingPropertyIndex = 0;
-    bool replacing = GetPropertyIndex (existingPropertyIndex, name);
 
     if (SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false))) ||
         SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false))))
@@ -4157,7 +4157,7 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
     // set the struct to the array
     ECValue structV;
     structV.SetStruct (entry.get());
-    status = GetHostR().SetValue (GetContainerPropertyIndex(), structV, GetCount() - 1);
+    status = GetHostR().SetValue (GetContainerPropertyIndex(), structV, replacing ? existingPropertyIndex : GetCount() - 1);
     if (SUCCESS != status)
         {
         BeAssert (false);
@@ -4165,8 +4165,6 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
         }
 
     revert.Clear();
-    if (replacing)
-        Remove (existingPropertyIndex);
 
     return ECOBJECTS_STATUS_Success;
     }
