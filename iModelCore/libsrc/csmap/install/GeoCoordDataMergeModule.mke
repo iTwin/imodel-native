@@ -1,0 +1,60 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: install/GeoCoordDataMergeModule.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+programName         = GeoCoordDataMergeModule
+
+PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+#---------------------------------------------------------------------------------------
+# MSI Installer file Setup.
+#---------------------------------------------------------------------------------------
+
+baseDir = $(_MakeFilePath)
+o       = $(OutputRootDir)build/csmap/install/
+
+%if !defined(REL_V)
+    REL_V = 9
+%endif
+
+%if !defined(MAJ_V)
+    MAJ_V = 99
+%endif
+
+%if !defined(MIN_V)
+    MIN_V = 99
+%endif
+
+%if !defined(SUBMIN_V)
+    SUBMIN_V = 99
+%endif
+
+always:
+    ~mkdir $(o)
+    ~putenv GeoCoordData=$(BuildContext)Delivery/GeoCoordData/
+    ~putenv GeoCoordDataMinimal=$(BuildContext)Delivery/GeoCoordDataMinimal/
+
+#---------------------------------------------------------------------------------------
+# Compile the MSI File
+#---------------------------------------------------------------------------------------
+
+INSTALLER_OUTPUT_FILENAME   = $(programName)
+INSTALLER_OUTPUT_FILEDIR    = $(o)
+INSTALLER_FILE_BASE         = $(BuildContext)Delivery/GeoCoordData/
+INSTALLER_SOURCE_LIST       = $(baseDir)$(programName).wxs
+INSTALLER_OBJECT_LIST       = $(o)$(programName).wixobj
+INSTALLER_MAKE_MERGEMODULE  = 1
+INSTALLER_PRODUCT_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+INSTALLER_TOOLSET_VERSION   = 3.0.5419.0
+INSTALLER_COMPILER_OPT      + -sw1086 -sw1088
+INSTALLER_CONTEXT_LOCATION  = $(BuildContext)Install/
+
+%include $(SharedMki)wix.mki
+
+
+
+

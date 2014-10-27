@@ -1,0 +1,1237 @@
+:Base CS-MAPUserGuide.hlp>main
+:Title CS-MAP User's Guide
+1 Copyright Notice=O109@CS-MAPUserGuide.hlp>Procedur
+1 Chapter 1 -- Release/Distribution Notes
+2 Chapter 1 -- Release/Distribution Notes=O509@CS-MAPUserGuide.hlp>Main
+2 Release Notes for CS-MAP 11
+3 Release Notes for CS-MAP 11=O511@CS-MAPUserGuide.hlp>Main
+3 Release 11.01=O3635@CS-MAPUserGuide.hlp>Main
+3 Release 11.02=O3634@CS-MAPUserGuide.hlp>Main
+3 Release 11.03=O3633@CS-MAPUserGuide.hlp>Main
+3 Release 11.04=O3636@CS-MAPUserGuide.hlp>Main
+3 Release 11.05=O3637@CS-MAPUserGuide.hlp>Main
+3 Release 11.07=O3638@CS-MAPUserGuide.hlp>Main
+3 Release 11.09=O3655@CS-MAPUserGuide.hlp>Main
+3 Release 11.10=O3656@CS-MAPUserGuide.hlp>Main
+3 Release 11.11=O3676@CS-MAPUserGuide.hlp>Main
+3 Release 11.12=O3677@CS-MAPUserGuide.hlp>Main
+3 Release 11.13=O3678@CS-MAPUserGuide.hlp>Main
+3 Release 11.14=O3679@CS-MAPUserGuide.hlp>Main
+3 Release 11.15=O3680@CS-MAPUserGuide.hlp>Main
+3 Important  Notices=O2640@CS-MAPUserGuide.hlp>Main
+3 New Stuff
+4 New Stuff=O514@CS-MAPUserGuide.hlp>Main
+4 Three Dimensional Coordinates
+5 Three Dimensional Coordinates=O515@CS-MAPUserGuide.hlp>Main
+5 CS_dtcvt3D Three Dimensional Datum Conversion=O516@CS-MAPUserGuide.hlp>Main
+5 CS_cs3ll Three Dimensional Coordinate Forward=O517@CS-MAPUserGuide.hlp>Main
+5 CS_ll3cs Three Dimensional Coordinate Inverse=O518@CS-MAPUserGuide.hlp>Main
+3 Multiple Data File AGD66/GDA94=O519@CS-MAPUserGuide.hlp>Main
+4 Multiple Data File AGD84/GDA94=O520@CS-MAPUserGuide.hlp>Main
+4 Multiple Data File NZGD49/NZGD2K=O521@CS-MAPUserGuide.hlp>Main
+4 Canadian Spatial Reference System (CSRS)=O522@CS-MAPUserGuide.hlp>Main
+4 VERTCON Implementation=O524@CS-MAPUserGuide.hlp>Main
+4 Geoid Height Calculation=O525@CS-MAPUserGuide.hlp>Main
+4 Datum Conversion Techniques=O526@CS-MAPUserGuide.hlp>Main
+4 Dictionary Difference Function=O527@CS-MAPUserGuide.hlp>Main
+4 Geocentric Coordinates=O528@CS-MAPUserGuide.hlp>Main
+4 Dictionary Hook Functions=O529@CS-MAPUserGuide.hlp>Main
+4 Dynamic Units Hook Function=O530@CS-MAPUserGuide.hlp>Main
+4 User Defined/Dynamic Units=O2651@CS-MAPUserGuide.hlp>Main
+4 Krovak  S-JTSK/95 Support=O531@CS-MAPUserGuide.hlp>Main
+4 MGRS Implementation
+5 MGRS Implementation=O532@CS-MAPUserGuide.hlp>Main
+5 MGRS Constructors=O533@CS-MAPUserGuide.hlp>Main
+5 MGRS Destructor=O534@CS-MAPUserGuide.hlp>Main
+5 MGRS Public Functions=O535@CS-MAPUserGuide.hlp>Main
+5 MGRS Private Functions=O538@CS-MAPUserGuide.hlp>Main
+3 New Transverse Mercator Variation=O2175@CS-MAPUserGuide.hlp>Main
+4 Dictionary Deferred Close Feature=O3657@CS-MAPUserGuide.hlp>Main
+4 EPSG Code Conversion Functions=O3658@CS-MAPUserGuide.hlp>Main
+3 Maintenance
+4 Maintenance=O539@CS-MAPUserGuide.hlp>Main
+4 Key Name Characters=O540@CS-MAPUserGuide.hlp>Main
+4 CS_atof Ratio/Range=O541@CS-MAPUserGuide.hlp>Main
+4 National Transformation, Version 1 Fixed=O542@CS-MAPUserGuide.hlp>Main
+4 Michigan Reworked=O543@CS-MAPUserGuide.hlp>Main
+4 New Coordinate System Groups=O544@CS-MAPUserGuide.hlp>Main
+4 MGRS Error=O545@CS-MAPUserGuide.hlp>Main
+4 Coordinate System Extents=O546@CS-MAPUserGuide.hlp>Main
+4 FIPS Correction=O547@CS-MAPUserGuide.hlp>Main
+4 Dictionary Maintenance=O548@CS-MAPUserGuide.hlp>Main
+3 Geodetic Data Catalog Files
+4 Geodetic Data Catalog Files=O549@CS-MAPUserGuide.hlp>Main
+4 Names/Extensions=O550@CS-MAPUserGuide.hlp>Main
+4 Path Names=O551@CS-MAPUserGuide.hlp>Main
+4 Buffer Size=O552@CS-MAPUserGuide.hlp>Main
+4 Flags=O553@CS-MAPUserGuide.hlp>Main
+4 Density=O554@CS-MAPUserGuide.hlp>Main
+2 Distribution Notes
+3 Distribution Notes=O501@CS-MAPUserGuide.hlp>Main
+3 Include Directory=O502@CS-MAPUserGuide.hlp>Main
+3 Library Source Code=O503@CS-MAPUserGuide.hlp>Main
+3 Dictionary Source Code and Data=O504@CS-MAPUserGuide.hlp>Main
+3 Test Source Code and Data=O505@CS-MAPUserGuide.hlp>Main
+3 Help Directory=O506@CS-MAPUserGuide.hlp>Main
+3 Make Procedure=O507@CS-MAPUserGuide.hlp>Main
+1 Printed Documentation=O555@CS-MAPUserGuide.hlp>Main
+1 CHapter 2 -- Descriptions and Discussion
+2 CHapter 2 -- Descriptions and Discussion=O510@CS-MAPUserGuide.hlp>Main
+2 Overview
+3 Overview=O351@CS-MAPUserGuide.hlp>Main
+3 Initialization=O352@CS-MAPUserGuide.hlp>Main
+3 High Level Interface=O353@CS-MAPUserGuide.hlp>Main
+3 Coordinate System Dictionary=O354@CS-MAPUserGuide.hlp>Main
+3 Other Interfaces=O355@CS-MAPUserGuide.hlp>Main
+3 Other Dictionaries=O356@CS-MAPUserGuide.hlp>Main
+3 Cartographic vs. Geodetic Referencing of Coordinate Systems=O357@CS-MAPUserGuide.hlp>Main
+3 Latitudes and Longitudes=O358@CS-MAPUserGuide.hlp>Main
+3 Coordinate Arrays=O359@CS-MAPUserGuide.hlp>Main
+3 Selected Source Code=O360@CS-MAPUserGuide.hlp>Main
+1 Introduction=O361@CS-MAPUserGuide.hlp>Main
+2 Naming Conventions
+3 Naming Conventions=O362@CS-MAPUserGuide.hlp>Main
+3 Name Collisions
+4 Name Collisions=O363@CS-MAPUserGuide.hlp>Main
+4 Function Names=O364@CS-MAPUserGuide.hlp>Main
+4 Structure Tags=O365@CS-MAPUserGuide.hlp>Main
+4 Global Variable Names=O366@CS-MAPUserGuide.hlp>Main
+4 Manifest Constants=O367@CS-MAPUserGuide.hlp>Main
+4 Naming Convention Examples=O368@CS-MAPUserGuide.hlp>Main
+2 Projection Code Names=O369@CS-MAPUserGuide.hlp>Main
+2 High Level Interface
+3 High Level Interface=O370@CS-MAPUserGuide.hlp>Main
+3 Basic Coordinate Conversion -- CS_cnvrt=O371@CS-MAPUserGuide.hlp>Main
+3 Grid Scale Factor -- CS_scale=O372@CS-MAPUserGuide.hlp>Main
+3 Convergence Angle -- CS_cnvrg=O373@CS-MAPUserGuide.hlp>Main
+3 Data Directory -- CS_altdr=O374@CS-MAPUserGuide.hlp>Main
+3 Recover System Resources -- CS_recvr=O375@CS-MAPUserGuide.hlp>Main
+3 Get Error Message Text -- CS_errmsg=O377@CS-MAPUserGuide.hlp>Main
+3 Compute Azimuth and Distance -- CS_llazdd=O381@CS-MAPUserGuide.hlp>Main
+3 Unit Lookup -- CS_unitlu=O382@CS-MAPUserGuide.hlp>Main
+3 Coordinate System Name Verification – CS_csIsValid=O383@CS-MAPUserGuide.hlp>Main
+3 Datum Name Verification – CS_dtIsValid=O384@CS-MAPUserGuide.hlp>Main
+3 Ellipsoid Name Verification – CS_elIsValid=O385@CS-MAPUserGuide.hlp>Main
+2 Data Structures
+3 Data Structures=O386@CS-MAPUserGuide.hlp>Main
+3 Ellipsoid Definition Structure=O387@CS-MAPUserGuide.hlp>Main
+3 Datum Definition Structure=O388@CS-MAPUserGuide.hlp>Main
+3 Datum Composite Structure=O389@CS-MAPUserGuide.hlp>Main
+3 Coordinate System Definition Structure=O390@CS-MAPUserGuide.hlp>Main
+3 Preprocessed Projection Structures=O391@CS-MAPUserGuide.hlp>Main
+3 Coordinate System Parameter Structure=O392@CS-MAPUserGuide.hlp>Main
+3 Projection Name Table Structure=O393@CS-MAPUserGuide.hlp>Main
+3 Datum Shift Definition Structure=O397@CS-MAPUserGuide.hlp>Main
+2 The Data Dictionaries
+3 The Data Dictionaries=O399@CS-MAPUserGuide.hlp>Main
+3 The Coordinate System Dictionary=O400@CS-MAPUserGuide.hlp>Main
+3 The Datum Dictionary=O401@CS-MAPUserGuide.hlp>Main
+3 The Ellipsoid Dictionary=O402@CS-MAPUserGuide.hlp>Main
+3 Dictionary Encryption=O403@CS-MAPUserGuide.hlp>Main
+3 Dictionary Definition Protection=O2641@CS-MAPUserGuide.hlp>Main
+3 Byte Ordering=O404@CS-MAPUserGuide.hlp>Main
+3 Dictionary Compiler=O405@CS-MAPUserGuide.hlp>Main
+3 Multiple Regression Datum Transformation Files=O406@CS-MAPUserGuide.hlp>Main
+3 Default Datums, Ellipsoids, and Units=O407@CS-MAPUserGuide.hlp>Main
+2 High Performance Interface
+3 High Performance Interface=O408@CS-MAPUserGuide.hlp>Main
+3 The Functions
+4 The Functions=O409@CS-MAPUserGuide.hlp>Main
+4 Coordinate System Locate=O410@CS-MAPUserGuide.hlp>Main
+4 Datum Conversion Setup=O411@CS-MAPUserGuide.hlp>Main
+4 Coordinate System to Lat/Long Conversion=O412@CS-MAPUserGuide.hlp>Main
+4 Datum Conversion=O413@CS-MAPUserGuide.hlp>Main
+4 Lat/Long to Coordinate System Conversion=O414@CS-MAPUserGuide.hlp>Main
+4 Close Datum Conversion=O415@CS-MAPUserGuide.hlp>Main
+4 Grid Scale Factor=O416@CS-MAPUserGuide.hlp>Main
+4 Scale Along a Parallel=O417@CS-MAPUserGuide.hlp>Main
+4 Scale Along a Meridian=O418@CS-MAPUserGuide.hlp>Main
+4 Convergence Angle=O419@CS-MAPUserGuide.hlp>Main
+4 Check Limits, Geographic=O420@CS-MAPUserGuide.hlp>Main
+4 Check Limits, Cartesian=O421@CS-MAPUserGuide.hlp>Main
+4 Free Coordinate System Parameters=O2176@CS-MAPUserGuide.hlp>Main
+2 Coordinate System to Coordinate System=O422@CS-MAPUserGuide.hlp>Main
+3 The LL Coordinate System=O423@CS-MAPUserGuide.hlp>Main
+3 Multiple Conversions=O424@CS-MAPUserGuide.hlp>Main
+3 Adding Datum Conversions to the Interface=O425@CS-MAPUserGuide.hlp>Main
+3 Geodetically Referenced Coordinate Systems=O426@CS-MAPUserGuide.hlp>Main
+3 Cartographically Referenced Coordinate Systems=O427@CS-MAPUserGuide.hlp>Main
+3 Cartographic Projections=O2642@CS-MAPUserGuide.hlp>Main
+2 Low Level Functions
+3 Low Level Functions=O428@CS-MAPUserGuide.hlp>Main
+3 Cartographic Projections
+4 Cartographic Projections=O2642@CS-MAPUserGuide.hlp>Main
+4 Definition Check Functions=O434@CS-MAPUserGuide.hlp>Main
+4 Setup Function=O429@CS-MAPUserGuide.hlp>Main
+4 Forward Functions=O430@CS-MAPUserGuide.hlp>Main
+4 Inverse Functions=O431@CS-MAPUserGuide.hlp>Main
+4 Scale Functions=O432@CS-MAPUserGuide.hlp>Main
+4 Convergence Functions=O433@CS-MAPUserGuide.hlp>Main
+4 Geographic Limits Check Functions=O435@CS-MAPUserGuide.hlp>Main
+4 Cartographic Limits Check Functions=O436@CS-MAPUserGuide.hlp>Main
+3 Geodetic Datum Shift Functions
+4 Geodetic Datum Shift Functions=O2643@CS-MAPUserGuide.hlp>Main
+4 NADCON Emulation Functions=O437@CS-MAPUserGuide.hlp>Main
+4 Datum Conversion Functions=O438@CS-MAPUserGuide.hlp>Main
+3 General Utility Functions
+4 General Utility Functions=O2644@CS-MAPUserGuide.hlp>Main
+4 GEOID Height Functions=O439@CS-MAPUserGuide.hlp>Main
+4 Geocentric Coordinates=O528@CS-MAPUserGuide.hlp>Main
+4 MGRS Implementation
+5 MGRS Implementation=O532@CS-MAPUserGuide.hlp>Main
+5 MGRS Constructors=O533@CS-MAPUserGuide.hlp>Main
+5 MGRS Destructor=O534@CS-MAPUserGuide.hlp>Main
+5 MGRS Public Functions=O535@CS-MAPUserGuide.hlp>Main
+5 MGRS Private Functions=O538@CS-MAPUserGuide.hlp>Main
+3 Forward/Inverse Functions=O2645@CS-MAPUserGuide.hlp>Main
+2 Program  Environments
+3 Program  Environments=O440@CS-MAPUserGuide.hlp>Main
+3 Multi-Threaded Programming=O441@CS-MAPUserGuide.hlp>Main
+3 GUI Considerations=O442@CS-MAPUserGuide.hlp>Main
+2 Customization
+3 Customization=O443@CS-MAPUserGuide.hlp>Main
+3 Tuning the Protection System=O444@CS-MAPUserGuide.hlp>Main
+3 Turning of Unique Names=O445@CS-MAPUserGuide.hlp>Main
+3 Eliminating a Projection=O446@CS-MAPUserGuide.hlp>Main
+3 Data Dictionary Directory=O447@CS-MAPUserGuide.hlp>Main
+3 Dictionary File Names=O448@CS-MAPUserGuide.hlp>Main
+3 Adding Units=O449@CS-MAPUserGuide.hlp>Main
+3 Language Translation=O454@CS-MAPUserGuide.hlp>Main
+1 Chapter 3 -- Executables
+2 Chapter 3 -- Executables=O508@CS-MAPUserGuide.hlp>Main
+2 CS_COMP—Coordinate System COMPiler
+3 CS_COMP—Coordinate System COMPiler=O335@CS-MAPUserGuide.hlp>Main
+3 Byte Ordering=O336@CS-MAPUserGuide.hlp>Main
+3 Source File Formats
+4 Source File Formats=O337@CS-MAPUserGuide.hlp>Main
+4 Coordsys.asc=O338@CS-MAPUserGuide.hlp>Main
+4 Datums.asc=O339@CS-MAPUserGuide.hlp>Main
+4 Elipsoid.asc=O340@CS-MAPUserGuide.hlp>Main
+4 MReg.asc=O341@CS-MAPUserGuide.hlp>Main
+2 TEST -- TEST program
+3 TEST -- TEST program=O345@CS-MAPUserGuide.hlp>Main
+3 Individual Tests=O346@CS-MAPUserGuide.hlp>Main
+3 Test Data=O347@CS-MAPUserGuide.hlp>Main
+3 Other Command Line Options=O348@CS-MAPUserGuide.hlp>Main
+3 BUGS=O349@CS-MAPUserGuide.hlp>Main
+1 mfcTEST -- MFC Dialog TEST=O350@CS-MAPUserGuide.hlp>Main
+2 Dictionary Differences Program=O2654@CS-MAPUserGuide.hlp>Main
+1 Chapter 4 -- Library Functions
+2 Chapter 4 -- Library Functions=O1261@CS-MAPUserGuide.hlp>Main
+2 High Level Interface Functions
+3 High Level Interface Functions=O1369@CS-MAPUserGuide.hlp>Main
+3 CS_altdr ALTernate DiRectory=O1370@CS-MAPUserGuide.hlp>Main
+3 CS_atof Ascii TO Floating point=O1371@CS-MAPUserGuide.hlp>Main
+3 CS_azddll LatLong Azimuth Distance calculator=O1372@CS-MAPUserGuide.hlp>Main
+3 CS_azsphr AZimuth on a SPHeRe=O1373@CS-MAPUserGuide.hlp>Main
+3 CS_cnvrg CoNVeRGence function=O1374@CS-MAPUserGuide.hlp>Main
+3 CS_cnvrt generalized CoNVeRT function=O1375@CS-MAPUserGuide.hlp>Main
+3 CS_cnvrt3D 3D generalized CoNVeRT function=O1376@CS-MAPUserGuide.hlp>Main
+3 CS_csEnum Coordinate System ENUMerator=O1377@CS-MAPUserGuide.hlp>Main
+3 CS_csIsValid Coordinate System key name Is Valid=O1378@CS-MAPUserGuide.hlp>Main
+3 CS_csRangeEnum  Coordinate System Useful Range Enumerator=O3632@CS-MAPUserGuide.hlp>Main
+3 CS_csRangeEnumSetup  Coordinate System Range Enumeration Setup=O3631@CS-MAPUserGuide.hlp>Main
+3 CS_dtEnum DaTum ENUMerator=O1379@CS-MAPUserGuide.hlp>Main
+3 CS_dtIsValid DaTum key name Is Valid=O1380@CS-MAPUserGuide.hlp>Main
+3 CS_elEnum ELlipsoid ENUMerator=O1381@CS-MAPUserGuide.hlp>Main
+3 CS_elIsValid ELlipsoid key name Is Valid=O1382@CS-MAPUserGuide.hlp>Main
+3 CS_errmsg ERRor MeSsaGe=O1383@CS-MAPUserGuide.hlp>Main
+3 CS_erpt Error RePorT=O1429@CS-MAPUserGuide.hlp>Main
+3 CS_fast FAST mode=O1384@CS-MAPUserGuide.hlp>Main
+3 CS_ftoa Floating point TO Ascii=O1385@CS-MAPUserGuide.hlp>Main
+3 CS_geoctrSetUp  GEOCenTRic setup=O1388@CS-MAPUserGuide.hlp>Main
+3 CS_geoctrGetXyz  GEOCenTRic GET XYZ=O1387@CS-MAPUserGuide.hlp>Main
+3 CS_geoctrGetLlh  GEOCenTRic GET LatLongHgt=O1386@CS-MAPUserGuide.hlp>Main
+3 CS_getCountyFips  Get County Federal Information Processing Standard code=O3623@CS-MAPUserGuide.hlp>Main
+3 CS_getDataDirectory GET DATA DIRECTORY=O1389@CS-MAPUserGuide.hlp>Main
+3 CS_getDatumOf  Get Datum of a Coordinate System=O3624@CS-MAPUserGuide.hlp>Main
+3 CS_getDescriptionOf  Get Description of a Coordinate System=O3625@CS-MAPUserGuide.hlp>Main
+3 CS_getEllipsoidOf  Get Ellipsoid Of a Coordinate System=O3626@CS-MAPUserGuide.hlp>Main
+3 CS_getReferenceOf  Get Reference Of a Coordinate System=O3627@CS-MAPUserGuide.hlp>Main
+3 CS_getSourceOf  Get Source Of Coordinate System=O3628@CS-MAPUserGuide.hlp>Main
+3 CS_getUnitsOf  Get Units of a Coordinate System=O3629@CS-MAPUserGuide.hlp>Main
+3 CS_getElValues  Get Ellipsoid Values=O3630@CS-MAPUserGuide.hlp>Main
+3 New Topic=O3681@CS-MAPUserGuide.hlp>Main
+3 CS_isgeo IS GEOgraphic=O1390@CS-MAPUserGuide.hlp>Main
+3 CS_llazdd Lat/Long to AZimuth and Distance calculator=O1391@CS-MAPUserGuide.hlp>Main
+3 CS_llFromMgrs calculate Lat/Long FROM MGRS=O1392@CS-MAPUserGuide.hlp>Main
+3 CS_mgrsFromLl calculate MGRS FROM Lat/Long=O1393@CS-MAPUserGuide.hlp>Main
+3 CS_mgrsSetUp MGRS SETUP=O1394@CS-MAPUserGuide.hlp>Main
+3 CS_recvr RECoVeR resources=O1395@CS-MAPUserGuide.hlp>Main
+3 CS_scale grid SCALE factor function=O1396@CS-MAPUserGuide.hlp>Main
+3 CS_scalh grid SCALE factor(H) function=O1397@CS-MAPUserGuide.hlp>Main
+3 CS_scalk grid SCALE factor(K) function=O1398@CS-MAPUserGuide.hlp>Main
+3 CS_setHelpPath  SET HELP PATH=O1399@CS-MAPUserGuide.hlp>Main
+3 CS_spZoneNbrMap State Plane ZONE NumBeR MAPper=O1400@CS-MAPUserGuide.hlp>Main
+3 CS_unEnum UNits ENUMerator=O1401@CS-MAPUserGuide.hlp>Main
+3 CS_unitlu UNIT Look Up=O1402@CS-MAPUserGuide.hlp>Main
+2 High Performance Interface
+3 High Performance Interface=O1403@CS-MAPUserGuide.hlp>Main
+3 CS_audflt Angular Unit DeFauLT=O1404@CS-MAPUserGuide.hlp>Main
+3 CS_cs2ll Coordinate System TO Latitude/Longitude=O1405@CS-MAPUserGuide.hlp>Main
+3 CS_cscnv Coordinate System CoNVergence=O1406@CS-MAPUserGuide.hlp>Main
+3 CS_csdef Coordinate System DEFinition locator=O1407@CS-MAPUserGuide.hlp>Main
+3 CS_csdel Coordinate System definition DELete=O1408@CS-MAPUserGuide.hlp>Main
+3 CS_csEnumByGroup Coordinate System ENUMerator By Group=O1409@CS-MAPUserGuide.hlp>Main
+3 CS_csGrpEnum Coordinate System GRouP ENUMerator=O1410@CS-MAPUserGuide.hlp>Main
+3 CS_csloc Coordinate System LOCate and initialize=O1411@CS-MAPUserGuide.hlp>Main
+3 CS_cssch Coordinate System SCale H, along a meridian=O1412@CS-MAPUserGuide.hlp>Main
+3 CS_cssck Coordinate System SCale K, along a parallel=O1413@CS-MAPUserGuide.hlp>Main
+3 CS_csscl Coordinate System SCaLe=O1414@CS-MAPUserGuide.hlp>Main
+3 CS_csupd Coordinate System dictionary UPDate=O1415@CS-MAPUserGuide.hlp>Main
+3 CS_dtcls DaTum conversion CLoSe=O1416@CS-MAPUserGuide.hlp>Main
+3 CS_dtcsu DaTum Conversion Set Up=O1417@CS-MAPUserGuide.hlp>Main
+3 CS_dtcvt DaTum ConVerT=O1418@CS-MAPUserGuide.hlp>Main
+3 CS_dtdef DaTum DEFinition locator=O1419@CS-MAPUserGuide.hlp>Main
+3 CS_dtdel DaTum definition DELete=O1420@CS-MAPUserGuide.hlp>Main
+3 CS_dtdflt DaTum DeFauLT=O1421@CS-MAPUserGuide.hlp>Main
+3 CS_dtloc DaTum LOCate=O1422@CS-MAPUserGuide.hlp>Main
+3 CS_dtupd DaTum dictionary UPDate=O1423@CS-MAPUserGuide.hlp>Main
+3 CS_eldef ELlipsoid DEFinition locator=O1424@CS-MAPUserGuide.hlp>Main
+3 CS_eldel ELlipsoid definition DELete=O1425@CS-MAPUserGuide.hlp>Main
+3 CS_eldflt ELlipsoid DeFauLT=O1426@CS-MAPUserGuide.hlp>Main
+3 CS_elEnum ELlipsoid ENUMerator=O1427@CS-MAPUserGuide.hlp>Main
+3 CS_elupd ELlipsoid dictionary UPDate=O1428@CS-MAPUserGuide.hlp>Main
+3 CS_errmsg ERRor MeSsaGe=O2104@CS-MAPUserGuide.hlp>Main
+3 CS_ll2cs Latitude/Longitude TO Coordinate System=O1430@CS-MAPUserGuide.hlp>Main
+3 CS_llchk Lat/Long limits CHecK=O1431@CS-MAPUserGuide.hlp>Main
+3 CS_ludflt Linear Unit DeFauLT=O1432@CS-MAPUserGuide.hlp>Main
+3 CS_xychk X and Y limits CHecK=O1433@CS-MAPUserGuide.hlp>Main
+3 CS_usrUnitPtr - Units Look Up Hook Function=O2650@CS-MAPUserGuide.hlp>Main
+3 CS_unitAdd - ADD UNIT to Table=O2652@CS-MAPUserGuide.hlp>Main
+3 CS_unitDel -- DELete UNIT from table=O2653@CS-MAPUserGuide.hlp>Main
+2 Low Level Interface Functions
+3 Low Level Interface Functions=O2646@CS-MAPUserGuide.hlp>Main
+3 Cartographic Projection Funtions
+4 Cartographic Projection Funtions=O2179@CS-MAPUserGuide.hlp>Main
+4 Albers Equal Area Projection (CSalber)
+5 Albers Equal Area Projection (CSalber)=O2180@CS-MAPUserGuide.hlp>Main
+5 CSalberF Forward conversion=O2181@CS-MAPUserGuide.hlp>Main
+5 CSalberI Inverse conversion=O2182@CS-MAPUserGuide.hlp>Main
+5 CSalberK grid scale (K) along parallel=O2183@CS-MAPUserGuide.hlp>Main
+5 CSalberH grid scale (H) along meridian=O2184@CS-MAPUserGuide.hlp>Main
+5 CSalberC Convergence angle=O2185@CS-MAPUserGuide.hlp>Main
+5 CSalberQ definition Quality check=O2186@CS-MAPUserGuide.hlp>Main
+5 CSalberL Latitude/longitude check=O2187@CS-MAPUserGuide.hlp>Main
+5 CSalberX Xy coordinate check=O2188@CS-MAPUserGuide.hlp>Main
+5 CSalberS Setup
+6 CSalberS Setup=O2189@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2190@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Alber_ Structure=O2192@CS-MAPUserGuide.hlp>Main
+4 American Polyconic Projection  (CSplycn)
+5 American Polyconic Projection  (CSplycn)=O2497@CS-MAPUserGuide.hlp>Main
+5 CSplycnF Forward conversion=O2498@CS-MAPUserGuide.hlp>Main
+5 CSplycnI Inverse conversion=O2499@CS-MAPUserGuide.hlp>Main
+5 CSplycnK grid scale (K) along parallel=O2500@CS-MAPUserGuide.hlp>Main
+5 CSplycnH grid scale (H) along meridian=O2501@CS-MAPUserGuide.hlp>Main
+5 CSplycnC Convergence angle=O2502@CS-MAPUserGuide.hlp>Main
+5 CSplycnQ definition Quality check=O2503@CS-MAPUserGuide.hlp>Main
+5 CSplycnL Latitude/longitude check=O2504@CS-MAPUserGuide.hlp>Main
+5 CSplycnX Xy coordinate check=O2505@CS-MAPUserGuide.hlp>Main
+5 CSplycnS Setup
+6 CSplycnS Setup=O2506@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2507@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Plycn_ Structure=O2509@CS-MAPUserGuide.hlp>Main
+4 Azimuthal Equal Area Projection (CSazmea)
+5 Azimuthal Equal Area Projection (CSazmea)=O2193@CS-MAPUserGuide.hlp>Main
+5 CsazmeaF Forward conversion=O2194@CS-MAPUserGuide.hlp>Main
+5 CSazmeaI Inverse conversion=O2195@CS-MAPUserGuide.hlp>Main
+5 CsazmeaK grid scale (K) normal=O2196@CS-MAPUserGuide.hlp>Main
+5 CSazmeaH grid scale (H) radial=O2197@CS-MAPUserGuide.hlp>Main
+5 CSazmeaC Convergence angle=O2198@CS-MAPUserGuide.hlp>Main
+5 CSazmeaQ definition Quality check=O2199@CS-MAPUserGuide.hlp>Main
+5 CSazmeaL Latitude/longitude check=O2200@CS-MAPUserGuide.hlp>Main
+5 CSazmeaX Xy coordinate check=O2201@CS-MAPUserGuide.hlp>Main
+5 CSazmeaS Setup
+6 CSazmeaS Setup=O2202@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2203@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Azmea_ Structure=O2205@CS-MAPUserGuide.hlp>Main
+4 Azmuthal Equidistant Projection (Csazmed)
+5 Azmuthal Equidistant Projection (Csazmed)=O2206@CS-MAPUserGuide.hlp>Main
+5 CSazmedF Forward conversion=O2207@CS-MAPUserGuide.hlp>Main
+5 CSazmedI Inverse conversion=O2208@CS-MAPUserGuide.hlp>Main
+5 CSazmedK grid scale (K) normal=O2209@CS-MAPUserGuide.hlp>Main
+5 CSazmedH grid scale (H) radial=O2210@CS-MAPUserGuide.hlp>Main
+5 CSazmedC Convergence angle=O2211@CS-MAPUserGuide.hlp>Main
+5 CSazmedQ definition Quality check=O2212@CS-MAPUserGuide.hlp>Main
+5 CSazmedL Latitude/longitude check=O2213@CS-MAPUserGuide.hlp>Main
+5 CSazmedX Xy coordinate check=O2214@CS-MAPUserGuide.hlp>Main
+5 CSazmedS Setup
+6 CSazmedS Setup=O2215@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition
+7 Coordinate System Definition=O2216@CS-MAPUserGuide.hlp>Main
+7 Lambert Azimuthal Equidistant Projection=O2655@CS-MAPUserGuide.hlp>Main
+7 Lambert Azimuthal Equidistant, Elevated Ellipsoid (cs_PRJCOD_AZEDE)=O2656@CS-MAPUserGuide.hlp>Main
+5 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Azmed_ Structure=O2218@CS-MAPUserGuide.hlp>Main
+4 Bonne Projection Projection (CSbonne)
+5 Bonne Projection Projection (CSbonne)=O2219@CS-MAPUserGuide.hlp>Main
+5 CSbonneF Forward conversion=O2220@CS-MAPUserGuide.hlp>Main
+5 CSbonneI Inverse conversion=O2221@CS-MAPUserGuide.hlp>Main
+5 CSbonneK parallel scale (K)=O2222@CS-MAPUserGuide.hlp>Main
+5 CSbonneH meridian scale (H)=O2223@CS-MAPUserGuide.hlp>Main
+5 CSbonneC Convergence angle=O2224@CS-MAPUserGuide.hlp>Main
+5 CSbonneQ definition Quality check=O2225@CS-MAPUserGuide.hlp>Main
+5 CSbonneL Latitude/longitude check=O2226@CS-MAPUserGuide.hlp>Main
+5 CSbonneX Xy coordinate check=O2227@CS-MAPUserGuide.hlp>Main
+5 CSbonneS Setup
+6 CSbonneS Setup=O2228@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2229@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Bonne_ Structure=O2231@CS-MAPUserGuide.hlp>Main
+4 Bipolar Oblique Conformal Conic Projection (CSbpcnc)
+5 Bipolar Oblique Conformal Conic Projection (CSbpcnc)=O2232@CS-MAPUserGuide.hlp>Main
+5 CSbpcncF Forward conversion=O2233@CS-MAPUserGuide.hlp>Main
+5 CSbpcncI Inverse conversion=O2234@CS-MAPUserGuide.hlp>Main
+5 CSbpcncK parallel scale (K)=O2235@CS-MAPUserGuide.hlp>Main
+5 CSbpcncC Convergence angle=O2236@CS-MAPUserGuide.hlp>Main
+5 CSbpcncQ definition Quality check=O2237@CS-MAPUserGuide.hlp>Main
+5 CSbpcncL Latitude/longitude check=O2238@CS-MAPUserGuide.hlp>Main
+5 CSbpcncX Xy coordinate check=O2239@CS-MAPUserGuide.hlp>Main
+5 CSbpcncS Setup
+6 CSbpcncS Setup=O2240@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2241@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Bpcnc_ Structure=O2243@CS-MAPUserGuide.hlp>Main
+4 Cassini Projection (CScsini)
+5 Cassini Projection (CScsini)=O2244@CS-MAPUserGuide.hlp>Main
+5 CScsiniF Forward=O2245@CS-MAPUserGuide.hlp>Main
+5 CScsiniI Inverse=O2246@CS-MAPUserGuide.hlp>Main
+5 CScsiniK parallel scale (K)=O2247@CS-MAPUserGuide.hlp>Main
+5 CScsiniH meridian scale (H)=O2248@CS-MAPUserGuide.hlp>Main
+5 CScsiniC Convergence angle=O2249@CS-MAPUserGuide.hlp>Main
+5 CScsiniQ definition Quality check=O2250@CS-MAPUserGuide.hlp>Main
+5 CScsiniL Latitude/longitude check=O2251@CS-MAPUserGuide.hlp>Main
+5 CScsiniX Xy coordinate check=O2252@CS-MAPUserGuide.hlp>Main
+5 CScsiniS Setup
+6 CScsiniS Setup=O2253@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2254@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Csini_ Structure=O2256@CS-MAPUserGuide.hlp>Main
+4 Danish System 34 (CSsys34)
+5 Danish System 34 (CSsys34)=O2702@CS-MAPUserGuide.hlp>Main
+5 CSsys34C Convergence angle=O2692@CS-MAPUserGuide.hlp>Main
+5 CSsys34F Forward conversion=O2693@CS-MAPUserGuide.hlp>Main
+5 CSsys34I Inverse conversion=O2695@CS-MAPUserGuide.hlp>Main
+5 CSsys34K parallel scale (K)=O2696@CS-MAPUserGuide.hlp>Main
+5 CSsys34H meridian scale (H)=O2694@CS-MAPUserGuide.hlp>Main
+5 CSsys34L Latitude/longitude check=O2697@CS-MAPUserGuide.hlp>Main
+5 CSsys34Q definition Quality check=O2698@CS-MAPUserGuide.hlp>Main
+5 CSsys34X Xy coordinate check=O2699@CS-MAPUserGuide.hlp>Main
+5 CSsys34S Setup (general)
+6 CSsys34S Setup (general)=O2691@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2700@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Sys34_ Structure=O2701@CS-MAPUserGuide.hlp>Main
+4 Equidistant Conic Projection (CSedcnc)
+5 Equidistant Conic Projection (CSedcnc)=O2257@CS-MAPUserGuide.hlp>Main
+5 CSedcncF Forward conversion=O2258@CS-MAPUserGuide.hlp>Main
+5 CSedcncI Inverse conversion=O2259@CS-MAPUserGuide.hlp>Main
+5 CSedcncK parallel scale (K)=O2260@CS-MAPUserGuide.hlp>Main
+5 CSedcncH meridian scale (H)=O2261@CS-MAPUserGuide.hlp>Main
+5 CSedcncC Convergence angle=O2262@CS-MAPUserGuide.hlp>Main
+5 CSedcncQ definition Quality check=O2263@CS-MAPUserGuide.hlp>Main
+5 CSedcncL Latitude/longitude check=O2264@CS-MAPUserGuide.hlp>Main
+5 CSedcncX Xy coordinate check=O2265@CS-MAPUserGuide.hlp>Main
+5 CSedcncS Setup
+6 CSedcncS Setup=O2266@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2267@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Edcnc_ Structure=O2269@CS-MAPUserGuide.hlp>Main
+4 Equidistant Cylindrical Projection (CSedcyl)
+5 Equidistant Cylindrical Projection (CSedcyl)=O2270@CS-MAPUserGuide.hlp>Main
+5 CSedcylF Forward conversion=O2271@CS-MAPUserGuide.hlp>Main
+5 CSedcylI Inverse conversion=O2272@CS-MAPUserGuide.hlp>Main
+5 CSedcylK parallel scale (K)=O2273@CS-MAPUserGuide.hlp>Main
+5 CSedcylH meridional scale (H)=O2274@CS-MAPUserGuide.hlp>Main
+5 CSedcylC Convergence angle=O2275@CS-MAPUserGuide.hlp>Main
+5 CSedcylQ definition Quality check=O2276@CS-MAPUserGuide.hlp>Main
+5 CSedcylL Latitude/longitude check=O2277@CS-MAPUserGuide.hlp>Main
+5 CSedcylX Xy coordinate check=O2278@CS-MAPUserGuide.hlp>Main
+5 CSedcylS Setup
+6 CSedcylS Setup=O2279@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2280@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Edcyl_ Structure=O2282@CS-MAPUserGuide.hlp>Main
+4 Eckert IV Projection (CSekrt4)
+5 Eckert IV Projection (CSekrt4)=O2283@CS-MAPUserGuide.hlp>Main
+5 CSekrt4F Forward conversion=O2284@CS-MAPUserGuide.hlp>Main
+5 CSekrt4I Inverse conversion=O2285@CS-MAPUserGuide.hlp>Main
+5 CSekrt4K parallel scale (K)=O2286@CS-MAPUserGuide.hlp>Main
+5 CSekrt4H meridian scale (H)=O2287@CS-MAPUserGuide.hlp>Main
+5 CSekrt4C Convergence angle=O2288@CS-MAPUserGuide.hlp>Main
+5 CSekrt4Q definition Quality check=O2289@CS-MAPUserGuide.hlp>Main
+5 CSekrt4L Latitude/longitude check=O2290@CS-MAPUserGuide.hlp>Main
+5 CSekrt4X Xy coordinate check=O2291@CS-MAPUserGuide.hlp>Main
+5 CSekrt4S Setup (general)
+6 CSekrt4S Setup (general)=O2292@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2293@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Ekrt4 Structure=O2295@CS-MAPUserGuide.hlp>Main
+4 Eckert VI Projection (CSekrt6)
+5 Eckert VI Projection (CSekrt6)=O2296@CS-MAPUserGuide.hlp>Main
+5 CSekrt6F Forward conversion=O2297@CS-MAPUserGuide.hlp>Main
+5 CSekrt6I Inverse conversion=O2298@CS-MAPUserGuide.hlp>Main
+5 CSekrt6K parallel scale (K)=O2299@CS-MAPUserGuide.hlp>Main
+5 CSekrt6H meridian scale (H)=O2300@CS-MAPUserGuide.hlp>Main
+5 CSekrt6C Convergence angle=O2301@CS-MAPUserGuide.hlp>Main
+5 CSekrt6Q definition Quality check=O2302@CS-MAPUserGuide.hlp>Main
+5 CSekrt6L Latitude/longitude check=O2303@CS-MAPUserGuide.hlp>Main
+5 CSekrt6X Xy coordinate check=O2304@CS-MAPUserGuide.hlp>Main
+5 CSekrt6S Setup (general)
+6 CSekrt6S Setup (general)=O2305@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2306@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Ekrt6_ Structure=O2308@CS-MAPUserGuide.hlp>Main
+4 Gnomonic Projection (CSgnomc)
+5 Gnomonic Projection (CSgnomc)=O2309@CS-MAPUserGuide.hlp>Main
+5 CsgnomcF Forward conversion=O2310@CS-MAPUserGuide.hlp>Main
+5 CsgnomcI Inverse conversion=O2311@CS-MAPUserGuide.hlp>Main
+5 CsgnomcK grid scale (K) normal to radial=O2312@CS-MAPUserGuide.hlp>Main
+5 CsgnomcH grid scale (H) along radial=O2313@CS-MAPUserGuide.hlp>Main
+5 CsgnomcC Convergence angle=O2314@CS-MAPUserGuide.hlp>Main
+5 CsgnomcL Latitude/longitude check=O2315@CS-MAPUserGuide.hlp>Main
+5 CSgnomcQ definition Quality check=O2316@CS-MAPUserGuide.hlp>Main
+5 CsgnomcX Xy coordinate check=O2317@CS-MAPUserGuide.hlp>Main
+5 CSgnomcS Setup
+6 CSgnomcS Setup=O2318@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2319@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Gnomc_ Structure=O2321@CS-MAPUserGuide.hlp>Main
+4 Goode Homolosine Projection (CShmlsn)
+5 Goode Homolosine Projection (CShmlsn)=O2322@CS-MAPUserGuide.hlp>Main
+5 CShmlsnF Forward conversion=O2323@CS-MAPUserGuide.hlp>Main
+5 CShmlsnI Inverse conversion=O2324@CS-MAPUserGuide.hlp>Main
+5 CShmlsnK parallel scale (K)=O2325@CS-MAPUserGuide.hlp>Main
+5 CShmlsnH meridian scale (H)=O2326@CS-MAPUserGuide.hlp>Main
+5 CShmlsnC Convergence angle=O2327@CS-MAPUserGuide.hlp>Main
+5 CShmlsnQ definition Quality check=O2328@CS-MAPUserGuide.hlp>Main
+5 CShmlsnL Latitude/longitude check=O2329@CS-MAPUserGuide.hlp>Main
+5 CShmlsnX Xy coordinate check=O2330@CS-MAPUserGuide.hlp>Main
+5 CShmlsnS Setup (general)
+6 CShmlsnS Setup (general)=O2331@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2332@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Hmlsn_ Structure=O2334@CS-MAPUserGuide.hlp>Main
+4 Hotine Oblique Mercator Projection  (CSoblqm)
+5 Hotine Oblique Mercator Projection  (CSoblqm)=O2454@CS-MAPUserGuide.hlp>Main
+5 CSoblqmF Forward conversion=O2455@CS-MAPUserGuide.hlp>Main
+5 CSoblqmI Inverse conversion=O2456@CS-MAPUserGuide.hlp>Main
+5 CSoblqmK scale (K)=O2457@CS-MAPUserGuide.hlp>Main
+5 CSoblqmC Convergence angle=O2458@CS-MAPUserGuide.hlp>Main
+5 CSoblqmQ definition Quality check=O2459@CS-MAPUserGuide.hlp>Main
+5 CSoblqmL Latitude/longitude check=O2460@CS-MAPUserGuide.hlp>Main
+5 CSoblqmX Xy coordinate check=O2461@CS-MAPUserGuide.hlp>Main
+5 CSoblqmS Setup
+6 CSoblqmS Setup=O2462@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition
+7 Coordinate System Definition=O2463@CS-MAPUserGuide.hlp>Main
+7 Single Point, Unrectified Hotine Oblique Mercator (cs_PRJCOD_HOM1UV)=O2464@CS-MAPUserGuide.hlp>Main
+7 Two Point, Unrectified Hotine Oblique Mercator (cs_PRJCOD_HOM2UV)=O2465@CS-MAPUserGuide.hlp>Main
+7 Alaska Variation, Hotine Oblique Mercator (cs_PRJCOD_HOM1XY)=O2466@CS-MAPUserGuide.hlp>Main
+7 Two Point, Rectified Hotine Oblique Mercator (cs_PRJCOD_HOM2XY)=O2467@CS-MAPUserGuide.hlp>Main
+7 Rectified Skew Orthomorphic (cs_PRJCOD_RSKEW)=O2468@CS-MAPUserGuide.hlp>Main
+7 Rectified Skew Orthomorphic Centered (cs_PRJCOD_RSKEWC)=O2469@CS-MAPUserGuide.hlp>Main
+5 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Oblqm_ Structure=O2471@CS-MAPUserGuide.hlp>Main
+4 Krovak Oblique Conformal Conic
+5 Krovak Oblique Conformal Conic=O2720@CS-MAPUserGuide.hlp>Main
+5 CSkrovkF Forward Conversion=O2721@CS-MAPUserGuide.hlp>Main
+5 CSkrovkI Inverse conversion=O2722@CS-MAPUserGuide.hlp>Main
+5 CSkrovkK scale (K)=O2723@CS-MAPUserGuide.hlp>Main
+5 CSkrovkC Convergence angle=O2724@CS-MAPUserGuide.hlp>Main
+5 CSkrovkQ definition Quality check=O2725@CS-MAPUserGuide.hlp>Main
+5 CSkrovkL Latitude/longitude check=O2726@CS-MAPUserGuide.hlp>Main
+5 CSkrovkX Xy coordinate check=O2727@CS-MAPUserGuide.hlp>Main
+5 CSkrovkS Setup
+6 CSkrovkS Setup=O2728@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition
+7 Coordinate System Definition=O2729@CS-MAPUserGuide.hlp>Main
+7 Krovak Oblique Conformal Conic, Czechoslovokia (cs_PRJCOD_=O2730@CS-MAPUserGuide.hlp>Main
+7 Krovak Oblique Conformal Conic/95 Adjustment=O2731@CS-MAPUserGuide.hlp>Main
+5 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Krovk_ Structure=O2732@CS-MAPUserGuide.hlp>Main
+4 Lambert Conformal Conic Projection (CSlmbrt)
+5 Lambert Conformal Conic Projection (CSlmbrt)=O2335@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtF Forward conversion=O2336@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtI Inverse conversion=O2337@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtK scale (K)=O2338@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtC Convergence angle=O2339@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtQ definition Quality check=O2340@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtL Latitude/longitude check=O2341@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtX Xy coordinate check=O2342@CS-MAPUserGuide.hlp>Main
+5 CSlmbrtS Setup
+6 CSlmbrtS Setup=O2343@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition
+7 Coordinate System Definition=O2344@CS-MAPUserGuide.hlp>Main
+7 Two Standard Parallels (cs_PRJCOD_LMBRT):=O2345@CS-MAPUserGuide.hlp>Main
+7 Single Standard Parallel (cs_PRJCOD_LM1SP):=O2346@CS-MAPUserGuide.hlp>Main
+7 Belgian Variation (cs_PRJCOD_LMBLGN):=O2347@CS-MAPUserGuide.hlp>Main
+7 Wisconsin Variation (cs_PRJCOD_WCCSL):=O2348@CS-MAPUserGuide.hlp>Main
+7 Minnesota Variation (cs_PRJCOD_MNDOTL):=O2349@CS-MAPUserGuide.hlp>Main
+5 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Lmbrt_ Structure=O2351@CS-MAPUserGuide.hlp>Main
+4 Lambert Tangential Projection  (CSlmtan)
+5 Lambert Tangential Projection  (CSlmtan)=O2352@CS-MAPUserGuide.hlp>Main
+5 CSlmtanF Forward conversion=O2353@CS-MAPUserGuide.hlp>Main
+5 CSlmtanI Inverse conversion=O2354@CS-MAPUserGuide.hlp>Main
+5 CSlmtanK parallel scale (K)=O2355@CS-MAPUserGuide.hlp>Main
+5 CSlmtanH meridian scale (H)=O2356@CS-MAPUserGuide.hlp>Main
+5 CSlmtanC Convergence angle=O2357@CS-MAPUserGuide.hlp>Main
+5 CSlmtanL Latitude/longitude check=O2358@CS-MAPUserGuide.hlp>Main
+5 CSlmtanQ definition Quality check=O2359@CS-MAPUserGuide.hlp>Main
+5 CSlmtanX Xy coordinate check=O2360@CS-MAPUserGuide.hlp>Main
+5 CSlmtanS Setup
+6 CSlmtanS Setup=O2361@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2362@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Lmtan_ Structure=O2364@CS-MAPUserGuide.hlp>Main
+4 Mercator Projection (CSmrcat)
+5 Mercator Projection (CSmrcat)=O2405@CS-MAPUserGuide.hlp>Main
+5 CSmrcatF Forward conversion=O2406@CS-MAPUserGuide.hlp>Main
+5 CSmrcatI Inverse conversion=O2407@CS-MAPUserGuide.hlp>Main
+5 CSmrcatK scale (K) along a parallel=O2408@CS-MAPUserGuide.hlp>Main
+5 CSmrcatC Convergence angle=O2409@CS-MAPUserGuide.hlp>Main
+5 CSmrcatQ definition Quality check=O2410@CS-MAPUserGuide.hlp>Main
+5 CSmrcatL Latitude/longitude check=O2411@CS-MAPUserGuide.hlp>Main
+5 CSmrcatX Xy coordinate check=O2412@CS-MAPUserGuide.hlp>Main
+5 CSmrcatS Setup
+6 CSmrcatS Setup=O2413@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2414@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Mrcat_ Structure=O2416@CS-MAPUserGuide.hlp>Main
+4 Miller Projection (CSmillr)
+5 Miller Projection (CSmillr)=O2365@CS-MAPUserGuide.hlp>Main
+5 CSmillrF Forward conversion=O2366@CS-MAPUserGuide.hlp>Main
+5 CSmillrI Inverse conversion=O2367@CS-MAPUserGuide.hlp>Main
+5 CSmillrK scale (K) along a parallel=O2368@CS-MAPUserGuide.hlp>Main
+5 CSmillrH scale (H) along a meridian=O2369@CS-MAPUserGuide.hlp>Main
+5 CSmillrC Convergence angle=O2370@CS-MAPUserGuide.hlp>Main
+5 CSmillrL Latitude/longitude check=O2371@CS-MAPUserGuide.hlp>Main
+5 CSmillrQ definition Quality check=O2372@CS-MAPUserGuide.hlp>Main
+5 CSmillrX Xy coordinate check=O2373@CS-MAPUserGuide.hlp>Main
+5 CSmillrS Setup
+6 CSmillrS Setup=O2374@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2375@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Millr_ Structure=O2377@CS-MAPUserGuide.hlp>Main
+4 Modified Polyconic Projection (CSmodpc)
+5 Modified Polyconic Projection (CSmodpc)=O2378@CS-MAPUserGuide.hlp>Main
+5 CSmodpcF Forward conversion=O2379@CS-MAPUserGuide.hlp>Main
+5 CSmodpcI Inverse conversion=O2380@CS-MAPUserGuide.hlp>Main
+5 CSmodpcK grid scale (K), along parallel=O2381@CS-MAPUserGuide.hlp>Main
+5 CSmodpcH grid scale (H), along meridian=O2382@CS-MAPUserGuide.hlp>Main
+5 CSmodpcC Convergence angle=O2383@CS-MAPUserGuide.hlp>Main
+5 CSmodpcB Basic calculations=O2384@CS-MAPUserGuide.hlp>Main
+5 CSmodpcQ definition Quality check=O2385@CS-MAPUserGuide.hlp>Main
+5 CSmodpcL Latitude/longitude check=O2386@CS-MAPUserGuide.hlp>Main
+5 CSmodpcX Xy coordinate check=O2387@CS-MAPUserGuide.hlp>Main
+5 CSmodpcS Setup
+6 CSmodpcS Setup=O2388@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2389@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Modpc_ Structure=O2391@CS-MAPUserGuide.hlp>Main
+4 Mollweide Projection (CSmolwd)
+5 Mollweide Projection (CSmolwd)=O2392@CS-MAPUserGuide.hlp>Main
+5 CSmolwdF Forward conversion=O2393@CS-MAPUserGuide.hlp>Main
+5 CSmolwdI Inverse conversion=O2394@CS-MAPUserGuide.hlp>Main
+5 CSmolwdK parallel scale (K)=O2395@CS-MAPUserGuide.hlp>Main
+5 CSmolwdH meridian scale (H)=O2396@CS-MAPUserGuide.hlp>Main
+5 CSmolwdC Convergence angle=O2397@CS-MAPUserGuide.hlp>Main
+5 CSmolwdQ definition Quality check=O2398@CS-MAPUserGuide.hlp>Main
+5 CSmolwdL Latitude/longitude check=O2399@CS-MAPUserGuide.hlp>Main
+5 CSmolwdX Xy coordinate check=O2400@CS-MAPUserGuide.hlp>Main
+5 CSmolwdS Setup (general)
+6 CSmolwdS Setup (general)=O2401@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2402@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Molwd_ Structure=O2404@CS-MAPUserGuide.hlp>Main
+4 Modified Stereographic Projection (CSmstro)
+5 Modified Stereographic Projection (CSmstro)=O2417@CS-MAPUserGuide.hlp>Main
+5 CSmstroF Forward=O2418@CS-MAPUserGuide.hlp>Main
+5 CSmstroI Inverse=O2419@CS-MAPUserGuide.hlp>Main
+5 CSmstroK scale (K)=O2420@CS-MAPUserGuide.hlp>Main
+5 CSmstroC Convergence angle=O2421@CS-MAPUserGuide.hlp>Main
+5 CSmstroQ definition Quality check=O2422@CS-MAPUserGuide.hlp>Main
+5 CSmstroL Latitude/longitude check=O2423@CS-MAPUserGuide.hlp>Main
+5 CSmstroX Xy coordinate check=O2424@CS-MAPUserGuide.hlp>Main
+5 CSmstroS Setup
+6 CSmstroS Setup=O2425@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2426@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Mstro_ Structure=O2428@CS-MAPUserGuide.hlp>Main
+4 New Zealand National Grid System (CSnzlnd)
+5 New Zealand National Grid System (CSnzlnd)=O2442@CS-MAPUserGuide.hlp>Main
+5 CSnzlndF Forward=O2443@CS-MAPUserGuide.hlp>Main
+5 CSnzlndI Inverse=O2444@CS-MAPUserGuide.hlp>Main
+5 CSnzlndK grid scale (K)=O2445@CS-MAPUserGuide.hlp>Main
+5 CSnzlndC Convergence angle=O2446@CS-MAPUserGuide.hlp>Main
+5 CSnzlndQ definition Quality check=O2447@CS-MAPUserGuide.hlp>Main
+5 CSnzlndL Latitude/longitude check=O2448@CS-MAPUserGuide.hlp>Main
+5 CSnzlndX Xy coordinate check=O2449@CS-MAPUserGuide.hlp>Main
+5 CSnzlndS Setup
+6 CSnzlndS Setup=O2450@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2451@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Nzlnd_ Structure=O2453@CS-MAPUserGuide.hlp>Main
+4 Non-Earth Coordinate System (CSnerth)
+5 Non-Earth Coordinate System (CSnerth)=O2708@CS-MAPUserGuide.hlp>Main
+5 CSnerthF - Forward Conversion=O2709@CS-MAPUserGuide.hlp>Main
+5 CSnerthI=O2710@CS-MAPUserGuide.hlp>Main
+5 CSnerthK scale (K) along a parallel=O2711@CS-MAPUserGuide.hlp>Main
+5 CSnerthC Convergence angle=O2712@CS-MAPUserGuide.hlp>Main
+5 CSnerthQ definition Quality check=O2715@CS-MAPUserGuide.hlp>Main
+5 CSnerthL=O2713@CS-MAPUserGuide.hlp>Main
+5 CSnerthX Xy coordinate check=O2714@CS-MAPUserGuide.hlp>Main
+5 CSnerthS Setup
+6 CSnerthS Setup=O2716@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2717@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2718@CS-MAPUserGuide.hlp>Main
+6 cs_Nerth_ Structure=O2719@CS-MAPUserGuide.hlp>Main
+4 Normal Aspect Authalic Cylindrical Projection (CSnacyl)
+5 Normal Aspect Authalic Cylindrical Projection (CSnacyl)=O2429@CS-MAPUserGuide.hlp>Main
+5 CSnacylF Forward conversion=O2430@CS-MAPUserGuide.hlp>Main
+5 CSnacylI Inverse conversion=O2431@CS-MAPUserGuide.hlp>Main
+5 CSnacylK parallel scale (K)=O2432@CS-MAPUserGuide.hlp>Main
+5 CSnacylH meridian scale (H)=O2433@CS-MAPUserGuide.hlp>Main
+5 CSnacylC Convergence angle=O2434@CS-MAPUserGuide.hlp>Main
+5 CSnacylQ definition Quality check=O2435@CS-MAPUserGuide.hlp>Main
+5 CSnacylL Latitude/longitude check=O2436@CS-MAPUserGuide.hlp>Main
+5 CSnacylX Xy coordinate check=O2437@CS-MAPUserGuide.hlp>Main
+5 CSnacylS Setup
+6 CSnacylS Setup=O2438@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2439@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Nacyl_ Structure=O2441@CS-MAPUserGuide.hlp>Main
+4 Oblique Cylindrical Projection (CSswiss)
+5 Oblique Cylindrical Projection (CSswiss)=O2559@CS-MAPUserGuide.hlp>Main
+5 CSswissF Forward conversion=O2560@CS-MAPUserGuide.hlp>Main
+5 CSswissI Inverse conversion=O2561@CS-MAPUserGuide.hlp>Main
+5 CSswissK parallel scale (K)=O2562@CS-MAPUserGuide.hlp>Main
+5 CSswissC Convergence angle=O2563@CS-MAPUserGuide.hlp>Main
+5 CSswissQ definition Quality check=O2564@CS-MAPUserGuide.hlp>Main
+5 CSswissL Latitude/longitude check=O2565@CS-MAPUserGuide.hlp>Main
+5 CSswissX Xy coordinate check=O2566@CS-MAPUserGuide.hlp>Main
+5 CSswissS Setup
+6 CSswissS Setup=O2567@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition
+7 Coordinate System Definition=O2568@CS-MAPUserGuide.hlp>Main
+7 Oblique Cylindrical Projection, Generalized (cs_PRJCOD_OBQCYL)=O2660@CS-MAPUserGuide.hlp>Main
+7 Oblique Cylindrical Projection, Switzerland (cs_PRJCOD_SWISS)=O2661@CS-MAPUserGuide.hlp>Main
+5 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Swiss_ Structure=O2570@CS-MAPUserGuide.hlp>Main
+4 Oblique Stereographic Projection  (CSostro)
+5 Oblique Stereographic Projection  (CSostro)=O2485@CS-MAPUserGuide.hlp>Main
+5 CSostroF Forward conversion=O2486@CS-MAPUserGuide.hlp>Main
+5 CSostroI Inverse conversion=O2487@CS-MAPUserGuide.hlp>Main
+5 CSostroK grid scale (K) normal to radial=O2488@CS-MAPUserGuide.hlp>Main
+5 CSostroC Convergence angle=O2489@CS-MAPUserGuide.hlp>Main
+5 CSostroQ definition Quality check=O2490@CS-MAPUserGuide.hlp>Main
+5 CSostroL Latitude/longitude check=O2491@CS-MAPUserGuide.hlp>Main
+5 CSostroX Xy coordinate check=O2492@CS-MAPUserGuide.hlp>Main
+5 CSostroS Setup
+6 CSostroS Setup=O2493@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2494@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Ostro_ Structure=O2496@CS-MAPUserGuide.hlp>Main
+4 Orthographic Projection  (CSortho)
+5 Orthographic Projection  (CSortho)=O2472@CS-MAPUserGuide.hlp>Main
+5 CSorthoF Forward conversion=O2473@CS-MAPUserGuide.hlp>Main
+5 CSorthoI Inverse conversion=O2474@CS-MAPUserGuide.hlp>Main
+5 CSorthoK grid scale (K) normal to radial=O2475@CS-MAPUserGuide.hlp>Main
+5 CSorthoH grid scale (H) along radial=O2476@CS-MAPUserGuide.hlp>Main
+5 CSorthoC Convergence angle=O2477@CS-MAPUserGuide.hlp>Main
+5 CSorthoQ definition Quality check=O2478@CS-MAPUserGuide.hlp>Main
+5 CSorthoL Latitude/longitude check=O2479@CS-MAPUserGuide.hlp>Main
+5 CSorthoX Xy coordinate check=O2480@CS-MAPUserGuide.hlp>Main
+5 CSorthoS Setup (general)
+6 CSorthoS Setup (general)=O2481@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2482@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Ortho_ Structure=O2484@CS-MAPUserGuide.hlp>Main
+4 Polar Stereographic Projection  (CSpstro)
+5 Polar Stereographic Projection  (CSpstro)=O2510@CS-MAPUserGuide.hlp>Main
+5 CSpstroF Forward conversion=O2511@CS-MAPUserGuide.hlp>Main
+5 CSpstroI Inverse conversion=O2512@CS-MAPUserGuide.hlp>Main
+5 CSpstroK grid scale (K) normal to radial=O2513@CS-MAPUserGuide.hlp>Main
+5 CSpstroC Convergence angle=O2514@CS-MAPUserGuide.hlp>Main
+5 CSpstroQ definition Quality check=O2515@CS-MAPUserGuide.hlp>Main
+5 CSpstroL Latitude/longitude check=O2516@CS-MAPUserGuide.hlp>Main
+5 CSpstroX Xy coordinate check=O2517@CS-MAPUserGuide.hlp>Main
+5 CSpstroS Setup
+6 CSpstroS Setup=O2518@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2519@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Pstro_ Structure=O2521@CS-MAPUserGuide.hlp>Main
+4 Robinson Projection (CSrobin)
+5 Robinson Projection (CSrobin)=O2522@CS-MAPUserGuide.hlp>Main
+5 CSrobinF Forward conversion=O2523@CS-MAPUserGuide.hlp>Main
+5 CSrobinI Inverse conversion=O2524@CS-MAPUserGuide.hlp>Main
+5 CSrobinK grid scale (K) normal to radial=O2525@CS-MAPUserGuide.hlp>Main
+5 CSrobinH grid scale (H) along radial=O2526@CS-MAPUserGuide.hlp>Main
+5 CSrobinC Convergence angle=O2527@CS-MAPUserGuide.hlp>Main
+5 CSrobinQ definition Quality check=O2528@CS-MAPUserGuide.hlp>Main
+5 CSrobinL Latitude/longitude check=O2529@CS-MAPUserGuide.hlp>Main
+5 CSrobinX Xy coordinate check=O2530@CS-MAPUserGuide.hlp>Main
+5 CSrobinS Setup (general)
+6 CSrobinS Setup (general)=O2531@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2532@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Robin_ Structure=O2534@CS-MAPUserGuide.hlp>Main
+4 Sinusoidal Projection (CSsinus)
+5 Sinusoidal Projection (CSsinus)=O2535@CS-MAPUserGuide.hlp>Main
+5 CSsinusF Forward conversion=O2536@CS-MAPUserGuide.hlp>Main
+5 CSsinusI Inverse conversion=O2537@CS-MAPUserGuide.hlp>Main
+5 CSsinusK parallel scale (K)=O2538@CS-MAPUserGuide.hlp>Main
+5 CSsinusH meridian scale (H)=O2539@CS-MAPUserGuide.hlp>Main
+5 CSsinusC Convergence angle=O2540@CS-MAPUserGuide.hlp>Main
+5 CSsinusQ definition Quality check=O2541@CS-MAPUserGuide.hlp>Main
+5 CSsinusL Latitude/longitude check=O2542@CS-MAPUserGuide.hlp>Main
+5 CSsinusX Xy coordinate check=O2543@CS-MAPUserGuide.hlp>Main
+5 CSsinusS Setup
+6 CSsinusS Setup=O2544@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2545@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Sinus_ Structure=O2547@CS-MAPUserGuide.hlp>Main
+4 Oblique Stereographic ala Snyder (CSsstro)
+5 Oblique Stereographic ala Snyder (CSsstro)=O2707@CS-MAPUserGuide.hlp>Main
+5 CSsstroF Forward conversion=O2548@CS-MAPUserGuide.hlp>Main
+5 CSsstroI Inverse conversion=O2549@CS-MAPUserGuide.hlp>Main
+5 CSsstroK grid scale (K) normal to radial=O2550@CS-MAPUserGuide.hlp>Main
+5 CSsstroC Convergence angle=O2551@CS-MAPUserGuide.hlp>Main
+5 CSsstroQ definition Quality check=O2552@CS-MAPUserGuide.hlp>Main
+5 CSsstroL Latitude/longitude check=O2553@CS-MAPUserGuide.hlp>Main
+5 CSsstroX Xy coordinate check=O2554@CS-MAPUserGuide.hlp>Main
+5 CSsstroS Setup
+6 CSsstroS Setup=O2555@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2556@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Sstro_ Structure=O2558@CS-MAPUserGuide.hlp>Main
+4 Transverse Authalic Cylindrical Projection  (CStacyl)
+5 Transverse Authalic Cylindrical Projection  (CStacyl)=O2571@CS-MAPUserGuide.hlp>Main
+5 CStacylF Forward conversion=O2572@CS-MAPUserGuide.hlp>Main
+5 CStacylI Inverse conversion=O2573@CS-MAPUserGuide.hlp>Main
+5 CStacylK parallel scale (K)=O2574@CS-MAPUserGuide.hlp>Main
+5 CStacylH meridian scale (K)=O2575@CS-MAPUserGuide.hlp>Main
+5 CStacylC Convergence angle=O2576@CS-MAPUserGuide.hlp>Main
+5 CStacylQ definition Quality check=O2577@CS-MAPUserGuide.hlp>Main
+5 CStacylL Latitude/longitude check=O2578@CS-MAPUserGuide.hlp>Main
+5 CStacylX Xy coordinate check=O2579@CS-MAPUserGuide.hlp>Main
+5 CStacylS Setup
+6 CStacylS Setup=O2580@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2581@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Tacyl_ Structure=O2583@CS-MAPUserGuide.hlp>Main
+4 Transverse Mercator, ala Snyder, Projection (CStrmrs)
+5 Transverse Mercator, ala Snyder, Projection (CStrmrs)=O2601@CS-MAPUserGuide.hlp>Main
+5 CStrmrsF Forward=O2602@CS-MAPUserGuide.hlp>Main
+5 CStrmrsI Inverse=O2603@CS-MAPUserGuide.hlp>Main
+5 CStrmrsK parallel scale (K)=O2604@CS-MAPUserGuide.hlp>Main
+5 CStrmrsC Convergence angle=O2605@CS-MAPUserGuide.hlp>Main
+5 CStrmrsQ definition Quality check=O2606@CS-MAPUserGuide.hlp>Main
+5 CStrmrsL Latitude/longitude check=O2607@CS-MAPUserGuide.hlp>Main
+5 CStrmrsX Xy coordinate check=O2608@CS-MAPUserGuide.hlp>Main
+5 CStrmrsS Snyder, Setup
+6 CStrmrsS Snyder, Setup=O2609@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2610@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Trmrs_ Structure=O2612@CS-MAPUserGuide.hlp>Main
+4 Transverse Mercator Projection  (CStrmer)
+5 Transverse Mercator Projection  (CStrmer)=O2584@CS-MAPUserGuide.hlp>Main
+5 CStrmerF Forward=O2585@CS-MAPUserGuide.hlp>Main
+5 CStrmerI Inverse=O2586@CS-MAPUserGuide.hlp>Main
+5 CStrmerK parallel scale (K)=O2587@CS-MAPUserGuide.hlp>Main
+5 CStrmerC Convergence angle=O2588@CS-MAPUserGuide.hlp>Main
+5 CStrmerQ definition Quality check=O2589@CS-MAPUserGuide.hlp>Main
+5 CStrmerL Latitude/longitude check=O2590@CS-MAPUserGuide.hlp>Main
+5 CStrmerX Xy coordinate check=O2591@CS-MAPUserGuide.hlp>Main
+5 CStrmerS Setup
+6 CStrmerS Setup=O2592@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition
+7 Coordinate System Definition=O2593@CS-MAPUserGuide.hlp>Main
+7 Transverse Mercator, aka Gauss Kruger (cs_PRJCOD_TRMER)=O2594@CS-MAPUserGuide.hlp>Main
+7 Universal Transverse Mercator (cs_PRJCOD_UTM)=O2595@CS-MAPUserGuide.hlp>Main
+7 South Oriented Transverse Mercator (cs_PRJCOD_SOTRM)=O2596@CS-MAPUserGuide.hlp>Main
+7 Wisconsin Variation (cs_PRJCOD_WCCST)=O2597@CS-MAPUserGuide.hlp>Main
+7 Minnesota Variation (cs_PRJCOD_MNDOT):=O2598@CS-MAPUserGuide.hlp>Main
+7 Transverse Mercator (Gauss/Kruger) with Affine Post Process (cs_PRJCOD_TRMERAF)=O2657@CS-MAPUserGuide.hlp>Main
+7 Ordnance Survey National Grid Transformation of 1997 (cs_PRJCOD_OSTN97)=O2658@CS-MAPUserGuide.hlp>Main
+7 Ordnance Survey National Grid Transformation of 1997 (cs_PRJCOD_OSTN02)=O2659@CS-MAPUserGuide.hlp>Main
+5 Datum Definition=O2191@CS-MAPUserGuide.hlp>Main
+6 cs_Trmer_ Structure=O2600@CS-MAPUserGuide.hlp>Main
+4 Unity Pseudo Projection  (CSunity)
+5 Unity Pseudo Projection  (CSunity)=O2613@CS-MAPUserGuide.hlp>Main
+5 CSunityF Forward conversion=O2614@CS-MAPUserGuide.hlp>Main
+5 CSunityI Inverse conversion=O2615@CS-MAPUserGuide.hlp>Main
+5 CSunityK scale (K)=O2616@CS-MAPUserGuide.hlp>Main
+5 CSunityC Covergence angle=O2617@CS-MAPUserGuide.hlp>Main
+5 CSunityQ definition Quality check=O2618@CS-MAPUserGuide.hlp>Main
+5 CSunityL Latitude/longitude check=O2619@CS-MAPUserGuide.hlp>Main
+5 CSunityX Xy coordinate check=O2620@CS-MAPUserGuide.hlp>Main
+5 CSunityS Setup
+6 CSunityS Setup=O2621@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2622@CS-MAPUserGuide.hlp>Main
+4 Van Der Grinten Projection  (CSvdgrn)
+5 Van Der Grinten Projection  (CSvdgrn)=O2623@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnF Forward conversion=O2624@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnI Inverse conversion=O2625@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnK parallel scale (K)=O2626@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnH meridian scale (H)=O2627@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnC Convergence angle=O2628@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnQ definition Quality check=O2629@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnL Latitude/longitude check=O2630@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnX Xy coordinate check=O2631@CS-MAPUserGuide.hlp>Main
+5 CSvdgrnS Setup
+6 CSvdgrnS Setup=O2632@CS-MAPUserGuide.hlp>Main
+6 Coordinate System Definition=O2633@CS-MAPUserGuide.hlp>Main
+6 Datum Definition=O2242@CS-MAPUserGuide.hlp>Main
+6 cs_Vdgrn_ Structure=O2635@CS-MAPUserGuide.hlp>Main
+3 Geodetic Conversion (Datum) Functions
+4 Geodetic Conversion (Datum) Functions=O1923@CS-MAPUserGuide.hlp>Main
+4 Three Parameter Transformation
+5 Three Parameter Transformation=O2664@CS-MAPUserGuide.hlp>Main
+5 CS_3pInit 3 Parameter INITialize=O1924@CS-MAPUserGuide.hlp>Main
+5 CS_3p3dFowrd 3 Parameter 3D FOrWaRD conversion=O1925@CS-MAPUserGuide.hlp>Main
+5 CS_3p2dFowrd 3 Parameter 2D FOrWaRD conversion=O1926@CS-MAPUserGuide.hlp>Main
+5 CS_3p3dInvrs 3 Parameter 3D INVeRSe transformation=O1927@CS-MAPUserGuide.hlp>Main
+5 CS_3p2dInvrs 3 Parameter 2D INVeRSe transformation=O1928@CS-MAPUserGuide.hlp>Main
+4 Four Parameter Transformation
+5 Four Parameter Transformation=O2665@CS-MAPUserGuide.hlp>Main
+5 CS_4pInit 4 Parameter INITialize=O1929@CS-MAPUserGuide.hlp>Main
+5 CS_4p3dFowrd 4 Parameter 3D FOrWaRD conversion=O1930@CS-MAPUserGuide.hlp>Main
+5 CS_4p2dFowrd 4 Parameter 2D FOrWaRD conversion=O1931@CS-MAPUserGuide.hlp>Main
+5 CS_4p3dInvrs 4 Parameter 3D INVeRSe transformation=O1932@CS-MAPUserGuide.hlp>Main
+5 CS_4p2dInvrs 4 Parameter 2D INVeRSe transformation=O1933@CS-MAPUserGuide.hlp>Main
+4 Six Parameter Transformation
+5 Six Parameter Transformation=O2666@CS-MAPUserGuide.hlp>Main
+5 CS_6pInit 6 Parameter INITialize=O1934@CS-MAPUserGuide.hlp>Main
+5 CS_6p3dFowrd 6 Parameter 3D FOrWaRD conversion=O1935@CS-MAPUserGuide.hlp>Main
+5 CS_6p2dFowrd 6 Parameter 2D FOrWaRD conversion=O1936@CS-MAPUserGuide.hlp>Main
+5 CS_6p3dInvrs 6 Parameter 3D INVeRSe transformation=O1937@CS-MAPUserGuide.hlp>Main
+5 CS_6p2dInvrs 6 Parameter 2D INVeRSe transformation=O1938@CS-MAPUserGuide.hlp>Main
+4 Seven Parameter Transformation
+5 Seven Parameter Transformation=O2667@CS-MAPUserGuide.hlp>Main
+5 CS_7pInit 7 Parameter INITialize=O1939@CS-MAPUserGuide.hlp>Main
+5 CS_7p3dFowrd 7 Parameter 3D FOrWaRD conversion=O1940@CS-MAPUserGuide.hlp>Main
+5 CS_7p2dFowrd 7 Parameter 2D FOrWaRD conversion=O1941@CS-MAPUserGuide.hlp>Main
+5 CS_7p3dInvrs 7 Parameter 3D INVeRSe transformation=O1942@CS-MAPUserGuide.hlp>Main
+5 CS_7p2dInvrs 7 Parameter 2D INVeRSe transformation=O1943@CS-MAPUserGuide.hlp>Main
+4 Bursa/Wolf Transformation
+5 Bursa/Wolf Transformation=O2668@CS-MAPUserGuide.hlp>Main
+5 CS_bwInit Bursa Wolf INITialize=O1947@CS-MAPUserGuide.hlp>Main
+5 CS_bw3dFowrd Bursa Wolf 3D FOrWaRD conversion=O1948@CS-MAPUserGuide.hlp>Main
+5 CS_bw2dFowrd Bursa Wolf 2D FOrWaRD conversion=O1949@CS-MAPUserGuide.hlp>Main
+5 CS_bw3dInvrs Bursa Wolf 3D INVeRSe transformation=O1950@CS-MAPUserGuide.hlp>Main
+5 CS_bw2dInvrs Bursa Wolf 2D INVeRSe transformation=O1951@CS-MAPUserGuide.hlp>Main
+4 DMA Multiple Regression
+5 DMA Multiple Regression=O2669@CS-MAPUserGuide.hlp>Main
+5 CS_dmaMrInit DMA Multiple Regression INITialize=O1952@CS-MAPUserGuide.hlp>Main
+5 CS_dmaMr3dFowrd DMA Multiple Regression 3D FOrWaRD conversion=O1953@CS-MAPUserGuide.hlp>Main
+5 CS_dmaMr2dFowrd DMA Multiple Regression 2D FOrWaRD conversion=O1954@CS-MAPUserGuide.hlp>Main
+5 CS_dmaMr3dInvrs DMA Multiple Regression 3D INVeRSe transformation=O1955@CS-MAPUserGuide.hlp>Main
+5 CS_dmaMr2dInvrs DMA Multiple Regression 2D INVeRSe transformation=O1956@CS-MAPUserGuide.hlp>Main
+4 DMA Molodensky Transformation
+5 DMA Molodensky Transformation=O2670@CS-MAPUserGuide.hlp>Main
+5 CS_moInit MOlodensky INITialize=O1958@CS-MAPUserGuide.hlp>Main
+5 CS_mo3dFowrd MOlodensky 3D FOrWaRD conversion=O1959@CS-MAPUserGuide.hlp>Main
+5 CS_mo2dFowrd MOlodensky 2D FOrWaRD conversion=O1960@CS-MAPUserGuide.hlp>Main
+5 CS_mo3dInvrs MOlodensky 3D INVeRSe transformation=O1961@CS-MAPUserGuide.hlp>Main
+5 CS_mo2dInvrs MOlodensky 2D INVeRSe transformation=O1962@CS-MAPUserGuide.hlp>Main
+4 Geocentric Coordinate Calculation
+5 Geocentric Coordinate Calculation=O2671@CS-MAPUserGuide.hlp>Main
+5 CS_llhToXyz LongLatHgt TO XYZ geocentric=O1957@CS-MAPUserGuide.hlp>Main
+5 CS_xyzToLlh XYZ geocentric TO LongLatHgt=O1963@CS-MAPUserGuide.hlp>Main
+4 Australian Geodetic Datum of 1966
+5 Australian Geodetic Datum of 1966=O2672@CS-MAPUserGuide.hlp>Main
+5 CSagd66Cls Australian Geodetic Datum of 1966 CLoSe=O1964@CS-MAPUserGuide.hlp>Main
+5 CSagd66Init Australian Geodetic Datum of 1966 INITialize=O1965@CS-MAPUserGuide.hlp>Main
+5 CSagd66ToGda94Log=O2674@CS-MAPUserGuide.hlp>Main
+5 CS_agd66Name Australian Geodetic Datum of 1966 NAME=O1944@CS-MAPUserGuide.hlp>Main
+5 CSagd66ToGda94 AGD66 TO GDA94 conversion=O1966@CS-MAPUserGuide.hlp>Main
+5 CSgda94ToAgd66 GDA94 TO AGD66 conversion=O1977@CS-MAPUserGuide.hlp>Main
+4 Australian Geodetic Datum of 1984
+5 Australian Geodetic Datum of 1984=O2673@CS-MAPUserGuide.hlp>Main
+5 CSagd84Cls Australian Geodetic Datum of 1984 CLoSe=O1967@CS-MAPUserGuide.hlp>Main
+5 CSagd84Init Australian Geodetic Datum of 1984 INITialize=O1968@CS-MAPUserGuide.hlp>Main
+5 CSagd84ToGda94Log AGD66 TO GDA94 LOG=O2675@CS-MAPUserGuide.hlp>Main
+5 CS_agd84Name Australian Geodetic Datum of 1984 NAME=O1945@CS-MAPUserGuide.hlp>Main
+5 CSagd84ToGda94 AGD84 TO GDA94 conversion=O1969@CS-MAPUserGuide.hlp>Main
+5 CSgda94ToAgd84 GDA94 TO AGD84 conversion=O1978@CS-MAPUserGuide.hlp>Main
+4 Average Terrestrial System of 1977 (ATS77)
+5 Average Terrestrial System of 1977 (ATS77)=O2676@CS-MAPUserGuide.hlp>Main
+5 CSats77Cls Average Terrestial System of 1977 CLoSe=O1970@CS-MAPUserGuide.hlp>Main
+5 CSats77Init Average Terrestial System of 1977 INITialize=O1971@CS-MAPUserGuide.hlp>Main
+5 CS_ats77Name Average Terrestrial System of 1977 NAME=O1946@CS-MAPUserGuide.hlp>Main
+5 CSats77ToCsrsLog  ATS77 TO CSRS LOG function=O2677@CS-MAPUserGuide.hlp>Main
+5 CSats77ToCsrs ATS77 TO CSRS conversion=O1972@CS-MAPUserGuide.hlp>Main
+5 CScsrsToAts77 CSRS TO ATS77 conversion=O1975@CS-MAPUserGuide.hlp>Main
+4 Canadian Spatial Reference System
+5 Canadian Spatial Reference System=O2678@CS-MAPUserGuide.hlp>Main
+5 CScsrsCls Canadian Spatial Reference System CLoSe=O1973@CS-MAPUserGuide.hlp>Main
+5 CScsrsInit Canadian Spatial Reference System INITialize=O1974@CS-MAPUserGuide.hlp>Main
+5 CS_csrsName Canadian Spatial Reference System NAME=O2679@CS-MAPUserGuide.hlp>Main
+5 CSnad83ToCsrsLog  NAD83 TO CSRS LOG function=O2680@CS-MAPUserGuide.hlp>Main
+5 CSnad83ToCsrs NAD83 TO Canadian Spatial Reference System conversion=O1983@CS-MAPUserGuide.hlp>Main
+5 CScsrsToNad83 Canadian Spatial Reference System TO NAD83 conversion=O1976@CS-MAPUserGuide.hlp>Main
+4 High Precision Gps Network
+5 High Precision Gps Network=O2681@CS-MAPUserGuide.hlp>Main
+5 CSharnCls HARN CLoSe=O1979@CS-MAPUserGuide.hlp>Main
+5 CSharnInit HARN INITialize=O1980@CS-MAPUserGuide.hlp>Main
+5 CSnad83ToHarnLog NAD83 TO HARN LOG=O2682@CS-MAPUserGuide.hlp>Main
+5 CSharnToNad83 HARN TO NAD83 conversion=O1981@CS-MAPUserGuide.hlp>Main
+5 CSnad83ToHarn NAD83 TO HARN conversion=O1984@CS-MAPUserGuide.hlp>Main
+4 North American Datum of 1983
+5 North American Datum of 1983=O2683@CS-MAPUserGuide.hlp>Main
+5 CSnadCls NADcon CLoSe=O1986@CS-MAPUserGuide.hlp>Main
+5 CSnadInit NADcon INITialize=O1987@CS-MAPUserGuide.hlp>Main
+5 CSnad27ToNad83Log NAD27 TO NAD83 LOG=O2684@CS-MAPUserGuide.hlp>Main
+5 CSnad27ToNad83 NAD27 TO NAD83 conversion=O1982@CS-MAPUserGuide.hlp>Main
+5 CSnad83ToNad27 NAD83 TO NAD27 conversion=O1985@CS-MAPUserGuide.hlp>Main
+4 New Zealand Geodetic Datum of 1949
+5 New Zealand Geodetic Datum of 1949=O2685@CS-MAPUserGuide.hlp>Main
+5 CSnzgd49Cls New Zealand Geodetic Datum of 1949 CLoSe=O1989@CS-MAPUserGuide.hlp>Main
+5 CSnzgd49Init New Zealand Geodetic Datum of 1949 INITialize=O1990@CS-MAPUserGuide.hlp>Main
+5 CS_nzgd49Name  New Zealand Geodetic Datum of 1949 NAME=O2686@CS-MAPUserGuide.hlp>Main
+5 CSnzgd2KToNzgd49 NZGD2K TO NZGD49 conversion=O1988@CS-MAPUserGuide.hlp>Main
+5 CSnzgd49ToNzgd2K NZGD49 TO NZGD2K conversion=O1991@CS-MAPUserGuide.hlp>Main
+4 World Geodetic System of 1972
+5 World Geodetic System of 1972=O2687@CS-MAPUserGuide.hlp>Main
+5 CSwgs72284 WGS72 TO wgs84=O1992@CS-MAPUserGuide.hlp>Main
+5 CSwgs8472 WGS84 to wgs72=O1993@CS-MAPUserGuide.hlp>Main
+4 North American Datum of 1983
+5 North American Datum of 1983=O2688@CS-MAPUserGuide.hlp>Main
+5 CSnad8384 NAD38 to wgs84=O2689@CS-MAPUserGuide.hlp>Main
+5 CSwgs8483 WGS84 to nad 83=O1994@CS-MAPUserGuide.hlp>Main
+4 Geocentric Datum of Australia, 1994
+5 Geocentric Datum of Australia, 1994=O2733@CS-MAPUserGuide.hlp>Main
+5 CSgda94ToWgs84 Gda94 to WGS84=O2739@CS-MAPUserGuide.hlp>Main
+5 CSwgs84ToGda94 WGS84 To GDA94=O2740@CS-MAPUserGuide.hlp>Main
+4 Geodetic Datum of New Zealand, 2000
+5 Geodetic Datum of New Zealand, 2000=O2734@CS-MAPUserGuide.hlp>Main
+5 CSnzgd=O2741@CS-MAPUserGuide.hlp>Main
+5 CSwgs84ToNzgd2k WGS84 to NZGD2000=O2742@CS-MAPUserGuide.hlp>Main
+4 European Terrestrial Reference System of 1989
+5 European Terrestrial Reference System of 1989=O2735@CS-MAPUserGuide.hlp>Main
+5 CSetrf89ToWgs84 ETRF89 To WGS84=O2743@CS-MAPUserGuide.hlp>Main
+5 CSwgs84ToEtrf89 WGS84 To ETRF89=O2744@CS-MAPUserGuide.hlp>Main
+4 European Datum of 1950
+5 European Datum of 1950=O2736@CS-MAPUserGuide.hlp>Main
+5 CSed50Cls Eurpean Datum of 1950 CLoSe=O2745@CS-MAPUserGuide.hlp>Main
+5 CSed50Init European Datum of 1950 INITialize=O2746@CS-MAPUserGuide.hlp>Main
+5 CS_ed50Name European Datum of 1950 NAME=O2747@CS-MAPUserGuide.hlp>Main
+5 CSed50ToEtrf89 ED50 To ETRF89 conversion=O2748@CS-MAPUserGuide.hlp>Main
+5 CSetrf89ToEd50 ETRF89 To ED50 conversion=O2749@CS-MAPUserGuide.hlp>Main
+4 Toyyo Datum
+5 Toyyo Datum=O2737@CS-MAPUserGuide.hlp>Main
+5 CSjgd2kCls Japanese Geodetic Datum of 2000 CLoSe=O2751@CS-MAPUserGuide.hlp>Main
+5 CSjgd2kInit=O2750@CS-MAPUserGuide.hlp>Main
+5 CS_j=O2754@CS-MAPUserGuide.hlp>Main
+5 CStokyoToJgd2k TOKYO=O2752@CS-MAPUserGuide.hlp>Main
+5 CSjgd2kToTokyo JGD2000 to TOKYO conversion=O2753@CS-MAPUserGuide.hlp>Main
+4 Nouvelle Triangulation de la France (NTF)
+5 Nouvelle Triangulation de la France (NTF)=O2738@CS-MAPUserGuide.hlp>Main
+5 CSrgf93Init  RGF93 INITialize=O2755@CS-MAPUserGuide.hlp>Main
+5 CSrgf93Cls  Réseau Géodésique Français of 1993 CLoSe=O2756@CS-MAPUserGuide.hlp>Main
+5 CSrgf93ToNtf - RGF93 To NTF conversion=O2757@CS-MAPUserGuide.hlp>Main
+5 CSntfToRgf93  NTF to RGF93 conversion=O2758@CS-MAPUserGuide.hlp>Main
+2 Microsoft MFC User Dialog Functions
+3 Microsoft MFC User Dialog Functions=O1341@CS-MAPUserGuide.hlp>Main
+3 CS_csDataDir Coordinate System DATA DIRectory dialog=O1343@CS-MAPUserGuide.hlp>Main
+3 CS_csDualBrowser Coordinate System DUAL BROWSER=O1344@CS-MAPUserGuide.hlp>Main
+3 CS_csBrowser Coordinate System BROWSER=O1342@CS-MAPUserGuide.hlp>Main
+3 CS_csEditor Coordinate System EDITOR dialog=O1345@CS-MAPUserGuide.hlp>Main
+3 CS_dtEditor DaTum EDITOR dialog=O1347@CS-MAPUserGuide.hlp>Main
+3 CS_gdcEdit  Geodetic Data Catalog EDITor=O2706@CS-MAPUserGuide.hlp>Main
+3 CS_elEditor ELlipsoid EDITOR dialog=O1348@CS-MAPUserGuide.hlp>Main
+3 CS_csTest Coordinate System TEST dialog=O1346@CS-MAPUserGuide.hlp>Main
+3 CS_mgTest  Military Grid TEST dialog=O2705@CS-MAPUserGuide.hlp>Main
+3 CS_=O2703@CS-MAPUserGuide.hlp>Main
+3 CS_elSelector  ELipsoid SELECTOR=O2704@CS-MAPUserGuide.hlp>Main
+3 CSwinhlp WINdows HeLP=O2173@CS-MAPUserGuide.hlp>Main
+2 General Support Functions
+3 General Support Functions=O2092@CS-MAPUserGuide.hlp>Main
+3 CS_adj1pi ADJust angle to 2 PI=O2093@CS-MAPUserGuide.hlp>Main
+3 CS_adj180 ADJust angle to 180 degrees=O2094@CS-MAPUserGuide.hlp>Main
+3 CS_adj270 ADJust angle to 270 degrees=O2095@CS-MAPUserGuide.hlp>Main
+3 CS_adj2pi ADJust angle to 2 PI=O2096@CS-MAPUserGuide.hlp>Main
+3 CS_adj2piI ADJust angle to 2 PI Inclusive=O2097@CS-MAPUserGuide.hlp>Main
+3 CS_adj90 ADJust angle to 90 degrees=O2098@CS-MAPUserGuide.hlp>Main
+3 CS_adjll ADJust Lat/Long=O2099@CS-MAPUserGuide.hlp>Main
+3 CS_bins BINary Search=O2100@CS-MAPUserGuide.hlp>Main
+3 CS_bswap Byte SWAPer=O2101@CS-MAPUserGuide.hlp>Main
+3 CS_cschk Coordinate System CHecK=O2102@CS-MAPUserGuide.hlp>Main
+3 CS_cslcl Coordinate System, LoCaL=O2103@CS-MAPUserGuide.hlp>Main
+3 CS_erpt Error RePorT=O2105@CS-MAPUserGuide.hlp>Main
+3 CS_fillin coordinate system definition FILL IN=O2106@CS-MAPUserGuide.hlp>Main
+3 CS_ii??? Imaginary Arithmetic Functions
+4 CS_ii??? Imaginary Arithmetic Functions=O2107@CS-MAPUserGuide.hlp>Main
+4 CS_iiadd - ImagInary ADD=O2108@CS-MAPUserGuide.hlp>Main
+4 CS_iisub - ImagInary SUBtract=O2109@CS-MAPUserGuide.hlp>Main
+4 CS_iikmul - ImagInary Konstant MULtiply=O2110@CS-MAPUserGuide.hlp>Main
+4 CS_iimul - ImagInary MULtiply=O2111@CS-MAPUserGuide.hlp>Main
+4 CS_iidiv - ImagInary DIVide=O2112@CS-MAPUserGuide.hlp>Main
+4 CS_iisrs - ImagInary SeRieS=O2113@CS-MAPUserGuide.hlp>Main
+4 CS_iisrs1 - ImagInary SeRieS, 1st derivative=O2114@CS-MAPUserGuide.hlp>Main
+4 CS_iisrs0 - ImagInary SeRieS, alternate for new zealand=O2115@CS-MAPUserGuide.hlp>Main
+4 CS_iiabs - ImagInary ABSolute value=O2116@CS-MAPUserGuide.hlp>Main
+4 CS_iicnj - ImagInary CoNJugate=O2117@CS-MAPUserGuide.hlp>Main
+2 CS_init INITialize=O2118@CS-MAPUserGuide.hlp>Main
+3 CS_ips In Place Sort=O2119@CS-MAPUserGuide.hlp>Main
+3 CS_isHlpAvailable IS HeLP file AVAILABLE=O2120@CS-MAPUserGuide.hlp>Main
+3 CS_lget Left justified GET=O2121@CS-MAPUserGuide.hlp>Main
+3 CS_lput Left justified field PUT=O2122@CS-MAPUserGuide.hlp>Main
+3 CS_nampp NAMe PreProcessor=O2123@CS-MAPUserGuide.hlp>Main
+3 CS_prchk Protection CHecK=O2124@CS-MAPUserGuide.hlp>Main
+3 CS_prjEnum PRoJection ENUMerator=O2125@CS-MAPUserGuide.hlp>Main
+3 CS_prjprm PRoJection PaRaMeter usage=O2126@CS-MAPUserGuide.hlp>Main
+3 CS_quadF QUADrant Forward=O2127@CS-MAPUserGuide.hlp>Main
+3 CS_quadI QUADrant Inverse=O2128@CS-MAPUserGuide.hlp>Main
+3 CS_renam RENAMe a file=O2129@CS-MAPUserGuide.hlp>Main
+3 CS_setHelpPath  SET HELP PATH=O2130@CS-MAPUserGuide.hlp>Main
+3 CS_stcpy STring CoPY=O2131@CS-MAPUserGuide.hlp>Main
+3 CS_stncp STring, N characters at most, CoPy=O2132@CS-MAPUserGuide.hlp>Main
+3 CS_stricmp STRing, case Insensitive, CoMPare=O2133@CS-MAPUserGuide.hlp>Main
+3 CS_strincmp STRing, case Insensitive, N chars max, CoMPare=O2134@CS-MAPUserGuide.hlp>Main
+3 CS_stristr find STRing, case Insensitive, in a STRing=O2135@CS-MAPUserGuide.hlp>Main
+3 CS_swpal SWaP ALl binary data files=O2136@CS-MAPUserGuide.hlp>Main
+3 CS_swpfl SWaP a single FiLe=O2137@CS-MAPUserGuide.hlp>Main
+3 CS_tpars Table PARSe=O2138@CS-MAPUserGuide.hlp>Main
+3 CS_trim character array TRIM=O2139@CS-MAPUserGuide.hlp>Main
+3 CS_zones extract ZONES from definition=O2140@CS-MAPUserGuide.hlp>Main
+3 CS_znlocF ZoNe LOCator Forward=O2141@CS-MAPUserGuide.hlp>Main
+3 CS_znlocI ZoNe LOCator Inverse=O2142@CS-MAPUserGuide.hlp>Main
+3 CSbcclu Basic Cached Coordinate system Look Up=O2143@CS-MAPUserGuide.hlp>Main
+3 CSbdclu Basic Datum Conversion Look Up=O2144@CS-MAPUserGuide.hlp>Main
+3 CSbt????  BeTa (authalic latitude) calculation
+4 CSbt????  BeTa (authalic latitude) calculation=O2145@CS-MAPUserGuide.hlp>Main
+4 CSbtFcal BeTa Forward CALculation=O2146@CS-MAPUserGuide.hlp>Main
+4 CSbtFsu BeTa Forward SetUp=O2147@CS-MAPUserGuide.hlp>Main
+4 CSbtIcal BeTa Inverse CALculation=O2148@CS-MAPUserGuide.hlp>Main
+4 CSbtIsu BeTa Inverse SetUp=O2149@CS-MAPUserGuide.hlp>Main
+2 CSccsphrD angular distance (CC) on SPHeRe in Degrees=O2150@CS-MAPUserGuide.hlp>Main
+3 CSccsphrR angular distance (CC) on SPHeRe in Radians=O2151@CS-MAPUserGuide.hlp>Main
+3 CScsKeyNames Coordinate System Key Names=O2152@CS-MAPUserGuide.hlp>Main
+3 CSchi????
+4 CSchi????=O2153@CS-MAPUserGuide.hlp>Main
+4 CSchiFcal CHI Forward CALculation=O2154@CS-MAPUserGuide.hlp>Main
+4 CSchiFsu CHI Forward SetUp=O2155@CS-MAPUserGuide.hlp>Main
+4 CSchiIcal CHI Inverse CALculation=O2156@CS-MAPUserGuide.hlp>Main
+4 CSchiIsu CHI Inverse SetUp=O2157@CS-MAPUserGuide.hlp>Main
+2 Csdfltpro DeFaULT PROcessor=O2158@CS-MAPUserGuide.hlp>Main
+3 CSdtKeyNames DaTum Key Names=O2159@CS-MAPUserGuide.hlp>Main
+3 CSelKeyNames ELlipsoid Key Names=O2160@CS-MAPUserGuide.hlp>Main
+3 CSllnrml Latitude/Longitude NoRMaL=O2167@CS-MAPUserGuide.hlp>Main
+3 CSmm???? Meridional distance functions
+4 CSmm???? Meridional distance functions=O2168@CS-MAPUserGuide.hlp>Main
+4 CSmmFcal M Forward CALculation=O2169@CS-MAPUserGuide.hlp>Main
+4 CSmmFsu M Forward SetUp=O2170@CS-MAPUserGuide.hlp>Main
+4 CSmmIcal M Inverse CALculation=O2171@CS-MAPUserGuide.hlp>Main
+4 CSmmIsu M Inverse SetUp=O2172@CS-MAPUserGuide.hlp>Main
+2 Dictionary Access Functions
+3 Dictionary Access Functions=O1349@CS-MAPUserGuide.hlp>Main
+3 CS_cscmp Coordinate System CoMPare=O1350@CS-MAPUserGuide.hlp>Main
+3 CS_csDictCls  Coordinate System DICTionary file CLoSe=O3659@CS-MAPUserGuide.hlp>Main
+3 CS_csfnm Coordinate System dictionary File NaMe=O1351@CS-MAPUserGuide.hlp>Main
+3 CS_csgrp Coordinate System dictionary GRouP=O1352@CS-MAPUserGuide.hlp>Main
+3 CS_csopn Coordinate System dictionary OPeN=O1353@CS-MAPUserGuide.hlp>Main
+3 CS_csrd Coordinate System dictionary ReaD=O1354@CS-MAPUserGuide.hlp>Main
+3 CS_csrup Coordinate System Release UPdate=O1355@CS-MAPUserGuide.hlp>Main
+3 CS_cswr Coordinate System dictionary WRite=O1356@CS-MAPUserGuide.hlp>Main
+3 CS_usrCsDef=O2647@CS-MAPUserGuide.hlp>Main
+3 CS_dtDictCls  DaTum DICTionary file CLoSe=O3660@CS-MAPUserGuide.hlp>Main
+3 CS_elDictCls  ELlipsoid DICTionary file CLoSe=O3661@CS-MAPUserGuide.hlp>Main
+3 CS_dtcmp DaTum definition CoMPare=O1357@CS-MAPUserGuide.hlp>Main
+3 CS_dtfnm DaTum dictionary File NaMe=O1358@CS-MAPUserGuide.hlp>Main
+3 CS_dtopn DaTum dictionary OPeN=O1359@CS-MAPUserGuide.hlp>Main
+3 CS_dtrd DaTum dictionary ReaD=O1360@CS-MAPUserGuide.hlp>Main
+3 CS_dtrup DaTum dictionary Release UPdate=O1361@CS-MAPUserGuide.hlp>Main
+3 CS_dtwr DaTum dictionary WRite=O1362@CS-MAPUserGuide.hlp>Main
+3 CS_usrDtDefPtr - Datum Definition Hook Function=O2648@CS-MAPUserGuide.hlp>Main
+3 CS_elcmp ELlipsoid definition CoMPare=O1363@CS-MAPUserGuide.hlp>Main
+3 CS_elfnm ELlipsoid dictionary File NaMe=O1364@CS-MAPUserGuide.hlp>Main
+3 CS_elopn ELlipsoid dictionary OPeN=O1365@CS-MAPUserGuide.hlp>Main
+3 CS_elrd ELlipsoid dictionary ReaD=O1366@CS-MAPUserGuide.hlp>Main
+3 CS_elrup ELipsoid dictionary Release UPdate=O1367@CS-MAPUserGuide.hlp>Main
+3 CS_elwr ELlipsoid dictionary WRite=O1368@CS-MAPUserGuide.hlp>Main
+3 CS_usrElDefPtr - Ellipsoid Definition Hook Function=O2649@CS-MAPUserGuide.hlp>Main
+2 Well Known Text Implementation
+3 Well Known Text Implementation=O3682@CS-MAPUserGuide.hlp>Main
+3 Objects/Functions Implemented in C++
+4 Objects/Functions Implemented in C++=O3686@CS-MAPUserGuide.hlp>Main
+4 TrcWktElement Object
+5 TrcWktElement Object=O3683@CS-MAPUserGuide.hlp>Main
+5 TrcWktElement - Parameters=O3693@CS-MAPUserGuide.hlp>Main
+5 TrcWktElement -- Construction / Destruction / Assignment=O3694@CS-MAPUserGuide.hlp>Main
+5 TrcWktElement  Member Functions=O3695@CS-MAPUserGuide.hlp>Main
+3 WKT Object Support
+4 WKT Object Support=O3684@CS-MAPUserGuide.hlp>Main
+4 CS_isWkt  IS Well Known Text=O3689@CS-MAPUserGuide.hlp>Main
+4 CS_wktToCs  Well Known Text To Coordinate System=O3639@CS-MAPUserGuide.hlp>Main
+4 CS_wktToCsEx  Well Known Text To Coordinate System EXtended=O3688@CS-MAPUserGuide.hlp>Main
+4 CS_wktToDt  Well Known Text To DaTum=O3692@CS-MAPUserGuide.hlp>Main
+4 CScs2Wkt=O3641@CS-MAPUserGuide.hlp>Main
+4 CS_wktToDict  Well Known Text To DICTionary=O3691@CS-MAPUserGuide.hlp>Main
+3 Name/Number mapping Functions
+4 Name/Number mapping Functions=O3685@CS-MAPUserGuide.hlp>Main
+4 CS_epsg2msi  EPSG code to MSI key name=O3672@CS-MAPUserGuide.hlp>Main
+4 CS_esriName2mai ESRI Name TO CS-MAP name=O3696@CS-MAPUserGuide.hlp>Main
+4 CS_msi2epsg  MSI key name TO EPSG code value=O3671@CS-MAPUserGuide.hlp>Main
+4 CS_msiName2Esri  CS-MAP NAME TO ESRI name=O3697@CS-MAPUserGuide.hlp>Main
+4 CSepsg2msiCS  EPSG code to MSI key name, Coordinate Systems=O3665@CS-MAPUserGuide.hlp>Main
+4 CSepsg2msiDT  EPSG code to MSI key name, DaTums=O3666@CS-MAPUserGuide.hlp>Main
+4 CSepsg2msiDT  EPSG code to MSI key name, ELlipsoids=O3667@CS-MAPUserGuide.hlp>Main
+4 CSepsgByIdxCS  EPSG codes BY InDeX, Coordinate Systems=O3668@CS-MAPUserGuide.hlp>Main
+4 CSepsgByIdxDT  EPSG codes BY InDeX, DaTums=O3669@CS-MAPUserGuide.hlp>Main
+4 CSepsgByIdxCS  EPSG codes BY InDeX, ELlipsoids=O3670@CS-MAPUserGuide.hlp>Main
+4 CSmsi2epsgCS  MSI to EPSG, Coordinate Systems=O3662@CS-MAPUserGuide.hlp>Main
+4 CSmsi2epsgDT  MSI to EPSG, DaTums=O3663@CS-MAPUserGuide.hlp>Main
+4 CSmsi2epsgEL  MSI to EPSG, ELlipsoids=O3664@CS-MAPUserGuide.hlp>Main
+2 Legacy Functions
+3 Legacy Functions=O1434@CS-MAPUserGuide.hlp>Main
+3 CS842grf wgs 84 TO local Geodetic ReFerence system=O1435@CS-MAPUserGuide.hlp>Main
+3 CS_bwcalc Bursa/Wolfe CALCulation=O1436@CS-MAPUserGuide.hlp>Main
+3 CS_getcs GET Coordinate System definition=O1437@CS-MAPUserGuide.hlp>Main
+3 CS_getdt GET DaTum definition=O1438@CS-MAPUserGuide.hlp>Main
+3 CS_getel GET ELlipsoid definition=O1439@CS-MAPUserGuide.hlp>Main
+3 CSgrf284 local Geodetic ReFerence system TO wgs 84=O1440@CS-MAPUserGuide.hlp>Main
+3 CSgrfinit local Geodetic ReFerence system INITialize=O1441@CS-MAPUserGuide.hlp>Main
+3 CS_mocalc MOlodensky CALCulator=O1442@CS-MAPUserGuide.hlp>Main
+3 CS_mrcalc Multiple Regression CALCulator=O1443@CS-MAPUserGuide.hlp>Main
+3 CS_p7calc 7 Parameter CALCulation=O1444@CS-MAPUserGuide.hlp>Main
+3 CS_putcs PUT Coordinate System to dictionary=O1445@CS-MAPUserGuide.hlp>Main
+3 CS_putdt PUT DaTum to dictionary=O1446@CS-MAPUserGuide.hlp>Main
+3 CS_putel PUT ELlipsoid to dictionary=O1447@CS-MAPUserGuide.hlp>Main
+3 CS_un2d Units, Name TO Double=O1448@CS-MAPUserGuide.hlp>Main
+3 CS842grf wgs 84 TO local Geodetic ReFerence system=O1449@CS-MAPUserGuide.hlp>Main
+3 CSgrf284 local Geodetic ReFerence system TO wgs 84=O1450@CS-MAPUserGuide.hlp>Main
+3 CSgrfinit local Geodetic ReFerence system INITialize=O1451@CS-MAPUserGuide.hlp>Main
+3 CSgeoidCls GEOID, CLoSe=O2162@CS-MAPUserGuide.hlp>Main
+3 CSgeoiddbo GEOID,  DataBase Open=O2163@CS-MAPUserGuide.hlp>Main
+3 CSgeoiddir GEOID, database DIRectory=O2164@CS-MAPUserGuide.hlp>Main
+3 CSgeoidHgt GEOID HeiGhT=O2161@CS-MAPUserGuide.hlp>Main
+3 CSgeoidinit GEOID, INITialize=O2165@CS-MAPUserGuide.hlp>Main
+3 CSgeoidptr GEOID, return grid cell PoinTeR=O2166@CS-MAPUserGuide.hlp>Main
+3 CShpg283 High Precision Gps network, 91 TO 83 conversion=O1452@CS-MAPUserGuide.hlp>Main
+3 CShpg291 High Precision Gps network, (from 83) TO 91 conversion=O1453@CS-MAPUserGuide.hlp>Main
+3 CShgndbo High Precision Gps network,  DataBase Open=O1454@CS-MAPUserGuide.hlp>Main
+3 CShpgdir High Precision Gps network database DIRectory=O1455@CS-MAPUserGuide.hlp>Main
+3 CShpginit High Precision Gps network, INITialize=O1456@CS-MAPUserGuide.hlp>Main
+3 CShpgptr High Precision Gps network, return grid cell PoinTeR=O1457@CS-MAPUserGuide.hlp>Main
+3 CSnad227 North American Datum, 83 TO 27 conversion=O1458@CS-MAPUserGuide.hlp>Main
+3 CSnad283 North American Datum, (from 27) TO 83 conversion=O1459@CS-MAPUserGuide.hlp>Main
+3 CSnad83284    NAD-83 TO wgs 84=O1460@CS-MAPUserGuide.hlp>Main
+3 CSnadcls North American Datum, CLoSe=O1461@CS-MAPUserGuide.hlp>Main
+3 CSnaddbo North American Datum,  DataBase Open=O1462@CS-MAPUserGuide.hlp>Main
+3 CSnaddir NADcon database DIRectory=O1463@CS-MAPUserGuide.hlp>Main
+3 CSnadinit North American Datum, INITialize=O1464@CS-MAPUserGuide.hlp>Main
+3 CSnadptr North American Datum, return grid cell PoinTeR=O1465@CS-MAPUserGuide.hlp>Main
+1 Chapter 5 -- Data Modules
+2 Chapter 5 -- Data Modules=O2636@CS-MAPUserGuide.hlp>Main
+2 CSdata -- general DATA module=O2637@CS-MAPUserGuide.hlp>Main
+2 CSdataPJ -- DATA, ProJection table=O2638@CS-MAPUserGuide.hlp>Main
+2 CSdataU -- DATA module, Units table=O2639@CS-MAPUserGuide.hlp>Main
+1 CS_wktToDt  Well Known Text to CS-MAP DaTum format=O3640@CS-MAPUserGuide.hlp>Main
+

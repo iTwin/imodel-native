@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+|
+|     $Source: install/GeoCoordDataMergeModule.wxs $
+|
+|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-->
+
+<!-- Build scripts are tied to ancient version of WiX. Replace 'Intel' with
+     'x86' which is used in current versions. -->
+<?if $(var.PACKAGE_TARGETPLATFORM) = Intel?>
+    <?undef PACKAGE_TARGETPLATFORM?>
+    <?define PACKAGE_TARGETPLATFORM = x86?>
+<?endif?>
+
+<?if $(var.PACKAGE_TARGETPLATFORM) = x64?>
+    <?define csmapPackageId = "{B3B4297A-9B0B-486B-8035-04A9FBB3E01B}" ?>
+    <?define GeneralFiles_GUID = "{12E73803-B736-4A5B-8BB3-67A72E790C7D}" ?>
+    <?define Australia_GUID = "{355E5DF9-63A5-4A32-A887-591DB2D0D48E}" ?>
+    <?define AGD66_GUID = "{DD98EBAB-7BCD-42D9-B085-0FC6B36939DF}" ?>
+    <?define AGD84_GUID = "{52BE47B6-0D5C-4D61-9003-28885C22A0EE}" ?>
+    <?define Brazil_GUID = "{302547BC-9BDC-4054-BEEC-A12DC03EC828}" ?>
+    <?define Canada_GUID = "{C1BBEF7E-64C6-4E75-B1F9-50023D5B2671}" ?>
+    <?define Ats77Csrs_GUID = "{11778D14-8CB9-4912-9C9A-6D19C707F0C5}" ?>
+    <?define Geoid_GUID = "{78585473-A9A1-4D9D-AE57-8BFDD7A6A350}" ?>
+    <?define Nad27Ats77_GUID = "{16766019-CF34-46F9-8584-073E51BD1E86}" ?>
+    <?define Nad27-76Nad83_GUID = "{83307ED9-CCBC-41AE-98E5-664E4E4AFCF5}" ?>
+    <?define Nad27CGQCSRS_GUID = "{D6BFC5B8-00E1-4740-BBB4-535D3FCF7428}" ?>
+    <?define Nad27CGQNad83_GUID = "{AABD7C15-51ED-49A1-A0B2-AA02A6A02B04}" ?>
+    <?define Nad27Csrs_GUID = "{E0551DF2-CC7F-4B8D-B1B6-0FD17D38B7FD}" ?>
+    <?define Nad27Nad83_GUID = "{A5F80836-8972-472D-85C5-68884FD8FA49}" ?>
+    <?define Nad83Csrs_GUID = "{8F66A9E4-06FC-4DCF-A99F-A3714DC0E085}" ?>
+    <?define France_GUID = "{E8154709-2BD9-4FFA-997B-A1D691EDB2B0}" ?>
+    <?define Germany_GUID = "{E9C5739A-5E2F-49A0-81E6-0E92C1C9932F}" ?>
+    <?define Japan_GUID = "{F21C5ABB-3C10-4AFB-954E-F1C068137F70}" ?>
+    <?define NewZealand_GUID = "{BB5A09AA-1F0F-4381-BD4E-1DD66FBB8B1E}" ?>
+    <?define Spain_GUID = "{66479EBB-8844-45E1-B637-18D566A88971}" ?>
+    <?define SouthAfrica_GUID = "{4C626A78-BF4E-4A7B-BCFA-0C7B8ACDC8D9}" ?>
+    <?define USA_GUID = "{64BF4122-25F8-401F-A883-CF00CAF6A7D7}" ?>
+    <?define HARN_GUID = "{7CE208E6-7B70-40C0-935F-CBE48E8466CD}" ?>
+    <?define NADCON_GUID = "{E3AAAB27-9FBE-4999-9253-649D87B32AD8}" ?>
+    <?define VERTCON_GUID = "{CD5BF430-B803-460F-9FCB-132D425D97B2}" ?>
+<?else?>
+    <?define csmapPackageId = "{94250CDF-4EB2-4789-9088-A339A5D48282}" ?>
+    <?define GeneralFiles_GUID = "{384CC13A-B326-4C97-99D5-174FA74F61E4}" ?>
+    <?define Australia_GUID = "{864EDAE9-10AE-4133-B6BB-D1DCECD26088}" ?>
+    <?define AGD66_GUID = "{6C587C92-9F8F-4FB4-9CFE-86F05078D4D7}" ?>
+    <?define AGD84_GUID = "{64E9A257-1CA8-475B-948A-398CC471DE36}" ?>
+    <?define Brazil_GUID = "{CB70143E-9686-4F86-9478-06ACD4900FFB}" ?>
+    <?define Canada_GUID = "{18AA5692-B663-4C18-8D61-AE7C98C49B2B}" ?>
+    <?define Ats77Csrs_GUID = "{C0A98745-AE20-4723-AFB9-BC90CF9057FF}" ?>
+    <?define Geoid_GUID = "{B0D3CB39-48A5-4F6F-9DFE-BB2C8D3B243B}" ?>
+    <?define Nad27Ats77_GUID = "{85AA4F89-E4F5-4C29-BEA9-8EF1D975A50F}" ?>
+    <?define Nad27-76Nad83_GUID = "{110707F0-3EC5-4414-B767-BD13315A1274}" ?>
+    <?define Nad27CGQCSRS_GUID = "{679CC3C7-17C5-483C-B44D-E691AED8BB8D}" ?>
+    <?define Nad27CGQNad83_GUID = "{49FB4C63-265F-4DAA-B538-646005A01DC6}" ?>
+    <?define Nad27Csrs_GUID = "{C02F65BC-9FDD-458B-A0BC-F13E2F2FB0CB}" ?>
+    <?define Nad27Nad83_GUID = "{2303B9E9-B791-42D5-8642-5B44829BA0C0}" ?>
+    <?define Nad83Csrs_GUID = "{4F03AE0A-B368-4046-9124-0337A3F4A7C6}" ?>
+    <?define France_GUID = "{3C1B3E10-5091-4765-B087-753A7B0387D5}" ?>
+    <?define Germany_GUID = "{6C7BB875-4EF1-4C20-9B00-D296FB0B2F30}" ?>
+    <?define Japan_GUID = "{8A35ADC0-6362-45DB-A40F-47BA5F360B30}" ?>
+    <?define NewZealand_GUID = "{8A2F92FC-1C32-46B8-BFE2-0886CC08DEA3}" ?>
+    <?define SouthAfrica_GUID = "{49DDC581-3051-4E3B-8718-BBA05F9002BD}" ?>
+    <?define Spain_GUID = "{33ECC984-933D-4F6E-B60A-E72E833B47BD}" ?>
+    <?define USA_GUID = "{244311A3-4EA6-445C-9FA3-435A9C7674CF}" ?>
+    <?define HARN_GUID = "{D0936E1A-FA0A-4447-96DD-CF8075DCE323}" ?>
+    <?define NADCON_GUID = "{4317FFAA-F7E3-49DB-9F9D-3CAA5A9960C7}" ?>
+    <?define VERTCON_GUID = "{91D982DD-85D7-42A6-958D-B691E5E15C0A}" ?>
+<?endif?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Module Id="csmap" Codepage="1252" Language="0" Version="$(var.INSTALLER_PRODUCT_VERSION)">
+        <Package Id="$(var.csmapPackageId)"
+                 Description="Coordinate System Map Files"
+                 InstallerVersion="300"
+                 Keywords="Installer; MSI; Database"
+                 Languages="1033"
+                 Manufacturer="Bentley Systems, Incorporated"
+                 Platform="$(var.PACKAGE_TARGETPLATFORM)" />
+
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="INSTALLDIR" Name=".">
+                <Component Id="GeneralFiles" Guid="$(var.GeneralFiles_GUID)" KeyPath="yes" Win64="$(var.COMPONENT_WIN64)">
+                    <File Id="_9ED3B4E71C4347ACAE6EFC2C87A7044E" Name="coordsys.dty"        Source="$(env.GeoCoordData)coordsys.dty" />
+                    <File Id="_B65D17B41A2C4371B0E3FAEC3915040F" Name="coordsys.dty.xml"    Source="$(env.GeoCoordData)coordsys.dty.xml" />
+                    <File Id="_0CEFE98064FB46E4B556E7955596096B" Name="datum.dty"           Source="$(env.GeoCoordDataMinimal)datum.dty" />
+                    <File Id="_948e970b9d1044f28237369d0b648e3c" Name="GeodeticPath.dty"    Source="$(env.GeoCoordDataMinimal)GeodeticPath.dty" />
+                    <File Id="_e0b3e8cf021541ecbc4c981837484c87" Name="GeodeticTransform.dty" Source="$(env.GeoCoordDataMinimal)GeodeticTransform.dty" />
+                    <File Id="_A3DD672887354767933E47A0803AB320" Name="ellipsoid.dty"       Source="$(env.GeoCoordDataMinimal)ellipsoid.dty" />
+                    <File Id="_F3C53C62FA9E4D059B64DFB7E7E54B4C" Name="GeoidHeight.gdc"     Source="$(env.GeoCoordData)GeoidHeight.gdc" />
+                    <File Id="_C9EFB08837AB4B5D8619FEEFBF44AF19" Name="Vertcon.gdc"         Source="$(env.GeoCoordData)Vertcon.gdc" />
+                </Component>
+
+                <Directory Id="_513E83B8F4A5474687AD4986F2F38971" Name="Australia">
+                    <Component Id="_864EDAE910AE4133B6BBD1DCECD26088" Guid="$(var.Australia_GUID)" KeyPath="yes" Win64="$(var.COMPONENT_WIN64)">
+                        <CreateFolder Directory="_513E83B8F4A5474687AD4986F2F38971" />
+                    </Component>
+                    <Directory Id="_1661C3AA71F743779AB858F35AB9409F" Name="AGD66">
+                        <Component Id="_6C587C929F8F4FB49CFE86F05078D4D7" Guid="$(var.AGD66_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_90DEB2882B0B4DE58B0DDC22551FFA6F" Name="A66National(13.09.01).gsb" KeyPath="yes" Source="$(env.GeoCoordData)Australia\AGD66\A66National(13.09.01).gsb" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_247C842FAA2E425B8891F7B2D5DF799B" Name="AGD84">
+                        <Component Id="_64E9A2571CA8475B948A398CC471DE36" Guid="$(var.AGD84_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_77C39E64DDA84056915E2FD903B88D87" Name="National84(02.07.01).gsb" KeyPath="yes" Source="$(env.GeoCoordData)Australia\AGD84\National84(02.07.01).gsb" />
+                        </Component>
+                    </Directory>
+                </Directory>    <!-- Australia -->
+
+                <Directory Id="_73FF53A481884EC0AAC1349A947541CB" Name="Brazil">
+                    <Component Id="_D7EF6D2B7DB84262B8FA6B9492512DFE" Guid="$(var.Brazil_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_AD5DC00E5C6640AB99571D5F712BF4E3" Name="CA61_003.GSB" KeyPath="yes" Source="$(env.GeoCoordData)Brazil\CA61_003.GSB" />
+                        <File Id="_F8C8EDB4B292471E802967AAEF066A59" Name="CA7072_003.GSB" Source="$(env.GeoCoordData)Brazil\CA7072_003.GSB" />
+                        <File Id="_D1CCECBAEF904B28948D1F9965FB27ED" Name="SAD69_003.GSB" Source="$(env.GeoCoordData)Brazil\SAD69_003.GSB" />
+                        <File Id="_B1D17E00901C46648CD7E56E0566A7B5" Name="SAD96_003.GSB" Source="$(env.GeoCoordData)Brazil\SAD96_003.GSB" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_0C49EDBB9ED44163B4C7122518208E9F" Name="Canada">
+                    <Component Id="_18AA5692B6634C188D61AE7C98C49B2B" Guid="$(var.Canada_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_DB78526A0880435FBB441E8FC5623A77" Name="readme_canada.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\readme_canada.txt" />
+                    </Component>
+                    <Directory Id="_471D040655A9427DB5B1C96A783A4785" Name="Ats77Csrs">
+                        <Component Id="_C0A98745AE204723AFB9BC90CF9057FF" Guid="$(var.Ats77Csrs_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_F0F126E4368A4BBB8B24F2E825D8D953" Name="readme_Ats77ToCsrs.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Ats77Csrs\readme_Ats77ToCsrs.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_F8CD8FAD79FB4413A88EDD757DBD10C2" Name="Geoid">
+                        <Component Id="_B0D3CB3948A54F6F9DFEBB2C8D3B243B" Guid="$(var.Geoid_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_AB64B053CFEB45A084B7764D32805C08" Name="readme_GeoidHeight.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Geoid\readme_GeoidHeight.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_32C4A3680FF74ECD87401920324494B9" Name="Nad27-76Nad83">
+                        <Component Id="_D8A98C8A7F9A4602B16AA48A5EAA7469" Guid="$(var.Nad27-76Nad83_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_5FEE9B0DF8E6474EA398D7737695ABB4" Name="readme_Nad27-76Nad83.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad27-76Nad83\readme_Nad27-76Nad83.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_EA91A4DF0DC44587BC716DA406E5451B" Name="Nad27Ats77">
+                        <Component Id="_85AA4F89E4F54C29BEA98EF1D975A50F" Guid="$(var.Nad27Ats77_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_52F3F62579134F17B6E19F098264C74E" Name="readme_Nad27ToAts77.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad27Ats77\readme_Nad27ToAts77.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_E180079DBA0646B89C5890DE77DD77A6" Name="Nad27CGQCSRS">
+                        <Component Id="_29C0C14AF0D94AE3A86AD0048EC4EA31" Guid="$(var.Nad27CGQCSRS_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_4AA829488BA2472A953A75389FF182D8" Name="readme_Nad27CGQCSRS.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad27CGQCSRS\readme_Nad27CGQCSRS.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_52088BACCA864136A509596CB595EDFF" Name="Nad27CGQNad83">
+                        <Component Id="_C2EBCE0AF4904780A2C56CE88D74AC54" Guid="$(var.Nad27CGQNad83_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_B6CC08D95FA84768AE445A17C58EE841" Name="readme_Nad27CGQNad83.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad27CGQNad83\readme_Nad27CGQNad83.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_CB122646B57243529929FBD46508B1FE" Name="Nad27Csrs">
+                        <Component Id="_C02F65BC9FDD458BA0BCF13E2F2FB0CB" Guid="$(var.Nad27Csrs_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_215746E766B3402EA35CA9F5DCCC0B9B" Name="readme_Nad27ToCsrs.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad27Csrs\readme_Nad27ToCsrs.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_A9C886C504B04E3C9E9864A52864EAEA" Name="Nad27Nad83">
+                        <Component Id="_2303B9E9B79142D586425B44829BA0C0" Guid="$(var.Nad27Nad83_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_924CCE20C7264632AA5160C369C88FD0" Name="123w53n3d.dac" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad27Nad83\123w53n3d.dac" />
+                            <File Id="_DA53BA531C944C5E999575945BD1C567" Name="bc27v1_1.dac" Source="$(env.GeoCoordData)Canada\Nad27Nad83\bc27v1_1.dac" />
+                            <File Id="_7CE8C54FAF514507B7ABC5F5DCD76D55" Name="readme_Nad27ToNad83.txt" Source="$(env.GeoCoordData)Canada\Nad27Nad83\readme_Nad27ToNad83.txt" />
+                        </Component>
+                    </Directory>
+                    <Directory Id="_B9AFF4F538D64CAABE5502A2A1BCBE08" Name="Nad83Csrs">
+                        <Component Id="_4F03AE0AB368404691240337A3F4A7C6" Guid="$(var.Nad83Csrs_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_0A0297926243473C8A7E1FD8D74356C9" Name="readme_Nad83ToCsrs.txt" KeyPath="yes" Source="$(env.GeoCoordData)Canada\Nad83Csrs\readme_Nad83ToCsrs.txt" />
+                        </Component>
+                    </Directory>
+                </Directory>    <!-- Canada -->
+
+                <Directory Id="_B3FB01A72CD149FAA15EEE8A3380C04D" Name="France">
+                    <Component Id="_69FAB5B968464FCF814B87DEC9BA462E" Guid="$(var.France_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_EEA15870963B4E3FA745B09C98CA1727" Name="gr3df97a.txt" KeyPath="yes" Source="$(env.GeoCoordData)France\gr3df97a.txt" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_9111DD8A4F5D4B219E1DED022C2E2AE3" Name="Germany">
+                    <Component Id="_62383CFBE84B4265942E517144D10E4A" Guid="$(var.Germany_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_82F2F228D6A947EB806E74449A5ADCE7" Name="BETA2007.gsb" KeyPath="yes" Source="$(env.GeoCoordData)Germany\BETA2007.gsb" />
+                        <File Id="_BEB8684DE4C040C195D3F76C68A35A48" Name="HeTa2010.gsb" Source="$(env.GeoCoordData)Germany\HeTa2010.gsb" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_D7123CCA530149CF8BB4624746102741" Name="Japan">
+                    <Component Id="_8A35ADC0636245DBA40F47BA5F360B30" Guid="$(var.Japan_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_487AB6951E5C416B9054D50B8E936CE5" Name="readme_TokyoToJgd2k.txt" KeyPath="yes" Source="$(env.GeoCoordData)Japan\readme_TokyoToJgd2k.txt" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_9B35806048F04128B9EDAC655E51B8AF" Name="NewZealand">
+                    <Component Id="_8A2F92FC1C3246B8BFE20886CC08DEA3" Guid="$(var.NewZealand_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_0D1092FE2A494C508772AE9CE742607B" Name="nzgd2kgrid9911.gsb" KeyPath="yes" Source="$(env.GeoCoordData)NewZealand\nzgd2kgrid9911.gsb" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_A0540BDA29BA4636BB983F4A83987CDB" Name="Spain">
+                    <Component Id="_33ECC984933D4F6EB60AE72E833B47BD" Guid="$(var.Spain_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_0DB232260C1846C9926AC460661BBA01" Name="sped2et-2005.gsb" KeyPath="yes" Source="$(env.GeoCoordData)Spain\sped2et-2005.gsb" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_1B6711BDF5384E22972638E39DFE5FF0" Name="SouthAfrica">
+                    <Component Id="_C7E1B106B3E045DE80A2BE2C04D66B62" Guid="$(var.SouthAfrica_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                        <File Id="_A5E90DE84AF448E6BBBCA5D2E28C5937" Name="readme_SA.txt" KeyPath="yes" Source="$(env.GeoCoordData)SouthAfrica\readme_SA.txt" />
+                    </Component>
+                </Directory>
+
+                <Directory Id="_B6100F1BA3EF4270BEA52075883DEDC8" Name="USA">
+                    <Component Id="_244311A34EA6445C9FA3435A9C7674CF" Guid="$(var.USA_GUID)" KeyPath="yes" Win64="$(var.COMPONENT_WIN64)">
+                        <CreateFolder Directory="_B6100F1BA3EF4270BEA52075883DEDC8" />
+                    </Component>
+                    <Directory Id="_2625E8EA07134F928B5771725B2F3E4A" Name="HARN">
+                        <Component Id="_D0936E1AFA0A444796DDCF8075DCE323" Guid="$(var.HARN_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_BDCF0FF15D434EE39ED1B7540C5DAAEB" Name="alhpgn.las" Source="$(env.GeoCoordData)USA\HARN\alhpgn.las" KeyPath="yes" />
+                            <File Id="_60FD4231C595439D9B065C7DA76CDA26" Name="alhpgn.los" Source="$(env.GeoCoordData)USA\HARN\alhpgn.los" />
+                            <File Id="_E1D7161B21974F6BAF59EE32B74E3C17" Name="azhpgn.las" Source="$(env.GeoCoordData)USA\HARN\azhpgn.las" />
+                            <File Id="_15BE2214920A482DB27AC1F045B7AC56" Name="azhpgn.los" Source="$(env.GeoCoordData)USA\HARN\azhpgn.los" />
+                            <File Id="_8983E426573B481D8347A31923FE5B97" Name="cnhpgn.las" Source="$(env.GeoCoordData)USA\HARN\cnhpgn.las" />
+                            <File Id="_28BF77DF490F4D83AE728966F0A6275F" Name="cnhpgn.los" Source="$(env.GeoCoordData)USA\HARN\cnhpgn.los" />
+                            <File Id="_057F13F85E314C2AA853F6FF3AD4A4C8" Name="cohpgn.las" Source="$(env.GeoCoordData)USA\HARN\cohpgn.las" />
+                            <File Id="_30EBB70F58324287AE930311141B3D50" Name="cohpgn.los" Source="$(env.GeoCoordData)USA\HARN\cohpgn.los" />
+                            <File Id="_136AADFFD31241A89673BDDD65A2DDD3" Name="cshpgn.las" Source="$(env.GeoCoordData)USA\HARN\cshpgn.las" />
+                            <File Id="_3B676AD882214CF3AD2A33A121DA5742" Name="cshpgn.los" Source="$(env.GeoCoordData)USA\HARN\cshpgn.los" />
+                            <File Id="_ED8DBD10D0ED4A9FBA263D900B49B8E1" Name="emhpgn.las" Source="$(env.GeoCoordData)USA\HARN\emhpgn.las" />
+                            <File Id="_3974891EA1B34F40AC7777BE07EA5C85" Name="emhpgn.los" Source="$(env.GeoCoordData)USA\HARN\emhpgn.los" />
+                            <File Id="_6E9B54E7C36A4C578521DAE9E63F0FAF" Name="ethpgn.las" Source="$(env.GeoCoordData)USA\HARN\ethpgn.las" />
+                            <File Id="_CC89C57D6B0A4E968D3C360250089A73" Name="ethpgn.los" Source="$(env.GeoCoordData)USA\HARN\ethpgn.los" />
+                            <File Id="_BDD6B1FCF7004D17BB2DFE5270A33F5C" Name="flhpgn.las" Source="$(env.GeoCoordData)USA\HARN\flhpgn.las" />
+                            <File Id="_CB19F4B6BD5F414DA30F07BA2870C30D" Name="flhpgn.los" Source="$(env.GeoCoordData)USA\HARN\flhpgn.los" />
+                            <File Id="_95E79293636A4384849D913E6B4DF427" Name="gahpgn.las" Source="$(env.GeoCoordData)USA\HARN\gahpgn.las" />
+                            <File Id="_2BDA5C1C72154E4BA791F2B614C87288" Name="gahpgn.los" Source="$(env.GeoCoordData)USA\HARN\gahpgn.los" />
+                            <File Id="_B79013CCF6284F16ACE819E0E4EA082C" Name="hihpgn.las" Source="$(env.GeoCoordData)USA\HARN\hihpgn.las" />
+                            <File Id="_DC7251F6E5D74BD9A32941C4C6652BF6" Name="hihpgn.los" Source="$(env.GeoCoordData)USA\HARN\hihpgn.los" />
+                            <File Id="_EDBBF899D7FC4F34BD17B68DCE5F0BAE" Name="kshpgn.las" Source="$(env.GeoCoordData)USA\HARN\kshpgn.las" />
+                            <File Id="_CDF57A0C92E04B45AAAD577E859AD25A" Name="kshpgn.los" Source="$(env.GeoCoordData)USA\HARN\kshpgn.los" />
+                            <File Id="_D43BCEDE2DDE498A9E850DD535554A0E" Name="kyhpgn.las" Source="$(env.GeoCoordData)USA\HARN\kyhpgn.las" />
+                            <File Id="_54EB77F882C548E884A163116F18503E" Name="kyhpgn.los" Source="$(env.GeoCoordData)USA\HARN\kyhpgn.los" />
+                            <File Id="_A75B518B55934DB89D029053682B6E90" Name="lahpgn.las" Source="$(env.GeoCoordData)USA\HARN\lahpgn.las" />
+                            <File Id="_92F010DF8D244D24882D8DDCFD4BD0A2" Name="lahpgn.los" Source="$(env.GeoCoordData)USA\HARN\lahpgn.los" />
+                            <File Id="_E3BD0762E60447CE8BD3B2C787F1D7F8" Name="mdhpgn.las" Source="$(env.GeoCoordData)USA\HARN\mdhpgn.las" />
+                            <File Id="_74006635F01444C4AC70234E7B7C7BD0" Name="mdhpgn.los" Source="$(env.GeoCoordData)USA\HARN\mdhpgn.los" />
+                            <File Id="_0A6D3E6F03BA46CB9E5E6C7A31AA6CF5" Name="mehpgn.las" Source="$(env.GeoCoordData)USA\HARN\mehpgn.las" />
+                            <File Id="_20FFFE78B28E4F12920110B81321BB06" Name="mehpgn.los" Source="$(env.GeoCoordData)USA\HARN\mehpgn.los" />
+                            <File Id="_17166E9BA4DA4CEEB394F5FF6371BBBE" Name="mihpgn.las" Source="$(env.GeoCoordData)USA\HARN\mihpgn.las" />
+                            <File Id="_E4BB8092698E48879AF0118702488B52" Name="mihpgn.los" Source="$(env.GeoCoordData)USA\HARN\mihpgn.los" />
+                            <File Id="_D3C7C5F8A22247F285F5A158CE5399B1" Name="mshpgn.las" Source="$(env.GeoCoordData)USA\HARN\mshpgn.las" />
+                            <File Id="_7350D17B4F874A23A40D8D21DBCFD470" Name="mshpgn.los" Source="$(env.GeoCoordData)USA\HARN\mshpgn.los" />
+                            <File Id="_CAA9F063855946B2A1A2BE96720240B2" Name="nbhpgn.las" Source="$(env.GeoCoordData)USA\HARN\nbhpgn.las" />
+                            <File Id="_2DF23F82032C40BDBA4B2C65AB5D982F" Name="nbhpgn.los" Source="$(env.GeoCoordData)USA\HARN\nbhpgn.los" />
+                            <File Id="_06DEFC61AFD04F88953200D6BF7A5FC7" Name="ndhpgn.las" Source="$(env.GeoCoordData)USA\HARN\ndhpgn.las" />
+                            <File Id="_CBD710E233614CCA9A44E962BCBC6FA5" Name="ndhpgn.los" Source="$(env.GeoCoordData)USA\HARN\ndhpgn.los" />
+                            <File Id="_95C13DEE209B455A9FBCC5438C14F3C0" Name="nehpgn.las" Source="$(env.GeoCoordData)USA\HARN\nehpgn.las" />
+                            <File Id="_8639928AB6B74811B2A694D2AE0C5C52" Name="nehpgn.los" Source="$(env.GeoCoordData)USA\HARN\nehpgn.los" />
+                            <File Id="_B2197CF3E21D4C95830F015DF3EDBDE4" Name="nmhpgn.las" Source="$(env.GeoCoordData)USA\HARN\nmhpgn.las" />
+                            <File Id="_ECDACE050F41427792A1AC3B801F9E81" Name="nmhpgn.los" Source="$(env.GeoCoordData)USA\HARN\nmhpgn.los" />
+                            <File Id="_DD8F06097E1949B094D563DF19654980" Name="nvhpgn.las" Source="$(env.GeoCoordData)USA\HARN\nvhpgn.las" />
+                            <File Id="_A2FDED175F3D415FA0A95A867B913B54" Name="nvhpgn.los" Source="$(env.GeoCoordData)USA\HARN\nvhpgn.los" />
+                            <File Id="_FAD14615079E480D818530E25318C833" Name="nyhpgn.las" Source="$(env.GeoCoordData)USA\HARN\nyhpgn.las" />
+                            <File Id="_685DDD0C75DB497C974F69244799884A" Name="nyhpgn.los" Source="$(env.GeoCoordData)USA\HARN\nyhpgn.los" />
+                            <File Id="_C0D32EBE2C4A4407B45468C3E9073166" Name="ohhpgn.las" Source="$(env.GeoCoordData)USA\HARN\ohhpgn.las" />
+                            <File Id="_321B6E3AB94C4885980A83969A5CB7C8" Name="ohhpgn.los" Source="$(env.GeoCoordData)USA\HARN\ohhpgn.los" />
+                            <File Id="_6B858969CCA14FD5B08CD85E53AEF470" Name="okhpgn.las" Source="$(env.GeoCoordData)USA\HARN\okhpgn.las" />
+                            <File Id="_F1F97D6894FA486DBC21A4865235DC6A" Name="okhpgn.los" Source="$(env.GeoCoordData)USA\HARN\okhpgn.los" />
+                            <File Id="_68D375CD31594358A7CEEC2A9D5C76C4" Name="pvhpgn.las" Source="$(env.GeoCoordData)USA\HARN\pvhpgn.las" />
+                            <File Id="_9C54DF38E5644EC69ACC43FF13FD790E" Name="pvhpgn.los" Source="$(env.GeoCoordData)USA\HARN\pvhpgn.los" />
+                            <File Id="_23F87E939E864BC7A2F9B2DBDFC13477" Name="sdhpgn.las" Source="$(env.GeoCoordData)USA\HARN\sdhpgn.las" />
+                            <File Id="_73DDD20D03A342C0A1D721791661F30D" Name="sdhpgn.los" Source="$(env.GeoCoordData)USA\HARN\sdhpgn.los" />
+                            <File Id="_405AA7897C7548F5B7FB3155752EBD06" Name="tnhpgn.las" Source="$(env.GeoCoordData)USA\HARN\tnhpgn.las" />
+                            <File Id="_A16976C47E86418E92C2C1DD53FD0BDB" Name="tnhpgn.los" Source="$(env.GeoCoordData)USA\HARN\tnhpgn.los" />
+                            <File Id="_FA21AF815111413DA9DF15D4EF576AFB" Name="uthpgn.las" Source="$(env.GeoCoordData)USA\HARN\uthpgn.las" />
+                            <File Id="_9EB74AB26CA84B439809784884ECE31C" Name="uthpgn.los" Source="$(env.GeoCoordData)USA\HARN\uthpgn.los" />
+                            <File Id="_D2408128B8D8434C872F255BA7E3E0FF" Name="vahpgn.las" Source="$(env.GeoCoordData)USA\HARN\vahpgn.las" />
+                            <File Id="_8C781CCD24A8421086A971197B2990D5" Name="vahpgn.los" Source="$(env.GeoCoordData)USA\HARN\vahpgn.los" />
+                            <File Id="_04179A4C7D79420A811D6CF7A5C33EEA" Name="wihpgn.las" Source="$(env.GeoCoordData)USA\HARN\wihpgn.las" />
+                            <File Id="_C486A02131D24CEEB7E42C8A40071766" Name="wihpgn.los" Source="$(env.GeoCoordData)USA\HARN\wihpgn.los" />
+                            <File Id="_05061269E6F04A6EBFC8C5BC13B0B8AE" Name="wmhpgn.las" Source="$(env.GeoCoordData)USA\HARN\wmhpgn.las" />
+                            <File Id="_03E8913DE65E428BA39A7C49529C4141" Name="wmhpgn.los" Source="$(env.GeoCoordData)USA\HARN\wmhpgn.los" />
+                            <File Id="_ED9DA982B75A480C9AA07E6D2ED08D4B" Name="wohpgn.las" Source="$(env.GeoCoordData)USA\HARN\wohpgn.las" />
+                            <File Id="_FFCA356D7D0F4F95A7D7DDCCB682C7D9" Name="wohpgn.los" Source="$(env.GeoCoordData)USA\HARN\wohpgn.los" />
+                            <File Id="_9FAC565ABDFB47BFA28FF311044DB6CD" Name="wthpgn.las" Source="$(env.GeoCoordData)USA\HARN\wthpgn.las" />
+                            <File Id="_6794A900B5D6414BB230ABC41097E49F" Name="wthpgn.los" Source="$(env.GeoCoordData)USA\HARN\wthpgn.los" />
+                            <File Id="_DE8D7C4909AF413A990234FC0C423175" Name="wvhpgn.las" Source="$(env.GeoCoordData)USA\HARN\wvhpgn.las" />
+                            <File Id="_4EB7B4887A904BD0A340B030DB76BF0F" Name="wvhpgn.los" Source="$(env.GeoCoordData)USA\HARN\wvhpgn.los" />
+                            <File Id="_EB8AF0E5DBEF4177ABF44B4CCFC345A2" Name="wyhpgn.las" Source="$(env.GeoCoordData)USA\HARN\wyhpgn.las" />
+                            <File Id="_C0CEE41B7D2C4EEB9E3451BA009D394B" Name="wyhpgn.los" Source="$(env.GeoCoordData)USA\HARN\wyhpgn.los" />
+                        </Component>
+                    </Directory>    <!-- HARN -->
+
+                    <Directory Id="_63AE59C93B374D1B972D084DCE2424A1" Name="NADCON">
+                        <Component Id="_4317FFAAF7E349DB9F9D3CAA5A9960C7" Guid="$(var.NADCON_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_B930EA0F7A50456482727C3CCC7CB6F7" Name="alaska.las" Source="$(env.GeoCoordData)USA\NADCON\alaska.las" KeyPath="yes" />
+                            <File Id="_5AFD866C22A84B428A32DE07A1813E4D" Name="alaska.los" Source="$(env.GeoCoordData)USA\NADCON\alaska.los" />
+                            <File Id="_207453D0F3EF4BA8AA858B702CEEB1A3" Name="conus.las" Source="$(env.GeoCoordData)USA\NADCON\conus.las" />
+                            <File Id="_F046FB1347314E77B1FCE4E099C47131" Name="conus.los" Source="$(env.GeoCoordData)USA\NADCON\conus.los" />
+                            <File Id="_38F01D433D7A416384C8CE5D4D33656A" Name="hawaii.las" Source="$(env.GeoCoordData)USA\NADCON\hawaii.las" />
+                            <File Id="_ADE7443EA58B483EB1D0B8DA00CF55F8" Name="hawaii.los" Source="$(env.GeoCoordData)USA\NADCON\hawaii.los" />
+                            <File Id="_BB97C2E84E844A7AA0BB4A663158CFF6" Name="prvi.las" Source="$(env.GeoCoordData)USA\NADCON\prvi.las" />
+                            <File Id="_404269F513BB4611B8D6D09565F6B7F4" Name="prvi.los" Source="$(env.GeoCoordData)USA\NADCON\prvi.los" />
+                            <File Id="_C2F7063C22574A7FA88F743902EB4B22" Name="stgeorge.las" Source="$(env.GeoCoordData)USA\NADCON\stgeorge.las" />
+                            <File Id="_155FC8519DB44B77830A3D53ECFED1DB" Name="stgeorge.los" Source="$(env.GeoCoordData)USA\NADCON\stgeorge.los" />
+                            <File Id="_A926BA61C5D4492CB8AB34AD295AFD59" Name="stlrnc.las" Source="$(env.GeoCoordData)USA\NADCON\stlrnc.las" />
+                            <File Id="_E10B9507341B44CFB091DEF0DB70614C" Name="stlrnc.los" Source="$(env.GeoCoordData)USA\NADCON\stlrnc.los" />
+                            <File Id="_033C758A068544219CD903390FB31F4B" Name="stpaul.las" Source="$(env.GeoCoordData)USA\NADCON\stpaul.las" />
+                            <File Id="_06D778E7BDEC42D5AA832EA875D5FCF7" Name="stpaul.los" Source="$(env.GeoCoordData)USA\NADCON\stpaul.los" />
+                        </Component>
+                    </Directory>    <!-- NADCON -->
+
+                    <Directory Id="_713CDE2214DC4833AA0ED4619BDD0BD1" Name="VERTCON">
+                        <Component Id="_91D982DD85D742A6958DB691E5E15C0A" Guid="$(var.VERTCON_GUID)" Win64="$(var.COMPONENT_WIN64)">
+                            <File Id="_04B5BA9140C14C42858DAB7AA12EF28C" Name="VERTCONC.94" Source="$(env.GeoCoordData)USA\VERTCON\VERTCONC.94" KeyPath="yes" />
+                            <File Id="_D1D48462896540599457730067F3CA70" Name="VERTCONE.94" Source="$(env.GeoCoordData)USA\VERTCON\VERTCONE.94" />
+                            <File Id="_3655995EAF844BBFAC9B972571EA641F" Name="VERTCONW.94" Source="$(env.GeoCoordData)USA\VERTCON\VERTCONW.94" />
+                        </Component>
+                    </Directory>    <!-- VERTCON -->
+
+                </Directory>    <!-- USA -->
+
+            </Directory>    <!-- INSTALLDIR -->
+        </Directory>    <!-- TARGETDIR -->
+    </Module>
+</Wix>
+
+
+
+
+
+
+

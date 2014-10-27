@@ -1,0 +1,447 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: csmap.mke $
+#    $RCSfile: csmap.mke,v $
+#   $Revision: 1.35 $
+#       $Date: 2010/04/21 15:09:58 $
+#     $Author: Alain.Robert $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------
+#
+# Make file for CS_MAP library
+#
+#----------------------------------------------------------------------
+#
+# USED VARIABLES
+#
+# MFC       - If defined, indicates that the compilation result is intended to execute
+#             outside the MicroStation environment
+#
+# CSMAP_DIR - (OPTIONAL but recommended) Must contain the full path the the root CSMAP directory
+#
+# CSMAP_EXELIB - (OPTIONAL and valid only if MFC defined) If defined, indicates that the library used 
+#                for linking with an MFC executable must be generated.
+#                If not defined then a library for linking with a DLL is generated
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+#   Define standard macros.
+#----------------------------------------------------------------------
+# Determine the subdirectory of objects to put csmap objects
+PolicyFile      = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+baseDir 	= $(_MakeFilePath)
+
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%ifdef MFC
+  uiAppName     = csmapmfcui
+  appName       = csmapmfc
+%else
+  uiAppName     = csmapui
+  appName       = BeCsmap
+%endif
+
+PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+
+
+
+o = $(OutputRootDir)build/csmap/
+
+#----------------------------------------------------------------------
+#   CSMap subdirectories
+#----------------------------------------------------------------------
+csSrcDir = $(baseDir)source/
+csMapInc = $(baseDir)include/
+
+dirToSearch = $(csMapInc)
+%include cincapnd.mki
+
+uiLibName = $(GCDlmLib)$(uiAppName)
+
+%ifdef MFC
+   csmapLibDir = $(CstNmstnDlmLib)
+%else
+   csmapLibDir = $(mdlAsNeeded)
+%endif
+
+libName = $(csmapLibDir)$(appName)
+
+%ifdef MFC
+    cCompOpts + -D__MFC__ -DNO_IODEFS
+    
+    %ifdef debug
+        crt_opt = -MDd
+    %else
+        crt_opt = -MD
+    %endif
+%endif
+
+#----------------------------------------------------------------------
+#   Create output directories.
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    ~@mkdir $(csmapLibDir)
+
+
+nameToDefine = TOTAL_SPECIAL
+%include cdefapnd.mki
+
+nameToDefine = GEOCOORD_ENHANCEMENT
+%include cdefapnd.mki
+
+nameToDefine = BENTLEY_TOOLSUBS_MEMALLOC
+%include cdefapnd.mki
+
+#let the compiler create a pch file to speed up the compile
+# CCompOpts + -Fp$(o)cs_map.pch -YX$(lInc)cs_map.h
+CCompOpts + -D__CPP__
+
+
+# Run-Time Error Checks: Remove the 'c' option which check is a value is assigned to a smaller data type and results in a data loss.
+# It happens a lot when decompressing and since this an external lib, we won't fix it. Error occurs in send_bits (trees.c)
+VCRuntimeCheckOption = \/RTCsu
+
+#---------------------------------------------
+# Specify source, objects and resources
+#---------------------------------------------
+%ifdef MFC
+  uiObjs = \
+    $(o)mgTest$(oext)         \
+    $(o)csDualBrowse$(oext)   \
+    $(o)csBrowser$(oext)      \
+    $(o)csDataDir$(oext)      \
+    $(o)csEdit$(oext)         \
+    $(o)csKeyNm$(oext)        \
+    $(o)CSwinHlp$(oext)       \
+    $(o)dtEdit$(oext)         \
+    $(o)dtSelect$(oext)       \
+    $(o)elEdit$(oext)         \
+    $(o)csTest$(oext)         \
+    $(o)elSelect$(oext)       \
+    $(o)CS_mfc$(oext)         \
+#    $(o)gdcEdit$(oext)         
+%endif
+
+#---------------------------------------------
+# Compile the source files for the Library
+#---------------------------------------------
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+# Order of files should be maintained as much as possible the same as the original csmap file Makefile.am
+# Except that C files and C++ are maintained separate C files first the C++ files.
+
+    $(o)CS_alber$(oext):              $(csSrcDir)CS_alber.c ${MultiCompileDepends}
+
+    $(o)CS_angle$(oext):              $(csSrcDir)CS_angle.c ${MultiCompileDepends}
+
+    $(o)CS_ansi$(oext):               $(csSrcDir)CS_ansi.c ${MultiCompileDepends}
+
+    $(o)CS_ats77New$(oext):           $(csSrcDir)CS_ats77New.c ${MultiCompileDepends}
+
+    $(o)CS_azmea$(oext):              $(csSrcDir)CS_azmea.c ${MultiCompileDepends}
+
+    $(o)CS_azmed$(oext):              $(csSrcDir)CS_azmed.c ${MultiCompileDepends}
+
+    $(o)CS_badekas$(oext):            $(csSrcDir)CS_badekas.c ${MultiCompileDepends}
+
+    $(o)CS_bonne$(oext):              $(csSrcDir)CS_bonne.c ${MultiCompileDepends}
+
+    $(o)CS_bpcnc$(oext):              $(csSrcDir)CS_bpcnc.c ${MultiCompileDepends}
+
+    $(o)CS_bursa$(oext):              $(csSrcDir)CS_bursa.c ${MultiCompileDepends}
+
+    $(o)CS_bynFile$(oext):            $(csSrcDir)CS_bynFile.c ${MultiCompileDepends}
+
+    $(o)CS_category$(oext):           $(csSrcDir)CS_category.c ${MultiCompileDepends}
+
+    $(o)CS_ctio$(oext):               $(csSrcDir)CS_ctio.c ${MultiCompileDepends}
+    
+    $(o)CS_csini$(oext):              $(csSrcDir)CS_csini.c ${MultiCompileDepends}
+
+    $(o)CS_csio$(oext):               $(csSrcDir)CS_csio.c ${MultiCompileDepends}
+
+    $(o)CS_csprm$(oext):              $(csSrcDir)CS_csprm.c ${MultiCompileDepends}
+
+    $(o)CS_cswktloc$(oext):           $(csSrcDir)CS_cswktloc.c ${MultiCompileDepends}
+
+    $(o)CS_datum$(oext):              $(csSrcDir)CS_datum.c ${MultiCompileDepends}
+
+    $(o)CS_defaults$(oext):           $(csSrcDir)CS_defaults.c ${MultiCompileDepends}
+
+    $(o)CS_defCmp$(oext):             $(csSrcDir)CS_defCmp.c ${MultiCompileDepends}
+
+    $(o)CS_defCmpEx$(oext):           $(csSrcDir)CS_defCmpEx.c ${MultiCompileDepends}
+
+    $(o)CS_dtcalc$(oext):             $(csSrcDir)CS_dtcalc.c ${MultiCompileDepends}
+
+    $(o)CS_dtio$(oext):               $(csSrcDir)CS_dtio.c ${MultiCompileDepends}
+  
+    $(o)CS_dtmBridge$(oext):          $(csSrcDir)CS_dtmBridge.c ${MultiCompileDepends}     
+    
+    $(o)CS_edcnc$(oext):              $(csSrcDir)CS_edcnc.c ${MultiCompileDepends}
+
+    $(o)CS_edcyl$(oext):              $(csSrcDir)CS_edcyl.c ${MultiCompileDepends}
+
+    $(o)CS_egm96$(oext):              $(csSrcDir)CS_egm96.c ${MultiCompileDepends}
+
+    $(o)CS_ekrt4$(oext):              $(csSrcDir)CS_ekrt4.c ${MultiCompileDepends}
+
+    $(o)CS_ekrt6$(oext):              $(csSrcDir)CS_ekrt6.c ${MultiCompileDepends}
+
+    $(o)CS_elCalc$(oext):             $(csSrcDir)CS_elCalc.c ${MultiCompileDepends}
+
+    $(o)CS_elio$(oext):               $(csSrcDir)CS_elio.c ${MultiCompileDepends}
+
+    $(o)CS_erpt$(oext):               $(csSrcDir)CS_erpt.c ${MultiCompileDepends}
+
+    $(o)CS_error$(oext):              $(csSrcDir)CS_error.c ${MultiCompileDepends}
+
+    $(o)CS_fips$(oext):               $(csSrcDir)CS_fips.c ${MultiCompileDepends}
+
+    $(o)CS_frame$(oext):              $(csSrcDir)CS_frame.c ${MultiCompileDepends}
+
+    $(o)CS_frnch$(oext):              $(csSrcDir)CS_frnch.c ${MultiCompileDepends}
+
+    $(o)CS_gauss$(oext):              $(csSrcDir)CS_gauss.c ${MultiCompileDepends}
+
+    $(o)CS_general$(oext):            $(csSrcDir)CS_general.c ${MultiCompileDepends}
+
+    $(o)CS_geoct$(oext):              $(csSrcDir)CS_geoct.c ${MultiCompileDepends}
+
+    $(o)CS_geoid96$(oext):            $(csSrcDir)CS_geoid96.c ${MultiCompileDepends}
+
+    $(o)CS_geoid99$(oext):            $(csSrcDir)CS_geoid99.c ${MultiCompileDepends}
+
+    $(o)CS_GeoidHeight$(oext):        $(csSrcDir)CS_GeoidHeight.c ${MultiCompileDepends}
+
+    $(o)CS_gissupprt$(oext):          $(csSrcDir)CS_gissupprt.c ${MultiCompileDepends}
+
+    $(o)CS_gnomc$(oext):              $(csSrcDir)CS_gnomc.c ${MultiCompileDepends}
+
+    $(o)CS_gpio$(oext):               $(csSrcDir)CS_gpio.c ${MultiCompileDepends}
+
+    $(o)CS_gridi$(oext):              $(csSrcDir)CS_gridi.c ${MultiCompileDepends}
+
+    $(o)CS_groups$(oext):             $(csSrcDir)CS_groups.c ${MultiCompileDepends}
+
+    $(o)CS_guiApi$(oext):             $(csSrcDir)CS_guiApi.c ${MultiCompileDepends}
+
+    $(o)CS_gxIndex$(oext):            $(csSrcDir)CS_gxIndex.c ${MultiCompileDepends}
+
+    $(o)CS_gxio$(oext):               $(csSrcDir)CS_gxio.c ${MultiCompileDepends}
+
+    $(o)CS_gxprm$(oext):              $(csSrcDir)CS_gxprm.c ${MultiCompileDepends}
+
+    $(o)CS_hlApi$(oext):              $(csSrcDir)CS_hlApi.c ${MultiCompileDepends}
+
+    $(o)CS_hmlsn$(oext):              $(csSrcDir)CS_hmlsn.c ${MultiCompileDepends}
+
+    $(o)CS_hpApi$(oext):              $(csSrcDir)CS_hpApi.c ${MultiCompileDepends}
+
+    $(o)CS_japanNew$(oext):           $(csSrcDir)CS_japanNew.c ${MultiCompileDepends}
+
+    $(o)CS_krovk$(oext):              $(csSrcDir)CS_krovk.c ${MultiCompileDepends}
+
+    $(o)CS_lmbrt$(oext):              $(csSrcDir)CS_lmbrt.c ${MultiCompileDepends}
+
+    $(o)CS_lmtan$(oext):              $(csSrcDir)CS_lmtan.c ${MultiCompileDepends}
+
+    $(o)CS_mgrs$(oext):               $(csSrcDir)CS_mgrs.c ${MultiCompileDepends}
+
+    $(o)CS_millr$(oext):              $(csSrcDir)CS_millr.c ${MultiCompileDepends}
+
+    $(o)CS_modpc$(oext):              $(csSrcDir)CS_modpc.c ${MultiCompileDepends}
+
+    $(o)CS_molod$(oext):              $(csSrcDir)CS_molod.c ${MultiCompileDepends}
+
+    $(o)CS_molwd$(oext):              $(csSrcDir)CS_molwd.c ${MultiCompileDepends}
+
+    $(o)CS_mrcat$(oext):              $(csSrcDir)CS_mrcat.c ${MultiCompileDepends}
+
+    $(o)CS_mstro$(oext):              $(csSrcDir)CS_mstro.c ${MultiCompileDepends}
+
+    $(o)CS_mulrg$(oext):              $(csSrcDir)CS_mulrg.c ${MultiCompileDepends}
+
+    $(o)CS_nacyl$(oext):              $(csSrcDir)CS_nacyl.c ${MultiCompileDepends}
+
+    $(o)CS_nadcn$(oext):              $(csSrcDir)CS_nadcn.c ${MultiCompileDepends}
+
+    $(o)CS_nerth$(oext):              $(csSrcDir)CS_nerth.c ${MultiCompileDepends}
+
+    $(o)CS_ntv1$(oext):               $(csSrcDir)CS_ntv1.c ${MultiCompileDepends}
+
+    $(o)CS_ntv2$(oext):               $(csSrcDir)CS_ntv2.c ${MultiCompileDepends}
+
+    $(o)CS_nullx$(oext):              $(csSrcDir)CS_nullx.c ${MultiCompileDepends}
+
+    $(o)CS_nzlnd$(oext):              $(csSrcDir)CS_nzlnd.c ${MultiCompileDepends}
+
+    $(o)CS_oblqm$(oext):              $(csSrcDir)CS_oblqm.c ${MultiCompileDepends}
+
+    $(o)CS_optional$(oext):           $(csSrcDir)CS_optional.c ${MultiCompileDepends}
+
+    $(o)CS_ortho$(oext):              $(csSrcDir)CS_ortho.c ${MultiCompileDepends}
+
+    $(o)CS_osgm91$(oext):             $(csSrcDir)CS_osgm91.c ${MultiCompileDepends}
+
+    $(o)CS_ost02$(oext):              $(csSrcDir)CS_ost02.c ${MultiCompileDepends}
+
+    $(o)CS_ost97$(oext):              $(csSrcDir)CS_ost97.c ${MultiCompileDepends}
+
+    $(o)CS_ostn02$(oext):             $(csSrcDir)CS_ostn02.c ${MultiCompileDepends}
+    
+    $(o)CS_ostn97$(oext):             $(csSrcDir)CS_ostn97.c ${MultiCompileDepends}
+
+    $(o)CS_ostro$(oext):              $(csSrcDir)CS_ostro.c ${MultiCompileDepends}
+
+    $(o)CS_parm3$(oext):              $(csSrcDir)CS_parm3.c ${MultiCompileDepends}
+
+    $(o)CS_parm4$(oext):              $(csSrcDir)CS_parm4.c ${MultiCompileDepends}
+
+    $(o)CS_parm6$(oext):              $(csSrcDir)CS_parm6.c ${MultiCompileDepends}
+
+    $(o)CS_parm7$(oext):              $(csSrcDir)CS_parm7.c ${MultiCompileDepends}
+
+    $(o)CS_plycn$(oext):              $(csSrcDir)CS_plycn.c ${MultiCompileDepends}
+
+    $(o)CS_pstro$(oext):              $(csSrcDir)CS_pstro.c ${MultiCompileDepends}
+
+    $(o)CS_robin$(oext):              $(csSrcDir)CS_robin.c ${MultiCompileDepends}
+
+    $(o)CS_sinus$(oext):              $(csSrcDir)CS_sinus.c ${MultiCompileDepends}
+
+    $(o)CS_sstro$(oext):              $(csSrcDir)CS_sstro.c ${MultiCompileDepends}
+
+    $(o)CS_supprt$(oext):             $(csSrcDir)CS_supprt.c ${MultiCompileDepends}
+
+    $(o)CS_swiss$(oext):              $(csSrcDir)CS_swiss.c ${MultiCompileDepends}
+
+    $(o)CS_sys34$(oext):              $(csSrcDir)CS_sys34.c ${MultiCompileDepends}
+
+    $(o)CS_system$(oext):             $(csSrcDir)CS_system.c ${MultiCompileDepends}
+
+    $(o)CS_tacyl$(oext):              $(csSrcDir)CS_tacyl.c ${MultiCompileDepends}
+
+    $(o)CS_trmer$(oext):              $(csSrcDir)CS_trmer.c ${MultiCompileDepends}
+
+    $(o)CS_trmrs$(oext):              $(csSrcDir)CS_trmrs.c ${MultiCompileDepends}
+
+    $(o)CS_units$(oext):              $(csSrcDir)CS_units.c ${MultiCompileDepends}
+
+    $(o)CS_unity$(oext):              $(csSrcDir)CS_unity.c ${MultiCompileDepends}
+
+    $(o)CS_vdgrn$(oext):              $(csSrcDir)CS_vdgrn.c ${MultiCompileDepends}
+
+    $(o)CS_VertconUS$(oext):          $(csSrcDir)CS_VertconUS.c ${MultiCompileDepends}
+
+    $(o)CS_vrtcon$(oext):             $(csSrcDir)CS_vrtcon.c ${MultiCompileDepends}
+
+    $(o)CS_wgs72$(oext):              $(csSrcDir)CS_wgs72.c ${MultiCompileDepends}
+    
+    $(o)CS_winkelTripel$(oext):       $(csSrcDir)CS_winkelTripel.c ${MultiCompileDepends}
+
+    $(o)CS_zones$(oext):              $(csSrcDir)CS_zones.c ${MultiCompileDepends}
+    
+    $(o)cscscomp$(oext):              $(csSrcDir)cscscomp.c ${MultiCompileDepends}
+
+    $(o)CSdata$(oext):                $(csSrcDir)CSdata.c ${MultiCompileDepends}
+    
+    $(o)CSdataDT$(oext):              $(csSrcDir)CSdataDT.c ${MultiCompileDepends}
+
+    $(o)CSdataPJ$(oext):              $(csSrcDir)CSdataPJ.c ${MultiCompileDepends}
+
+    $(o)CSdataU$(oext):               $(csSrcDir)CSdataU.c ${MultiCompileDepends}
+
+    $(o)CSdatumCatalog$(oext):        $(csSrcDir)CSdatumCatalog.c ${MultiCompileDepends}
+
+    $(o)CSdictDiff$(oext):            $(csSrcDir)CSdictDiff.c ${MultiCompileDepends}
+
+    $(o)CSdtcomp$(oext):              $(csSrcDir)CSdtcomp.c ${MultiCompileDepends}
+    
+    $(o)CSelcomp$(oext):              $(csSrcDir)CSelcomp.c ${MultiCompileDepends}
+
+    $(o)CSgeodeticSupport$(oext):     $(csSrcDir)CSgeodeticSupport.c ${MultiCompileDepends}
+
+    $(o)CSgpcomp$(oext):              $(csSrcDir)CSgpcomp.c ${MultiCompileDepends}
+    
+    $(o)CSgxcomp$(oext):              $(csSrcDir)CSgxcomp.c ${MultiCompileDepends}
+
+    $(o)CSmrcomp$(oext):              $(csSrcDir)CSmrcomp.c ${MultiCompileDepends}
+
+    $(o)CSsys34KMS$(oext):            $(csSrcDir)CSsys34KMS.c ${MultiCompileDepends}
+
+    $(o)CSwktFlavors$(oext):          $(csSrcDir)CSwktFlavors.c ${MultiCompileDepends}
+
+# The two following files implement the projection implemented inside Bentley
+    $(o)TFE_TransverseMercator$(oext): $(csSrcDir)TFE_TransverseMercator.c ${MultiCompileDepends}
+
+    $(o)CS_MNDOToblqm$(oext):         $(csSrcDir)CS_MNDOToblqm.c ${MultiCompileDepends}
+
+
+# C++ file below
+# Files csBrowser.cpp, csDataDir.cpp, csDualBrowse.cpp, csWinHlp.cpp are not compiled since they implement unrequired dialogs.
+
+#    $(o)CS_mfc$(oext):                $(csSrcDir)CS_mfc.cpp ${MultiCompileDepends}
+
+    $(o)CS_wellKnownText$(oext):      $(csSrcDir)CS_wellKnownText.cpp ${MultiCompileDepends}
+
+    $(o)CScs2Wkt$(oext):              $(csSrcDir)CScs2Wkt.cpp ${MultiCompileDepends}
+
+    $(o)csCsvFileSupport$(oext):      $(csSrcDir)csCsvFileSupport.cpp ${MultiCompileDepends}
+
+    $(o)CSdt2Wkt$(oext):              $(csSrcDir)CSdt2Wkt.cpp ${MultiCompileDepends}
+
+    $(o)CSel2Wkt$(oext):              $(csSrcDir)CSel2Wkt.cpp ${MultiCompileDepends}
+
+    $(o)csEpsgStuff$(oext):           $(csSrcDir)csEpsgStuff.cpp ${MultiCompileDepends}
+
+    $(o)csEpsgSupport$(oext):         $(csSrcDir)csEpsgSupport.cpp ${MultiCompileDepends}
+
+#    $(o)CSKeyNm$(oext):               $(csSrcDir)CSKeyNm.cpp ${MultiCompileDepends}
+
+    $(o)csNameMapper$(oext):          $(csSrcDir)csNameMapper.cpp ${MultiCompileDepends}
+
+    $(o)csNameMapperSupport$(oext):   $(csSrcDir)csNameMapperSupport.cpp ${MultiCompileDepends}
+
+    $(o)rcWellKnownText$(oext):       $(csSrcDir)rcWellKnownText.cpp ${MultiCompileDepends}
+
+    $(o)rcWktKonstants$(oext):        $(csSrcDir)rcWktKonstants.cpp ${MultiCompileDepends}
+
+    $(o)CSIoUtil$(oext):              $(csSrcDir)CSIoUtil.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+LIB_OBJS =% $(MultiCompileObjectList)
+
+
+
+
+#----------------------------------------------------------------------
+#   Create the static library
+#----------------------------------------------------------------------
+
+LIB_NAME                = BeCsmap
+LIB_DEST                = $(o)
+LIB_TMP_DIR             = $(o)
+LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+LIB_EXPORT_NAME         = $(stlibprefix)$(LIB_NAME)$(stlibext)
+
+%include creatlib.mki
+
+
+
+always:
+    |----------------------------------------
+    |*** $(appName) Build Complete ***
+    |----------------------------------------
+
+CreateBuildContext:
+    CreateSymLinks.py   -d"$(OutBuildContexts)csmap/VendorAPI/csmap=$(baseDir)Include"

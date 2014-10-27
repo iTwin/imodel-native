@@ -1,0 +1,83 @@
+SeqNbr,EpsgNbr,EsriNbr,OracleNbr,MapInfoNbr,OemNbr,Oracle9Nbr,CsMapNbr,CsMapName,CtmxName,AdskName,EpsgName,EsriName,OracleName,MapInfoName,OemName,GeoToolsName,OcrName,OgcName,GeoTiffName,Oracle9Name,LegacyName,CnvrsnName,CnvrsnComment,MaintenanceComment,Quality,UserFlag,RfcnQualifier
+100,7001,0,0,0,0,0,,AIRY30,Airy1830,AIRY30,Airy 1830,Airy_1830,Airy 1830 (EPSG ID 7001),,,Airy 1830,,,,Airy 1930,,,,,0,0,0
+200,7002,0,0,0,0,0,,AIRY-MOD,AiryModified/1849,AIRY-MOD,Airy Modified 1849,Airy_Modified,Airy Modified 1849 (EPSG ID 7002),,,Airy Modified 1849,,,,Airy 1930(Ireland 1965),,,,,0,0,0
+300,7003,0,0,0,0,0,,ANS66|AUSSIE,ANS66,AUSSIE,Australian National Spheroid,Australian,Australian National Spheroid (EPSG ID 7003),,,Australian National Spheroid,,,,Australian,,,,,0,0,0
+400,7004,0,0,0,0,0,,BESSEL,Bessel1841,BESSEL,Bessel 1841,Bessel_1841,Bessel 1841 (EPSG ID 7004),,,Bessel 1841,,,,Bessel 1841,,,,,0,0,0
+500,7005,0,0,0,0,0,,BESL-MOD,BesselModified,BESL-MOD,Bessel Modified,Bessel_Modified,Bessel Modified (EPSG ID 7005),,,Bessel Modified,,,,,,,,,0,0,0
+600,7007,0,0,0,0,0,,CLRK58,Clarke1858,CLRK58,Clarke 1858,Clarke_1858,Clarke 1858 (EPSG ID 7007),,,Clarke 1858,,,,,,,,,0,0,0
+700,7008,0,0,0,0,0,,CLRK66,Clarke1866,CLRK66,Clarke 1866,Clarke_1866,Clarke 1866 (EPSG ID 7008),,,Clarke 1866,,,,Clarke 1866,,,,,0,0,0
+800,7009,0,0,0,0,0,,MICHIGAN,Clark1866/Michigan,MICHIGAN,Clarke 1866 Michigan,Clarke_1866_Michigan,Clarke 1866 Michigan (EPSG ID 7009),,,Clarke 1866 Michigan,,,,Clarke 1866 (Michigan),,,,,0,0,0
+900,7010,0,0,0,0,0,,CLRK-PAL,Clarke1880/PAL,CLRK-PAL,Clarke 1880 (Benoit),Clarke_1880_Benoit,Clarke 1880 (Benoit) (EPSG ID 7010),,,Clarke 1880 (Benoit),,,,Clarke 1880 (Benoit),,,,,0,0,0
+1000,7011,0,0,0,0,0,,CLRK-IGN,Clarke1880/IGN,CLRK-IGN,Clarke 1880 (IGN),Clarke_1880_IGN,Clarke 1880 (IGN) (EPSG ID 7011),,,Clarke 1880 (IGN),,,,Clarke 1880 (IGN),,,,,0,0,0
+1100,7012,0,0,0,0,0,,CLRK-RGS|CLRK80,Clarke1880/RGS,CLRK-RGS|CLRK80,Clarke 1880 (RGS),Clarke_1880_RGS,Clarke 1880 (RGS) (EPSG ID 7012),,,Clarke 1880 (RGS),,,,Clarke 1880,,,,,0,0,0
+1200,7013,0,0,0,0,0,,CLRK-ARC,Clarke1880/Arc,CLRK-ARC|SACLRK80,Clarke 1880 (Arc),Clarke_1880_Arc,Clarke 1880 (Arc) (EPSG ID 7013),,,Clarke 1880 (Arc),,,,Clarke 1880 (Arc 1950),,,,,0,0,0
+1300,7014,0,0,0,0,0,,CLRK22,Clarke1880/SGA/1922,CLRK22,Clarke 1880 (SGA 1922),Clarke_1880_SGA,Clarke 1880 (SGA 1922) (EPSG ID 7014),,,Clarke 1880 (SGA 1922),,,,Clarke 1880 (Merchich),,,,,0,0,0
+1400,7015,0,0,0,0,0,,EVEREST,Everest1830/37,EVEREST,Everest 1830 (1937 Adjustment),Everest_Adjustment_1937,Everest 1830 (1937 Adjustment) (EPSG ID 7015),,,Everest 1830 (1937 Adjustment),,,,Everest,,,,,0,0,0
+1500,7016,0,0,0,0,0,,Everest1830/67,Everest1830/67,Everest1830/67,Everest 1830 (1967 Definition),Everest_Definition_1967,Everest 1830 (1967 Definition) (EPSG ID 7016),,,Everest 1830 (1967 Definition),,,,,,,,,0,0,0
+1600,7018,0,0,0,0,0,,EVRST-MD,EverestModified/1830,EVRST-MD,Everest 1830 Modified,Everest_1830_Modified,Everest 1830 Modified (EPSG ID 7018),,,Everest 1830 Modified,,,,Everest (Kertau),,,,,0,0,0
+1700,7019,0,0,0,0,0,,GRS1980,GRS80,GRS1980,GRS 1980,GRS_1980,GRS 1980 (EPSG ID 7019),,,GRS 1980,,,,GRS 80,GRS 80,,,,0,0,0
+1800,7020,0,0,0,0,0,,HLMRT06,Helmert06,HLMRT06,Helmert 1906,Helmert_1906,Helmert 1906 (EPSG ID 7020),,,Helmert 1906,,,,Helmert 1906,,,,,0,0,0
+1900,7021,0,0,0,0,0,,IndonesianNtl,IndonesianNtl,IndonesianNtl,Indonesian National Spheroid,Indonesian,Indonesian National Spheroid (EPSG ID 7021),,,Indonesian National Spheroid,,,,,,,,,0,0,0
+2000,7022,0,0,0,0,0,,INTNL|HAYFORD|NZGD49,International24|NewZealand49|Hayford09,INTNL|HAYFORD,International 1924,International_1924,International 1924 (EPSG ID 7022),,,International 1924,,,,International 1924,,,,,0,0,0
+2100,7024,0,0,0,0,0,,KRASOV,Krassovskiy40,KRASOV,Krassowsky 1940,Krasovsky_1940,Krassowsky 1940 (EPSG ID 7024),,,Krassowsky 1940,,,,Krassovsky,,,,,0,0,0
+2200,7025,0,0,0,0,0,,NWL-9D,NWL-9D,NWL-9D/1,NWL 9D,NWL_9D,NWL 9D (EPSG ID 7025),,,NWL 9D,,,,WGS 66,,,,,0,0,0
+2300,7027,0,0,0,0,0,,PLESSIS,Plessis1817,PLESSIS,Plessis 1817,Plessis_1817,Plessis 1817 (EPSG ID 7027),,,Plessis 1817,,,,,,,,,0,0,0
+2400,7028,0,0,0,0,0,,STRU1860,Struve1860,STRU1860,Struve 1860,Struve_1860,Struve 1860 (EPSG ID 7028),,,Struve 1860,,,,,,,,,0,0,0
+2500,7029,0,0,0,0,0,,WarOffice,WarOffice,WarOffice,War Office,War_Office,War Office (EPSG ID 7029),,,War Office,,,,,,,,,0,0,0
+2600,7030,0,0,0,0,0,,WGS84,WGS84,WGS84,WGS 84,WGS_1984,WGS 84 (EPSG ID 7030),,,WGS 84,,,,WGS 84,World_Geodetic_System_of_1984,,,,0,0,0
+2700,7031,0,0,0,0,0,,GEM-10C,GEM 10C,GEM-10C,GEM 10C,GEM_10C,GEM 10C (EPSG ID 7031),,,GEM 10C,,,,,,,,,0,0,0
+2800,7032,0,0,0,0,0,,OSU86F,OSU86F,OSU86F,OSU86F,OSU_86F,OSU86F (EPSG ID 7032),,,OSU86F,,,,,,,,,0,0,0
+2900,7033,0,0,0,0,0,,OSU91A,OSU91A,OSU91A-MOD,OSU91A,OSU_91A,OSU91A (EPSG ID 7033),,,OSU91A,,,,,,,,,0,0,0
+3000,7034,0,0,0,0,0,,Clrk80-Strasser,Clarke1880,Clrk80-Strasser,Clarke 1880,Clarke_1880,Clarke 1880 (EPSG ID 7034),,,Clarke 1880,,,,,,,,,0,0,0
+3100,7035,0,0,0,0,0,,SPHERE-1,Sphere/EPSG,SPHERE-1,Sphere,Sphere,Sphere (EPSG ID 7035),,,Sphere,,,,,,,,"De[recated by EPSG, replace with Authalic S{here when such is added to this dictionary",0,0,0
+3200,7036,0,0,0,0,0,,GRS1967,GRS67,GRS1967,GRS 1967,GRS_1967,GRS 1967 (EPSG ID 7036),,,GRS 1967,,,,,,,,,0,0,0
+3300,7041,0,0,0,0,0,,ATS77,ATS77,ATS,Average Terrestrial System 1977,ATS_1977,Average Terrestrial System 1977 (EPSG ID 7041),,,Average Terrestrial System 1977,,,,,,,,,0,0,0
+3400,7042,0,0,0,0,0,,Everest1830,Everest1830,Everest1830,Everest (1830 Definition),Everest_1830,Everest (1830 Definition) (EPSG ID 7042),,,Everest (1830 Definition),,,,,,,,,0,0,0
+3500,7043,0,0,0,0,0,,WGS72,WGS72,WGS72,WGS 72,WGS_1972,WGS 72 (EPSG ID 7043),,,WGS 72,,,,WGS 72,,,,,0,0,0
+3600,7044,0,0,0,0,0,,Everest1830Def62,Everest1830/62,Everest1830Def62,Everest 1830 (1962 Definition),Everest_Definition_1962,Everest 1830 (1962 Definition) (EPSG ID 7044),,,Everest 1830 (1962 Definition),,,,,,,,,0,0,0
+3700,7045,0,0,0,0,0,,Everest1830Def75,Everest1830/75,Everest1830Def75,Everest 1830 (1975 Definition),Everest_Definition_1975,Everest 1830 (1975 Definition) (EPSG ID 7045),,,Everest 1830 (1975 Definition),,,,,,,,,0,0,0
+3800,7046,0,0,0,0,0,,BESL-NMB,Bessel/Nambia,BESL-NMB,Bessel Namibia (GLM),Bessel_Namibia,Bessel Namibia (GLM) (EPSG ID 7046),,,Bessel Namibia (GLM),,,,Bessel 1841 (Schwarzeck),,,,,0,0,0
+3900,7048,0,0,0,0,0,,GRS80SphereAuthalic,GRS80AuthalicSphere,GRS80SphereAuthalic,GRS 1980 Authalic Sphere,,GRS 1980 Authalic Sphere (EPSG ID 7047),,,GRS 1980 Authalic Sphere,,,,,,,,,0,0,0
+4000,7049,0,0,0,0,0,,Xian80,Xian80,Xian80,IAG 1975,Xian_1980,Xian 1980 (EPSG ID 7049),,,Xian 1980,,,,,,,,,0,0,0
+4100,7050,0,0,0,0,0,,SA1969,SAD69,SA1969,GRS 1967 Modified,GRS_1967_Truncated,GRS 1967 (SAD69) (EPSG ID 7050),,,,,,,South American 1969,,,,,0,0,0
+4200,7051,0,0,0,0,0,,DANEMARK,Danemark/1876,DANEMARK,Danish 1876,Danish_1876,Danish 1876 (EPSG ID 7051),,,,,,,,,,,,0,0,0
+4300,7052,0,0,0,0,0,,Clarke66AuthalicSphere,Clarke66AuthalicSphere,Clarke66AuthalicSphere,Clarke 1866 Authalic Sphere,Sphere_Clarke_1866_Authalic,,,,,,,,,,,,,0,0,0
+4400,7053,0,0,0,0,0,,HOUGH,Hough60,HOUGH,Hough 1960,Hough_1960,,,,,,,,Hough,,,,,0,0,0
+4500,7054,0,0,0,0,0,,PZ-90,PZ-90,PZ-90,PZ-90,,,,,,,,,,,,,,0,0,0
+4600,7055,0,0,0,0,0,,Clarke1866/IntnlFt,Clarke1866/IntnlFt,Clarke1866/IntnlFt,Clarke 1880 (international foot),,,,,,,,,,,,,,0,0,0
+4700,7056,0,0,0,0,0,,Everest1969/RSO,Everest1969/RSO,Everest1969/RSO,Everest 1830 (RSO 1969),Everest_Modified_1969,,,,,,,,,,,,,0,0,0
+4300,7057,0,0,0,0,0,,,,Intnl24AuthalicSphere,International 1924 Authalic Sphere,,,,,,,,,,,,,,0,0,0
+4300,7058,0,0,0,0,0,,,,Hughes1980,Hughes 1980,,,,,,,,,,,,,,0,0,0
+4300,7059,0,0,0,0,0,,,,VisualisationSphere,Popular Visualisation Sphere,,,,,,,,,,,,,,0,0,0
+4350,1024,0,0,0,0,0,,,,CGCS2000,CGCS2000,,,,,,,,,,,,,Added in EPSG 7.06,0,0,0
+4800,0,0,0,0,0,0,,AUSSIE52,AIG52,AUSSIE52,,,,,,,,,,,,,,,0,0,0
+4900,0,0,0,0,0,0,,AIRY49,Airy1848,AIRY49,,,,,,,,,,,,,,,0,0,0
+5000,0,0,0,0,0,0,,APL4-5,APL4-5,APL4-5,,,,,,,,,,,,,,,0,0,0
+5100,0,0,0,0,0,0,,Bessel-Norway,Bessel/Norway,Bessel-Norway,,,,,,,,,,,,,,,0,0,0
+5200,0,0,0,0,0,0,,BESL-TRI,Bessel/Triangulation,BESL-TRI,,,,,,,,,,,,,,,0,0,0
+5300,0,0,0,0,0,0,,T-BPCNC,BiPolarConicExampleCase,,,,,,,,,,,,,,,,0,0,0
+5400,0,0,0,0,0,0,,BPCNC,BiPolarConicSphere,BPCNC,,,,,,,,,,,,,,,0,0,0
+5500,0,0,0,0,0,0,,Borneo,Borneo,EVRST-Borneo,,,,,,,,,,,,,,,0,0,0
+5600,0,0,0,0,0,0,,CLRKS,Clarke1866Sphere,CLRKS,,,,,,,,,,,,,,,0,0,0
+5700,0,0,0,0,0,0,,CLRK85,Clarke1885,CLRK85,,,,,,,,,,,,,,,0,0,0
+5800,0,0,0,0,0,0,,DELA1810,Delambre1810,DELA1810,,,,,,,,,,,,,,,0,0,0
+5900,0,0,0,0,0,0,,DELA-MOD,DelambreModified,DELA-MOD,,,,,,,,,,,,,,,0,0,0
+6000,0,0,0,0,0,0,,EVRST-TM|EVRST-IM,EverestImperial,EVRST-TM|EVRST-IM,,xxEverest_1967,xxEverest 1830/1967 Definition,,,Everest 1830 (1967 Definition),,,,,,,,,0,0,0
+6100,0,0,0,0,0,0,,FSHR1960,Fischer60,FSHR1960,,Fischer_1960,,,,,,,,,,,,,0,0,0
+6200,0,0,0,0,0,0,,FSHR60MD,Fischer60Modified,FSHR60MD,,Fischer_Modified,Fischer 1960 (South Asia),,,,,,,Fischer 1960 (South Asia),,,,,0,0,0
+6300,0,0,0,0,0,0,,FSHR1968,Fischer68,FSHR1968,,Fischer_1968,,,,,,,,,,,,,0,0,0
+6400,0,0,0,0,0,0,,GHANA-WO,GhanaWarOffice,GHANA-WO,,,,,,,,,,,,,,,0,0,0
+6500,0,0,0,0,0,0,,HEIS-29,Heiskanen29,HEIS-29,,,,,,,,,,,,,,,0,0,0
+6600,0,0,0,0,0,0,,HOLLAND,Holland,HOLLAND,,,,,,,,,,,,,,,0,0,0
+6700,0,0,0,0,0,0,,,International67,,,International_1967,,,,,,,,,,,,,0,0,0
+6800,0,0,0,0,0,0,,IUGG-67,IUGG67,IUGG-67,,,,,,,,,,,,,,,0,0,0
+6900,0,0,0,0,0,0,,IUGG-75,IUGG75,IUGG-75-MOD,,,,,,,,,,,,,,,0,0,0
+7000,0,0,0,0,0,0,,JEFF-48,Jeffreys48,JEFF-48,,,,,,,,,,,,,,,0,0,0
+7100,0,0,0,0,0,0,,KAULA1961,Kaula61,KAULA1961,,,,,,,,,,,,,,,0,0,0
+7200,0,0,0,0,0,0,,SVANBERG,Svanberg,SVANBERG,,,,,,,,,,,,,,,0,0,0
+7300,0,0,0,0,0,0,,UNITS3,ThreeUnitSphere,,,,,,,,,,,,,,,,0,0,0
+7400,0,0,0,0,0,0,,WGS60,WGS60,WGS60,,,WGS 60,,,,,,,WGS 60,,,,,0,0,0
+7500,0,0,0,0,0,0,,WGS66,,,,WGS_1966,WGS 66,,,,,,,,,,,,0,0,0
+7600,0,0,0,0,0,0,,WALB,Walbeck,WALB,,Walbeck,,,,,,,,,,,,,0,0,0
+7700,0,0,0,0,0,0,,SPHERE,,,,Sphere_ARC_INFO,,,,,,,,,,,,,0,0,0
+7800,0,0,0,0,0,0,,,,,,Sphere_EMEP,,,,,,,,,,,,,0,0,0

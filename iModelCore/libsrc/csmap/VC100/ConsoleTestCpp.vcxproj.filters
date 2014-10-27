@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\TestCpp\Source\CStest1.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest2.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest3.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest4.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest5.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest6.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest7.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest8.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStest9.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestA.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestB.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestC.cpp" />
+    <ClCompile Include="..\TestCpp\Source\csTestCpp.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestD.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestE.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestF.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestG.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestH.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestI.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestJ.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestK.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestL.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestM.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestN.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestS.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestSupport.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestT.cpp" />
+    <ClCompile Include="..\TestCpp\Source\CStestZ.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\TestCpp\Include\csTestCpp.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="TestData">
+      <UniqueIdentifier>{436b3a68-7710-433e-bdef-7138d59043f9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\TestCpp\TEST.DAT">
+      <Filter>TestData</Filter>
+    </None>
+    <None Include="..\TestCpp\TEST_All.DAT">
+      <Filter>TestData</Filter>
+    </None>
+  </ItemGroup>
+</Project>

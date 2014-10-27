@@ -1,0 +1,333 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\Source\CS_alber.c" />
+    <ClCompile Include="..\Source\CS_angle.c" />
+    <ClCompile Include="..\Source\CS_ansi.c" />
+    <ClCompile Include="..\Source\CS_ats77New.c" />
+    <ClCompile Include="..\Source\CS_azmea.c" />
+    <ClCompile Include="..\Source\CS_azmed.c" />
+    <ClCompile Include="..\Source\CS_badekas.c" />
+    <ClCompile Include="..\Source\CS_bonne.c" />
+    <ClCompile Include="..\Source\CS_bpcnc.c" />
+    <ClCompile Include="..\Source\CS_bursa.c" />
+    <ClCompile Include="..\Source\CS_bynFile.c" />
+    <ClCompile Include="..\Source\CS_category.c" />
+    <ClCompile Include="..\Source\CS_csini.c" />
+    <ClCompile Include="..\Source\CS_csio.c" />
+    <ClCompile Include="..\Source\CS_csprm.c" />
+    <ClCompile Include="..\Source\CS_csWktLoc.c" />
+    <ClCompile Include="..\Source\CS_datum.c" />
+    <ClCompile Include="..\Source\CS_defaults.c" />
+    <ClCompile Include="..\Source\CS_defCmp.c" />
+    <ClCompile Include="..\Source\CS_defCmpEx.c" />
+    <ClCompile Include="..\Source\CS_dtcalc.c" />
+    <ClCompile Include="..\Source\CS_dtio.c" />
+    <ClCompile Include="..\Source\CS_dtmBridge.c" />
+    <ClCompile Include="..\Source\CS_edcnc.c" />
+    <ClCompile Include="..\Source\CS_edcyl.c" />
+    <ClCompile Include="..\Source\CS_egm96.c" />
+    <ClCompile Include="..\Source\CS_ekrt4.c" />
+    <ClCompile Include="..\Source\CS_ekrt6.c" />
+    <ClCompile Include="..\Source\CS_elCalc.c" />
+    <ClCompile Include="..\Source\CS_elio.c" />
+    <ClCompile Include="..\Source\CS_erpt.c" />
+    <ClCompile Include="..\Source\CS_error.c" />
+    <ClCompile Include="..\Source\CS_fips.c" />
+    <ClCompile Include="..\Source\CS_frame.c" />
+    <ClCompile Include="..\Source\CS_frnch.c" />
+    <ClCompile Include="..\Source\CS_gauss.c" />
+    <ClCompile Include="..\Source\CS_general.c" />
+    <ClCompile Include="..\Source\CS_geoct.c" />
+    <ClCompile Include="..\Source\CS_geoid96.c" />
+    <ClCompile Include="..\Source\CS_geoid99.c" />
+    <ClCompile Include="..\Source\CS_GeoidHeight.c" />
+    <ClCompile Include="..\Source\CS_gissupprt.c" />
+    <ClCompile Include="..\Source\CS_gnomc.c" />
+    <ClCompile Include="..\Source\CS_gpio.c" />
+    <ClCompile Include="..\Source\CS_gridi.c" />
+    <ClCompile Include="..\Source\CS_groups.c" />
+    <ClCompile Include="..\Source\CS_guiApi.c" />
+    <ClCompile Include="..\Source\CS_gxIndex.c" />
+    <ClCompile Include="..\Source\CS_gxio.c" />
+    <ClCompile Include="..\Source\CS_gxprm.c" />
+    <ClCompile Include="..\Source\CS_hlApi.c" />
+    <ClCompile Include="..\Source\CS_hmlsn.c" />
+    <ClCompile Include="..\Source\CS_hpApi.c" />
+    <ClCompile Include="..\Source\CS_japanNew.c" />
+    <ClCompile Include="..\Source\CS_krovk.c" />
+    <ClCompile Include="..\Source\CS_lmbrt.c" />
+    <ClCompile Include="..\Source\CS_lmtan.c" />
+    <ClCompile Include="..\Source\CS_mfc.cpp" />
+    <ClCompile Include="..\Source\CS_mgrs.c" />
+    <ClCompile Include="..\Source\CS_millr.c" />
+    <ClCompile Include="..\Source\CS_modpc.c" />
+    <ClCompile Include="..\Source\CS_molod.c" />
+    <ClCompile Include="..\Source\CS_molwd.c" />
+    <ClCompile Include="..\Source\CS_mrcat.c" />
+    <ClCompile Include="..\Source\CS_mstro.c" />
+    <ClCompile Include="..\Source\CS_mulrg.c" />
+    <ClCompile Include="..\Source\CS_nacyl.c" />
+    <ClCompile Include="..\Source\CS_nadcn.c" />
+    <ClCompile Include="..\Source\CS_nerth.c" />
+    <ClCompile Include="..\Source\CS_ntv1.c" />
+    <ClCompile Include="..\Source\CS_ntv2.c" />
+    <ClCompile Include="..\Source\CS_nullx.c" />
+    <ClCompile Include="..\Source\CS_nzlnd.c" />
+    <ClCompile Include="..\Source\CS_oblqm.c" />
+    <ClCompile Include="..\Source\CS_optional.c" />
+    <ClCompile Include="..\Source\CS_ortho.c" />
+    <ClCompile Include="..\Source\CS_osgm91.c" />
+    <ClCompile Include="..\Source\CS_ost02.c" />
+    <ClCompile Include="..\Source\CS_ost97.c" />
+    <ClCompile Include="..\Source\CS_ostn02.c" />
+    <ClCompile Include="..\Source\CS_ostn97.c" />
+    <ClCompile Include="..\Source\CS_ostro.c" />
+    <ClCompile Include="..\Source\CS_parm3.c" />
+    <ClCompile Include="..\Source\CS_parm4.c" />
+    <ClCompile Include="..\Source\CS_parm6.c" />
+    <ClCompile Include="..\Source\CS_parm7.c" />
+    <ClCompile Include="..\Source\CS_plycn.c" />
+    <ClCompile Include="..\Source\CS_pstro.c" />
+    <ClCompile Include="..\Source\CS_rlsUpdt.c" />
+    <ClCompile Include="..\Source\CS_robin.c" />
+    <ClCompile Include="..\Source\CS_sinus.c" />
+    <ClCompile Include="..\Source\CS_sstro.c" />
+    <ClCompile Include="..\Source\CS_supprt.c" />
+    <ClCompile Include="..\Source\CS_swiss.c" />
+    <ClCompile Include="..\Source\CS_sys34.c" />
+    <ClCompile Include="..\Source\CS_system.c" />
+    <ClCompile Include="..\Source\CS_tacyl.c" />
+    <ClCompile Include="..\Source\CS_trmer.c" />
+    <ClCompile Include="..\Source\CS_trmrs.c" />
+    <ClCompile Include="..\Source\CS_units.c" />
+    <ClCompile Include="..\Source\CS_unity.c" />
+    <ClCompile Include="..\Source\CS_vdgrn.c" />
+    <ClCompile Include="..\Source\CS_VertconUS.c" />
+    <ClCompile Include="..\Source\CS_vrtcon.c" />
+    <ClCompile Include="..\Source\cs_wellknowntext.cpp" />
+    <ClCompile Include="..\Source\CS_wgs72.c" />
+    <ClCompile Include="..\Source\CS_winkelTripel.c" />
+    <ClCompile Include="..\Source\CS_zones.c" />
+    <ClCompile Include="..\Source\csBrowser.cpp" />
+    <ClCompile Include="..\Source\CScs2Wkt.cpp" />
+    <ClCompile Include="..\Source\cscscomp.c" />
+    <ClCompile Include="..\Source\csCsvFileSupport.cpp" />
+    <ClCompile Include="..\Source\CSdata.c" />
+    <ClCompile Include="..\Source\csDataDir.cpp" />
+    <ClCompile Include="..\Source\CSdataDT.c" />
+    <ClCompile Include="..\Source\CSdataPJ.c" />
+    <ClCompile Include="..\Source\CSdataU.c" />
+    <ClCompile Include="..\Source\CSdatumCatalog.c" />
+    <ClCompile Include="..\Source\CSdictDiff.c" />
+    <ClCompile Include="..\Source\CSdt2Wkt.cpp" />
+    <ClCompile Include="..\Source\CSdtcomp.c" />
+    <ClCompile Include="..\Source\csDualBrowse.cpp" />
+    <ClCompile Include="..\Source\csEdit.cpp" />
+    <ClCompile Include="..\Source\CSel2Wkt.cpp" />
+    <ClCompile Include="..\Source\CSelcomp.c" />
+    <ClCompile Include="..\Source\csEpsgStuff.cpp" />
+    <ClCompile Include="..\Source\csEpsgSupport.cpp" />
+    <ClCompile Include="..\Source\CSgeodeticSupport.c" />
+    <ClCompile Include="..\Source\CSgpcomp.c" />
+    <ClCompile Include="..\Source\CSgxcomp.c" />
+    <ClCompile Include="..\Source\csKeyNm.cpp" />
+    <ClCompile Include="..\Source\CSmrcomp.c" />
+    <ClCompile Include="..\Source\csNameMapper.cpp" />
+    <ClCompile Include="..\Source\csNameMapperSupport.cpp" />
+    <ClCompile Include="..\Source\csTest.cpp" />
+    <ClCompile Include="..\Source\CSwinHlp.cpp" />
+    <ClCompile Include="..\Source\CSwktFlavors.c" />
+    <ClCompile Include="..\Source\dtEdit.cpp" />
+    <ClCompile Include="..\Source\dtSelect.cpp" />
+    <ClCompile Include="..\Source\elEdit.cpp" />
+    <ClCompile Include="..\Source\elSelect.cpp" />
+    <ClCompile Include="..\Source\gdcEdit.cpp" />
+    <ClCompile Include="..\Source\mgTest.cpp" />
+    <ClCompile Include="..\Source\rcWellKnownText.cpp" />
+    <ClCompile Include="..\Source\rcWktKonstants.cpp" />
+    <ClCompile Include="..\Source\CS_caDatum.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_caV1GridFile.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_caV2GridFile.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_ch1903.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_csrs.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dhdn.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtAgd66ToGda94.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtAgd84ToGda94.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtAts77ToNad83.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtCh1903ToPlus.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtDhdnToEtrf89.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtEd50ToEtrf89.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtNad27ToAts77.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtNad27ToNad83.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtNad83ToHarn.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtNzdg49ToNzgd2K.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtRgf93ToNtf.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_dtTokyoToJgd2k.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_ed50.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_hpgn.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_japan.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_nad27.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_nzgd49.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_rgf93ToNtf.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_usDatum.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CS_usGridFile.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CSdatumSupport.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CSgridCellCache.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CSnad27ToCsrs.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\CSnad83ToCsrs.c">
+      <Filter>Excluded</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\csIoUtil.cpp" />
+    <ClCompile Include="..\Source\cs_ctio.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\cs_Ats77.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_clientBeg.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_clientEnd.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_Frnch.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_Geodetic.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_hlp.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_Legacy.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_mfc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_map.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_Nadcon.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_NTv1.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_NTv2.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_OpenSource.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_res.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_Wchar.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_wkt.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csCsvFileSupport.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csepsgstuff.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csNameMapper.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csNameMapperSupport.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\mgTest.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\rcWellKnownText.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cs_ioUtil.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csIoUtil.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csIoUtilAutoPtr.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csIoUtilDirIterator.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\csIoUtilDirSwitch.hpp">
+      <Filter>Include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Excluded">
+      <UniqueIdentifier>{4b60b246-a31a-44c1-82f7-2ff05da88aa4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{7e473dc2-03af-431a-bc95-6a5924b6e296}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

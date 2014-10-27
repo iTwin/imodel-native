@@ -1,0 +1,20 @@
+-i..\..\Include
+-e514								// unusual use of boolean expression
+-e801								// use of goto is deprecated
+-e834								// suggest use of parenthesis to make precedence obvious
+-e1551								// function (destructors and iterators) may throw and exception.
+-esym(534,CS_stcpy)					// ignoring return value
+-esym(534,CS_stncp)					// ignoring return value
+-esym(534,CS_stncp)					// ignoring return value
+-esym(534,setvbuf)					// ignoring return value
+-esym(534,CS_adjll)					// ignoring return value
+-esym(534,CS_bswap)					// ignoring return value
+-esym(534,CS_bswap)					// ignoring return value
+-esym(534,wcsncpy)					// ignoring return value
+-esym(534,wcsncat)					// ignoring return value
+-esym(534,swprintf)					// ignoring return value
+-esym(534,TcsEpsgCode::AsString)	// ignoring return value
+-esym(1529,TcsEpsgCode::operator=)	// no check for &rhs == this
+
+
+
