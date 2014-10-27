@@ -717,6 +717,8 @@ public:
 
     // For setting additional ad-hoc metadata
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, WCharCP accessor, ECValueCR v);
+
+    ECOBJECTS_EXPORT ECObjectsStatus    Swap (UInt32 propIdxA, UInt32 propIdxB);
     };
 
 //__PUBLISH_SECTION_START__

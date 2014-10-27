@@ -4068,6 +4068,32 @@ StandaloneECEnablerPtr AdhocPropertyQuery::GetStructEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus AdhocPropertyEdit::Swap (UInt32 propIdxA, UInt32 propIdxB)
+    {
+    auto entryA = GetEntry (propIdxA), entryB = GetEntry (propIdxB);
+    if (entryA.IsNull() || entryB.IsNull())
+        return ECOBJECTS_STATUS_PropertyNotFound;
+
+    ECValue v;
+    v.SetStruct (entryA.get());
+    auto status = GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxB);
+    if (SUCCESS != status)
+        return status;
+
+    v.SetStruct (entryB.get());
+    status = GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxA);
+    if (SUCCESS != status)
+        {
+        v.SetStruct (entryA.get());
+        GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxA);
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displayLabel, WCharCP unitName, WCharCP extendedTypeName, bool isReadOnly, bool hidden)
     {
     if (!IsSupported())
