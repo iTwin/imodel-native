@@ -59,6 +59,7 @@ struct MSXmlBinaryReader : public IBeXmlReader
             public:
                 ValueHandle(byte* buffer) : m_valueType(ValueHandleType::Empty), m_buffer(buffer) {};
                 void SetValue(byte* buffer, ValueHandleType type, int length, int offset);
+                void SetValue(ValueHandleType type);
                 Utf8String GetString();
                 Int32 ToInt();
             };
@@ -90,9 +91,10 @@ struct MSXmlBinaryReader : public IBeXmlReader
                 XmlNode(XmlNodeType nodeType, byte* buffer, UInt32 flags);
                 bool HasContent() { return m_hasContent;}
                 XmlNodeType NodeType() { return m_nodeType;}
-                void SetLocalName(Utf8String localName);
-                Utf8CP GetLocalName() { return m_localName.c_str();}
+                Utf8StringR GetLocalNameR() {return m_localName; }
+                Utf8CP GetLocalName() const { return m_localName.c_str();}
                 void SetValueHandle(byte* buffer, ValueHandleType type, int length, int offset);
+                void SetValueHandle(ValueHandleType type);
                 Utf8String ValueAsString() { return m_value.GetString(); }
             };
 
@@ -130,16 +132,16 @@ struct MSXmlBinaryReader : public IBeXmlReader
         int m_offset;
         bool m_rootElement;
         bool m_isTextWithEndElement;
-        bvector<XmlElementNode*> m_elementNodes;
-        XmlAtomicTextNode* m_atomicTextNode;
-        XmlInitialNode* m_initialNode;
-        XmlEndElementNode* m_endElementNode;
+        bvector<XmlElementNode> m_elementNodes;
+        XmlAtomicTextNode m_atomicTextNode;
+        XmlInitialNode m_initialNode;
+        XmlEndElementNode m_endElementNode;
 
         BeXmlReader::ReadResult ReadNode();
         byte GetByte();
         XmlBinaryNodeType GetBinaryNodeType();
         void SkipByte() {m_offset++;}
-        XmlElementNode* EnterScope();
+        XmlElementNode& EnterScope();
         void ExitScope();
         void MoveToNode(XmlNode* node);
         XmlAtomicTextNode* MoveToAtomicTextWithEndElement();
@@ -148,12 +150,11 @@ struct MSXmlBinaryReader : public IBeXmlReader
         void ReadAttributes();
 
         void ReadName(Utf8StringR name);
-        void ReadName(XmlElementNode* node);
+        void ReadName(XmlElementNode& node);
         int ReadMultiByteUInt31();
 
     public:
-        MSXmlBinaryReader(byte* bytes, int length);
-        ~MSXmlBinaryReader();
+        ECOBJECTS_EXPORT MSXmlBinaryReader(byte* bytes, int length);
 
         XmlNodeType MoveToContent();
 

@@ -192,6 +192,118 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, MSBsplineSurfacePtr &result)
     return false;
     }
 
+bool BeXmlCGParser::TryParse (BeXmlNodeP node, CurveVectorPtr &result)
+    {
+    if (BeStringUtilities::Stricmp (node->GetName (), "Polygon") == 0)
+        {
+        bvector<DPoint3d> points;
+        if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
+            {
+            ICurvePrimitivePtr linestring = ICurvePrimitive::CreateLineString (points);
+            CurveVectorPtr area = CurveVector::Create
+                        (CurveVector::BOUNDARY_TYPE_Outer);
+            area->push_back (linestring);
+            result = area;
+            return true;
+            }
+        }
+    else if (BeStringUtilities::Stricmp (node->GetName (), "SurfacePatch") == 0)
+        {
+        BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
+        BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
+        if (NULL != exteriorLoop)
+            {
+            CurveVectorPtr exteriorChild;
+            if (TryParse (exteriorLoop->GetFirstChild (BEXMLNODE_Element), exteriorChild))
+                {
+                if (NULL == holeLoops)
+                    {
+                    result = exteriorChild;
+                    }
+                else
+                    {
+                    CurveVectorPtr loops = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+                    loops->Add (exteriorChild);
+                    for (BeXmlNodeP child = holeLoops->GetFirstChild (BEXMLNODE_Element); NULL != child;
+                                child = child->GetNextSibling (BEXMLNODE_Element))
+                        {
+                        CurveVectorPtr hole;
+                        if (TryParse (child, hole))
+                            {
+                            loops->Add (hole);
+                            size_t index = loops->size () - 1;
+                            CurveVector::BoundaryType boundaryType;
+                            if (loops->GetChildBoundaryType (index, boundaryType))
+                                loops->SetChildBoundaryType (index, CurveVector::BOUNDARY_TYPE_Inner);
+                            }
+                        }
+                    result = loops;
+                    }
+                // hmm.. how to verify/announce validity (closed curve as child)???
+                return true;
+                }
+            }
+        }
+    else if (BeStringUtilities::Stricmp (node->GetName (), "CurveChain") == 0)
+        {
+        BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
+        CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+        for (BeXmlNodeP child = curveList->GetFirstChild (BEXMLNODE_Element); NULL != child;
+                    child = child->GetNextSibling (BEXMLNODE_Element))
+            {
+            ICurvePrimitivePtr segment;
+            TryParse (child, segment);
+            curves->push_back (segment);
+            }
+        result = curves;
+        return true;
+        }
+    else if (BeStringUtilities::Stricmp (node->GetName (), "CircularDisk") == 0)
+        {
+        RotMatrix axes;
+        DPoint3d origin;
+        double radius;
+        if (   FindChildPlacement (node, "placement", origin, axes)
+            && FindChildDouble (node, "radius", radius)
+            )
+            {
+            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
+                        DEllipse3d::FromScaledRotMatrix (
+                                origin, axes,
+                                radius, radius,
+                                0.0, Angle::TwoPi ()));
+            CurveVectorPtr area = CurveVector::Create
+                        (CurveVector::BOUNDARY_TYPE_Outer);
+            area->push_back (arc);
+            result = area;
+            return true;
+            }
+        }
+    else if (BeStringUtilities::Stricmp (node->GetName (), "EllipticDisk") == 0)
+        {
+        RotMatrix axes;
+        DPoint3d origin;
+        double radiusA, radiusB;
+        if (   FindChildPlacement (node, "placement", origin, axes)
+            && FindChildDouble (node, "radiusA", radiusA)
+            && FindChildDouble (node, "radiusB", radiusB)
+            )
+            {
+            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
+                        DEllipse3d::FromScaledRotMatrix (
+                                origin, axes,
+                                radiusA, radiusB,
+                                0.0, Angle::TwoPi ()));
+            CurveVectorPtr area = CurveVector::Create
+                        (CurveVector::BOUNDARY_TYPE_Outer);
+            area->push_back (arc);
+            result = area;
+            return true;
+            }
+        }
+    return false;
+    }
+
 bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
     {
     if (BeStringUtilities::Stricmp (node->GetName (), "LineSegment") == 0)
@@ -252,115 +364,12 @@ bool BeXmlCGParser::TryParse (BeXmlNodeP node, ICurvePrimitivePtr &result)
             return true;
             }
         }
-    else if (BeStringUtilities::Stricmp (node->GetName (), "SurfacePatch") == 0)
-        {
-        BeXmlNodeP exteriorLoop = FindChild (node, "ExteriorLoop");
-        BeXmlNodeP holeLoops     = FindChild (node, "ListOfHoleLoop");
-        if (NULL != exteriorLoop)
-            {
-            ICurvePrimitivePtr exteriorChild;
-            CurveVectorPtr loops = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
-            if (TryParse (exteriorLoop->GetFirstChild (BEXMLNODE_Element), exteriorChild))
-                {
-                loops->push_back (exteriorChild);
-                if (NULL != holeLoops)
-                    {
-                    for (BeXmlNodeP child = holeLoops->GetFirstChild (BEXMLNODE_Element); NULL != child;
-                                child = child->GetNextSibling (BEXMLNODE_Element))
-                        {
-                        ICurvePrimitivePtr hole;
-                        if (TryParse (child, hole))
-                            {
-                            loops->push_back (hole);
-                            size_t index = loops->size () - 1;
-                            CurveVector::BoundaryType boundaryType;
-                            if (loops->GetChildBoundaryType (index, boundaryType))
-                                loops->SetChildBoundaryType (index, CurveVector::BOUNDARY_TYPE_Inner);
-                            }
-                        }
-                    }
-                result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*loops);
-                // hmm.. how to verify/announce validity (closed curve as child)???
-                return true;
-                }
-            }
-        }
-    else if (BeStringUtilities::Stricmp (node->GetName (), "CurveChain") == 0)
-        {
-        BeXmlNodeP curveList = FindChild (node, "ListOfCurve");
-        CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-        for (BeXmlNodeP child = curveList->GetFirstChild (BEXMLNODE_Element); NULL != child;
-                    child = child->GetNextSibling (BEXMLNODE_Element))
-            {
-            ICurvePrimitivePtr segment;
-            TryParse (child, segment);
-            curves->push_back (segment);
-            }
-        result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*curves);
-        return true;
-        }
     else if (BeStringUtilities::Stricmp (node->GetName (), "Linestring") == 0)
         {
         bvector<DPoint3d> points;
         if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
             {
             result = ICurvePrimitive::CreateLineString (points);
-            return true;
-            }
-        }
-    else if (BeStringUtilities::Stricmp (node->GetName (), "Polygon") == 0)
-        {
-        bvector<DPoint3d> points;
-        if (GetPoints (node, "ListOfPoint", NULL, points))    // allow any tag name in the points !!!
-            {
-            ICurvePrimitivePtr linestring = ICurvePrimitive::CreateLineString (points);
-            CurveVectorPtr area = CurveVector::Create
-                        (CurveVector::BOUNDARY_TYPE_Outer);
-            area->push_back (linestring);
-            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
-            return true;
-            }
-        }
-    else if (BeStringUtilities::Stricmp (node->GetName (), "CircularDisk") == 0)
-        {
-        RotMatrix axes;
-        DPoint3d origin;
-        double radius;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDouble (node, "radius", radius)
-            )
-            {
-            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
-                        DEllipse3d::FromScaledRotMatrix (
-                                origin, axes,
-                                radius, radius,
-                                0.0, Angle::TwoPi ()));
-            CurveVectorPtr area = CurveVector::Create
-                        (CurveVector::BOUNDARY_TYPE_Outer);
-            area->push_back (arc);
-            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
-            return true;
-            }
-        }
-    else if (BeStringUtilities::Stricmp (node->GetName (), "EllipticDisk") == 0)
-        {
-        RotMatrix axes;
-        DPoint3d origin;
-        double radiusA, radiusB;
-        if (   FindChildPlacement (node, "placement", origin, axes)
-            && FindChildDouble (node, "radiusA", radiusA)
-            && FindChildDouble (node, "radiusB", radiusB)
-            )
-            {
-            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (
-                        DEllipse3d::FromScaledRotMatrix (
-                                origin, axes,
-                                radiusA, radiusB,
-                                0.0, Angle::TwoPi ()));
-            CurveVectorPtr area = CurveVector::Create
-                        (CurveVector::BOUNDARY_TYPE_Outer);
-            area->push_back (arc);
-            result = ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*area);
             return true;
             }
         }
@@ -588,12 +597,18 @@ BeXmlCGParser::BeXmlCGParser ()
 bool BeXmlCGParser::TryParse (BeXmlNodeP node, bvector<IGeometryPtr> &geometry, size_t maxDepth)
     {
     ICurvePrimitivePtr curvePrimitive;
+    CurveVectorPtr curveVector;
     ISolidPrimitivePtr solidPrimitive;
     MSBsplineSurfacePtr surface;
     size_t count = 0;
     if (TryParse (node, curvePrimitive))
         {
         geometry.push_back (IGeometry::Create (curvePrimitive));
+        count = 1;
+        }
+    else if (TryParse (node, curveVector))
+        {
+        geometry.push_back (IGeometry::Create (curveVector));
         count = 1;
         }
     else if (TryParse (node, solidPrimitive))

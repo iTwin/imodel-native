@@ -629,7 +629,7 @@ void BeXmlCGWriter::WriteDgnTorusPipeDetail (IBeXmlWriterR dest, DgnTorusPipeDet
         WriteDouble (dest, "radiusB", radiusB);
         WriteDouble (dest, "startAngle", 0.0);
         WriteDouble (dest, "sweepAngle", Angle::RadiansToDegrees (sweepAngle));
-        WriteBool   (dest, "capped", data.m_capped);
+        WriteBool   (dest, "bSolidFlag", data.m_capped);
         dest.WriteElementEnd ();
         }
     }
@@ -654,7 +654,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
                 WritePlacementZX (dest, centerA, unitZ, unitX);
                 WriteDouble (dest, "height", height);
                 WriteDouble (dest, "radius", radiusA);
-                WriteBool (dest, "capped", data.m_capped);
+                WriteBool (dest, "bSolidFlag", data.m_capped);
                 dest.WriteElementEnd ();
                 }
             else
@@ -664,7 +664,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
                 WriteDouble (dest, "radiusA", radiusA);
                 WriteDouble (dest, "radiusB", radiusB);
                 WriteDouble (dest, "height", height);
-                WriteBool (dest, "capped", data.m_capped);
+                WriteBool (dest, "bSolidFlag", data.m_capped);
                 dest.WriteElementEnd ();
                 }
             }
@@ -675,7 +675,7 @@ void BeXmlCGWriter::WriteDgnConeDetail (IBeXmlWriterR dest, DgnConeDetail data)
             WriteXYZ (dest, "centerB", centerB);
             WriteDouble (dest, "radiusA", radiusA);
             WriteDouble (dest, "radiusB", radiusB);
-            WriteBool (dest, "capped", data.m_capped);
+            WriteBool (dest, "bSolidFlag", data.m_capped);
             dest.WriteElementEnd ();
             }
         }
@@ -698,12 +698,13 @@ void BeXmlCGWriter::WriteDgnBoxDetail (IBeXmlWriterR dest, DgnBoxDetail data)
         )
         {
         dest.WriteElementStart ("Block");
-        DVec3d unitZ;
+        DVec3d unitZ, unitX;
         unitZ.Normalize (zVector);
-        WritePlacementZX (dest, origin, xVector, unitZ);
+        unitX.Normalize (xVector);
+        WritePlacementZX (dest, origin, unitZ, unitX);
         WriteXYZ (dest, "cornerA", DPoint3d::From (0,0,0));
         WriteXYZ (dest, "cornerB", DPoint3d::From (ax, ay, zVector.Magnitude ()));
-        WriteBool (dest, "capped", data.m_capped);
+        WriteBool (dest, "bSolidFlag", data.m_capped);
         dest.WriteElementEnd ();
         }
     else

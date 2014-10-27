@@ -20,20 +20,18 @@ bool ReadILineSegment (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("LineSegment")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d startPoint = s_default_DPoint3d;
-        DPoint3d endPoint = s_default_DPoint3d;
+        CGLineSegmentDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("startPoint")
-                && ReadTagDPoint3d ("startPoint", startPoint))
+                && ReadTagDPoint3d ("startPoint", detail.startPoint))
                 continue;
 
             if (   CurrentElementNameMatch ("endPoint")
-                && ReadTagDPoint3d ("endPoint", endPoint))
+                && ReadTagDPoint3d ("endPoint", detail.endPoint))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -41,7 +39,7 @@ bool ReadILineSegment (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateLineSegment( startPoint, endPoint);
+        result = m_factory.Create (detail);//LineSegment(detail.startPoint,detail.endPoint);
         return true;
         }
     return false;
@@ -69,30 +67,26 @@ bool ReadICircularArc (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularArc")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double radius = s_default_double;
-        Angle startAngle = s_default_Angle;
-        Angle sweepAngle = s_default_Angle;
+        CGCircularArcDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("radius")
-                && ReadTagdouble ("radius", radius))
+                && ReadTagdouble ("radius", detail.radius))
                 continue;
 
             if (   CurrentElementNameMatch ("startAngle")
-                && ReadTagAngle ("startAngle", startAngle))
+                && ReadTagAngle ("startAngle", detail.startAngle))
                 continue;
 
             if (   CurrentElementNameMatch ("sweepAngle")
-                && ReadTagAngle ("sweepAngle", sweepAngle))
+                && ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -100,7 +94,7 @@ bool ReadICircularArc (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCircularArc( placement, radius, startAngle, sweepAngle);
+        result = m_factory.Create (detail);//CircularArc(detail.placement,detail.radius,detail.startAngle,detail.sweepAngle);
         return true;
         }
     return false;
@@ -133,55 +127,46 @@ bool ReadIDgnBox (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnBox")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d baseOrigin = s_default_DPoint3d;
-        DPoint3d topOrigin = s_default_DPoint3d;
-        DVector3d vectorX = s_default_DVector3d;
-        DVector3d vectorY = s_default_DVector3d;
-        double baseX = s_default_double;
-        double baseY = s_default_double;
-        double topX = s_default_double;
-        double topY = s_default_double;
-        bool capped = s_default_bool;
+        CGDgnBoxDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("baseOrigin")
-                && ReadTagDPoint3d ("baseOrigin", baseOrigin))
+                && ReadTagDPoint3d ("baseOrigin", detail.baseOrigin))
                 continue;
 
             if (   CurrentElementNameMatch ("topOrigin")
-                && ReadTagDPoint3d ("topOrigin", topOrigin))
+                && ReadTagDPoint3d ("topOrigin", detail.topOrigin))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorX")
-                && ReadTagDVector3d ("vectorX", vectorX))
+                && ReadTagDVector3d ("vectorX", detail.vectorX))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorY")
-                && ReadTagDVector3d ("vectorY", vectorY))
+                && ReadTagDVector3d ("vectorY", detail.vectorY))
                 continue;
 
             if (   CurrentElementNameMatch ("baseX")
-                && ReadTagdouble ("baseX", baseX))
+                && ReadTagdouble ("baseX", detail.baseX))
                 continue;
 
             if (   CurrentElementNameMatch ("baseY")
-                && ReadTagdouble ("baseY", baseY))
+                && ReadTagdouble ("baseY", detail.baseY))
                 continue;
 
             if (   CurrentElementNameMatch ("topX")
-                && ReadTagdouble ("topX", topX))
+                && ReadTagdouble ("topX", detail.topX))
                 continue;
 
             if (   CurrentElementNameMatch ("topY")
-                && ReadTagdouble ("topY", topY))
+                && ReadTagdouble ("topY", detail.topY))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("capped", detail.capped))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -189,7 +174,7 @@ bool ReadIDgnBox (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnBox( baseOrigin, topOrigin, vectorX, vectorY, baseX, baseY, topX, topY, capped);
+        result = m_factory.Create (detail);//DgnBox(detail.baseOrigin,detail.topOrigin,detail.vectorX,detail.vectorY,detail.baseX,detail.baseY,detail.topX,detail.topY,detail.capped);
         return true;
         }
     return false;
@@ -221,50 +206,42 @@ bool ReadIDgnSphere (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnSphere")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d center = s_default_DPoint3d;
-        DVector3d vectorX = s_default_DVector3d;
-        DVector3d vectorZ = s_default_DVector3d;
-        double radiusXY = s_default_double;
-        double radiusZ = s_default_double;
-        Angle startLatitude = s_default_Angle;
-        Angle latitudeSweep = s_default_Angle;
-        bool capped = s_default_bool;
+        CGDgnSphereDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("center")
-                && ReadTagDPoint3d ("center", center))
+                && ReadTagDPoint3d ("center", detail.center))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorX")
-                && ReadTagDVector3d ("vectorX", vectorX))
+                && ReadTagDVector3d ("vectorX", detail.vectorX))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorZ")
-                && ReadTagDVector3d ("vectorZ", vectorZ))
+                && ReadTagDVector3d ("vectorZ", detail.vectorZ))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusXY")
-                && ReadTagdouble ("radiusXY", radiusXY))
+                && ReadTagdouble ("radiusXY", detail.radiusXY))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusZ")
-                && ReadTagdouble ("radiusZ", radiusZ))
+                && ReadTagdouble ("radiusZ", detail.radiusZ))
                 continue;
 
             if (   CurrentElementNameMatch ("startLatitude")
-                && ReadTagAngle ("startLatitude", startLatitude))
+                && ReadTagAngle ("startLatitude", detail.startLatitude))
                 continue;
 
             if (   CurrentElementNameMatch ("latitudeSweep")
-                && ReadTagAngle ("latitudeSweep", latitudeSweep))
+                && ReadTagAngle ("latitudeSweep", detail.latitudeSweep))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("capped", detail.capped))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -272,7 +249,7 @@ bool ReadIDgnSphere (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnSphere( center, vectorX, vectorZ, radiusXY, radiusZ, startLatitude, latitudeSweep, capped);
+        result = m_factory.Create (detail);//DgnSphere(detail.center,detail.vectorX,detail.vectorZ,detail.radiusXY,detail.radiusZ,detail.startLatitude,detail.latitudeSweep,detail.capped);
         return true;
         }
     return false;
@@ -303,45 +280,38 @@ bool ReadIDgnCone (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnCone")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d centerA = s_default_DPoint3d;
-        DPoint3d centerB = s_default_DPoint3d;
-        DVector3d vectorX = s_default_DVector3d;
-        DVector3d vectorY = s_default_DVector3d;
-        double radiusA = s_default_double;
-        double radiusB = s_default_double;
-        bool capped = s_default_bool;
+        CGDgnConeDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("centerA")
-                && ReadTagDPoint3d ("centerA", centerA))
+                && ReadTagDPoint3d ("centerA", detail.centerA))
                 continue;
 
             if (   CurrentElementNameMatch ("centerB")
-                && ReadTagDPoint3d ("centerB", centerB))
+                && ReadTagDPoint3d ("centerB", detail.centerB))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorX")
-                && ReadTagDVector3d ("vectorX", vectorX))
+                && ReadTagDVector3d ("vectorX", detail.vectorX))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorY")
-                && ReadTagDVector3d ("vectorY", vectorY))
+                && ReadTagDVector3d ("vectorY", detail.vectorY))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusA")
-                && ReadTagdouble ("radiusA", radiusA))
+                && ReadTagdouble ("radiusA", detail.radiusA))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusB")
-                && ReadTagdouble ("radiusB", radiusB))
+                && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("capped", detail.capped))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -349,7 +319,7 @@ bool ReadIDgnCone (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnCone( centerA, centerB, vectorX, vectorY, radiusA, radiusB, capped);
+        result = m_factory.Create (detail);//DgnCone(detail.centerA,detail.centerB,detail.vectorX,detail.vectorY,detail.radiusA,detail.radiusB,detail.capped);
         return true;
         }
     return false;
@@ -380,45 +350,38 @@ bool ReadIDgnTorusPipe (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnTorusPipe")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d center = s_default_DPoint3d;
-        DVector3d vectorX = s_default_DVector3d;
-        DVector3d vectorY = s_default_DVector3d;
-        double majorRadius = s_default_double;
-        double minorRadius = s_default_double;
-        Angle sweepAngle = s_default_Angle;
-        bool capped = s_default_bool;
+        CGDgnTorusPipeDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("center")
-                && ReadTagDPoint3d ("center", center))
+                && ReadTagDPoint3d ("center", detail.center))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorX")
-                && ReadTagDVector3d ("vectorX", vectorX))
+                && ReadTagDVector3d ("vectorX", detail.vectorX))
                 continue;
 
             if (   CurrentElementNameMatch ("vectorY")
-                && ReadTagDVector3d ("vectorY", vectorY))
+                && ReadTagDVector3d ("vectorY", detail.vectorY))
                 continue;
 
             if (   CurrentElementNameMatch ("majorRadius")
-                && ReadTagdouble ("majorRadius", majorRadius))
+                && ReadTagdouble ("majorRadius", detail.majorRadius))
                 continue;
 
             if (   CurrentElementNameMatch ("minorRadius")
-                && ReadTagdouble ("minorRadius", minorRadius))
+                && ReadTagdouble ("minorRadius", detail.minorRadius))
                 continue;
 
             if (   CurrentElementNameMatch ("sweepAngle")
-                && ReadTagAngle ("sweepAngle", sweepAngle))
+                && ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("capped", detail.capped))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -426,7 +389,7 @@ bool ReadIDgnTorusPipe (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnTorusPipe( center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped);
+        result = m_factory.Create (detail);//DgnTorusPipe(detail.center,detail.vectorX,detail.vectorY,detail.majorRadius,detail.minorRadius,detail.sweepAngle,detail.capped);
         return true;
         }
     return false;
@@ -445,7 +408,7 @@ bool ReadIDgnTorusPipe (IGeometryPtr &result)
 ///    &lt;placement&gt;... &lt;/placement&gt;
 ///    &lt;cornerA&gt;... &lt;/cornerA&gt;
 ///    &lt;cornerB&gt;... &lt;/cornerB&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/Block&gt;
 /// </code>
 /// </summary>
@@ -454,30 +417,26 @@ bool ReadIBlock (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Block")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        DPoint3d cornerA = s_default_DPoint3d;
-        DPoint3d cornerB = s_default_DPoint3d;
-        bool capped = s_default_bool;
+        CGBlockDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("cornerA")
-                && ReadTagDPoint3d ("cornerA", cornerA))
+                && ReadTagDPoint3d ("cornerA", detail.cornerA))
                 continue;
 
             if (   CurrentElementNameMatch ("cornerB")
-                && ReadTagDPoint3d ("cornerB", cornerB))
+                && ReadTagDPoint3d ("cornerB", detail.cornerB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -485,7 +444,7 @@ bool ReadIBlock (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateBlock( placement, cornerA, cornerB, capped);
+        result = m_factory.Create (detail);//Block(detail.placement,detail.cornerA,detail.cornerB,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -505,7 +464,7 @@ bool ReadIBlock (IGeometryPtr &result)
 ///    &lt;height&gt;... &lt;/height&gt;
 ///    &lt;radiusA&gt;... &lt;/radiusA&gt;
 ///    &lt;radiusB&gt;... &lt;/radiusB&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/CircularCone&gt;
 /// </code>
 /// </summary>
@@ -514,35 +473,30 @@ bool ReadICircularCone (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularCone")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double height = s_default_double;
-        double radiusA = s_default_double;
-        double radiusB = s_default_double;
-        bool capped = s_default_bool;
+        CGCircularConeDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("height")
-                && ReadTagdouble ("height", height))
+                && ReadTagdouble ("height", detail.height))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusA")
-                && ReadTagdouble ("radiusA", radiusA))
+                && ReadTagdouble ("radiusA", detail.radiusA))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusB")
-                && ReadTagdouble ("radiusB", radiusB))
+                && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -550,7 +504,7 @@ bool ReadICircularCone (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCircularCone( placement, height, radiusA, radiusB, capped);
+        result = m_factory.Create (detail);//CircularCone(detail.placement,detail.height,detail.radiusA,detail.radiusB,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -569,7 +523,7 @@ bool ReadICircularCone (IGeometryPtr &result)
 ///    &lt;placement&gt;... &lt;/placement&gt;
 ///    &lt;height&gt;... &lt;/height&gt;
 ///    &lt;radius&gt;... &lt;/radius&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/CircularCylinder&gt;
 /// </code>
 /// </summary>
@@ -578,30 +532,26 @@ bool ReadICircularCylinder (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularCylinder")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double height = s_default_double;
-        double radius = s_default_double;
-        bool capped = s_default_bool;
+        CGCircularCylinderDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("height")
-                && ReadTagdouble ("height", height))
+                && ReadTagdouble ("height", detail.height))
                 continue;
 
             if (   CurrentElementNameMatch ("radius")
-                && ReadTagdouble ("radius", radius))
+                && ReadTagdouble ("radius", detail.radius))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -609,7 +559,7 @@ bool ReadICircularCylinder (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCircularCylinder( placement, height, radius, capped);
+        result = m_factory.Create (detail);//CircularCylinder(detail.placement,detail.height,detail.radius,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -635,20 +585,18 @@ bool ReadICircularDisk (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CircularDisk")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double radius = s_default_double;
+        CGCircularDiskDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("radius")
-                && ReadTagdouble ("radius", radius))
+                && ReadTagdouble ("radius", detail.radius))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -656,7 +604,7 @@ bool ReadICircularDisk (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCircularDisk( placement, radius);
+        result = m_factory.Create (detail);//CircularDisk(detail.placement,detail.radius);
         return true;
         }
     return false;
@@ -681,15 +629,14 @@ bool ReadICoordinate (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Coordinate")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d xyz = s_default_DPoint3d;
+        CGCoordinateDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("xyz")
-                && ReadTagDPoint3d ("xyz", xyz))
+                && ReadTagDPoint3d ("xyz", detail.xyz))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -697,7 +644,7 @@ bool ReadICoordinate (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCoordinate( xyz);
+        result = m_factory.Create (detail);//Coordinate(detail.xyz);
         return true;
         }
     return false;
@@ -726,35 +673,30 @@ bool ReadIEllipticArc (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("EllipticArc")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double radiusA = s_default_double;
-        double radiusB = s_default_double;
-        Angle startAngle = s_default_Angle;
-        Angle sweepAngle = s_default_Angle;
+        CGEllipticArcDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusA")
-                && ReadTagdouble ("radiusA", radiusA))
+                && ReadTagdouble ("radiusA", detail.radiusA))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusB")
-                && ReadTagdouble ("radiusB", radiusB))
+                && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
             if (   CurrentElementNameMatch ("startAngle")
-                && ReadTagAngle ("startAngle", startAngle))
+                && ReadTagAngle ("startAngle", detail.startAngle))
                 continue;
 
             if (   CurrentElementNameMatch ("sweepAngle")
-                && ReadTagAngle ("sweepAngle", sweepAngle))
+                && ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -762,7 +704,7 @@ bool ReadIEllipticArc (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateEllipticArc( placement, radiusA, radiusB, startAngle, sweepAngle);
+        result = m_factory.Create (detail);//EllipticArc(detail.placement,detail.radiusA,detail.radiusB,detail.startAngle,detail.sweepAngle);
         return true;
         }
     return false;
@@ -789,25 +731,22 @@ bool ReadIEllipticDisk (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("EllipticDisk")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double radiusA = s_default_double;
-        double radiusB = s_default_double;
+        CGEllipticDiskDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusA")
-                && ReadTagdouble ("radiusA", radiusA))
+                && ReadTagdouble ("radiusA", detail.radiusA))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusB")
-                && ReadTagdouble ("radiusB", radiusB))
+                && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -815,7 +754,7 @@ bool ReadIEllipticDisk (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateEllipticDisk( placement, radiusA, radiusB);
+        result = m_factory.Create (detail);//EllipticDisk(detail.placement,detail.radiusA,detail.radiusB);
         return true;
         }
     return false;
@@ -845,40 +784,34 @@ bool ReadISingleLineText (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SingleLineText")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        String textString = s_default_String;
-        String fontName = s_default_String;
-        double characterXSize = s_default_double;
-        double characterYSize = s_default_double;
-        int justification = s_default_int;
+        CGSingleLineTextDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("textString")
-                && ReadTagString ("textString", textString))
+                && ReadTagString ("textString", detail.textString))
                 continue;
 
             if (   CurrentElementNameMatch ("fontName")
-                && ReadTagString ("fontName", fontName))
+                && ReadTagString ("fontName", detail.fontName))
                 continue;
 
             if (   CurrentElementNameMatch ("characterXSize")
-                && ReadTagdouble ("characterXSize", characterXSize))
+                && ReadTagdouble ("characterXSize", detail.characterXSize))
                 continue;
 
             if (   CurrentElementNameMatch ("characterYSize")
-                && ReadTagdouble ("characterYSize", characterYSize))
+                && ReadTagdouble ("characterYSize", detail.characterYSize))
                 continue;
 
             if (   CurrentElementNameMatch ("justification")
-                && ReadTagint ("justification", justification))
+                && ReadTagint ("justification", detail.justification))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -886,7 +819,7 @@ bool ReadISingleLineText (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSingleLineText( placement, textString, fontName, characterXSize, characterYSize, justification);
+        result = m_factory.Create (detail);//SingleLineText(detail.placement,detail.textString,detail.fontName,detail.characterXSize,detail.characterYSize,detail.justification);
         return true;
         }
     return false;
@@ -906,7 +839,7 @@ bool ReadISingleLineText (IGeometryPtr &result)
 ///    &lt;centerB&gt;... &lt;/centerB&gt;
 ///    &lt;radiusA&gt;... &lt;/radiusA&gt;
 ///    &lt;radiusB&gt;... &lt;/radiusB&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/SkewedCone&gt;
 /// </code>
 /// </summary>
@@ -915,35 +848,30 @@ bool ReadISkewedCone (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SkewedCone")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        DPoint3d centerB = s_default_DPoint3d;
-        double radiusA = s_default_double;
-        double radiusB = s_default_double;
-        bool capped = s_default_bool;
+        CGSkewedConeDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("centerB")
-                && ReadTagDPoint3d ("centerB", centerB))
+                && ReadTagDPoint3d ("centerB", detail.centerB))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusA")
-                && ReadTagdouble ("radiusA", radiusA))
+                && ReadTagdouble ("radiusA", detail.radiusA))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusB")
-                && ReadTagdouble ("radiusB", radiusB))
+                && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -951,7 +879,7 @@ bool ReadISkewedCone (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSkewedCone( placement, centerB, radiusA, radiusB, capped);
+        result = m_factory.Create (detail);//SkewedCone(detail.placement,detail.centerB,detail.radiusA,detail.radiusB,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -977,20 +905,18 @@ bool ReadISphere (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Sphere")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double radius = s_default_double;
+        CGSphereDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("radius")
-                && ReadTagdouble ("radius", radius))
+                && ReadTagdouble ("radius", detail.radius))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -998,7 +924,7 @@ bool ReadISphere (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSphere( placement, radius);
+        result = m_factory.Create (detail);//Sphere(detail.placement,detail.radius);
         return true;
         }
     return false;
@@ -1019,7 +945,7 @@ bool ReadISphere (IGeometryPtr &result)
 ///    &lt;radiusB&gt;... &lt;/radiusB&gt;
 ///    &lt;startAngle&gt;... &lt;/startAngle&gt;
 ///    &lt;sweepAngle&gt;... &lt;/sweepAngle&gt;
-///    &lt;capped&gt;... &lt;/capped&gt;
+///    &lt;bSolidFlag&gt;... &lt;/bSolidFlag&gt;
 ///  &lt;/TorusPipe&gt;
 /// </code>
 /// </summary>
@@ -1028,40 +954,34 @@ bool ReadITorusPipe (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("TorusPipe")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        double radiusA = s_default_double;
-        double radiusB = s_default_double;
-        Angle startAngle = s_default_Angle;
-        Angle sweepAngle = s_default_Angle;
-        bool capped = s_default_bool;
+        CGTorusPipeDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("placement")
-                && ReadTagPlacementOriginZX ("placement", placement))
+                && ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusA")
-                && ReadTagdouble ("radiusA", radiusA))
+                && ReadTagdouble ("radiusA", detail.radiusA))
                 continue;
 
             if (   CurrentElementNameMatch ("radiusB")
-                && ReadTagdouble ("radiusB", radiusB))
+                && ReadTagdouble ("radiusB", detail.radiusB))
                 continue;
 
             if (   CurrentElementNameMatch ("startAngle")
-                && ReadTagAngle ("startAngle", startAngle))
+                && ReadTagAngle ("startAngle", detail.startAngle))
                 continue;
 
             if (   CurrentElementNameMatch ("sweepAngle")
-                && ReadTagAngle ("sweepAngle", sweepAngle))
+                && ReadTagAngle ("sweepAngle", detail.sweepAngle))
                 continue;
 
-            if (   CurrentElementNameMatch ("capped")
-                && ReadTagbool ("capped", capped))
+            if (   CurrentElementNameMatch ("capped", "bSolidFlag")
+                && ReadTagbool ("bSolidFlag", detail.bSolidFlag))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -1069,7 +989,7 @@ bool ReadITorusPipe (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateTorusPipe( placement, radiusA, radiusB, startAngle, sweepAngle, capped);
+        result = m_factory.Create (detail);//TorusPipe(detail.placement,detail.radiusA,detail.radiusB,detail.startAngle,detail.sweepAngle,detail.bSolidFlag);
         return true;
         }
     return false;
@@ -1095,20 +1015,18 @@ bool ReadIVector (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Vector")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Start with the system default for each field ....
-        DPoint3d xyz = s_default_DPoint3d;
-        DVector3d vector = s_default_DVector3d;
+        CGVectorDetail detail;
 
         for (;IsStartElement ();)
             {
             if (   CurrentElementNameMatch ("xyz")
-                && ReadTagDPoint3d ("xyz", xyz))
+                && ReadTagDPoint3d ("xyz", detail.xyz))
                 continue;
 
             if (   CurrentElementNameMatch ("vector")
-                && ReadTagDVector3d ("vector", vector))
+                && ReadTagDVector3d ("vector", detail.vector))
                 continue;
 
             if (!SkipUnexpectedTag ())
@@ -1116,7 +1034,7 @@ bool ReadIVector (IGeometryPtr &result)
             }
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateVector( xyz, vector);
+        result = m_factory.Create (detail);//Vector(detail.xyz,detail.vector);
         return true;
         }
     return false;
@@ -1165,36 +1083,28 @@ bool ReadIIndexedMesh (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("IndexedMesh")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<DPoint3d> CoordArray;
-        bvector<int> CoordIndexArray;
-        bvector<DPoint2d> ParamArray;
-        bvector<int> ParamIndexArray;
-        bvector<DVector3d> NormalArray;
-        bvector<int> NormalIndexArray;
-        bvector<DVector3d> ColorArray;
-        bvector<int> ColorIndexArray;
+        CGIndexedMeshDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfDPoint3d ("ListOfCoord", "Coord", CoordArray))
+            if (ReadListOfDPoint3d ("ListOfCoord", "Coord", detail.xyzArray))
                 continue;
-            if (ReadListOfint ("ListOfCoordIndex", "CoordIndex", CoordIndexArray))
+            if (ReadListOfint ("ListOfCoordIndex", "CoordIndex", detail.coordIndexArray))
                 continue;
-            if (ReadListOfDPoint2d ("ListOfParam", "Param", ParamArray))
+            if (ReadListOfDPoint2d ("ListOfParam", "Param", detail.uvArray))
                 continue;
-            if (ReadListOfint ("ListOfParamIndex", "ParamIndex", ParamIndexArray))
+            if (ReadListOfint ("ListOfParamIndex", "ParamIndex", detail.paramIndexArray))
                 continue;
-            if (ReadListOfDVector3d ("ListOfNormal", "Normal", NormalArray))
+            if (ReadListOfDVector3d ("ListOfNormal", "Normal", detail.normalArray))
                 continue;
-            if (ReadListOfint ("ListOfNormalIndex", "NormalIndex", NormalIndexArray))
+            if (ReadListOfint ("ListOfNormalIndex", "NormalIndex", detail.normalIndexArray))
                 continue;
-            if (ReadListOfDVector3d ("ListOfColor", "Color", ColorArray))
+            if (ReadListOfDVector3d ("ListOfColor", "Color", detail.colorArray))
                 continue;
-            if (ReadListOfint ("ListOfColorIndex", "ColorIndex", ColorIndexArray))
+            if (ReadListOfint ("ListOfColorIndex", "ColorIndex", detail.colorIndexArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1203,16 +1113,7 @@ bool ReadIIndexedMesh (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateIndexedMesh (
-            CoordArray,
-            CoordIndexArray,
-            ParamArray,
-            ParamIndexArray,
-            NormalArray,
-            NormalIndexArray,
-            ColorArray,
-            ColorIndexArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1239,15 +1140,14 @@ bool ReadIAdjacentSurfacePatches (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("AdjacentSurfacePatches")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> PatchArray;
+        CGAdjacentSurfacePatchesDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfISurfacePatch ("ListOfPatch", "Patch", PatchArray))
+            if (ReadListOfISurfacePatch ("ListOfPatch", "Patch", detail.patchArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1256,9 +1156,7 @@ bool ReadIAdjacentSurfacePatches (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateAdjacentSurfacePatches (
-            PatchArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1293,27 +1191,22 @@ bool ReadIBsplineCurve (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("BsplineCurve")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        int order = s_default_int;
-        bool closed = s_default_bool;
-        bvector<DPoint3d> ControlPointArray;
-        bvector<double> WeightArray;
-        bvector<double> KnotArray;
+        CGBsplineCurveDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagint ("order", order))
+            if (ReadTagint ("order", detail.order))
                 continue;
-            if (ReadTagbool ("closed", closed))
+            if (ReadTagbool ("closed", detail.closed))
                 continue;
-            if (ReadListOfDPoint3d ("ListOfControlPoint", "ControlPoint", ControlPointArray))
+            if (ReadListOfDPoint3d ("ListOfControlPoint", "ControlPoint", detail.controlPointArray))
                 continue;
-            if (ReadListOfdouble ("ListOfWeight", "Weight", WeightArray))
+            if (ReadListOfdouble ("ListOfWeight", "Weight", detail.weightArray))
                 continue;
-            if (ReadListOfdouble ("ListOfKnot", "Knot", KnotArray))
+            if (ReadListOfdouble ("ListOfKnot", "Knot", detail.knotArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1322,13 +1215,7 @@ bool ReadIBsplineCurve (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateBsplineCurve (
-            order,
-            closed,
-            ControlPointArray,
-            WeightArray,
-            KnotArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1370,42 +1257,32 @@ bool ReadIBsplineSurface (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("BsplineSurface")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        int orderU = s_default_int;
-        bool closedU = s_default_bool;
-        int numUControlPoint = s_default_int;
-        int orderV = s_default_int;
-        bool closedV = s_default_bool;
-        int numVControlPoint = s_default_int;
-        bvector<DPoint3d> ControlPointArray;
-        bvector<double> WeightArray;
-        bvector<double> KnotUArray;
-        bvector<double> KnotVArray;
+        CGBsplineSurfaceDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagint ("orderU", orderU))
+            if (ReadTagint ("orderU", detail.orderU))
                 continue;
-            if (ReadTagbool ("closedU", closedU))
+            if (ReadTagbool ("closedU", detail.closedU))
                 continue;
-            if (ReadTagint ("numUControlPoint", numUControlPoint))
+            if (ReadTagint ("numUControlPoint", detail.numUControlPoint))
                 continue;
-            if (ReadTagint ("orderV", orderV))
+            if (ReadTagint ("orderV", detail.orderV))
                 continue;
-            if (ReadTagbool ("closedV", closedV))
+            if (ReadTagbool ("closedV", detail.closedV))
                 continue;
-            if (ReadTagint ("numVControlPoint", numVControlPoint))
+            if (ReadTagint ("numVControlPoint", detail.numVControlPoint))
                 continue;
-            if (ReadListOfDPoint3d ("ListOfControlPoint", "ControlPoint", ControlPointArray))
+            if (ReadListOfDPoint3d ("ListOfControlPoint", "ControlPoint", detail.controlPointArray))
                 continue;
-            if (ReadListOfdouble ("ListOfWeight", "Weight", WeightArray))
+            if (ReadListOfdouble ("ListOfWeight", "Weight", detail.weightArray))
                 continue;
-            if (ReadListOfdouble ("ListOfKnotU", "KnotU", KnotUArray))
+            if (ReadListOfdouble ("ListOfKnotU", "KnotU", detail.knotUArray))
                 continue;
-            if (ReadListOfdouble ("ListOfKnotV", "KnotV", KnotVArray))
+            if (ReadListOfdouble ("ListOfKnotV", "KnotV", detail.knotVArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1414,18 +1291,7 @@ bool ReadIBsplineSurface (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateBsplineSurface (
-            orderU,
-            closedU,
-            numUControlPoint,
-            orderV,
-            closedV,
-            numVControlPoint,
-            ControlPointArray,
-            WeightArray,
-            KnotUArray,
-            KnotVArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1452,15 +1318,14 @@ bool ReadICurveChain (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CurveChain")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> CurveArray;
+        CGCurveChainDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfIPrimitiveCurve ("ListOfCurve", "Curve", CurveArray))
+            if (ReadListOf_AnyICurvePrimitive ("ListOfCurve", "Curve", detail.curveArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1469,9 +1334,7 @@ bool ReadICurveChain (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCurveChain (
-            CurveArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1498,15 +1361,14 @@ bool ReadICurveGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CurveGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> CurveArray;
+        CGCurveGroupDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfICurve ("ListOfCurve", "Curve", CurveArray))
+            if (ReadListOfICurve ("ListOfCurve", "Curve", detail.curveArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1515,9 +1377,7 @@ bool ReadICurveGroup (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCurveGroup (
-            CurveArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1543,16 +1403,16 @@ bool ReadICurveReference (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("CurveReference")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bool reversed = s_default_bool;
-        ReaderTypeFor_ICurve parentCurve = s_default_ICurve;
+        CGCurveReferenceDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagbool ("reversed", reversed))
+            if (ReadTagbool ("reversed", detail.reversed))
+                continue;
+            if (ReadTag_AnyCurve ("parentCurve", detail.parentCurve))
                 continue;
 
                 
@@ -1562,10 +1422,7 @@ bool ReadICurveReference (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateCurveReference (
-            reversed,
-            parentCurve);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1592,15 +1449,14 @@ bool ReadIGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Group")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> MemberArray;
+        CGGroupDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfIGeometry ("ListOfMember", "Member", MemberArray))
+            if (ReadListOfIGeometry ("ListOfMember", "Member", detail.memberArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1609,9 +1465,7 @@ bool ReadIGroup (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateGroup (
-            MemberArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1645,30 +1499,24 @@ bool ReadIInterpolatingCurve (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("InterpolatingCurve")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        int endConditionCode = s_default_int;
-        int knotCode = s_default_int;
-        DVector3d startVector = s_default_DVector3d;
-        DVector3d endVector = s_default_DVector3d;
-        bvector<DPoint3d> PointArray;
-        bvector<double> KnotArray;
+        CGInterpolatingCurveDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagint ("endConditionCode", endConditionCode))
+            if (ReadTagint ("endConditionCode", detail.endConditionCode))
                 continue;
-            if (ReadTagint ("knotCode", knotCode))
+            if (ReadTagint ("knotCode", detail.knotCode))
                 continue;
-            if (ReadTagDVector3d ("startVector", startVector))
+            if (ReadTagDVector3d ("startVector", detail.startVector))
                 continue;
-            if (ReadTagDVector3d ("endVector", endVector))
+            if (ReadTagDVector3d ("endVector", detail.endVector))
                 continue;
-            if (ReadListOfDPoint3d ("ListOfPoint", "Point", PointArray))
+            if (ReadListOfDPoint3d ("ListOfPoint", "Point", detail.PointArray))
                 continue;
-            if (ReadListOfdouble ("ListOfKnot", "Knot", KnotArray))
+            if (ReadListOfdouble ("ListOfKnot", "Knot", detail.KnotArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1677,14 +1525,7 @@ bool ReadIInterpolatingCurve (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateInterpolatingCurve (
-            endConditionCode,
-            knotCode,
-            startVector,
-            endVector,
-            PointArray,
-            KnotArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1711,15 +1552,14 @@ bool ReadILineString (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("LineString")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<DPoint3d> PointArray;
+        CGLineStringDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfDPoint3d ("ListOfPoint", "Point", PointArray))
+            if (ReadListOfDPoint3d ("ListOfPoint", "Point", detail.PointArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1728,9 +1568,7 @@ bool ReadILineString (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateLineString (
-            PointArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1758,18 +1596,16 @@ bool ReadIOperation (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Operation")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        String name = s_default_String;
-        bvector<IGeometryPtr> MemberArray;
+        CGOperationDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagString ("name", name))
+            if (ReadTagString ("name", detail.name))
                 continue;
-            if (ReadListOfIGeometry ("ListOfMember", "Member", MemberArray))
+            if (ReadListOfIGeometry ("ListOfMember", "Member", detail.memberArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1778,10 +1614,7 @@ bool ReadIOperation (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateOperation (
-            name,
-            MemberArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1810,20 +1643,19 @@ bool ReadIParametricSurfacePatch (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("ParametricSurfacePatch")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        LoopType loopType = s_default_LoopType;
-        ReaderTypeFor_IParametricSurface surface = s_default_IParametricSurface;
-        bvector<IGeometryPtr> CurveChainArray;
+        CGParametricSurfacePatchDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagLoopType ("loopType", loopType))
+            if (ReadTagLoopType ("loopType", detail.loopType))
+                continue;
+            if (ReadTag_AnyParametricSurface ("surface", detail.surface))
                 continue;
 
-            if (ReadListOfICurveChain ("ListOfCurveChain", "CurveChain", CurveChainArray))
+            if (ReadListOfICurveChain ("ListOfCurveChain", "CurveChain", detail.loopArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1832,11 +1664,7 @@ bool ReadIParametricSurfacePatch (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateParametricSurfacePatch (
-            loopType,
-            surface,
-            CurveChainArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1863,15 +1691,14 @@ bool ReadIPointChain (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("PointChain")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> PointArray;
+        CGPointChainDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfISinglePoint ("ListOfPoint", "Point", PointArray))
+            if (ReadListOfISinglePoint ("ListOfPoint", "Point", detail.PointArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1880,9 +1707,7 @@ bool ReadIPointChain (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreatePointChain (
-            PointArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1909,15 +1734,14 @@ bool ReadIPointGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("PointGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> MemberArray;
+        CGPointGroupDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfIPoint ("ListOfMember", "Member", MemberArray))
+            if (ReadListOfIPoint ("ListOfMember", "Member", detail.memberArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1926,9 +1750,7 @@ bool ReadIPointGroup (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreatePointGroup (
-            MemberArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -1955,15 +1777,14 @@ bool ReadIPolygon (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Polygon")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<DPoint3d> PointArray;
+        CGPolygonDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfDPoint3d ("ListOfPoint", "Point", PointArray))
+            if (ReadListOfDPoint3d ("ListOfPoint", "Point", detail.pointArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -1972,9 +1793,7 @@ bool ReadIPolygon (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreatePolygon (
-            PointArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2000,16 +1819,16 @@ bool ReadIPrimitiveCurveReference (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("PrimitiveCurveReference")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bool reversed = s_default_bool;
-        ReaderTypeFor_IPrimitiveCurve parentCurve = s_default_IPrimitiveCurve;
+        CGPrimitiveCurveReferenceDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagbool ("reversed", reversed))
+            if (ReadTagbool ("reversed", detail.reversed))
+                continue;
+            if (ReadTag_AnyICurvePrimitive ("parentCurve", detail.parentCurve))
                 continue;
 
                 
@@ -2019,10 +1838,7 @@ bool ReadIPrimitiveCurveReference (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreatePrimitiveCurveReference (
-            reversed,
-            parentCurve);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2048,16 +1864,16 @@ bool ReadISharedGroupDef (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SharedGroupDef")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        String name = s_default_String;
-        ReaderTypeFor_IGeometry geometry = s_default_IGeometry;
+        CGSharedGroupDefDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagString ("name", name))
+            if (ReadTagString ("name", detail.name))
+                continue;
+            if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
                 
@@ -2067,10 +1883,7 @@ bool ReadISharedGroupDef (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSharedGroupDef (
-            name,
-            geometry);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2096,18 +1909,16 @@ bool ReadISharedGroupInstance (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SharedGroupInstance")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        String sharedGroupName = s_default_String;
-        Transform transform = s_default_Transform;
+        CGSharedGroupInstanceDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagString ("sharedGroupName", sharedGroupName))
+            if (ReadTagString ("sharedGroupName", detail.sharedGroupName))
                 continue;
-            if (ReadTagTransform ("transform", transform))
+            if (ReadTagTransform ("transform", detail.transform))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2116,10 +1927,7 @@ bool ReadISharedGroupInstance (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSharedGroupInstance (
-            sharedGroupName,
-            transform);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2144,14 +1952,15 @@ bool ReadIShelledSolid (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("ShelledSolid")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        ReaderTypeFor_ISurface BoundingSurface = s_default_ISurface;
+        CGShelledSolidDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
+            if (ReadTag_AnySurface ("BoundingSurface", detail.BoundingSurface))
+                continue;
 
                 
             if (!SkipUnexpectedTag ())
@@ -2160,9 +1969,7 @@ bool ReadIShelledSolid (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateShelledSolid (
-            BoundingSurface);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2188,16 +1995,18 @@ bool ReadISolidBySweptSurface (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SolidBySweptSurface")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        ReaderTypeFor_ISurface baseGeometry = s_default_ISurface;
-        ReaderTypeFor_ICurve railCurve = s_default_ICurve;
+        CGSolidBySweptSurfaceDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
+            if (ReadTag_AnySurface ("baseGeometry", detail.baseGeometry))
+                continue;
 
+            if (ReadTag_AnyCurve ("railCurve", detail.railCurve))
+                continue;
 
                 
             if (!SkipUnexpectedTag ())
@@ -2206,10 +2015,7 @@ bool ReadISolidBySweptSurface (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSolidBySweptSurface (
-            baseGeometry,
-            railCurve);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2236,15 +2042,14 @@ bool ReadISolidByRuledSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SolidByRuledSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> SectionArray;
+        CGSolidByRuledSweepDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfISurface ("ListOfSection", "Section", SectionArray))
+            if (ReadListOf_AnyGeometry ("ListOfSection", "Section", detail.SectionArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2253,9 +2058,7 @@ bool ReadISolidByRuledSweep (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSolidByRuledSweep (
-            SectionArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2282,15 +2085,14 @@ bool ReadISurfaceByRuledSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfaceByRuledSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> SectionArray;
+        CGSurfaceByRuledSweepDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfICurve ("ListOfSection", "Section", SectionArray))
+            if (ReadListOf_AnyGeometry ("ListOfSection", "Section", detail.SectionArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2299,9 +2101,7 @@ bool ReadISurfaceByRuledSweep (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSurfaceByRuledSweep (
-            SectionArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2328,15 +2128,14 @@ bool ReadISolidGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SolidGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> SolidArray;
+        CGSolidGroupDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfISolid ("ListOfSolid", "Solid", SolidArray))
+            if (ReadListOfISolid ("ListOfSolid", "Solid", detail.solidArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2345,9 +2144,7 @@ bool ReadISolidGroup (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSolidGroup (
-            SolidArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2379,34 +2176,28 @@ bool ReadISpiral (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("Spiral")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        String spiralType = s_default_String;
-        DPoint3d startPoint = s_default_DPoint3d;
-        Angle startBearing = s_default_Angle;
-        double startCurvature = s_default_double;
-        DPoint3d endPoint = s_default_DPoint3d;
-        Angle endBearing = s_default_Angle;
-        double endCurvature = s_default_double;
-        ReaderTypeFor_IGeometry geometry = s_default_IGeometry;
+        CGSpiralDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagString ("spiralType", spiralType))
+            if (ReadTagString ("spiralType", detail.spiralType))
                 continue;
-            if (ReadTagDPoint3d ("startPoint", startPoint))
+            if (ReadTagDPoint3d ("startPoint", detail.startPoint))
                 continue;
-            if (ReadTagAngle ("startBearing", startBearing))
+            if (ReadTagAngle ("startBearing", detail.startBearing))
                 continue;
-            if (ReadTagdouble ("startCurvature", startCurvature))
+            if (ReadTagdouble ("startCurvature", detail.startCurvature))
                 continue;
-            if (ReadTagDPoint3d ("endPoint", endPoint))
+            if (ReadTagDPoint3d ("endPoint", detail.endPoint))
                 continue;
-            if (ReadTagAngle ("endBearing", endBearing))
+            if (ReadTagAngle ("endBearing", detail.endBearing))
                 continue;
-            if (ReadTagdouble ("endCurvature", endCurvature))
+            if (ReadTagdouble ("endCurvature", detail.endCurvature))
+                continue;
+            if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
                 
@@ -2416,16 +2207,7 @@ bool ReadISpiral (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSpiral (
-            spiralType,
-            startPoint,
-            startBearing,
-            startCurvature,
-            endPoint,
-            endBearing,
-            endCurvature,
-            geometry);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2451,16 +2233,18 @@ bool ReadISurfaceBySweptCurve (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfaceBySweptCurve")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        ReaderTypeFor_ICurve baseGeometry = s_default_ICurve;
-        ReaderTypeFor_ICurve railCurve = s_default_ICurve;
+        CGSurfaceBySweptCurveDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
+            if (ReadTag_AnyCurve ("baseGeometry", detail.baseGeometry))
+                continue;
 
+            if (ReadTag_AnyCurve ("railCurve", detail.railCurve))
+                continue;
 
                 
             if (!SkipUnexpectedTag ())
@@ -2469,10 +2253,7 @@ bool ReadISurfaceBySweptCurve (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSurfaceBySweptCurve (
-            baseGeometry,
-            railCurve);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2499,15 +2280,14 @@ bool ReadISurfaceGroup (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfaceGroup")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bvector<IGeometryPtr> SurfaceArray;
+        CGSurfaceGroupDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadListOfISurface ("ListOfSurface", "Surface", SurfaceArray))
+            if (ReadListOfISurface ("ListOfSurface", "Surface", detail.surfaceArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2516,9 +2296,7 @@ bool ReadISurfaceGroup (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSurfaceGroup (
-            SurfaceArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2546,17 +2324,17 @@ bool ReadISurfacePatch (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("SurfacePatch")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        ReaderTypeFor_ICurveChain exteriorLoop = s_default_ICurveChain;
-        bvector<IGeometryPtr> HoleLoopArray;
+        CGSurfacePatchDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
+            if (ReadTag_AnyCurveChain ("exteriorLoop", detail.exteriorLoop))
+                continue;
 
-            if (ReadListOfICurveChain ("ListOfHoleLoop", "HoleLoop", HoleLoopArray))
+            if (ReadListOfICurveChain ("ListOfHoleLoop", "HoleLoop", detail.holeLoopArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2565,10 +2343,7 @@ bool ReadISurfacePatch (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateSurfacePatch (
-            exteriorLoop,
-            HoleLoopArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2594,16 +2369,16 @@ bool ReadITransformedGeometry (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("TransformedGeometry")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        Transform transform = s_default_Transform;
-        ReaderTypeFor_IGeometry geometry = s_default_IGeometry;
+        CGTransformedGeometryDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagTransform ("transform", transform))
+            if (ReadTagTransform ("transform", detail.transform))
+                continue;
+            if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
                 
@@ -2613,10 +2388,7 @@ bool ReadITransformedGeometry (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateTransformedGeometry (
-            transform,
-            geometry);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2643,19 +2415,18 @@ bool ReadIDgnExtrusion (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnExtrusion")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        DVector3d extrusionVector = s_default_DVector3d;
-        bool capped = s_default_bool;
-        ReaderTypeFor_ISweepable baseGeometry = s_default_ISweepable;
+        CGDgnExtrusionDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagDVector3d ("extrusionVector", extrusionVector))
+            if (ReadTagDVector3d ("extrusionVector", detail.extrusionVector))
                 continue;
-            if (ReadTagbool ("capped", capped))
+            if (ReadTagbool ("capped", detail.capped))
+                continue;
+            if (ReadTag_AnyCurveVector ("baseGeometry", detail.baseGeometry))
                 continue;
 
                 
@@ -2665,11 +2436,7 @@ bool ReadIDgnExtrusion (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnExtrusion (
-            extrusionVector,
-            capped,
-            baseGeometry);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2687,6 +2454,7 @@ bool ReadIDgnExtrusion (IGeometryPtr &result)
 ///  &lt;DgnRotationalSweep&gt;
 ///    &lt;Center&gt;... &lt;/Center&gt;
 ///    &lt;Axis&gt;... &lt;/Axis&gt;
+///    &lt;SweepAngle&gt;... &lt;/SweepAngle&gt;
 ///    &lt;Capped&gt;... &lt;/Capped&gt;
 ///    &lt;BaseGeometry&gt;... &lt;/BaseGeometry&gt;
 ///  &lt;/DgnRotationalSweep&gt;
@@ -2697,22 +2465,22 @@ bool ReadIDgnRotationalSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnRotationalSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        DPoint3d center = s_default_DPoint3d;
-        DVector3d axis = s_default_DVector3d;
-        bool capped = s_default_bool;
-        ReaderTypeFor_ISweepable baseGeometry = s_default_ISweepable;
+        CGDgnRotationalSweepDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagDPoint3d ("center", center))
+            if (ReadTagDPoint3d ("center", detail.center))
                 continue;
-            if (ReadTagDVector3d ("axis", axis))
+            if (ReadTagDVector3d ("axis", detail.axis))
                 continue;
-            if (ReadTagbool ("capped", capped))
+            if (ReadTagAngle ("sweepAngle", detail.sweepAngle))
+                continue;
+            if (ReadTagbool ("capped", detail.capped))
+                continue;
+            if (ReadTag_AnyCurveVector ("baseGeometry", detail.baseGeometry))
                 continue;
 
                 
@@ -2722,12 +2490,7 @@ bool ReadIDgnRotationalSweep (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnRotationalSweep (
-            center,
-            axis,
-            capped,
-            baseGeometry);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2755,18 +2518,16 @@ bool ReadIDgnRuledSweep (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("DgnRuledSweep")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        bool capped = s_default_bool;
-        bvector<IGeometryPtr> ContourArray;
+        CGDgnRuledSweepDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagbool ("capped", capped))
+            if (ReadTagbool ("capped", detail.capped))
                 continue;
-            if (ReadListOfISweepable ("ListOfContour", "Contour", ContourArray))
+            if (ReadListOf_AnyCurveVector ("ListOfContour", "Contour", detail.contourArray))
                 continue;
                 
             if (!SkipUnexpectedTag ())
@@ -2775,10 +2536,7 @@ bool ReadIDgnRuledSweep (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateDgnRuledSweep (
-            capped,
-            ContourArray);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
@@ -2811,37 +2569,30 @@ bool ReadITransitionSpiral (IGeometryPtr &result)
     {
     result = nullptr;
     if (CurrentElementNameMatch ("TransitionSpiral")
-        && ReadToChild ())
+        && ReadToChildOrEnd ())
         {
-        // Gather children
-        String spiralType = s_default_String;
-        PlacementOriginZX placement = s_default_PlacementOriginZX;
-        Angle startBearing = s_default_Angle;
-        double startRadius = s_default_double;
-        Angle endBearing = s_default_Angle;
-        double endRadius = s_default_double;
-        double activeStartFraction = s_default_double;
-        double activeEndFraction = s_default_double;
-        ReaderTypeFor_IGeometry geometry = s_default_IGeometry;
+        CGTransitionSpiralDetail detail;
 
         // Read children in any order ...
         for (;IsStartElement ();)
             {
-            if (ReadTagString ("spiralType", spiralType))
+            if (ReadTagString ("spiralType", detail.spiralType))
                 continue;
-            if (ReadTagPlacementOriginZX ("placement", placement))
+            if (ReadTagPlacementOriginZX ("placement", detail.placement))
                 continue;
-            if (ReadTagAngle ("startBearing", startBearing))
+            if (ReadTagAngle ("startBearing", detail.startBearing))
                 continue;
-            if (ReadTagdouble ("startRadius", startRadius))
+            if (ReadTagdouble ("startRadius", detail.startRadius))
                 continue;
-            if (ReadTagAngle ("endBearing", endBearing))
+            if (ReadTagAngle ("endBearing", detail.endBearing))
                 continue;
-            if (ReadTagdouble ("endRadius", endRadius))
+            if (ReadTagdouble ("endRadius", detail.endRadius))
                 continue;
-            if (ReadTagdouble ("activeStartFraction", activeStartFraction))
+            if (ReadTagdouble ("activeStartFraction", detail.activeStartFraction))
                 continue;
-            if (ReadTagdouble ("activeEndFraction", activeEndFraction))
+            if (ReadTagdouble ("activeEndFraction", detail.activeEndFraction))
+                continue;
+            if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
                 
@@ -2851,17 +2602,7 @@ bool ReadITransitionSpiral (IGeometryPtr &result)
 
         // Get out of the primary element ..
         ReadEndElement ();
-        result = m_factory.CreateTransitionSpiral (
-            spiralType,
-            placement,
-            startBearing,
-            startRadius,
-            endBearing,
-            endRadius,
-            activeStartFraction,
-            activeEndFraction,
-            geometry);
-
+        result = m_factory.Create (detail);
         return true;
         }
     return false;
