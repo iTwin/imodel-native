@@ -87,7 +87,7 @@ void BeXmlCGWriter::WriteIndexList (IBeXmlWriterR dest, bvector<int> const & dat
     if (0 == data.size())
         return;
 
-    dest.WriteElementStart (listName);
+    BeXmlStatus s = dest.WriteElementStart (listName);
     size_t numThisLine = 0;
     for (size_t i = 0 ; i < data.size (); i++)
         {
@@ -99,7 +99,7 @@ void BeXmlCGWriter::WriteIndexList (IBeXmlWriterR dest, bvector<int> const & dat
         if (needLineFeed)
             numThisLine = 0;
         }
-    dest.WriteElementEnd ();
+    s = dest.WriteElementEnd ();
     }
 
 void BeXmlCGWriter::WriteList (IBeXmlWriterR dest, bvector<double> const & data, Utf8CP listName, Utf8CP itemName)
@@ -165,9 +165,10 @@ void BeXmlCGWriter::WriteXYZ (IBeXmlWriterR dest, Utf8CP name, DPoint3dCR xyz)
     {
     wchar_t buffer[1024];
     BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G,%.17G,%.17G", xyz.x, xyz.y, xyz.z);
-    dest.WriteElementStart (name);
-    dest.WriteText (buffer);
-    dest.WriteElementEnd (); 
+    BeXmlStatus s;
+    s = dest.WriteElementStart (name);
+    s = dest.WriteText (buffer);
+    s = dest.WriteElementEnd (); 
     }
 
 void BeXmlCGWriter::WriteText (IBeXmlWriterR dest, Utf8CP name, wchar_t const *data)
@@ -181,7 +182,7 @@ void BeXmlCGWriter::WriteText (IBeXmlWriterR dest, Utf8CP name, wchar_t const *d
 void BeXmlCGWriter::WriteXY (IBeXmlWriterR dest, Utf8CP name, double x, double y)
     {
     wchar_t buffer[1024];
-    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G,%.17G,%.17G", x, y);
+    BeStringUtilities::Snwprintf (buffer, _countof (buffer), L"%.17G,%.17G", x, y);
     dest.WriteElementStart (name);
     dest.WriteText (buffer);
     dest.WriteElementEnd (); 
@@ -552,29 +553,21 @@ void BeXmlCGWriter::Write (IBeXmlWriterR dest, CurveVectorCR curveVector, bool p
             {
             dest.WriteElementStart ("SurfacePatch");
             bvector <ICurvePrimitivePtr> holeLoop;
+            int n = 0;
             for(ICurvePrimitivePtr curve : curveVector)
                 {
+                // ASSUME first child is outer loop...
                 if (NULL != curve->GetChildCurveVectorCP ())
                     {
-                    switch (curve->GetChildCurveVectorCP ()->GetBoundaryType ())
+                    if (n++ == 0)
                         {
-                        case CurveVector::BOUNDARY_TYPE_Outer:
-                            {
-                            dest.WriteElementStart ("ExteriorLoop");
-                                Write (dest, *curve->GetChildCurveVectorCP (), false);
-                            dest.WriteElementEnd ();
-
-                            break;
-                            }
-
-                        case CurveVector::BOUNDARY_TYPE_Inner:
-                            {
-                            holeLoop.push_back (curve);
-                            break;
-                            }
-
-                        default:
-                            return;
+                        dest.WriteElementStart ("ExteriorLoop");
+                        Write (dest, *curve->GetChildCurveVectorCP (), false);
+                        dest.WriteElementEnd ();
+                        }
+                    else
+                        {
+                        holeLoop.push_back (curve);
                         }
                     }
                 }
@@ -742,7 +735,7 @@ void BeXmlCGWriter::WriteDgnExtrusionDetail (IBeXmlWriterR dest, DgnExtrusionDet
     DPoint3d curveStart, curveEnd;
     if (data.m_baseCurve->GetStartEnd (curveStart, curveEnd))
         {
-        dest.WriteElementStart (data.m_capped ? "SolidBySweptCurve" : "SurfaceBySweptCurve");
+        dest.WriteElementStart (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
             dest.WriteElementStart ("BaseGeometry");
             Write (dest, *data.m_baseCurve);
             dest.WriteElementEnd ();
@@ -807,7 +800,7 @@ void BeXmlCGWriter::WriteDgnRotationalSweepDetail (IBeXmlWriterR dest, DgnRotati
     Transform localToWorld, worldToLocal;    
     if (data.GetTransforms (localToWorld, worldToLocal))
         {
-        dest.WriteElementStart (data.m_capped ? "SolidBySweptCurve" : "SurfaceBySweptCurve");
+        dest.WriteElementStart (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
             dest.WriteElementStart ("BaseGeometry");
             Write (dest, *data.m_baseCurve);
             dest.WriteElementEnd ();
