@@ -310,7 +310,7 @@ WString         ECPresentationManager::GetString (WCharCP rscFileName, UInt tabl
 +---------------+---------------+---------------+---------------+---------------+------*/
 IAUIDataContextCP ECPresentationManager::GetSelection (void const* eventHub, bool subSelection)
     {
-    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+    for (T_SelectionListeners::const_iterator iter = m_selectionListeners.begin(); iter != m_selectionListeners.end(); ++iter)
         {
         if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             {
@@ -345,8 +345,13 @@ bool sortECSelectionListenersByPriority (RefCountedPtr<ECSelectionListener> x, R
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RegisterSelectionHook (ECSelectionListener& listener)
     {
-    if (CheckAndAddProviderFromList (listener, m_selecitonListeners))
-        std::sort (m_selecitonListeners.begin(), m_selecitonListeners.end(), sortECSelectionListenersByPriority);
+    RefCountedPtr <ECSelectionListener> listenerPtr (&listener);
+
+    if (m_selectionListeners.end() != std::find (m_selectionListeners.begin(), m_selectionListeners.end(), listenerPtr))
+        return; // do not allow duplicates
+
+    m_selectionListeners.push_back (listenerPtr);
+    std::sort (m_selectionListeners.begin(), m_selectionListeners.end(), sortECSelectionListenersByPriority);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,7 +359,13 @@ void            ECPresentationManager::RegisterSelectionHook (ECSelectionListene
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::UnRegisterSelectionHook (ECSelectionListener& listener)
     {
-    RemoveProviderFromList (listener, m_selecitonListeners);
+    RefCountedPtr <ECSelectionListener> listenerPtr (&listener);
+    T_SelectionListeners::iterator iter = std::find (m_selectionListeners.begin(), m_selectionListeners.end(), listenerPtr);
+
+    if (m_selectionListeners.end() == iter)
+        return;
+
+    m_selectionListeners.erase(iter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,7 +374,7 @@ void            ECPresentationManager::UnRegisterSelectionHook (ECSelectionListe
 void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR selectionEvent)
     {
     void const* eventHub = selectionEvent.GetEventHub();
-    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+    for (T_SelectionListeners::const_iterator iter = m_selectionListeners.begin(); iter != m_selectionListeners.end(); ++iter)
         {
         if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             (*iter)->_OnSelection(selectionEvent);
@@ -376,7 +387,7 @@ void            ECPresentationManager::TriggerSelectionEvent (ECSelectionEventCR
 void            ECPresentationManager::TriggerSubSelectionEvent (ECSelectionEventCR selectionEvent)
     {
     void const* eventHub = selectionEvent.GetEventHub();
-    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+    for (T_SelectionListeners::const_iterator iter = m_selectionListeners.begin(); iter != m_selectionListeners.end(); ++iter)
         {
         if (NULL == eventHub || (*iter)->GetEventHub() == eventHub)
             (*iter)->_OnSubSelection(selectionEvent);
@@ -406,7 +417,7 @@ IECNativeImagePtr ECPresentationManager::GetOverlayImage (IAUIDataContextCR cont
 int             ECPresentationManager::GetSelectionQueryScope()
     {
     int mask = 0;
-    for (T_SelectionListeners::const_iterator iter = m_selecitonListeners.begin(); iter != m_selecitonListeners.end(); ++iter)
+    for (T_SelectionListeners::const_iterator iter = m_selectionListeners.begin(); iter != m_selectionListeners.end(); ++iter)
         mask |= (*iter)->_GetSelectionQueryScope();
     
     return mask;
