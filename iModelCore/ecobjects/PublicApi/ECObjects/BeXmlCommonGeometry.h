@@ -89,7 +89,6 @@ public: static ECOBJECTS_EXPORT bool TryParse (Utf8CP beXmlCGString, bvector<IGe
 struct BeXmlCGWriter
 {
 
-    /*__PUBLISH_SECTION_START__*/
 public:
 
     //! Write common geometry xml for an IGeometryPtr object
