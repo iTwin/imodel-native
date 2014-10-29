@@ -17,10 +17,7 @@ struct CGBinarySerializationTests : ECTestFixture
     void Roundtrip(Utf8String xml, bool useStreamReader=false)
         {
         bvector<IGeometryPtr> geoms;
-        if (useStreamReader)
             ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, 0)) << "Failed to deserialize string: " << xml.c_str();
-        else
-            ASSERT_TRUE(BeXmlCGParser::TryParse(xml.c_str(), geoms, 0)) << "Failed to deserialize string: " << xml.c_str();
         ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
 
         bvector<byte> bytes;
@@ -73,7 +70,7 @@ TEST (CGSerializationTests, DeserializeEllipticDisc)
     {
     Utf8String xml("<EllipticDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radiusA>1</radiusA><radiusB>1.5</radiusB></EllipticDisk>");
     bvector<IGeometryPtr> geoms;
-    BeXmlCGParser::TryParse(xml.c_str(), geoms, 0);
+    BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, 0);
 
     IGeometryPtr geometry = geoms[0];
     ASSERT_TRUE(geoms.size () == 1);
