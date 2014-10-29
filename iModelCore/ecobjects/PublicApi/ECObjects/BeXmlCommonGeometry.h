@@ -93,23 +93,28 @@ private:
     //! XML element  <name>x,y,z</name>
     //! @param [in] dest xml receiver
     //! @param [in] data coordinate data.
-    static void WriteXYZ    (IBeXmlWriterR dest, Utf8CP name, DPoint3dCR data);
+    //! @param [in] shortNameAllowed true if context allows short name use.
+    static void WriteXYZ    (IBeXmlWriterR dest, Utf8CP name, DPoint3dCR data, bool shortNameAllowed = false);
     //! XML element  <name>x,y,z</name>
     //! @param [in] dest xml receiver
     //! @param [in] x coordinate value
     //! @param [in] y coordinate value
     //! @param [in] z coordinate value
-    static void WriteXYZ    (IBeXmlWriterR dest, Utf8CP name, double x, double y, double z);
+    static void WriteXYZ    (IBeXmlWriterR dest, Utf8CP name, double x, double y, double z, bool shortNameAllowed = false);
+
+    //! Start an element that has an optional name. (e.g. within an array of points, doubles, etc)
+    static void WriteOptionalName (IBeXmlWriterR dest, Utf8CP name, bool shortName);
+
 
     //! XML element  <name>x,y</name>
     //! @param [in] dest xml receiver
     //! @param [in] x coordinate value
     //! @param [in] y coordinate value
-    static void WriteXY     (IBeXmlWriterR dest, Utf8CP name, double x, double y);
+    static void WriteXY     (IBeXmlWriterR dest, Utf8CP name, double x, double y, bool shortNameAllowed = false);
     //! XML element  <name>a</name>
     //! @param [in] dest xml receiver
     //! @param [in] a double value
-    static void WriteDouble (IBeXmlWriterR dest, Utf8CP name, double a);
+    static void WriteDouble (IBeXmlWriterR dest, Utf8CP name, double a, bool shortNameAllowed = false);
     //! XML element  <name>a</name>
     //! @param [in] dest xml receiver
     //! @param [in] a int value
@@ -121,18 +126,18 @@ private:
     //! XML element  <name>[buffer]true</name>
     //! @param [in] dest xml receiver
     //! @param [in] buffer null terminated string
-    static void WriteText (IBeXmlWriterR dest, Utf8CP name, wchar_t const *buffer);
+    static void WriteText (IBeXmlWriterR dest, Utf8CP name, Utf8CP buffer);
 
 
     //! XML element  <listName><name>x0,y0,z0</name>......</listName>
     //! @param [in] dest xml receiver
-    static void WriteList      (IBeXmlWriterR dest, bvector<DPoint3d> const & data, Utf8CP listName, Utf8CP itemName);
+    static void WriteList      (IBeXmlWriterR dest, bvector<DPoint3d> const & data, Utf8CP longName, Utf8CP shortName, Utf8CP itemName);
     //! XML element  <listName><name>a0</name><name>a1</name>......</listName>
     //! @param [in] dest xml receiver
-    static void WriteList      (IBeXmlWriterR dest, bvector<double> const & data, Utf8CP listName, Utf8CP itemName);
+    static void WriteList      (IBeXmlWriterR dest, bvector<double> const & data, Utf8CP longName, Utf8CP shortName, Utf8CP itemName);
     //! XML element  <listName><name>x0,y0,z0</name>......</listName>
     //! @param [in] dest xml receiver
-    static void WriteList      (IBeXmlWriterR dest, bvector<DVec3d> const & data, Utf8CP listName, Utf8CP itemName);
+    static void WriteList      (IBeXmlWriterR dest, bvector<DVec3d> const & data, Utf8CP longName, Utf8CP shortName, Utf8CP itemName);
     //! XML element  <listName><name>r0,g0,b0</name>......</listName>
     //! @param [in] dest xml receiver
     static void WriteList      (IBeXmlWriterR dest, bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP itemName);
@@ -164,7 +169,7 @@ private:
     static void WritePolyface (IBeXmlWriterR dest, PolyfaceHeader &mesh);
     //! Write a common geometry text object
     //! @param [in] dest xml receiver
-    static void WriteTextPlacement (IBeXmlWriterR dest, DPoint3dCR xyz, wchar_t const *text, double charSize);
+    static void WriteTextPlacement (IBeXmlWriterR dest, DPoint3dCR xyz, Utf8CP text, double charSize);
     //! Write a common geometry linestring
     //! @param [in] dest xml receiver
     static void WriteLineString (IBeXmlWriterR dest, bvector<DPoint3d> const &points);
@@ -267,6 +272,12 @@ public:
     //! @param [out] cgBeXml xml string
     //! @param [in]  data IGeometryPtr common geometry object to be serialized
     ECOBJECTS_EXPORT static void Write (Utf8StringR cgBeXml, IGeometryPtr data);
+
+    //! Write common geometry json for an IGeometryPtr object
+    //! @param [out] dest json string
+    //! @param [in]  data IGeometryPtr common geometry object to be serialized
+    ECOBJECTS_EXPORT static void WriteJson (Utf8StringR dest, IGeometryPtr data);
+
 
     ECOBJECTS_EXPORT static void WriteBytes (bvector<byte>& bytes, ICurvePrimitiveCR data);
 

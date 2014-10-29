@@ -139,7 +139,8 @@ $(o)SupplementalSchema$(oext)                              : $(baseDir)Supplemen
 
 $(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 
-$(o)BeXmlCGReader$(oext)                                   : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
+# DOM-based reader superseded by stream reader ...
+#$(o)BeXmlCGReader$(oext)                                   : $(baseDir)BeXmlCGReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 
 $(o)BeXmlCGStreamReader$(oext)                             : $(baseDir)BeXmlCGStreamReader.cpp $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h $(baseDir)nativeCGReaderH.h $(baseDir)nativeCGFactoryH.h $(baseDir)CGNativeFactoryImplementations.h ${MultiCompileDepends} 
 
