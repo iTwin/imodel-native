@@ -15,10 +15,20 @@ static BeFileName s_rootDirectory;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+//static
 void            ECSchemaReadContext::Initialize (BeFileNameCR rootDirectory)
     {
     s_rootDirectory = rootDirectory;
     s_rootDirectory.AppendSeparator();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     10/14
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BeFileNameCR ECSchemaReadContext::GetHostAssetsDirectory ()
+    {
+    return s_rootDirectory;
     }
 
 /*---------------------------------------------------------------------------------**//**

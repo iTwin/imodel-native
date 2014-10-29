@@ -381,7 +381,7 @@ WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt
 
     WString buff;
 
-    buff.Sprintf (buff, fmt, schemaName, versionMajor, versionMinor, className);
+    buff.Sprintf (fmt, schemaName, versionMajor, versionMinor, className);
 
     return buff;
     }
@@ -1859,7 +1859,7 @@ TEST_F (ECDBufferTests, PointersIntoInstanceMemory)
     memcpy (pStr, newStr, _countof(newStr)*sizeof(WChar));
 
     // The flag should not be reset when the ECValue was assigned a value
-    EXPECT_EQ (true, v.AllowsPointersIntoInstanceMemory());
+    EXPECT_TRUE (v.AllowsPointersIntoInstanceMemory());
 
     instance->GetValue (v, L"String");
     //EXPECT_EQ (v.GetString(), pStr);                // got back pointer to same address in instance data

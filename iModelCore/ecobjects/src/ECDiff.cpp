@@ -300,15 +300,15 @@ WString ECDiffValue::ToString() const
     switch (m_type)
         {
         case VALUETYPE_Boolean:
-            WString::Sprintf (out, L"%ls", m_valueBool?L"true" :L"false"); break;
+            out.Sprintf (L"%ls", m_valueBool?L"true" :L"false"); break;
         case VALUETYPE_Double:
-            WString::Sprintf (out, L"%f", m_valueDouble); break;
+            out.Sprintf (L"%f", m_valueDouble); break;
         case VALUETYPE_Int32:
-            WString::Sprintf (out, L"%d", m_valueInt32); break;
+            out.Sprintf (L"%d", m_valueInt32); break;
         case VALUETYPE_Int64:
-            WString::Sprintf (out, L"%ld", m_valueInt64); break;
+            out.Sprintf (L"%lld", m_valueInt64); break;
         case VALUETYPE_String:
-            WString::Sprintf (out, L"\"%ls\"", m_valueString.c_str()); break;
+            out.Sprintf (L"\"%ls\"", m_valueString.c_str()); break;
         case VALUETYPE_Nil:
             out = L"<nil>"; break;
         }
@@ -611,7 +611,7 @@ ECDiffNodeP ECDiffNode::Add (DiffNodeId type)
 ECDiffNodeP ECDiffNode::AddWithIndex (int index, DiffNodeId type)
     {
     WString idx;
-    WString::Sprintf (idx, L"%ls[%d]", m_name.c_str(), index);
+    idx.Sprintf (L"%ls[%d]", m_name.c_str(), index);
     if (m_childNodeMap.find (idx.c_str()) != m_childNodeMap.end())
         {
         BeAssert(false && "ECDiffNode with same name already exist");

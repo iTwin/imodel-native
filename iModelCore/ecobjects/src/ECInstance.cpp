@@ -3132,7 +3132,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_DateTime:
             {
-            BeStringUtilities::Snprintf (outString, "%I64d", ecValue.GetDateTimeTicks());
+            BeStringUtilities::Snprintf (outString, "%lld", ecValue.GetDateTimeTicks());
             break;
             }
 
@@ -3150,7 +3150,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_Long:
             {
-            BeStringUtilities::Snprintf (outString, "%I64d", ecValue.GetLong());
+            BeStringUtilities::Snprintf (outString, "%lld", ecValue.GetLong());
             break;
             }
 

@@ -73,6 +73,11 @@ public:
     //!            In the assets directory the standard ECSchemas have to be located in @b ECSchemas/Standard/.
     ECOBJECTS_EXPORT static void Initialize (BeFileNameCR hostAssetsDirectory);
 
+    //! Gets the host assets directory to where the application deploys assets that come with the API, e.g. standard ECSchemas.
+    //! Must have been set via ECSchemaReadContext::Initialize.
+    //! @return Host assets directory
+    ECOBJECTS_EXPORT static BeFileNameCR GetHostAssetsDirectory ();
+
     //! Creates a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted

@@ -229,25 +229,11 @@ ECSchema::~ECSchema ()
 
     m_refSchemaList.clear();
 
-#if defined (__clang__)
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wsizeof-pointer-memaccess"
-#endif // defined (__clang__)
-
-#if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wsizeof-pointer-memaccess"
-#endif
-
-    memset (this, 0xececdead, sizeof(this));
-
-#if defined (BENTLEY_TOOL_CONTEXT_IsLinuxGcc)
-    #pragma GCC diagnostic pop
-#endif
-
-#if defined (__clang__)
-    #pragma clang diagnostic pop
-#endif // defined (__clang__)
+    memset ((void*)this, 0xececdead, 4);// Replaced sizeof(this) with 4. There is value 
+                                        // in trying to make this logic "correct" for a 64-bit build. 
+                                        // This memset is clearly just intended to aid in debugging. 
+                                        // Attempting to use this object with the high 4 bytes of the vtable 
+                                        // pointer set to 0xececdead will crash just as reliably.
     }
 
 //---------------------------------------------------------------------------------------

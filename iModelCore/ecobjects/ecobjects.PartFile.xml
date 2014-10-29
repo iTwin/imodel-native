@@ -26,14 +26,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicApi/PublishAPI.mke">
         <SubPart PartName="PublicAPI" />
         <Bindings>
-            <Directory SubPartDirectory="PublishedAPI/ECObjects" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
+            <Directory SubPartDirectory="PublishedAPI/ECObjects" SourceName="Delivery/PublishedAPI" ProductDirectoryName="PublishedAPI" Required="false"/>
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi_Doc" BentleyBuildMakeFile="PublicAPI/BuildPublishedDoc.mke">
+    <Part Name="PublishedApi_Doc" BentleyBuildMakeFile="PublicApi/BuildPublishedDoc.mke">
         <RequiredRepository>bsitools-doxygen</RequiredRepository>
         <SubPart PartName="PublishedApi" />
         <Bindings>
@@ -55,7 +55,7 @@
 
     <Part Name="ECObjectsTestsBasicDependencies">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"                   Repository="util-gtest" />
-        <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
+        <SubPart PartName="StandardSchemas"      PartFile="ECStandards"             Repository="ECStandards"/>
         <SubPart PartName="ECObjectsNative" />
     </Part>
 
