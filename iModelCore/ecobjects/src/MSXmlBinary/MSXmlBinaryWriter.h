@@ -156,6 +156,7 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd () override;
 
         BeXmlStatus WriteText(Utf8CP text) override;
+        BeXmlStatus WriteCommaSeparatedNumerics(Utf8CP text) override;
         BeXmlStatus WriteText(WCharCP text) override;
 
         BeXmlStatus WriteDoubleText(double data);

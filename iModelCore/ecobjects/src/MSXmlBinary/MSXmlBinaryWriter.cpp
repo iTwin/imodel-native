@@ -135,6 +135,12 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
     return BEXML_Success;
     }
 
+BeXmlStatus MSXmlBinaryWriter::WriteCommaSeparatedNumerics(Utf8CP text)
+    {
+    return WriteText (text);
+    }
+
+
 BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
     {
     float f;
