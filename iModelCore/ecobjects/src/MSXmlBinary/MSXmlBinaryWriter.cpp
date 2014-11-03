@@ -27,21 +27,6 @@ BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name)
     return WriteElementStart(name, m_depth == 0 ? s_defaultNamespace : nullptr);
     }
     
-BeXmlStatus MSXmlBinaryWriter::WriteArrayElementStart(Utf8CP longName, Utf8CP shortName)
-    {
-    return WriteElementStart (longName);
-    }
-
-BeXmlStatus MSXmlBinaryWriter::WriteSetElementStart(Utf8CP name)
-    {
-    return WriteElementStart (name);
-    }        
-
-BeXmlStatus MSXmlBinaryWriter::WriteShortElementStart(Utf8CP name)
-    {
-    return WriteElementStart (name);
-    }
-
 BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     {
     StartElement(name, nameSpace);
@@ -50,7 +35,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteElementEnd()
+BeXmlStatus MSXmlBinaryWriter::WriteElementEnd(Utf8CP name)
     {
     if (WriteState::Element == m_writeState)
         {
@@ -135,18 +120,12 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteCommaSeparatedNumerics(Utf8CP text)
-    {
-    return WriteText (text);
-    }
-
-
-BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
+BeXmlStatus MSXmlBinaryWriter::WriteDoubleToken(double data)
     {
     float f;
     float fMax = std::numeric_limits<float>::max();
     if (data >= -fMax && data <= fMax && (f = (float)data) == data)
-        WriteFloatText(f);
+        WriteFloatToken(f);
     else
         {
         StartContent();
@@ -160,11 +139,11 @@ BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteFloatText(float data)
+BeXmlStatus MSXmlBinaryWriter::WriteFloatToken(float data)
     {
     Int64 l;
     if (data >= std::numeric_limits<Int64>::min() && data <= std::numeric_limits<Int64>::max() && (l = (Int64)data) == data)
-        WriteInt64Text(l);
+        WriteInt64Token(l);
     else
         {
         StartContent();
@@ -178,10 +157,10 @@ BeXmlStatus MSXmlBinaryWriter::WriteFloatText(float data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteInt64Text(Int64 data)
+BeXmlStatus MSXmlBinaryWriter::WriteInt64Token(Int64 data)
     {
     if (data >= std::numeric_limits<Int32>::min() && data <= std::numeric_limits<Int32>::max())
-        return WriteInt32Text((Int32) data);
+        return WriteInt32Token((Int32) data);
     else
         {
         StartContent();
@@ -195,7 +174,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteInt64Text(Int64 data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteInt32Text(Int32 data)
+BeXmlStatus MSXmlBinaryWriter::WriteInt32Token(Int32 data)
     {
     StartContent();
     m_textNodeOffset = (int) m_buffer.size();
@@ -233,7 +212,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteInt32Text(Int32 data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteBoolText(bool value)
+BeXmlStatus MSXmlBinaryWriter::WriteBoolToken(bool value)
     {
     StartContent();
     m_textNodeOffset = (int) m_buffer.size();
@@ -291,7 +270,7 @@ void MSXmlBinaryWriter::EndStartElement()
 void MSXmlBinaryWriter::WriteEndStartElement(bool isEmpty)
     {
     if (isEmpty)
-        WriteElementEnd();
+        WriteElementEnd(nullptr);   // We know that our implementation does not use the name here
     }
 
 MSXmlBinaryWriter::Element& MSXmlBinaryWriter::EnterScope()
@@ -320,4 +299,34 @@ void MSXmlBinaryWriter::WriteXmlnsAttribute(Utf8CP ns)
     WriteNode(XmlBinaryNodeType::ShortXmlnsAttribute);
     WriteName(ns);
     }
+    
+//! Writes a node with name and bool value.
+BeXmlStatus MSXmlBinaryWriter::WriteNamedBool(Utf8CP name, bool value, bool nameOptional)
+    {
+    BeXmlStatus status = BEXML_Success;
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+    GUARDED_STATUS_ASSIGNMENT (status, WriteBoolToken (value))
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+    return status;
+    }
+    
+//! Writes a node with name and Int32 value.
+BeXmlStatus MSXmlBinaryWriter::WriteNamedInt32 (Utf8CP name, Int32 value, bool nameOptional)
+    {
+    BeXmlStatus status = BEXML_Success;
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+    GUARDED_STATUS_ASSIGNMENT (status, WriteInt32Token (value))
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+    return status;
+    }
+
+//! Writes a node with name and double value.
+BeXmlStatus MSXmlBinaryWriter::WriteNamedDouble (Utf8CP name, double value, bool nameOptional) 
+    {
+    BeXmlStatus status = BEXML_Success;
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+    GUARDED_STATUS_ASSIGNMENT (status, WriteDoubleToken (value))
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+    return status;
+    }      
 END_BENTLEY_ECOBJECT_NAMESPACE

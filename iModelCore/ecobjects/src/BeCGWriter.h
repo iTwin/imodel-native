@@ -25,101 +25,71 @@ static void Indent (IBeXmlWriterR m_dest)
 struct BeCGWriter
 {
 IBeXmlWriterR m_dest;
+bool m_textualizeXYData;  // for compatibility with .net
 
-BeCGWriter (IBeXmlWriterR dest) : m_dest (dest)
+BeCGWriter (IBeXmlWriterR dest, bool textualizeXYData) : m_dest (dest), m_textualizeXYData (textualizeXYData)
     {
+    
     }
 
-void WriteOptionalName (Utf8CP name, bool shortName)
-    {
-    BeXmlStatus s;
-    if (shortName)
-        s = m_dest.WriteShortElementStart (name);
-    else
-        s = m_dest.WriteElementStart (name);
-    }
 
 void WriteXYZ (Utf8CP name, DPoint3dCR xyz, bool shortName = false)
     {
-    char buffer[1024];
-    BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G,%.17G,%.17G", xyz.x, xyz.y, xyz.z);
-    BeXmlStatus s;
-    WriteOptionalName (name, shortName);
-    s = m_dest.WriteCommaSeparatedNumerics (buffer);
-    s = m_dest.WriteElementEnd (); 
+    WriteXYZ (name, xyz.x, xyz.y, xyz.z, shortName);
     }
 
-void WriteText (Utf8CP name, Utf8CP data)
+void WriteText (Utf8CP name, Utf8CP data, bool shortName = false)
     {
-    m_dest.WriteElementStart (name);
-    m_dest.WriteText (data);
-    m_dest.WriteElementEnd (); 
+    m_dest.WriteNamedText (name, data, shortName);
     }
 
 
 void WriteXY (Utf8CP name, double x, double y, bool shortName = false)
     {
-    char buffer[1024];
-    BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G,%.17G", x, y);
-    WriteOptionalName (name, shortName);
-    m_dest.WriteCommaSeparatedNumerics (buffer);
-    m_dest.WriteElementEnd (); 
+    if (m_textualizeXYData)
+        {
+        char buffer[1024];
+        BeStringUtilities::Snprintf (buffer, _countof (buffer),
+                "%.17G,%.17G", x, y);
+        m_dest.WriteNamedText (name, buffer, shortName);
+        }
+    else
+        {
+        double xy[3] = {x,y};
+        m_dest.WriteBlockedDoubles (name, shortName, (double*)&xy, 3);
+        }
     }
 
 void WriteXYZ (Utf8CP name, double x, double y, double z, bool shortName = false)
     {
-    char buffer[1024];
-    BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G,%.17G,%.17G", x, y, z);
-    WriteOptionalName (name, shortName);
-    m_dest.WriteCommaSeparatedNumerics (buffer);
-    m_dest.WriteElementEnd (); 
+    if (m_textualizeXYData)
+        {
+        char buffer[1024];
+        BeStringUtilities::Snprintf (buffer, _countof (buffer),
+                "%.17G,%.17G,%.17G", x, y, z);
+        m_dest.WriteNamedText (name, buffer, shortName);
+        }
+    else
+        {
+        double xyz[3] = {x,y,z};
+        m_dest.WriteBlockedDoubles (name, shortName, (double*)&xyz, 3);
+        }
     }
 
 void WriteDouble (Utf8CP name, double data, bool shortName = false)
     {
-    WriteOptionalName (name, shortName);
-    MSXmlBinaryWriter* binWriter = dynamic_cast<MSXmlBinaryWriter*>(&m_dest);
-    if (nullptr == binWriter)
-        {
-        char buffer[1024];
-        BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", data);
-        m_dest.WriteCommaSeparatedNumerics (buffer);
-        }
-    else
-        binWriter->WriteDoubleText(data);
-    m_dest.WriteElementEnd (); 
+    m_dest.WriteNamedDouble (name, data, shortName);
     }
 
 void WriteInt (Utf8CP name, int data, bool shortName = false)
     {
-    WriteOptionalName (name, shortName);
-    MSXmlBinaryWriter* binWriter = dynamic_cast<MSXmlBinaryWriter*>(&m_dest);
-    if (nullptr == binWriter)
-        {
-        char buffer[1024];
-        BeStringUtilities::Snprintf (buffer, _countof (buffer), "%d", data);
-        m_dest.WriteCommaSeparatedNumerics (buffer);
-        }
-    else
-        binWriter->WriteInt32Text(data);
-    m_dest.WriteElementEnd (); 
+    m_dest.WriteNamedInt32 (name, data, shortName);
     }
 
 
-void WriteBool (Utf8CP name, bool data)
+void WriteBool (Utf8CP name, bool data, bool shortName = false)
     {
-    m_dest.WriteElementStart (name);
-    MSXmlBinaryWriter* binWriter = dynamic_cast<MSXmlBinaryWriter*>(&m_dest);
-    if (nullptr == binWriter)
-        {
-        if (data)
-            m_dest.WriteText ("true");
-        else
-            m_dest.WriteText ("false");
-        }
-    else
-        binWriter->WriteBoolText(data);
-    m_dest.WriteElementEnd (); 
+    m_dest.WriteNamedBool (name, data, shortName);
     }
 
 
@@ -130,50 +100,44 @@ void WriteList (bvector<DPoint3d> const & data, Utf8CP listName, Utf8CP shortNam
     if (0 == data.size())
         return;
 
-    m_dest.WriteArrayElementStart (listName, shortName);
-    for (size_t i = 0 ; i < data.size (); i++)
-        WriteXYZ (itemName, data[i], true);
-    m_dest.WriteElementEnd ();
+    if (m_textualizeXYData)
+        {
+        m_dest.WriteArrayElementStart(listName, shortName);
+        for (size_t i = 0 ; i < data.size (); i++)
+            WriteXYZ (itemName, data[i], true);
+        m_dest.WriteArrayElementEnd (listName, shortName);
+        }
+    else
+        {
+        if (0 == data.size())
+            return;
+        m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
+              data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+        }
     }
 
 void WriteList (bvector<DVec3d> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
     {
     if (0 == data.size())
         return;
-
-    m_dest.WriteArrayElementStart (listName, shortName);
-    for (size_t i = 0 ; i < data.size (); i++)
-        {
-        Indent (m_dest);
-        double refValue = data[i].Magnitude ();
-        WriteXYZ (itemName,
-                    SuppressNearZeroCoordinate (data[i].x, refValue),
-                    SuppressNearZeroCoordinate (data[i].y, refValue),
-                    SuppressNearZeroCoordinate (data[i].z, refValue), true);
-        }
-    m_dest.WriteElementEnd ();
+    m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
+          data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
     }
 
-void WriteList (bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP itemName)
+void WriteList (bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
+    {
+    if (0 == data.size())
+        return;
+    m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
+          data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+    }
+
+void WriteList (bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
     {
     if (0 == data.size())
         return;
 
-    m_dest.WriteElementStart (listName);
-    for (size_t i = 0 ; i < data.size (); i++)
-        {
-        Indent (m_dest);
-        WriteXYZ (itemName, data[i].red, data[i].green, data[i].blue);
-        }
-    m_dest.WriteElementEnd ();
-    }
-
-void WriteList (bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP itemName)
-    {
-    if (0 == data.size())
-        return;
-
-    m_dest.WriteElementStart (listName);
+    m_dest.WriteArrayElementStart(listName, shortName);
     for (size_t i = 0 ; i < data.size (); i++)
         {
         Indent (m_dest);
@@ -181,16 +145,16 @@ void WriteList (bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP itemName
         WriteXY (itemName, SuppressNearZeroCoordinate (data[i].x, refValue),
                     SuppressNearZeroCoordinate (data[i].y, refValue));
         }
-    m_dest.WriteElementEnd ();
+    m_dest.WriteArrayElementEnd (listName, shortName);
     }
 
 
-void WriteIndexList (bvector<int> const & data, Utf8CP listName, Utf8CP itemName)
+void WriteIndexList (bvector<int> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
     {
     if (0 == data.size())
         return;
 
-    BeXmlStatus s = m_dest.WriteElementStart (listName);
+    m_dest.WriteArrayElementStart(listName, shortName);
     size_t numThisLine = 0;
     for (size_t i = 0 ; i < data.size (); i++)
         {
@@ -202,7 +166,7 @@ void WriteIndexList (bvector<int> const & data, Utf8CP listName, Utf8CP itemName
         if (needLineFeed)
             numThisLine = 0;
         }
-    s = m_dest.WriteElementEnd ();
+    m_dest.WriteArrayElementEnd (listName, shortName);
     }
 
 void WriteList (bvector<double> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
@@ -210,10 +174,11 @@ void WriteList (bvector<double> const & data, Utf8CP listName, Utf8CP shortName,
     if (0 == data.size())
         return;
 
-    m_dest.WriteArrayElementStart (listName, shortName);
-    for (size_t i = 0 ; i < data.size (); i++)
-        WriteDouble (itemName, data[i], true);
-    m_dest.WriteElementEnd ();
+    //m_dest.WriteArrayElementStart(listName, shortName);
+    m_dest.WriteDoubleArray (listName, shortName,
+          itemName, true,
+          (double *)&data.front (), data.size ());
+    //m_dest.WriteArrayElementEnd (listName, shortName);
     }
 
 void WritePlacementZX
@@ -223,7 +188,7 @@ DVec3dCR vectorZ,
 DVec3dCR vectorX
 )
     {
-    m_dest.WriteSetElementStart ("placement");
+    m_dest.WriteSetElementStart("placement");
     WriteXYZ ("origin", origin);
     DVec3d unitZ, unitY, unitX;
     unitZ.Normalize (vectorZ);
@@ -231,7 +196,7 @@ DVec3dCR vectorX
     unitX.NormalizedCrossProduct (unitY, unitZ);
     WriteXYZ ("vectorZ", unitZ);
     WriteXYZ ("vectorX", unitX);
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("placement");
     }
 
 void WritePlacementZX
@@ -242,7 +207,7 @@ RotMatrixCR axes
     {
     DVec3d vectorX, vectorY, vectorZ;
     axes.GetColumns (vectorX, vectorY, vectorZ);
-    m_dest.WriteSetElementStart ("placement");
+    m_dest.WriteSetElementStart("placement");
     WriteXYZ ("origin", origin);
     DVec3d unitZ, unitY, unitX;
     unitZ.Normalize (vectorZ);
@@ -250,7 +215,7 @@ RotMatrixCR axes
     unitX.NormalizedCrossProduct (unitY, unitZ);
     WriteXYZ ("vectorZ", unitZ);
     WriteXYZ ("vectorX", unitX);
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("placement");
     }
 
 
@@ -267,10 +232,10 @@ void WritePlacementXY (DPoint3dCR origin, DVec3dCR vectorX, DVec3dCR vectorY)
 
 void WriteSegment (DSegment3dCR data)
     {
-    m_dest.WriteSetElementStart ("LineSegment");
+    m_dest.WriteSetElementStart("LineSegment");
     WriteXYZ ("startPoint", data.point[0]);
     WriteXYZ ("endPoint", data.point[1]);    
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("LineSegment");
     }
 
 void WriteArc (DEllipse3dCR arc)
@@ -278,23 +243,23 @@ void WriteArc (DEllipse3dCR arc)
     if (arc.IsCircular ())
         {
         DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
-        m_dest.WriteSetElementStart ("CircularArc");
+        m_dest.WriteSetElementStart("CircularArc");
         WritePlacementXY ( majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
         WriteDouble ("radius",     majorMinorArc.vector0.Magnitude ());
         WriteDouble ("startAngle",  Angle::RadiansToDegrees (majorMinorArc.start));
         WriteDouble ("sweepAngle",    Angle::RadiansToDegrees (majorMinorArc.sweep));
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("CircularArc");
         }
     else
         {
         DEllipse3d majorMinorArc = DEllipse3d::FromPerpendicularAxes (arc);
-        m_dest.WriteSetElementStart ("EllipticArc");
+        m_dest.WriteSetElementStart("EllipticArc");
         WritePlacementXY ( majorMinorArc.center, majorMinorArc.vector0, majorMinorArc.vector90);
         WriteDouble ("radiusA",     majorMinorArc.vector0.Magnitude ());
         WriteDouble ("radiusB",     majorMinorArc.vector90.Magnitude ());
         WriteDouble ("startAngle",  Angle::RadiansToDegrees (majorMinorArc.start));
         WriteDouble ("sweepAngle",    Angle::RadiansToDegrees (majorMinorArc.sweep));
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("EllipticArc");
         }
     }
 
@@ -306,51 +271,51 @@ void WriteDisk (DEllipse3dCR arc)
     yVector.Scale (majorMinorArc.vector90, direction);
     if (arc.IsCircular ())
         {
-        m_dest.WriteSetElementStart ("CircularDisk");
+        m_dest.WriteSetElementStart("CircularDisk");
         WritePlacementXY (majorMinorArc.center, majorMinorArc.vector0, yVector);
         WriteDouble ("radius",     majorMinorArc.vector0.Magnitude ());
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("CircularDisk");
         }
     else
         {
-        m_dest.WriteSetElementStart ("EllipticDisk");
+        m_dest.WriteSetElementStart("EllipticDisk");
         WritePlacementXY (majorMinorArc.center, majorMinorArc.vector0, yVector);
         WriteDouble ("radiusA",     majorMinorArc.vector0.Magnitude ());
         WriteDouble ("radiusB",     majorMinorArc.vector90.Magnitude ());
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("EllipticDisk");
         }
     }
 
 
 void WritePolyface (PolyfaceHeader &mesh)
     {
-    m_dest.WriteSetElementStart ("IndexedMesh");
-    WriteList (mesh.Point (), "ListOfCoord", "Coords", "xyz");
+    m_dest.WriteSetElementStart("IndexedMesh");
+    WriteList (mesh.Point (), "ListOfCoord", "Points", "xyz");
 
     if (mesh.PointIndex ().Active ())
-        WriteIndexList (mesh.PointIndex (), "ListOfCoordIndex", "id");
+        WriteIndexList (mesh.PointIndex (), "ListOfCoordIndex", "PointIndex", "id");
 
     if (mesh.Param ().Active ())
-        WriteList (mesh.Param (), "ListOfParam", "uv");
+        WriteList (mesh.Param (), "ListOfParam", "Params", "uv");
     if (mesh.ParamIndex ().Active ())
-        WriteIndexList (mesh.ParamIndex (), "ListOfParamIndex", "id");
+        WriteIndexList (mesh.ParamIndex (), "ListOfParamIndex", "ParamIndex", "id");
 
     if (mesh.Normal ().Active ())
         WriteList (mesh.Normal (), "ListOfNormal", "Normals", "normal");
     if (mesh.NormalIndex ().Active ())
-        WriteIndexList (mesh.NormalIndex (), "ListOfNormalIndex", "id");
+        WriteIndexList (mesh.NormalIndex (), "ListOfNormalIndex", "NormalIndex", "id");
 
     if (mesh.DoubleColor ().Active ())
-        WriteList (mesh.DoubleColor (), "ListOfColor", "Color");
+        WriteList (mesh.DoubleColor (), "ListOfColor", "Colors", "Color");
     if (mesh.ColorIndex ().Active ())
-        WriteIndexList (mesh.ColorIndex (), "ListOfColorIndex", "id");
+        WriteIndexList (mesh.ColorIndex (), "ListOfColorIndex", "ColorIndex", "id");
 
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("IndexedMesh");
     }
 
 void WriteCurve (MSBsplineCurveCR curve)
     {
-    m_dest.WriteSetElementStart ("BsplineCurve");
+    m_dest.WriteSetElementStart("BsplineCurve");
 
     WriteInt ("Order", curve.params.order);
 
@@ -371,13 +336,13 @@ void WriteCurve (MSBsplineCurveCR curve)
     knots.assign (curve.knots, curve.knots + curve.NumberAllocatedKnots ());
     WriteList (knots, "ListOfKnot", "Knots", "Knot");
 
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("BsplineCurve");
     }
 
 
 void WriteSurface (MSBsplineSurfaceCR surface)
     {
-    m_dest.WriteSetElementStart ("BsplineSurface");
+    m_dest.WriteSetElementStart("BsplineSurface");
 
     WriteInt ("OrderU", surface.uParams.order);
     WriteBool ("ClosedU", surface.uParams.closed ? true : false);
@@ -409,7 +374,7 @@ void WriteSurface (MSBsplineSurfaceCR surface)
     vknots.assign (surface.vKnots, surface.vKnots + numVKnots);
     WriteList (vknots, "ListOfKnotV", "KnotsV", "KnotV");
 
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("BsplineSurface");
     }
 
 
@@ -421,29 +386,29 @@ Utf8CP data,
 double charSize
 )
     {
-    m_dest.WriteSetElementStart ("SingleLineText");
+    m_dest.WriteSetElementStart("SingleLineText");
     WritePlacementZX (xyz, DVec3d::From (0,0,1), DVec3d::From (1,0,0));
     Indent (m_dest); WriteText ("textString", data);
     Indent (m_dest); WriteText ("fontName", "ARIAL");
     Indent (m_dest); WriteDouble ("characterXSize", charSize);
     Indent (m_dest); WriteDouble ("characterYSize", charSize);
     Indent (m_dest); WriteDouble ("slantAngle", 0.0);
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("SingleLineText");
     }
 
 
 void WriteLineString (bvector<DPoint3d> const &points)
     {
-    m_dest.WriteSetElementStart ("LineString");
+    m_dest.WriteSetElementStart("LineString");
     WriteList (points, "ListOfPoint", "Points", "xyz");
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("LineString");
     }
 
 void WriteCoordinate (DPoint3dCR point)
     {
-    m_dest.WriteSetElementStart ("Coordinate");
+    m_dest.WriteSetElementStart("Coordinate");
     WriteXYZ ("xyz", point);
-    m_dest.WriteElementEnd ();    
+    m_dest.WriteSetElementEnd ("Coordinate");    
     }
 
 void WritePointString (bvector<DPoint3d> const &points, bool preferMostCompactPrimitives)
@@ -454,21 +419,21 @@ void WritePointString (bvector<DPoint3d> const &points, bool preferMostCompactPr
         }
     else
         {
-        m_dest.WriteSetElementStart ("PointChain");
-        m_dest.WriteSetElementStart ("ListOfPoint");  // Needs work -- PointString is somehow not the same as points in linestring?
+        m_dest.WriteSetElementStart("PointChain");
+        m_dest.WriteSetElementStart("ListOfPoint");  // Needs work -- PointString is somehow not the same as points in linestring?
         for (size_t i = 0; i < points.size (); i++)
             WriteCoordinate (points[i]);
-        m_dest.WriteElementEnd ();
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("ListOfPoint");
+        m_dest.WriteSetElementEnd ("PointChain");
         }
     }
 
 
 void WritePolygon (bvector<DPoint3d> const &points)
     {
-    m_dest.WriteSetElementStart ("Polygon");
+    m_dest.WriteSetElementStart("Polygon");
     WriteList (points, "ListOfPoint", "Points", "xyz");
-    m_dest.WriteElementEnd ();
+    m_dest.WriteSetElementEnd ("Polygon");
     }
 
 
@@ -540,12 +505,12 @@ void Write (CurveVectorCR curveVector, bool preferMostCompactPrimitives)
                 }
             else
                 {
-                m_dest.WriteSetElementStart ("CurveChain");
-                    m_dest.WriteArrayElementStart ("ListOfCurve", "Curves");
+                m_dest.WriteSetElementStart("CurveChain");
+                    m_dest.WriteArrayElementStart("ListOfCurve", "Curves");
                     for(ICurvePrimitivePtr curve : curveVector)
                         Write (*curve);
-                    m_dest.WriteElementEnd ();
-                m_dest.WriteElementEnd ();
+                    m_dest.WriteArrayElementEnd ("ListOfCurve", "Curves");
+                m_dest.WriteSetElementEnd ("CurveChain");
                 }
             break;
             }
@@ -558,12 +523,12 @@ void Write (CurveVectorCR curveVector, bool preferMostCompactPrimitives)
                 }
             else
                 {
-                m_dest.WriteSetElementStart ("CurveChain");
-                    m_dest.WriteArrayElementStart ("ListOfCurve", "Curves");
+                m_dest.WriteSetElementStart("CurveChain");
+                    m_dest.WriteArrayElementStart("ListOfCurve", "Curves");
                     for(ICurvePrimitivePtr curve : curveVector)
                         Write (*curve);
-                    m_dest.WriteElementEnd ();
-                m_dest.WriteElementEnd ();
+                    m_dest.WriteArrayElementEnd ("ListOfCurve", "Curves");
+                m_dest.WriteSetElementEnd ("CurveChain");
                 }
             break;
             }
@@ -571,7 +536,7 @@ void Write (CurveVectorCR curveVector, bool preferMostCompactPrimitives)
 
         case CurveVector::BOUNDARY_TYPE_ParityRegion:
             {
-            m_dest.WriteSetElementStart ("SurfacePatch");
+            m_dest.WriteSetElementStart("SurfacePatch");
             bvector <ICurvePrimitivePtr> holeLoop;
             int n = 0;
             for(ICurvePrimitivePtr curve : curveVector)
@@ -581,9 +546,9 @@ void Write (CurveVectorCR curveVector, bool preferMostCompactPrimitives)
                     {
                     if (n++ == 0)
                         {
-                        m_dest.WriteSetElementStart ("Exterior");
+                        m_dest.WriteSetElementStart("ExteriorLoop");
                         Write (*curve->GetChildCurveVectorCP (), false);
-                        m_dest.WriteElementEnd ();
+                        m_dest.WriteSetElementEnd ("ExteriorLoop");
                         }
                     else
                         {
@@ -594,31 +559,31 @@ void Write (CurveVectorCR curveVector, bool preferMostCompactPrimitives)
 
             if (holeLoop.size() > 0)
                 {
-                m_dest.WriteArrayElementStart ("ListOfHoleLoop","Holes");
+                m_dest.WriteArrayElementStart("ListOfHoleLoop","Holes");
                 for (size_t i=0; i<holeLoop.size (); i++)
                     Write (*holeLoop[i]->GetChildCurveVectorCP (), false);
-                m_dest.WriteElementEnd ();
+                m_dest.WriteArrayElementEnd ("ListOfHoleLoop","Holes");
                 }
-            m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("SurfacePatch");
             break;
             }
         
         case CurveVector::BOUNDARY_TYPE_UnionRegion:
             {
-            m_dest.WriteSetElementStart ("SurfaceGroup");
+            m_dest.WriteSetElementStart("SurfaceGroup");
             for(ICurvePrimitivePtr curve : curveVector)
                 Write (*curve->GetChildCurveVectorCP ());
-            m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("SurfaceGroup");
             
             break;
             }
 
         case CurveVector::BOUNDARY_TYPE_None:
             {
-            m_dest.WriteSetElementStart ("Group");
+            m_dest.WriteSetElementStart("Group");
             for(ICurvePrimitivePtr curve : curveVector)
                 Write (*curve);
-            m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("Group");
             
             break;
             }
@@ -636,14 +601,14 @@ void WriteDgnTorusPipeDetail (DgnTorusPipeDetail data)
     double radiusA, radiusB, sweepAngle;
     if (data.TryGetFrame (center, axes, radiusA, radiusB, sweepAngle))
         {
-        m_dest.WriteSetElementStart ("TorusPipe");
+        m_dest.WriteSetElementStart("TorusPipe");
         WritePlacementZX (center, axes);
         WriteDouble ("radiusA", radiusA);
         WriteDouble ("radiusB", radiusB);
         WriteDouble ("startAngle", 0.0);
         WriteDouble ("sweepAngle", Angle::RadiansToDegrees (sweepAngle));
         WriteBool   ("bSolidFlag", data.m_capped);
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("TorusPipe");
         }
     }
 
@@ -663,33 +628,33 @@ void WriteDgnConeDetail (DgnConeDetail data)
             {
             if (DoubleOps::AlmostEqual (radiusA, radiusB))
                 {
-                m_dest.WriteSetElementStart ("CircularCylinder");
+                m_dest.WriteSetElementStart("CircularCylinder");
                 WritePlacementZX (centerA, unitZ, unitX);
                 WriteDouble ("height", height);
                 WriteDouble ("radius", radiusA);
                 WriteBool ("bSolidFlag", data.m_capped);
-                m_dest.WriteElementEnd ();
+                m_dest.WriteSetElementEnd ("CircularCylinder");
                 }
             else
                 {
-                m_dest.WriteSetElementStart ("CircularCone");
+                m_dest.WriteSetElementStart("CircularCone");
                 WritePlacementZX (centerA, unitZ, unitX);
                 WriteDouble ("radiusA", radiusA);
                 WriteDouble ("radiusB", radiusB);
                 WriteDouble ("height", height);
                 WriteBool ("bSolidFlag", data.m_capped);
-                m_dest.WriteElementEnd ();
+                m_dest.WriteSetElementEnd ("CircularCone");
                 }
             }
         else
             {
-            m_dest.WriteSetElementStart ("SkewedCone");
+            m_dest.WriteSetElementStart("SkewedCone");
             WritePlacementZX (centerA, unitZ, unitX);
             WriteXYZ ("centerB", centerB);
             WriteDouble ("radiusA", radiusA);
             WriteDouble ("radiusB", radiusB);
             WriteBool ("bSolidFlag", data.m_capped);
-            m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("SkewedCone");
             }
         }
     }
@@ -710,7 +675,7 @@ void WriteDgnBoxDetail (DgnBoxDetail data)
         && DoubleOps::AlmostEqual (ay, by)
         )
         {
-        m_dest.WriteSetElementStart ("Block");
+        m_dest.WriteSetElementStart("Block");
         DVec3d unitZ, unitX;
         unitZ.Normalize (zVector);
         unitX.Normalize (xVector);
@@ -718,7 +683,7 @@ void WriteDgnBoxDetail (DgnBoxDetail data)
         WriteXYZ ("cornerA", DPoint3d::From (0,0,0));
         WriteXYZ ("cornerB", DPoint3d::From (ax, ay, zVector.Magnitude ()));
         WriteBool ("bSolidFlag", data.m_capped);
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("Block");
         }
     else
         {
@@ -741,12 +706,12 @@ void WriteDgnSphereDetail (DgnSphereDetail data)
     double radius;
     if (data.IsTrueSphere (center, axes, radius))
         {
-        m_dest.WriteSetElementStart ("Sphere");
+        m_dest.WriteSetElementStart("Sphere");
         DVec3d unitX, unitY, unitZ;
         axes.GetColumns (unitX, unitY, unitZ);
         WritePlacementZX (center, unitZ, unitX);
         WriteDouble ("radius", radius);
-        m_dest.WriteElementEnd ();
+        m_dest.WriteSetElementEnd ("Sphere");
         }
     }
 
@@ -755,17 +720,17 @@ void WriteDgnExtrusionDetail (DgnExtrusionDetail data)
     DPoint3d curveStart, curveEnd;
     if (data.m_baseCurve->GetStartEnd (curveStart, curveEnd))
         {
-        m_dest.WriteSetElementStart (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
-            m_dest.WriteSetElementStart ("BaseGeometry");
+        m_dest.WriteSetElementStart(data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
+            m_dest.WriteSetElementStart("BaseGeometry");
             Write (*data.m_baseCurve);
-            m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("BaseGeometry");
             DSegment3d segment;
             segment.point[0] = curveStart;
             segment.point[1].SumOf (curveStart, data.m_extrusionVector);
-            m_dest.WriteSetElementStart ("RailCurve");
+            m_dest.WriteSetElementStart("RailCurve");
             WriteSegment (segment);
-            m_dest.WriteElementEnd ();
-        m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("RailCurve");
+        m_dest.WriteSetElementEnd (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
         }
     }
 
@@ -820,15 +785,15 @@ void WriteDgnRotationalSweepDetail (DgnRotationalSweepDetail data)
     Transform localToWorld, worldToLocal;    
     if (data.GetTransforms (localToWorld, worldToLocal))
         {
-        m_dest.WriteSetElementStart (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
-            m_dest.WriteSetElementStart ("BaseGeometry");
+        m_dest.WriteSetElementStart(data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
+            m_dest.WriteSetElementStart("BaseGeometry");
             Write (*data.m_baseCurve);
-            m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("BaseGeometry");
             DEllipse3d arc = BuildSweepArc (*data.m_baseCurve, localToWorld, worldToLocal, data.m_sweepAngle);
-            m_dest.WriteSetElementStart ("RailCurve");
+            m_dest.WriteSetElementStart("RailCurve");
             WriteArc (arc);
-            m_dest.WriteElementEnd ();
-        m_dest.WriteElementEnd ();
+            m_dest.WriteSetElementEnd ("RailCurve");
+        m_dest.WriteSetElementEnd (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
         }
     }
 

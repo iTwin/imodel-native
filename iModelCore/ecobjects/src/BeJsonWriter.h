@@ -99,6 +99,11 @@ struct BeCGJsonWriter : IBeXmlWriter
         for (size_t i = 0; text[i] != 0; i++)
             m_string.push_back (text[i]);
         }
+
+    void EmitArrayStart () {m_string.push_back ('[');}
+    void EmitArrayEnd   () {m_string.push_back (']');}
+    void EmitArraySeparator () {m_string.push_back (',');}
+        
     void Error (Utf8CP description)
         {
         NewLine ();
@@ -133,7 +138,8 @@ struct BeCGJsonWriter : IBeXmlWriter
         Emit ("{");
         return Status ();
         }
-
+    public: BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) override{return WriteElementEnd (name);}
+    
     //! Writes the start of named
     public: BeXmlStatus virtual WriteElementStart (Utf8CP name) override
         {
@@ -153,23 +159,40 @@ struct BeCGJsonWriter : IBeXmlWriter
         NewLine ();
         EmitQuoted (shortName);
         Emit (":");
-        NewLine (1);
-        Emit ("[");
+        EmitArrayStart ();
         return Status ();
+        }
+
+    //! Writes the start of an array element node with the provided name.
+    public: BeXmlStatus virtual WriteArrayElementEnd (Utf8CP longName, Utf8CP shortName) override
+        {
+        EmitArrayEnd ();
+        PopState ();
+        return BEXML_Success;
         }
 
     //! Writes the start of an anonymous
-    public: BeXmlStatus virtual WriteShortElementStart (Utf8CP name) override
+    public: BeXmlStatus virtual WritePositionalElementStart (Utf8CP name, bool nameOptional, bool doBreak) override
         {
-        EmitSeparator ();
-        PushState (ElementType::Anonymous);
-        NewLine ();
+        if (nameOptional)
+            {
+            EmitSeparator ();
+            if (doBreak)
+                NewLine ();
+            PushState (ElementType::Anonymous);
+            }
+        else
+            {
+            WriteElementStart (name);
+            }
         return Status ();
         }
 
+    public: BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak) override {return WriteElementEnd (name);}
+
 
     //! Writes the end of an element node.
-    public: BeXmlStatus virtual WriteElementEnd () override
+    public: BeXmlStatus virtual WriteElementEnd (Utf8CP name) override
         {
         ElementType type = TOSType ();
         switch (type)
@@ -220,27 +243,108 @@ struct BeCGJsonWriter : IBeXmlWriter
         return Status ();
         }
 
-    //! Write text that has been preformated (comma separated)
-    //! and hence (big assumption?) can be used as either (a) xml element content or
-    //! (b) json array content.
-    public: BeXmlStatus virtual WriteCommaSeparatedNumerics(Utf8CP value) override
+
+
+    //! Writes a text node (plain string as content). 
+BeXmlStatus WriteNamedBool(Utf8CP name, bool value, bool nameOptional)
         {
-        bool hasCommas = false;
-        for (size_t i = 0; value[i] != 0; i++)
-            if (value[i] == ',')
-                {
-                hasCommas = true;
-                }
-        if (hasCommas)
-            {
-            Emit ("[");
-            Emit (value);
-            Emit ("]");
-            }
-        else
-            Emit (value);
-        return Status ();
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        Emit (value ? "true" : "false");
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
         }
+        
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes a text node (plain string as content). 
+BeXmlStatus WriteNamedInt32 (Utf8CP name, int value, bool nameOptional)
+        {
+        char buffer[256];
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        BeStringUtilities::Snprintf (buffer, _countof (buffer), "%d", value);
+        Emit (buffer);
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes a text node (plain string as content). 
+BeXmlStatus WriteNamedDouble (Utf8CP name, double value, bool nameOptional)
+        {
+        char buffer[256];
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", value);
+        Emit (buffer);
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
+        }
+
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple doubles.
+BeXmlStatus virtual WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double *data, size_t n) override
+        {
+        BeXmlStatus status = BEXML_Success;        
+        char buffer[256];
+        WritePositionalElementStart (itemName, itemNameOptional, true);
+        EmitArrayStart ();
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", data[i]);
+            EmitSeparator ();
+            Emit (buffer);
+            }
+        EmitArrayEnd ();
+        WritePositionalElementEnd (itemName, itemNameOptional, true);
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple doubles.
+    //! The names are never used.
+BeXmlStatus WriteArrayOfBlockedDoubles (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double *data, size_t numPerBlock, size_t numBlock)
+        {
+        BeXmlStatus status = BEXML_Success;
+        WriteArrayElementStart (longName, shortName);
+        for (size_t i = 0; status == BEXML_Success && i < numBlock; i++)
+            {
+            WriteBlockedDoubles (itemName, itemNameOptional, data + i * numPerBlock, numPerBlock); 
+            }
+        WriteArrayElementEnd (longName, shortName);
+        return status;
+        }
+
+    //! Writes multiple doubles.
+BeXmlStatus WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double *data, size_t n)
+        {
+        BeXmlStatus status = BEXML_Success;
+        char buffer[1024];
+        WriteArrayElementStart (longName, shortName);
+        static int s_breakCount = 10;
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            bool doBreak = i > 0 && (i % s_breakCount) == 0;
+            BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", data[i]);
+            WritePositionalElementStart (itemName, itemNameOptional, doBreak);
+            Emit (buffer);
+            WritePositionalElementEnd (itemName, itemNameOptional, doBreak);
+            }
+        WriteArrayElementEnd (longName, shortName);
+        return status;
+        }
+
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

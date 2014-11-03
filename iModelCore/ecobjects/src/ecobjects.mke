@@ -146,6 +146,7 @@ $(o)BeXmlCGStreamReader$(oext)                             : $(baseDir)BeXmlCGSt
 
 $(o)BeXmlCGWriter$(oext)                                   : $(baseDir)BeXmlCGWriter.cpp \
                                                              $(baseDir)BeJsonWriter.h \
+                                                             $(baseDir)BeJsonValueBuilder.h \
                                                              $(baseDir)BeCGWriter.h \
                                                              $(ecobjectsPublicAPISrc)BeXmlCommonGeometry.h ${MultiCompileDepends} 
 

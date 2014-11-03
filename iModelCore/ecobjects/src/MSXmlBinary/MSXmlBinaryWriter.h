@@ -140,33 +140,35 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         //! Writes the start of an element node with the provided name.
         ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name) override;
 
-        //! Writes the start of an element node with the provided name. (xml uses the long name)
-        ECOBJECTS_EXPORT BeXmlStatus WriteArrayElementStart (Utf8CP longName, Utf8CP shortName) override;
-
-        //! Writes the start of an element node with the provided name
-        ECOBJECTS_EXPORT BeXmlStatus WriteSetElementStart (Utf8CP name) override;
-
-        //! Writes the start of an element node with the provided name.
-        ECOBJECTS_EXPORT BeXmlStatus WriteShortElementStart (Utf8CP longName) override;
-
         //! Writes the start of an element node with the provided name and namespace
         ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name, Utf8CP nameSpace);
 
         //! Writes the end of an element node.
-        ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd () override;
+        ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd (Utf8CP name) override;
 
         BeXmlStatus WriteText(Utf8CP text) override;
-        BeXmlStatus WriteCommaSeparatedNumerics(Utf8CP text) override;
         BeXmlStatus WriteText(WCharCP text) override;
 
-        BeXmlStatus WriteDoubleText(double data);
-        BeXmlStatus WriteFloatText(float data);
-        BeXmlStatus WriteInt64Text(Int64 data);
-        BeXmlStatus WriteInt32Text(Int32 data);
-        BeXmlStatus WriteBoolText(bool value);
+        BeXmlStatus WriteDoubleToken(double data);
+        BeXmlStatus WriteFloatToken(float data);
+        BeXmlStatus WriteInt64Token(Int64 data);
+        BeXmlStatus WriteInt32Token(Int32 data);
+        BeXmlStatus WriteBoolToken(bool value);
 
 
         void GetBytes(bvector<byte>& bytes);
+        
+    public:        
+        
+    //! Writes a node with name and bool value.
+    public: ECOBJECTS_EXPORT BeXmlStatus virtual WriteNamedBool(Utf8CP name, bool value, bool nameOptional) override;
+        
+    //! Writes a node with name and Int32 value.
+    public: ECOBJECTS_EXPORT BeXmlStatus virtual WriteNamedInt32 (Utf8CP name, Int32 value, bool nameOptional) override;
+
+    //! Writes a node with name and double value.
+    public: ECOBJECTS_EXPORT BeXmlStatus virtual WriteNamedDouble (Utf8CP name, double value, bool nameOptional) override;
+        
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
