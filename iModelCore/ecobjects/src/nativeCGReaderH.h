@@ -2608,6 +2608,65 @@ bool ReadITransitionSpiral (IGeometryPtr &result)
     return false;
     }
 
+bool ReadExtendedObject(IGeometryPtr &result)
+    {
+    result = nullptr;
+    if (CurrentElementNameMatch("ExtendedObject"))
+        ReadToChildOrEnd();
 
+    return false;
+    }
 
+//<ExtendedObject xmlns="http://www.bentley.com/schemas/Bentley.ECSerializable.1.0">
+//    <Coordinate xmlns="http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0">
+//        <xyz>11.1,22.2,33.3</xyz>
+//    </Coordinate>
+//    <ExtendedData>
+//        <TransientLookupCollection>
+//            <Entry key="color" typeCode="Int32">32</Entry>
+//        </TransientLookupCollection>
+//    </ExtendedData>
+//</ExtendedObject>
+
+bool ReadExtendedData(IGeometryPtr &result)
+    {
+    if (!CurrentElementNameMatch("ExtendedData"))
+        return false;
+
+    ReadToChildOrEnd();
+
+    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
+    // Should be 'TransientLookupCollection'
+    if (!CurrentElementNameMatch("TransientLookupCollection"))
+        return false;
+        
+    xmlDom->WriteElementStart(m_currentElementName.c_str());
+    ReadToChildOrEnd();
+    // Next, iterate over each entry
+    for (;IsStartElement ();)
+        {
+        Utf8String keyValue;
+        Utf8String keyName("key");
+        m_reader.ReadToNextAttribute (&keyName, &keyValue);
+
+        Utf8String typeValue;
+        Utf8String typeCode("typeCode");
+        m_reader.ReadToNextAttribute (&typeCode, &typeValue);
+        
+        Utf8String content;
+        m_reader.Read();
+
+        m_reader.MoveToContent();
+        m_reader.ReadContentAsString(content);
+        m_reader.MoveToContent();
+        m_reader.ReadToEndOfElement();
+        m_reader.MoveToContent();
+        }
+
+    xmlDom->WriteElementEnd();
+    Utf8String cgBeXml;
+    xmlDom->ToString(cgBeXml);
+
+    return false;
+    }
 

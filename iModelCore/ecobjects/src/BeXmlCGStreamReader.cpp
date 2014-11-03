@@ -215,6 +215,8 @@ static void InitParseTable ()
         s_parseTable[Utf8String("DgnRotationalSweep")] = &ReadIDgnRotationalSweep;
         s_parseTable[Utf8String("DgnRuledSweep")] = &ReadIDgnRuledSweep;
         s_parseTable[Utf8String("TransitionSpiral")] = &ReadITransitionSpiral;
+        s_parseTable[Utf8String("ExtendedObject")] = &ReadExtendedObject;
+        s_parseTable[Utf8String("ExtendedData")] = &ReadExtendedData;
         }
     }
 
@@ -956,10 +958,6 @@ public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
                 {
                 geometry.push_back (result);
                 count++;
-                }
-            else
-                {
-                break;
                 }
             }
         }

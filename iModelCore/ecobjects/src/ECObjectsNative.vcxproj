@@ -141,6 +141,9 @@
     <ClInclude Include="MSXmlBinary\MSXmlBinaryReader.h" />
     <ClInclude Include="MSXmlBinary\MSXmlEnums.h" />
     <ClInclude Include="MSXmlBinary\MSXmlBinaryWriter.h" />
+    <ClInclude Include="nativeCGClasses.h" />
+    <ClInclude Include="nativeCGFactoryH.h" />
+    <ClInclude Include="nativeCGReaderH.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />
