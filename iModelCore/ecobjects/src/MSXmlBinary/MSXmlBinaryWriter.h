@@ -140,6 +140,15 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         //! Writes the start of an element node with the provided name.
         ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name) override;
 
+        //! Writes the start of an element node with the provided name. (xml uses the long name)
+        ECOBJECTS_EXPORT BeXmlStatus WriteArrayElementStart (Utf8CP longName, Utf8CP shortName) override;
+
+        //! Writes the start of an element node with the provided name
+        ECOBJECTS_EXPORT BeXmlStatus WriteSetElementStart (Utf8CP name) override;
+
+        //! Writes the start of an element node with the provided name.
+        ECOBJECTS_EXPORT BeXmlStatus WriteShortElementStart (Utf8CP longName) override;
+
         //! Writes the start of an element node with the provided name and namespace
         ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name, Utf8CP nameSpace);
 
@@ -147,6 +156,7 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd () override;
 
         BeXmlStatus WriteText(Utf8CP text) override;
+        BeXmlStatus WriteCommaSeparatedNumerics(Utf8CP text) override;
         BeXmlStatus WriteText(WCharCP text) override;
 
         BeXmlStatus WriteDoubleText(double data);

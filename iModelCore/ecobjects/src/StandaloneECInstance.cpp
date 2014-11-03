@@ -1240,6 +1240,14 @@ bool            StandaloneECEnabler::_HasChildProperties (UInt32 parentIndex) co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 StandaloneECEnabler::_GetParentPropertyIndex (UInt32 childIndex) const
+    {
+    return GetClassLayout().GetParentPropertyIndex (childIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StandaloneECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const

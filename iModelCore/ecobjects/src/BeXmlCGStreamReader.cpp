@@ -25,6 +25,8 @@ static void CopyToBlockedVector (bvector<T> const &source, TBlocked &dest)
     {
     dest.clear ();
     dest.reserve (source.size ());
+    if (source.size () > 0)
+        dest.SetActive (true);
     for (T const &x : source)
         dest.push_back (x);
     }

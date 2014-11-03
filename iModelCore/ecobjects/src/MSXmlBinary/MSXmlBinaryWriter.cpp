@@ -26,6 +26,21 @@ BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name)
     {
     return WriteElementStart(name, m_depth == 0 ? s_defaultNamespace : nullptr);
     }
+    
+BeXmlStatus MSXmlBinaryWriter::WriteArrayElementStart(Utf8CP longName, Utf8CP shortName)
+    {
+    return WriteElementStart (longName);
+    }
+
+BeXmlStatus MSXmlBinaryWriter::WriteSetElementStart(Utf8CP name)
+    {
+    return WriteElementStart (name);
+    }        
+
+BeXmlStatus MSXmlBinaryWriter::WriteShortElementStart(Utf8CP name)
+    {
+    return WriteElementStart (name);
+    }
 
 BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     {
@@ -119,6 +134,12 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
     EndContent();
     return BEXML_Success;
     }
+
+BeXmlStatus MSXmlBinaryWriter::WriteCommaSeparatedNumerics(Utf8CP text)
+    {
+    return WriteText (text);
+    }
+
 
 BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
     {

@@ -11,15 +11,9 @@
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECDBuffer.h>
 
-EC_TYPEDEFS(StandaloneECEnabler);
-
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID         0xEC5E
-typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
-typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
-
-
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
 enum PropertyFlagIndex : UInt8
@@ -280,6 +274,7 @@ protected:
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
+    virtual UInt32                      _GetParentPropertyIndex (UInt32 childIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
     virtual bool                        _IsPropertyReadOnly (UInt32 propertyIndex) const override;
 //__PUBLISH_CLASS_VIRTUAL__

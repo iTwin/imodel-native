@@ -624,6 +624,7 @@ protected:
         Unit,
         ExtendType,
         IsReadOnly,
+        IsHidden,
         MAX
         };
 private:
@@ -631,7 +632,7 @@ private:
     friend struct AdhocPropertyEdit;
 
     WString                 m_metadataPropertyNames[Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
-    UInt32                  m_containerIndex;                               // the property index of the struct array holding ad-hoc properties within the host's ECClass
+    UInt32                  m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
 protected:
     WCharCP                 GetPropertyName (Index index) const;
 
@@ -661,11 +662,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AdhocPropertyQuery : AdhocPropertyMetadata
     {
-protected:
-    IECInstancePtr          GetEntry (UInt32 index) const;
-    ECObjectsStatus         GetString (WStringR str, UInt32 index, Index which) const;
-    ECObjectsStatus         GetValue (ECValueR v, UInt32 index, Index which) const;
-    ECObjectsStatus         GetValue (ECValueR v, IECInstanceCR instance, Index which) const;
 private:
     IECInstanceCR           m_host;
 public:
@@ -683,6 +679,18 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (WStringR typeName, UInt32 index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (WStringR unitName, UInt32 index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    IsReadOnly (bool& isReadOnly, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    IsHidden (bool& isHidden, UInt32 index) const;
+
+    // For getting additional ad-hoc metadata
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 index, WCharCP accessor) const;
+
+    IECInstancePtr          GetEntry (UInt32 index) const;
+    ECObjectsStatus         GetString (WStringR str, UInt32 index, Index which) const;
+    ECObjectsStatus         GetString (WStringR str, IECInstanceCR instance, Index which) const;
+    ECObjectsStatus         GetValue (ECValueR v, UInt32 index, Index which) const;
+    ECObjectsStatus         GetValue (ECValueR v, IECInstanceCR instance, Index which) const;
+    ECClassCP               GetStructClass() const;
+    StandaloneECEnablerPtr  GetStructEnabler() const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -700,10 +708,17 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (UInt32 index, WCharCP displayLabel, bool andSetName = false);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (UInt32 index, bool isReadOnly);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsHidden (UInt32 index, bool isHidden);
 
-    ECOBJECTS_EXPORT ECObjectsStatus    Add (WCharCP name, ECValueCR v, WCharCP displayLabel = nullptr, WCharCP unitName = nullptr, WCharCP extendedTypeName = nullptr, bool isReadOnly = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    Add (WCharCP name, ECValueCR v, WCharCP displayLabel = nullptr, WCharCP unitName = nullptr, WCharCP extendedTypeName = nullptr, bool isReadOnly = false, bool hidden = false);
     ECOBJECTS_EXPORT ECObjectsStatus    Remove (UInt32 index);
     ECOBJECTS_EXPORT ECObjectsStatus    Clear();
+    ECOBJECTS_EXPORT ECObjectsStatus    CopyFrom (AdhocPropertyQueryCR src, bool preserveValues);
+
+    // For setting additional ad-hoc metadata
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, WCharCP accessor, ECValueCR v);
+
+    ECOBJECTS_EXPORT ECObjectsStatus    Swap (UInt32 propIdxA, UInt32 propIdxB);
     };
 
 //__PUBLISH_SECTION_START__

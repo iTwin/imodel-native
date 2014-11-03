@@ -418,6 +418,8 @@ public:
 
     ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId);
 
+    // Copy any properties which are common to both IECInstances, skip the rest.
+    ECOBJECTS_EXPORT ECObjectsStatus    CopyCommonValues (ECN::IECInstanceCR source);
 /*__PUBLISH_SECTION_START__*/
     //! Attempts to copy all property values from one instance to this instance.
     //! It is expected that the source instance is of the same class as this instance.
