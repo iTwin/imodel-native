@@ -11,6 +11,21 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+static bool IsWhitespace(Utf8Char ch)
+    {
+    return (ch <= ' ' && (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'));
+    }
+
+static bool IsWhitespace(Utf8StringR str)
+    {
+    for (int i = 0; i < str.size(); i++)
+        {
+        if (!IsWhitespace(str[i]))
+            return false;
+        }
+    return true;
+    }
+
 void MSXmlBinaryReader::ValueHandle::SetValue(byte* buffer, ValueHandleType type, int length, int offset)
     {
     m_buffer = buffer;
@@ -196,20 +211,90 @@ void MSXmlBinaryReader::ReadAttributes()
     if (nodeType < XmlBinaryNodeType::MinAttribute || nodeType > XmlBinaryNodeType::MaxAttribute)
         return;
 
-    switch (nodeType)
+    while (true)
         {
-        case XmlBinaryNodeType::ShortXmlnsAttribute:
-            SkipByte();
-            Utf8String temp;
-            ReadName(temp);
-            break;
+        nodeType = GetBinaryNodeType();
+        XmlAttributeNode* attributeNode = nullptr;
+        Utf8String temp;
+        switch (nodeType)
+            {
+            case XmlBinaryNodeType::ShortAttribute:
+                SkipByte();
+                attributeNode = &AddAttributeNode();
+                ReadName(attributeNode->GetLocalNameR());
+                ReadAttributeText(attributeNode);
+                break;
+            case XmlBinaryNodeType::ShortXmlnsAttribute:
+                SkipByte();
+                ReadName(temp);
+                break;
+            default:
+                return;
+            }
         }
     }
 
-void MSXmlBinaryReader::ReadText(XmlAtomicTextNode* textNode, ValueHandleType type, int length)
+void MSXmlBinaryReader::ReadText(XmlTextNode* textNode, ValueHandleType type, int length)
     {
     textNode->SetValueHandle(m_bytes, type, length, m_offset);
     m_offset += length;
+    }
+
+void MSXmlBinaryReader::ReadAttributeText(XmlTextNode* textNode)
+    {
+    XmlBinaryNodeType nodeType = GetBinaryNodeType();
+    SkipByte(); // node type
+    switch (nodeType)
+        {
+        case XmlBinaryNodeType::EmptyText:
+            textNode->SetValueHandle(ValueHandleType::Empty);
+            SkipByte();
+            break;
+        case XmlBinaryNodeType::ZeroText:
+            textNode->SetValueHandle(ValueHandleType::Zero);
+            SkipByte();
+            break;
+        case XmlBinaryNodeType::OneText:
+            textNode->SetValueHandle(ValueHandleType::One);
+            SkipByte();
+            break;
+        case XmlBinaryNodeType::TrueText:
+            textNode->SetValueHandle(ValueHandleType::True);
+            SkipByte();
+            break;
+        case XmlBinaryNodeType::FalseText:
+            textNode->SetValueHandle(ValueHandleType::False);
+            SkipByte();
+            break;
+        case XmlBinaryNodeType::BoolText:
+            {
+            textNode->SetValueHandle(ReadUInt8() == 0 ? ValueHandleType::False : ValueHandleType::True);
+            SkipByte();
+            break;
+            }
+        case XmlBinaryNodeType::Chars8Text:
+            ReadText(textNode, ValueHandleType::UTF8, ReadUInt8());
+            break;
+        case XmlBinaryNodeType::Int8Text:
+            ReadText(textNode, ValueHandleType::Int8, 1); // these lengths are hardcoded from Windows
+            break;
+        case XmlBinaryNodeType::Int16Text:
+            ReadText(textNode, ValueHandleType::Int16, 2);
+            break;
+        case XmlBinaryNodeType::Int32Text:
+            ReadText(textNode, ValueHandleType::Int32, 4);
+            break;
+        case XmlBinaryNodeType::Int64Text:
+            ReadText(textNode, ValueHandleType::Int64, 8);
+            break;
+        case XmlBinaryNodeType::FloatText:
+            ReadText(textNode, ValueHandleType::Single, 4);
+            break;
+        case XmlBinaryNodeType::DoubleText:
+            ReadText(textNode, ValueHandleType::Double, 8);
+            break;
+        }
+
     }
 
 IBeXmlReader::ReadResult MSXmlBinaryReader::ReadNode()
@@ -241,21 +326,25 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadNode()
         case XmlBinaryNodeType::ZeroTextWithEndElement:
             {
             MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::Zero);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::OneTextWithEndElement:
             {
             MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::One);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::TrueTextWithEndElement:
             {
             MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::True);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::FalseTextWithEndElement:
             {
             MoveToAtomicTextWithEndElement()->SetValueHandle(ValueHandleType::False);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::Chars8TextWithEndElement:
@@ -263,26 +352,31 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadNode()
             int length = GetByte();
             SkipByte();
             ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::UTF8, length);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::Int8TextWithEndElement:
             {
             ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Int8, 1);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::Int16TextWithEndElement:
             {
             ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Int16, 2);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::FloatTextWithEndElement:
             {
             ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Single, 4);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         case XmlBinaryNodeType::DoubleTextWithEndElement:
             {
             ReadText(MoveToAtomicTextWithEndElement(), ValueHandleType::Double, 8);
+            m_value = m_node->ValueAsString();
             return READ_RESULT_Success;
             }
         }
@@ -332,6 +426,14 @@ void MSXmlBinaryReader::MoveToNode(XmlNode* node)
     this->m_localName.AssignOrClear(nullptr);
     }
 
+MSXmlBinaryReader::XmlAttributeNode& MSXmlBinaryReader::AddAttributeNode()
+    {
+    XmlAttributeNode an(nullptr);
+    m_attributeNodes.push_back(an);
+    m_attributeCount++;
+    return m_attributeNodes[m_attributeCount-1];
+    }
+
 void MSXmlBinaryReader::ReadName(Utf8StringR name)
     {
     int length = ReadMultiByteUInt31();
@@ -347,6 +449,13 @@ void MSXmlBinaryReader::ReadName(Utf8StringR name)
 void MSXmlBinaryReader::ReadName(XmlElementNode& node)
     {
     ReadName(node.GetLocalNameR());
+    }
+
+int MSXmlBinaryReader::ReadUInt8()
+    {
+    int i = GetByte();
+    SkipByte();
+    return i;
     }
 
 int MSXmlBinaryReader::ReadMultiByteUInt31()
@@ -393,17 +502,19 @@ MSXmlBinaryReader::XmlNode::XmlNode(XmlNodeType nodeType, byte* buffer, UInt32 n
     m_canGetAttribute = ((nodeFlags & (UInt32) XmlNodeFlags::CanGetAttribute) != 0);
     m_canMoveToElement = ((nodeFlags & (UInt32)XmlNodeFlags::CanMoveToElement) != 0);
     m_localName.AssignOrClear(nullptr);
+    m_exitScope = (nodeType == XmlNodeType::EndElement);
     }
 
 MSXmlBinaryReader::MSXmlBinaryReader(byte* bytes, int length) 
     : m_bytes(bytes), m_length(length), m_depth(0), m_offset(0), m_rootElement(false), m_isTextWithEndElement(false), 
-        m_atomicTextNode(bytes), m_initialNode(bytes), m_endElementNode()
+        m_atomicTextNode(bytes), m_initialNode(bytes), m_endElementNode(), m_attributeCount(0)
     {
     m_localName.AssignOrClear(nullptr);
     m_node = &m_initialNode;
+    m_value.AssignOrClear(nullptr);
     }
 
-MSXmlBinaryReader::XmlNodeType MSXmlBinaryReader::MoveToContent()
+IBeXmlReader::NodeType MSXmlBinaryReader::MoveToContent()
     {
     do 
         {
@@ -411,6 +522,16 @@ MSXmlBinaryReader::XmlNodeType MSXmlBinaryReader::MoveToContent()
             {
             if (m_node->NodeType() != XmlNodeType::Text && m_node->NodeType() != XmlNodeType::CDATA)
                 break;
+
+            else if (Utf8String::IsNullOrEmpty(m_node->ValueAsString().c_str()))
+                {
+                break;
+                }
+            else
+                {
+                if (!IsWhitespace(m_value))
+                    break;
+                }
             }
         else
             {
@@ -418,7 +539,7 @@ MSXmlBinaryReader::XmlNodeType MSXmlBinaryReader::MoveToContent()
             }
         } while (Read());
 
-    return m_node->NodeType();
+    return (IBeXmlReader::NodeType) m_node->NodeType();
     }
 
 bool MSXmlBinaryReader::IsStartElement()
@@ -433,6 +554,16 @@ bool MSXmlBinaryReader::IsStartElement()
 
 IBeXmlReader::ReadResult MSXmlBinaryReader::Read()
     {
+    if (m_isTextWithEndElement)
+        {
+        m_isTextWithEndElement = false;
+        m_node = &m_endElementNode;
+        return IBeXmlReader::ReadResult::READ_RESULT_Success;
+        }
+    if (m_node->ExitScope())
+        {
+        ExitScope();
+        }
     return ReadNode();
     }
 
@@ -443,14 +574,13 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadTo(IBeXmlReader::NodeType nodeTy
         if (m_node->NodeType() == MSXmlBinaryReader::XmlNodeType::Element)
             ReadNode();
 
-        return MoveToContent() == MSXmlBinaryReader::XmlNodeType::Element ? READ_RESULT_Success : READ_RESULT_Error;
+        return MoveToContent() == IBeXmlReader::NodeType::NODE_TYPE_Element ? READ_RESULT_Success : READ_RESULT_Error;
         }
     else if (NODE_TYPE_EndElement == nodeType)
         {
         if (m_isTextWithEndElement)
             {
             m_isTextWithEndElement = false;
-            m_depth--;
             m_node = &m_endElementNode;
             }
         }
@@ -480,6 +610,62 @@ IBeXmlReader::NodeType MSXmlBinaryReader::GetCurrentNodeType()
 BeXmlStatus MSXmlBinaryReader::GetCurrentNodeValue(Utf8StringR value)
     {
     value = m_node->ValueAsString();
+    m_value.AssignOrClear(value.c_str());
     return BeXmlStatus::BEXML_Success;
     }
+
+BeXmlStatus MSXmlBinaryReader::ReadToNextAttribute(Utf8StringP name, Utf8StringP value)
+    {
+    for (XmlAttributeNode node : m_attributeNodes)
+        {
+        if (node.GetLocalNameR().CompareTo(name->c_str()) == 0)
+            {
+            Utf8String attr = node.ValueAsString();
+            value->AssignOrClear(attr.c_str());
+            break;
+            }
+        }
+    return BeXmlStatus::BEXML_Success;
+    }
+
+IBeXmlReader::ReadResult MSXmlBinaryReader::ReadToEndOfElement()
+    {
+    if (m_node->NodeType() != XmlNodeType::EndElement && MoveToContent() != IBeXmlReader::NodeType::NODE_TYPE_EndElement)
+        {
+        return IBeXmlReader::ReadResult::READ_RESULT_Error;
+        }
+    return Read();
+    }
+
+BeXmlStatus MSXmlBinaryReader::ReadContentAsString(Utf8StringR str)
+    {
+    // The .NET code does the following:
+    //string value;
+    //XmlNode node = this.Node;
+    //if (node.IsAtomicValue)
+    //    {
+    //    if (this.value != null)
+    //        {
+    //        value = this.value;
+    //        if (node.AttributeText == null)
+    //            this.value = string.Empty;
+    //        }
+    //    else
+    //        {
+    //        value = node.Value.GetString();
+    //        SkipValue(node);
+    //        if (value.Length > quotas.MaxStringContentLength)
+    //            XmlExceptionHelper.ThrowMaxStringContentLengthExceeded(this, quotas.MaxStringContentLength);
+    //        }
+    //    return value;
+    //    }
+    //return base.ReadContentAsString(quotas.MaxStringContentLength);
+
+    // However, the only line that is actually hit in our deserialization through common geometry is the "this.value = string.Empty"
+    str.AssignOrClear(m_node->ValueAsString().c_str());
+    m_value.AssignOrClear("");
+
+    return BeXmlStatus::BEXML_Success;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
