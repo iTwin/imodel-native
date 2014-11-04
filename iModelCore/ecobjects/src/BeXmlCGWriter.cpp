@@ -49,4 +49,12 @@ void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryPtr data)
     writer->GetBytes(bytes);
     delete writer;
     }
+    
+bool BeXmlCGWriter::TryWriteJsonValue (Json::Value &value, IGeometryPtr data)
+    {
+    BeCGJsonValueWriter builder;
+    BeCGWriter (builder, false).Write (data);
+    return builder.TryPopStack (value);
+    }
+    
 END_BENTLEY_ECOBJECT_NAMESPACE

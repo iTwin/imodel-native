@@ -153,20 +153,7 @@ void WriteIndexList (bvector<int> const & data, Utf8CP listName, Utf8CP shortNam
     {
     if (0 == data.size())
         return;
-
-    m_dest.WriteArrayElementStart(listName, shortName);
-    size_t numThisLine = 0;
-    for (size_t i = 0 ; i < data.size (); i++)
-        {
-        if (numThisLine == 0)
-            Indent (m_dest);
-        WriteInt (itemName, data[i], true);
-        numThisLine++;
-        bool needLineFeed = (numThisLine > s_maxIndexPerLine) || data[i] == 0;
-        if (needLineFeed)
-            numThisLine = 0;
-        }
-    m_dest.WriteArrayElementEnd (listName, shortName);
+    m_dest.WriteIntArray (listName, shortName, itemName, true, &data[0], data.size ());
     }
 
 void WriteList (bvector<double> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)

@@ -9,9 +9,9 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECObjects.h>
 #include <Geom/GeomApi.h>
-
 /*__PUBLISH_SECTION_END__*/
 #include <BeXml/BeXml.h>
+#include <D:/graphite06/src/libsrc/jsoncpp/include/json/value.h>
 /*__PUBLISH_SECTION_START__*/
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -106,6 +106,8 @@ public:
     //! @param [in]  data IGeometryPtr common geometry object to be serialized
     ECOBJECTS_EXPORT static void WriteBytes (bvector<byte>& bytes, IGeometryPtr data);
 
+    //! Write to a json value.
+    ECOBJECTS_EXPORT static bool TryWriteJsonValue (Json::Value &value, IGeometryPtr data);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

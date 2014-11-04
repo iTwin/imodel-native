@@ -285,6 +285,7 @@ LINKER_LIBRARIES            = xmllite$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + d:/topaz1/out/Winx64/BuildContexts/DgnPlatform/SdkSources/MobileDgnSdk-Winx64/lib/Winx64/BeJsonCpp.lib
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1

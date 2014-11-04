@@ -131,11 +131,17 @@ struct BeCGJsonWriter : IBeXmlWriter
         {
         EmitSeparator ();
         PushState (ElementType::Set);
+#ifdef SetNameIsOutside
         NewLine ();
         EmitQuoted (name);
         Emit (":");
         NewLine (1);
         Emit ("{");
+#else
+        NewLine (1);
+        Emit ("{");
+        EmitQuoted ("Type");Emit(":");EmitQuoted (name);
+#endif
         return Status ();
         }
     public: BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) override{return WriteElementEnd (name);}
@@ -292,7 +298,7 @@ BeXmlStatus WriteNamedDouble (Utf8CP name, double value, bool nameOptional)
 // @bsimethod                                                   Earlin.Lutz 10/2014
 //---------------------------------------------------------------------------------------
     //! Writes multiple doubles.
-BeXmlStatus virtual WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double *data, size_t n) override
+BeXmlStatus virtual WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double const *data, size_t n) override
         {
         BeXmlStatus status = BEXML_Success;        
         char buffer[256];
@@ -308,6 +314,40 @@ BeXmlStatus virtual WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional,
         WritePositionalElementEnd (itemName, itemNameOptional, true);
         return status;
         }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple ints
+    public: BeXmlStatus WriteIntArray
+    (
+    Utf8CP longName,
+    Utf8CP shortName,
+    Utf8CP itemName,
+    bool itemNameOptional,
+    int const *data,
+    size_t n
+    ) override
+        {
+        BeXmlStatus status = BEXML_Success;
+        if (n > 0)
+            {
+            char buffer[256];
+            static int s_breakCount = 20;
+            WriteArrayElementStart (longName, shortName);
+            for (size_t i = 0; status == BEXML_Success && i < n; i++)
+                {
+                bool doBreak = i > 0 && (i % s_breakCount) == 0;
+                BeStringUtilities::Snprintf (buffer, _countof (buffer), "%d", data[i]);
+                WritePositionalElementStart (itemName, itemNameOptional, doBreak);
+                Emit (buffer);
+                WritePositionalElementEnd (itemName, itemNameOptional, doBreak);
+                }
+            WriteArrayElementEnd (longName, shortName);
+            }
+        return status;
+        }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Earlin.Lutz 10/2014
