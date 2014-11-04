@@ -22,7 +22,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //
 // @bsiclass                                                    Carole.MacDonald 09/2014
 //=======================================================================================
-struct BeCGJsonValueWriter : IBeXmlWriter
+struct BeCGJsonValueWriter : IBeStructuredDataWriter
     {
     private:
     size_t m_numErrors;
@@ -97,37 +97,12 @@ struct BeCGJsonValueWriter : IBeXmlWriter
         }
     public: BeXmlStatus Status (){ return m_numErrors == 0 ? BEXML_Success : BEXML_ContentWrongType;}
             
-    //! Writes the start of named
-    public: BeXmlStatus virtual WriteElementStart (Utf8CP name) override
-        {
-        Error ("Usupported WriteElementStart text");
-        return Status ();
-        }
-
-    //! Writes the end of an element node.
-    public: BeXmlStatus virtual WriteElementEnd (Utf8CP name) override
-        {
-        Error ("Usupported WriteElementEnd text");
-        return Status ();
-        }
-
-    //! Writes a text node (plain string as content).
-    public: BeXmlStatus virtual WriteText (WCharCP) override
-        {
-        Error ("Usupported WCharCP text");
-        return Status ();
-        }
-    //! Writes a text content 
-    public: BeXmlStatus virtual WriteText(Utf8CP value) override
-        {
-        Error ("Usupported WriteText");        
-        return Status ();
-        }
 
     //! Start construction of a set.
-    public: BeXmlStatus virtual WriteSetElementStart (Utf8CP name) override
-        {        
+    public: BeXmlStatus virtual WriteSetElementStart (Utf8CP type) override
+        {
         m_stack.push_back (StackFrame (ElementType::Set));
+        WriteNamedText ("Type", type, false);
         return Status ();
         }
 
@@ -135,6 +110,20 @@ struct BeCGJsonValueWriter : IBeXmlWriter
     public: BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) override
         {
         CheckTOSType (ElementType::Set);
+        return Status ();
+        }
+
+    //! Start construction of named set element
+    public: BeXmlStatus virtual WriteNamedSetStart (Utf8CP name) override
+        {
+        WriteSetElementStart (name);
+        return Status ();
+        }
+
+    //! Start construction of named set element
+    public: BeXmlStatus virtual WriteNamedSetEnd (Utf8CP name) override
+        {
+        WriteSetElementEnd (name);
         Json::Value topValue;
         if (TryPopStack (topValue))
             {
@@ -143,6 +132,49 @@ struct BeCGJsonValueWriter : IBeXmlWriter
             }
         return Status ();
         }
+
+    //! Start construction of named set element
+    public: BeXmlStatus virtual WritePositionalElementStart (Utf8CP name, bool nameOptional, bool doBreak) override
+        {
+        WriteSetElementStart (name);
+        return Status ();
+        }
+
+    //! Start construction of named set element
+    public: BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak) override
+        {
+        WriteSetElementEnd (name);
+        return Status ();
+        }
+
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                                   Earlin.Lutz 10/2014
+    //---------------------------------------------------------------------------------------
+        //! Writes multiple doubles.
+    BeXmlStatus WriteArrayOfBlockedDoubles
+    (
+    Utf8CP longName,
+    Utf8CP shortName,
+    Utf8CP itemName,
+    bool itemNameOptional,
+    double const *data,
+    size_t numPerBlock,
+    size_t numBlock
+    )
+        {
+        BeXmlStatus status = BEXML_Success;        
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementStart (longName, shortName))
+        for (size_t i = 0; status == BEXML_Success && i < numBlock; i++)
+            {
+            WriteBlockedDoubles (itemName, itemNameOptional, data + i * numPerBlock, numPerBlock);
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementEnd (longName, shortName))
+        return status;
+        }
+
+
+
 
     //! Start construction of a set.
     public: BeXmlStatus virtual WriteArrayElementStart (Utf8CP longName, Utf8CP shortName) override
@@ -174,6 +206,13 @@ struct BeCGJsonValueWriter : IBeXmlWriter
         }
 
     public: BeXmlStatus WriteNamedDouble (Utf8CP itemName, double data, bool optionalName) override
+        {
+        Json::Value itemValue (data);
+        AddNamedValueToTOS (itemName, itemValue, optionalName);
+        return Status ();
+        }
+
+    public: BeXmlStatus WriteNamedText (Utf8CP itemName, Utf8CP data, bool optionalName) override
         {
         Json::Value itemValue (data);
         AddNamedValueToTOS (itemName, itemValue, optionalName);

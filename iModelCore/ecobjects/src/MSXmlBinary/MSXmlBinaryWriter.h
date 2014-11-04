@@ -16,6 +16,130 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+#define GUARDED_STATUS_ASSIGNMENT(_status_,_expression_)\
+    {\
+    if (_status_ == BEXML_Success)\
+        _status_ = _expression_;\
+    }
+
+struct IBeStructuredDataWriter;
+typedef IBeStructuredDataWriter &IBeStructuredDataWriterR;
+
+struct IBeStructuredDataWriter
+{
+//! Writes the start of an element node with the provided name, but possibly omit the name at discretion of the writer.
+//! Expected usage is that an xml writer will use the name, json writer will omit.
+//! Xml is noop for separator
+public:  BeXmlStatus virtual WritePositionalElementStart (Utf8CP name, bool nameOptional, bool doBreak) = 0;
+public:  BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak) = 0;
+
+
+
+
+//! Writes the start of an element node with long or short name at discretion of the writer.
+//! Expected usage is that xml will use longName, json will use shortName.
+public:  BeXmlStatus virtual WriteArrayElementStart (Utf8CP longName, Utf8CP shortName)  = 0;
+public:  BeXmlStatus virtual WriteArrayElementEnd (Utf8CP longName, Utf8CP shortName)  = 0;
+    
+//! Writes the start of an element expected to have named children.
+public:  BeXmlStatus virtual WriteSetElementStart (Utf8CP name)  = 0;
+public:  BeXmlStatus virtual WriteSetElementEnd (Utf8CP name)  = 0;
+
+//! Writes the start of a named element
+public:  BeXmlStatus virtual WriteNamedSetStart (Utf8CP name)  = 0;
+public:  BeXmlStatus virtual WriteNamedSetEnd (Utf8CP name)  = 0;
+
+//! Writes an element with plain string as content. 
+public:  BeXmlStatus virtual WriteNamedText(Utf8CP name, Utf8CP text, bool nameOptional) = 0;
+    
+//! Writes an element with a bool as content. 
+public:  BeXmlStatus virtual WriteNamedBool(Utf8CP name, bool value, bool nameOptional) = 0;
+        
+//! Writes an element with Int32 as content. 
+public:  BeXmlStatus virtual WriteNamedInt32 (Utf8CP name, int value, bool nameOptional) = 0;
+
+//! Writes an element with a double as content.
+public:  BeXmlStatus virtual WriteNamedDouble (Utf8CP name, double value, bool nameOptional) = 0;
+
+//! Writes multiple doubles.
+public:  BeXmlStatus virtual WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double const *data, size_t n) = 0;
+
+//! Writes multiple doubles.
+public:  BeXmlStatus virtual WriteArrayOfBlockedDoubles (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t numPerBlock, size_t numBlock) = 0;
+
+//! Writes multiple doubles.
+public:  BeXmlStatus virtual WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t n) = 0;
+    
+//! Writes multiple ints.
+public:  BeXmlStatus virtual WriteIntArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, int const *data, size_t n) = 0;
+};
+
+//! Abstracton layer to express json-like structure in xml.
+struct BeStructuredXmlWriter : IBeStructuredDataWriter
+    {
+    IBeXmlWriter *m_writer;
+    BeStructuredXmlWriter (IBeXmlWriter *writer)
+        {
+        m_writer = writer;
+        }
+    // Mid level element start/end pairs:
+    //  1) always convert to direct xml start end
+    //  2) always use element names (ignore nameOptional params)
+    //  3) always use "long" names for arrays
+
+    //! Writes the start of an element node with the provided name, but possibly omit the name at discretion of the writer.
+    //! Expected usage is that an xml writer will use the name, json writer will omit.
+    //! Xml is noop for separator
+    public:  BeXmlStatus virtual WritePositionalElementStart (Utf8CP name, bool nameOptional, bool doBreak) override
+          {
+          return m_writer->WriteElementStart (name);
+          }
+    public:  BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak)
+          {
+          return m_writer->WriteElementEnd (name);
+          }
+
+
+    //! Writes the start of an element node with long or short name at discretion of the writer.
+    //! Expected usage is that xml will use longName, json will use shortName.
+    public:  BeXmlStatus virtual WriteArrayElementStart (Utf8CP longName, Utf8CP shortName) {return m_writer->WriteElementStart (longName);}
+    public:  BeXmlStatus virtual WriteArrayElementEnd (Utf8CP longName, Utf8CP shortName) {return m_writer->WriteElementEnd (longName);}
+    
+    //! Writes the start of an element expected to have named children.
+    public:  BeXmlStatus virtual WriteSetElementStart (Utf8CP name) {return m_writer->WriteElementStart (name);}
+    public:  BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) {return m_writer->WriteElementEnd (name);}
+
+    //! Writes the start of an element expected to have named children.
+    public:  BeXmlStatus virtual WriteNamedSetStart (Utf8CP name) {return m_writer->WriteElementStart (name);}
+    public:  BeXmlStatus virtual WriteNamedSetEnd (Utf8CP name) {return m_writer->WriteElementEnd (name);}
+
+    //! Writes an element with plain string as content. 
+    public:  BeXmlStatus virtual WriteNamedText(Utf8CP name, Utf8CP text, bool nameOptional);
+    
+    //! Writes an element with a bool as content. 
+    public:  BeXmlStatus virtual WriteNamedBool(Utf8CP name, bool value, bool nameOptional);
+        
+    //! Writes an element with Int32 as content. 
+    public:  BeXmlStatus virtual WriteNamedInt32 (Utf8CP name, int value, bool nameOptional);
+
+    //! Writes an element with a double as content.
+    public:  BeXmlStatus virtual WriteNamedDouble (Utf8CP name, double value, bool nameOptional);
+
+    //! Writes multiple doubles.
+    public:  BeXmlStatus virtual WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double const *data, size_t n);
+
+    //! Writes multiple doubles.
+    public:  BeXmlStatus virtual WriteArrayOfBlockedDoubles (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t numPerBlock, size_t numBlock);
+
+    //! Writes multiple doubles.
+    public:  BeXmlStatus virtual WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t n);
+    
+    //! Writes multiple ints.
+    public:  BeXmlStatus virtual WriteIntArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, int const *data, size_t n);
+
+    };
+
+
 struct MSXmlBinaryWriter : IBeXmlWriter
     {
     private:
@@ -160,15 +284,46 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         
     public:        
         
-    //! Writes a node with name and bool value.
-    public: ECOBJECTS_EXPORT BeXmlStatus virtual WriteNamedBool(Utf8CP name, bool value, bool nameOptional) override;
-        
-    //! Writes a node with name and Int32 value.
-    public: ECOBJECTS_EXPORT BeXmlStatus virtual WriteNamedInt32 (Utf8CP name, Int32 value, bool nameOptional) override;
-
-    //! Writes a node with name and double value.
-    public: ECOBJECTS_EXPORT BeXmlStatus virtual WriteNamedDouble (Utf8CP name, double value, bool nameOptional) override;
         
     };
+
+struct MSStructuredXmlBinaryWriter : MSXmlBinaryWriter, BeStructuredXmlWriter
+{
+MSStructuredXmlBinaryWriter ()
+    : BeStructuredXmlWriter (this)
+    {
+    }
+
+//! Writes a node with name and bool value.
+BeXmlStatus virtual WriteNamedBool(Utf8CP name, bool value, bool nameOptional) override
+    {
+    BeXmlStatus status = BEXML_Success;
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+    GUARDED_STATUS_ASSIGNMENT (status, WriteBoolToken (value))
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+    return status;
+    }
+    
+//! Writes a node with name and Int32 value.
+BeXmlStatus virtual WriteNamedInt32 (Utf8CP name, Int32 value, bool nameOptional) override
+    {
+    BeXmlStatus status = BEXML_Success;
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+    GUARDED_STATUS_ASSIGNMENT (status, WriteInt32Token (value))
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+    return status;
+    }
+
+//! Writes a node with name and double value.
+BeXmlStatus virtual WriteNamedDouble (Utf8CP name, double value, bool nameOptional) override
+    {
+    BeXmlStatus status = BEXML_Success;
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+    GUARDED_STATUS_ASSIGNMENT (status, WriteDoubleToken (value))
+    GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+    return status;
+    } 
+
+};
 
 END_BENTLEY_ECOBJECT_NAMESPACE

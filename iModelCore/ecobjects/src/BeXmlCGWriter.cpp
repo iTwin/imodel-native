@@ -8,10 +8,13 @@
 #include "ECObjectsPch.h"
 #include "MSXmlBinary\MSXmlBinaryWriter.h"
 #include "BeJsonValueBuilder.h"
+#ifdef BuildBeJsonWriter
 #include "BeJsonWriter.h"
+#endif
 #include "BeCGWriter.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
@@ -19,13 +22,15 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
     {
     cgBeXml.clear();
-    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
-    BeCGWriter (*xmlDom.get(), false).Write(data);
-    xmlDom->ToString(cgBeXml);
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    BeStructuredXmlWriter structuredWriter (xmlWriter.get ());
+    BeCGWriter (structuredWriter, false).Write(data);
+    xmlWriter->ToString(cgBeXml);
     }
 
 void BeXmlCGWriter::WriteJson(Utf8StringR cgBeXml, IGeometryPtr data)
     {
+#ifdef BuildBeJsonWriter
     cgBeXml.clear();
     
     BeCGJsonWriter writer (2);
@@ -33,6 +38,9 @@ void BeXmlCGWriter::WriteJson(Utf8StringR cgBeXml, IGeometryPtr data)
     BeCGWriter (writer, false).Write(data);
     writer.Emit ("\n}");
     writer.ToString(cgBeXml);
+#else
+    cgBeXml = "{\"WriteJson not supported -- use TryWritJsonValue\"}";
+#endif
     }
 
 void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryPtr data)
@@ -40,7 +48,7 @@ void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryPtr data)
 #if defined (_WIN32)
     unsigned int oldFormat = _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
-    MSXmlBinaryWriter* writer = new MSXmlBinaryWriter();
+    MSStructuredXmlBinaryWriter* writer = new MSStructuredXmlBinaryWriter();
     BeCGWriter(*writer, true).Write (data);
 #if defined (_WIN32)
     _set_output_format(oldFormat);

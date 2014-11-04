@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //
 // @bsiclass                                                    Carole.MacDonald 09/2014
 //=======================================================================================
-struct BeCGJsonWriter : IBeXmlWriter
+struct BeCGJsonWriter : IBeStructuredDataWriter
     {
     Utf8String m_string;
     int m_indent;
@@ -127,7 +127,7 @@ struct BeCGJsonWriter : IBeXmlWriter
 
 
     //! Writes the start of a list element node with the provided name.
-    public: BeXmlStatus virtual WriteSetElementStart (Utf8CP name) override
+    public: BeXmlStatus WriteSetElementStart (Utf8CP name) override
         {
         EmitSeparator ();
         PushState (ElementType::Set);
@@ -144,10 +144,10 @@ struct BeCGJsonWriter : IBeXmlWriter
 #endif
         return Status ();
         }
-    public: BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) override{return WriteElementEnd (name);}
+    public: BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) override{return WriteNamedSetEnd (name);}
     
     //! Writes the start of named
-    public: BeXmlStatus virtual WriteElementStart (Utf8CP name) override
+    public: BeXmlStatus virtual WriteNamedSetStart (Utf8CP name) override
         {
         EmitSeparator ();
         PushState (ElementType::Named);
@@ -189,23 +189,23 @@ struct BeCGJsonWriter : IBeXmlWriter
             }
         else
             {
-            WriteElementStart (name);
+            WriteNamedSetStart (name);
             }
         return Status ();
         }
 
-    public: BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak) override {return WriteElementEnd (name);}
+    public: BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak) override {return WriteNamedSetEnd (name);}
 
 
     //! Writes the end of an element node.
-    public: BeXmlStatus virtual WriteElementEnd (Utf8CP name) override
+    public: BeXmlStatus virtual WriteNamedSetEnd (Utf8CP name) override
         {
         ElementType type = TOSType ();
         switch (type)
             {
             case ElementType::Null:
                 {
-                Error ("WriteElementEnd in Null State");
+                Error ("WriteNamedSetEnd in Null State");
                 break;
                 }
             case ElementType::Set:
@@ -235,20 +235,6 @@ struct BeCGJsonWriter : IBeXmlWriter
             }
         return Status ();
         }
-
-    //! Writes a text node (plain string as content).
-    public: BeXmlStatus virtual WriteText (WCharCP) override
-        {
-        Error ("Usupported WCharCP text");
-        return Status ();
-        }
-    //! Writes a text content 
-    public: BeXmlStatus virtual WriteText(Utf8CP value) override
-        {
-        EmitQuoted (value);
-        return Status ();
-        }
-
 
 
     //! Writes a text node (plain string as content). 
@@ -385,6 +371,7 @@ BeXmlStatus WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName
         return status;
         }
 
+BeXmlS
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

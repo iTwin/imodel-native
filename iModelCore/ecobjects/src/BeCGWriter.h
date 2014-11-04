@@ -19,15 +19,15 @@ static double SuppressNearZeroCoordinate (double x, double refValue)
     return fabs (x) < tol ? 0.0 : x;
     }
 
-static void Indent (IBeXmlWriterR m_dest)
+static void Indent (IBeStructuredDataWriterR m_dest)
     {
     }
-struct BeCGWriter
+struct BeCGWriter 
 {
-IBeXmlWriterR m_dest;
+IBeStructuredDataWriterR m_dest;
 bool m_textualizeXYData;  // for compatibility with .net
 
-BeCGWriter (IBeXmlWriterR dest, bool textualizeXYData) : m_dest (dest), m_textualizeXYData (textualizeXYData)
+BeCGWriter (IBeStructuredDataWriterR dest, bool textualizeXYData) : m_dest (dest), m_textualizeXYData (textualizeXYData)
     {
     
     }
@@ -175,7 +175,7 @@ DVec3dCR vectorZ,
 DVec3dCR vectorX
 )
     {
-    m_dest.WriteSetElementStart("placement");
+    m_dest.WriteNamedSetStart("placement");
     WriteXYZ ("origin", origin);
     DVec3d unitZ, unitY, unitX;
     unitZ.Normalize (vectorZ);
@@ -183,7 +183,7 @@ DVec3dCR vectorX
     unitX.NormalizedCrossProduct (unitY, unitZ);
     WriteXYZ ("vectorZ", unitZ);
     WriteXYZ ("vectorX", unitX);
-    m_dest.WriteSetElementEnd ("placement");
+    m_dest.WriteNamedSetEnd ("placement");
     }
 
 void WritePlacementZX
@@ -194,7 +194,7 @@ RotMatrixCR axes
     {
     DVec3d vectorX, vectorY, vectorZ;
     axes.GetColumns (vectorX, vectorY, vectorZ);
-    m_dest.WriteSetElementStart("placement");
+    m_dest.WriteNamedSetStart("placement");
     WriteXYZ ("origin", origin);
     DVec3d unitZ, unitY, unitX;
     unitZ.Normalize (vectorZ);
@@ -202,7 +202,7 @@ RotMatrixCR axes
     unitX.NormalizedCrossProduct (unitY, unitZ);
     WriteXYZ ("vectorZ", unitZ);
     WriteXYZ ("vectorX", unitX);
-    m_dest.WriteSetElementEnd ("placement");
+    m_dest.WriteNamedSetEnd ("placement");
     }
 
 
@@ -367,7 +367,7 @@ void WriteSurface (MSBsplineSurfaceCR surface)
 
 void WriteTextPlacement
 (
-IBeXmlWriterR m_dest,
+IBeStructuredDataWriterR m_dest,
 DPoint3dCR xyz,
 Utf8CP data,
 double charSize
