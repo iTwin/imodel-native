@@ -75,6 +75,7 @@ struct MSXmlBinaryReader : public IBeXmlReader
                 bool m_isEmptyElement;
                 Utf8String m_localName;
                 ValueHandle m_value;
+                bool m_exitScope;
 
             protected: enum class XmlNodeFlags
                     {
@@ -96,6 +97,7 @@ struct MSXmlBinaryReader : public IBeXmlReader
                 void SetValueHandle(byte* buffer, ValueHandleType type, int length, int offset);
                 void SetValueHandle(ValueHandleType type);
                 Utf8String ValueAsString() { return m_value.GetString(); }
+                bool ExitScope() { return m_exitScope; }
             };
 
         struct XmlElementNode : XmlNode
@@ -106,10 +108,16 @@ struct MSXmlBinaryReader : public IBeXmlReader
                     }
             };
 
-        struct XmlAtomicTextNode : XmlNode
+        struct XmlTextNode : XmlNode
+            {
+            public:
+                XmlTextNode(XmlNodeType nodeType, byte* buffer, UInt32 flags) : XmlNode(nodeType, buffer, flags) {}
+            };
+
+        struct XmlAtomicTextNode : XmlTextNode
             {
             public :
-                XmlAtomicTextNode(byte* buffer) : XmlNode(XmlNodeType::Text, buffer, (UInt32) XmlNodeFlags::HasValue | (UInt32) XmlNodeFlags::AtomicValue | (UInt32) XmlNodeFlags::SkipValue | (UInt32) XmlNodeFlags::HasContent) {}
+                XmlAtomicTextNode(byte* buffer) : XmlTextNode(XmlNodeType::Text, buffer, (UInt32) XmlNodeFlags::HasValue | (UInt32) XmlNodeFlags::AtomicValue | (UInt32) XmlNodeFlags::SkipValue | (UInt32) XmlNodeFlags::HasContent) {}
             };
 
         struct XmlInitialNode : XmlNode
@@ -118,10 +126,16 @@ struct MSXmlBinaryReader : public IBeXmlReader
                 XmlInitialNode(byte* buffer) : XmlNode(XmlNodeType::None, buffer, 0) {}
             };
 
+        struct XmlAttributeNode : XmlTextNode
+            {
+            public :
+                XmlAttributeNode(byte* buffer) : XmlTextNode(XmlNodeType::Attribute, buffer, (UInt32) XmlNodeFlags::CanGetAttribute | (UInt32) XmlNodeFlags::CanMoveToElement | (UInt32) XmlNodeFlags::HasValue | (UInt32) XmlNodeFlags::AtomicValue) {}
+            };
+
         struct XmlEndElementNode : XmlNode
             {
             public:
-                XmlEndElementNode() : XmlNode(XmlNodeType::EndElement, nullptr, 0) {}
+                XmlEndElementNode() : XmlNode(XmlNodeType::EndElement, nullptr, (UInt32) XmlNodeFlags::HasContent) {}
             };
 
         byte* m_bytes;
@@ -129,10 +143,13 @@ struct MSXmlBinaryReader : public IBeXmlReader
         int m_depth;
         XmlNode* m_node;
         Utf8String m_localName;
+        Utf8String m_value;
         int m_offset;
         bool m_rootElement;
         bool m_isTextWithEndElement;
         bvector<XmlElementNode> m_elementNodes;
+        bvector<XmlAttributeNode> m_attributeNodes;
+        int m_attributeCount;
         XmlAtomicTextNode m_atomicTextNode;
         XmlInitialNode m_initialNode;
         XmlEndElementNode m_endElementNode;
@@ -146,17 +163,19 @@ struct MSXmlBinaryReader : public IBeXmlReader
         void MoveToNode(XmlNode* node);
         XmlAtomicTextNode* MoveToAtomicTextWithEndElement();
         XmlAtomicTextNode* MoveToAtomicText();
-        void ReadText(XmlAtomicTextNode* textNode, ValueHandleType type, int length);
+        void ReadText(XmlTextNode* textNode, ValueHandleType type, int length);
         void ReadAttributes();
+        void ReadAttributeText(XmlTextNode* textNode);
+        MSXmlBinaryReader::XmlAttributeNode& AddAttributeNode();
 
         void ReadName(Utf8StringR name);
         void ReadName(XmlElementNode& node);
         int ReadMultiByteUInt31();
 
+        int ReadUInt8();
+
     public:
         ECOBJECTS_EXPORT MSXmlBinaryReader(byte* bytes, int length);
-
-        XmlNodeType MoveToContent();
 
         bool IsStartElement();
 
@@ -165,6 +184,9 @@ struct MSXmlBinaryReader : public IBeXmlReader
 
         //! Advances (reads) to the next node of the provided type.
         ECOBJECTS_EXPORT IBeXmlReader::ReadResult ReadTo (NodeType) override;
+
+        //! Advances (reads) to the start the end of this element node.
+        ECOBJECTS_EXPORT IBeXmlReader::ReadResult ReadToEndOfElement() override;
 
         //! Gets the type of the current node.
         ECOBJECTS_EXPORT IBeXmlReader::NodeType GetCurrentNodeType () override;
@@ -176,6 +198,13 @@ struct MSXmlBinaryReader : public IBeXmlReader
         //! @note This only peeks at the value of the current node. This will not, for example, return the value of any child text nodes of an element node. If you want this utility, @see GetCurrentNodeValue.
         ECOBJECTS_EXPORT BeXmlStatus GetCurrentNodeValue(Utf8StringR) override;
 
+        //! Advances (reads) to the next attribute in the current element node, optionally providing its name and value. If the current node is not an element, this automatically fails.
+        ECOBJECTS_EXPORT BeXmlStatus ReadToNextAttribute (Utf8StringP name, Utf8StringP value) override;
+
+        ECOBJECTS_EXPORT IBeXmlReader::NodeType MoveToContent() override;
+
+        //! Reads the text content at the current position as a String object.
+        ECOBJECTS_EXPORT BeXmlStatus ReadContentAsString(Utf8StringR str) override;
 
     };
 
