@@ -120,16 +120,39 @@ void WriteList (bvector<DVec3d> const & data, Utf8CP listName, Utf8CP shortName,
     {
     if (0 == data.size())
         return;
-    m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
-          data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+
+    if (m_textualizeXYData)
+        {
+        m_dest.WriteArrayElementStart(listName, shortName);
+        for (size_t i = 0 ; i < data.size (); i++)
+            WriteXYZ (itemName, data[i], true);
+        m_dest.WriteArrayElementEnd (listName, shortName);
+        }
+    else
+        {
+        if (0 == data.size())
+            return;
+        m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
+              data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+        }
     }
 
 void WriteList (bvector<RgbFactor> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
     {
     if (0 == data.size())
         return;
-    m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
-          data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+    if (m_textualizeXYData)
+        {
+        m_dest.WriteArrayElementStart(listName, shortName);
+        for (size_t i = 0 ; i < data.size (); i++)
+            WriteXYZ (itemName, data[i].red, data[i].green, data[i].blue, true);
+        m_dest.WriteArrayElementEnd (listName, shortName);
+        }
+    else
+        {
+        m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
+              data.size () > 0 ? (double *)&data.front () : nullptr, 3, data.size ());
+        }
     }
 
 void WriteList (bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP shortName, Utf8CP itemName)
@@ -137,15 +160,22 @@ void WriteList (bvector<DPoint2d> const & data, Utf8CP listName, Utf8CP shortNam
     if (0 == data.size())
         return;
 
-    m_dest.WriteArrayElementStart(listName, shortName);
-    for (size_t i = 0 ; i < data.size (); i++)
+    if (m_textualizeXYData)
         {
-        Indent (m_dest);
-        double refValue = data[i].Magnitude ();
-        WriteXY (itemName, SuppressNearZeroCoordinate (data[i].x, refValue),
-                    SuppressNearZeroCoordinate (data[i].y, refValue));
+        m_dest.WriteArrayElementStart(listName, shortName);
+        for (size_t i = 0 ; i < data.size (); i++)
+            {
+            double refValue = data[i].Magnitude ();
+            WriteXY (itemName,
+                SuppressNearZeroCoordinate (data[i].x, refValue), SuppressNearZeroCoordinate (data[i].y, refValue), true);
+            }
+        m_dest.WriteArrayElementEnd (listName, shortName);
         }
-    m_dest.WriteArrayElementEnd (listName, shortName);
+    else
+        {
+        m_dest.WriteArrayOfBlockedDoubles (listName, shortName, itemName, true,
+              data.size () > 0 ? (double *)&data.front () : nullptr, 2, data.size ());
+        }
     }
 
 

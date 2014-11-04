@@ -324,6 +324,47 @@ BeXmlStatus virtual WriteNamedDouble (Utf8CP name, double value, bool nameOption
     return status;
     } 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple ints.
+BeXmlStatus WriteIntArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, int const *data, size_t n) override
+        {
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementStart (longName, shortName))
+        static int s_breakCount = 10;
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            bool doBreak = ((i % s_breakCount) == 0);
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (itemName, itemNameOptional, doBreak))
+            GUARDED_STATUS_ASSIGNMENT (status, WriteInt32Token (data[i]))
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (itemName, itemNameOptional, doBreak))
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementEnd (longName, shortName))
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple doubles.
+BeXmlStatus WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t n)
+        {
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementStart (longName, shortName))
+        static int s_breakCount = 5;
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            bool doBreak = ((i % s_breakCount) == 0);
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (itemName, itemNameOptional, doBreak))
+            GUARDED_STATUS_ASSIGNMENT (status, WriteDoubleToken (data[i]))
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (itemName, itemNameOptional, doBreak))
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementEnd (longName, shortName))
+        return status;
+        }
+
+
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
