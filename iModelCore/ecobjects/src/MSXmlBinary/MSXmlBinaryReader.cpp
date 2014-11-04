@@ -581,7 +581,6 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadTo(IBeXmlReader::NodeType nodeTy
         if (m_isTextWithEndElement)
             {
             m_isTextWithEndElement = false;
-            m_depth--;
             m_node = &m_endElementNode;
             }
         }
