@@ -2361,8 +2361,12 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
             {
             // Stupid PropertyValueMatchesNoChange return value is stupid.
             if (SUCCESS != (status = duplicateProperties (target, *prop.GetChildValues(), ignoreErrors)))
+                {
                 if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
+                else
+                    status = ECOBJECTS_STATUS_Success;  // ignore error
+                }
 
             continue;
             }
@@ -2370,8 +2374,12 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
             if (NULL != ecProp && ecProp->GetIsPrimitive() && SUCCESS != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
+                {
                 if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
+                else
+                    status = ECOBJECTS_STATUS_Success;  // ignore error
+                }
             }
         }
 

@@ -18,7 +18,7 @@ static bool IsWhitespace(Utf8Char ch)
 
 static bool IsWhitespace(Utf8StringR str)
     {
-    for (int i = 0; i < str.size(); i++)
+    for (size_t i = 0; i < str.size(); i++)
         {
         if (!IsWhitespace(str[i]))
             return false;
