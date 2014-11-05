@@ -2663,7 +2663,7 @@ bool ReadExtendedData(IGeometryPtr &result)
         m_reader.MoveToContent();
         }
 
-    xmlDom->WriteElementEnd();
+    xmlDom->WriteElementEnd(m_currentElementName.c_str());
     Utf8String cgBeXml;
     xmlDom->ToString(cgBeXml);
 

@@ -56,7 +56,7 @@ void WriteXY (Utf8CP name, double x, double y, bool shortName = false)
     else
         {
         double xy[3] = {x,y};
-        m_dest.WriteBlockedDoubles (name, shortName, (double*)&xy, 3);
+        m_dest.WriteBlockedDoubles (name, shortName, (double*)&xy, 2);
         }
     }
 
@@ -738,15 +738,15 @@ void WriteDgnExtrusionDetail (DgnExtrusionDetail data)
     if (data.m_baseCurve->GetStartEnd (curveStart, curveEnd))
         {
         m_dest.WriteSetElementStart(data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
-            m_dest.WriteSetElementStart("BaseGeometry");
+            m_dest.WriteNamedSetStart("BaseGeometry");
             Write (*data.m_baseCurve);
-            m_dest.WriteSetElementEnd ("BaseGeometry");
+            m_dest.WriteNamedSetEnd ("BaseGeometry");
             DSegment3d segment;
             segment.point[0] = curveStart;
             segment.point[1].SumOf (curveStart, data.m_extrusionVector);
-            m_dest.WriteSetElementStart("RailCurve");
+            m_dest.WriteNamedSetStart("RailCurve");
             WriteSegment (segment);
-            m_dest.WriteSetElementEnd ("RailCurve");
+            m_dest.WriteNamedSetEnd ("RailCurve");
         m_dest.WriteSetElementEnd (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
         }
     }
@@ -803,13 +803,13 @@ void WriteDgnRotationalSweepDetail (DgnRotationalSweepDetail data)
     if (data.GetTransforms (localToWorld, worldToLocal))
         {
         m_dest.WriteSetElementStart(data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
-            m_dest.WriteSetElementStart("BaseGeometry");
+            m_dest.WriteNamedSetStart("BaseGeometry");
             Write (*data.m_baseCurve);
-            m_dest.WriteSetElementEnd ("BaseGeometry");
+            m_dest.WriteNamedSetEnd ("BaseGeometry");
             DEllipse3d arc = BuildSweepArc (*data.m_baseCurve, localToWorld, worldToLocal, data.m_sweepAngle);
-            m_dest.WriteSetElementStart("RailCurve");
+            m_dest.WriteNamedSetStart("RailCurve");
             WriteArc (arc);
-            m_dest.WriteSetElementEnd ("RailCurve");
+            m_dest.WriteNamedSetEnd ("RailCurve");
         m_dest.WriteSetElementEnd (data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");
         }
     }
