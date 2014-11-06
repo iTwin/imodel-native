@@ -2635,12 +2635,10 @@ bool ReadExtendedData(IGeometryPtr &result)
 
     ReadToChildOrEnd();
 
-    BeXmlWriterPtr xmlDom = BeXmlWriter::Create();
     // Should be 'TransientLookupCollection'
     if (!CurrentElementNameMatch("TransientLookupCollection"))
         return false;
         
-    xmlDom->WriteElementStart(m_currentElementName.c_str());
     ReadToChildOrEnd();
     // Next, iterate over each entry
     for (;IsStartElement ();)
@@ -2659,13 +2657,14 @@ bool ReadExtendedData(IGeometryPtr &result)
         m_reader.MoveToContent();
         m_reader.ReadContentAsString(content);
         m_reader.MoveToContent();
-        m_reader.ReadToEndOfElement();
+
+        // m_reader.ReadEndElement()
+            {
+            m_reader.ReadToEndOfElement();
+            m_reader.Read();
+            }
         m_reader.MoveToContent();
         }
-
-    xmlDom->WriteElementEnd();
-    Utf8String cgBeXml;
-    xmlDom->ToString(cgBeXml);
 
     return false;
     }

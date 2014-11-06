@@ -634,7 +634,7 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadToEndOfElement()
         {
         return IBeXmlReader::ReadResult::READ_RESULT_Error;
         }
-    return Read();
+    return IBeXmlReader::ReadResult::READ_RESULT_Success;
     }
 
 BeXmlStatus MSXmlBinaryReader::ReadContentAsString(Utf8StringR str)
