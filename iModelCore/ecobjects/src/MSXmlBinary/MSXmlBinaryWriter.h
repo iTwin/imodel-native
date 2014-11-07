@@ -96,22 +96,22 @@ struct BeStructuredXmlWriter : IBeStructuredDataWriter
           }
     public:  BeXmlStatus virtual WritePositionalElementEnd (Utf8CP name, bool nameOptional, bool doBreak)
           {
-          return m_writer->WriteElementEnd (name);
+          return m_writer->WriteElementEnd ();
           }
 
 
     //! Writes the start of an element node with long or short name at discretion of the writer.
     //! Expected usage is that xml will use longName, json will use shortName.
     public:  BeXmlStatus virtual WriteArrayElementStart (Utf8CP longName, Utf8CP shortName) {return m_writer->WriteElementStart (longName);}
-    public:  BeXmlStatus virtual WriteArrayElementEnd (Utf8CP longName, Utf8CP shortName) {return m_writer->WriteElementEnd (longName);}
+    public:  BeXmlStatus virtual WriteArrayElementEnd (Utf8CP longName, Utf8CP shortName) {return m_writer->WriteElementEnd ();}
     
     //! Writes the start of an element expected to have named children.
     public:  BeXmlStatus virtual WriteSetElementStart (Utf8CP name) {return m_writer->WriteElementStart (name);}
-    public:  BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) {return m_writer->WriteElementEnd (name);}
+    public:  BeXmlStatus virtual WriteSetElementEnd (Utf8CP name) {return m_writer->WriteElementEnd ();}
 
     //! Writes the start of an element expected to have named children.
     public:  BeXmlStatus virtual WriteNamedSetStart (Utf8CP name) {return m_writer->WriteElementStart (name);}
-    public:  BeXmlStatus virtual WriteNamedSetEnd (Utf8CP name) {return m_writer->WriteElementEnd (name);}
+    public:  BeXmlStatus virtual WriteNamedSetEnd (Utf8CP name) {return m_writer->WriteElementEnd ();}
 
     //! Writes an element with plain string as content. 
     public:  BeXmlStatus virtual WriteNamedText(Utf8CP name, Utf8CP text, bool nameOptional);
@@ -268,7 +268,7 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name, Utf8CP nameSpace);
 
         //! Writes the end of an element node.
-        ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd (Utf8CP name) override;
+        ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd () override;
 
         BeXmlStatus WriteText(Utf8CP text) override;
         BeXmlStatus WriteText(WCharCP text) override;

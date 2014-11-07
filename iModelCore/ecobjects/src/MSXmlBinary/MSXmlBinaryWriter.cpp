@@ -190,7 +190,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteElementEnd(Utf8CP name)
+BeXmlStatus MSXmlBinaryWriter::WriteElementEnd()
     {
     if (WriteState::Element == m_writeState)
         {
@@ -425,7 +425,7 @@ void MSXmlBinaryWriter::EndStartElement()
 void MSXmlBinaryWriter::WriteEndStartElement(bool isEmpty)
     {
     if (isEmpty)
-        WriteElementEnd(nullptr);   // We know that our implementation does not use the name here
+        WriteElementEnd();   // We know that our implementation does not use the name here
     }
 
 MSXmlBinaryWriter::Element& MSXmlBinaryWriter::EnterScope()
