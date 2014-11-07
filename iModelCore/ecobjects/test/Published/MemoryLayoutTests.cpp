@@ -2005,9 +2005,12 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"EndPoint"));
     point3d = ecValue.GetPoint3D ();
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
+    //in absence of the DateTimeInfo custom attribute on Service_Date the retrieved
+    //date time will always be of kind Unspecified, i.e. the original kind (here Utc)
+    //gets lost
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (inTimeUtc.Compare (sysTime, true));
+    EXPECT_TRUE (inTimeUtc.Equals (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
@@ -2206,7 +2209,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     ECValue dateValue (nowUtc);
     EXPECT_TRUE (dateValue.IsDateTime());
     DateTime nowToo = dateValue.GetDateTime ();
-    EXPECT_TRUE (nowToo.Compare (nowUtc, true));
+    EXPECT_TRUE (nowToo.Equals (nowUtc, true));
 
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);

@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardCustomAttributeHelper.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -13,8 +13,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-const DateTime::Kind DateTimeInfo::DEFAULT_KIND = DateTime::DATETIMEKIND_Unspecified;
-const DateTime::Component DateTimeInfo::DEFAULT_COMPONENT = DateTime::DATETIMECOMPONENT_DateTime;
+const DateTime::Kind DateTimeInfo::DEFAULT_KIND = DateTime::Kind::Unspecified;
+const DateTime::Component DateTimeInfo::DEFAULT_COMPONENT = DateTime::Component::DateAndTime;
 const DateTime::Info DateTimeInfo::s_default = DateTime::Info (DateTimeInfo::DEFAULT_KIND, DateTimeInfo::DEFAULT_COMPONENT);
 
 //---------------------------------------------------------------------------------------

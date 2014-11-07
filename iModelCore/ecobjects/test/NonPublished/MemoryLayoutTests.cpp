@@ -802,13 +802,13 @@ TEST_F(MemoryLayoutTests, GetPrimitiveValuesUsingInteropHelper)
     Int64      ticksOutput;
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDateTimeValue (*instance, L"ADateTime", timeInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDateTime      (*instance, timeOutput, L"ADateTime"));
-    EXPECT_TRUE (timeInput.Compare (timeOutput, true));
+    EXPECT_TRUE (timeInput.Equals (timeOutput, true));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDateTimeTicks (*instance, L"ADateTime", ticksInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDateTimeTicks (*instance, ticksOutput, L"ADateTime"));
     EXPECT_TRUE (ticksInput == ticksOutput);
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDateTimeValue (*instance, L"SomeDateTimes[0]", timeInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDateTime      (*instance, timeOutput, L"SomeDateTimes[0]"));
-    EXPECT_TRUE (timeInput.Compare (timeOutput, true));
+    EXPECT_TRUE (timeInput.Equals (timeOutput, true));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::SetDateTimeTicks (*instance, L"SomeDateTimes[1]", ticksInput));
     EXPECT_TRUE (ECOBJECTS_STATUS_Success == ECInstanceInteropHelper::GetDateTimeTicks (*instance, ticksOutput, L"SomeDateTimes[1]"));
     EXPECT_TRUE (ticksInput == ticksOutput);
@@ -1091,7 +1091,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Service_Date"));
     DateTime sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (inTime.Compare (sysTime, true));
+    EXPECT_TRUE (inTime.Equals (sysTime, true));
     EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"Install_Date"));
     EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
 
@@ -1401,7 +1401,7 @@ TEST_F (MemoryLayoutTests, Values) // move it!
     EXPECT_TRUE (dateValue.IsDateTime());
     DateTime nowtoo = dateValue.GetDateTime ();
     EXPECT_TRUE (nowUtc.GetInfo () == nowtoo.GetInfo ());
-    EXPECT_TRUE (nowUtc.Compare (nowtoo));
+    EXPECT_TRUE (nowUtc.Equals (nowtoo));
 
     ECValue fixedDate;
     fixedDate.SetDateTimeTicks (634027121070910000);

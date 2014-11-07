@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -67,7 +67,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
         }
 
     bool isKindNull = true;
-    DateTime::Kind kind = DateTime::DATETIMEKIND_Unspecified;
+    DateTime::Kind kind = DateTime::Kind::Unspecified;
     //parsing returns false in error case
     if (!TryParseKind (isKindNull, kind, caVal))
         {
@@ -84,7 +84,7 @@ bool DateTimeInfoAccessor::TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR 
         }
 
     bool isComponentNull = true;
-    DateTime::Component component = DateTime::DATETIMECOMPONENT_DateTime;
+    DateTime::Component component = DateTime::Component::DateAndTime;
     //parsing returns false in error case
     if (!TryParseComponent (isComponentNull, component, caVal))
         {
@@ -142,17 +142,17 @@ bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind,
     isKindNull = false;
     if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_UNSPECIFIED_STR) == 0)
         {
-        kind = DateTime::DATETIMEKIND_Unspecified;
+        kind = DateTime::Kind::Unspecified;
         return true;
         }
     else if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_UTC_STR) == 0)
         {
-        kind = DateTime::DATETIMEKIND_Utc;
+        kind = DateTime::Kind::Utc;
         return true;
         }
     else if (BeStringUtilities::Stricmp (kindStr, DATETIMEKIND_LOCAL_STR) == 0)
         {
-        kind = DateTime::DATETIMEKIND_Local;
+        kind = DateTime::Kind::Local;
         return true;
         }
     else
@@ -177,17 +177,17 @@ bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind,
     isKindNull = false;
     if (BeStringUtilities::CompareUtf16WChar (kindStr, DATETIMEKIND_UNSPECIFIED_WSTR) == 0)
         {
-        kind = DateTime::DATETIMEKIND_Unspecified;
+        kind = DateTime::Kind::Unspecified;
         return true;
         }
     else if (BeStringUtilities::CompareUtf16WChar (kindStr, DATETIMEKIND_UTC_WSTR) == 0)
         {
-        kind = DateTime::DATETIMEKIND_Utc;
+        kind = DateTime::Kind::Utc;
         return true;
         }
     else if (BeStringUtilities::CompareUtf16WChar (kindStr, DATETIMEKIND_LOCAL_WSTR) == 0)
         {
-        kind = DateTime::DATETIMEKIND_Local;
+        kind = DateTime::Kind::Local;
         return true;
         }
     else
@@ -236,12 +236,12 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
     isComponentNull = false;
     if (BeStringUtilities::Stricmp (componentStr, DATETIMECOMPONENT_DATE_STR) == 0)
         {
-        component = DateTime::DATETIMECOMPONENT_Date;
+        component = DateTime::Component::Date;
         return true;
         }
     else if (BeStringUtilities::Stricmp (componentStr, DATETIMECOMPONENT_DATETIME_STR) == 0)
         {
-        component = DateTime::DATETIMECOMPONENT_DateTime;
+        component = DateTime::Component::DateAndTime;
         return true;
         }
     else
@@ -266,12 +266,12 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
     isComponentNull = false;
     if (BeStringUtilities::CompareUtf16WChar (componentStr, DATETIMECOMPONENT_DATE_WSTR) == 0)
         {
-        component = DateTime::DATETIMECOMPONENT_Date;
+        component = DateTime::Component::Date;
         return true;
         }
     else if (BeStringUtilities::CompareUtf16WChar (componentStr, DATETIMECOMPONENT_DATETIME_WSTR) == 0)
         {
-        component = DateTime::DATETIMECOMPONENT_DateTime;
+        component = DateTime::Component::DateAndTime;
         return true;
         }
     else
