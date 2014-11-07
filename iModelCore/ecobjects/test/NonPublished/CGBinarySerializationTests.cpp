@@ -84,18 +84,18 @@ TEST (CGSerializationTests, DeserializeEllipticDisc)
 
 TEST (CGSerializationTests, DeserializeExtendedData)
     {
-    //<ExtendedObject xmlns="http://www.bentley.com/schemas/Bentley.ECSerializable.1.0">
-    //    <LineSegment xmlns="http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0">
-    //        <startPoint>0,0,0</startPoint>
-    //        <endPoint>1,0,0</endPoint>
-    //    </LineSegment>
-    //    <ExtendedData>
-    //        <TransientLookupCollection>
-    //            <Entry key="length" typeCode="Double">3.14</Entry>
-    //            <Entry key="name" typeCode="String">test string</Entry>
-    //        </TransientLookupCollection>
-    //    </ExtendedData>
-    //</ExtendedObject>
+    Utf8String xml("<ExtendedObject xmlns=\"http://www.bentley.com/schemas/Bentley.ECSerializable.1.0\"> \
+                        <LineSegment xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"> \
+                            <startPoint>0,0,0</startPoint> \
+                            <endPoint>1,0,0</endPoint> \
+                        </LineSegment> \
+                        <ExtendedData> \
+                            <TransientLookupCollection> \
+                                <Entry key=\"length\" typeCode=\"Double\">3.14</Entry> \
+                                <Entry key=\"name\" typeCode=\"String\">test string</Entry> \
+                            </TransientLookupCollection> \
+                        </ExtendedData> \
+                    ExtendedObject>");
 
     byte bytes[] = {0x40, 0x0E, 0x45, 0x78, 0x74, 0x65, 0x6E, 0x64, 0x65, 0x64, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74, 0x08, 0x39, 0x68, 0x74,
                      0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77, 0x2E, 0x62, 0x65, 0x6E, 0x74, 0x6C, 0x65, 0x79, 0x2E, 0x63, 0x6F, 0x6D,
@@ -114,6 +114,9 @@ TEST (CGSerializationTests, DeserializeExtendedData)
                      0x04, 0x03, 0x6B, 0x65, 0x79, 0x98, 0x04, 0x6E, 0x61, 0x6D, 0x65, 0x04, 0x08, 0x74, 0x79, 0x70, 0x65, 0x43, 0x6F, 0x64,
                      0x65, 0x98, 0x06, 0x53, 0x74, 0x72, 0x69, 0x6E, 0x67, 0x99, 0x0B, 0x74, 0x65, 0x73, 0x74, 0x20, 0x73, 0x74, 0x72, 0x69,
                      0x6E, 0x67, 0x01, 0x01, 0x01};
+
+    bvector<IGeometryPtr> geoms;
+    BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, 0);
 
     bvector<IGeometryPtr> geoms2;
     Bentley::ECN::BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, 0);
