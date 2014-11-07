@@ -7,9 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include "MSXmlBinary\MSXmlBinaryWriter.h"
+#ifdef BuildCGJsonValueBuilder
 #include "BeJsonValueBuilder.h"
-#ifdef BuildBeJsonWriter
-#include "BeJsonWriter.h"
 #endif
 #include "BeCGWriter.h"
 
@@ -39,7 +38,7 @@ void BeXmlCGWriter::WriteJson(Utf8StringR cgBeXml, IGeometryPtr data)
     writer.Emit ("\n}");
     writer.ToString(cgBeXml);
 #else
-    cgBeXml = "{\"WriteJson not supported -- use TryWritJsonValue\"}";
+    cgBeXml = "{\"WriteJson not supported \"}";
 #endif
     }
 
@@ -58,11 +57,12 @@ void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryPtr data)
     delete writer;
     }
     
+#ifdef BuildCGJsonValueBuilder
 bool BeXmlCGWriter::TryWriteJsonValue (Json::Value &value, IGeometryPtr data)
     {
     BeCGJsonValueWriter builder;
     BeCGWriter (builder, false).Write (data);
     return builder.TryPopStack (value);
     }
-    
+#endif    
 END_BENTLEY_ECOBJECT_NAMESPACE
