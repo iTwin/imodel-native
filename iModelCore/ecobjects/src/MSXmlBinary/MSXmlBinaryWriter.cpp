@@ -10,6 +10,161 @@
 #include "MSXmlBinaryWriter.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+// DEFAULT IMPLEMENTATIONS --  verbose xml.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes a text node (plain string as content). 
+BeXmlStatus BeStructuredXmlWriter::WriteNamedText(Utf8CP name, Utf8CP text, bool nameOptional)
+        {
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText (text))
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes a text node (plain string as content). 
+BeXmlStatus BeStructuredXmlWriter::WriteNamedBool(Utf8CP name, bool value, bool nameOptional)
+        {
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        if (value)
+            GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText ("true"))
+        else
+            GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText ("false"))
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
+        }
+        
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes a text node (plain string as content). 
+BeXmlStatus BeStructuredXmlWriter::WriteNamedInt32 (Utf8CP name, int value, bool nameOptional)
+        {
+        char buffer[256];
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        BeStringUtilities::Snprintf (buffer, _countof (buffer), "%d", value);
+        GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText (buffer))
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes a text node (plain string as content). 
+BeXmlStatus BeStructuredXmlWriter::WriteNamedDouble (Utf8CP name, double value, bool nameOptional)
+        {
+        char buffer[256];
+        BeXmlStatus status = BEXML_Success;
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (name, nameOptional, true))
+        BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", value);
+        GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText (buffer))
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (name, nameOptional, true))
+        return status;
+        }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple doubles.
+BeXmlStatus BeStructuredXmlWriter::WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double const *data, size_t n)
+        {
+        BeXmlStatus status = BEXML_Success;        
+        char buffer[256];
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (itemName, itemNameOptional, true))
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", data[i]);
+            if (i > 0)
+                GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText (","))
+            GUARDED_STATUS_ASSIGNMENT (status, m_writer->WriteText (buffer))
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (itemName, itemNameOptional, true))
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple doubles.
+BeXmlStatus BeStructuredXmlWriter::WriteArrayOfBlockedDoubles
+(
+Utf8CP longName,
+Utf8CP shortName,
+Utf8CP itemName,
+bool itemNameOptional,
+double const *data,
+size_t numPerBlock,
+size_t numBlock
+)
+        {
+        BeXmlStatus status = BEXML_Success;        
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementStart (longName, shortName))
+        for (size_t i = 0; status == BEXML_Success && i < numBlock; i++)
+            {
+            WriteBlockedDoubles (itemName, itemNameOptional, data + i * numPerBlock, numPerBlock);
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementEnd (longName, shortName))
+        return status;
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple doubles.
+BeXmlStatus BeStructuredXmlWriter::WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t n)
+        {
+        BeXmlStatus status = BEXML_Success;
+        char buffer[1024];
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementStart (longName, shortName))
+        static int s_breakCount = 5;
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            BeStringUtilities::Snprintf (buffer, _countof (buffer), "%.17G", data[i]);
+            bool doBreak = ((i % s_breakCount) == 0);
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (itemName, itemNameOptional, doBreak))
+            m_writer->WriteText (buffer);
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (itemName, itemNameOptional, doBreak))
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementEnd (longName, shortName))
+        return status;
+        }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz 10/2014
+//---------------------------------------------------------------------------------------
+    //! Writes multiple ints.
+BeXmlStatus BeStructuredXmlWriter::WriteIntArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, int const *data, size_t n)
+        {
+        BeXmlStatus status = BEXML_Success;
+        char buffer[1024];
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementStart (longName, shortName))
+        static int s_breakCount = 10;
+        for (size_t i = 0; status == BEXML_Success && i < n; i++)
+            {
+            BeStringUtilities::Snprintf (buffer, _countof (buffer), "%d", data[i]);
+            bool doBreak = ((i % s_breakCount) == 0);
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementStart (itemName, itemNameOptional, doBreak))
+            m_writer->WriteText (buffer);
+            GUARDED_STATUS_ASSIGNMENT (status, WritePositionalElementEnd (itemName, itemNameOptional, doBreak))
+            }
+        GUARDED_STATUS_ASSIGNMENT (status, WriteArrayElementEnd (longName, shortName))
+        return status;
+        }
+
+
+
+
+
 
 //static
 Utf8CP const MSXmlBinaryWriter::s_defaultNamespace = "http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0";
@@ -27,21 +182,6 @@ BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name)
     return WriteElementStart(name, m_depth == 0 ? s_defaultNamespace : nullptr);
     }
     
-BeXmlStatus MSXmlBinaryWriter::WriteArrayElementStart(Utf8CP longName, Utf8CP shortName)
-    {
-    return WriteElementStart (longName);
-    }
-
-BeXmlStatus MSXmlBinaryWriter::WriteSetElementStart(Utf8CP name)
-    {
-    return WriteElementStart (name);
-    }        
-
-BeXmlStatus MSXmlBinaryWriter::WriteShortElementStart(Utf8CP name)
-    {
-    return WriteElementStart (name);
-    }
-
 BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     {
     StartElement(name, nameSpace);
@@ -135,18 +275,12 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteCommaSeparatedNumerics(Utf8CP text)
-    {
-    return WriteText (text);
-    }
-
-
-BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
+BeXmlStatus MSXmlBinaryWriter::WriteDoubleToken(double data)
     {
     float f;
     float fMax = std::numeric_limits<float>::max();
     if (data >= -fMax && data <= fMax && (f = (float)data) == data)
-        WriteFloatText(f);
+        WriteFloatToken(f);
     else
         {
         StartContent();
@@ -160,11 +294,11 @@ BeXmlStatus MSXmlBinaryWriter::WriteDoubleText(double data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteFloatText(float data)
+BeXmlStatus MSXmlBinaryWriter::WriteFloatToken(float data)
     {
     Int64 l;
     if (data >= std::numeric_limits<Int64>::min() && data <= std::numeric_limits<Int64>::max() && (l = (Int64)data) == data)
-        WriteInt64Text(l);
+        WriteInt64Token(l);
     else
         {
         StartContent();
@@ -178,10 +312,10 @@ BeXmlStatus MSXmlBinaryWriter::WriteFloatText(float data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteInt64Text(Int64 data)
+BeXmlStatus MSXmlBinaryWriter::WriteInt64Token(Int64 data)
     {
     if (data >= std::numeric_limits<Int32>::min() && data <= std::numeric_limits<Int32>::max())
-        return WriteInt32Text((Int32) data);
+        return WriteInt32Token((Int32) data);
     else
         {
         StartContent();
@@ -195,7 +329,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteInt64Text(Int64 data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteInt32Text(Int32 data)
+BeXmlStatus MSXmlBinaryWriter::WriteInt32Token(Int32 data)
     {
     StartContent();
     m_textNodeOffset = (int) m_buffer.size();
@@ -233,7 +367,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteInt32Text(Int32 data)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteBoolText(bool value)
+BeXmlStatus MSXmlBinaryWriter::WriteBoolToken(bool value)
     {
     StartContent();
     m_textNodeOffset = (int) m_buffer.size();
@@ -291,7 +425,7 @@ void MSXmlBinaryWriter::EndStartElement()
 void MSXmlBinaryWriter::WriteEndStartElement(bool isEmpty)
     {
     if (isEmpty)
-        WriteElementEnd();
+        WriteElementEnd();   // We know that our implementation does not use the name here
     }
 
 MSXmlBinaryWriter::Element& MSXmlBinaryWriter::EnterScope()
@@ -320,4 +454,6 @@ void MSXmlBinaryWriter::WriteXmlnsAttribute(Utf8CP ns)
     WriteNode(XmlBinaryNodeType::ShortXmlnsAttribute);
     WriteName(ns);
     }
+    
+     
 END_BENTLEY_ECOBJECT_NAMESPACE
