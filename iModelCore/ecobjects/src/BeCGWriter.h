@@ -876,16 +876,13 @@ void Write (ISolidPrimitiveR primitive)
     }
 
 
-void Write (IGeometryPtr geometry)
+void Write (IGeometryCR geometry)
     {
-    if (!geometry.IsValid ())
-        return;
-
-    switch (geometry->GetGeometryType ())
+    switch (geometry.GetGeometryType ())
         {
         case IGeometry::GeometryType::CurvePrimitive:
             {
-            ICurvePrimitivePtr curvePrimitive = geometry->GetAsICurvePrimitive ();
+            ICurvePrimitivePtr curvePrimitive = geometry.GetAsICurvePrimitive ();
 
             Write (*curvePrimitive);
             return;
@@ -893,7 +890,7 @@ void Write (IGeometryPtr geometry)
 
         case IGeometry::GeometryType::CurveVector:
             {
-            CurveVectorPtr curveVector = geometry->GetAsCurveVector ();
+            CurveVectorPtr curveVector = geometry.GetAsCurveVector ();
 
             Write (*curveVector);
             return;
@@ -901,7 +898,7 @@ void Write (IGeometryPtr geometry)
 
         case IGeometry::GeometryType::SolidPrimitive:
             {
-            ISolidPrimitivePtr solidPrimitive = geometry->GetAsISolidPrimitive ();
+            ISolidPrimitivePtr solidPrimitive = geometry.GetAsISolidPrimitive ();
 
             Write (*solidPrimitive);
             return;
@@ -909,7 +906,7 @@ void Write (IGeometryPtr geometry)
 
         case IGeometry::GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr bSurface = geometry->GetAsMSBsplineSurface ();
+            MSBsplineSurfacePtr bSurface = geometry.GetAsMSBsplineSurface ();
 
             WriteSurface (*bSurface);
             return;
@@ -917,7 +914,7 @@ void Write (IGeometryPtr geometry)
 
         case IGeometry::GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr polyface = geometry->GetAsPolyfaceHeader ();
+            PolyfaceHeaderPtr polyface = geometry.GetAsPolyfaceHeader ();
 
             WritePolyface (*polyface);
             return;

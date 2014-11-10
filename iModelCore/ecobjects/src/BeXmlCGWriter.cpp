@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
+void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryCR data)
     {
     cgBeXml.clear();
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
@@ -27,7 +27,7 @@ void BeXmlCGWriter::Write(Utf8StringR cgBeXml, IGeometryPtr data)
     xmlWriter->ToString(cgBeXml);
     }
 
-void BeXmlCGWriter::WriteJson(Utf8StringR cgBeXml, IGeometryPtr data)
+void BeXmlCGWriter::WriteJson(Utf8StringR cgBeXml, IGeometryCR data)
     {
 #ifdef BuildBeJsonWriter
     cgBeXml.clear();
@@ -42,7 +42,7 @@ void BeXmlCGWriter::WriteJson(Utf8StringR cgBeXml, IGeometryPtr data)
 #endif
     }
 
-void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryPtr data)
+void BeXmlCGWriter::WriteBytes(bvector<byte>& bytes, IGeometryCR data)
     {
 #if defined (_WIN32)
     unsigned int oldFormat = _set_output_format(_TWO_DIGIT_EXPONENT);

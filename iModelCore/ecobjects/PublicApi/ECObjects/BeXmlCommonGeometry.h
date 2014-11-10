@@ -95,18 +95,18 @@ public:
 
     //! Write common geometry xml for an IGeometryPtr object
     //! @param [out] cgBeXml xml string
-    //! @param [in]  data IGeometryPtr common geometry object to be serialized
-    ECOBJECTS_EXPORT static void Write (Utf8StringR cgBeXml, IGeometryPtr data);
+    //! @param [in]  data IGeometryCR common geometry object to be serialized
+    ECOBJECTS_EXPORT static void Write (Utf8StringR cgBeXml, IGeometryCR data);
 
     //! Write common geometry json for an IGeometryPtr object
     //! @param [out] dest json string
-    //! @param [in]  data IGeometryPtr common geometry object to be serialized
-    ECOBJECTS_EXPORT static void WriteJson (Utf8StringR dest, IGeometryPtr data);
+    //! @param [in]  data IGeometryCR common geometry object to be serialized
+    ECOBJECTS_EXPORT static void WriteJson (Utf8StringR dest, IGeometryCR data);
 
     //! Write common geometry binary xml (Microsoft .net) for an IGeometryPtr object
     //! @param [out] bytes binary bytes.
-    //! @param [in]  data IGeometryPtr common geometry object to be serialized
-    ECOBJECTS_EXPORT static void WriteBytes (bvector<byte>& bytes, IGeometryPtr data);
+    //! @param [in]  data IGeometryCR common geometry object to be serialized
+    ECOBJECTS_EXPORT static void WriteBytes (bvector<byte>& bytes, IGeometryCR data);
 
 #ifdef BuildCGJsonValueBuilder
     //! Write to a json value.
