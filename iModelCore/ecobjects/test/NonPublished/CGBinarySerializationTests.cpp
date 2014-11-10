@@ -22,7 +22,7 @@ struct CGBinarySerializationTests : ECTestFixture
 
         bvector<byte> bytes;
         //    BeXmlCGWriter::WriteBytes(bytes, *(originalArc.get()));
-        BeXmlCGWriter::WriteBytes(bytes, geoms[0]);
+        BeXmlCGWriter::WriteBytes(bytes, *geoms[0]);
 
         bvector<IGeometryPtr> geoms2;
         ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes.data(), (int) bytes.size(), geoms2, 0)) << "Failed binary deserialization of " << xml.c_str();
