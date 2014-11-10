@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/DateTimeInfoCustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -178,14 +178,14 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
             expectedResults.clear ();
             expectedResults.push_back (ExpectedResultPerProperty (L"nodatetimeinfo", ExpectedResult ()));
             expectedResults.push_back (ExpectedResultPerProperty (L"emptydatetimeinfo", ExpectedResult ()));
-            expectedResults.push_back (ExpectedResultPerProperty (L"utc", ExpectedResult (DateTime::DATETIMEKIND_Utc)));
-            expectedResults.push_back (ExpectedResultPerProperty (L"unspecified", ExpectedResult (DateTime::DATETIMEKIND_Unspecified)));
-            expectedResults.push_back (ExpectedResultPerProperty (L"local", ExpectedResult (DateTime::DATETIMEKIND_Local)));
+            expectedResults.push_back (ExpectedResultPerProperty (L"utc", ExpectedResult (DateTime::Kind::Utc)));
+            expectedResults.push_back (ExpectedResultPerProperty (L"unspecified", ExpectedResult (DateTime::Kind::Unspecified)));
+            expectedResults.push_back (ExpectedResultPerProperty (L"local", ExpectedResult (DateTime::Kind::Local)));
             expectedResults.push_back (ExpectedResultPerProperty (L"garbagekind", ExpectedResult ()));
-            expectedResults.push_back (ExpectedResultPerProperty (L"dateonly", ExpectedResult (DateTime::DATETIMECOMPONENT_Date)));
+            expectedResults.push_back (ExpectedResultPerProperty (L"dateonly", ExpectedResult (DateTime::Component::Date)));
             expectedResults.push_back (ExpectedResultPerProperty (L"garbagecomponent", ExpectedResult ()));
             expectedResults.push_back (ExpectedResultPerProperty (L"garbagekindgarbagecomponent", ExpectedResult ()));
-            expectedResults.push_back (ExpectedResultPerProperty (L"dateTimeArrayProp", ExpectedResult (DateTime::DATETIMEKIND_Utc)));
+            expectedResults.push_back (ExpectedResultPerProperty (L"dateTimeArrayProp", ExpectedResult (DateTime::Kind::Utc)));
 
             return DateTimeInfoTestFixture::CreateTestSchema (context);
             }
@@ -242,7 +242,7 @@ protected:
         {
         bvector<DateTime> testDateTimes;
         testDateTimes.push_back (DateTime::GetCurrentTimeUtc ());
-        testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 18, 14, 22));
+        testDateTimes.push_back (DateTime (DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22));
         testDateTimes.push_back (DateTime (2013, 2, 18));
 
         for (DateTimeCR testDateTime: testDateTimes)
@@ -480,9 +480,9 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTime)
 
     AssertSetValue (instance, L"nodatetimeinfo", true, true, DateTime::Info ());
     AssertSetValue (instance, L"emptydatetimeinfo", true, true, DateTime::Info ());
-    AssertSetValue (instance, L"utc", false, true, DateTime::Info (DateTime::DATETIMEKIND_Utc, DateTime::DATETIMECOMPONENT_DateTime));
-    AssertSetValue (instance, L"unspecified", false, true, DateTime::Info (DateTime::DATETIMEKIND_Unspecified, DateTime::DATETIMECOMPONENT_DateTime));
-    AssertSetValue (instance, L"dateonly", true, false, DateTime::Info (DateTime::DATETIMEKIND_Unspecified, DateTime::DATETIMECOMPONENT_Date));
+    AssertSetValue (instance, L"utc", false, true, DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime));
+    AssertSetValue (instance, L"unspecified", false, true, DateTime::Info (DateTime::Kind::Unspecified, DateTime::Component::DateAndTime));
+    AssertSetValue (instance, L"dateonly", true, false, DateTime::Info (DateTime::Kind::Unspecified, DateTime::Component::Date));
 
     //wrong values are treated as if the meta data wasn't specified
     AssertSetValue (instance, L"garbagekind", true, true, DateTime::Info ());
@@ -508,10 +508,10 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
     ECValue ticksOnlyValue;
     ticksOnlyValue.SetDateTimeTicks (ceTicks);
     ECValue ticksWithUtc;
-    ticksWithUtc.SetDateTimeTicks (ceTicks, DateTime::Info (DateTime::DATETIMEKIND_Utc, DateTime::DATETIMECOMPONENT_DateTime));
+    ticksWithUtc.SetDateTimeTicks (ceTicks, DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime));
 
     ECValue ticksWithDateOnly;
-    ticksWithDateOnly.SetDateTimeTicks (ceTicks, DateTime::Info (DateTime::DATETIMEKIND_Unspecified, DateTime::DATETIMECOMPONENT_Date));
+    ticksWithDateOnly.SetDateTimeTicks (ceTicks, DateTime::Info (DateTime::Kind::Unspecified, DateTime::Component::Date));
 
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ASSERT_TRUE (instance.IsValid ());
@@ -576,7 +576,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (SUCCESS, stat);
     
     DateTime actualDate = v.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
 
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -588,11 +588,11 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
 
     //test 2: Original date is Unspecified
-    expectedDate = DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 2, 13, 14);
+    expectedDate = DateTime (DateTime::Kind::Unspecified, 2013, 2, 2, 13, 14);
     expectedTicks = 0LL;
     ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (expectedTicks));
 
@@ -601,7 +601,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (SUCCESS, stat);
 
     actualDate = v.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, false);
 
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -613,7 +613,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, false);
 
 
@@ -627,7 +627,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (SUCCESS, stat);
 
     actualDate = v.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
 
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -639,7 +639,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
     EXPECT_EQ (ECOBJECTS_STATUS_Success, ecstat);
 
     actualDate = actualValue.GetDateTime ();
-    EXPECT_EQ (DateTime::DATETIMEKIND_Unspecified, actualDate.GetInfo ().GetKind ());
+    EXPECT_EQ (DateTime::Kind::Unspecified, actualDate.GetInfo ().GetKind ());
     AssertDateTime (expectedDate, actualDate, true);
     }
 
@@ -649,9 +649,9 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
 TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
     {
     bvector<DateTime> testDateTimes;
-    testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Utc, 2013, 2, 18, 14, 22));
-    testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 18, 14, 22));
-    testDateTimes.push_back (DateTime (DateTime::DATETIMEKIND_Local, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back (DateTime (DateTime::Kind::Utc, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back (DateTime (DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back (DateTime (DateTime::Kind::Local, 2013, 2, 18, 14, 22));
     testDateTimes.push_back (DateTime (2013, 2, 18));
 
     ECSchemaReadContextPtr context = NULL;
@@ -665,7 +665,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
 
     for (DateTimeCR testDateTime: testDateTimes)
         {
-        const bool isLocal = testDateTime.GetInfo ().GetKind () == DateTime::DATETIMEKIND_Local;
+        const bool isLocal = testDateTime.GetInfo ().GetKind () == DateTime::Kind::Local;
         ECValue value;
         const BentleyStatus expectedStat = isLocal ? ERROR : SUCCESS;
         EXPECT_EQ (expectedStat, value.SetDateTime (testDateTime)) << "Return value of ECValue::SetDateTime ('" << testDateTime.ToString ().c_str () << "')";
@@ -713,7 +713,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, GetDateTime)
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ASSERT_TRUE (instance.IsValid ());
 
-    DateTime expectedDateTime (DateTime::DATETIMEKIND_Utc, 2013, 2, 18, 14, 28, 34, 1234567);
+    DateTime expectedDateTime (DateTime::Kind::Utc, 2013, 2, 18, 14, 28, 34, 1234567);
 
     AssertGetValue (instance, L"utc", expectedDateTime, true);
     AssertGetValue (instance, L"nodatetimeinfo", expectedDateTime, false);
@@ -727,7 +727,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, GetDateTime)
     instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ASSERT_TRUE (instance.IsValid ());
 
-    expectedDateTime = DateTime (DateTime::DATETIMEKIND_Unspecified, 2013, 2, 18, 14, 28, 34, 1234567);
+    expectedDateTime = DateTime (DateTime::Kind::Unspecified, 2013, 2, 18, 14, 28, 34, 1234567);
 
     AssertGetValue (instance, L"unspecified", expectedDateTime, true);
     AssertGetValue (instance, L"nodatetimeinfo", expectedDateTime, true);
@@ -768,8 +768,8 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, DateTimeArrayRoundtrip)
     const UInt32 expectedArraySize = 3;
     DateTime expected [expectedArraySize];
     expected[0] = DateTime::GetCurrentTimeUtc ();
-    expected[1] = DateTime (DateTime::DATETIMEKIND_Utc, 2012, 1, 1, 13, 14);
-    expected[2] = DateTime (DateTime::DATETIMEKIND_Utc, 2011, 1, 1, 13, 14);
+    expected[1] = DateTime (DateTime::Kind::Utc, 2012, 1, 1, 13, 14);
+    expected[2] = DateTime (DateTime::Kind::Utc, 2011, 1, 1, 13, 14);
 
     instance->AddArrayElements (propertyName, expectedArraySize);
     for (UInt32 i = 0; i < expectedArraySize; i++)
@@ -818,7 +818,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     ECObjectsStatus expectedSuccess [expectedArraySize];
     expected[0] = DateTime::GetCurrentTimeUtc ();
     expectedSuccess[0] = ECOBJECTS_STATUS_Success;
-    expected[1] = DateTime (DateTime::DATETIMEKIND_Unspecified, 2012, 1, 1, 13, 14);
+    expected[1] = DateTime (DateTime::Kind::Unspecified, 2012, 1, 1, 13, 14);
     expectedSuccess[1] = ECOBJECTS_STATUS_DataTypeMismatch;
     expected[2] = DateTime (2011, 1, 1);
     expectedSuccess[2] = ECOBJECTS_STATUS_DataTypeMismatch;
