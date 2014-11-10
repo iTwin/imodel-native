@@ -177,12 +177,12 @@ MSXmlBinaryWriter::MSXmlBinaryWriter()
     m_textNodeOffset = -1;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name)
+BeXmlStatus MSXmlBinaryWriter::_WriteElementStart(Utf8CP name)
     {
-    return WriteElementStart(name, m_depth == 0 ? s_defaultNamespace : nullptr);
+    return _WriteElementStart(name, m_depth == 0 ? s_defaultNamespace : nullptr);
     }
     
-BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
+BeXmlStatus MSXmlBinaryWriter::_WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     {
     StartElement(name, nameSpace);
     WriteNode(XmlBinaryNodeType::ShortElement);
@@ -190,7 +190,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteElementStart(Utf8CP name, Utf8CP nameSpace)
     return BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteElementEnd()
+BeXmlStatus MSXmlBinaryWriter::_WriteElementEnd()
     {
     if (WriteState::Element == m_writeState)
         {
@@ -249,7 +249,7 @@ void MSXmlBinaryWriter::WriteName(Utf8CP name)
         }
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteText(WCharCP text)
+BeXmlStatus MSXmlBinaryWriter::_WriteText(WCharCP text)
     {
     if (WString::IsNullOrEmpty (text))
         return BEXML_ArgumentError;
@@ -260,7 +260,7 @@ BeXmlStatus MSXmlBinaryWriter::WriteText(WCharCP text)
     return WriteText((Utf8Char const*) value.c_str());
     }
 
-BeXmlStatus MSXmlBinaryWriter::WriteText(Utf8CP text)
+BeXmlStatus MSXmlBinaryWriter::_WriteText(Utf8CP text)
     {
     StartContent();
 

@@ -256,22 +256,22 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         void ExitScope();
 
         void AutoComplete(WriteState writeState);
+        //! Writes the start of an element node with the provided name and namespace
+        BeXmlStatus _WriteElementStart (Utf8CP name, Utf8CP nameSpace);
+
+    protected:
+        //! Writes the start of an element node with the provided name.
+        BeXmlStatus _WriteElementStart (Utf8CP name) override;
+        //! Writes the end of an element node.
+        BeXmlStatus _WriteElementEnd () override;
+
+        BeXmlStatus _WriteText(Utf8CP text) override;
+        BeXmlStatus _WriteText(WCharCP text) override;
+
 
     public:
         //! Default constructor
         ECOBJECTS_EXPORT MSXmlBinaryWriter();
-
-        //! Writes the start of an element node with the provided name.
-        ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name) override;
-
-        //! Writes the start of an element node with the provided name and namespace
-        ECOBJECTS_EXPORT BeXmlStatus WriteElementStart (Utf8CP name, Utf8CP nameSpace);
-
-        //! Writes the end of an element node.
-        ECOBJECTS_EXPORT BeXmlStatus WriteElementEnd () override;
-
-        BeXmlStatus WriteText(Utf8CP text) override;
-        BeXmlStatus WriteText(WCharCP text) override;
 
         BeXmlStatus WriteDoubleToken(double data);
         BeXmlStatus WriteFloatToken(float data);
@@ -279,11 +279,7 @@ struct MSXmlBinaryWriter : IBeXmlWriter
         BeXmlStatus WriteInt32Token(Int32 data);
         BeXmlStatus WriteBoolToken(bool value);
 
-
         void GetBytes(bvector<byte>& bytes);
-        
-    public:        
-        
         
     };
 

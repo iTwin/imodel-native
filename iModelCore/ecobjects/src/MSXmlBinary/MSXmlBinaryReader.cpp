@@ -514,7 +514,8 @@ MSXmlBinaryReader::MSXmlBinaryReader(byte* bytes, int length)
     m_value.AssignOrClear(nullptr);
     }
 
-IBeXmlReader::NodeType MSXmlBinaryReader::MoveToContent()
+// IBeXmlReader implementation
+IBeXmlReader::NodeType MSXmlBinaryReader::_MoveToContent()
     {
     do 
         {
@@ -537,7 +538,7 @@ IBeXmlReader::NodeType MSXmlBinaryReader::MoveToContent()
             {
 
             }
-        } while (Read());
+        } while (_Read());
 
     return (IBeXmlReader::NodeType) m_node->NodeType();
     }
@@ -552,7 +553,7 @@ bool MSXmlBinaryReader::IsStartElement()
     return true;
     }
 
-IBeXmlReader::ReadResult MSXmlBinaryReader::Read()
+IBeXmlReader::ReadResult MSXmlBinaryReader::_Read()
     {
     if (m_isTextWithEndElement)
         {
@@ -567,14 +568,14 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::Read()
     return ReadNode();
     }
 
-IBeXmlReader::ReadResult MSXmlBinaryReader::ReadTo(IBeXmlReader::NodeType nodeType)
+IBeXmlReader::ReadResult MSXmlBinaryReader::_ReadTo(IBeXmlReader::NodeType nodeType)
     {
     if (NODE_TYPE_Element == nodeType)
         {
         if (m_node->NodeType() == MSXmlBinaryReader::XmlNodeType::Element)
             ReadNode();
 
-        return MoveToContent() == IBeXmlReader::NodeType::NODE_TYPE_Element ? READ_RESULT_Success : READ_RESULT_Error;
+        return _MoveToContent() == IBeXmlReader::NodeType::NODE_TYPE_Element ? READ_RESULT_Success : READ_RESULT_Error;
         }
     else if (NODE_TYPE_EndElement == nodeType)
         {
@@ -592,7 +593,7 @@ IBeXmlReader::ReadResult MSXmlBinaryReader::ReadTo(IBeXmlReader::NodeType nodeTy
     return (m_offset == m_length ? READ_RESULT_Error : READ_RESULT_Success);
     }
 
-BeXmlStatus MSXmlBinaryReader::GetCurrentNodeName (Utf8StringR nodeName)
+BeXmlStatus MSXmlBinaryReader::_GetCurrentNodeName (Utf8StringR nodeName)
     {
     if (Utf8String::IsNullOrEmpty(m_localName.c_str()))
         {
@@ -602,19 +603,25 @@ BeXmlStatus MSXmlBinaryReader::GetCurrentNodeName (Utf8StringR nodeName)
     return BeXmlStatus::BEXML_Success;
     }
 
-IBeXmlReader::NodeType MSXmlBinaryReader::GetCurrentNodeType()
+IBeXmlReader::NodeType MSXmlBinaryReader::_GetCurrentNodeType()
     {
     return (IBeXmlReader::NodeType) m_node->NodeType();
     }
 
-BeXmlStatus MSXmlBinaryReader::GetCurrentNodeValue(Utf8StringR value)
+BeXmlStatus MSXmlBinaryReader::_GetCurrentNodeValue(Utf8StringR value)
     {
     value = m_node->ValueAsString();
     m_value.AssignOrClear(value.c_str());
     return BeXmlStatus::BEXML_Success;
     }
 
-BeXmlStatus MSXmlBinaryReader::ReadToNextAttribute(Utf8StringP name, Utf8StringP value)
+BeXmlStatus MSXmlBinaryReader::_GetCurrentNodeValue(WStringR value)
+    {
+    BeStringUtilities::Utf8ToWChar (value, m_node->ValueAsString().c_str());
+    return BeXmlStatus::BEXML_Success;
+    }
+
+BeXmlStatus MSXmlBinaryReader::_ReadToNextAttribute(Utf8StringP name, Utf8StringP value)
     {
     for (XmlAttributeNode node : m_attributeNodes)
         {
@@ -628,16 +635,33 @@ BeXmlStatus MSXmlBinaryReader::ReadToNextAttribute(Utf8StringP name, Utf8StringP
     return BeXmlStatus::BEXML_Success;
     }
 
-IBeXmlReader::ReadResult MSXmlBinaryReader::ReadToEndOfElement()
+BeXmlStatus MSXmlBinaryReader::_ReadToNextAttribute(Utf8StringP name, WStringP value)
     {
-    if (m_node->NodeType() != XmlNodeType::EndElement && MoveToContent() != IBeXmlReader::NodeType::NODE_TYPE_EndElement)
+    for (XmlAttributeNode node : m_attributeNodes)
+        {
+        if (node.GetLocalNameR().CompareTo(name->c_str()) == 0)
+            {
+            if (value)
+                {
+                Utf8String attr = node.ValueAsString();
+                BeStringUtilities::Utf8ToWChar (*value, attr.c_str());
+                }
+            break;
+            }
+        }
+    return BeXmlStatus::BEXML_Success;
+    }
+
+IBeXmlReader::ReadResult MSXmlBinaryReader::_ReadToEndOfElement()
+    {
+    if (m_node->NodeType() != XmlNodeType::EndElement && _MoveToContent() != IBeXmlReader::NodeType::NODE_TYPE_EndElement)
         {
         return IBeXmlReader::ReadResult::READ_RESULT_Error;
         }
     return IBeXmlReader::ReadResult::READ_RESULT_Success;
     }
 
-BeXmlStatus MSXmlBinaryReader::ReadContentAsString(Utf8StringR str)
+BeXmlStatus MSXmlBinaryReader::_ReadContentAsString(Utf8StringR str)
     {
     // The .NET code does the following:
     //string value;

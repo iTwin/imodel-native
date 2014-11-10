@@ -174,37 +174,48 @@ struct MSXmlBinaryReader : public IBeXmlReader
 
         int ReadUInt8();
 
+    protected:
+        //! Advances (reads) to the next node.
+        IBeXmlReader::ReadResult _Read () override;
+
+        //! Advances (reads) to the next node of the provided type.
+        IBeXmlReader::ReadResult _ReadTo (NodeType) override;
+
+        IBeXmlReader::ReadResult _ReadTo (NodeType, Utf8CP name, WStringP value) override { return IBeXmlReader::ReadResult::READ_RESULT_Error; } // WIP: Not implemented yet.
+
+        //! Advances (reads) to the start the end of this element node.
+        IBeXmlReader::ReadResult _ReadToEndOfElement() override;
+
+        //! Gets the type of the current node.
+        IBeXmlReader::NodeType _GetCurrentNodeType () override;
+
+        //! Gets the name of the current node.
+        BeXmlStatus _GetCurrentNodeName (Utf8StringR) override;
+
+        //! Gets the value of the current node.
+        //! @note This only peeks at the value of the current node. This will not, for example, return the value of any child text nodes of an element node. If you want this utility, @see GetCurrentNodeValue.
+        BeXmlStatus _GetCurrentNodeValue(Utf8StringR) override;
+
+        //! Gets the value of the current node.
+        //! @note This only peeks at the value of the current node. This will not, for example, return the value of any child text nodes of an element node. If you want this utility, @see GetCurrentNodeValue.
+        BeXmlStatus _GetCurrentNodeValue(WStringR) override;
+
+        //! Advances (reads) to the next attribute in the current element node, optionally providing its name and value. If the current node is not an element, this automatically fails.
+        BeXmlStatus _ReadToNextAttribute (Utf8StringP name, Utf8StringP value) override;
+
+        //! Advances (reads) to the next attribute in the current element node, optionally providing its name and value. If the current node is not an element, this automatically fails.
+        BeXmlStatus _ReadToNextAttribute (Utf8StringP name, WStringP value) override;
+
+        IBeXmlReader::NodeType _MoveToContent() override;
+
+        //! Reads the text content at the current position as a String object.
+        BeXmlStatus _ReadContentAsString(Utf8StringR str) override;
+
     public:
         ECOBJECTS_EXPORT MSXmlBinaryReader(byte* bytes, int length);
 
         bool IsStartElement();
 
-        //! Advances (reads) to the next node.
-        ECOBJECTS_EXPORT IBeXmlReader::ReadResult Read () override;
-
-        //! Advances (reads) to the next node of the provided type.
-        ECOBJECTS_EXPORT IBeXmlReader::ReadResult ReadTo (NodeType) override;
-
-        //! Advances (reads) to the start the end of this element node.
-        ECOBJECTS_EXPORT IBeXmlReader::ReadResult ReadToEndOfElement() override;
-
-        //! Gets the type of the current node.
-        ECOBJECTS_EXPORT IBeXmlReader::NodeType GetCurrentNodeType () override;
-
-        //! Gets the name of the current node.
-        ECOBJECTS_EXPORT BeXmlStatus GetCurrentNodeName (Utf8StringR) override;
-
-        //! Gets the value of the current node.
-        //! @note This only peeks at the value of the current node. This will not, for example, return the value of any child text nodes of an element node. If you want this utility, @see GetCurrentNodeValue.
-        ECOBJECTS_EXPORT BeXmlStatus GetCurrentNodeValue(Utf8StringR) override;
-
-        //! Advances (reads) to the next attribute in the current element node, optionally providing its name and value. If the current node is not an element, this automatically fails.
-        ECOBJECTS_EXPORT BeXmlStatus ReadToNextAttribute (Utf8StringP name, Utf8StringP value) override;
-
-        ECOBJECTS_EXPORT IBeXmlReader::NodeType MoveToContent() override;
-
-        //! Reads the text content at the current position as a String object.
-        ECOBJECTS_EXPORT BeXmlStatus ReadContentAsString(Utf8StringR str) override;
 
     };
 
