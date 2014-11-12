@@ -1241,11 +1241,11 @@ struct ECRelationshipConstraintClass : NonCopyableClass
         //! Move assignment operator of ECRelationshipConstraintClass.
         const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs);
         //! Returns reference of current Constraint ECClass
-        ECClassR GetClass() const;
+        ECOBJECTS_EXPORT ECClassR GetClass() const;
         //! Returns vector of Contraint ECClass keys
-        const std::vector<WString>& GetKeys() const;
+        ECOBJECTS_EXPORT const std::vector<WString>& GetKeys() const;
         //! Adds constraint key if it is already not in list.
-        void AddKey(WCharCP key);
+        ECOBJECTS_EXPORT void AddKey(WCharCP key);
     };
 struct ECRelationshipConstraintClassList : NonCopyableClass
     {
