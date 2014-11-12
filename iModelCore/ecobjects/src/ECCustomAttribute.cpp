@@ -673,12 +673,14 @@ bool includeSupplementalAttributes
 )
     {
     m_customAttributes = new ECCustomAttributeCollection();
-    for (IECInstancePtr ptr: container.m_primaryCustomAttributes)
-        m_customAttributes->push_back(ptr);
-
-    if (includeSupplementalAttributes)
+    if (includeSupplementalAttributes && container.m_consolidatedCustomAttributes.size() > 0)
         {
-        for (IECInstancePtr ptr: container.m_consolidatedCustomAttributes)
+        for (IECInstancePtr ptr : container.m_consolidatedCustomAttributes)
+            m_customAttributes->push_back(ptr);
+        }
+    else
+        {
+        for (IECInstancePtr ptr : container.m_primaryCustomAttributes)
             m_customAttributes->push_back(ptr);
         }
 

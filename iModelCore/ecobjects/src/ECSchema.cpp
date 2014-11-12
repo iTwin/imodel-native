@@ -1087,16 +1087,16 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
         ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
         if (NULL != relClass)
             {
-            for (ECClassP target: relClass->GetTarget().GetClasses())
+            for (auto target : relClass->GetTarget().GetConstraintClasses())
                 {
-                if ((ECSchemaP) &(target->GetSchema()) == foundSchema.get())
+                if ((ECSchemaP) &(target->GetClass().GetSchema()) == foundSchema.get())
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
                 }
-            for (ECClassP source: relClass->GetSource().GetClasses())
+            for (auto source : relClass->GetSource().GetConstraintClasses())
                 {
-                if ((ECSchemaP) &(source->GetSchema()) == foundSchema.get())
+                if ((ECSchemaP) &(source->GetClass().GetSchema()) == foundSchema.get())
                     {
                     return ECOBJECTS_STATUS_SchemaInUse;
                     }
@@ -1770,11 +1770,11 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
     ECRelationshipClassP relClass = const_cast<ECRelationshipClassP>(ecClass.GetRelationshipClassCP());
     if (NULL != relClass)
         {
-        for (ECClassP source: relClass->GetSource().GetClasses())
-            WriteClass(parentNode, *source, context);
+        for (auto source : relClass->GetSource().GetConstraintClasses())
+            WriteClass(parentNode, source->GetClass(), context);
 
-        for (ECClassP target: relClass->GetTarget().GetClasses())
-            WriteClass(parentNode, *target, context);
+        for (auto target : relClass->GetTarget().GetConstraintClasses())
+            WriteClass(parentNode, target->GetClass(), context);
         }
     WritePropertyDependencies(parentNode, ecClass, context);
     WriteCustomAttributeDependencies(parentNode, ecClass, context);

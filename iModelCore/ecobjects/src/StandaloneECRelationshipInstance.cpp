@@ -207,9 +207,9 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    for (ECClassCP source: GetRelationshipClass().GetSource().GetClasses())
+    for (auto source : GetRelationshipClass().GetSource().GetConstraintClasses())
         {
-        if (source->GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(source))
+        if (source->GetClass().GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(&source->GetClass()))
             {
             m_source = instance;
             return;
@@ -261,9 +261,9 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
     if (NULL == instance)
         return;
 
-    for (ECClassCP target: this->GetRelationshipClass().GetTarget().GetClasses())
+    for (auto target : this->GetRelationshipClass().GetTarget().GetConstraintClasses())
         {
-        if (target->GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(target))
+        if (target->GetClass().GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(&target->GetClass()))
             {
             m_target = instance;
             return;
