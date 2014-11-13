@@ -217,8 +217,6 @@ static void InitParseTable ()
         s_parseTable[Utf8String("DgnRotationalSweep")] = &ReadIDgnRotationalSweep;
         s_parseTable[Utf8String("DgnRuledSweep")] = &ReadIDgnRuledSweep;
         s_parseTable[Utf8String("TransitionSpiral")] = &ReadITransitionSpiral;
-        s_parseTable[Utf8String("ExtendedObject")] = &ReadExtendedObject;
-        s_parseTable[Utf8String("ExtendedData")] = &ReadExtendedData;
         }
     }
 
@@ -774,15 +772,6 @@ bool ReadTagAngle (CharCP name, Angle &value)
     }
 
 #include "nativeCGReaderH.h"
-bool ReadExtendedObject(IGeometryPtr &result)
-    {
-    result = nullptr;
-    if (CurrentElementNameMatch("ExtendedObject"))
-        ReadToChildOrEnd();
-
-    return false;
-    }
-
 //<ExtendedObject xmlns="http://www.bentley.com/schemas/Bentley.ECSerializable.1.0">
 //    <Coordinate xmlns="http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0">
 //        <xyz>11.1,22.2,33.3</xyz>
@@ -794,21 +783,19 @@ bool ReadExtendedObject(IGeometryPtr &result)
 //    </ExtendedData>
 //</ExtendedObject>
 
-bool ReadExtendedData(IGeometryPtr &result)
+bool ReadExtendedData(bvector<bvector<Utf8String>>& extendedDataEntries)
     {
-    if (!CurrentElementNameMatch("ExtendedData"))
-        return false;
-
     ReadToChildOrEnd();
 
     // Should be 'TransientLookupCollection'
     if (!CurrentElementNameMatch("TransientLookupCollection"))
         return false;
-        
+
     ReadToChildOrEnd();
     // Next, iterate over each entry
     for (;IsStartElement ();)
         {
+        bvector<Utf8String> entry;
         Utf8String keyValue;
         Utf8String keyName("key");
         m_reader.ReadToNextAttribute (&keyName, &keyValue);
@@ -816,14 +803,17 @@ bool ReadExtendedData(IGeometryPtr &result)
         Utf8String typeValue;
         Utf8String typeCode("typeCode");
         m_reader.ReadToNextAttribute (&typeCode, &typeValue);
-        
+
         Utf8String content;
         m_reader.Read();
 
         m_reader.MoveToContent();
         m_reader.ReadContentAsString(content);
         m_reader.MoveToContent();
-
+        entry.push_back(keyValue);
+        entry.push_back(typeValue);
+        entry.push_back(content);
+        extendedDataEntries.push_back(entry);
         // m_reader.ReadEndElement()
             {
             m_reader.ReadToEndOfElement();
@@ -831,13 +821,67 @@ bool ReadExtendedData(IGeometryPtr &result)
             }
         m_reader.MoveToContent();
         }
-
+    ReadEndElement(); // Entry
+    ReadEndElement(); // TransientLookupCollection
     return false;
+    }
+
+bmap<IGeometry*, bvector<bvector<Utf8String>>> m_extendedData;
+void ReadExtendedObject(bvector<IGeometryPtr> &geometry)
+    {
+    if (!CurrentElementNameMatch("ExtendedObject"))
+        return;
+
+    ReadToChildOrEnd();
+
+    ParseMethod parseMethod = s_parseTable[m_currentElementName];
+    IGeometryPtr result;
+    if (parseMethod != nullptr)
+        {
+        if (!(this->*parseMethod)(result))
+            return;
+        geometry.push_back (result);
+        }
+
+    if (!CurrentElementNameMatch("ExtendedData"))
+        return;
+
+    bvector<bvector<Utf8String>> dataEntries;
+    ReadExtendedData(dataEntries);
+    m_extendedData[result.get()] = dataEntries;
+    m_reader.ReadToEndOfElement();
+    ReadEndElement();
+    }
+
+void ReadExtendedObject(IGeometryPtr &geometry)
+    {
+    if (!CurrentElementNameMatch("ExtendedObject"))
+        return;
+
+    ReadToChildOrEnd();
+
+    ParseMethod parseMethod = s_parseTable[m_currentElementName];
+    if (parseMethod != nullptr)
+        {
+        if (!(this->*parseMethod)(geometry))
+            return;
+        }
+
+    if (!CurrentElementNameMatch("ExtendedData"))
+        return;
+
+    bvector<bvector<Utf8String>> dataEntries;
+    ReadExtendedData(dataEntries);
+    m_extendedData[geometry.get()] = dataEntries;
+    ReadEndElement();
     }
 
 
 bool ReadTag_AnyGeometry (IGeometryPtr &value)
     {
+    if (CurrentElementNameMatch("ExtendedObject"))
+        ReadExtendedObject(value);
+
     ParseMethod parseMethod = s_parseTable[m_currentElementName];
     if (parseMethod != nullptr)
         {
@@ -996,35 +1040,55 @@ bool ReadTag_AnyICurvePrimitive (CharCP name, ICurvePrimitivePtr &value)
     }
 
 
-public: bool TryParse (bvector<IGeometryPtr> &geometry, size_t maxDepth)
+public: bool TryParse (bvector<IGeometryPtr> &geometry, bmap<IGeometry*, bvector<bvector<Utf8String>>> &extendedData, size_t maxDepth)
     {
     size_t count = 0;
-
-    for (;IsStartElement ();)
+    if (CurrentElementNameMatch("ExtendedObject"))
         {
-        ParseMethod parseMethod = s_parseTable[m_currentElementName];
-        if (parseMethod == nullptr)
+        ReadExtendedObject(geometry);
+        }
+    else 
+        {
+        for (;IsStartElement ();)
             {
-            if (maxDepth > 0)
+            ParseMethod parseMethod = s_parseTable[m_currentElementName];
+            if (parseMethod == nullptr)
                 {
-                ReadToElement ();
-                if (!TryParse (geometry, maxDepth - 1))
-                  break;
-                AdvanceAfterContentExtraction ();
+                if (maxDepth > 0)
+                    {
+                    ReadToElement ();
+                    if (!TryParse (geometry, extendedData, maxDepth - 1))
+                      break;
+                    AdvanceAfterContentExtraction ();
+                    }
+                break;
                 }
-            break;
-            }
-        else
-            {
-            IGeometryPtr result;
-            if ((this->*parseMethod)(result))
+            else
                 {
-                geometry.push_back (result);
-                count++;
+                IGeometryPtr result;
+                if ((this->*parseMethod)(result))
+                    {
+                    geometry.push_back (result);
+                    count++;
+                    }
                 }
             }
         }
-    return count > 0;
+
+    bmap<IGeometry*, bvector<bvector<Utf8String>>>::const_iterator extendedDataIterator;
+    bmap<IGeometry*, bvector<bvector<Utf8String>>>::const_iterator extendedDataIterator2;
+
+    for (extendedDataIterator = m_extendedData.begin(); extendedDataIterator != m_extendedData.end(); extendedDataIterator++)
+        {
+        IGeometry* geometryObj = extendedDataIterator->first;
+        extendedDataIterator2 = extendedData.find(geometryObj);
+        if (extendedDataIterator2 != extendedData.end())
+            continue;
+        bvector<bvector<Utf8String>> entries = extendedDataIterator->second;
+        extendedData[geometryObj] = entries;
+        }
+
+    return geometry.size() > 0;
     }
 };
 
@@ -1071,7 +1135,7 @@ void ShowAllNodeTypes (Utf8CP beXmlCGString)
     printf ("\n</XMLNodes>");
     }
 
-bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, size_t maxDepth)
+bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> &geometry, bmap<IGeometry*, bvector<bvector<Utf8String>>> &extendedData, size_t maxDepth)
     {
     static int s_preview = 0;
     if (s_preview)
@@ -1080,15 +1144,15 @@ bool BeXmlCGStreamReader::TryParse (Utf8CP beXmlCGString, bvector<IGeometryPtr> 
     IGeometryCGFactory factory;
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString (status, beXmlCGString);
     BeXmlCGStreamReaderImplementation parser (*reader, factory);
-    return parser.TryParse(geometry, maxDepth);
+    return parser.TryParse(geometry, extendedData, maxDepth);
     }
 
-bool BeXmlCGStreamReader::TryParse (byte* buffer, int bufferLength, bvector<IGeometryPtr> &geometry, size_t maxDepth)
+bool BeXmlCGStreamReader::TryParse (byte* buffer, int bufferLength, bvector<IGeometryPtr> &geometry, bmap<IGeometry*, bvector<bvector<Utf8String>>> &extendedData, size_t maxDepth)
     {
     IGeometryCGFactory factory;
     MSXmlBinaryReader reader(buffer, bufferLength);
     BeXmlCGStreamReaderImplementation parser (reader, factory);
-    return parser.TryParse(geometry, maxDepth);
+    return parser.TryParse(geometry, extendedData, maxDepth);
     }
     
 BeXmlCGStreamReaderImplementation::ParseDictionary BeXmlCGStreamReaderImplementation::s_parseTable;
