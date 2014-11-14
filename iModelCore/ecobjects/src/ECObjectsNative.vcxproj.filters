@@ -33,17 +33,6 @@
     <Filter Include="ECUnits\Source Files">
       <UniqueIdentifier>{3118501a-d447-465a-9b9f-7d593da60f89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="MSXml">
-      <UniqueIdentifier>{021a9dbf-529c-449f-8844-b8fc353b791b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="MSXml\Header Files">
-      <UniqueIdentifier>{91a1df33-dd4b-4060-a121-9a303ce46ce1}</UniqueIdentifier>
-      <Extensions>*.h</Extensions>
-    </Filter>
-    <Filter Include="MSXml\Source Files">
-      <UniqueIdentifier>{3c3b3bc3-c768-45f5-877b-2fceadaa1fef}</UniqueIdentifier>
-      <Extensions>*.cpp</Extensions>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp">
@@ -142,12 +131,6 @@
     <ClCompile Include="ECcontext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BeXmlCGReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BeXmlCGWriter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ECDBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -161,18 +144,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DateTimeInfoAccessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MSXmlBinary\MSXmlBinaryWriter.cpp">
-      <Filter>MSXml\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MSXmlBinary\MSXmlBinaryReader.cpp">
-      <Filter>MSXml\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BeXmlCGStreamReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ExtendableSerializationHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -275,18 +246,6 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECUnits\Units.h">
       <Filter>ECUnits\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MSXmlBinary\MSXmlBinaryWriter.h">
-      <Filter>MSXml\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MSXmlBinary\MSXmlEnums.h">
-      <Filter>MSXml\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MSXmlBinary\MSXmlBinaryReader.h">
-      <Filter>MSXml\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

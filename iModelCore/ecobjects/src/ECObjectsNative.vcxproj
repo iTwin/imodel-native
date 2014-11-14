@@ -62,9 +62,6 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BeXmlCGReader.cpp" />
-    <ClCompile Include="BeXmlCGStreamReader.cpp" />
-    <ClCompile Include="BeXmlCGWriter.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
@@ -85,8 +82,6 @@
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="MemoryInstanceSupport.cpp" />
-    <ClCompile Include="MSXmlBinary\MSXmlBinaryReader.cpp" />
-    <ClCompile Include="MSXmlBinary\MSXmlBinaryWriter.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
     <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="presentation\auicommand.cpp" />
@@ -104,7 +99,6 @@
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
@@ -138,12 +132,6 @@
     <ClInclude Include="FileUtilities.h" />
     <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
-    <ClInclude Include="MSXmlBinary\MSXmlBinaryReader.h" />
-    <ClInclude Include="MSXmlBinary\MSXmlEnums.h" />
-    <ClInclude Include="MSXmlBinary\MSXmlBinaryWriter.h" />
-    <ClInclude Include="nativeCGClasses.h" />
-    <ClInclude Include="nativeCGFactoryH.h" />
-    <ClInclude Include="nativeCGReaderH.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ecobjects.mke" />

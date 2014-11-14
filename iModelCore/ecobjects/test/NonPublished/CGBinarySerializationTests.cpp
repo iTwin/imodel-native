@@ -6,9 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
+#include <Geom/Serialization/BeXmlCommonGeometry.h>
 #include "TestFixture.h"
-
-#include "../../src/MSXmlBinary/MSXmlBinaryWriter.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -138,7 +137,7 @@ TEST (CGSerializationTests, DeserializeExtendedData)
 
     bvector<IGeometryPtr> geoms2;
     bmap<IGeometry*, bvector<bvector<Utf8String>>> extendedData2;
-    ASSERT_TRUE(Bentley::ECN::BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, extendedData2, 0)) << "Failed binary deserialization of extended data: " << xml.c_str();
+    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, extendedData2, 0)) << "Failed binary deserialization of extended data: " << xml.c_str();
     ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms2.size() << " for " << xml.c_str();
 
     }
