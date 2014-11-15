@@ -2471,29 +2471,36 @@ ECObjectsStatus ECDBuffer::CopyPropertiesFromBuffer (ECDBufferCR srcBuffer)
 
     // copy struct instances, updating their identifiers if necessary
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    PropertyLayoutCP propLayout;
+    PropertyLayoutCP srcPropLayout;
     UInt32 nProperties = classLayout.GetPropertyCount();
     for (UInt32 propIdx = 0; propIdx < nProperties; propIdx++)
         {
-        if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutByIndex (propLayout, propIdx) || !propLayout->GetTypeDescriptor().IsStructArray())
+        if (ECOBJECTS_STATUS_Success != srcBuffer.GetClassLayout().GetPropertyLayoutByIndex (srcPropLayout, propIdx) || !srcPropLayout->GetTypeDescriptor().IsStructArray())
             continue;
 
-        ArrayCount nEntries = srcBuffer.GetReservedArrayCount (*propLayout);
+        // NB: The respective buffers may have different ClassLayout pointers. Each expects to be passed a PropertyLayout from its own ClassLayout object.
+        PropertyLayoutCP myPropLayout;
+        if (&classLayout == &srcBuffer.GetClassLayout())
+            myPropLayout = srcPropLayout;
+        else if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutByIndex (myPropLayout, propIdx) || !myPropLayout->GetTypeDescriptor().IsStructArray())
+            continue;
+
+        ArrayCount nEntries = srcBuffer.GetReservedArrayCount (*srcPropLayout);
         for (ArrayCount arrayIdx = 0; arrayIdx < nEntries; arrayIdx++)
             {
             ECValue srcStructVal;
-            if (ECOBJECTS_STATUS_Success == srcBuffer._GetStructArrayValueFromMemory (srcStructVal, *propLayout, arrayIdx) && !srcStructVal.IsNull())
+            if (ECOBJECTS_STATUS_Success == srcBuffer._GetStructArrayValueFromMemory (srcStructVal, *srcPropLayout, arrayIdx) && !srcStructVal.IsNull())
                 {
                 // The ECDBuffer we copied from source to 'this' contains struct ID values relevant only to source buffer
                 // So clear out the struct ID entry in 'this' first.
                 // WIP_FUSION: Assumption that struct IDs are always integers and 0 == null struct
                 //  There seems to be no reason not to enforce that.
                 ECValue nullStructIdValue (0);
-                status = SetPrimitiveValueToMemory (nullStructIdValue, *propLayout, true, arrayIdx);
+                status = SetPrimitiveValueToMemory (nullStructIdValue, *myPropLayout, true, arrayIdx);
                 if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)  // useless redundant return value...
                     break;
 
-                if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, *propLayout, arrayIdx)))
+                if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, *myPropLayout, arrayIdx)))
                     {
                     // This useless return value is a constant pain in the...
                     if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
