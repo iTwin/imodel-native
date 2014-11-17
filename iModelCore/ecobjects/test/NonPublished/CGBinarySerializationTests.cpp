@@ -6,9 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
+#include <Geom/Serialization/BeXmlCommonGeometry.h>
 #include "TestFixture.h"
-
-#include "../../src/MSXmlBinary/MSXmlBinaryWriter.h"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -17,16 +16,18 @@ struct CGBinarySerializationTests : ECTestFixture
     void Roundtrip(Utf8String xml, bool useStreamReader=false)
         {
         bvector<IGeometryPtr> geoms;
-            ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, 0)) << "Failed to deserialize string: " << xml.c_str();
+        bmap<IGeometry*, BeExtendedData> extendedData;
+        ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0)) << "Failed to deserialize string: " << xml.c_str();
         ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
 
         bvector<byte> bytes;
         //    BeXmlCGWriter::WriteBytes(bytes, *(originalArc.get()));
-        BeXmlCGWriter::WriteBytes(bytes, *geoms[0]);
+        BeXmlCGWriter::WriteBytes(bytes, *geoms[0], &extendedData);
 
         bvector<IGeometryPtr> geoms2;
-        ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes.data(), (int) bytes.size(), geoms2, 0)) << "Failed binary deserialization of " << xml.c_str();
-        ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms.size() << " for " << xml.c_str();
+        bmap<IGeometry*, BeExtendedData> extendedData2;
+        ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes.data(), (int) bytes.size(), geoms2, extendedData2, 0)) << "Failed binary deserialization of " << xml.c_str();
+        ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms2.size() << " for " << xml.c_str();
         ASSERT_TRUE(geoms[0]->IsSameStructureAndGeometry(*geoms2[0])) << "Did not get same structure for " << xml.c_str();
         }
     };
@@ -70,7 +71,8 @@ TEST (CGSerializationTests, DeserializeEllipticDisc)
     {
     Utf8String xml("<EllipticDisk xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\"><placement><origin>0,0,0</origin><vectorZ>0,0,1</vectorZ><vectorX>1,0,0</vectorX></placement><radiusA>1</radiusA><radiusB>1.5</radiusB></EllipticDisk>");
     bvector<IGeometryPtr> geoms;
-    BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, 0);
+    bmap<IGeometry*, BeExtendedData> extendedData;
+    BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0);
 
     IGeometryPtr geometry = geoms[0];
     ASSERT_TRUE(geoms.size () == 1);
@@ -116,10 +118,80 @@ TEST (CGSerializationTests, DeserializeExtendedData)
                      0x6E, 0x67, 0x01, 0x01, 0x01};
 
     bvector<IGeometryPtr> geoms;
-    BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, 0);
+    bmap<IGeometry*, BeExtendedData> extendedData;
+    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0)) << "Failed to deserialize string: " << xml.c_str();
+    ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
+    bmap<IGeometry*, BeExtendedData>::const_iterator extendedDataIterator;
+
+    for (extendedDataIterator = extendedData.begin(); extendedDataIterator != extendedData.end(); extendedDataIterator++)
+        {
+        IGeometry* geometryObj = extendedDataIterator->first;
+        ASSERT_TRUE(NULL != geometryObj);
+        printf("Geometry type: %d\n", geometryObj->GetGeometryType());
+        BeExtendedData entries = extendedDataIterator->second;
+        for (auto const& entry: entries)
+            {
+            printf("%s: %s of type (%s)\n", entry.Key.c_str(), entry.Value.c_str(), entry.Type.c_str());
+            }
+        }
 
     bvector<IGeometryPtr> geoms2;
-    Bentley::ECN::BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, 0);
+    bmap<IGeometry*, BeExtendedData> extendedData2;
+    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(bytes, 325, geoms2, extendedData2, 0)) << "Failed binary deserialization of extended data: " << xml.c_str();
+    ASSERT_EQ(1, geoms2.size()) << "Expected 1 geometry object returned for binary deserialization but got " << geoms2.size() << " for " << xml.c_str();
 
     }
+
+TEST (CGSerializationTests, DeserializeNestedExtendedData)
+    {
+    Utf8String xml("<CurveChain xmlns=\"http://www.bentley.com/schemas/Bentley.Geometry.Common.1.0\">\
+                        <ListOfCurve>\
+                            <ExtendedObject xmlns=\"http://www.bentley.com/schemas/Bentley.ECSerializable.1.0\">\
+                                <LineSegment>\
+                                    <startPoint>0,0,0</startPoint>\
+                                    <endPoint>1,0,0</endPoint>\
+                                </LineSegment>\
+                                <ExtendedData>\
+                                    <TransientLookupCollection>\
+                                        <Entry key=\"length\" typeCode=\"Double\">3.14</Entry>\
+                                        <Entry key=\"name\" typeCode=\"String\">test string</Entry>\
+                                    </TransientLookupCollection>\
+                                </ExtendedData>\
+                            </ExtendedObject>\
+                            <CircularArc>\
+                                <placement>\
+                                    <origin>1,2,0</origin>\
+                                    <vectorZ>0,0,1</vectorZ>\
+                                    <vectorX>1,0,0</vectorX>\
+                                </placement>\
+                                <radius>1</radius>\
+                                <startAngle>-90</startAngle>\
+                                <sweepAngle>180</sweepAngle>\
+                            </CircularArc>\
+                        </ListOfCurve>\
+                </CurveChain>");
+    bvector<IGeometryPtr> geoms;
+    bmap<IGeometry*, BeExtendedData> extendedData;
+    ASSERT_TRUE(BeXmlCGStreamReader::TryParse(xml.c_str(), geoms, extendedData, 0)) << "Failed to deserialize string: " << xml.c_str();
+    ASSERT_EQ(1, geoms.size()) << "Expected 1 geometry object returned for string deserialization but got " << geoms.size() << " for " << xml.c_str();
+
+    Utf8String beCgXml;
+    BeXmlCGWriter::Write(beCgXml, *geoms[0], &extendedData);
+
+    bmap<IGeometry*, BeExtendedData>::const_iterator extendedDataIterator;
+
+    for (extendedDataIterator = extendedData.begin(); extendedDataIterator != extendedData.end(); extendedDataIterator++)
+        {
+        IGeometry* geometryObj = extendedDataIterator->first;
+        ASSERT_TRUE(NULL != geometryObj);
+        printf("Geometry type: %d\n", geometryObj->GetGeometryType());
+        BeExtendedData entries = extendedDataIterator->second;
+        for (auto const& entry: entries)
+            {
+            printf("%s: %s of type (%s)\n", entry.Key.c_str(), entry.Value.c_str(), entry.Type.c_str());
+            }
+        }
+
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
