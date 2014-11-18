@@ -1,0 +1,91 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Thumbnails/Thumbnails.mke $
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName = Thumbnails
+baseDir	= $(_MakeFilePath)
+
+policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
+%include mdl.mki
+
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/Thumbnails/
+
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+CCompPDBName = $(appName)
+
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#   Define __SHELLEXTUTIL_BUILD__ symbol, so that class declarations and function decls will
+#           know to specify dllexport, rather than dllimport (the default)
+#               !No other makefile should define this symbol!
+#----------------------------------------------------------------------
+nameToDefine=__THUMBNAILS_BUILD__
+%include cdefapnd.mki
+
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+# Create PCH
+# CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+# $(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h
+
+# Use PCH
+# CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)dllmain$(oext) : $(baseDir)dllmain.cpp ${MultiCompileDepends}
+
+$(o)ThumbnailsProvider$(oext) : $(baseDir)ThumbnailsProvider.cpp $(PublicApiDir)ThumbnailsProvider.h ${MultiCompileDepends}
+
+$(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
+
+$(o)ThumbnailUtil$(oext) : $(baseDir)ThumbnailUtil.cpp $(baseDir)ThumbnailUtil.h ${MultiCompileDepends}
+
+$(o)RasterFileFormats$(oext) : $(baseDir)RasterFileFormats.cpp $(PublicApiDir)RasterFileFormats.h ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NO_SIGN	    = 1
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)IppGraLibs.lib \
+                       $(ContextSubpartsLibs)IppUtlLibs.lib \
+                       $(ContextSubpartsLibs)$(libprefix)Bentley.lib \
+                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator.lib \
+                       $(ContextSubpartsLibs)PdfLibInitializer.lib \
+                       $(ContextSubpartsLibs)PointCloudCore.lib \
+                       $(ContextSubpartsLibs)BentleyGeom.lib
+
+%include dlmlink.mki
+
+

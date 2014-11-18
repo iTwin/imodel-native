@@ -1,0 +1,30 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Thumbnails/Thumbnails.prewire.mke $
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+appName = Thumbnails
+baseDir		= $(_MakeFilePath)
+
+policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
+%include mdl.mki
+
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+
+# Wire in my own public header files.
+always:
+   @CreateSymLinks.py -d"$(PublicApiDir)Thumbnails=$(SrcRoot)RealityModFramework\PublicAPI\Thumbnails" 
+    

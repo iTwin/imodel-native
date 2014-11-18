@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="ThumbnailsHeader" BMakeFile="Thumbnails\Thumbnails.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="Thumbnails" />
+        </Bindings>
+    </Part>
+
+    
+    <Part Name="Thumbnails" BMakeFile="Thumbnails\Thumbnails.mke">
+      <SubPart PartName="ThumbnailsHeader" />
+      <SubPart PartName="DllsUnicode" PartFile="ImagePP" Repository="ImagePP" />
+      <SubPart PartName="PointCloudCore"  PartFile="PointCloudCore" Repository="PointCloudCore" />
+      <Bindings>
+          <Libs>Delivery/$(stlibprefix)Thumbnails$(stlibext)</Libs>
+          <Files ProductDirectoryName="RealityModFrameworkBin">delivery/Thumbnails.dll</Files>
+      </Bindings>
+    </Part>
+
+    <!--<Part Name="ThumbnailsTester" BMakeFile="Thumbnails\Tests\ThumbnailsTester.mke">
+        <SubPart PartName="Thumbnails"/>
+        <Bindings>
+            <Files ProductDirectoryName="ImageppAppsBin">delivery/ThumbnailsTester.exe</Files>
+        </Bindings>
+    </Part>-->
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    
+    <ProductDirectoryList ListName="RealityModFrameworkDirList" >
+        <ProductDirectory Name="PublicAPI"                  Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
+        <ProductDirectory Name="Libs"                       Deliver="false" />
+        <ProductDirectory Name="OracleNativeAssemblies"     Deliver="false"/>
+        <ProductDirectory Name="GdalData"                   Deliver="false"/>
+        <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
+        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
+
+        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
+
+        <ProductDirectory Name="RealityModFrameworkBin"     Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies"    Path=""/>
+        <ProductDirectory Name="ImagePPAssemblies"          Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"  Path=""/>
+        <ProductDirectory Name="AdobeAssemblies"            Path="" Deliver="false"/>
+        <ProductDirectory Name="AdobeResource"              Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="PPNativeAssemblies"         Path="" />
+        <ProductDirectory Name="PdfLibInitNativeAssemblies" Path="" />
+        <ProductDirectory Name="GeomNativeAssemblies"       Path="" />
+        <ProductDirectory Name="GeoCoordData"               Path="GeoCoordinateData" Deliver="false"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" Deliver="false"/>
+
+        <ProductDirectory Name="GeomNativeAssemblies" Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies" Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies32Ext" Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
+        <ProductDirectory Name="PointCloudCoreAssemblies" Path=""/>
+
+        <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
+
+    </ProductDirectoryList>
+
+
+    <Product Name="RealityModFramework">
+        <SubPart PartName="Thumbnails"/>
+        <!--<SubPart PartName="ThumbnailsTester"/>-->
+        <Directories DirectoryListName="RealityModFrameworkDirList" />
+    </Product>
+
+</BuildContext>

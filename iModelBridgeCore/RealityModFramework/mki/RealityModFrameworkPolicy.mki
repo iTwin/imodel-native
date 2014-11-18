@@ -1,0 +1,63 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: mki/RealityModFrameworkPolicy.mki $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+OPTIMIZE_FOR_SPEED=1
+CPP_EXCEPTION_USE_ASYNC=1
+BUILD_NO_STACK_CHECK = 1
+
+%include $(SharedMki)DefinePublicApiIncludes.mki
+
+%include $(SrcBsiCommon)PublicSDK/DefaultToolSet.mki
+
+#----------------------------------------------------------
+# Common Preprocessor definition.
+#----------------------------------------------------------
+%if defined(IPP_USING_STATIC_LIBRARIES)
+    nameToDefine=IPP_USING_STATIC_LIBRARIES
+    %include cdefapnd.mki
+%endif
+
+#use /EHa 
+nameToDefine = CPP_EXCEPTION_USE_ASYNC
+%include cdefapnd.mki
+
+
+
+#-----------------------------------------------------------
+# Source Dirs
+#-----------------------------------------------------------
+
+#----------------------------------------------------------
+# outdirs
+#----------------------------------------------------------
+o = $(OutputRootDir)build/RealityModFramework/$(appName)/
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+ContextSubPartsAssembliesDir  = $(BuildContext)SubParts/Assemblies/
+ContextDeliveryDir            = $(BuildContext)Delivery/
+ContextSubpartsLibs           = $(BuildContext)SubParts/Libs/
+
+ASSEMBLY_CONTEXT_LOCATION   = $(ContextDeliveryDir)
+
+#----------------------------------------------------------
+# Compile and link settings
+#----------------------------------------------------------
+%include $(SharedMki)CommonCompileLinkPolicy.mki

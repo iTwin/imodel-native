@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/AssertRealityModFrameworkPolicy.mki $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+SystemPolicyMki     = $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki = $(SrcRoot)RealityModFramework/mki/RealityModFrameworkPolicy.mki
