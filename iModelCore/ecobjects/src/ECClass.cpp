@@ -1836,8 +1836,11 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
         }
     return listOfClasses;
     }
-   
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false) :m_relClass(relClass), m_isMultiple(isMultiple)
+    {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2378,7 +2381,17 @@ ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintC
     m_constraintClasses.push_back(std::move(newConstraintClass));
     return ECOBJECTS_STATUS_Success;
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) : m_ecClass(&ecClass)
+    {}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs) :
+m_ecClass(rhs.m_ecClass), m_keys(std::move(rhs.m_keys))
+    { }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -1222,22 +1222,26 @@ public:
     //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
 };
-
+//=======================================================================================
+//! This class describes the relationship source or target cardinality. It also holds relationships key properties
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================
 struct ECRelationshipConstraintClass : NonCopyableClass
     {
+    //__PUBLISH_SECTION_END__
     private:
         std::vector<WString> m_keys;
         ECClassCP m_ecClass;
+    //__PUBLISH_SECTION_START__
+
     public:
         //! Constructor of ECRelationshipConstraintClass require ECClass name.
         //! @param ecClass is name of Constraint class.
-        ECRelationshipConstraintClass(ECClassCR ecClass) : m_ecClass(&ecClass)
-            { }
+        ECRelationshipConstraintClass(ECClassCR ecClass);
 
         //! Move constructor of ECRelationshipConstraintClass.
-        ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs) :
-            m_ecClass(rhs.m_ecClass), m_keys(std::move(rhs.m_keys))
-            { }
+        ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs);
         //! Move assignment operator of ECRelationshipConstraintClass.
         const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs);
         //! Returns reference of current Constraint ECClass
@@ -1247,17 +1251,24 @@ struct ECRelationshipConstraintClass : NonCopyableClass
         //! Adds constraint key if it is already not in list.
         ECOBJECTS_EXPORT void AddKey(WCharCP key);
     };
+//=======================================================================================
+//! This class holds the list of source or target Constraint on ECRelationships
+//! @bsiclass
+//=======================================================================================
 struct ECRelationshipConstraintClassList : NonCopyableClass
     {
     std::vector<std::unique_ptr<ECRelationshipConstraintClass>> m_constraintClasses;
     struct iterator : public std::iterator<std::forward_iterator_tag, ECRelationshipConstraintClassCP>
         {
-
+        //__PUBLISH_SECTION_END__
         friend struct ECRelationshipConstraintClassList;// TODO: specify begin and end functions;
+
         private:
             std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator m_iterator;
         private:
             iterator(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x);
+        //__PUBLISH_SECTION_START__
+
         public:
             ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator->()const; //!< Returns the value at the current location
             ECOBJECTS_EXPORT iterator&                           operator++(); //!< Increments the iterator
@@ -1265,18 +1276,19 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
             ECOBJECTS_EXPORT bool                                operator==(iterator const& rhs) const; //!< Checks for equality
             ECOBJECTS_EXPORT ECRelationshipConstraintClassCP     operator* () const; //!< Returns the value at the current location
         };
+    //__PUBLISH_SECTION_END__
     private:
 
         ECRelationshipClassP m_relClass;
         bool m_isMultiple;
+   //__PUBLISH_SECTION_START__
     public:
-        ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false) :m_relClass(relClass), m_isMultiple(isMultiple)
-            {}
+        ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false);
         //! Returns true if the constraint allows for a variable number of classes
         ECOBJECTS_EXPORT bool GetIsMultiple() const;
         ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
         ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
-        ECRelationshipConstraintClassCP operator[](size_t x)const; //!< Array operator overloaded
+        ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator[](size_t x)const; //!< Array operator overloaded
         //! Adds the specified class to the constraint.
         //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
         //! will replace the current class applied to the constraint with the new class.
