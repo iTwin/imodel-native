@@ -1839,7 +1839,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false) :m_relClass(relClass), m_isMultiple(isMultiple)
+ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple) :m_relClass(relClass), m_isMultiple(isMultiple)
     {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
