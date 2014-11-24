@@ -34,7 +34,8 @@ libsUsed = \
         $(BuildContext)SubParts/Libs/ECObjects.lib \
         $(BuildContext)SubParts/Libs/Bentley.lib \
         $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
-        $(BuildContext)SubParts/Libs/BentleyGeom.lib
+        $(BuildContext)SubParts/Libs/BentleyGeom.lib \
+        $(BuildContext)SubParts/Libs/GeomLibsSerialization.lib
 
 #----------------------------------------------------------------------
 #       Create output directories

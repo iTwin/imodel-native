@@ -64,6 +64,7 @@
     <Part Name="ECObjectsTestsDependencies">
         <SubPart PartName="google_gtest"         PartFile="gtest"                   Repository="util-gtest" />
         <SubPart PartName="StandardSchemas"      PartFile="ecstandards"             Repository="ecstandards"/>
+        <SubPart PartName="GeomlibsSerialization" PartFile="GeomLibs" Repository="GeomLibs" />
         <SubPart PartName="Logging" /> 
         <SubPart PartName="ECObjectsNative" />
         <SubPart PartName="ECObjectsTestsSeedData"/>
