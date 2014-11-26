@@ -1257,17 +1257,32 @@ struct ECRelationshipConstraintClass : NonCopyableClass
 //=======================================================================================
 struct ECRelationshipConstraintClassList : NonCopyableClass
     {
+    //__PUBLISH_SECTION_END__
+
+    private:
     std::vector<std::unique_ptr<ECRelationshipConstraintClass>> m_constraintClasses;
-    struct iterator : public std::iterator<std::forward_iterator_tag, ECRelationshipConstraintClassCP>
+    //__PUBLISH_SECTION_START__
+    
+    public:
+    struct iterator
         {
-        //__PUBLISH_SECTION_END__
         friend struct ECRelationshipConstraintClassList;// TODO: specify begin and end functions;
 
+        public:
+            struct Impl;
+
         private:
-            std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator m_iterator;
+            Impl *m_pimpl;
+        //__PUBLISH_SECTION_END__
+
         private:
             iterator(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x);
         //__PUBLISH_SECTION_START__
+
+        public:
+            iterator(const iterator &);
+            iterator& operator=(const iterator & rhs);
+            iterator();
 
         public:
             ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator->()const; //!< Returns the value at the current location
@@ -1275,6 +1290,7 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
             ECOBJECTS_EXPORT bool                                operator!=(iterator const& rhs) const; //!< Checks for inequality
             ECOBJECTS_EXPORT bool                                operator==(iterator const& rhs) const; //!< Checks for equality
             ECOBJECTS_EXPORT ECRelationshipConstraintClassCP     operator* () const; //!< Returns the value at the current location
+            ECOBJECTS_EXPORT ~iterator();
         };
     //__PUBLISH_SECTION_END__
     private:
@@ -1299,6 +1315,8 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
         ECOBJECTS_EXPORT ECObjectsStatus            clear();
         //! Removes specified ECClass from Constraint class vector
         ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECClassCR);
+        ~ECRelationshipConstraintClassList();
+           
     };
 
 

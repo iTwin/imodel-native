@@ -2262,17 +2262,52 @@ bool ECClass::Is (WCharCP schemaname, WCharCP classname) const
 
     return false;
     }
+
+
+struct ECRelationshipConstraintClassList::iterator::Impl
+    {
+    std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator m_iterator;
+    Impl(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator iterator)
+        {
+        m_iterator = iterator;
+        }
+
+    };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator::iterator(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x)
-:m_iterator(x) {}
+    {
+    m_pimpl = new Impl(x);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator::operator = (ECRelationshipConstraintClassList::iterator const& rhs)
+    {
+    this->m_pimpl->m_iterator = rhs.m_pimpl->m_iterator;
+    return *this;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::iterator(const ECRelationshipConstraintClassList::iterator & it)
+    {
+    m_pimpl = it.m_pimpl;
+    } 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::iterator()
+    {
+    m_pimpl->m_iterator;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator:: operator++()
     {
-    ++m_iterator;
+    ++m_pimpl->m_iterator;
     return *this;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -2280,28 +2315,36 @@ ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraintClassList::iterator::operator==(const iterator& rhs)const
     {
-    return m_iterator == rhs.m_iterator;
+    return m_pimpl->m_iterator == rhs.m_pimpl->m_iterator;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraintClassList::iterator::operator!=(const iterator& rhs)const
     {
-    return m_iterator != rhs.m_iterator;
+    return m_pimpl->m_iterator != rhs.m_pimpl->m_iterator;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::iterator::operator*()const
     {
-    return m_iterator->get();
+    return m_pimpl->m_iterator->get();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::~iterator()
+    {
+    delete m_pimpl;
+    m_pimpl = nullptr;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::iterator::operator->()const
     {
-    return m_iterator->get();
+    return m_pimpl->m_iterator->get();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
@@ -2315,7 +2358,8 @@ ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::b
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::end()const
     {
-    return iterator(m_constraintClasses.end());
+    auto itor = iterator(m_constraintClasses.end());
+    return itor;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
@@ -2380,6 +2424,9 @@ ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintC
     classConstraint = newConstraintClass.get();
     m_constraintClasses.push_back(std::move(newConstraintClass));
     return ECOBJECTS_STATUS_Success;
+    }
+ECRelationshipConstraintClassList::~ECRelationshipConstraintClassList()
+    {
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
