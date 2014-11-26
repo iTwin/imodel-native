@@ -2356,8 +2356,7 @@ ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::b
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::end()const
     {
-    auto itor = iterator(m_constraintClasses.end());
-    return itor;
+    return iterator(m_constraintClasses.end());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
