@@ -2300,7 +2300,7 @@ ECRelationshipConstraintClassList::iterator::iterator(const ECRelationshipConstr
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator::iterator()
     {
-    m_pimpl->m_iterator;
+    //m_pimpl->m_iterator;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
