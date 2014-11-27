@@ -1245,7 +1245,7 @@ struct ECRelationshipConstraintClass : NonCopyableClass
         //! Move assignment operator of ECRelationshipConstraintClass.
         const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs);
         //! Returns reference of current Constraint ECClass
-        ECOBJECTS_EXPORT ECClassR GetClass() const;
+        ECOBJECTS_EXPORT ECClassCR GetClass() const;
         //! Returns vector of Contraint ECClass keys
         ECOBJECTS_EXPORT const std::vector<WString>& GetKeys() const;
         //! Adds constraint key if it is already not in list.

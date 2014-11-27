@@ -1832,7 +1832,7 @@ const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
     ECConstraintClassesList listOfClasses;
     for (auto const &constraintClassIterator : m_constraintClasses)
         {
-        listOfClasses.push_back(&constraintClassIterator->GetClass());
+        listOfClasses.push_back (const_cast<ECClassP>(&constraintClassIterator->GetClass ()));
         }
     return listOfClasses;
     }
@@ -2263,72 +2263,107 @@ bool ECClass::Is (WCharCP schemaname, WCharCP classname) const
     return false;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                            Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
 struct ECRelationshipConstraintClassList::iterator::Impl
     {
-    std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator m_iterator;
-    Impl(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator iterator)
-        {
-        m_iterator = iterator;
-        }
+    typedef std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator const_iterator;
+    private:
+        const_iterator m_iterator;
 
+    public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+        Impl (const_iterator& iterator)
+            :m_iterator (iterator)
+            {
+            }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    const_iterator const& GetIterator () const { return m_iterator; }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    const_iterator& GetIteratorR ()  { return m_iterator; }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Impl& operator = (Impl& rhs)
+        {
+        m_iterator = rhs.GetIterator();
+        return *this;
+        }
     };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator::iterator(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x)
+ECRelationshipConstraintClassList::iterator::iterator (std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x)
+:m_pimpl (new Impl (x))
     {
-    m_pimpl = new Impl(x);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::iterator(const ECRelationshipConstraintClassList::iterator & it)
+:m_pimpl (new Impl (it.m_pimpl->GetIteratorR()))
+    {
+    } 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator::operator = (ECRelationshipConstraintClassList::iterator const& rhs)
     {
-    this->m_pimpl->m_iterator = rhs.m_pimpl->m_iterator;
+    *(this->m_pimpl) =  *(rhs.m_pimpl);
     return *this;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator::iterator(const ECRelationshipConstraintClassList::iterator & it)
-    {
-    m_pimpl = it.m_pimpl;
-    } 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator::iterator()
     {}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator:: operator++()
     {
-    ++m_pimpl->m_iterator;
+    ++(m_pimpl->GetIteratorR());
     return *this;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraintClassList::iterator::operator==(const iterator& rhs)const
     {
-    return m_pimpl->m_iterator == rhs.m_pimpl->m_iterator;
+    return m_pimpl->GetIteratorR () == rhs.m_pimpl->GetIteratorR ();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraintClassList::iterator::operator!=(const iterator& rhs)const
     {
-    return m_pimpl->m_iterator != rhs.m_pimpl->m_iterator;
+    return m_pimpl->GetIteratorR () != rhs.m_pimpl->GetIteratorR ();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::iterator::operator*()const
     {
-    return m_pimpl->m_iterator->get();
+    return m_pimpl->GetIteratorR ()->get ();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2337,13 +2372,15 @@ ECRelationshipConstraintClassList::iterator::~iterator()
     delete m_pimpl;
     m_pimpl = nullptr;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::iterator::operator->()const
     {
-    return m_pimpl->m_iterator->get();
+    return m_pimpl->GetIteratorR ()->get ();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2351,6 +2388,7 @@ ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::b
     {
     return iterator(m_constraintClasses.begin());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2358,6 +2396,7 @@ ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::e
     {
     return iterator(m_constraintClasses.end());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2365,6 +2404,7 @@ ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::operator[](si
     {
     return m_constraintClasses.at(x).get();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2373,6 +2413,7 @@ ECObjectsStatus ECRelationshipConstraintClassList::clear()
     m_constraintClasses.clear();
     return ECObjectsStatus::ECOBJECTS_STATUS_Success;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2389,6 +2430,7 @@ ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constainClas
 
     return ECOBJECTS_STATUS_ClassNotFound;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2422,20 +2464,27 @@ ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintC
     m_constraintClasses.push_back(std::move(newConstraintClass));
     return ECOBJECTS_STATUS_Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClassList::~ECRelationshipConstraintClassList()
     {
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) : m_ecClass(&ecClass)
     {}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs) :
 m_ecClass(rhs.m_ecClass), m_keys(std::move(rhs.m_keys))
     { }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2445,13 +2494,15 @@ const ECRelationshipConstraintClass & ECRelationshipConstraintClass::operator = 
     m_keys = std::move(rhs.m_keys);
     return *this;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassR ECRelationshipConstraintClass::GetClass() const
+ECClassCR ECRelationshipConstraintClass::GetClass() const
     {
-    return const_cast < ECClassR > (*m_ecClass);
+    return *m_ecClass;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2459,6 +2510,7 @@ const std::vector<WString>& ECRelationshipConstraintClass::GetKeys() const
     {
     return m_keys;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
