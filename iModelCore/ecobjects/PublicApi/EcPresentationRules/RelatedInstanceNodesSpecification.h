@@ -2,12 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
+#pragma once
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/ChildNodeSpecification.h>
 #include <ECPresentationRules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -32,6 +35,7 @@ not ECInstance node!
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         bool                       m_groupByClass;
         bool                       m_groupByRelationship;
@@ -44,7 +48,6 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         WString                    m_relationshipClassNames;
         WString                    m_relatedClassNames;
 
-
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP               _GetXmlElementName ();
@@ -55,6 +58,7 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RelatedInstanceNodesSpecification ();
@@ -113,3 +117,5 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

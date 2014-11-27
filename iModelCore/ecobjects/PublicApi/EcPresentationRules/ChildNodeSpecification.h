@@ -5,12 +5,16 @@
 |  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+typedef bvector<struct ChildNodeRule*> ChildNodeRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ChildNodeSpecifications.
@@ -18,6 +22,7 @@ Base class for all ChildNodeSpecifications.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ChildNodeSpecification
     {
+//__PUBLISH_SECTION_END__
     private:
         int                m_priority;
         int                m_id;
@@ -46,6 +51,8 @@ struct ChildNodeSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) = 0;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
     public:
         //! Destructor.
         ECOBJECTS_EXPORT virtual                      ~ChildNodeSpecification (void);
@@ -92,3 +99,5 @@ struct ChildNodeSpecification
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

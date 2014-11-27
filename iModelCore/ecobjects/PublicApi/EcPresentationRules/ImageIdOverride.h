@@ -2,11 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ImageIdOverride.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/PresentationRule.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -17,6 +21,7 @@ generation algorithm.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ImageIdOverride : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString m_imageIdExpression;
 
@@ -30,6 +35,7 @@ struct ImageIdOverride : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ImageIdOverride ();
@@ -42,3 +48,5 @@ struct ImageIdOverride : public PresentationRule
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */
