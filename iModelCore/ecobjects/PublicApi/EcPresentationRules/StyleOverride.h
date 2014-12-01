@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/StyleOverride.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,6 +18,7 @@ Node style override rule implementation. This rule is used to override default n
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct StyleOverride : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString m_foreColor;
         WString m_backColor;
@@ -31,6 +34,7 @@ struct StyleOverride : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void     _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT StyleOverride ();
@@ -50,3 +54,5 @@ struct StyleOverride : public PresentationRule
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */
