@@ -48,6 +48,7 @@ EC_TYPEDEFS(ArrayECProperty);
 EC_TYPEDEFS(ECPropertyIterable);
 EC_TYPEDEFS(ECClassContainer);
 EC_TYPEDEFS(ECClass);
+EC_TYPEDEFS(ECRelationshipConstraintClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipCardinality);
