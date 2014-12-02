@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: privmki/AssertDgnPlatformPolicy.mki $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki=${SrcRoot}/DgnPlatform/privmki/DgnPlatformPolicy.mki
+

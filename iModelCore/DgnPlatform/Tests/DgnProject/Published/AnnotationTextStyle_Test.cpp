@@ -1,0 +1,219 @@
+//-------------------------------------------------------------------------------------- 
+//     $Source: Tests/DgnProject/Published/AnnotationTextStyle_Test.cpp $
+//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//-------------------------------------------------------------------------------------- 
+
+#include "DgnHandlersTests.h"
+#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+class AnnotationTextStyleTest : public GenericDgnModelTestFixture
+{
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                                   Jeff.Marker     05/2014
+    //---------------------------------------------------------------------------------------
+    public: AnnotationTextStyleTest () :
+        GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+        {
+        }
+
+}; // AnnotationTextStyleTest
+
+//---------------------------------------------------------------------------------------
+// Verifies the mapping between AnnotationTextStyleProperty and data type in AnnotationTextStylePropertyBag by ensuring it does not assert.
+// Higher level AnnotationTextStyle tests provide otherwise good coverage for AnnotationTextStylePropertyBag because styles uses a bag for their underlying storage.
+// @bsimethod                                                   Jeff.Marker     05/2014
+//---------------------------------------------------------------------------------------
+TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
+    {
+    AnnotationTextStylePropertyBagPtr data = AnnotationTextStylePropertyBag::Create();
+
+    data->SetIntegerProperty(AnnotationTextStyleProperty::ColorId, 2);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::FontId, 2);
+    data->SetRealProperty(AnnotationTextStyleProperty::Height, 2.0);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 2);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSubScript, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSubScript, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSuperScript, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsSuperScript, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, 1);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, (UInt32)AnnotationStackedFractionType::DiagonalBar);
+    data->SetRealProperty(AnnotationTextStyleProperty::WidthFactor, 2.0);
+    }
+
+#define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
+    Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
+    Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
+    UInt32 colorId = 11;                                                                        STYLE_PTR->SetColorId(colorId);\
+    UInt32 fontId = 21;                                                                         STYLE_PTR->SetFontId(fontId);\
+    double height = 31.31;                                                                      STYLE_PTR->SetHeight(height);\
+    bool isBold = true;                                                                         STYLE_PTR->SetIsBold(isBold);\
+    bool isItalic = true;                                                                       STYLE_PTR->SetIsItalic(isItalic);\
+    bool isSubScript = true;                                                                    STYLE_PTR->SetIsSubScript(isSubScript);\
+    bool isSuperScript = true;                                                                  STYLE_PTR->SetIsSuperScript(isSuperScript);\
+    bool isUnderlined = true;                                                                   STYLE_PTR->SetIsUnderlined(isUnderlined);\
+    AnnotationStackedFractionType fractionType = AnnotationStackedFractionType::DiagonalBar;    STYLE_PTR->SetStackedFractionType(fractionType);\
+    double widthFactor = 41.41;                                                                 STYLE_PTR->SetWidthFactor(widthFactor);
+
+#define VERIFY_DATA_1(STYLE_PTR)\
+    EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
+    EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
+    EXPECT_TRUE(colorId == STYLE_PTR->GetColorId());\
+    EXPECT_TRUE(fontId == STYLE_PTR->GetFontId());\
+    EXPECT_TRUE(height == STYLE_PTR->GetHeight());\
+    EXPECT_TRUE(isBold == STYLE_PTR->IsBold());\
+    EXPECT_TRUE(isItalic == STYLE_PTR->IsItalic());\
+    EXPECT_TRUE(isSubScript == STYLE_PTR->IsSubScript());\
+    EXPECT_TRUE(isSuperScript == STYLE_PTR->IsSuperScript());\
+    EXPECT_TRUE(isUnderlined == STYLE_PTR->IsUnderlined());\
+    EXPECT_TRUE(fractionType == STYLE_PTR->GetStackedFractionType());\
+    EXPECT_TRUE(widthFactor == STYLE_PTR->GetWidthFactor());
+
+//---------------------------------------------------------------------------------------
+// Creates a style and tests accessors.
+// @bsimethod                                                   Jeff.Marker     05/2014
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+
+    //.............................................................................................
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
+    ASSERT_TRUE(style.IsValid());
+
+    // Basics
+    EXPECT_TRUE(&project == &style->GetDgnProjectR());
+    EXPECT_TRUE(!style->GetId().IsValid()); // Cannot call SetId directly from published API.
+
+    // Defaults
+    EXPECT_TRUE(style->GetName().empty());
+    EXPECT_TRUE(style->GetDescription().empty());
+    EXPECT_TRUE(0 == style->GetColorId());
+    EXPECT_TRUE(0 == style->GetFontId());
+    EXPECT_TRUE(1.0 == style->GetHeight());
+    EXPECT_TRUE(!style->IsBold());
+    EXPECT_TRUE(!style->IsItalic());
+    EXPECT_TRUE(!style->IsSubScript());
+    EXPECT_TRUE(!style->IsSuperScript());
+    EXPECT_TRUE(!style->IsUnderlined());
+    EXPECT_TRUE(AnnotationStackedFractionType::HorizontalBar == style->GetStackedFractionType());
+    EXPECT_TRUE(1.0 == style->GetWidthFactor());
+
+    // Set/Get round-trip
+    DECLARE_AND_SET_DATA_1(style);
+    VERIFY_DATA_1(style);
+    }
+
+//---------------------------------------------------------------------------------------
+// Creates and clones a style.
+// @bsimethod                                                   Jeff.Marker     05/2014
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextStyleTest, DeepCopy)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+
+    //.............................................................................................
+    AnnotationTextStylePtr style = AnnotationTextStyle::Create(project);
+    ASSERT_TRUE(style.IsValid());
+
+    DECLARE_AND_SET_DATA_1(style);
+
+    //.............................................................................................
+    AnnotationTextStylePtr clonedStyle = style->Clone();
+    ASSERT_TRUE(clonedStyle.IsValid());
+    ASSERT_TRUE(style.get() != clonedStyle.get());
+    
+    EXPECT_TRUE(&project == &clonedStyle->GetDgnProjectR());
+    EXPECT_TRUE(style->GetId() == clonedStyle->GetId());
+    VERIFY_DATA_1(clonedStyle);
+    }
+
+//---------------------------------------------------------------------------------------
+// Verifies persistence in the style table.
+// @bsimethod                                                   Jeff.Marker     05/2014
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextStyleTest, TableReadWrite)
+    {
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnProjectR project = *m_testDgnManager.GetDgnProjectP();
+
+    //.............................................................................................
+    // Verify initial state. This is expected to be blank, but update this and other count checks if the seed files changes.
+    EXPECT_TRUE(0 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+
+    //.............................................................................................
+    // Insert
+    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
+    DECLARE_AND_SET_DATA_1(testStyle);
+
+    AnnotationTextStylePtr fileStyle = project.Styles().AnnotationTextStyles().Insert(*testStyle);
+    ASSERT_TRUE(fileStyle.IsValid());
+    
+    ASSERT_TRUE(fileStyle->GetId().IsValid());
+    DgnStyleId fileStyleId = fileStyle->GetId();
+    
+    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(testStyle->GetId() != fileStyle->GetId());
+    VERIFY_DATA_1(fileStyle);
+
+    EXPECT_TRUE(1 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+
+    //.............................................................................................
+    // Query
+    EXPECT_TRUE(project.Styles().AnnotationTextStyles().ExistsById(fileStyleId));
+    EXPECT_TRUE(project.Styles().AnnotationTextStyles().ExistsByName(name.c_str()));
+
+    fileStyle = project.Styles().AnnotationTextStyles().QueryById(fileStyleId);
+    ASSERT_TRUE(fileStyle.IsValid());
+    
+    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(fileStyleId == fileStyle->GetId());
+    VERIFY_DATA_1(fileStyle);
+
+    fileStyle = project.Styles().AnnotationTextStyles().QueryByName(name.c_str());
+    EXPECT_TRUE(fileStyle.IsValid());
+    
+    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(fileStyleId == fileStyle->GetId());
+    VERIFY_DATA_1(fileStyle);
+    
+    //.............................................................................................
+    // Update
+    AnnotationTextStylePtr mutatedStyle = fileStyle->Clone();
+    ASSERT_TRUE(mutatedStyle.IsValid());
+
+    name = "DifferentName"; mutatedStyle->SetName(name.c_str());
+    colorId *= 100;         mutatedStyle->SetColorId(colorId);
+    height *= 100.0;        mutatedStyle->SetHeight(height);
+    isBold = false;         mutatedStyle->SetIsBold(isBold);
+
+    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Update(*mutatedStyle));
+
+    EXPECT_TRUE(1 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+
+    fileStyle = project.Styles().AnnotationTextStyles().QueryByName(name.c_str());
+    EXPECT_TRUE(fileStyle.IsValid());
+    
+    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(mutatedStyle->GetId() == fileStyle->GetId());
+    VERIFY_DATA_1(fileStyle);
+    
+    //.............................................................................................
+    // Delete
+    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Delete(mutatedStyle->GetId()));
+
+    EXPECT_TRUE(0 == project.Styles().AnnotationTextStyles().MakeIterator().QueryCount());
+    EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsById(fileStyleId));
+    EXPECT_TRUE(!project.Styles().AnnotationTextStyles().ExistsByName(name.c_str()));
+    }

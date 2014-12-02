@@ -1,0 +1,520 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include    <DgnPlatformInternal.h>
+#include    <DgnPlatform/DgnCore/LsLocal.h>
+
+#define LCPOINT_ANYVERTEX   (LCPOINT_LINEORG | LCPOINT_LINEEND | LCPOINT_LINEVERT)
+
+typedef PointSymRsc*        PointSymRscP;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   02/03
++---------------+---------------+---------------+---------------+---------------+------*/
+LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
+    {
+    if (m_mod1 & LCPOINT_ADJROT)
+        return  ROTATE_Adjusted;
+
+    if (m_mod1 & LCPOINT_ABSROT)
+        return  ROTATE_Absolute;
+
+    return  ROTATE_Relative;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* calculate the "maximum offset from the origin" for this element descriptor chain.
+* @bsimethod                                                    Keith.Bentley   03/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static double getDescrMaxOffset (MSElementDescrVec const& elems, DgnModelP model, double angle)
+    {
+    double      maxWidth = 0, test;
+
+    Transform transform;
+    transform.initFromPrincipleAxisRotations(NULL, 0.0, 0.0, angle);
+
+    for (auto descr: elems)
+        {
+        if (model)
+            descr->SetDgnModel(*model); // Probably no longer necessary?
+
+        EditElementHandle  tmpElHandle (descr.get(), false);
+        DisplayHandlerP    handler = tmpElHandle.GetDisplayHandler();
+
+        DRange3d    range;
+
+        if (handler && SUCCESS == handler->CalcElementRange (tmpElHandle, range, &transform))
+            {
+            // only consider the y component of the range for offset
+            if ((test = fabs (range.low.y)) > maxWidth)
+                maxWidth = test;
+
+            if ((test = fabs (range.high.y)) > maxWidth)
+                maxWidth = test;
+
+            if ((test = fabs (range.low.z)) > maxWidth)
+                maxWidth = test;
+
+            if ((test = fabs (range.high.z)) > maxWidth)
+                maxWidth = test;
+            }
+        }
+
+    return maxWidth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
+    {
+    if (NULL == GetElements())
+        return  0.0;
+
+    double maxWidth = getDescrMaxOffset (*GetElements(), dgnModel, m_angle) / m_symbol->GetMuDef();
+    double offset   = m_offset.magnitude ();
+
+    return  (offset + maxWidth) * 2.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   02/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addClipPlane (ConvexClipPlaneSetR clipPlanes, DPoint3dCP pt, DPoint3dCP dir)
+    {
+    clipPlanes.push_back (ClipPlane (DVec3d::From (-dir->x, -dir->y, -dir->z), *pt));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Output this symbol ref at a specific location and direction, optionally clipping the origin and/or end.
+* @bsimethod                                                    Keith.Bentley   02/03
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modifiers, DPoint3dCP org, DPoint3dCP dir, double const* xScale, DPoint3dCP clipOrg, DPoint3dCP clipEnd) const
+    {
+    if (NULL == m_symbol.get ())
+        return ERROR;
+
+    Transform  transform;
+    RotMatrix   planeByRows;
+    modifiers->GetPlaneAsMatrixRows (planeByRows);
+    DVec3d xVector, yVector, zVector;
+    planeByRows.getRows (&xVector, &yVector, &zVector);
+
+    DVec3d uVector, vVector, wVector;
+    uVector = *(DVec3d*)dir;
+    wVector = zVector;
+    vVector.normalizedCrossProduct (&wVector, &uVector);
+    transform.initFromOriginAndVectors (org, &uVector, &vVector, &wVector);
+
+    double      scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale());
+    transform.translateInLocalCoordinates (&transform, m_offset.x * scale, m_offset.y * scale, 0.0);
+
+    // Add rotation modifiers. Rotation is about the Z axis of the transform.
+    switch (GetRotationMode())
+        {
+        case ROTATE_Relative:
+            {
+            // Can't call initFromPrincipleAxisRotations directly since it will multiply matrices in wrong order.
+            RotMatrix rotation, product, baseMatrix;
+            rotation.initFromPrincipleAxisRotations (NULL, 0.0, 0.0, m_angle);
+            transform.getMatrix (&baseMatrix);
+            product.productOf (&baseMatrix, &rotation);
+            transform.setMatrix (&product);
+            break;
+            }
+
+        case ROTATE_Absolute:
+            {
+            RotMatrix planeByColumns, rotatedMatrix;
+            planeByColumns.initFromColumnVectors (&xVector, &yVector, &zVector);
+            rotatedMatrix.initFromPrincipleAxisRotations (&planeByColumns, 0.0, 0.0, m_angle);
+            transform.setMatrix (&rotatedMatrix);
+            }
+            break;
+
+        case ROTATE_Adjusted:
+            {
+            // Adjust so that the X direction is left to right with vertical adjusted to read "up hill" (-y to +y)
+            DVec3d xDir, yDir, zDir;
+            DPoint3d org;
+            transform.getOriginAndVectors (&org, &xDir, &yDir, &zDir);
+            DVec3d xDirTemp = xDir;
+            planeByRows.multiply (&xDirTemp);
+            if (xDirTemp.x < 0.0 || fabs (xDirTemp.y + 1.0) < .0001)
+                {
+                xDir.negate ();
+                yDir.negate ();
+                }
+            transform.initFromOriginAndVectors (&org, &xDir, &yDir, &zDir);
+
+            RotMatrix rotation, product, baseMatrix;
+            rotation.initFromPrincipleAxisRotations (NULL, 0.0, 0.0, m_angle);
+            transform.getMatrix (&baseMatrix);
+            product.productOf (&baseMatrix, &rotation);
+            transform.setMatrix (&product);
+            }
+            break;
+        }
+
+
+    scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale() / m_symbol->GetMuDef());
+    DPoint3d    scaleVec;
+    scaleVec.init (scale, scale, scale);
+    if (xScale)
+        scaleVec.x *= *xScale;
+
+    transform.scaleMatrixColumns (&transform, scaleVec.x, scaleVec.y, scaleVec.z);
+ 
+    ConvexClipPlaneSet  convexClip;
+    // if there is clip at either the beginning or the end of the symbol, set up the clip planes
+    if (clipOrg || clipEnd)
+        {
+        if (clipOrg)
+            {
+            DPoint3d revDir = *dir;
+            revDir.scale (-1.0);
+            addClipPlane (convexClip, clipOrg, &revDir);
+            }
+
+        if (clipEnd)
+            addClipPlane (convexClip, clipEnd, dir);
+        }
+
+    ClipPlaneSet clips (convexClip);
+    context->DrawSymbol (m_symbol.get (), &transform, &clips, !GetUseColor(), !GetUseWeight());
+
+    return  SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    08/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsSymbolComponent::_Draw (ViewContextR context)
+    {
+    DgnModelP   dgnCacheP = NULL;
+    ViewportP   vp = context.GetViewport();
+
+    if (NULL != vp)
+        dgnCacheP = vp->GetViewController ().GetTargetModel ();
+
+    XGraphicsContainer::DrawXGraphicsFromMemory (context, GetXGraphicsData (),
+                                                static_cast <Int32> (GetXGraphicsSize ()), 
+                                                dgnCacheP, XGraphicsContainer::DRAW_OPTION_None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    08/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
+    {
+    range.low = m_symBase;  
+
+    range.high.x = m_symBase.x + m_symSize.x;
+    range.high.y = m_symBase.y + m_symSize.y;
+    range.high.z = m_symBase.z + m_symSize.z;
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent (pLocation)
+    {
+    m_muDef       = 0.0;
+    m_storedScale = 0.0;
+    m_symFlags    = 0;
+    m_postProcessed = false;
+    m_xGraphicsSize = 0; 
+    m_xGraphicsData = NULL;
+
+    memset (&m_symSize, 0, sizeof(m_symSize));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+LsSymbolComponent::~LsSymbolComponent ()
+    {
+    FreeGraphics (true, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    08/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsSymbolComponent::SetXGraphics (byte const *data, size_t dataSize)
+    {
+    if (NULL != m_xGraphicsData)
+        memutil_free (const_cast <byte*> (m_xGraphicsData));
+
+    m_xGraphicsSize = dataSize;
+    m_xGraphicsData = (byte*)memutil_malloc (dataSize, HEAPSIG_LineStyleSymbol);
+    memcpy (const_cast <byte*> (m_xGraphicsData), data, dataSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/06
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelP LsSymbolComponent::GetSymbolDgnModel (ViewContextCP context) const
+    {
+    // we need to specify the modelref as the modelRef for the style we're drawing since
+    // it is not in m_elmDscr. This makes fonts, for example, pick the right file.
+    LineStyleSymbP  styleSymb;
+    ViewContextP    vc = const_cast <ViewContextP> (context);
+
+    if (NULL == vc->GetCurrLineStyle (&styleSymb) || NULL == styleSymb)
+        return NULL;
+
+    // NEEDSWORK_V10: Linestyle api shouldn't require a DgnModel...should just need DgnProject or maybe ViewController...
+    return context->GetDgnProject ().Models ().GetModelById (context->GetDgnProject ().Models ().GetFirstModelId ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   01/03
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       LsSymbolComponent::_DoStroke (ViewContextP context, DPoint3dCP inPoints, int nPoints, LineStyleSymbCP modifiers) const
+    {
+    BeAssert (0);  // symbol components should never be drawn this way
+    return  SUCCESS;
+    }
+
+#if defined (NEEDS_WORK_DGNITEM)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   04/06
++---------------+---------------+---------------+---------------+---------------+------*/
+static UInt32 computeComplexCmpnSizeFromBuffer (byte *pCur, byte *pEnd)
+    {
+    int     cmpnCount = ((DgnElementP) pCur)->GetComplexComponentCount();
+
+    if (0 == cmpnCount)
+        return 0;
+
+    pCur += ((DgnElementP) pCur)->Size(); // Advance to first component...
+
+    if (pCur > pEnd)
+        return 0;
+
+    size_t  cmpnSize = 0;
+
+    for (int i=0; i < cmpnCount; i++)
+        {
+        size_t  elemSize = ((DgnElementP) pCur)->Size();
+
+        cmpnSize += elemSize;
+        pCur += elemSize;
+
+        if (pCur > pEnd)
+            return 0;
+        }
+
+    return static_cast <UInt32> (cmpnSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   11/00
++---------------+---------------+---------------+---------------+---------------+------*/
+static int createSymbolDscrV8 (MSElementDescrVec& symVec, MSElementDescrP hdr, byte *pSymBuf, int bufSize, int threeD, DgnModelP model)
+    {
+    if (NULL == model)
+        return ERROR;
+
+    byte    *pCur = pSymBuf;
+    byte    *pEnd = pCur + bufSize;
+
+    while (pCur < pEnd)
+        {
+        DgnElementP tmpElmP = (DgnElementP) pCur;
+        size_t      elemSize = tmpElmP->Size();
+        UInt32      cmpnSize = computeComplexCmpnSizeFromBuffer (pCur, pEnd);
+
+        pCur += elemSize;
+
+        // Clear the unique id and graphic group number
+        tmpElmP->InvalidateElementId();
+
+        MSElementDescrPtr tmpEdP = MSElementDescr::Allocate (*tmpElmP, *model);
+
+        if (cmpnSize)
+            {
+            createSymbolDscrV8(symVec, tmpEdP.get(), pCur, cmpnSize, threeD, model);
+            pCur += cmpnSize;
+            }
+
+        if (NULL != hdr)
+            hdr->AddComponent(*tmpEdP);
+        else
+            symVec.push_back(tmpEdP);
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   11/00
++---------------+---------------+---------------+---------------+---------------+------*/
+int LineStyleUtil::CreateSymbolDscr (MSElementDescrVec& symVec, byte *symBufP, int bufSize, int threeD, UInt32 rscType, DgnModelP model)
+    {
+    int status = SUCCESS;
+
+    status = createSymbolDscrV8 (symVec, NULL, symBufP, bufSize, threeD, model);
+
+    /* Remove any custom line styles from the point descriptors.  This prevents circular line style usage */
+    lsutil_removeCustomLineStyles (symVec);
+    return status;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    07/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
+    {
+    if (m_postProcessed)
+        return;
+        
+    m_postProcessed = true;
+
+    //   If the symbol was stored with no master unit definition (scale) use the working units from the master file.
+    if (m_storedScale > 0.0)
+        {
+        SetMuDef (m_storedScale);
+        }
+    else
+        {
+        double muDef = 1.0/modelRef->GetMillimetersPerMaster();
+
+        SetMuDef (muDef);
+        }
+
+    if (GetXGraphicsData() != NULL)
+        return;    //  if the component was saved as XGraphics then the data is already loaded and there is no MSElementDescr
+
+    XGraphicsRecorder   recorder (modelRef);
+
+    recorder.EnableInitialWeightMatSym ();
+    recorder.EnableInitialColorMatSym ();
+    recorder.EnableInitialLineCodeMatSym();
+
+    for (auto& descr : m_elements)
+        {
+        descr->SetDgnModel(*modelRef); // Probably no longer necessary...should have been set when elements were created...
+        ElementHandle handle(descr.get(), false);
+        
+        recorder.GetContext ()->OutputElement (handle);
+        }
+        
+    XGraphicsContainerR    xGraphicsContainer = const_cast <XGraphicsContainerR> (recorder.GetContainer ());
+    
+    size_t                  dataSize = xGraphicsContainer.GetDataSize ();
+    byte const*             data = xGraphicsContainer.GetData ();
+    
+    SetXGraphics (data, dataSize);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    10/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+void            LsSymbolComponent::_ClearPostProcess ()
+    {
+    m_postProcessed = false;
+    //  Assume we need to regenerate the XGraphics
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JimBartlett     08/92
++---------------+---------------+---------------+---------------+---------------+------*/
+LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsRscReader* reader)
+    {
+    PointSymRsc*    symRsc = (PointSymRsc*) reader->GetRsc();
+
+    if (NULL == symRsc)
+        return  NULL;
+
+    LsSymbolComponent* symbComp = new LsSymbolComponent (reader->GetSource());
+    symbComp->SetDescription (WString(symRsc->header.descr, false).c_str());
+
+    // add to cache
+    LineStyleCacheManager::CacheAdd (symbComp);
+
+#if defined (NEEDS_WORK_DGNITEM)
+    if (symRsc->GetSymbolType() == PointSymRsc::ST_Elements)
+        {
+        LineStyleUtil::CreateSymbolDscr (symbComp->GetElementsR(), symRsc->symBuf, symRsc->nBytes, (symRsc->symFlags & LSSYM_3D) ? true : false, reader->GetRscType(), reader->GetDgnProject().Models().GetDictionaryModel());
+        }
+    else
+#endif
+        {
+        symbComp->SetXGraphics (symRsc->symBuf, symRsc->nBytes);
+        }
+
+    symbComp->SetFlags (symRsc->symFlags);
+
+    DPoint3d symSize, symBase = symRsc->header.range.low;
+    symSize.x = symRsc->header.range.high.x - symRsc->header.range.low.x;
+    symSize.y = symRsc->header.range.high.y - symRsc->header.range.low.y;
+
+    if (symRsc->symFlags & LSSYM_3D)
+        {
+        symSize.z = symRsc->header.range.high.z - symRsc->header.range.low.z;
+        }
+    else
+        {
+        symSize.z = 0.0;
+        symBase.z = 0.0;
+        }
+
+    symbComp->SetSymSize (&symSize);
+    symbComp->SetSymBase (&symBase);
+    symbComp->SetStoredUnitScale (symRsc->header.scale);
+    return symbComp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsSymbolComponent::FreeGraphics (bool freeDescr, bool freeXGraphics)
+    {
+    if (freeDescr)
+        m_elements.clear();
+        
+    if (freeXGraphics && NULL != m_xGraphicsData)
+        {
+        m_xGraphicsSize = 0;
+        memutil_free (const_cast <byte*> (m_xGraphicsData));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    John.Gooding    09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void LsSymbolComponent::AddGraphics (EditElementHandleR eeh)
+    {
+    m_elements.push_back(eeh.ExtractElementDescr());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    10/2012
+//--------------+------------------------------------------------------------------------
+BentleyStatus LsSymbolComponent::AddSymbolGraphicsAsProperty (UInt32& componentId, DgnProjectR project, byte const*data, size_t size, PointSymRsc::SymbolType symbolType)
+    {
+    PropertySpec spec = PointSymRsc::ST_Elements == symbolType ? LineStyleProperty::SymbolElements () : LineStyleProperty::SymbolXGraphics();
+    GetNextComponentId (componentId, project, spec);
+    project.SaveProperty (spec, data, (UInt32)size, componentId, 0);
+
+    return BSISUCCESS;
+    }
+
+double              LsSymbolComponent::GetStoredUnitScale () const { return m_storedScale; }
+void                LsSymbolComponent::SetStoredUnitScale (double storedScale) { m_muDef = m_storedScale = storedScale; }
+double              LsSymbolComponent::GetUnitScale () const { return m_muDef; }
+bool                LsSymbolComponent::IsNoScale () const { return IsNotScaled (); }
+void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = (m_symFlags & ~LSSYM_NOSCALE) | (value ? LSSYM_NOSCALE : 0); }
+bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
+void                LsSymbolComponent::GetRange (DRange3dR range) const 
+    { 
+    _GetRange (range);
+    }

@@ -1,0 +1,397 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ArcHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\AssocGeom.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\AssociativePoint.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\AssocRegionHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BitMaskLinkage.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BRepCellHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BSplineCurveHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BSplineSurfaceHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\CellHeaderHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ChainHeaderHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ComplexHeaderHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ConeHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ContentAreaHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\CurveHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DelegatedElementECEnabler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DelegateMaps.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DetailingSymbol.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DetailingSymbolHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnComponentHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnComponentSchema.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECInstance.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECManager.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECModelLinkageProvider.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECProviderBase.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECTypes.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnHandlersAPI.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinkHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinkManager.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinks.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinksXAttributeHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinkTree.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\dgnole.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnStoreHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnTextStyle.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnTextStyleProperties.r.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Dimension.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionElem.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionStyle.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionStyleProps.r.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DropGraphics.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECDbJsonAdapter.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECInstanceHolderHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECLogger.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECPerSchemaCache.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXACaches.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAInstance.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAProvider.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXARelationship.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAttributes.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAttributesReader.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAttributesWriter.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ElementComparer.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ElementECProvider.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ElementUtil.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ExtendedElementHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\FlatteningCollection.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\GroupedHoleHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IAreaFillProperties.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IDgnOleDraw.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IEcPropertyHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IECXDataTreeNodeType66Handler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IEditActionSource.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IGeoCoordReproject.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IIModelPublishExtension.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\image.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IManipulator.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IMaterialProperties.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IModifyElement.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IPointCloud.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IRasterAttachment.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IRasterSourceFileQuery.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IRenderDependency.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ITextEdit.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\LightElementHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\LinearHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Locate.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MarkupHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MdlTextInternal.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MdlTextStyleInternal.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MeshHeaderHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MultilineHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MultilineStyle.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Note.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\NoteHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\OleCellHeaderHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PersistentElementPathXAttributeHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PersistentSnapPath.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PickContext.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PlaneConstraints.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PointCloudECTypeAdapters.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PointCloudHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ProviderPerFileCache.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RasterECTypeAdapters.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RasterHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RasterResolutionSolver.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RefAttachHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RegionUtil.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SchemaElementHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SchemaLayoutElementHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ScopedDgnHost.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SectionGeometryGenerator.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SharedCellHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SpiralCurveHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SurfaceAndSolidHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TableHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TagElementData.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TagElementHandler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\3dtools.r.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\smartsolid.r.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\tcb.r.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\toolset.r.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\AlongTextDependency.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Caret.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\CharStream.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Fraction.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\IDgnTextStyleApplyable.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\IDwgContext.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Indentation.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\ITextListener.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Line.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Paragraph.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Run.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\RunProperties.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextAPICommon.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlock.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockAPI.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockIterators.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockNode.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockUtilities.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextContext.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextField.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextParamWideAndScale.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\WhiteSpace.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextHandlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\thematicdisplay.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Type5Handlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Type66Handlers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Type9Handler.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\WhereCriterion.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\XMLFragment.h" />
+    <ClInclude Include="DgnEC\dgnecfileprovider.h" />
+    <ClInclude Include="DgnEC\DgnECIntrinsicRelationships.h" />
+    <ClInclude Include="DgnEC\DgnECLog.h" />
+    <ClInclude Include="DgnEC\DgnECMaterialProperties.h" />
+    <ClInclude Include="DgnEC\DgnECMemoryBasedInstance.h" />
+    <ClInclude Include="DgnEC\dgnecmodelprovider.h" />
+    <ClInclude Include="DgnEC\DgnECTableExtensions.h" />
+    <ClInclude Include="DgnEC\DgnECTypeAdapters.h" />
+    <ClInclude Include="DgnEC\DgnLinkECProperties.h" />
+    <ClInclude Include="DgnEC\ECXDInstanceXAttributeHandler.h" />
+    <ClInclude Include="DgnEC\GenericHostTypeIteration.h" />
+    <ClInclude Include="DgnHandlersDLLInlines.h" />
+    <ClInclude Include="DgnHandlersInternal.h" />
+    <ClInclude Include="DgnHandlersLog.h" />
+    <ClInclude Include="Dimension\DimensionInternal.h" />
+    <ClInclude Include="Dimension\DimStyleInternal.h" />
+    <ClInclude Include="Dimension\NoteInternal.h" />
+    <ClInclude Include="Icons.h" />
+    <ClInclude Include="TextBlock\TextFieldHandlers.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DgnHandlers.mke" />
+    <None Include="DgnHandlers.mki" />
+    <None Include="DigitalSignatureUntrustedSprite.ico" />
+    <None Include="DigitalSignatureUnverifiedSprite.ico" />
+    <None Include="DigitalSignatureVerifiedSprite.ico" />
+    <None Include="Markup\MarkupPlacemark.ico" />
+    <None Include="WordBreakDataGenerator.py" />
+    <None Include="WordBreakProperty.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Icons.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AnnotationCellHeaderHandler.cpp" />
+    <ClCompile Include="ArcHandlers.cpp" />
+    <ClCompile Include="AreaFillProperties.cpp" />
+    <ClCompile Include="AssocCreate.cpp" />
+    <ClCompile Include="AssocDependencyRoot.cpp" />
+    <ClCompile Include="AssocPoint.cpp" />
+    <ClCompile Include="AssocRegionHandler.cpp" />
+    <ClCompile Include="BitMaskLinkage.cpp" />
+    <ClCompile Include="BRepCellHandler.cpp" />
+    <ClCompile Include="BSplineCurveHandler.cpp" />
+    <ClCompile Include="BSplineSurfaceHandler.cpp" />
+    <ClCompile Include="CellHeaderHandler.cpp" />
+    <ClCompile Include="ChainHeaderHandlers.cpp" />
+    <ClCompile Include="CloneRemapper.cpp" />
+    <ClCompile Include="ConeHandler.cpp" />
+    <ClCompile Include="ContentAreaHandler.cpp" />
+    <ClCompile Include="CurveHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\DetailCalloutHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\DetailingSymbol.cpp" />
+    <ClCompile Include="DetailingSymbol\DetailingSymbolFileAccess.cpp" />
+    <ClCompile Include="DetailingSymbol\DetailingSymbolHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\DrawingTitleBuilder.cpp" />
+    <ClCompile Include="DetailingSymbol\DrawingTitleHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\ElevationCalloutHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\PlanCalloutHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\ProxyLinkTree.cpp" />
+    <ClCompile Include="DetailingSymbol\SectionCalloutHandler.cpp" />
+    <ClCompile Include="DetailingSymbol\TitleTextHandler.cpp" />
+    <ClCompile Include="DgnComponentHandlers.cpp" />
+    <ClCompile Include="DgnComponentSchema.cpp" />
+    <ClCompile Include="DgnEC\DelegatedElementECEnabler.cpp" />
+    <ClCompile Include="DgnEC\dgnecfileprovider.cpp" />
+    <ClCompile Include="DgnEC\DgnECFinders.cpp" />
+    <ClCompile Include="DgnEC\DgnECInstance.cpp" />
+    <ClCompile Include="DgnEC\DgnECIntrinsicRelationships.cpp" />
+    <ClCompile Include="DgnEC\DgnECManager.cpp" />
+    <ClCompile Include="DgnEC\DgnECMaterialProperties.cpp" />
+    <ClCompile Include="DgnEC\DgnECModelLinkageProvider.cpp" />
+    <ClCompile Include="DgnEC\DgnECModelProvider.cpp" />
+    <ClCompile Include="DgnEC\DgnECProviderBase.cpp" />
+    <ClCompile Include="DgnEC\DgnECTableExtensions.cpp" />
+    <ClCompile Include="DgnEC\DgnECTypeAdapters.cpp" />
+    <ClCompile Include="DgnEC\DgnECTypes.cpp" />
+    <ClCompile Include="DgnEC\DgnLinkECProperties.cpp" />
+    <ClCompile Include="DgnEC\ECDbJsonAdapter.cpp" />
+    <ClCompile Include="DgnEC\ECInstanceHolderHandler.cpp" />
+    <ClCompile Include="DgnEC\ECPerSchemaCache.cpp" />
+    <ClCompile Include="DgnEC\ECXACaches.cpp" />
+    <ClCompile Include="DgnEC\ECXAInstance.cpp" />
+    <ClCompile Include="DgnEC\ECXAProvider.cpp" />
+    <ClCompile Include="DgnEC\ECXARelationship.cpp" />
+    <ClCompile Include="DgnEC\ECXAttributesReader.cpp" />
+    <ClCompile Include="DgnEC\ECXAttributesWriter.cpp" />
+    <ClCompile Include="DgnEC\ECXDataTreeSchemasLocater.cpp" />
+    <ClCompile Include="DgnEC\ECXDCaches.cpp" />
+    <ClCompile Include="DgnEC\ECXDInstance.cpp" />
+    <ClCompile Include="DgnEC\ECXDInstanceXAttributeHandler.cpp" />
+    <ClCompile Include="DgnEC\ECXDProvider.cpp" />
+    <ClCompile Include="DgnEC\ECXDRelationship.cpp" />
+    <ClCompile Include="DgnEC\ECXDRelationshipXAttributeHandler.cpp" />
+    <ClCompile Include="DgnEC\ElementECProvider.cpp" />
+    <ClCompile Include="DgnEC\ProviderPerFileCache.cpp" />
+    <ClCompile Include="DgnEC\SchemaElementHandler.cpp" />
+    <ClCompile Include="DgnEC\SchemaLayoutElementHandler.cpp" />
+    <ClCompile Include="DgnEC\WhereCriterion.cpp" />
+    <ClCompile Include="DgnHandlers.cpp" />
+    <ClCompile Include="DgnHandlersDLLInlines.cpp" />
+    <ClCompile Include="DgnHandlersInternal.cpp" />
+    <ClCompile Include="DgnLinkManager.cpp" />
+    <ClCompile Include="DgnLinks.cpp" />
+    <ClCompile Include="DgnLinksXAttributeHandler.cpp" />
+    <ClCompile Include="DgnLinkTree.cpp" />
+    <ClCompile Include="DgnStoreHandlers.cpp" />
+    <ClCompile Include="Dimension\DimAngular.cpp" />
+    <ClCompile Include="Dimension\DimAPI.cpp" />
+    <ClCompile Include="Dimension\DimElement.cpp" />
+    <ClCompile Include="Dimension\DimensionHandler.cpp" />
+    <ClCompile Include="Dimension\DimGenerate.cpp" />
+    <ClCompile Include="Dimension\DimLinear.cpp" />
+    <ClCompile Include="Dimension\DimLinkage.cpp" />
+    <ClCompile Include="Dimension\DimMLText.cpp" />
+    <ClCompile Include="Dimension\DimRadial.cpp" />
+    <ClCompile Include="Dimension\DimStyle.cpp" />
+    <ClCompile Include="Dimension\DimStyleCompare.cpp" />
+    <ClCompile Include="Dimension\DimStyleHandler.cpp" />
+    <ClCompile Include="Dimension\DimStyleTable.cpp" />
+    <ClCompile Include="Dimension\DimTerminator.cpp" />
+    <ClCompile Include="Dimension\DimText.cpp" />
+    <ClCompile Include="Dimension\DimUtility.cpp" />
+    <ClCompile Include="Dimension\Note.cpp" />
+    <ClCompile Include="DisplayHandler.cpp" />
+    <ClCompile Include="DropContext.cpp" />
+    <ClCompile Include="ElementComparer.cpp" />
+    <ClCompile Include="ElementGeometry.cpp" />
+    <ClCompile Include="ElementUtil.cpp" />
+    <ClCompile Include="FenceParams.cpp" />
+    <ClCompile Include="GPArray.cpp" />
+    <ClCompile Include="GroupedHoleHandler.cpp" />
+    <ClCompile Include="Handler.cpp" />
+    <ClCompile Include="HitPath.cpp" />
+    <ClCompile Include="IEcPropertyHandler.cpp" />
+    <ClCompile Include="LightElement.cpp" />
+    <ClCompile Include="LinearHandlers.cpp" />
+    <ClCompile Include="LinuxGlobals.cpp" />
+    <ClCompile Include="Markup\MarkupPlacemarkHandler.cpp" />
+    <ClCompile Include="MaterialProperties.cpp" />
+    <ClCompile Include="MatrixElements.cpp" />
+    <ClCompile Include="MdlTextInternal.cpp" />
+    <ClCompile Include="MeshHeaderHandler.cpp" />
+    <ClCompile Include="ModelHeaderElementHandler.cpp" />
+    <ClCompile Include="MultilineHandler.cpp" />
+    <ClCompile Include="MultilineStyle.cpp" />
+    <ClCompile Include="OleCellHeaderHandler.cpp" />
+    <ClCompile Include="PersistentElementPathXAttributeHandler.cpp" />
+    <ClCompile Include="PickContext.cpp" />
+    <ClCompile Include="PlaneConstraints.cpp" />
+    <ClCompile Include="PointCloud\PointCloudClip.cpp" />
+    <ClCompile Include="PointCloud\PointCloudECTypeAdapters.cpp" />
+    <ClCompile Include="PointCloud\PointCloudHandler.cpp" />
+    <ClCompile Include="Raster\RasterAttachment.cpp" />
+    <ClCompile Include="Raster\RasterECTypeAdapters.cpp" />
+    <ClCompile Include="Raster\RasterHandlers.cpp" />
+    <ClCompile Include="Raster\RasterResolutionSolver.cpp" />
+    <ClCompile Include="RegionUtil.cpp" />
+    <ClCompile Include="RenderHandlers.cpp" />
+    <ClCompile Include="ScopedDgnHost.cpp" />
+    <ClCompile Include="SectionGeometryGenerator.cpp" />
+    <ClCompile Include="SharedCellHandler.cpp" />
+    <ClCompile Include="snapassoc.cpp" />
+    <ClCompile Include="SurfaceAndSolidHandlers.cpp" />
+    <ClCompile Include="TableHandlers.cpp" />
+    <ClCompile Include="TagElementHandler.cpp" />
+    <ClCompile Include="TextBlock\AlongTextDependency.cpp" />
+    <ClCompile Include="TextBlock\Caret.cpp" />
+    <ClCompile Include="TextBlock\CharStream.cpp" />
+    <ClCompile Include="TextBlock\DgnTextElementProcessor.cpp" />
+    <ClCompile Include="TextBlock\DwgTextElementProcessor.cpp" />
+    <ClCompile Include="TextBlock\FindReplaceText.cpp" />
+    <ClCompile Include="TextBlock\Fraction.cpp" />
+    <ClCompile Include="TextBlock\Indentation.cpp" />
+    <ClCompile Include="TextBlock\Line.cpp" />
+    <ClCompile Include="TextBlock\Paragraph.cpp" />
+    <ClCompile Include="TextBlock\Run.cpp" />
+    <ClCompile Include="TextBlock\RunProperties.cpp" />
+    <ClCompile Include="TextBlock\TextBlock.cpp" />
+    <ClCompile Include="TextBlock\TextBlockIterators.cpp" />
+    <ClCompile Include="TextBlock\TextBlockNode.cpp" />
+    <ClCompile Include="TextBlock\TextBlockPlayer.cpp" />
+    <ClCompile Include="TextBlock\TextBlockRecorder.cpp" />
+    <ClCompile Include="TextBlock\TextBlockUtilities.cpp" />
+    <ClCompile Include="TextBlock\TextField.cpp" />
+    <ClCompile Include="TextBlock\TextFieldHandlers.cpp" />
+    <ClCompile Include="TextBlock\TextParamAndScale.cpp" />
+    <ClCompile Include="TextBlock\WhiteSpace.cpp" />
+    <ClCompile Include="TextHandlers.cpp" />
+    <ClCompile Include="TextStyleHandlers.cpp" />
+    <ClCompile Include="TextStyle\DgnTextStyle.cpp" />
+    <ClCompile Include="TextStyle\DgnTextStyleAccessors.cpp" />
+    <ClCompile Include="TextStyle\DgnTextStyleManager.cpp" />
+    <ClCompile Include="TextStyle\MdlTextStyleInternal.cpp" />
+    <ClCompile Include="TextStyle\TextStylePropertyMask.cpp" />
+    <ClCompile Include="ThematicDisplay.cpp" />
+    <ClCompile Include="ThematicDisplayHandlers.cpp" />
+    <ClCompile Include="Type5Handlers.cpp" />
+    <ClCompile Include="Type66Handlers.cpp" />
+    <ClCompile Include="UniscribeServices.cpp" />
+    <ClCompile Include="XMLFragment.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B0F4345F-932D-44AC-8C0F-8CF416EC1E68}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\PublicAPI\;$(SrcRoot)DgnPlatform\PrivateApi\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>DgnHandlers.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;BENTLEY_WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\PublicAPI\;$(SrcRoot)DgnPlatform\PrivateApi\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

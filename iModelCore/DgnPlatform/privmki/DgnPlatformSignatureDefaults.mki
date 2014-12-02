@@ -1,0 +1,83 @@
+#/*--------------------------------------------------------------------------------------+
+#|
+#|     $Source: privmki/DgnPlatformSignatureDefaults.mki $
+#|
+#| $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#|
+#+--------------------------------------------------------------------------------------*/
+
+%if !defined (__ConfigurePolicy_mki__)
+%error ConfigurePolicy.mki must be included before DgnPlatformSignatureDefaults.mki
+%endif
+
+#
+#  The default for sharedmki/linkMixedAssembly.mki is to NOT strongly name.  We choose
+#  to enforce an opposite default for MicroStation here.
+#
+%if !defined (ASSEMBLY_NO_STRONGNAME) && !defined (ASSEMBLY_STRONGNAME) && !defined (ASSEMBLY_MODULE)
+    %error You should seriously consider setting ASSEMBLY_STRONGNAME, but if you are sure you do not want a strongly named assembly then set ASSEMBLY_NO_STRONGNAME instead.
+%endif
+
+%if !defined (DLM_NO_SIGN) && !defined (DLM_NO_RCSIGN) && !defined (ASSEMBLY_NO_RIGHTS_COMPLIANCE_CHECK)
+    %include $(SrcBsiCommon)sharedmki/isrightscompliant.mki
+%endif
+
+TLBIMP_KEYFILE_OPTION = keyfile
+
+#
+#  If strong name test signing is requested, but it is not available in the toolset that
+#  is asserted, then we have to downgrade it to good old delay signing (i.e. NoSignature).
+#
+%if $(StrongNameSignature) == "TestSignature"
+    %if MSVC_VERSION < 1400        # test signing is only available in VS2005 and newer
+        StrongNameSignature=NoSignature
+    %endif
+%endif
+
+%if $(StrongNameSignature) == "NormalSignature"
+    %if defined (UseOfficialKeys)
+        %if defined (isRightsCompliant) || defined (isRightsNeutral)
+            ASSEMBLY_KEYFILE_DEFAULT   = $(CSIDL_COMMON_DOCUMENTS)/PRGSRightsCompliant.snk
+        %else
+            ASSEMBLY_KEYFILE_DEFAULT   = $(CSIDL_COMMON_DOCUMENTS)/PRGNonRightsCompliant.snk
+        %endif
+    %else
+        %if defined (isRightsCompliant) || defined (isRightsNeutral)
+            ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)RightsCompliant.snk
+        %else
+            ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)NonRightsCompliant.snk
+        %endif
+    %endif
+%elif $(StrongNameSignature) == "NoSignature" || $(StrongNameSignature) == "TestSignature"
+    ASSEMBLY_DELAYSIGN = 1
+    %if $(StrongNameSignature) == "NoSignature"
+        ASSEMBLY_SKIPPABLE_VERIFICATION = 1
+    %else
+        ASSEMBLY_TESTKEYFILE_DEFAULT = $(bsiCerts)Test.snk
+        ASSEMBLY_TESTSIGN=1
+    %endif
+    TLBIMP_KEYFILE_OPTION = publickey
+    %if defined (isRightsCompliant)
+        ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)PublicPrgRightsCompliant.snk
+    %else
+        ASSEMBLY_KEYFILE_DEFAULT   = $(bsiCerts)PublicPrgNonRightsCompliant.snk
+    %endif
+%else
+    %error StrongNameSignature has invalid value of $(StrongNameSignature).  If it helps, pascal case is required on values.
+%endif
+
+#
+#  If we are building a C# assembly then we include signrscsdefs.mki right here.
+#  We also default ASSEMBLY_AUTHENTICODE_SIGN to true for MicroStation here.
+#
+%if defined (ASSEMBLY_TARGET_DIRECTORY)
+#
+#   After learning the negative consequences of applying authenticode signatures to assemblies we decided to not
+#   do this by default after all. Since the assembly loader always trys to verify authenticode signatures (unlike
+#   the native loader) it can lead to several second delays.
+#
+#   ASSEMBLY_AUTHENTICODE_SIGN = 1
+    %include signrscsdefs.mki
+%endif
+
+

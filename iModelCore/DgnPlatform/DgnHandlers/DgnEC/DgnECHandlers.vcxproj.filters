@@ -1,0 +1,248 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\DgnECFinders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\DgnECInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECInstanceHolderHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECXAttributesReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECXAttributesSchemaPersistence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECXAttributesWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECXDataTreeSchemasLocater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ElementECProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\SchemaLayoutElementHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\WhereCriterion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECPerSchemaCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECProviderBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\LegacyECXRelationships.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\DgnPlatform\DgnHandlers\DgnEC\ProviderPerFileCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\DgnV8\DgnV8FileIO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaElementHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXAInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXAProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXACaches.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXDInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXDInstanceXAttributeHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXDProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXDRelationship.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXDRelationshipXAttributeHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXDCaches.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECXARelationship.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dgnecfileprovider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CommonDelegates.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDwgFormatHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DelegatedElementECEnabler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECIntrinsicRelationships.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECMaterialProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECModelLinkageProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECModelProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECTableExtensions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECTypeAdapters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnElementECInstanceGenerators.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnLinkECProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnECJsonAdapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\DgnECFinders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\DgnECInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\DgnECManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\DgnHandlersAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnHandlersInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnPlatform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXAttributes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXAttributesCaches.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXAttributesInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXAttributesProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXAttributesReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PrivateApi\DgnPlatformInternal\DgnHandlers\ECXAttributesSchemaPersistence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXAttributesWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXCaches.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PrivateApi\DgnPlatformInternal\DgnHandlers\ECXDataTreeSchemasLocater.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXInstanceXAttributeHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXRelationship.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECXRelationshipXAttributeHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\DgnHandlers\DgnEC\ECXStructValueXAttributeHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\SchemaLayoutElementHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\WhereCriterion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnHandlers\ECLogger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnHandlers\ProviderPerFileCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnHandlers\ECPerSchemaCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnHandlers\ECProviderBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnHandlers\LegacyECXRelationships.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnHandlers\ECQuery.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\DgnV8\DgnV8FileIO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnHandlers\SchemaElementHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ECXDInstanceXAttributeHandler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dgnecfileprovider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GenericHostTypeIteration.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\DgnHandlers\DgnECJsonAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\PrivateApi\DgnPlatformInternal\DgnHandlers\schemas\dgn.01.00.ecschema.xml" />
+  </ItemGroup>
+</Project>

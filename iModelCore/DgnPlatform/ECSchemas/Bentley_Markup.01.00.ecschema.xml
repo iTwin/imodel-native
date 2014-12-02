@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ECSchema schemaName="Bentley_Markup"
+
+          nameSpacePrefix="mkup"
+
+          version="1.0"
+
+          description="Bentley Markup Schema"
+
+          displayLabel="Bentley Markup Schema"
+
+          xmlns:bcc="Bentley_Common_Classes.01.00"
+
+          xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+
+
+    <!-- The Bentley Markup class. -->
+
+    <ECClass typeName="Markup"
+
+             description="Bentley Markup Class"
+
+             displayLabel="Markup"
+
+             isDomainClass="True">
+
+        <ECProperty propertyName="Name"         typeName="string" description="The markup name" displayLabel="Markup" />
+
+        <ECProperty propertyName="Description"  description="The markup description" typeName="string"  displayLabel="Description" />
+
+        <ECProperty propertyName="ReviewModel"  description="The review model of the markup" typeName="string"  displayLabel="Review Model" />
+
+        <ECProperty propertyName="Creator"      description="The username of the markup creator" typeName="string"  displayLabel="Creator" />
+
+        <ECProperty propertyName="CreateDate"   description="The date when the markup was created" typeName="dateTime"  displayLabel="Date Created"/>
+
+        <ECProperty propertyName="AssignedTo"   description="The name of the person the markup was assigned to" typeName="string"  displayLabel="Assigned To"/>
+
+        <ECProperty propertyName="ApprovedBy"   description="The name of the person that approved the markup" typeName="string"  displayLabel="Approved By"/>
+
+        <ECProperty propertyName="Status"       description="The status of the markup" typeName="string"  displayLabel="Status" />
+
+        <ECProperty propertyName="Priority"     description="The priority of the markup" typeName="string"  displayLabel="Priority" />
+
+    </ECClass>
+
+
+</ECSchema>

@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="DgnPlatformLib">
+        <RequiredRepository>DgnPlatformExamples</RequiredRepository> <!-- Many developers of higher-level parts will want to see the examples. -->
+        <SubPart PartName="DgnPlatformDLL" />
+    </Part>
+
+    <Part Name="Readme" BentleyBuildMakeFile="ProcessReadme.mke">
+        <Bindings>
+            <Files ProductDirectoryName="DgnPlatform_PublishedAPI_Scope1_Doc">
+                Delivery/readme.htm
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <!-- Also re-deliver some ECSchemas -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
+        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <Bindings>
+            <PublicAPI Domain="DgnPlatform" />
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                ECSchemas/Bentley_Markup.01.00.ecschema.xml
+                ECSchemas/Bentley_MarkupExtension.01.01.ecschema.xml
+                ECSchemas/DgnMarkupSchema.01.00.ecschema.xml
+                ECSchemas/Dgn.02.00.ecschema.xml
+             </Files>
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as a library suffix to disambiguate from Vancouver libraries -->
+    <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="ECDb"                PartFile="BeSQLite"     Repository="BeSQLite" />
+        <SubPart PartName="ToolsubsDll"         PartFile="RmgrTools"    Repository="RmgrTools" />
+        <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
+        <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="ECObjectsNative"     PartFile="ecobjects"    Repository="ecobjects" />
+        <SubPart PartName="freetype2StaticLib"  PartFile="freetype2"    Repository="libsrc-freetype2" />
+        <SubPart PartName="LastResortFonts"     PartFile="MstnAppData"  Repository="miscdev-mstnappdata" />
+        <SubPart PartName="FontConfigurationFile"   PartFile="MstnAppData"  Repository="miscdev-mstnappdata" />
+        <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="png"                 PartFile="png"          Repository="Libsrc-png"/>
+        <SubPart PartName="BeLibJpegTurbo"      PartFile="BeLibJpegTurbo" Repository="Libsrc-libjpegturbo"/>
+        <SubPart PartName="Headers"             PartFile="flatbuffers"  Repository="libsrc-flatbuffers"/>
+        <SubPart PartName="BoostHeaders"        PartFile="BoostHeaders" Repository="BoostHeaders" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
+            <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff,Delivery/xliffs/DgnHandlersMessages_en.xliff</Files>
+            <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ImagePPComponents" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP"  />
+    </Part>
+
+    <Part Name="DimStyleSchemaPrewire" BentleyBuildMakeFile="DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke" >
+        <Bindings>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                GeneratedSchemas/DimensionStyleSchema.01.00.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests_Support">
+        <SubPart PartName="PublicAPI"/>
+        <Bindings>
+            <!-- CompileUnitTests.mke will put -I$(BuildContext)SubParts/UnitTests/PublicAPI on the include path, so that unit test source can #include <DgnPlatform/DgnProject/DgnHandlers/ScopedDgnHost.h> -->
+            <Directory SourceName="PublicAPI/DgnPlatform/DgnHandlers/UnitTests" SubPartDirectory="UnitTests/PublicAPI/DgnPlatform/DgnHandlers"/>
+            <Directory SourceName="PrivateAPI"                                  SubPartDirectory="UnitTests/PrivateAPI"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <!-- What I WANT is PublicAPI. I include DgnHandlers, because that causes PublicAPI to be built. -->
+        <SubPart PartName="DgnPlatformDLL"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/DgnProject"/>
+        </Bindings>
+    </Part>
+
+    <!-- "VersionedApi" is a special copy of the internal DgnPlatform API where all headers are shifted down into a version-specific directory -->
+    <!-- This is important for Graphite components (like DgnDbFileIO) that run in-process with Vancouver -->
+    <Part Name="VersionedApi" BentleyBuildMakeFile="VersionedApi.mke" OnlyPlatforms="x64,x86">
+        <SubPart PartName="DgnPlatformDLL"/>
+        <Bindings>
+            <Directory SourceName="Delivery/VersionedApi" ProductDirectoryName="VersionedApi" SubPartDirectory="VersionedApi" Required="true"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnProjectUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)DgnPlatform/Tests/DgnProject/ -dBEGTEST_NAME=DgnProject -dBEGTEST_DEPENDENCIES=$(SrcRoot)DgnPlatform/Tests/DgnProject/dependencies.mki">
+        <!-- Get GTest API directory -->
+        <SubPart    PartName="google_gtest_lib"                 PartFile="gtest"        Repository="util-gtest" />
+        <!-- Get the unit tests support API -->
+        <SubPart    PartName="UnitTests_Support"                PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <!-- Get the tested API -->
+        <SubPart    PartName="DgnPlatformDLL"                   PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <!-- Get the test documents 
+        <SubProduct ProductName="BeTestDocuments"               PartFile="BeGTest"      Repository="BeGTest" />
+        -->
+        <!-- Needed for published unit tests -->
+        <SubPart    PartName="PublishedApi"                     PartFile="DgnPlatform"  Repository="DgnPlatform"/>
+    </Part>
+
+    <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+    <ProductDirectoryList ListName="DgnPlatform">
+        <ProductDirectory Name="PublicAPI"           Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"           Deliver="false" />
+        <ProductDirectory Name="VendorAPI"           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="MergeModules"        Deliver="false" />
+        <ProductDirectory Name="RunWaitExes"         Deliver="false" />
+        <ProductDirectory Name="WorkSpaceSystemData" Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformTestExe"  Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false" />
+        <ProductDirectory Name="DgnDbImportConfiguration" Deliver="false" />
+        <ProductDirectory Name="Libs"            Path="Libs"/>
+        <ProductDirectory Name="Libs"            Path="StaticLibs" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"     Path="Libs"/>
+        <ProductDirectory Name="ECObjectsLibs"   Path="Libs"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="StaticLibs" LibType="static"/>
+        <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="GeomNativeAssemblies" Path="Dlls" LibType="static"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="Dlls" LibType="static"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts" RelativeTo="DgnPlatformFont" Path="LastResortFonts" LibType="static"/>
+        <ProductDirectory Name="LoggingNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies" Path="Dlls" LibType="static"/>
+        <ProductDirectory Name="PPNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" />
+        <ProductDirectory Name="ECSchemas" Path="" RelativeTo="ecobjectsnativeassemblies" LibType="static"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="StaticLibs" LibType="static"/>
+        <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1" Path="Include"/>
+        <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1_Doc" Path="Docs"/>
+        <ProductDirectory Name="DgnPlatform_PublishedAPI_Scope1_XML" Path="Docs"/>
+        <ProductDirectory Name="DgnPlatformDemoRoot" Path="Demo"/>
+        <ProductDirectory Name="DgnPlatformDemoSource" Path="Source" RelativeTo="DgnPlatformDemoRoot"/>
+        <ProductDirectory Name="DgnPlatformInstall" Path="install"/>
+        <ProductDirectory Name="DgnPlatformData" Path="Data"/>
+        <ProductDirectory Name="DgnPlatformDemoExe" Path="Exe" RelativeTo="DgnPlatformDemoRoot"/>
+        <ProductDirectory Name="DgnPlatformSeed" Path="Seed" RelativeTo="DgnPlatformData"/>
+        <ProductDirectory Name="DgnPlatformFont" Path="Fonts" RelativeTo="DgnPlatformData"/>
+        <ProductDirectory Name="DgnPlatformFont" Path="Fonts" RelativeTo="DgnPlatformData" LibType ="static"/>
+        <ProductDirectory Name="DgnCoreDecorators" Path="decorators/dgncore" RelativeTo="DgnPlatformData"/>
+        <ProductDirectory Name="DgnViewDecorators" Path="decorators/dgnview" RelativeTo="DgnPlatformData"/>
+        <ProductDirectory Name="DgnPlatformDemoDgn"  Path="Dgn" RelativeTo="DgnPlatformDemoRoot"/>
+        <ProductDirectory Name="DgnPlatformLineStyleRsc"  Path="Symb" RelativeTo="DgnPlatformData"/>
+        <ProductDirectory Name="VendorNotices" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static"/>
+
+        <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="ImagePPAssemblies"          Deliver="false"/>
+        <ProductDirectory Name="AdobeAssemblies"            Deliver="false"/>
+        <ProductDirectory Name="AdobeResource"              Deliver="false"/>
+        <ProductDirectory Name="GeoCoordData"               Deliver="false"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="GdalData"                   Deliver="false"/>
+        <ProductDirectory Name="MrSidAssemblies"            Deliver="false"/>
+
+        <ProductDirectory Name="DgnPlatformSampleRoot" Path="Sample"/>
+        <ProductDirectory Name="DgnPlatformSampleSourceDir" Path="Source" RelativeTo="DgnPlatformSampleRoot"/>
+        <ProductDirectory Name="DgnPlatformSampleAdditionalAssets" RelativeTo="DgnPlatformSampleRoot"/>
+        <ProductDirectory Name="DgnPlatformSampleSqlangDir" Path="Sqlang" RelativeTo="DgnPlatformData"/>
+    </ProductDirectoryList>
+
+    <!-- Do we still need this product?
+    <Product Name="DgnPlatform" PrgOutputDir="DgnPlatform" SaveProduct="true">
+        <SubPart PartName="DgnPlatformLib"/>
+
+        <SubPart PartName="DgnPlatformDemoSource" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples"/>
+        <SubPart PartName="DgnPlatformSample" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples"/>
+        <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+
+        <Directories DirectoryListName="DgnPlatform" />
+    </Product>
+    -->
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
+    <Part Name="L10N-DgnPlatformXliffs-en" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/DgnPlatform/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-DgnPlatform/en/">
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-de" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnCoreMessages_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnHandlersMessages_de.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-es" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/DgnCoreMessages_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/DgnHandlersMessages_es.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-it" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/DgnCoreMessages_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/DgnHandlersMessages_it.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-ja" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/DgnCoreMessages_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/DgnHandlersMessages_ja.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-ru" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/DgnCoreMessages_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/DgnHandlersMessages_ru.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-zh-cn" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/DgnCoreMessages_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/DgnHandlersMessages_zh-cn.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-zh-tw" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/DgnCoreMessages_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/DgnHandlersMessages_zh-tw.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *** NEEDS WORK: We should not need any special "bootstrapping". AssertToolSet.mki should set up toolcontext for any/all platforms. *** -->
+    <!-- The first part ever built causes the tool context to be generated. This is actually a little intricate and has certain requirements, so explicitly cause it to happen in a controlled way. -->
+    <Part Name="BootStrapToolContext" BentleyBuildMakeFile="BootStrapToolContext.mke"/>
+
+    <!-- *** NEEDS WORK: We should not need a special part for Linux. *** -->
+    <Product Name="DgnPlatformLinux" OnlyPlatforms="LinuxX64">
+        <Directories DirectoryListName="DgnPlatformLinux" />
+        
+        <SubPart PartName="BootStrapToolContext"/>
+        <SubPart PartName="DgnPlatformLib"/>
+    </Product>
+
+    <ProductDirectoryList ListName="DgnPlatformLinux">
+        <ProductDirectory Name="PublicAPI" Path="include/publicapi"/>
+        <ProductDirectory Name="VendorAPI" Path="include/vendorapi"/>
+
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="lib"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies" Path="lib"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies" Path="lib"/>
+        <ProductDirectory Name="GeomNativeAssemblies" Path="lib"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies" Path="lib"/>
+
+        <ProductDirectory Name="DgnPlatformFont" Path="etc/fonts"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts" Path="etc/fonts"/>
+        <ProductDirectory Name="ECSchemas" Path="etc"/>
+        <ProductDirectory Name="VendorNotices" Path="etc/notices"/>
+        <ProductDirectory Name="VendorNotices" LibType="static" Path="etc/notices"/>
+
+        <ProductDirectory Name="Libs" Deliver="False"/>
+    </ProductDirectoryList>
+
+    <Part Name="DgnPlatform-Tested">
+        <!-- Build the SDK -->
+        <!-- *** NEEDS WORK: We should not need a special part for Linux. *** -->
+        <SubPart PartName="BootStrapToolContext"/>
+<!--        <SubPart PartName="DgnPlatformLib" /> -->
+        <!-- Build all platform unit tests -->
+	<SubPart PartName="PlatformUnitTests-No-View" PartFile="BeGTest" Repository="BeGTest"  />
+        <!-- Build the test runner and, if possible, run the tests -->
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"  Repository="BeGTest" />
+    </Part>
+
+</BuildContext>

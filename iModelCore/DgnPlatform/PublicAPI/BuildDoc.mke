@@ -1,0 +1,129 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PublicAPI/BuildDoc.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile=$(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
+%include    mdl.mki
+%include    $(SharedMki)HtmlHelp.mki
+
+%if defined (DONT_BUILD_DOC)
+    %return
+%endif
+
+SrcDgnPlatform=$(SrcRoot)DgnPlatform/
+
+%if !defined (NO_CHM)
+%if !defined (OutputFile)
+    %error OutputFile - You must define this to identify where to link the generated .chm file
+    %return
+%endif
+%endif
+
+%if defined (NO_XML)
+    %if defined (Scope1)
+        InputDir       = $(BuildContext)SubParts/PublishedApi_Scope1/DgnProject/
+        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox_scope1/
+    %else
+        InputDir       = $(BuildContext)SubParts/PublishedApi/DgnProject/
+        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox/
+    %endif
+%else
+    %if defined (Scope1)
+        InputDir       = $(BuildContext)SubParts/PublishedApi_Scope1/DgnProject/
+        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox_scope1_xml/
+    %else
+        InputDir       = $(BuildContext)SubParts/PublishedApi/DgnProject/
+        DOXYGEN_OUTPUT = $(dgnPlatformBuildDir_)dox_xml/
+    %endif
+%endif
+
+InputStamp     = $(InputDir).stamp
+
+# You can't have a big include directory because Doxygen doesn't respect "#pragma once" so we can't point this at PublishedAPI.
+#   However, we seem to need the Bentley directory as an include to get the docs to generate correctly.  Otherwise ElementHandles don't work.
+#   Previous comments indicate that it is needed to understand macros like BEGIN_BENTLEY_NAMESPACE and ADD_BENTLEY_TYPEDEFS.
+#   So we create this temporary directory, and only link in the Bentley directory.  That keeps performance up while creating the full doc. 
+includeDir = $(dgnPlatformBuildDir_)doxygenInclude/
+always:
+    !~@mkdir $(includeDir)
+   CreateSymLinks.py -d"$(includeDir)Bentley=$(BuildContextPublicApiDir)Bentley"
+
+DOXYGEN_INPUT  = $(InputDir)
+
+#INCLUDE_PATH  = $(DOXYGEN_INPUT)
+$(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
+    $(msg)
+    ~mkdir $(DOXYGEN_OUTPUT)
+    > $(DOXYGEN_OUTPUT)doxygen.cfg
+    @INCLUDE      = bentley-doxygen.cfg
+%if defined (NO_XML)
+    @INCLUDE      = bentley-doxygen-html-aliases.cfg
+%else
+    @INCLUDE      = bentley-doxygen-xml-aliases.cfg
+%endif
+    <
+    ~@putenv PROJECT_NAME="DgnPlatform SDK Documentation"
+    ~@putenv DOXYGEN_INPUT=$(DOXYGEN_INPUT)
+    ~@putenv DOXYGEN_IMAGES=$(_MakefilePath)htmlinclude
+    ~@putenv DOXYGEN_OUTPUT=$(DOXYGEN_OUTPUT)
+    ~@putenv DOXYGEN_INCLUDE=$(includeDir)
+    ~@putenv HHC=
+    %if defined (NO_XML)
+        ~@putenv DOXYGEN_GENERATE_XML=NO
+        | ************************************************
+        | *  NO_XML is defined - not building *.xml 
+        | ************************************************
+    %else
+        ~@putenv DOXYGEN_GENERATE_XML=YES
+    %endif 
+    %if defined (NO_CHM)
+        ~@putenv DOXYGEN_GENERATE_CHM=NO
+        | ************************************************
+        | *  NO_CHM is defined - not building *.chm
+        | ************************************************
+    %else 
+        ~@putenv CHM_FILE=$(DOXYGEN_OUTPUT)DgnPlatformApi
+        ~@putenv DOXYGEN_GENERATE_CHM=YES
+    %endif
+    %if defined (NO_HTML)
+        ~@putenv DOXYGEN_GENERATE_HTML=NO
+        | ************************************************
+        | *  NO_HTML is defined - not building *.html 
+        | ************************************************
+    %else 
+        ~@putenv DOXYGEN_GENERATE_HTML=YES
+    %endif
+    ~chdir $(SrcDgnPlatform)docs                             
+    !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
+    %if !defined (NO_XML)
+        | ************************************************
+        | * See $(DOXYGEN_OUTPUT)xml/*
+        | ************************************************
+        @CreateSymLinks.py -d"$(BuildContext)xml=$(DOXYGEN_OUTPUT)xml/"
+    %endif
+    %if !defined (NO_CHM)
+        | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]
+        !-$(hhc) $(DOXYGEN_OUTPUT)html/index.hhp
+        | ************************************************
+        | * See $(CHM_FILE).chm
+        | ************************************************
+    %endif 
+    %if !defined (NO_HTML)
+        | ************************************************
+        | * See $(DOXYGEN_OUTPUT)html/index.html
+        | ************************************************
+    %endif
+    ~time
+
+%if !defined (NO_CHM)
+    $(BuildContext)$(OutputFile): $(DOXYGEN_OUTPUT)DgnPlatformAPI.chm
+        $(LinkFirstDepToFirstTarget)
+%endif
+
+%if !defined (NO_XML)
+always:
+   @CreateSymLinks.py -d"$(BuildContext)$(OutputFile)=$(DOXYGEN_OUTPUT)"
+%endif

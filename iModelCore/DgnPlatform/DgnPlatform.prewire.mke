@@ -1,0 +1,18 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: DgnPlatform.prewire.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
+%include mdl.mki
+
+# Wire in my own public header files.
+always:
+    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnPlatform=$(DgnPlatformPublicAPISrc)DgnPlatform"
+    @CreateSymLinks.py -d"$(BuildContext)ECSchemas=$(SrcRoot)/DgnPlatform/ECSchemas"
+
+# Wire in my own private header files (for unit tests).
+always:
+    @CreateSymLinks.py -d"$(BuildContext)PrivateAPI/DgnPlatformInternal=$(DgnPlatformInternalApiSrc)"

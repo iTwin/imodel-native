@@ -1,0 +1,25 @@
+#----------------------------------------------------------------------
+#
+#     $Source: DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+schemaOutDir    = $(o)
+schemaLinkDir    = $(BuildContext)GeneratedSchemas/
+
+%include mdl.mki
+
+o = $(OutputRootDir)Build/DimStyleSchemaGenerator/
+
+$(schemaOutDir)DimensionStyleSchema.01.00.ecschema.xml : $(_makefilespace)
+    !~@mkdir $(schemaOutDir)
+    >$@
+        TBD - must get pre-built DimensionStyleSchema.01.00.ecschema.xml from somewhere. Creating a stub for now.
+    <
+
+# Link the schema into the build context
+$(schemaLinkDir)DimensionStyleSchema.01.00.ecschema.xml : $(schemaOutDir)DimensionStyleSchema.01.00.ecschema.xml
+    !~@mkdir $(schemaLinkDir)
+    $(LinkFirstDepToFirstTarget)

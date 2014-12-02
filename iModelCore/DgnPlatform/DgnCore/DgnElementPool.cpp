@@ -1,0 +1,1130 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/DgnElementPool.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <DgnPlatformInternal.h>
+
+typedef PersistentElementRefP* PersistentElementRefH;
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+/*=================================================================================**//**
+* @bsiclass                                                     KeithBentley    01/01
++===============+===============+===============+===============+===============+======*/
+struct ElemIdRange
+{
+    UInt64 m_low, m_high;
+
+    void Init (UInt64 low, UInt64 high) {m_low = low; m_high  = high;}
+    void Extend (ElemIdRange const& range)
+        {
+        if (range.m_low < m_low)
+            m_low = range.m_low;
+        if (range.m_high > m_high)
+            m_high = range.m_high;
+        }
+
+    void Extend (UInt64 newKey)
+        {
+        if (newKey < m_low)
+            m_low = newKey;
+        if (newKey > m_high)
+            m_high = newKey;
+        }
+
+    bool Contains (UInt64 key) const {return (key >= m_low) && (key <= m_high);}
+    bool Contains (ElemIdRange const& range) const {return (range.m_high <= m_high) && (range.m_low >= m_low);}
+};
+
+enum PurgeStat {PURGE_Kept=0, PURGE_Deleted=1};
+
+struct ElemIdRangeNode;
+struct ElemIdLeafNode;
+
+typedef struct ElemIdRangeNode* ElemIdRangeNodeP;
+typedef ElemIdRangeNode const * ElemIdRangeNodeCP;
+typedef ElemIdRangeNodeP*       ElemIdRangeNodeH;
+typedef ElemIdRangeNodeP const* ElemIdRangeNodeCH;
+typedef bool (*T_NodeSortFunc)(ElemIdRangeNodeP, ElemIdRangeNodeP);
+
+/*=================================================================================**//**
+* a node in the tree that has children
+* @bsiclass                                                     KeithBentley    01/01
++===============+===============+===============+===============+===============+======*/
+struct ElemIdParent
+{
+    virtual ~ElemIdParent(){}
+    virtual void _IncreaseRange (ElemIdRange const&) = 0;
+    virtual void _AddChildNode (ElemIdRangeNodeP newNode) = 0;
+    virtual ElemIdLeafNode const* _NextSibling (ElemIdRangeNodeCP me) const = 0;
+};
+
+/*=================================================================================**//**
+* every node in the tree must have this.
+* @bsiclass                                                     KeithBentley    12/97
++===============+===============+===============+===============+===============+======*/
+struct ElemIdRangeNode
+{
+protected:
+    ElemIdTree&    m_treeRoot;              // pointer to root of tree. Needed for FreeNode
+    ElemIdParent*  m_parent;                // pointer to this node's immediate parent. Only necessary for iterators.
+    mutable ElemIdRange m_range;            // highest and lowest ElementId held in this node
+    UInt64         m_lastUnreferenced;      // the "time" any entry from this node down last became garbage
+    int            m_nEntries;              // the total number of entries held in this node
+    bool           m_isLeaf;
+    mutable bool   m_allReferenced;         // if true, we know all of the entries from this node down hold no garbage elements
+    mutable bool   m_isSloppy;              // is m_range accurate? If not, we need to determine it.
+
+public:
+    ElemIdRangeNode (ElemIdTree& root, ElemIdParent* parent, bool leaf) : m_treeRoot(root),m_parent(parent),m_isLeaf(leaf) {m_nEntries=0; m_isSloppy=false; m_allReferenced=false; InitRange(); m_lastUnreferenced=0;}
+    virtual void _CalculateNodeRange() const = 0;
+    virtual void _Add (PersistentElementRefP entry, UInt64 counter) = 0;
+    virtual struct ElemIdLeafNode const* _GetFirstNode() const = 0;
+    virtual PurgeStat _Purge(Int64 memTarget) = 0;
+    virtual PurgeStat _ReleaseAndCleanup(UInt64 key) = 0;
+    virtual void _Empty () = 0;
+    virtual void _OnDestroying() = 0;
+
+    bool ContainsKey (UInt64 key) const {CheckSloppy(); return m_range.Contains(key);}
+    void SetParent(ElemIdParent* newParent) {m_parent = newParent;}
+    bool IsLeaf() const {return m_isLeaf;}
+    ElemIdParent const* GetParent () const {return m_parent;}
+    bool IsSloppy() const {return m_isSloppy;}
+    void CheckSloppy() const {if (IsSloppy())_CalculateNodeRange();}
+    int GetCount () const {return m_nEntries;}
+    void InitRange (UInt64 min, UInt64 max) const {m_range.Init (min, max); m_isSloppy = false;}
+    void InitRange() const {InitRange (ULLONG_MAX, 0);}
+    void GetExactNodeRange (ElemIdRange& range) const {CheckSloppy(); range = m_range;}
+    void SetNodeRange(ElemIdRange const& range) const { m_range = range; m_isSloppy = false; }
+    void SetLastUnReferenced (UInt64 val) {m_lastUnreferenced=val; m_allReferenced=false;}
+    UInt64 GetLastUnReferenced () const {return m_lastUnreferenced;}
+    UInt64 GetLowestId() const {return m_range.m_low;}
+    bool AreAllReferenced() const {return m_allReferenced;}
+    PersistentElementRefP Find (UInt64 key, bool) const;
+};
+
+/*=================================================================================**//**
+// Leaf nodes only hold elements
+// @bsiclass                                                    Keith.Bentley   09/12
++===============+===============+===============+===============+===============+======*/
+struct ElemIdLeafNode : ElemIdRangeNode
+{
+private:
+    PersistentElementRefP m_elems[NUM_LEAFENTRIES];
+
+    void CalculateLeafRange() const {InitRange (m_elems[0]->GetElementId().GetValue(), (*LastEntry())->GetElementId().GetValue());}
+    void ReleaseAllPinned (ElementRefP ref);
+
+    virtual ElemIdLeafNode const* _GetFirstNode () const {return this;}
+    virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
+    virtual void _Add (PersistentElementRefP entry, UInt64 counter) override;
+    virtual PurgeStat _Purge(Int64) override;
+    virtual PurgeStat _ReleaseAndCleanup(UInt64 key) override;
+    virtual void _Empty () override;
+    virtual void _OnDestroying() override;
+
+public:
+    PersistentElementRefP GetEntry(int index) const {return m_elems[index];}
+    PersistentElementRefP const* FirstEntry() const {return m_elems;}
+    PersistentElementRefP const* LastEntry() const {return &m_elems[m_nEntries-1];}
+    ElemIdLeafNode (ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode (root, parent, true) {}
+    void AddEntry (PersistentElementRefP entry);
+    void SplitLeafNode();
+    PersistentElementRefP FindLeaf (UInt64 key, bool) const;
+};
+
+/*=================================================================================**//**
+* an internal node either holds all Internal nodes, or all LeafNodes.
+* @bsiclass                                                     KeithBentley    12/97
++===============+===============+===============+===============+===============+======*/
+struct ElemIdInternalNode : public ElemIdRangeNode, ElemIdParent
+{
+protected:
+    ElemIdRangeNodeP m_children[NUM_INTERNALENTRIES];
+
+    virtual void _Add (PersistentElementRefP entry, UInt64 counter) override {SetLastUnReferenced(counter); ChooseBestNode(entry->GetElementId().GetValue())->_Add (entry, counter);}
+    virtual void _IncreaseRange (ElemIdRange const&) override;
+    virtual void _CalculateNodeRange () const override;
+    virtual ElemIdLeafNode const* _GetFirstNode () const override {return (*FirstEntryC())->_GetFirstNode();}
+    virtual ElemIdLeafNode const* _NextSibling (ElemIdRangeNodeCP from) const override;
+    virtual PurgeStat _Purge(Int64) override;
+    virtual PurgeStat _ReleaseAndCleanup(UInt64 key) override;
+    virtual void _Empty () override;
+    virtual void _OnDestroying() override;
+
+    void AccessedNode(int i);
+    void SortInto (ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
+
+public:
+    virtual void _AddChildNode (ElemIdRangeNodeP newNode) override;
+
+    ElemIdInternalNode (ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode (root, parent, false) {}
+
+    ElemIdRangeNodeCH GetEntryC (int i) const     {return m_children+i;}
+    ElemIdRangeNodeCH FirstEntryC()     const     {return GetEntryC(0);}
+    ElemIdRangeNodeCH LastEntryC()      const     {return GetEntryC(m_nEntries-1);}
+    ElemIdRangeNodeH  GetEntry (int i)            {return m_children+i;}
+    ElemIdRangeNodeH  FirstEntry()                {return GetEntry(0);}
+    ElemIdRangeNodeH  LastEntry()                 {return GetEntry(m_nEntries-1);}
+    ElemIdRangeNodeP ChooseBestNode (UInt64 key);
+    bool Contains (ElemIdRangeNodeP child);
+    void SplitInternalNode();
+    PersistentElementRefP FindInternal (UInt64 key, bool) const;
+};
+
+struct MyStats : DgnElementPool::Statistics
+{
+void Reset() {m_newElements=m_unReferenced=m_reReferenced=m_purged = 0 ;}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
+inline PersistentElementRefP ElemIdRangeNode::Find (UInt64 key, bool setFreeEntryFlag) const
+   {
+   return m_isLeaf ? ((ElemIdLeafNode const*) this)->FindLeaf(key,setFreeEntryFlag) :
+                     ((ElemIdInternalNode const*) this)->FindInternal(key,setFreeEntryFlag);
+   }
+
+//=======================================================================================
+// A tree of elements, sorted by ElementId. Elements are held in the tree, even if their refCount goes to 0 so they can be reclaimed
+// if they are needed again. Unreferenced elements are deleted when a "Purge" operation is performed, attempting to preferentially keep the most
+// recently released elements.
+// @bsiclass                                                    Keith.Bentley   09/12
+//=======================================================================================
+struct ElemIdTree : public ElemIdParent
+{
+    FixedSizePool1     m_leafPool;          // pool for allocating leaf nodes
+    FixedSizePool1     m_internalPool;      // pool for allocating internal nodes
+    ElemIdRangeNodeP   m_root;              // the root node. Starts as a leaf node for trees with less than 50 entries
+    DgnProjectR        m_project;
+    UInt64             m_counter;           // always increasing, used to tell least recently accessed for garbage collection
+    MyStats            m_stats;
+    DgnElementPool::Totals m_totals;
+
+    virtual void _IncreaseRange (ElemIdRange const&) override {}
+    virtual void _AddChildNode (ElemIdRangeNodeP newNode) override;
+    virtual ElemIdLeafNode const* _NextSibling (ElemIdRangeNodeCP curr) const override {return NULL;}
+
+    ElemIdInternalNode* NewInternalNode (ElemIdParent* parent) {return new ((ElemIdInternalNode*) m_internalPool.malloc ()) ElemIdInternalNode (*this, parent);}
+    ElemIdLeafNode* NewLeafNode (ElemIdParent* parent)         {return new ((ElemIdLeafNode*) m_leafPool.malloc ()) ElemIdLeafNode (*this, parent);}
+    void FreeNode (ElemIdRangeNodeP child, bool leaf);
+
+public:
+    ElemIdTree (DgnProjectR project) : m_project(project)
+        {
+        m_totals.m_entries        = 0;
+        m_totals.m_unreferenced   = 0;
+        m_totals.m_allocedBytes   = 0;
+        m_counter           = 0;
+        m_leafPool.SetSize (sizeof(ElemIdLeafNode), 4);
+        m_internalPool.SetSize (sizeof(ElemIdInternalNode), 4);
+        m_root  = NULL;
+        m_stats.Reset();
+        }
+
+    ~ElemIdTree () {Destroy();}
+
+    bool ContainsKey (ElementId key) {return (NULL != FindElement(key, false));}
+    ElemIdRangeNodeP GetRoot() {return m_root;}
+    PersistentElementRefP FindElement (ElementId key, bool setAccessed);
+    void AddElement (PersistentElementRefP);
+    void KillElement (PersistentElementRefP, bool);
+    void ReleaseAndCleanup (PersistentElementRefP element);
+    void Purge (Int64 memTarget);
+    void Destroy ();
+    void OnDestroying();
+};
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2014
+//---------------------------------------------------------------------------------------
+PurgeStat ElemIdLeafNode::_ReleaseAndCleanup(UInt64 key)
+    {
+    // binary search for position to put new entry
+    for (int begin=0, end=m_nEntries; begin < end;)
+        {
+        int index = begin + (end - begin - 1)/2;
+        UInt64 thisId = m_elems[index]->GetElementId().GetValue();
+        if (key < thisId)
+            end = index;
+        else if (thisId < key)
+            begin = ++index;
+        else
+            {
+            //  this is the entry to delete
+            BeAssert (m_elems[index]->GetRefCount() == 0); // duplicate keys!
+            if (m_elems[index]->GetRefCount() != 0)
+                return PURGE_Kept;
+
+            PersistentElementRefP target = m_elems[index];
+            m_isSloppy = true;           // we can't tell whether we may have dropped the first or last entry.
+            //  Is it worth computing m_allReferenced?
+
+            m_nEntries -= 1;
+            memmove (m_elems + index, m_elems + index + 1, (m_nEntries-index) * sizeof (PersistentElementRefP));
+
+            // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
+            m_treeRoot.KillElement (target, false);
+            break;
+            }
+        }
+
+    return (0 == m_nEntries) ? PURGE_Deleted : PURGE_Kept;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PurgeStat ElemIdLeafNode::_Purge(Int64 memTarget)
+    {
+    if (m_allReferenced || m_treeRoot.m_totals.m_allocedBytes < memTarget || 0 == m_treeRoot.m_totals.m_unreferenced)
+        return  PURGE_Kept;
+
+    PersistentElementRefH curr = m_elems;
+    PersistentElementRefH used = curr;
+    PersistentElementRefH end = m_elems + m_nEntries;
+
+    unsigned killedIndex = 0;
+    PersistentElementRefP killed[NUM_LEAFENTRIES];
+
+    for (;curr < end; ++curr)
+        {
+        if (0 == (*curr)->GetRefCount()) // is the element garbage?
+            {
+            //  Do not kill the element here.  If the element's app data holds a reference to another
+            //  element -- possibly a symbol element -- killing the element here may cause the reference
+            //  count of that element to go to zero. We don't want that to happen until the tree is in a
+            //  consistent state.
+            killed[killedIndex++] = *curr;
+            BeAssert(killedIndex <= NUM_LEAFENTRIES);
+            }
+        else
+            *(used++) = *curr;
+        }
+
+    m_isSloppy = true;           // we can't tell whether we may have dropped the first or last entry.
+    m_allReferenced = true;      // since we know we've eliminated any garbage entries, mark this node as "all referenced"
+    m_nEntries = (int)(used - m_elems);
+
+    // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
+    for (unsigned i = 0; i < killedIndex; i++)
+        m_treeRoot.KillElement (killed[i], false);
+
+    return (0 == m_nEntries) ? PURGE_Deleted : PURGE_Kept;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* copy entries from one arry into another and sort via a function
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::SortInto (ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc)
+    {
+    memcpy (into, from, m_nEntries*sizeof(ElemIdRangeNodeP));
+    std::sort (into, into+m_nEntries, sortFunc);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool sortByAccessTime (ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLastUnReferenced() < n2->GetLastUnReferenced();}
+static bool sortById (ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLowestId() < n2->GetLowestId();}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2014
+//---------------------------------------------------------------------------------------
+PurgeStat ElemIdInternalNode::_ReleaseAndCleanup(UInt64 key)
+    {
+    for (unsigned index = 0; index < (unsigned)m_nEntries; ++index)
+        {
+        ElemIdRangeNodeP node = m_children[index];
+        ElemIdRange  currRange;
+        node->GetExactNodeRange (currRange);
+
+        if (key >= currRange.m_low && key <= currRange.m_high)
+            {
+            if (PURGE_Deleted != node->_ReleaseAndCleanup(key))
+                {
+                //  Should we compute m_allReferenced -- maybe call AreAllRefenced
+                return PURGE_Kept;
+                }
+
+            m_nEntries -= 1;
+            memmove (m_children + index, m_children + index + 1, (m_nEntries-index) * sizeof(ElemIdRangeNodeP));
+            m_treeRoot.FreeNode (node, node->IsLeaf());    // child was deleted
+
+            return (0 == m_nEntries) ? PURGE_Deleted : PURGE_Kept;
+            }
+        }
+
+    BeAssert(false && "did not find _ReleaseAndCleanup target");
+    return PURGE_Kept;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PurgeStat ElemIdInternalNode::_Purge(Int64 memTarget)
+    {
+    if (m_allReferenced || m_treeRoot.m_totals.m_allocedBytes < memTarget || 0 == m_treeRoot.m_totals.m_unreferenced)
+        return  PURGE_Kept;
+
+    // We want to attempt to purge garbage, starting with the least-recently-accessed nodes.
+    // Copy the list into a new array and sort by lastaccess time.
+    ElemIdRangeNodeP purgeOrder[NUM_INTERNALENTRIES];
+    SortInto (purgeOrder, m_children, sortByAccessTime);
+
+    ElemIdRangeNodeH curr = purgeOrder;
+    ElemIdRangeNodeH used = purgeOrder; // used to squeeze out deleted nodes.
+    ElemIdRangeNodeH end = curr + m_nEntries;
+
+    m_allReferenced = true;  // start out marking this node as completely filled. If we hit any children with garbage, we turn this off.
+    unsigned nPurgeList = 0;
+    ElemIdRangeNodeP purgeList[NUM_INTERNALENTRIES];
+    for (;curr < end; ++curr)
+        {
+        ElemIdRangeNodeP node = *curr;
+        if (PURGE_Deleted == node->_Purge(memTarget))
+            //  Do not free the node here. Subsequent iterations may kill an element that holds a reference
+            //  to another element and that may trigger logic that searches the tree.  The nodes can't be freed until
+            //  we are done purging.
+            purgeList[nPurgeList++] = node;
+        else
+            {
+            if (!node->AreAllReferenced())
+                m_allReferenced = false;  // if any node below is isn't completely full, we're not either
+
+            *(used++) = node;
+            }
+        }
+
+    m_isSloppy = true;
+
+    // we've now potentially dropped entries in this node. See what happened
+    int nLeft = (int)(used - purgeOrder);
+    if (m_nEntries == nLeft)
+        return PURGE_Kept;      // we didn't drop any, we're done
+
+    // we dropped some but not all entries. Get the remaining ones from the "purgeOrder" array and put them back into child array,
+    // sorted by their ElementId range
+    m_nEntries = nLeft; // make sure this happens before sort!
+    if (0 != nLeft)
+        SortInto (m_children, purgeOrder, sortById);
+
+    for (unsigned purgeIndex = 0; purgeIndex < nPurgeList; ++purgeIndex)
+        m_treeRoot.FreeNode (purgeList[purgeIndex], purgeList[purgeIndex]->IsLeaf());    // child was deleted, we free and and don't copy into "used"
+
+    return 0==nLeft ? PURGE_Deleted : PURGE_Kept;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2014
+//---------------------------------------------------------------------------------------
+void ElemIdTree::ReleaseAndCleanup (PersistentElementRefP element)
+    {
+    if (element->GetRefCount() != 0)
+        {
+        BeAssert(false && "ref count is not 0");
+        return;
+        }
+
+    UInt64  key = element->GetElementId().GetValue();
+    if (NULL == m_root || (PURGE_Deleted != m_root->_ReleaseAndCleanup(key)))
+        return;
+
+    // all of the elements were garbage!
+    FreeNode (m_root, m_root->IsLeaf());
+    m_root = NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* remove garbage (refCount==0) elements from the tree, until we have at most "memTarget" bytes used by this pool.
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdTree::Purge (Int64 memTarget)
+    {
+    if (memTarget < 0)
+        memTarget = 0;
+
+    if (NULL == m_root || (PURGE_Deleted != m_root->_Purge(memTarget)))
+        return;
+
+    // all of the elements were garbage!
+    FreeNode (m_root, m_root->IsLeaf());
+    m_root = NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* add an element to this node, sorted by ElementId
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdLeafNode::AddEntry (PersistentElementRefP entry)
+    {
+    int index = m_nEntries;
+    UInt64 key = entry->GetElementId().GetValue();
+
+    if (key < m_range.m_high)
+        {
+        // binary search for position to put new entry
+        for (int begin=0, end=m_nEntries; begin < end;)
+            {
+            index = begin + (end - begin - 1)/2;
+            UInt64 thisId = m_elems[index]->GetElementId().GetValue();
+            if (key < thisId)
+                end = index;
+            else if (thisId < key)
+                begin = ++index;
+            else
+                {
+                BeAssert (false); // duplicate keys!
+                break;
+                }
+            }
+
+        PersistentElementRefP const*  tEntry = m_elems + index;
+        memmove ((void*) (tEntry+1), tEntry, (m_nEntries-index) * sizeof (PersistentElementRefP));
+        }
+
+    m_elems[index] = entry;
+    m_nEntries++;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdLeafNode::_Add (PersistentElementRefP entry, UInt64 counter)
+    {
+    // since elements are always unreferenced when we add them to the tree, this correctly marks this node as not "allUnreferenced"
+    SetLastUnReferenced(counter);
+
+    if (m_isSloppy)
+        CalculateLeafRange();
+
+    AddEntry (entry);
+
+    UInt64 key;
+    if (!m_range.Contains (key = entry->GetElementId().GetValue()))
+        {
+        m_range.Extend (key);
+        m_parent->_IncreaseRange (m_range);
+        }
+
+    if (NUM_LEAFENTRIES == GetCount ())
+        SplitLeafNode ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PersistentElementRefP ElemIdLeafNode::FindLeaf (UInt64 key, bool setFreeEntryFlag) const
+    {
+    if (setFreeEntryFlag) // this means that the last reference to an element in this node was just released.
+        m_allReferenced = false;
+
+    for (int begin=0, end=m_nEntries; begin < end;)
+        {
+        int index = begin + (end - begin - 1)/2;
+        UInt64 thisId = m_elems[index]->GetElementId().GetValue();
+        if (key < thisId)
+            end = index;
+        else if (thisId < key)
+            begin = index + 1;
+        else
+            return m_elems[index];
+        }
+
+    return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdLeafNode::SplitLeafNode()
+    {
+    if (NULL == m_parent)
+        return;
+
+    ElemIdLeafNode*   newNode = m_treeRoot.NewLeafNode (m_parent);
+    newNode->m_lastUnreferenced = m_lastUnreferenced;
+
+    int numEntries  = GetCount();
+    int start       = (numEntries - (numEntries / 5)) + 1;
+
+    for (int i = start; i < numEntries; i++)
+        newNode->AddEntry (GetEntry(i));
+
+    m_nEntries = start;
+    m_allReferenced = false;
+    CalculateLeafRange();
+
+    newNode->_CalculateNodeRange();
+    m_parent->_AddChildNode (newNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ElemIdRangeNodeP ElemIdInternalNode::ChooseBestNode (UInt64 key)
+    {
+    if (m_isSloppy)
+        _CalculateNodeRange ();
+
+    if (key >= m_range.m_high)
+        return *LastEntry();
+
+    if (key <= m_range.m_low)
+        return  *FirstEntry();
+
+    ElemIdRangeNodeP lastNode = NULL;
+    UInt64      distance, lastDist = ULLONG_MAX;
+
+    for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
+        {
+        ElemIdRange  thisRange;
+        (*curr)->GetExactNodeRange (thisRange);
+
+        if (key >= thisRange.m_low)
+            {
+            if (key <= thisRange.m_high)
+                return  *curr;
+
+            lastDist = (key - thisRange.m_high);
+            lastNode = *curr;
+            }
+        else
+            {
+            distance = (thisRange.m_low - key);
+            return (distance < lastDist) ? *curr : lastNode;
+            }
+        }
+
+    return  lastNode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PersistentElementRefP ElemIdInternalNode::FindInternal (UInt64 key, bool setFreeEntryFlag) const
+    {
+    if (setFreeEntryFlag) // this means that the last reference to an element in this node was just released.
+        m_allReferenced = false;
+
+    for (int begin=0, end=m_nEntries; begin < end;)
+        {
+        int index = begin + (end - begin - 1)/2;
+
+        ElemIdRange  thisRange;
+        m_children[index]->GetExactNodeRange (thisRange);
+
+        if (key < thisRange.m_low)
+            end = index;
+        else if (thisRange.m_high < key)
+            begin = index + 1;
+        else
+            return m_children[index]->Find (key, setFreeEntryFlag);
+        }
+
+    return  NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/04
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElemIdInternalNode::Contains (ElemIdRangeNodeP child)
+    {
+    // this isn't sorted by child address, can't use binary search
+    for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
+        {
+        if (*curr == child)
+            return  true;
+        }
+
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::_AddChildNode (ElemIdRangeNodeP newNode)
+    {
+    if (Contains (newNode))
+        return;
+
+    newNode->SetParent(this);
+
+    ElemIdRange   range;
+    newNode->GetExactNodeRange (range);
+    m_range.Extend (range);
+
+    int index = 0;
+    for (; index <m_nEntries; index++)
+        {
+        ElemIdRange   thisRange;
+        m_children[index]->GetExactNodeRange (thisRange);
+
+        if (range.m_high <= thisRange.m_low)
+            {
+            memmove ((void*) &m_children[index+1], &m_children[index], (m_nEntries-index) * sizeof (ElemIdRangeNodeP));
+            break;
+            }
+        }
+
+    m_children[index] = newNode;
+    if (NUM_INTERNALENTRIES == ++m_nEntries)
+        SplitInternalNode ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::_IncreaseRange (ElemIdRange const& range)
+    {
+    if (m_isSloppy)
+        _CalculateNodeRange ();
+    else
+        {
+        if (m_range.Contains (range))
+            return;
+
+        m_range.Extend (range);
+        }
+
+    m_parent->_IncreaseRange (m_range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::SplitInternalNode()
+    {
+    if (NULL == m_parent)
+        return;
+
+    ElemIdInternalNode*  newNode = m_treeRoot.NewInternalNode (m_parent);
+    int                 nEntries = GetCount();
+    int                 start = (nEntries - (nEntries/4)) + 1;
+
+    newNode->m_lastUnreferenced = m_lastUnreferenced;
+
+    for (int i = start; i < nEntries; i++)
+        newNode->_AddChildNode (m_children[i]);
+
+    m_nEntries = start;
+    _CalculateNodeRange();
+
+    m_parent->_AddChildNode (newNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::_CalculateNodeRange () const
+    {
+    InitRange();
+
+    ElemIdRange currRange;
+    for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
+        {
+        (*curr)->GetExactNodeRange (currRange);
+        m_range.Extend (currRange);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ElemIdLeafNode const* ElemIdInternalNode::_NextSibling (ElemIdRangeNodeCP from) const
+    {
+    for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
+        {
+        if (from == *curr)
+            {
+            if (++curr > last)
+                {
+                ElemIdRangeNodeCP mySibling = m_parent->_NextSibling (this);
+                return (NULL == mySibling) ? NULL : mySibling->_GetFirstNode ();
+                }
+
+            return  (*curr)->_GetFirstNode();
+            }
+        }
+
+    BeAssert (0);
+    return  NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdTree::AddElement (PersistentElementRefP entry)
+    {
+    if (NULL == entry)
+        return;
+
+    if (NULL == m_root)
+        m_root = NewLeafNode (this);
+
+    BeAssert (0 ==entry->GetRefCount());
+    ++m_totals.m_entries;
+    ++m_totals.m_unreferenced;
+    m_root->_Add (entry, ++m_counter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdTree::KillElement (PersistentElementRefP elRef, bool killingWholeTree)
+    {
+    BeAssert (0 == elRef->GetRefCount());
+    if (!killingWholeTree)
+        {
+        BeAssert (0 != m_totals.m_entries);
+        BeAssert (0 != m_totals.m_unreferenced);
+        --m_totals.m_entries;
+        --m_totals.m_unreferenced;
+        ++m_stats.m_purged;
+        }
+
+    elRef->DeallocateRef (m_project.Models().ElementPool(), killingWholeTree);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+PersistentElementRefP ElemIdTree::FindElement (ElementId key, bool setFreeFlag)
+    {
+    if ((NULL == m_root) || !m_root->ContainsKey (key.GetValueUnchecked()))
+        return NULL;
+
+    return  const_cast<PersistentElementRefP>(m_root->Find (key.GetValueUnchecked(), setFreeFlag));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/04
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdTree::FreeNode (ElemIdRangeNodeP child, bool leaf)
+    {
+    if (leaf)
+        m_leafPool.free (child);
+    else
+        m_internalPool.free (child);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdTree::_AddChildNode (ElemIdRangeNodeP newNode)
+    {
+    ElemIdRange          range;
+    ElemIdRangeNodeP     currentRoot = m_root;
+    ElemIdInternalNode*  newRoot;
+
+    newRoot = new ((ElemIdInternalNode*) m_internalPool.malloc ()) ElemIdInternalNode (*this, this);
+    newRoot->_AddChildNode (newNode);
+
+    newNode->GetExactNodeRange (range);
+    newRoot->SetNodeRange (range);
+
+    if (NULL != currentRoot)
+        newRoot->_AddChildNode (currentRoot);
+
+    m_root = newRoot;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdLeafNode::_Empty ()
+    {
+    PersistentElementRefH end = m_elems + m_nEntries;
+
+    for (PersistentElementRefH curr = m_elems; curr < end; ++curr)
+        m_treeRoot.KillElement (*curr, true);
+
+    m_nEntries = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::_Empty()
+    {
+    ElemIdRangeNodeH end = m_children + m_nEntries;
+
+    for (ElemIdRangeNodeH curr = m_children; curr < end; ++curr)
+        (*curr)->_Empty();
+
+    m_nEntries = 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     06/13
+//---------------------------------------------------------------------------------------
+void ElemIdLeafNode::_OnDestroying()
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     06/13
+//---------------------------------------------------------------------------------------
+void ElemIdInternalNode::_OnDestroying()
+    {
+    ElemIdRangeNodeH end = m_children + m_nEntries;
+
+    for (ElemIdRangeNodeH curr = m_children; curr < end; ++curr)
+        (*curr)->_OnDestroying();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     06/13
+//---------------------------------------------------------------------------------------
+void ElemIdTree::OnDestroying()
+    {
+    if (m_root)
+        m_root->_OnDestroying();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdTree::Destroy()
+    {
+    if (m_root)
+        m_root->_Empty(); // this frees all of the elements and their data
+
+    m_root = NULL;
+    m_leafPool.purge_memory_and_reinitialize();
+    m_internalPool.purge_memory_and_reinitialize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPool::~DgnElementPool() 
+    {
+    Destroy(); 
+    DELETE_AND_CLEAR(m_tree);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::Destroy()
+    {
+    BeDbMutexHolder _v_v(m_mutex);
+    m_tree->Destroy();
+    m_heapZone.EmptyAll();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     06/13
+//---------------------------------------------------------------------------------------
+void DgnElementPool::OnDestroying()
+    {
+    if (NULL == m_tree)
+        return;
+
+    BeDbMutexHolder _v_v(m_mutex);
+    m_tree->OnDestroying();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::AllocatedMemory (Int32 size)
+    {
+    if (size<0)
+        {
+        BeAssert(false);
+        return;
+        }
+    BeDbMutexHolder _v(m_mutex);
+    m_tree->m_totals.m_allocedBytes += size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::ReturnedMemory (Int32 size)
+    {
+    if (size<0)
+        {
+        BeAssert(false);
+        return;
+        }
+    BeDbMutexHolder _v(m_mutex);
+    m_tree->m_totals.m_allocedBytes -= size;
+    BeAssert (m_tree->m_totals.m_allocedBytes >= 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* an element that was previously garbage was just referenced
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::OnReclaimed(PersistentElementRefCR el)
+    {
+    BeDbMutexHolder _v_v(m_mutex);
+    BeAssert (0 != m_tree->m_totals.m_unreferenced);
+    --m_tree->m_totals.m_unreferenced;
+    ++m_tree->m_stats.m_reReferenced;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* an element that was previously referenced just became garbage
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::OnUnreferenced(PersistentElementRefCR el)
+    {
+    BeDbMutexHolder _v_v(m_mutex);
+    m_tree->FindElement(el.GetElementId(), true);   // mark this entry as having free content
+    ++m_tree->m_totals.m_unreferenced;
+    ++m_tree->m_stats.m_unReferenced;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PersistentElementRefP DgnElementPool::AllocateElementRef (DgnModelR dgnModel, ElementId id)
+    {
+    BeDbMutexHolder _v_v(m_mutex);
+    PersistentElementRefP elRef = new PersistentElementRef (&dgnModel, id);
+    m_tree->AddElement (elRef);
+    ++m_tree->m_stats.m_newElements;
+    return  elRef;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2014
+//---------------------------------------------------------------------------------------
+void DgnElementPool::ReleaseAndCleanup(PersistentElementRefPtr&elementRef)
+    {
+    PersistentElementRefP element = elementRef.get();
+    if (element->GetRefCount() != 1)
+        return;
+
+    elementRef = NULL;
+    BeDbMutexHolder _v_v(m_mutex);
+    m_tree->ReleaseAndCleanup(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::Purge (Int64 memTarget)
+    {
+    BeDbMutexHolder _v_v(m_mutex);
+    m_tree->Purge(memTarget);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+PersistentElementRefP DgnElementPool::FindElementById (ElementId id) const
+    {
+    BeDbMutexHolder _v_v(m_mutex);
+    return  m_tree->FindElement(id, false);
+    }
+
+DgnElementPool::Totals DgnElementPool::GetTotals() const {return m_tree->m_totals;}
+DgnElementPool::Statistics DgnElementPool::GetStatistics() const {return m_tree->m_stats;}
+void DgnElementPool::ResetStatistics() {m_tree->m_stats.Reset();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/12
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPool::DgnElementPool(DgnProjectR project) : m_heapZone (0, false), m_mutex(BeDbMutex::RecursiveMutex)
+    {
+    m_tree = new ElemIdTree(project);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A changeset was just applied to the database. That means that the element data in memory potentially does not match
+* what is now in the database. We need to find any elements in memory that were affected by the changeset and fix them.
+* Note that it is entirely possible that some elements in the changeset are not currently in memory. That's fine, we
+* don't need to worry about them - they'll be reloaded with the correct data if/when they're needed.
+* @bsimethod                                    Keith.Bentley                   07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::OnChangesetApplied (TxnSummaryCR summary)
+    {
+    // ADDS: elements that were added by the changeset are generally not of interest. However, when we
+    // delete elements in a session we don't remove them from the pool or from loaded models.
+    // Rather, they are marked as deleted. That is for two reasons: 1) otherwise we wouldn't know what model to
+    // put it in when it is undeleted in the case where we have loaded models, and 2) because we can't force their
+    // reference count to 0 and someone may be holding a reference to it. So, we need to check all of the adds in the
+    // changeset and see whether they are in fact "undeletes" from undo/redo.
+    for (auto& el : summary.GetElementAdds())
+        {
+        PersistentElementRefP elRef = FindElementById (el.GetElementId());
+        if (NULL != elRef) // if it is not found, there's nothing to do
+            elRef->UndeleteElement();
+        }
+
+    // DELETES: elements that were deleted by the changeset must be marked as deleted in the pool (see discussion above).
+    for (auto& el : summary.GetElementDeletes())
+        {
+        PersistentElementRefP elRef = FindElementById (el.GetElementId());
+        if (NULL != elRef) // if not found, nothing to do
+            {
+            DgnModelP model = elRef->GetDgnModelP();
+            elRef->DeleteElementAndComponents (*model);
+            model->OnElementDeletedFromDb(*elRef, false);
+            }
+        }
+
+    // MODIFIED: elements that are modified must be reloaded from the database
+    for (auto& el: summary.GetElementModifies())
+        {
+        DgnModelStatus stat = el->ReloadFromDb();
+        if (DGNMODEL_STATUS_Success != stat)
+            { BeAssert(false); }
+        }
+
+    // for XAttribute deletes or modifies, just clear the cache of that XAttr on its ElementRef.
+    for (auto& xatt: summary.GetXAttributeDeletes())
+        {
+        PersistentElementRefP elRef = FindElementById (xatt.GetElementId());
+        if (NULL != elRef)
+            elRef->ClearXAttCache(xatt.GetHandlerId(), xatt.GetXAttrId());
+        }
+    for (auto& xatt: summary.GetXAttributeModifies())
+        {
+        PersistentElementRefP elRef = FindElementById (xatt.GetElementId());
+        if (NULL != elRef)
+            elRef->ClearXAttCache(xatt.GetHandlerId(), xatt.GetXAttrId());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A previously undone changeset was canceled (meaning we made a different change while the changeset was reversed).
+* Or, we had uncommitted changes when we issued the undo command, that were reversed.
+* At this point all of the elements that were deleted by reversing the changeset (i.e. elements that were created by the original change)
+* are no longer useful. Tell their DgnModel to drop its reference (if it has one) to them so they become garbage and can be purged.
+* @bsimethod                                    Keith.Bentley                   07/13
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementPool::OnChangesetCanceled (TxnSummaryCR summary)
+    {
+    // This is only necessary because we keep deleted elements in memory. For XAttributes, we free the memory when
+    // we delete them so there is no corresponding work here for them.
+    for (auto& el : summary.GetElementDeletes())
+        {
+        PersistentElementRefP elRef = FindElementById (el.GetElementId());
+        if (NULL == elRef)
+            continue;
+
+        // Note: we can't actually free the memory here. We must wait for the next purge. They are garbage and no one
+        // should ever find them again. The element must have been deleted when the add was changeset was undone, but
+        // we need to tell the model to drop its reference.
+        DgnModelP model = elRef->GetDgnModelP();
+
+        // If the element was undone, then it is already deleted. However, if the transaction was never committed, and we're
+        // undoing, then we need to delete the element to free its XAttributes, QV graphics, etc.
+        if (!elRef->IsDeleted())
+            elRef->DeleteElementAndComponents (*model);
+
+        model->OnElementDeletedFromDb(*elRef, true); // this causes the model to remove this element from its "owned" list.
+        BeAssert (elRef->GetRefCount() == 0);
+        }
+    }

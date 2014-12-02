@@ -1,0 +1,381 @@
+//--------------------------------------------------------------------------------------
+//     $Source: DgnCore/Annotations/Annotations.fbs $
+//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//--------------------------------------------------------------------------------------
+
+namespace BentleyG06.DgnPlatform.FB;
+
+//***************************************************************************************************************************************************
+// AnnotationTextStyle
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+enum AnnotationTextStyleProperty : int {
+                                    //  TYPE    TARGET      NOTES
+                                    //  ----    ------      -----
+    ColorId = 1,                    //  integer run         Must be a valid color ID in the project
+    FontId = 2,                     //  integer run         Must be a valid font ID in the project
+    Height = 3,                     //  real    document    In project UORs
+    LineSpacingFactor = 4,          //  real    document    Factor of height
+    IsBold = 5,                     //  integer run         0 or 1 boolean
+    IsItalic = 6,                   //  integer run         0 or 1 boolean
+    IsSubScript = 7,                //  integer run         0 or 1 boolean
+    IsSuperScript = 8,              //  integer run         0 or 1 boolean
+    IsUnderlined = 9,               //  integer run         0 or 1 boolean
+    StackedFractionScale = 10,      //  real    run         Factor of height
+    StackedFractionType = 11,       //  integer run         Must exist in the AnnotationStackedFractionType enumeration
+    SubScriptOffsetFactor = 12,     //  real    run         Factor of height
+    SubScriptScale = 13,            //  real    run         Factor of height
+    SuperScriptOffsetFactor = 14,   //  real    run         Factor of height
+    SuperScriptScale = 15,          //  real    run         Factor of height
+    WidthFactor = 16                //  real    document    Factor of height
+
+} // AnnotationTextStyleProperty
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+struct AnnotationTextStyleSetter (emitVectorTypedefs) {
+    key:AnnotationTextStyleProperty;
+    integerValue:long;
+    realValue:double;
+
+} // AnnotationTextStyleSetter
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+table AnnotationTextStyle {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    id:uint;
+    name:string;
+    description:string;
+    setters:[AnnotationTextStyleSetter];
+
+} // AnnotationTextStyle
+
+//***************************************************************************************************************************************************
+// AnnotationTextBlock
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+enum AnnotationTextBlockProperty : int {
+                            //  TYPE    TARGET      NOTES
+                            //  ----    ------      -----
+    DocumentWidth = 1,      //  real    Document    In project UORs
+    Justification = 2       //  integer Document    Must exist in the AnnotationTextBlock::HorizontalJustification enumeration
+
+} // AnnotationTextBlockProperty
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+struct AnnotationTextBlockSetter (emitVectorTypedefs) {
+    key:AnnotationTextBlockProperty;
+    integerValue:long;
+    realValue:double;
+
+} // AnnotationTextBlockSetter
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+enum AnnotationTextBlockRunType : int {
+    Text = 1,
+    Fraction = 2,
+    LineBreak = 3
+
+} // AnnotationTextBlockRunType
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+table AnnotationTextBlockRun (emitVectorTypedefs) {
+    type:AnnotationTextBlockRunType;
+    properties:[AnnotationTextBlockSetter];
+    styleId:uint;
+    styleOverrides:[AnnotationTextStyleSetter];
+
+    // RUN_TYPE_Text
+    text_content:string;
+    
+    // RUN_TYPE_Fraction
+    fraction_numeratorContent:string;
+    fraction_denominatorContent:string;
+
+} // AnnotationTextBlockRun
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+table AnnotationTextBlockParagraph (emitVectorTypedefs) {
+    properties:[AnnotationTextBlockSetter];
+    styleId:uint;
+    styleOverrides:[AnnotationTextStyleSetter];
+    runs:[AnnotationTextBlockRun];
+
+} // AnnotationTextBlockParagraph
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     05/2014
+//=======================================================================================
+table AnnotationTextBlock {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    properties:[AnnotationTextBlockSetter];
+    styleId:uint;
+    styleOverrides:[AnnotationTextStyleSetter];
+    paragraphs:[AnnotationTextBlockParagraph];
+
+} // AnnotationTextBlock
+
+//***************************************************************************************************************************************************
+// AnnotationFrameStyle
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+enum AnnotationFrameStyleProperty : int {
+                                //  TYPE    NOTES
+                                //  ----    -----
+    CloudBulgeFactor = 1,       //  real    Factor of effective diameter
+    CloudDiameterFactor = 2,    //  real    Factor of text height
+    FillColorId = 3,            //  integer Must be a valid color ID in the project
+    FillTransparency = 4,       //  real    [0.0..1.0]
+    HorizontalPadding = 5,      //  real    Factor of the first character's text height
+    IsFillEnabled = 6,          //  integer 0 or 1 boolean
+    IsStrokeCloud = 7,          //  integer 0 or 1 boolean
+    IsStrokeEnabled = 8,        //  integer 0 or 1 boolean
+    StrokeColorId = 9,          //  integer Must be a valid color ID in the project
+    StrokeStyle = 10,           //  integer Must be a standard line code
+    StrokeWeight = 11,          //  integer Must be a standard line weight
+    Type = 12,                  //  integer Must exist in the AnnotationFrameType enumeration
+    VerticalPadding = 13        //  real    Factor of the first character's text height
+
+} // AnnotationFrameStyleProperty
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+struct AnnotationFrameStyleSetter (emitVectorTypedefs) {
+    key:AnnotationFrameStyleProperty;
+    integerValue:long;
+    realValue:double;
+
+} // AnnotationFrameStyleSetter
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+table AnnotationFrameStyle {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    id:uint;
+    name:string;
+    description:string;
+    setters:[AnnotationFrameStyleSetter];
+
+} // AnnotationFrameStyle
+
+//***************************************************************************************************************************************************
+// AnnotationFrame
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+table AnnotationFrame {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    styleId:uint;
+    styleOverrides:[AnnotationFrameStyleSetter];
+
+} // AnnotationFrame
+
+//***************************************************************************************************************************************************
+// AnnotationLeaderStyle
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+enum AnnotationLeaderStyleProperty : int {
+                                //  TYPE    NOTES
+                                //  ----    -----
+    LineColorId = 1,            //  integer Must be a valid color ID in the project
+    LineStyle = 2,              //  integer Must be a standard line code
+    LineType = 3,               //  integer Must exist in the AnnotationLeaderLineType enumeration
+    LineWeight = 4,             //  integer Must be a standard line weight
+    TerminatorColorId = 5,      //  integer Must be a valid color ID in the project
+    TerminatorScaleFactor = 6,  //  real    Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
+    TerminatorStyle = 7,        //  integer Must be a standard line code
+    TerminatorType = 8,         //  integer Must exist in the AnnotationLeaderTerminatorType enumeration
+    TerminatorWeight = 9        //  integer Must be a standard line weight
+
+} // AnnotationLeaderStyleProperty
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+struct AnnotationLeaderStyleSetter (emitVectorTypedefs) {
+    key:AnnotationLeaderStyleProperty;
+    integerValue:long;
+    realValue:double;
+
+} // AnnotationLeaderStyleSetter
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+table AnnotationLeaderStyle {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    id:uint;
+    name:string;
+    description:string;
+    setters:[AnnotationLeaderStyleSetter];
+
+} // AnnotationLeaderStyle
+
+//***************************************************************************************************************************************************
+// AnnotationLeader
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+enum AnnotationLeaderSourceAttachmentType : int {
+    ById = 1
+
+} // AnnotationLeaderSourceAttachmentType
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+enum AnnotationLeaderTargetAttachmentType : int {
+    ByPhysicalPoint = 1
+
+} // AnnotationLeaderTargetAttachmentType
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+struct AnnotationLeaderDPoint3d {
+    x:double;
+    y:double;
+    z:double;
+
+} // AnnotationLeaderDPoint3d
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2014
+//=======================================================================================
+table AnnotationLeader (emitVectorTypedefs) {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    styleId:uint;
+    styleOverrides:[AnnotationLeaderStyleSetter];
+
+    sourceAttachmentType:AnnotationLeaderSourceAttachmentType;
+    sourceAttachmentId:uint;
+    targetAttachmentType:AnnotationLeaderTargetAttachmentType;
+    targetAttachmentPt:AnnotationLeaderDPoint3d;
+
+} // AnnotationLeader
+
+//***************************************************************************************************************************************************
+// TextAnnotationSeed
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+enum TextAnnotationSeedProperty : int {
+                        //  TYPE    NOTES
+                        //  ----    -----
+    FrameStyleId = 1,   //  integer ID of an AnnotationFrameStyle in the project
+    LeaderStyleId = 2,  //  integer ID of an AnnotationLeaderStyle in the project
+    TextStyleId = 3     //  integer ID of an AnnotationTextStyle in the project
+
+} // TextAnnotationSeedProperty
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+struct TextAnnotationSeedSetter (emitVectorTypedefs) {
+    key:TextAnnotationSeedProperty;
+    integerValue:long;
+    realValue:double;
+
+} // TextAnnotationSeedSetter
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+table TextAnnotationSeed {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+    id:uint;
+    name:string;
+    description:string;
+    setters:[TextAnnotationSeedSetter];
+
+} // TextAnnotationSeed
+
+//***************************************************************************************************************************************************
+// TextAnnotation
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+table TextAnnotation {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+
+    document:AnnotationTextBlock;
+    frame:AnnotationFrame;
+    leaders:[AnnotationLeader];
+
+} // TextAnnotation
+
+//***************************************************************************************************************************************************
+// TextAnnotationElement
+//***************************************************************************************************************************************************
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+struct TextAnnotationElementTransform {
+    form3d00:double;
+    form3d01:double;
+    form3d02:double;
+    form3d03:double;
+    form3d10:double;
+    form3d11:double;
+    form3d12:double;
+    form3d13:double;
+    form3d20:double;
+    form3d21:double;
+    form3d22:double;
+    form3d23:double;
+
+} // TextAnnotationElementTransform
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+table TextAnnotationElement {
+    majorVersion:ubyte;
+    minorVersion:ubyte;
+
+    seedId:uint;
+    transform:TextAnnotationElementTransform;
+
+} // TextAnnotationElement

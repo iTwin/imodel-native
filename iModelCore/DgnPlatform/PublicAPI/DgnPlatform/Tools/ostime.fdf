@@ -1,0 +1,22 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnPlatform/Tools/ostime.fdf $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+/*__BENTLEY_INTERNAL_ONLY__*/
+#include <Bentley/BeTimeUtilities.h>
+
+BEGIN_EXTERN_C
+
+/* returns the time in milliseconds since 1/1/1970 */
+DGNPLATFORM_EXPORT double osTime_cvtNTFileTimeToMillis (Int64 inputTime);
+
+/* returns the NT file time from milliseconds since 1/1/1970 */
+DGNPLATFORM_EXPORT Int64 osTime_cvtMillisToNTFileTime (double inputTime);
+
+/* returns milliseconds since 1/1/1970 as string in user locale */
+DGNPLATFORM_EXPORT double osTime_getCurrentMillis ();
+
+END_EXTERN_C

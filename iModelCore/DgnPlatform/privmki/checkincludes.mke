@@ -1,0 +1,62 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: privmki/checkincludes.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki 
+appName = CheckIncludes
+
+
+%if !defined (WORKING_ON_PORT_TO_NEW_TOOLSET)
+    %warn For now, checkIncludes can only be done when building with VS2010
+    %return
+%endif
+
+%include mdl.mki
+
+baseDir         = $(_MakeFilePath)
+
+o = $(dgnPlatformBuildDir_)CheckIncludes/
+
+always:
+    ~mkdir $(o)
+    
+publicApiDir = $(OutputRootDir)Product/DgnPlatform/Include/
+
+# Don't want to mix in Build Context - #pragma once works on full path name.
+%undef PublicApiIncludes
+
+testIncludeCppFile = $(o)includeTester.cpp
+
+# Some includes need to be first.
+$(testIncludeCppFile) : $(baseDir)CheckIncludes.mke
+    > $(testIncludeCppFile)
+    \#include <DgnPlatform/DgnPlatform.h>
+    <
+
+#### # Run checkincludes to verify #include statements and generated C file
+#### always:
+####     |----------------------------------------------------------------------
+####     | Checking includes in $(publicApiDir) for consistency
+####     |----------------------------------------------------------------------
+####     > $(o)inccheckincludes.opt
+####     -I $(publicApiDir)
+####     -r
+####     -c $(testIncludeCppFile)
+####     -e $(publicApiDir)Bentley/BeTest.h
+####     -e $(publicApiDir)Bentley/BeStringUtilitiesInlines.h
+####     $(publicApiDir)
+####     <
+####     $(SrcBsiTools)winX86/CheckIncludes @$(o)inccheckincludes.opt
+%warn Not running CheckIncludes.exe - This program must be changed to support the conditional includes that we need to make our header files portable.
+
+# Compile the generated C file
+
+dirToSearch = $(publicApiDir)
+%include cincapnd.mki
+
+$(o)includeTester.obj   :   $(testIncludeCppFile)
+
+

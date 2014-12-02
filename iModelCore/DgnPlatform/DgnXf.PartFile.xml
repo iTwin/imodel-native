@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // DgnXfG                                                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- DgnXfG library with a static copy of the DgnPlatform stack inside -->
+    <Part Name="DgnXfG-EmbeddedDgnPlatform" BentleyBuildMakeFile="DgnXf/DgnXfG.mke" BMakeOptions="+dEMBEDDED_DGNPLATFORM=1" OnlyPlatforms="x64">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" LibType="Static"/>
+        <SubPart PartName="DgnXflib" PartFile="DgnXfLib" Repository="DgnXfLib" LibType="Static"/>
+        <Bindings>
+            <Libs ProductDirectoryName="DgnXfLibs" Required="true">Delivery/DgnXfG*.lib</Libs>
+            <Assemblies ProductDirectoryName="DgnXfAssemblies" Required="true">Delivery/DgnXfG*.dll</Assemblies>
+            <Directory SourceName="Delivery/DgnXfPublicApi" ProductDirectoryName="DgnXfPublicApi" SubPartDirectory="DgnXfSdk"/>
+        </Bindings>
+    </Part>
+
+    <!-- DgnXfG library with a link to the DgnPlatform stack -->
+    <Part Name="DgnXfG-LinkToDgnPlatform" BentleyBuildMakeFile="DgnXf/DgnXfG.mke">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnXflib" PartFile="DgnXfLib" Repository="DgnXfLib" LibType="Static"/>
+        <Bindings>
+            <Libs ProductDirectoryName="DgnXfLibs" Required="true">Delivery/$(libprefix)DgnXfG*$(libext)</Libs>
+            <Assemblies ProductDirectoryName="DgnXfAssemblies" Required="true">Delivery/$(libprefix)DgnXfG*$(shlibext)</Assemblies>
+            <Directory SourceName="Delivery/DgnXfPublicApi" ProductDirectoryName="DgnXfPublicApi" SubPartDirectory="DgnXfSdk" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <!-- Product that delivers the DgnXfG DLL with a static copy of the DgnPlatform stack inside. -->
+    <Product Name="DgnXfSdk-Winx64" SaveProduct="true">
+        <SubPart PartName="DgnXfG-EmbeddedDgnPlatform" LibType="Static"/>
+        <SubPart PartName="DgnXfExporterExe" PartFile="DgnXfExamples" Repository="DgnPlatformExamples"/>
+        <SubPart PartName="DgnXfDumpExe" PartFile="DgnXfExamples" Repository="DgnPlatformExamples"/>
+        <Directories DirectoryListName="DgnXfSdk-Winx64" />
+    </Product>
+
+    <ProductDirectoryList ListName="DgnXfSdk-Winx64">
+        <!-- assets/ -->
+        <ProductDirectory Name="ECSchemas"                      LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformFont"                LibType="static" Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformLastResortFonts"     LibType="static" Deliver="false"/>
+        <!-- include/ -->
+        <ProductDirectory Name="DgnXfPublicApi"                 LibType="static" Deliver="true" Path="include"/>
+        <ProductDirectory Name="PublicAPI"                      LibType="static" Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                      LibType="static" Deliver="false"/>
+        <!-- lib/ -->
+        <ProductDirectory Name="DgnXfAssemblies"                LibType="static" Deliver="true" Path=""/>
+        <ProductDirectory Name="DgnXfLibs"                      LibType="static" Deliver="true" Path=""/>
+        <ProductDirectory Name="DgnXfExporterExe"               LibType="dynamic" Deliver="true" Path=""/>
+        <ProductDirectory Name="DgnXfDumpExe"                   LibType="dynamic" Deliver="true" Path=""/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"    LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"        LibType="static" Deliver="false"/>
+        <ProductDirectory Name="ECObjectsNativeAssemblies"      LibType="static" Deliver="false"/>
+        <ProductDirectory Name="GeomNativeAssemblies"           LibType="static" Deliver="false"/>
+        <ProductDirectory Name="Libs"                           LibType="static" Deliver="false"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"      LibType="static" Deliver="false"/>
+        <!-- notices/ -->
+        <ProductDirectory Name="VendorNotices"                  LibType="static" Deliver="true" Path="notices"/>
+        <ProductDirectory Name="BeProtoBufNotices"              LibType="static" Deliver="true" Path="notices"/>
+        <ProductDirectory Name="BentleyEulaDelivery"            LibType="static" Deliver="true" Path="notices"/>
+    </ProductDirectoryList>
+
+</BuildContext>

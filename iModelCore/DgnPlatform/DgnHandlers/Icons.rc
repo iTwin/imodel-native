@@ -1,0 +1,13 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnHandlers/Icons.rc $
+|
+|  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "Icons.h"
+
+ICONID_SIGNATURE_VERIFIED           ICON        DigitalSignatureVerifiedSprite.ico
+ICONID_SIGNATURE_UNVERIFIED         ICON        DigitalSignatureUnverifiedSprite.ico
+ICONID_SIGNATURE_UNTRUSTED          ICON        DigitalSignatureUntrustedSprite.ico
+ICONID_ELEMENT_MARKUP_PLACEMARK     ICON        Markup\MarkupPlacemark.ico

@@ -1,0 +1,1966 @@
+/*----------------------------------------------------------------------+                            
+|
+|   $Source: DgnHandlers/Dimension/DimensionInternal.h $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++----------------------------------------------------------------------*/
+#pragma once
+
+#if defined (NEEDS_WORK_DGNITEM)
+/* .h File Dependencies */
+#include <Bentley/ScopedArray.h>
+#include <DgnPlatform/DgnHandlers/MdlTextInternal.h>
+#include <DgnPlatform/DgnHandlers/TextBlock/TextAPICommon.h>
+
+#define CHECK_LOCATE               1
+#define CHECK_SNAP                 2
+
+#define ESC                       27
+#define ABORT                      1
+#define WONT_FIT                  -2
+
+#define DIM_STROKED_NONE          0
+#define DIM_STROKED_DIM           1
+#define DIM_STROKED_PROXY         2
+#define DIM_STROKED_DIMANDPROXY   3
+
+/* Dimension command numbers  */
+#define LABEL_LINE               213
+#define SIZE_ARROW               214
+#define SIZE_STROKE              215
+#define LOCATE_SINGLE            216
+#define LOCATE_STACKED           217
+#define ORDINATE                 297
+#define CUSTOM_LINEAR            364
+
+#define ANGLE_SIZE               224
+#define ANGLE_LOCATION           225
+#define ANGLE_LINES              361
+#define ARC_SIZE                 226
+#define ARC_LOCATION             227
+
+/* Dimension Command (1 - 24 index into dimension template) */
+#define MAX_DIMSTR        MAX_DIMSTRING
+extern const WChar DIMMLTEXT_ValuePlaceHolder[];
+
+/* Command Names (cmdname.txt) used during dimension modification */
+#define CN_MODIFY_ELEMENT  92
+#define CN_INSERT_VERTEX  138
+
+/* Dimension error messages */
+#define ERRMSG_ASSOC         2097      /* Errors.r (base = 2000)            */
+
+/* Used by adim_generateDimLine */
+#define TRIM_NONE       (0)
+#define TRIM_LEFT       (1<<0)
+#define TRIM_RIGHT      (1<<1)
+#define TRIM_BOTH       (TRIM_LEFT | TRIM_RIGHT)
+
+#define AUXSYM_BUILTIN   1        /* Generated symbol                  */
+#define AUXSYM_SYMBOL    2        /* Character from symbol font        */
+#define AUXSYM_CELL      3        /* Shared cell symbol                */
+
+#define CURRENT_DIM_CHECKSUM_TYPE   3
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+typedef struct _elementProcess
+    {
+    int                             elmType;        /* Primitive type from locate (not passed)      */
+    int                             segment;        /* Element segment            (not passed)      */
+    int                             elmNumber;      /* Element number                               */
+    int                             flags;          /* Private flags for use in compound strokers       */
+    int                             lineNo;         /* Line number (used only in multi-lines)       */
+    bool                            is3d;           // is original element being hatched a 3D element
+    } ElementProcess;
+
+/*-----------------------------------------------------------------------
+Dimension symbols - two prefix, two suffix
+-----------------------------------------------------------------------*/
+struct DimStackInfo
+    {
+    int         segNo;            /* segment of stack height requested */
+    double      height;           /* stacked (relative) height from 1st dimension line */
+    };
+
+struct DimAuxSymbol
+    {
+    double      width;            /* Symbol width                      */
+    UInt64   cellId;           /* Id of shared cell definition      */
+
+    byte        type;             /* Symbol type (AUXSYM_ ) 0 = none   */
+    byte        index;            /* Index of built in symbol          */
+    UShort      symbol;           /* Symbol character                  */
+    UInt32      font;             /* Symbol font                       */
+    };
+
+struct DimStringData
+    {
+    double         charWidth;
+
+    DPoint2d       textTile;
+    DPoint2d       tolTile;
+
+    RotMatrix      rMatrix;
+
+    double         preSymMar;
+    double         sufSymMar;
+    double         symWidth;
+    DimAuxSymbol   auxSym[4];
+
+    DPoint2d       upperSize;
+    DPoint2d       lowerSize;
+    
+    DimStrings     m_strings;
+
+    DimStringData ()
+        {
+        charWidth = 0;
+        DPoint2d zero = {0};
+        upperSize = lowerSize = textTile = tolTile = zero;
+        memset (&rMatrix, 0, sizeof(rMatrix));
+        preSymMar = sufSymMar = symWidth = 0;
+        memset (auxSym, 0, sizeof(auxSym));
+        }
+
+    WString*    GetPrimaryStrings()                 { return m_strings.GetString (DIMTEXTPART_Primary,   DIMTEXTSUBPART_Main); }
+    WString*    GetSecondaryStrings ()              { return m_strings.GetString (DIMTEXTPART_Secondary, DIMTEXTSUBPART_Main); }
+    };
+
+struct DimOptionBlockHeader
+    {
+    byte            nWords;
+    byte            type;
+    };
+
+/*---------------------------------------------------------------------------------------
+    Dimension primitive element symbology
+---------------------------------------------------------------------------------------*/
+enum DimMaterialIndex
+    {
+    DIM_MATERIAL_DimLine       = 0,
+    DIM_MATERIAL_Extension     = 1,
+    DIM_MATERIAL_Terminator    = 2,
+    DIM_MATERIAL_Text          = 3,
+    DIM_MATERIAL_MLUserText    = 4,
+
+    DIM_MATERIAL_MAX           = 5,
+    };
+
+#define ADIMSEGMENTTEXTBOXES_TYPED
+
+/*---------------------------------------------------------------------------------------
+    Structures used to carry over dimension override information.
+---------------------------------------------------------------------------------------*/
+typedef struct
+    {
+    DimOverrideHdr      hdr;
+    UInt16              pointNo;
+    DimPointOverrides   point;
+    } PointOverride;
+
+typedef struct
+    {
+    DimOverrideHdr      hdr;
+    UInt16              segmentNo;
+    DimSegmentOverrides segment;
+    } SegmentOverride;
+
+typedef struct
+    {
+    DimOverrideHdr          hdr;
+    UInt16                  segmentNo;
+    DimSegmentFlagOverrides sgmtflg;
+    } SegmentFlagOverride;
+
+typedef struct
+    {
+    DimOverrideHdr      hdr;
+    UInt16              unused;
+    DimOverallOverrides overall;
+    } OverallOverride;
+
+typedef struct
+    {
+    DimOverrideHdr       hdr;
+    UInt16               unused;
+    DimStyleExtensions   styleExt;
+    } StyleExtension;
+
+typedef struct
+    {
+    DimOverrideHdr      hdr;
+    UInt16              unused;
+    DimOrdinateOverrides ordinate;
+    } OrdinateOverride;
+
+typedef struct
+    {
+    DimOverrideHdr      hdr;
+    UInt16              segmentNo;
+    DimMLText           *pText;
+    } DimMLTextOverride;
+
+struct DimOverrides
+    {
+    int                 nStyleExt;
+    int                 nOverall;
+    int                 nSegments;
+    int                 nSgmtFlgs;
+    int                 nPoints;
+    int                 nOrdinate;
+    int                 nMLTexts;
+    StyleExtension      *pStyleExt;
+    OverallOverride     *pOverall;
+    SegmentOverride     *pSegment;
+    SegmentFlagOverride *pSgmtFlag;
+    PointOverride       *pPoint;
+    OrdinateOverride    *pOrdinate;
+    DimMLTextOverride   *pMLText;
+    };
+
+enum    DimProxyOverride
+    {
+    DIMPROXY_OVERRIDE_None          = 0,
+    DIMPROXY_OVERRIDE_NoProxy       = 1,
+    DIMPROXY_OVERRIDE_NotOnlyProxy  = 2,
+    };
+struct AdimProcess
+    {
+private:
+    ElementHandleCR     m_dimensionElement;
+    void                InitRotMatrix ();
+public:
+    ViewContextP        context;
+    ElementProcess      ep;
+    
+    DPoint3dP           points;
+    RotMatrix           rMatrix;
+    DimArcInfo          dimArc;
+
+    struct
+        {
+        UShort      allDontFit:1;       // text+margins+terminators do not fit (manual offset is not considered fit)
+        UShort      textNotFit:1;       // text alone does not fit
+        UShort      fitTermsInside:1;   // keep terminators inside even if allDontFit=true
+        UShort      pushTextOutside:1;  // push text outside if allDontFit=true
+        UShort      firstSeg:1;
+        UShort      lastSeg:1;
+        UShort      textBlockPopulated:1;
+        UShort      proxyStroked:1;
+        UShort      embed:1;
+        UShort      fitOption:3;
+        UShort      tightFitTextAbove:1;
+        UShort      ignoreMinLeader:1;  // ignore minimum leader dim->geom.margin and activates auto min leader
+        UShort      unused:2;
+        }           flags;
+
+    DimStringData   strDat;
+    double          stackHeight;
+    UInt32          partName;
+    RotMatrix       vuMatrix;
+    DimStackInfo    stack;
+    DimOverrides    *pOverrides;
+    double          *pdDimLengths;
+    BitMaskP         pLeaderedMask;
+    TextBlockPtr    m_textBlock;
+    DimProxyOverride    proxyOverride;
+
+    AdimRotatedTextBox      textBox[2];
+    AdimSegmentTextBoxes   *pTextBoxes;
+
+    LegacyTextStyle       *pTextStyle;
+    DimDerivedData  *pDerivedData;
+    double          dProjectedTextWidth;
+
+    DimensionElm const* GetDimElementCP() const {return (DimensionElm const*) m_dimensionElement.GetElementCP();}
+    DgnModelP       GetDgnModelP() const {BeAssert(NULL != m_dimensionElement.GetDgnModelP()); return m_dimensionElement.GetDgnModelP();}
+    ElementHandleCR    GetElemHandleCR() const {return m_dimensionElement;}
+    
+    AdimProcess (ElementHandleCR element, ViewContextP context);
+    ~ AdimProcess();
+    void Init ();
+    } ;
+
+struct DimFormattedText
+{
+private:
+    typedef bvector<byte> ByteVector;
+
+    UInt16      m_component;
+
+    UInt32      m_nodeNumber;         // stored only if text node
+    DPoint2d    m_origin;
+    DPoint2d    m_scale;              // text block width and height 'range'
+    DPoint2d    m_size;               // text character width and height
+    double      m_rotation;           // text rotation in radians
+
+    ByteVector      m_variStringBuffer;
+    TextParamWide   m_textParams;
+
+public:
+
+    enum ComponentID
+        {
+        COMPONENTID_PreValue       = 0,     // Text before dimension value
+        COMPONENTID_Prefix         = 1,     // Text immediately before value
+        COMPONENTID_Value          = 2,     // Dimension value text & prefix
+        COMPONENTID_Suffix         = 3,     // Text immediately after value
+        COMPONENTID_PostValue      = 4,     // Text after dimension value
+        //COMPONENTID_Note           = 5,   // Text below dimension line
+        COMPONENTID_NodeProperties = 7,     // Text node properties
+        };
+
+    static const ComponentID s_firstComponentID = COMPONENTID_PreValue;
+    static const ComponentID s_lastComponentID  = COMPONENTID_NodeProperties;
+
+
+DimFormattedText ();
+
+// Getters
+UInt16          GetComponentID () const    { return m_component; }
+WString         GetString (DgnProjectR file) const;
+TextParamWide   GetTextParamWide () const;
+DPoint2d        GetOrigin () const         { return m_origin; }
+DPoint2d        GetScale () const          { return m_scale; }
+double          GetWidth () const          { return m_size.x; }
+double          GetHeight () const         { return m_size.y; }
+double          GetRotation () const       { return m_rotation; }
+UInt32          GetNodeNumber () const     { return m_nodeNumber; }
+bool            IsNodeComponent () const   { return COMPONENTID_NodeProperties == GetComponentID(); }
+int             GetCrCount () const        { return m_textParams.exFlags.crCount; }
+UInt16          GetJustification () const  { return (UInt16)m_textParams.just; }
+DPoint2d        GetTileSize () const       { return m_size; }
+
+// Setters
+void            SetComponentID (UInt16 val)             { m_component  = val; }
+void            SetString (WCharCP val, DgnProjectR file);
+void            SetTextParamWide (TextParamWideCR val);
+void            SetOrigin (DPoint2dCR val)              { m_origin     = val; }
+void            SetScale (DPoint2dR val)                { m_scale      = val; }
+void            SetWidth (double val)                   { m_size.x     = val; }
+void            SetHeight (double val)                  { m_size.y     = val; }
+void            SetRotation (double val)                { m_rotation   = val; }
+void            SetNodeNumber (UInt32 val)              { m_nodeNumber = val; }
+
+// Used for serialization / deserialization
+int             GetLinkageMaxNumBytes() const;
+TextFormattingLinkage        GetTextParamAsLinkageData () const;
+void            SetTextParamFromLinkageData (TextFormattingLinkageCR textLink);
+const char*     GetVariString () const;
+int             GetVariStringNumBytes () const  { return (int)m_variStringBuffer.size(); }
+void            SetVariString (const char* pText, int nBytesIn);
+
+}; // DimFormattedText
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+|   Dimension primitive part names macros                               |
+|                                                                       |
++----------------------------------------------------------------------*/
+#define ADIM_SETNAME(dimVar,elmType,subType)    (dimVar = (dimVar&0x0000ff00) | (elmType?(elmType<<4):(dimVar&0x000000f0)) | subType)
+
+#define ADIM_SETSEG(dimVar,segNo)               (dimVar = (segNo << 8) | (dimVar&0x000000ff))
+
+struct AdimStringUtil
+{
+//static size_t  MSWCharFromVariChar (WCharP outUnicodeString, UInt32 outNumChars, char const * inVariCharString, DgnFontCR effectiveFont);
+//static size_t  MSWCharFromVariChar (WCharP outUnicodeString, UInt32 outNumChars, char const * inVariCharString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnProjectR dgnFile);
+static WString WStringFromVariChar (char const * inVariCharString, DgnFontCR effectiveFont);
+static WString WStringFromVariChar (char const * inVariCharString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnProjectR dgnFile);
+
+static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WCharCP inUnicodeString, DgnFontCR effectiveFont);
+static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WCharCP inUnicodeString, UInt16 fontNumber, UInt16 shxBigFontNumber, DgnProjectR dgnFile);
+};
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+DGNPLATFORM_TYPEDEFS(AdimProcess)
+
+BEGIN_BENTLEY_API_NAMESPACE
+
+void    shiftElementData (DgnPlatform::DimensionElm *dim, char *pStart, int nMove);
+
+int adim_extractTextCluster
+(
+WString*                        strings,                /* <= Dimension strings         */
+DgnPlatform::DimStringConfig*   stringConfig,           /* <= Text configuration        */
+ElementHandleCR                 dimElement,             /* => Dimension element buffer   */
+int                             pointNo,                /* => Point number of text       */
+DgnFontCR                       effectiveFont           /* => Font used for encoding varichar */
+);
+
+int     adim_extensionsGetNoteTerminator (DgnPlatform::DimStyleExtensions const& extensions);
+void    adim_extensionsSetNoteTerminator (DgnPlatform::DimStyleExtensions& extensions, int value);
+
+int     adim_generateSingleDimension (AdimProcessP , bool, DPoint3dP , DVec3dP );
+int     adim_generateTextSymbols (AdimProcessP , double, DPoint2dP, DPoint3dP , DVec3dP );
+
+void     adim_rotateText
+(
+DVec3dP pDirection,    /* <=> Dimension text direction        */
+DPoint3dP pOrigin,       /* <=> Dimension text origin           */
+DPoint2dP        pBoxSize,      /* => text frame box size              */
+AdimProcessP pAdimProcess   /* => Function used to process elements*/
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @return       elemproc status SUCCESS/ERROR or -1 not processed -> not enhanced text
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+int      adim_generateTextUsingDescr
+(
+AdimProcessP ep,
+DPoint3dP origin,
+DVec3dP direction
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/02
++---------------+---------------+---------------+---------------+---------------+------*/
+ StatusInt       adim_loadTextBlockFromMarkedUpString
+(
+TextBlockR      textBlock,
+WCharCP       pString,
+DgnPlatform::TextParamWide*  pTextParamWide,
+DPoint2dCP      pTileSize,
+AdimProcessP     pAdimProcess
+);
+
+void    adim_uorToDimString (WString&, DgnPlatform::DimUnitBlock*, WCharCP, WCharCP, double, bool, UInt16, UInt16, int, double *, bool, AdimProcessP, UShort primaryAccuracy);
+void    adim_getTileSize (DPoint2dP, DPoint2dP, ElementHandleCR dimElement);
+
+void adim_getLengthStrings
+(
+AdimProcessP pAdimProcess,   /* <=> */
+double          dimLength,       /*  => Length of dimension line        */
+UShort          primaryAccuracy
+);
+
+int     adim_convertUnits
+(
+double          *pDistanceUorOut,
+double          uorsIn,
+DgnPlatform::DimUnitBlock    *pDimUnitsIn,
+DgnModelP    pDgnModel
+);
+
+void adim_getEffectiveSymbology
+(
+DgnPlatform::Symbology              *pSymbologyOut,
+ElementHandleCR            dimElement,
+DgnPlatform::DimMaterialIndex        materialIndex,
+UInt32                  partName,
+DgnPlatform::DimOverrides           *pOverrides
+);
+
+void    adim_harvestTextBoxForDerivedData
+(
+AdimProcessP ap
+);
+
+bool     adim_checkNoLineFlag
+(
+AdimProcessCP ap,
+int                 termIndex
+);
+
+/*---------------------------------------------------------------------------+
+|                                                                            |
+|   adimterm.c - function prototypes                                  |
+|                                                                            |
++---------------------------------------------------------------------------*/
+int  adim_generateLineTerminator (AdimProcessP , DPoint3dP , DPoint3dP , int, bool);
+int  adim_generateTerminator (AdimProcessP , DPoint3dP , DVec3dP , int);
+
+/*---------------------------------------------------------------------------+
+|                                                                            |
+|   adimutil.c - function prototypes                                  |
+|                                                                            |
++---------------------------------------------------------------------------*/
+int     adim_generateLine (AdimProcessP , DPoint3dP , DPoint3dP , DgnPlatform::DimMaterialIndex);
+int     adim_generateLineString (AdimProcessP , DPoint3dP , int, int, DgnPlatform::DimMaterialIndex);
+int     adim_generateText (AdimProcessP , WCharCP, DPoint3dP , DVec3dP , DgnPlatform::TextElementJustification, DPoint2dP);
+int     adim_generateSymbol (AdimProcessP , int, UInt16, DPoint3dP , RotMatrixP , DPoint2dP, DgnPlatform::TextElementJustification, DgnPlatform::DimMaterialIndex);
+int     adim_generateArc (AdimProcessCP , DPoint3dCP, double, double, RotMatrixCP, double, double, DgnPlatform::DimMaterialIndex material = DgnPlatform::DIM_MATERIAL_DimLine);
+int     adim_generateArcByPoints (AdimProcessP , DPoint3dP , DgnPlatform::DimMaterialIndex material);
+int     adim_generateCircle (AdimProcessP , DPoint3dP , double, RotMatrixP , bool, DgnPlatform::DimMaterialIndex);
+int     adim_generateCell (AdimProcessP , UInt64 , DPoint3dP , RotMatrixP , double, double, DgnPlatform::DimMaterialIndex);
+int     adim_generateCellScale (AdimProcessP , UInt64, DPoint3dP , RotMatrixP , double, DgnPlatform::DimMaterialIndex);
+int     adim_findSharedCellDef (double*, double*, ElementRefPtr*, UInt64, DgnModelP);
+
+void    adim_updateTextBox
+(
+AdimProcessP     ep,            // <=>
+DPoint3dCP      org,
+DVec3dCP        baseDir,
+RotMatrixCP     rMatrix,
+DPoint2dCP      adSize
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Check whether dimension with leader aka ball-n-chain is in use
+* @bsimethod                                                    petri.niiranen  03/02
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     adim_checkForLeader
+(
+UInt16                  *chainType,       /* <=  return the ball and chain type */
+AdimProcessCP  const ep,               /*  => working process data           */
+double const            offsetY,          /*  => text offset data               */
+DPoint2dCP              textSize          /*  => text size data                 */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Generate leader portion of the dimension "note" aka ball-and-chain.
+* @param        pChainedText    OUT     chained text location
+* @param        ep              IN OUT  adim process information
+* @param        pOriginPnt      IN      text location
+* @param        pStartPnt       IN      leader start point on dimension line
+* @param        direction       IN      direction of dimension text
+* @param        textSize        IN      text size information
+* @bsimethod                                                    petri.niiranen  04/02
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt    adim_generateBallAndChain
+(
+DPoint3dP                pChainedText,
+AdimProcessP             ep,
+DPoint3dCP  const   pOriginPnt,
+DPoint3dCP  const   pStartPnt,
+DVec3dCP  const   direction,
+DPoint2dCP              textSize,
+double const            offsetY
+);
+
+void    adim_getRMatrixFromDir
+(
+RotMatrixP pOutRMatrix,
+DVec3dCP pDirection,
+RotMatrixCP pDimRMatrix,
+RotMatrixCP pViewRMatrix
+);
+
+void    adim_getYVec
+(
+DVec3dP          pYDir,
+DVec3dCP    pXDir,
+AdimProcessP pAdimProcess
+);
+
+void     adim_offsetText
+(
+DPoint3dP                output_origin,    /* <= point to be offset             */
+DPoint3dCP  const   input_origin,     /* => point to be offset             */
+DVec3dCP  const     direction,        /* => line perpindicular to offset  */
+double                  distance,         /* => distance to offset             */
+AdimProcessP             pAdimProcess
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  02/02
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt16   adim_getDimTextJustification
+(
+AdimProcessCP  const pAdimProcess
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    sunand.sandurkar 08/02
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnPlatform::TextElementJustification adim_getDimTextJustificationHorizontal
+(
+AdimProcessCP  const pAdimProcess
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  02/02
++---------------+---------------+---------------+---------------+---------------+------*/
+double   adim_computeLeftEdgeOffset
+(
+AdimProcessCP  const pAdimProcess,
+double      const        dOffsetIn,
+double      const        dWidth
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  03/02
++---------------+---------------+---------------+---------------+---------------+------*/
+double   adim_getIntersectLength
+(
+DPoint3dCP  const pCheck,
+DPoint2dCP            pTextSize,
+double   const        dMargin
+);
+
+/*---------------------------------------------------------------------------+
+|                                                                            |
+|   adim.c - function prototypes                                      |
+|                                                                            |
++---------------------------------------------------------------------------*/
+
+int adim_modifyDimension
+(
+DPoint3dP currpoint
+);
+
+void adim_dropDimension
+(
+DgnPlatform::DimensionElm *dim,
+UInt32       filePos,
+int          freeze
+);
+
+
+/*---------------------------------------------------------------------------+
+|                                                                            |
+|   adim1.c - function prototypes                                     |
+|                                                                            |
++---------------------------------------------------------------------------*/
+int  adim_strokeSizeDimension (DgnPlatform::DimensionElm const*, AdimProcessP , bool);
+int  adim_strokeOrdinateDimension (DgnPlatform::DimensionElm const*, AdimProcessP , bool);
+
+
+int     adim_generateDimension (double*, AdimProcessP , DPoint3dP , DPoint3dP ,
+            DPoint3dP , double, DgnPlatform::DimText const*, int, int);
+
+int     adim_generateLinearDimension (AdimProcessP , DPoint3dP , DVec3dP , const double offsetY);
+
+/*---------------------------------------------------------------------------------**//**
+* Generate dimension text and symbols.
+*
+* @param        ep          IN OUT  adim process information
+* @param        startpt     IN      dimension line mid point or NULL if not with leader
+* @param        origin      IN      dimension text origin point
+* @param        direction   IN      text running direction
+* @return       element process status
+* @bsimethod                                                    petri.niiranen  04/02
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt adim_generateLinearDimensionWithOffset
+(
+AdimProcessP             ep,
+DPoint3dCP  const   startpt,
+DPoint3dCP  const   origin,
+DVec3dCP  const   direction,
+const double          offsetY
+);
+
+/*---------------------------------------------------------------------------+
+|                                                                            |
+|   l_adtext.c - function prototypes                                  |
+|                                                                            |
++---------------------------------------------------------------------------*/
+void    adim_getStringSize
+(
+DPoint2dP       stringSize,
+WCharCP       string,
+DPoint2dCP      tileSize,
+int             fontNo,
+AdimProcessP     pAdimProcess
+);
+
+int     adim_insertLengthString
+(
+WString&        dimStg,     /* <=> string to be used in dimension      */
+WCharCP       lenStg      /*  => length string for dimension string  */
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| Sharelib dimension functions                                          |
+|                                                                       |
++----------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------**//**
+* Check input string for possible fraction. This check searches for digit-'/'-digit
+* pattern.
+* @param        pwStringIn      => string to check for fraction
+* @param        ppwSlashPos     <= slash position or NULL
+* @bsimethod                                                    petri.niiranen  07/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     adim_hasFraction
+(
+WCharP        pwStringIn,
+WCharP*       ppwSlashPos
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Parse fraction components
+*
+* @param        pwIntegerOut     <= prevalue and integer text
+* @param        pwNumeratorOut   <= numerator text
+* @param        pwDenominatorOut <= denominator text
+* @param        pwReminingOut    <= text following denominator
+* @param        pwStringIn       => string to parse
+* @return       StatusInt, SUCCESS if fraction can be parsed
+* @bsimethod                                                    petri.niiranen  07/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt        adim_parseFraction
+(
+WCharP      pwIntegerOut,
+WCharP      pwNumeratorOut,
+WCharP      pwDenominatorOut,
+WCharP      pwReminingOut,
+WCharCP     pwStringIn
+);
+
+void     adim_calcTextOffset
+(
+DPoint2d&       offset,
+int             textJust,
+bool            pushRight,
+double          lineLength,     /*  => Length of dimension line        */
+double          stringLength,   /*  => Length of dimension string      */
+double          charWidth,      /*  => Char width used in dim text     */
+double          leader,         /*  => Leader length                   */
+int             termMode,       /*  => Terminator mode                 */
+DPoint2dCP      pTextSize,   /*  => total text size                 */
+DVec3dCP pTextDir,    /*  => Text running direction          */
+DVec3dCP pDimlineDir, /*  => Dim line running direction      */
+AdimProcessP pAdimProcess  /* <=> Function used to process elements */
+);
+
+void    adim_unpackFromFourDoubles
+(
+RotMatrixP rMatrix,
+const double    *pQuat,
+bool            is3D
+);
+
+void     adim_packToFourDoubles
+(
+double             *pQuat,
+RotMatrixCP rmP,
+bool                is3D
+);
+
+int      adim_setStringLinkage
+(
+DgnElementP pElementIn,
+const WChar  *pStringIn,
+int             categoryIn,
+int             linkageKeyIn,
+int             maxStringSizeIn
+);
+
+int      adim_setStringLinkageUsingDescr
+(
+MSElementDescrH ppDescrIn,
+WChar         *pStringIn,
+int             categoryIn,
+int             linkageKeyIn,
+int             maxStringSizeIn
+);
+
+int      adim_getStringLinkage
+(
+WChar         *pStringOut,
+DgnElementCP  pElementIn,
+int             categoryIn,
+int             linkageKeyIn,
+int             maxStringSizeIn
+);
+
+int      adim_deleteStringLinkage
+(
+DgnElementP pElementIn,    /* <=> */
+int         categoryIn,     /* => */
+int         linkageKeyIn    /* => */
+);
+
+void adim_setHitDetail
+(
+AdimProcessCP ep             /* => Function used to process element    */
+);
+
+int      mdlDim_setCellName
+(
+DgnElementP pElementIn,        /* <=> */
+WChar     *pCellNameIn,       /*  => */
+int         cellFlag            /* DIMCELL_xxx */
+);
+
+int      mdlDim_setCellNameUsingDescr
+(
+MSElementDescrH ppDescrIn,
+WChar         *pCellNameIn,       /*  => */
+int             cellFlag                /* DIMCELL_xxx */
+);
+
+int      mdlDim_setCellName
+(
+DgnElementP pElementIn,        /* <=> */
+WChar     *pCellNameIn,       /*  => */
+int         cellFlag            /* DIMCELL_xxx */
+);
+
+int      mdlDim_getCellName
+(
+WChar     *pCellNameOut,  /* <= */
+DgnElementP pElementIn,    /* <=> */
+int         cellFlag        /* => DIMCELL_xxx */
+);
+
+int      mdlDim_removeCellName
+(
+DgnElementP pElementIn,
+int         cellFlag
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+Public WString* adim_getSimpleStringPtrByType
+(
+DgnPlatform::DimStrings  *pwDimStrings,
+int             iPartType,
+int             iSubType
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+double  adim_getTrimDistance
+(
+AdimProcessP ap,
+int             termIndex,
+DgnPlatform::DimTermBlock const *pTermBlock,
+bool            sameSide
+);
+
+StatusInt    adim_generateDimLine
+(
+AdimProcessP ap,
+DPoint3dP pLeftPt,
+DPoint3dP pRightPt,
+DgnPlatform::DimMaterialIndex    material,
+int                 leftTermIn,
+int                 rightTermIn,
+int                 trimCode,
+bool                lineInside,
+bool                termsInside,
+bool                bLeftToRight
+);
+
+StatusInt    adim_generateExtensionLine
+(
+AdimProcessP ap,            /* => Adim Process                        */
+DPoint3dP start,         /* => Start point of line                 */
+DPoint3dP end,           /* => End point of line                   */
+bool                useExtSymb     /* => Use extension symbology             */
+);
+
+StatusInt    adim_generateBSpline
+(
+DPoint3dP termDir,               /* <=  */
+AdimProcessP                 ep,                     /*  => */
+int                         nPoints,                /*  => */
+DPoint3dP dPoints,               /*  => */
+DPoint3dCP  const startTangent,           /*  => can be (0,0,0) */
+DPoint3dCP  const endTangent              /*  => can be (0,0,0) */
+);
+
+
+void     adim_changeTextHeapEncoding
+(
+EditElementHandleR dimElement,
+UInt32          newFont,
+UInt32          newShxBigFont,
+UInt32          oldFont,
+UInt32          oldShxBigFont
+);
+
+/*------------------------------------------------------------------------------
+* WARNING: It is typically not safe to call this function directly. Use
+*          mdlDim_setTextStyle2.
+------------------------------------------------------------------------------*/
+StatusInt     adim_setTextStyle
+(
+EditElementHandleR  dimElm,             /* => */
+const DgnPlatform::LegacyTextStyle  *pTextStyle,        /* => */
+bool                sizeChangeAllowed   /* => */
+);
+
+/*---------------------------------------------------------------------------------------
+    Dimension override collection functions
+---------------------------------------------------------------------------------------*/
+StatusInt    mdlDim_overridesGet
+(
+DgnPlatform::DimOverrides    **ppOverridesOut,
+ElementHandleCR    elementIn
+);
+
+void     mdlDim_overridesPointInserted
+(
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             pointNo
+);
+
+StatusInt    mdlDim_overridesSet
+(
+EditElementHandleR elementIn,
+DgnPlatform::DimOverrides    *pOverridesIn
+);
+
+void     mdlDim_overridesFreeAll
+(
+DgnPlatform::DimOverrides    **ppOverridesIn
+);
+
+/*---------------------------------------------------------------------------------------
+    Dimension override collection parameter functions
+---------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------**//**
+* Get extension property
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        defaultValueIn  =>
+* @return       true if extension exists
+* @bsimethod                                                    JoshSchifter    08/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_extensionsGetPrimaryTolAccuracy
+(
+UInt16          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+UInt16          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetSecondaryTolAccuracy
+(
+UInt16          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+UInt16          defaultValueIn
+);
+
+void     mdlDim_extensionsGetOrdinateUseDatumValueFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetOrdinateReverseDecrementFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetOrdinateFreeLocationFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+StatusInt    mdlDim_setOrdinateFreeLocationFlag
+(
+EditElementHandleR     dimElement,
+bool                *pFlagValue
+);
+
+void     mdlDim_extensionsGetLabelLineSuppressAngleFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetLabelLineSuppressLengthFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetLabelLineInvertLabelsFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetLabelLineAdjacentLabelsFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetMultiJustVerticalFlag
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoReduceFractionFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoReduceAltFractionFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoReduceTolFractionFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoReduceSecFractionFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoReduceAltSecFractionFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoReduceTolSecFractionFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteLeaderType
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteTerminator
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteTerminatorType
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteTextRotation
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteHorAttachment
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteVerLeftAttachment
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNoteVerRightAttachment
+(
+int             *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             defaultValueIn
+);
+
+void     mdlDim_extensionsGetNotUseModelAnnotationScaleFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+bool     mdlDim_extensionsGetAnnotationScale
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetRoundOff
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetSecondaryRoundOff
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetOrdinateDatumValue
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetNoteElbowLength
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetStackedFractionScale
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetInlineTextLift
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetNoteLeftMargin
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetNoteLowerMargin
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetNoteTermChar
+(
+UInt16          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+UInt16          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetNoteTermFont
+(
+UInt32          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+UInt32          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetBncElbowLength
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_isMinLeaderIgnored
+(
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool            defaultValueIn
+);
+
+bool     mdlDim_extensionsGetFitOption
+(
+UInt16          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+UInt16          defaultValueIn
+);
+
+bool     mdlDim_extensionsGetSuppressUnfitTerminatorsFlag
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool             defaultValueIn
+);
+
+bool     mdlDim_extensionsGetPushTextRight
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool             defaultValueIn
+);
+
+bool     mdlDim_extensionsGetTightFitTextAbove
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool             defaultValueIn
+);
+
+bool     mdlDim_extensionsGetAutoBallNChain
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool             defaultValueIn
+);
+
+bool     mdlDim_extensionsGetFitInclinedTextBox
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool             defaultValueIn
+);
+
+bool     mdlDim_extensionsGetExtendDimLineUnderText
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+bool             defaultValueIn
+);
+
+DGNPLATFORM_EXPORT bool     adim_updateExtensionsFromDirectionFormat
+(
+DgnPlatform::DimStyleExtensions&    elmExtensions,
+DirectionFormatterCR                dirFormat
+);
+
+bool     mdlDim_extensionsGetDirectionMode
+(
+DgnPlatform::DirectionMode  *pProperty,
+DgnPlatform::DimOverrides            *pOverridesIn
+);
+
+bool     mdlDim_extensionsGetDirectionBaseDir
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn
+);
+
+bool     mdlDim_extensionsGetDirectionClockwise
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get overall property
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        defaultValueIn  =>
+* @return       true if override exists
+* @bsimethod                                                    JoshSchifter    08/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_overridesGetOverallRefScale
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_overridesGetOverallAngleQuadrant
+(
+UInt16          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+UInt16          defaultValueIn
+);
+
+bool     mdlDim_overridesGetOverallSlantAngle
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get witnessline property.
+*
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        pointNo         =>
+* @param        defaultValueIn  =>
+* @return       true if override exists
+* @bsimethod                                                    petri.niiranen  02/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_overridesGetPointWitnessExtend
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             pointNo,
+double          defaultValueIn
+);
+
+bool     mdlDim_overridesGetPointWitnessOffset
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             pointNo,
+double          defaultValueIn
+);
+
+bool     mdlDim_overridesGetPointWitnessColor
+(
+UInt32          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             pointNo,
+UInt32          defaultValueIn
+);
+
+bool     mdlDim_overridesGetPointWitnessWeight
+(
+UInt32          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             pointNo,
+UInt32          defaultValueIn
+);
+
+bool     mdlDim_overridesGetPointWitnessStyle
+(
+long            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             pointNo,
+long            defaultValueIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get segment property.
+*
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        segmentNo       =>
+* @param        defaultValueIn  =>
+* @return       true if override exists
+* @bsimethod                                                    petri.niiranen  02/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_overridesGetSegmentTextRotation
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+double          defaultValueIn
+);
+
+bool     mdlDim_overridesGetSegmentTextJustification
+(
+UInt16          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+UInt16          defaultValueIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get segment property.
+*
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        segmentNo       =>
+* @param        defaultValueIn  =>
+* @return       true if override exists
+* @bsimethod                                                    SunandSandurkar 12/03
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_overridesGetSegmentCurveStartTangent
+(
+DPoint3dP pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+DPoint3dP defaultValueIn
+);
+
+bool     mdlDim_overridesGetSegmentCurveEndTangent
+(
+DPoint3dP pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+DPoint3dP defaultValueIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get segment flag property.
+*
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        segmentNo       =>
+* @param        defaultValueIn  =>
+* @return       true if override exists
+* @bsimethod                                                    petri.niiranen  02/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_overridesGetSegmentFlagUnderlineText
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+bool            defaultValueIn
+);
+
+bool     mdlDim_overridesGetSegmentFlagSuppressLeftDimLine
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+bool            defaultValueIn
+);
+
+bool     mdlDim_overridesGetSegmentFlagSuppressRightDimLine
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+bool            defaultValueIn
+);
+
+bool     mdlDim_overridesGetSegmentFlagPrimaryIsReference
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+bool            defaultValueIn
+);
+
+bool     mdlDim_overridesGetSegmentFlagSecondaryIsReference
+(
+bool            *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo,
+int             defaultValueIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get ordinate property
+* @param        pProperty       <=
+* @param        pOverridesIn    =>
+* @param        defaultValueIn  =>
+* @return       true if override exists
+* @bsimethod                                                    petri.niiranen  04/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     mdlDim_overridesGetOrdinateStartValueX
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+bool     mdlDim_overridesGetOrdinateStartValueY
+(
+double          *pProperty,
+DgnPlatform::DimOverrides    *pOverridesIn,
+double          defaultValueIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get text dimMLText blob for given segment.
+* @param    ppText        <= found text
+* @param    pOverridesIn  =>
+* @param    segmentNo     =>
+* @return   SUCCESS, if dimMLText exists; otherwise ERROR.
+* @bsimethod                                                    petri.niiranen  06/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt        mdlDim_overridesGetDimMLText
+(
+DgnPlatform::DimMLText       **ppText,
+DgnPlatform::DimOverrides    *pOverridesIn,
+int             segmentNo
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Clear segment flag property.
+*
+* @param        pOverridesIn    <=>
+* @param        segmentNo       =>
+* @param        propertyField   =>
+* @return   SUCCESS, if override exist and got cleared.
+* @bsimethod                                                    petri.niiranen  02/02
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt     mdlDim_overridesClearSegmentPropertyBit
+(
+DgnPlatform::DimOverrides*   pOverridesIn,
+const int       segmentNo,
+const UInt32    propertyField
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Get the text location flag.
+* @param    pProperty       <=  text location property
+* @param    pOverridesIn     => overrides struct pointer
+* @param    pElm             => dim element
+* @return       true if override exists
+* @bsimethod                                                    SunandSandurkar 12/03
++---------------+---------------+---------------+---------------+---------------+------*/
+bool                 mdlDim_overridesGetTextLocation
+(
+DgnPlatform::DimStyleProp_Text_Location  *pValueOut,
+DgnPlatform::DimOverrides                *pOverridesIn,
+bool                        embedOveride
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+enum AdimTextSizeOption
+{
+ADIM_TEXTSIZE_Exact     = 0,
+ADIM_TEXTSIZE_Nominal   = 1,
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt        dimTextBlock_populateWithValues
+(
+AdimProcessP            pAdimProcess,
+DgnPlatform::DimMLText* pText,
+WString*                strings
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       dimTextBlock_getTextSize
+(
+AdimProcessP        pAdimProcess,
+DPoint2dP           pSizeOut,
+AdimTextSizeOption  sizeOption
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+MSElementDescrPtr dimTextBlock_getTextDescr
+(
+AdimProcessP pAdimProcess,
+DgnPlatform::DimMLText       *pText,
+DPoint3dP pTxtOrigin,
+DVec3dP pDirection
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     dimTextBlock_getRequiresTextBlock
+(
+AdimProcessP pAdimProcess,
+DgnPlatform::DimMLText       **ppTextOut
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+void     adim_getTextSize
+(
+DPoint2dP                   pTextSize,
+AdimProcessP                pAdimProcess,
+DgnPlatform::DimStringData* pDstr,
+AdimTextSizeOption          sizeOption
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/04
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            dimTextBlock_stringContainsMarkup
+(
+WCharCP       string
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    12/02
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt        dimTextBlock_appendMarkedUpString
+(
+TextBlockR      textBlock,
+WCharCP       pwString,
+DgnPlatform::TextParamWide*  pTextParamWide,
+DPoint2dCP      pTextSize,
+AdimProcessP     pAdimProcess
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+void     dimTextBlock_setPopulated
+(
+AdimProcessP pAdimProcess,
+bool            bState
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    petri.niiranen  09/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     dimTextBlock_isPopulated
+(
+AdimProcessP pAdimProcess
+);
+
+StatusInt   adimUtil_scaleDimValue
+(
+EditElementHandleR dimElement,
+double          scale,
+bool            modifyAllowed
+);
+
+
+void* mdlDim_getEditOptionBlock (EditElementHandleR dimElement, int reqType, UInt64*);
+void const* mdlDim_getEditOptionBlockFromElement (DgnElementCR , ElementHandleCR dimElement, int reqType, UInt64*);
+
+void     adim_setDimTextWitnessLineFromTemplate
+(
+ElementHandleCR        dimElement,
+DgnPlatform::DimText *           dimText,
+int                 iPoint,
+bool                noWitness   /* => true: no witness, false: use template */
+);
+
+StatusInt        adim_allocateAndExtractTextStyleForStroke
+(
+LegacyTextStyleP          *ppTextStyle,
+ElementHandleCR      dimElement
+);
+
+double  adim_getScaleForCellDynamics
+(
+DgnModelP        srcDgnModel,
+DgnModelP        dstDgnModel
+);
+
+DgnPlatform::StackedFractionType adim_textFracTypeFromDim (int dimFracType);
+
+int adim_dimFracTypeFromText (DgnPlatform::StackedFractionType textFracType);
+
+
+void            adim_getMLNoteVerLeftAttachment
+(
+const DgnPlatform::DimStyleExtensions            *pExtensions,
+UInt16                              *pValue
+);
+
+void            adim_setMLNoteVerLeftAttachment
+(
+DgnPlatform::DimStyleExtensions                  *pExtensions,
+UInt16                              eValue
+);
+
+void            adim_getMLNoteVerRightAttachment
+(
+const DgnPlatform::DimStyleExtensions            *pExtensions,
+UInt16                              *pValue
+);
+
+void            adim_setMLNoteVerRightAttachment
+(
+DgnPlatform::DimStyleExtensions                  *pExtensions,
+UInt16                              eValue
+);
+
+void     adim_setCurrentSegmentTextIsOutside
+(
+AdimProcessP pAdimProcess,
+int             dimJust
+);
+
+bool      adim_areTerminatorsBetweenExtensionLines
+(
+AdimProcessP pAdimProcess,
+double              effectiveWidth,
+double              fitMargin,
+double              dimLineLength,
+double              insideMinLeader,
+DPoint2dCR          offset,
+int                 textJust
+);
+
+bool         adim_needExtraTextMargin
+(
+AdimProcessCP pAdimProcess
+);
+
+bool         adim_isDimlineThruEitherTerm
+(
+AdimProcessCP pAdimProcess
+);
+
+void         adim_getEffectiveTerminators
+(
+int                 *pLeftTerm,
+int                 *pRightTerm,
+AdimProcessCP pAdimProcess
+);
+
+void         adim_getEffectiveMinLeaders
+(
+double              *pInside,
+double              *pOutside,
+AdimProcessCP pAdimProcess
+);
+
+StatusInt                       mdlDim_getBallNChainMode
+(
+DgnPlatform::DimStyleProp_BallAndChain_Mode  *pBncMode,
+ElementHandleCR
+);
+
+StatusInt                mdlDim_getFitOption
+(
+DgnPlatform::DimStyleProp_FitOptions         *pFitOption,
+ElementHandleCR                    dimElement
+);
+
+StatusInt                mdlDim_setFitOption
+(
+EditElementHandleR                 dimElement,
+DgnPlatform::DimStyleProp_FitOptions         fitOption
+);
+
+bool                     mdlDim_isFrozenInSharedCell
+(
+DgnElementCP pDimElm
+);
+
+int mdlDim_scale2
+(
+EditElementHandleR dimElement,           /* <=> dimension element to scale */
+double          scale,          /*  => scale factor */
+bool         modifyAllowed,  /*  => allowed to change element size */
+bool         setShields,     /*  => protect scaled sizes from dimstyle */
+bool         updateRange     /*  => update element range */
+);
+
+double   adim_projectTextSize
+(
+DPoint2dCP          pTextSize,
+DPoint3dCP pTextDir,
+double              textMargin
+);
+
+bool    adim_useWitnessLineOffset (AdimProcessCP  ep);
+
+void    adim_getFloatingAngularFormat
+(
+DgnPlatform::AngleFormatVals*   pFormat,       /* <=> */
+int*    pAccuracy      /* <=> */
+);
+
+StatusInt adim_createUnitBlock
+(
+DgnPlatform::DimUnitBlock*       pUnitBlock,       /* <= */
+bool                        isPrimary,        /* => */
+double const*               pUorPerStorage,   /* => */
+UnitDefinitionCP    masterUnit,       /* => */
+UnitDefinitionCP    subUnit           /* => */
+);
+
+StatusInt adim_extractUnitBlock
+(
+double*             pUorPerStorage,   /* <= */
+UnitDefinitionP     masterUnit,       /* <= */
+UnitDefinitionP     subUnit,          /* <= */
+DgnPlatform::DimUnitBlock*       pUnitBlock        /* => */
+);
+
+/*------------------------------------------------------------------------*//**
+The mdlDim_getStyleExtension function is used to retrieve style extensions from
+the specified dimension element.
+* @Param        pExtensionsOut OUT the style extensions retrieved from the dimension
+element.
+* @Param        pElementIn IN is the dimension element to retrieve the extensions from.
+* @Return       SUCCESS if the extensions information is retrieved successfully.
+* @ALinkJoin    usmthmdlDim_deleteStyleExtensionC usmthmdlDim_setStyleExtensionC
+* @Group        "Dimension Functions"
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+
+int     adim_strokeDimension (AdimProcessR ep);
+
+END_BENTLEY_API_NAMESPACE
+
+DGNPLATFORM_TYPEDEFS (IDimElementHelper)
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+enum DimensionCategory
+    {
+    Invalid     = 0,
+    Linear      = 1,
+    Angular     = 2,
+    Radial      = 3,
+    Note        = 4,
+    LabelLine   = 5
+    };
+
+struct DimensionHelperFactory;
+typedef RefCountedPtr<IDimElementHelper>    IDimElementHelperPtr;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          IDimElementHelper : public RefCountedBase
+    {
+    friend struct DimensionHelperFactory;
+
+    protected:
+        ElementHandleCR        m_dimension;
+        DimensionHandler &  m_hdlr;
+        IDimElementHelper (ElementHandleCR dimension, DimensionHandler& hdlr)
+            :m_dimension (dimension), m_hdlr(hdlr)
+            {}
+        
+        void    ResolveTerminators (EditElementHandleR, int iSegment) const;
+        bool    CanReturnWithoutStroke () const;
+    public:
+        virtual BentleyStatus   DropToSegment (ElementAgendaR droppedDimension) const {return ERROR;}
+        virtual int             GetNumberofSegments () const = 0;
+        virtual StatusInt       StrokeDimension (AdimProcess&) const = 0;
+        virtual StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const {return SUCCESS;}
+        virtual bool            IsVertexDeletable (HitPathCP hitPath) const = 0;
+        virtual BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo);
+        virtual BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) = 0;
+        virtual bool            HasText () const {return true;}
+    };
+
+#if defined (NEEDS_WORK_DGNITEM)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          AngularDimensionHelper: public IDimElementHelper
+    {
+    DEFINE_T_SUPER(IDimElementHelper)
+    friend struct DimensionHelperFactory;
+
+    AngularDimensionHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
+    BentleyStatus   DropToSegment (ElementAgendaR droppedDimension) const override;
+    int             GetNumberofSegments () const override {return m_hdlr.GetNumPoints (m_dimension) - 2;}
+    StatusInt       StrokeDimension (AdimProcess&) const override;
+    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 3;}
+    BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo) override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          LinearDimensionHelper: public IDimElementHelper
+    {
+    DEFINE_T_SUPER(IDimElementHelper)
+    friend struct DimensionHelperFactory;
+    private:
+    void    RecalcTextOffsetForLinearSingleDims(EditElementHandleR segmentDim, ElementHandleCR origDim,
+                    bvector<double> const& xTextOffsets, UInt32 iSegment) const;
+    double  GetExtensionHeightDifference (int segNo) const;
+    
+    protected:
+    LinearDimensionHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
+    BentleyStatus   DropToSegment (ElementAgendaR droppedDimension) const override;
+    int             GetNumberofSegments () const override{return m_hdlr.GetNumPoints (m_dimension) -1;}
+    StatusInt       StrokeDimension (AdimProcess&) const override;
+    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
+    BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo) override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          OrdinateDimensionHelper : public IDimElementHelper
+    {
+    DEFINE_T_SUPER(IDimElementHelper)
+    friend struct DimensionHelperFactory;
+    private:
+    bool            IsWitnesslineSuppressed (int pointNo) const;
+
+    protected:
+    OrdinateDimensionHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
+    
+    BentleyStatus   DropToSegment (ElementAgendaR droppedDimension) const override;
+    int             GetNumberofSegments () const override {return m_hdlr.GetNumPoints (m_dimension);}
+    StatusInt       StrokeDimension (AdimProcess&) const override;
+    StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const override;
+    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          RadialDimensionHelper : public IDimElementHelper
+    {
+    DEFINE_T_SUPER(IDimElementHelper)
+    friend struct DimensionHelperFactory;
+    protected:
+    RadialDimensionHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
+    int             GetNumberofSegments () const override {return 1;}
+    StatusInt       StrokeDimension (AdimProcess&) const override;
+    StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const override;
+    bool            IsVertexDeletable (HitPathCP hitPath) const override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    bool            HasText () const override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          LabelLineHelper: public IDimElementHelper
+    {
+    DEFINE_T_SUPER(IDimElementHelper)
+    friend struct DimensionHelperFactory;
+    protected:
+    LabelLineHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
+    int             GetNumberofSegments () const override {return 1;}
+    StatusInt       StrokeDimension (AdimProcess&) const override;
+    StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const override;
+    bool            IsVertexDeletable (HitPathCP hitPath) const override {return false;}
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override{return ERROR;}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          NoteDimensionHelper: public IDimElementHelper
+    {
+    DEFINE_T_SUPER(IDimElementHelper)
+    friend struct DimensionHelperFactory;
+    protected:
+    NoteDimensionHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
+    int             GetNumberofSegments () const override {return 1;}
+    StatusInt       StrokeDimension (AdimProcess&) const override;
+    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
+    BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo) override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    bool            HasText () const override;
+    };
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+struct          DimensionHelperFactory
+    {
+    static IDimElementHelperPtr CreateHelper (ElementHandleCR element);
+    };
+
+StatusInt        mdlDimText_traverseFormatters
+(
+DimMLTextP                       pText,
+PFDimTextFmtTraverseFunction    pUserTraverseFunction,
+void                            *pUserData,
+DgnModelP                    modelRef
+);
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+
+
+
+
+Public void     updateTextBoxFromTextBlock
+(
+AdimProcessP    ep,            // <=>
+TextBlockCR     textBlock
+);
+#endif

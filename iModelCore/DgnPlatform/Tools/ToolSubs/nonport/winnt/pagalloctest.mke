@@ -1,0 +1,83 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Tools/ToolSubs/nonport/winnt/pagalloctest.mke $
+#    $RCSfile: pagalloctest.mke,v $
+#   $Revision: 1.1 $
+#       $Date: 2010/08/05 15:42:11 $
+#     $Author: Chuck.Kirschman $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#----------------------------------------------------------------------
+#
+#   MicroStation Trace Log Dump Makefile
+#
+#----------------------------------------------------------------------
+%include    mdl.mki
+
+baseDir         = $(_MakeFilePath)
+#---------------------------------------------
+#   define output directory
+#---------------------------------------------
+objDir		= $(DgnPlatformToolsBuildDir)pagalloctest/
+
+#---------------------------------------------
+#   Create the object directory if necessary
+#---------------------------------------------
+always:
+    ~mkdir $(objdir)
+
+#Get Bentley.dll
+#    copy C:\vancouver\output\Winx86\Product\DgnPlatform\Dlls\Bentley.dll $(objdir)
+
+#----------------------------------------------------------------------
+# 	Define include path for tools subsystem
+#----------------------------------------------------------------------
+dirToSearch = $(publishIncSrc)
+#%include cincapnd.mki
+
+#dirToSearch = $(utilSharedInc)
+#%include cincapnd.mki
+
+#dirToSearch = $(sharedIncSrc)
+#%include cincapnd.mki
+
+#dirToSearch = $(msPrivInc)
+#%include cincapnd.mki
+
+#dirToSearch = $(toolsPubInc)
+#%include cincapnd.mki
+
+#dirToSearch = $(toolsPrivInc)
+#%include cincapnd.mki
+
+#dirToSearch = $(toolsPrivInc)
+#%include cincapnd.mki
+
+#dirToSearch = $(boostHeaders)
+#%include cincapnd.mki
+
+#dirToSearch = $(msPrivInc)
+#%include cincapnd.mki
+
+
+#----------------------------------------------------------------------
+#    Append compiler options
+#----------------------------------------------------------------------
+
+$(objDir)test_pagalloc.obj	: $(baseDir)test_pagalloc.cpp
+
+linkObjs =    $(objDir)test_pagalloc.obj 
+
+#----------------------------------------------------------------------
+#		 Build/Link Commands
+#----------------------------------------------------------------------
+EXE_DEST     = $(objDir)
+EXE_NAME     = pagalloctest
+EXE_OBJS     = $(linkObjs)
+EXE_LIBS     = $(objDir)RmgrTools.lib
+EXE_TMP_DIR  = $(objDir)
+EXE_LOPT1    = \/BASE:0x400000 \/DYNAMICBASE:NO
+
+%include $(SrcBsiCommon)sharedmki/linktool.mki

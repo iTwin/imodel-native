@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_MarkupExtension" nameSpacePrefix="mkup2" version="01.01" displayLabel="Bentley Markup Extension Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="AuditComment" description="Information about changes made to a markup" displayLabel="Audit Comment" isDomainClass="True">
+        <ECProperty propertyName="Comment" typeName="string" description="The change that was made" />
+        <ECProperty propertyName="Date" typeName="dateTime" description="When the change was made" />
+        <ECProperty propertyName="Reviewer" typeName="string" description="Who made the change" />
+    </ECClass>
+    <ECClass typeName="MarkupExtension" description="Bentley Markup Extension Class" isDomainClass="True">
+        <ECProperty propertyName="Template" typeName="string" description="Name of the template applied to the markup"/>
+        <ECProperty propertyName="DueDate" typeName="dateTime" displayLabel="Due Date" description="The due date for the engineering changes described by this markup" />
+        <ECProperty propertyName="ReviewedBy" description="The name of the person that reviewed the markup" typeName="string"  displayLabel="Reviewed By" />
+        <ECProperty propertyName="PlacemarkLocation" typeName="point3d" displayLabel="Location" description="The XYZ location of the markup's placemark" />
+        <ECProperty propertyName="User1" typeName="string" displayLabel="User 1" description="General user-defined markup property #1" />
+        <ECProperty propertyName="User2" typeName="string" displayLabel="User 2" description="General user-defined markup property #2" />
+        <ECProperty propertyName="User3" typeName="string" displayLabel="User 3" description="General user-defined markup property #3" />
+        <ECProperty propertyName="User4" typeName="string" displayLabel="User 4" description="General user-defined markup property #4" />
+    </ECClass>
+</ECSchema>

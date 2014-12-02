@@ -1,0 +1,24 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: ProcessReadme.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile=$(SrcRoot)DgnPlatform/privmki/AssertDgnPlatformPolicy.mki
+%include mdl.mki
+%include $(SharedMki)stdversion.mki
+
+#--------------------------------------------------------------------------------------------------
+#  Update the readme file with the proper version number
+#--------------------------------------------------------------------------------------------------
+readmeDir      = ${dgnPlatformBuildDir_}/
+VERSION_STRING = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+
+$(readmeDir)readme.htm : $(baseDir)readme.htm
+    >$@
+        $[@subst "REL_V.MAJ_V.MIN_V.SUBMIN_V", $(VERSION_STRING), $[@readfile $(baseDir)readme.htm]]
+    >
+
+always:
+   @createsymlinks.py "$(BuildContext)Delivery/readme.htm=$(readmeDir)readme.htm"

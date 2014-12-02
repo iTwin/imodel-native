@@ -1,0 +1,110 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: DgnXf/DgnXfG.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+
+appName             =% DgnXf$(BENTLEY_API_NAME)
+SrcDir              = $(_MakeFilePath)
+o                   = $(OutputRootDir)Build/$(appName)/
+
+always:
+    ~mkdir $(o)
+
+nameToDefine = __DGNDBTOXFDLL_BUILD__
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec) $(BuildContext)PublicAPI/DgnXfLib/DgnXfLib.h $(SrcRoot)DgnPlatform/PublicAPI/DgnPlatform/DgnXf/DgnProjectXf.h $(SrcRoot)DgnPlatform/PublicAPI/DgnPlatform/DgnXf/DgnDbXf.h
+%include MultiCppCompileRule.mki
+
+$(o)DgnXfExport$(oext)              : $(SrcDir)DgnXfExport.cpp ${MultiCompileDepends} 
+
+$(o)DgnXfToDb$(oext)                : $(SrcDir)DgnXfToDb.cpp ${MultiCompileDepends}
+
+$(o)DgnXfToDbContextSection$(oext)  : $(SrcDir)DgnXfToDbContextSection.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+DgnXfObjs = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+%if defined (EMBEDDED_DGNPLATFORM)
+    %if $(TARGET_PLATFORM)=="Windows"
+        # Embed a static copy of the DgnPlatform stack inside this DLL
+        DLM_OBJECT_FILES = $(DgnXfObjs)
+        DLM_OBJECT_FILES + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+    
+        ## *** NEEDS WORK: BeXml.lib(BeXml.obj) : warning LNK4049: locally defined symbol xmlFree imported
+        DLM_SPECIAL_LINKOPT = -Ignore:4049
+
+        # For uniscribeservices, used by nonport_DgnRscFont.cpp, DgnTrueTypeFont.cpp
+        LINKER_LIBRARIES + usp10.lib
+    %else
+        %error EMBEDDED_DGNPLATFORM currently only supported on Windows
+    %endif
+%else
+    # Link to the DgnPlatform libraries
+    DLM_OBJECT_FILES = $(DgnXfObjs)
+
+    ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
+    LINKER_LIBRARIES = $(ContextLibPrefix)Bentley$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)BentleyAllocator$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)BentleyGeom$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)BeJsonCpp$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)BeSQLite$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)BeSQLiteEC$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)BeZlib$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)DgnPlatform$(libext)
+    LINKER_LIBRARIES + $(ContextLibPrefix)ECObjects$(libext)
+
+    %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+        DLM_OBJECT_FILES + $(BuildContext)SubParts/StaticLibs/$(libprefix)BeProtobuf$(stlibext)
+        DLM_OBJECT_FILES + $(BuildContext)SubParts/StaticLibs/$(libprefix)DgnXfLib$(stlibext)
+    %else
+        LINKER_LIBRARIES + $(ContextLibPrefix)BeProtobuf$(stlibext)
+        LINKER_LIBRARIES + $(ContextLibPrefix)DgnXfLib$(stlibext)
+    %endif
+%endif
+
+DLM_NAME                    = $(appName)
+DLM_API_NUMBER              = $(ApiNumber)
+DLM_EXPORT_OBJS             = $(DgnXfObjs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%if defined (EMBEDDED_DGNPLATFORM)
+    #--------------------------------------------------------------------------------------
+    # Note: In this case, always build as a shared library (which contains a static DgnPlatform)
+    #--------------------------------------------------------------------------------------
+    %include dlmlink.mki
+
+    $(BuildContext)Delivery/$(appName).pdb : $(o)$(appName).pdb
+        $(LinkFirstDepToFirstTarget)
+%else
+    %include $(sharedMki)linkLibrary.mki
+%endif
+
+# deliver my publicapi
+$(BuildContext)Delivery/DgnXfPublicApi/DgnXfSdk/DgnDbXf.h : $(BuildContext)PublicAPI/DgnPlatform/DgnXf/DgnDbXf.h
+    $(msg)
+    !~@mkdir $(BuildContext)Delivery/DgnXfPublicApi/DgnXfSdk
+    $(LinkFirstDepToFirstTarget)

@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#     $Source: $
+#  $Copyright: $
+#--------------------------------------------------------------------------------------
+
+# The first part ever built causes the tool context to be generated.
+# This is actually a little intricate and has certain requirements (e.g. including BentleyApi.mki).
+# Do it here in a controlled way.
+
+PolicyFile = $(InternalSystemPolicy)
+
+%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+
+%include mdl.mki

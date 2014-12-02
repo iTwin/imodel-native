@@ -1,0 +1,440 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>DgnCore</ProjectName>
+    <ProjectGuid>{A258B5C5-BA68-4613-9175-7E1FDC63F284}</ProjectGuid>
+    <RootNamespace>build_DgnCore</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild DgnCore -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32;BENTLEY_WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\PublicAPI\;$(SrcRoot)DgnPlatform\PrivateApi\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bmake $(SrcRoot)DgnPlatform\DgnCore\DgnCore.mke</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bmake $(SrcRoot)DgnPlatform\DgnCore\DgnCore.mke +a</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bmake $(SrcRoot)DgnPlatform\DgnCore\DgnCore.mke +Da</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">build_DgnCore.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">WIN32;BENTLEY_WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\DgnPlatform\PublicAPI\;$(SrcRoot)DgnPlatform\PrivateApi\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ACSManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\AnnotationScale.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\AssocFarPath.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\AssocTag.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\bsirect.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\BSISerializable.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Clip.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ColorBook.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ColorUtils.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\CompressedXAttribute.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\CopyContext.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnAttachment.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnAttachmentClip.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnAttachmentCreate.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnAttachmentElement.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnAttachmentOverrides.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnColorMap.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnCore.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnCoreInternal.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnDomain.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFile.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnMaterials.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnModelRef.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnProject.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnRangeTree.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnRepresentation.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnScan.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnStringUtils.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnTableElementScanner.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnViewDb.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DisplayAttribute.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DisplayHandler.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DisplayPath.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DisplayStyleManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DrawAreaPattern.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ElementAgenda.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ElementGeometry.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ElementHandlerManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ElementUtil.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ElemHandle.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\FenceParams.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\GParray.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\GradientSettings.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Handler.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\HandlerTypeInfo.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\IAuxSystem.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\IFacetTopologyTable.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ITxn.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Linkage.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\LinuxGlobals.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Material.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\MaterialSettings.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\MaterialTokens.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\mdlTable.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ModelAccess.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\MSElementDescr.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\NamedGroup.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\NullContext.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\PersistentElementPath.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\PolyfaceIndexing.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\PrimitivesWithNamedPlanes.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\PropertyContext.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\PropertyProcessors.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RangeContext.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RegisteredApp.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RMatrix.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\RunPropertiesBase.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Scanner.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\SimplifyViewDrawGeom.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\SnapContext.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Sprites.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\StoredExpression.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\TemporaryElementRef.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\TextString.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\TextStringProperties.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\TMatrix.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\TxnManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\UniscribeServices.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\UnitManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ValueFormat.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ValueParse.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\VecMath.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\VecMathDeprecated.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ViewContext.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ViewGroup.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\ViewInfo.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\Viewport.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\XAttributeHandlerManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\XGraphics.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\XGraphicsCache.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\AddToGraph.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyChangeTrack.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyChangeTrackProcessAffected.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyGraph.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyIdRemappingForClone.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyManagerLinkage.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyRoot.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\DependencyUtils.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\dgdbg.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\dependency\XAttributeDependencies.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFontManager\DgnFontManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFontManager\DgnRscFont.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFontManager\DgnShxFile.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFontManager\DgnShxFont.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFontManager\DgnTrueTypeFont.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\DgnFontManager\nonport_DgnRscFont.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LineStyleApi.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LineStyleLinkage.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LineStyleManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsCache.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsDefinitionElm.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsDwgOut.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsElem.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsLinFile.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsLocation.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsName.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsPointComponent.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\LsSymbology.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\StrokePattern.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnCore\linestyle\StrokeSymbol.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\dblinkcache.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\DgnDocumentManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\dgnelemutil.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\DgnFileBase.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\DgnFileDb.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\dgnfileio.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\DgnModel.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\DgnModelHandler.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\dgnv8protect.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\ElementRef.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\ElemRangeIndex.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\historycachedquery.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\historywatchlist.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\IntegrationManager.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\modelinfo.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\SheetDef.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\strlinkage.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\UnitDefinition.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\XAttributeChange.cpp" />
+    <ClCompile Include="$(SrcRoot)DgnPlatform\DgnFileIO\zipstream.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnAttachment.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnAttachmentClip.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnAttachmentCreate.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnAttachmentElement.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnForeignFileIO.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnProjectImporter.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnV8FileIO.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnV8Levels.cpp" />
+    <ClCompile Include="..\ForeignFormat\DgnV8ProjectImporter.cpp" />
+    <ClCompile Include="..\ForeignFormat\dgnv8protect.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\convattrv7tov8.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\convertv7tcb.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\convertv7tov8.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\dgnv7fileio.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\extmstcbv7.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\levelconvert.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\lstyleconvert.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\rasterconvert.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\tagsetconvert.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DgnV7FileIO\viewconvert.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\DigitalSignatureCellHeaderHandler.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\NamedView.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\NamedViewDisplay.cpp" />
+    <ClCompile Include="..\ForeignFormat\Handlers\SheetBorder.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelCache.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelDefinition.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelDescr.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelMask.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelMaskTree.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelMaskTreeEntry.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\LevelNameDictionary.cpp" />
+    <ClCompile Include="..\ForeignFormat\LevelCache\PersistentLevelCache.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\Raster8788.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\RasterElementDependency.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\RasterElementListener.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\rastwrit.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\V8RasterAttachment.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\V8RasterHandlers.cpp" />
+    <ClCompile Include="..\ForeignFormat\Raster\V8RasterImporter.cpp" />
+    <ClCompile Include="..\ForeignFormat\V8DependencyLinkage.cpp" />
+    <ClCompile Include="..\ForeignFormat\V8NamedGroup.cpp" />
+    <ClCompile Include="..\ForeignFormat\ViewGroupHandler.cpp" />
+    <ClCompile Include="ECDbWrappers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(SrcRoot)DgnPlatform\DgnCore\DgnCore.mke" />
+    <None Include="DgnCore.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SrcRoot)DgnPlatform\DgnCore\DgnCoreInternal.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\DgnCore\DgnCoreDLLInlines.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnPlatform.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\DgnCore\DgnProject.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PrivateApi\DgnPlatformInternal\DgnCore\DgnElementsInternal.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PrivateApi\DgnPlatformInternal\DgnCore\DgnPropertyBlob.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\AnnotationScale.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\AreaPattern.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\AssocFarPath.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\BSIRect.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\BSISerializable.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\CfgVarExpr.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ClipDescr.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\CodePages.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ColorBook.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ColorUtil.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\CompressedXAttribute.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\CopyContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DependencyGraph.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DependencyManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DependencyManagerAppid.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DependencyManagerLinkage.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DependencyMgrXAttributeChangeTracker.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnAttachment.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnColorMap.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnCore.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnCoreAPI.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnCoreEvent.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnDocumentManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnDomain.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnFile.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnFileBase.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnFontManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnModel.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnModelRef.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnRangeTree.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnRepresentation.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnRscFont.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnShxFont.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnStringUtils.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnTableElementScanner.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnViewDb.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DgnViewport.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DisplayAttribute.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DisplayHandler.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DisplayPath.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DisplayPriority.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DisplayStyleListFileData.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\DisplayStyleManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\EldscrFuncs.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ElementAgenda.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ElementGeometry.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ElementHandle.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ElementHandlerManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ElementProperties.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ElementUtil.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\FenceParams.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\GeoCoordinationManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\GPArray.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\GradientSettings.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\Handler.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\HitPath.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IAnnotationHandler.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IAuxCoordSys.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IDgnComponent.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IDrawRasterAttachment.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IGeoCoordServices.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IPickGeom.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IRasterAttachmentOverride.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IRasterOutput.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ISprite.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ITiledRaster.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ITransactionHandler.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ITxnManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IViewDraw.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IViewOutput.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\IViewTransients.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LevelCache.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LevelMask.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LevelMaskTree.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LevelNameDictionary.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LevelTable.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LevelTypes.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LineStyle.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LineStyleApi.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LineStyleManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LineStyleResource.r.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\Linkage.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LinkageHolderElement.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LsLocal.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\lstyle.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\LxoProcedure.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\Material.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\MaterialSettings.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\MdlMatrix.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\mdlModelRef.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\mdlTable.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ModelAccess.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\NamedGroup.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\NotificationManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\NullContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\PersistentElementPath.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\PolyfaceHeader.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\PrimitivesWithNamedPlanes.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\PropertyContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\PropertyProcessors.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\QvViewport.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\RegisteredApp.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\RemapLevelNameMaskContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\rtypes.r.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\RunPropertiesBase.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ScanCriteria.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\SimplifyViewDrawGeom.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\SnapContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\Sprites.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\StoredExpression.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\SubEntity.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\TemporaryElementRef.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\TextParam.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\TextString.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\TextStringProperties.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\Undo.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ValueFormat.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ValueParse.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\VecMath.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ViewContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ViewGroup.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\ViewInfo.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\XAttributeChange.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\XAttributeHandler.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\XGraphics.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\basefileio.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\BentleyDgn.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\CacheDataBlock.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\cachelock.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnAppData.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnElements.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnFileIO.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnFileIOApi.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnFileIODeprecated.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnFileIOLib.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnFileIOProtection.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\dgnhandlercommands.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnHistory.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnLinkage.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnModelHandler.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DgnModelRefCollections.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\DimStyleResource.r.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\ElementRefBase.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\ElementUtil.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\historyclientlib.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\historyErrors.r.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\historyinternallib.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\historylib.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\historyqueryclient.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\historyqueryserver.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\IntegrationManager.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\Linkage.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\ModelInfo.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\MSElementDescr.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\QvElemSet.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\RefCountedMSElementDescr.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\ServerLoadContext.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\SheetDef.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\UnitDefinition.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\XAttributeChangeSet.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\XAttributeIter.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnFileIO\ZipStream.h" />
+    <ClInclude Include="$(SrcRoot)DgnPlatform\DgnFileIO\DepDebugger.h" />
+    <ClInclude Include="..\ForeignFormat\DgnV8FileIO.h" />
+    <ClInclude Include="..\ForeignFormat\ForeignFormat.h" />
+    <ClInclude Include="..\ForeignFormat\Handlers\DgnV7FileIO\common.h" />
+    <ClInclude Include="..\ForeignFormat\Handlers\DgnV7FileIO\DataDefinitionConversionRules.h" />
+    <ClInclude Include="..\ForeignFormat\LevelCache\level.h" />
+    <ClInclude Include="..\ForeignFormat\V8NamedGroup.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnCore\ECDbWrappers.h" />
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnFileIO\ElementRef.h" />
+    <ClInclude Include="DgnCoreLog.h" />
+    <ClInclude Include="NamedGroupTable.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
