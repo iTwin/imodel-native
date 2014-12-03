@@ -1874,6 +1874,11 @@ bool              ECValue::Equals (ECValueCR v) const
         }
     if (IsDouble())
         return DoubleOps::AlmostEqual (GetDouble(), v.GetDouble());
+    if (IsPoint3D ())
+        return DPoint3dOps::AlmostEqual (GetPoint3D (), v.GetPoint3D ());
+
+    if (IsPoint2D())
+         return DPoint2dOps::AlmostEqual (GetPoint2D (), v.GetPoint2D ());
 
     size_t primitiveValueSize = (size_t) GetFixedPrimitiveValueSize (GetPrimitiveType());
     //&m_boolean points to the first memory address of the union (as does every other union member)
