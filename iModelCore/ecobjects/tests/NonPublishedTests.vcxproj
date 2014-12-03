@@ -63,7 +63,9 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NonPublished\AdhocPropertyTests.cpp" />
     <ClCompile Include="NonPublished\CalculatedPropertyTests.cpp" />
+    <ClCompile Include="NonPublished\CGBinarySerializationTests.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
     <ClCompile Include="NonPublished\ECSchemaUnitsManagerTests.cpp" />
     <ClCompile Include="NonPublished\MemoryLayoutTests.cpp" />

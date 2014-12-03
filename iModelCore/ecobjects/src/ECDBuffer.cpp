@@ -1263,6 +1263,15 @@ bool ClassLayout::HasChildProperties (UInt32 parentIndex) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+UInt32 ClassLayout::GetParentPropertyIndex (UInt32 childIndex) const
+    {
+    PropertyLayoutCP propertyLayout;
+    return ECOBJECTS_STATUS_Success == GetPropertyLayoutByIndex (propertyLayout, childIndex) ? propertyLayout->GetParentStructIndex() : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 UInt32  ClassLayout::GetFirstChildPropertyIndex (UInt32 parentIndex) const
@@ -2316,7 +2325,7 @@ ClassLayoutCR ECDBuffer::GetClassLayout() const                             { re
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/11
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source)
+static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCollectionCR source, bool ignoreErrors)
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     for (ECValuesCollection::const_iterator it=source.begin(); it != source.end(); ++it)
@@ -2325,9 +2334,13 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
         if (prop.HasChildValues())
             {
             // Stupid PropertyValueMatchesNoChange return value is stupid.
-            if (ECOBJECTS_STATUS_Success != (status = duplicateProperties (target, *prop.GetChildValues())))
-                if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+            if (ECOBJECTS_STATUS_Success != (status = duplicateProperties (target, *prop.GetChildValues(), ignoreErrors)))
+                {
+                if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
+                else
+                    status = ECOBJECTS_STATUS_Success;  // ignore error
+                }
 
             continue;
             }
@@ -2335,8 +2348,12 @@ static ECObjectsStatus     duplicateProperties (IECInstanceR target, ECValuesCol
             {
             ECPropertyCP ecProp = prop.GetValueAccessor().GetECProperty();
             if (NULL != ecProp && ecProp->GetIsPrimitive() && ECOBJECTS_STATUS_Success != (status = target.SetInternalValueUsingAccessor (prop.GetValueAccessor(), prop.GetValue())))
-                if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
+                {
+                if (!ignoreErrors && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != status)
                     return status;
+                else
+                    status = ECOBJECTS_STATUS_Success;  // ignore error
+                }
             }
         }
 
@@ -2359,7 +2376,25 @@ ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
     
     // Not ECD-based, or incompatible layouts. Copy property-by-property
     ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
-    return duplicateProperties (*this, *srcValues);
+    return duplicateProperties (*this, *srcValues, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::CopyCommonValues (IECInstanceCR source)
+    {
+    if (GetClass().GetName().Equals (source.GetClass().GetName()))
+        {
+        // If both are ECD-based, try copying the buffers first - it's cheaper.
+        ECDBuffer* thisBuffer = this->GetECDBufferP();
+        ECDBuffer const* srcBuffer;
+        if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECOBJECTS_STATUS_Success == thisBuffer->CopyFromBuffer (*srcBuffer))
+            return ECOBJECTS_STATUS_Success;
+        }
+
+    ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
+    return duplicateProperties (*this, *srcValues, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2410,29 +2445,36 @@ ECObjectsStatus ECDBuffer::CopyPropertiesFromBuffer (ECDBufferCR srcBuffer)
 
     // copy struct instances, updating their identifiers if necessary
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    PropertyLayoutCP propLayout;
+    PropertyLayoutCP srcPropLayout;
     UInt32 nProperties = classLayout.GetPropertyCount();
     for (UInt32 propIdx = 0; propIdx < nProperties; propIdx++)
         {
-        if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutByIndex (propLayout, propIdx) || !propLayout->GetTypeDescriptor().IsStructArray())
+        if (ECOBJECTS_STATUS_Success != srcBuffer.GetClassLayout().GetPropertyLayoutByIndex (srcPropLayout, propIdx) || !srcPropLayout->GetTypeDescriptor().IsStructArray())
             continue;
 
-        ArrayCount nEntries = srcBuffer.GetReservedArrayCount (*propLayout);
+        // NB: The respective buffers may have different ClassLayout pointers. Each expects to be passed a PropertyLayout from its own ClassLayout object.
+        PropertyLayoutCP myPropLayout;
+        if (&classLayout == &srcBuffer.GetClassLayout())
+            myPropLayout = srcPropLayout;
+        else if (ECOBJECTS_STATUS_Success != classLayout.GetPropertyLayoutByIndex (myPropLayout, propIdx) || !myPropLayout->GetTypeDescriptor().IsStructArray())
+            continue;
+
+        ArrayCount nEntries = srcBuffer.GetReservedArrayCount (*srcPropLayout);
         for (ArrayCount arrayIdx = 0; arrayIdx < nEntries; arrayIdx++)
             {
             ECValue srcStructVal;
-            if (ECOBJECTS_STATUS_Success == srcBuffer._GetStructArrayValueFromMemory (srcStructVal, *propLayout, arrayIdx) && !srcStructVal.IsNull())
+            if (ECOBJECTS_STATUS_Success == srcBuffer._GetStructArrayValueFromMemory (srcStructVal, *srcPropLayout, arrayIdx) && !srcStructVal.IsNull())
                 {
                 // The ECDBuffer we copied from source to 'this' contains struct ID values relevant only to source buffer
                 // So clear out the struct ID entry in 'this' first.
                 // WIP_FUSION: Assumption that struct IDs are always integers and 0 == null struct
                 //  There seems to be no reason not to enforce that.
                 ECValue nullStructIdValue (0);
-                status = SetPrimitiveValueToMemory (nullStructIdValue, *propLayout, true, arrayIdx);
+                status = SetPrimitiveValueToMemory (nullStructIdValue, *myPropLayout, true, arrayIdx);
                 if (ECOBJECTS_STATUS_Success != status && ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)  // useless redundant return value...
                     break;
 
-                if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, *propLayout, arrayIdx)))
+                if (ECOBJECTS_STATUS_Success != (status = _SetStructArrayValueToMemory (srcStructVal, *myPropLayout, arrayIdx)))
                     {
                     // This useless return value is a constant pain in the...
                     if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)

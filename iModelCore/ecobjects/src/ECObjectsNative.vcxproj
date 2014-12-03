@@ -54,6 +54,7 @@
     <ClCompile Include="BeXmlCGReader.cpp" />
     <ClCompile Include="BeXmlCGWriter.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
+    <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
     <ClCompile Include="ECcontext.cpp" />
@@ -85,7 +86,6 @@
     <ClCompile Include="presentation\ecviewdefinition.cpp" />
     <ClCompile Include="StandaloneECInstance.cpp" />
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
-    <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
     <ClCompile Include="Units\ECUnitsClassLocater.cpp" />

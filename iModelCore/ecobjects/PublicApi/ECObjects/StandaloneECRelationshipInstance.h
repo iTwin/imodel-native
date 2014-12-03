@@ -92,24 +92,16 @@ public:
 //! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
-struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public ECEnabler
+struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public StandaloneECEnabler
    {
 //__PUBLISH_SECTION_END__
 private:
     ECN::ECRelationshipClassCR      m_relationshipClass;
 
-    StandaloneECRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
-    ~StandaloneECRelationshipEnabler ();
+    StandaloneECRelationshipEnabler (ECN::ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
+    ECOBJECTS_EXPORT ~StandaloneECRelationshipEnabler ();
 
 protected:
-    virtual WCharCP                     _GetName() const override;
-    virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
-    virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
-    virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
-    virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
-    virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
-    virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
-
     virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const;
     virtual ECN::ECRelationshipClassCR    _GetRelationshipClass() const;
 
@@ -121,6 +113,12 @@ public:
     //! @param[in]  ecClass The relationship class which to create an enabler for
     //! @returns The StandaloneECRelationshipEnabler for the given class.
     ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr  CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass);
+    //! Given an ECRelationshipClass, will create an enabler for that class
+    //! @param[in]  ecClass The relationship class which to create an enabler for
+    //! @param[in]  classLayout for the ecClass
+    //! @param[in]  structStandaloneEnablerLocater
+    //! @returns The StandaloneECRelationshipEnabler for the given class.
+    ECOBJECTS_EXPORT static StandaloneECRelationshipEnablerPtr  CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     //! Creates an instance of the supported ECRelationshipClass
     ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr        CreateRelationshipInstance () const;
     //! Returns this enabler as a base ECEnabler

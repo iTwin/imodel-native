@@ -16,10 +16,11 @@
 #include "ECObjectsNativeLog.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeFileName.h>
-#include <ECObjects/BeXmlCommonGeometry.h>
 #include <Logging/bentleylogging.h>
 #include <ECObjects/CalculatedProperty.h>
 #include <ECObjects/ECInstanceIterable.h>
+#include <BeXml/BeXml.h>
+
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 extern ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath);

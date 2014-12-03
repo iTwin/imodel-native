@@ -27,6 +27,14 @@ extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVe
 static  bool        s_noAssert = false;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECNameValidation::IsValidName (WCharCP name)
+    {
+    return RESULT_Valid == Validate (name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Currently this is only used by ECValidatedName and ECSchema.
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -118,6 +118,9 @@ public:
     //! @returns RESULT_Valid if the name is valid, or a ValidationResult indicating why the name is invalid.
     ECOBJECTS_EXPORT static ValidationResult    Validate (WCharCP name);
 
+    //! Returns true if the specified name is a valid EC name
+    ECOBJECTS_EXPORT static bool                IsValidName (WCharCP name);
+
     //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
     ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
     ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (Utf8Char c);
