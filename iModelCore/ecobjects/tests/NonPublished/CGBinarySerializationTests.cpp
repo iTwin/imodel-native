@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/CGBinarySerializationTests.cpp $
+|     $Source: tests/NonPublished/CGBinarySerializationTests.cpp $
 |
 |  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
