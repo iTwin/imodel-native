@@ -626,6 +626,26 @@ WStringCP consolidatedSchemaFullName
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             return status;
         }
+    for (IECInstancePtr const & customAttribute : consolidatedCustomAttributeContainer.GetPrimaryCustomAttributes(false))
+        {
+        ECClassCR classDefinition = customAttribute->GetClass();
+        bool found = false;
+        for (IECInstancePtr const & customAttribute : consolidatedCustomAttributeContainer.GetCustomAttributes(false))
+            {
+            ECClassCR currentClass = customAttribute->GetClass();
+            if (ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
+               {
+               found = true;
+               }
+            }
+        if (!found)
+            {
+            consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*customAttribute);
+            }
+        }
+
+
+
     return status;
     }
 

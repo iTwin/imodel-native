@@ -2,26 +2,17 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/PresentationRulesTypes.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-typedef bvector<RootNodeRuleP>                       RootNodeRuleList;
-typedef bvector<ChildNodeRuleP>                      ChildNodeRuleList;
-typedef bvector<ContentRuleP>                        ContentRuleList;
-typedef bvector<ImageIdOverrideP>                    ImageIdOverrideList;
-typedef bvector<LabelOverrideP>                      LabelOverrideList;
-typedef bvector<StyleOverrideP>                      StyleOverrideList;
-typedef bvector<GroupingRuleP>                       GroupingRuleList;
-typedef bvector<LocalizationResourceKeyDefinitionP>  LocalizationResourceKeyDefinitionList;
-typedef bvector<UserSettingsGroupP>                  UserSettingsGroupList;
-typedef bvector<CheckBoxRuleP>                       CheckBoxRuleList;
-typedef bvector<RenameNodeRuleP>                     RenameNodeRuleList;
-typedef bvector<SortingRuleP>                        SortingRuleList;
 
 /*---------------------------------------------------------------------------------**//**
 PresentationRuleSet is a container of all presentation rules for particular type of the tree
@@ -30,6 +21,7 @@ and particular set of schemas .
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationRuleSet : public RefCountedBase
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString                                m_ruleSetId;
         WString                                m_supportedSchemas;
@@ -55,6 +47,7 @@ struct PresentationRuleSet : public RefCountedBase
         SortingRuleList                        m_sortingRules;
         UserSettingsGroupList                  m_userSettings;
 
+    private:
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet (void);
 
@@ -80,6 +73,7 @@ struct PresentationRuleSet : public RefCountedBase
         //Private destructor.
                                                         ~PresentationRuleSet (void);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Creates an instance of PresentationRuleSet.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  CreateInstance 
@@ -183,3 +177,5 @@ struct PresentationRuleSet : public RefCountedBase
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

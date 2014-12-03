@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRule.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -27,6 +29,7 @@ Base class for all custom PresentationKeys. It represents any presentation confi
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationKey
     {
+//__PUBLISH_SECTION_END__
 private:
     int m_priority;
 
@@ -46,6 +49,8 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode) = 0;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Virtual destructor.
     virtual ~PresentationKey(){}
@@ -61,13 +66,13 @@ public:
 
     };
 
-
 /*---------------------------------------------------------------------------------**//**
 Base class for all PresentationRules.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationRule : public PresentationKey
     {
+//__PUBLISH_SECTION_END__
 private:
     WString   m_condition;
     bool      m_onlyIfNotHandled;
@@ -85,6 +90,8 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void           _WriteXml (BeXmlNodeP xmlNode);
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
     ECOBJECTS_EXPORT WStringCR              GetCondition (void) const;
@@ -94,3 +101,5 @@ public:
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

@@ -892,7 +892,6 @@ public:
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
 typedef bvector<ECClassP> ECConstraintClassesList;
-
 /*__PUBLISH_SECTION_END__*/
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 /*__PUBLISH_SECTION_START__*/
@@ -1273,6 +1272,102 @@ public:
     //!     constructor of RelationshipCardinality to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
 };
+//=======================================================================================
+//! This class describes the relationship source or target cardinality. It also holds relationships key properties
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================
+struct ECRelationshipConstraintClass : NonCopyableClass
+    {
+    //__PUBLISH_SECTION_END__
+    private:
+        std::vector<WString> m_keys;
+        ECClassCP m_ecClass;
+    //__PUBLISH_SECTION_START__
+
+    public:
+        //! Constructor of ECRelationshipConstraintClass require ECClass name.
+        //! @param ecClass is name of Constraint class.
+        ECRelationshipConstraintClass(ECClassCR ecClass);
+
+        //! Move constructor of ECRelationshipConstraintClass.
+        ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs);
+        //! Move assignment operator of ECRelationshipConstraintClass.
+        const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs);
+        //! Returns reference of current Constraint ECClass
+        ECOBJECTS_EXPORT ECClassCR GetClass() const;
+        //! Returns vector of Contraint ECClass keys
+        ECOBJECTS_EXPORT const std::vector<WString>& GetKeys() const;
+        //! Adds constraint key if it is already not in list.
+        ECOBJECTS_EXPORT void AddKey(WCharCP key);
+    };
+//=======================================================================================
+//! This class holds the list of source or target Constraint on ECRelationships
+//! @bsiclass
+//=======================================================================================
+struct ECRelationshipConstraintClassList : NonCopyableClass
+    {
+    //__PUBLISH_SECTION_END__
+
+    private:
+    std::vector<std::unique_ptr<ECRelationshipConstraintClass>> m_constraintClasses;
+    //__PUBLISH_SECTION_START__
+    
+    public:
+    struct iterator
+        {
+        friend struct ECRelationshipConstraintClassList;// TODO: specify begin and end functions;
+
+        public:
+            struct Impl;
+
+        private:
+            Impl *m_pimpl;
+        //__PUBLISH_SECTION_END__
+
+        private:
+            iterator(std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x);
+        //__PUBLISH_SECTION_START__
+
+        public:
+            iterator(const iterator &);
+            iterator& operator=(const iterator & rhs);
+            iterator();
+
+        public:
+            ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator->()const; //!< Returns the value at the current location
+            ECOBJECTS_EXPORT iterator&                           operator++(); //!< Increments the iterator
+            ECOBJECTS_EXPORT bool                                operator!=(iterator const& rhs) const; //!< Checks for inequality
+            ECOBJECTS_EXPORT bool                                operator==(iterator const& rhs) const; //!< Checks for equality
+            ECOBJECTS_EXPORT ECRelationshipConstraintClassCP     operator* () const; //!< Returns the value at the current location
+            ECOBJECTS_EXPORT ~iterator();
+        };
+    //__PUBLISH_SECTION_END__
+    private:
+
+        ECRelationshipClassP m_relClass;
+        bool m_isMultiple;
+   //__PUBLISH_SECTION_START__
+    public:
+        ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple = false);
+        //! Returns true if the constraint allows for a variable number of classes
+        ECOBJECTS_EXPORT bool GetIsMultiple() const;
+        ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
+        ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
+        ECOBJECTS_EXPORT ECRelationshipConstraintClassCP operator[](size_t x)const; //!< Array operator overloaded
+        //! Adds the specified class to the constraint.
+        //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
+        //! will replace the current class applied to the constraint with the new class.
+        //! @param[out] classConstraint ECRelationshipConstraintClass for current ECClass
+        //! @param[in] ecClass  The class to add
+        ECOBJECTS_EXPORT ECObjectsStatus            Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
+        //! Clears the vector Constraint classes
+        ECOBJECTS_EXPORT ECObjectsStatus            clear();
+        //! Removes specified ECClass from Constraint class vector
+        ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECClassCR);
+        ~ECRelationshipConstraintClassList();
+           
+    };
 
 
 //=======================================================================================
@@ -1290,11 +1385,10 @@ private:
     // to support implicit relationships.  For now, just support explicit relationships
 //    stdext::hash_map<ECClassCP, ECRelationshipConstrainClassCP> m_constraintClasses;
 
-    ECConstraintClassesList     m_constraintClasses;
+    ECRelationshipConstraintClassList    m_constraintClasses;
 
     WString                     m_roleLabel;
     bool                        m_isPolymorphic;
-    bool                        m_isMultiple;
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
 
@@ -1356,13 +1450,20 @@ public:
     //! @param[in] classConstraint  The class to add
     ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECClassCR classConstraint);
 
+
     //! Removes the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove
     ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECClassCR classConstraint);
 
     //! Returns the classes applied to the constraint.
-    ECOBJECTS_EXPORT const                      ECConstraintClassesList& GetClasses() const;
+    ECOBJECTS_EXPORT const bvector<ECClassP> GetClasses() const;
 
+    //! Returns the classes applied to the constraint.
+    ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;
+
+    ECOBJECTS_EXPORT ECRelationshipConstraintClassList& GetConstraintClassesR() ;
+
+    
     //! Copies this constraint to the destination
     ECOBJECTS_EXPORT ECObjectsStatus            CopyTo(ECRelationshipConstraintR toRelationshipConstraint);
 

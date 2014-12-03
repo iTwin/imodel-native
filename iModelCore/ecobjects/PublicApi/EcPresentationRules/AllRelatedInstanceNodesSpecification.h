@@ -2,12 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentationRules/AllRelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
+#pragma once
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/ChildNodeSpecification.h>
 #include <ECPresentationRules/PresentationRuleSet.h>
 #include <ECPresentationRules/RelatedInstanceNodesSpecification.h>
 
@@ -19,6 +22,7 @@ This specification returns all instance nodes available in the repository.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         bool                       m_groupByClass;
         bool                       m_groupByRelationship;
@@ -37,6 +41,7 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT AllRelatedInstanceNodesSpecification ();
@@ -45,7 +50,6 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
         ECOBJECTS_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
                                                                bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, WStringCR supportedSchemas);
 
-    
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
@@ -66,7 +70,8 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
 
         //! Sets direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection requiredDirection);
-
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

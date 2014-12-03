@@ -2262,5 +2262,54 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     EXPECT_NE (SCHEMA_READ_STATUS_Success, status);    
     EXPECT_TRUE (schema.IsNull());
     }
-    
+TEST_F(SchemaDeserializationTest, TestRelationshipKeys)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr ecSchema;
+    Utf8String schemaString(L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"ReferencedSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" description=\"Description\" displayLabel=\"Display Label\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        L"  <ECClass typeName = \"Class\" isDomainClass = \"True\">"
+        L"      <ECProperty propertyName = \"Property\" typeName = \"string\" />"
+        L"  </ECClass>"
+        L"  <ECClass typeName = \"Class1\" isDomainClass = \"True\">"
+        L"      <ECProperty propertyName = \"Property1\" typeName = \"string\" />"
+        L"      <ECProperty propertyName = \"Property2\" typeName = \"string\" />"
+        L"  </ECClass>"
+        L"  <ECRelationshipClass typeName = \"RelationshipClass\" isDomainClass = \"True\" strength = \"referencing\" strengthDirection = \"forward\">"
+        L"      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        L"          <Class class = \"Class\">"
+        L"              <Key>"
+        L"                  <Property name = \"Property\" />"
+        L"              </Key>"
+        L"          </Class>"
+        L"      </Source>"
+        L"      <Target cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        L"          <Class class = \"Class1\">"
+        L"              <Key>"
+        L"                  <Property name = \"Property1\" />"
+        L"                  <Property name = \"Property2\" />"
+        L"              </Key>"
+        L"          </Class>"
+        L"      </Target>"
+        L"  </ECRelationshipClass>"
+        L"</ECSchema>");
+    ECSchema::ReadFromXmlString(ecSchema, schemaString.c_str() , *schemaContext);
+    Utf8String schema = NULL;
+    ecSchema->WriteToXmlString(schema);
+    ECRelationshipClassP relClass= ecSchema->GetClassP(L"RelationshipClass")->GetRelationshipClassP();
+    for (auto constrainClass : relClass->GetSource().GetConstraintClasses())
+        {
+        WString key = constrainClass->GetKeys().at(0);
+        ASSERT_TRUE(key.Equals(L"Property"));
+        }
+   
+    for (auto constrainClass : relClass->GetTarget().GetConstraintClasses())
+        {
+        auto keys = constrainClass->GetKeys();
+        ASSERT_EQ(2, keys.size());
+        ASSERT_TRUE(((WString)keys[0]).Equals(L"Property1"));
+        ASSERT_TRUE(((WString)keys[1]).Equals(L"Property2"));
+        }
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE
