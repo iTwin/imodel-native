@@ -13,17 +13,11 @@
 #include <ECObjects/ECDBuffer.h>
 /** @endcond */
 
-EC_TYPEDEFS(StandaloneECEnabler);
-
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID         0xEC5E
-typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
-typedef RefCountedPtr<StandaloneECInstance> StandaloneECInstancePtr;
-
 /** @cond BENTLEY_SDK_Internal */
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
-
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
 enum PropertyFlagIndex ENUM_UNDERLYING_TYPE(UInt8)
@@ -197,6 +191,11 @@ public:
 
 /** @endcond */
 
+struct StandaloneECEnabler;
+typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
+struct StandaloneECInstance;
+typedef RefCountedPtr<StandaloneECInstance>  StandaloneECInstancePtr;
+
 //=======================================================================================
 //! ECN::StandaloneECInstance is an implementation of IECInstance which is not tied
 //! to a specified persistence store and which holds the values in memory that it allocates,
@@ -300,16 +299,17 @@ struct StandaloneECEnabler : public ECEnabler
 private:
     ClassLayoutPtr          m_classLayout;
 
+protected:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
-protected:
     virtual WCharCP                     _GetName() const override;
     virtual ECObjectsStatus             _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override;
     virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override;
     virtual UInt32                      _GetFirstPropertyIndex (UInt32 parentIndex) const override;
     virtual UInt32                      _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override;
     virtual bool                        _HasChildProperties (UInt32 parentIndex) const override;
+    virtual UInt32                      _GetParentPropertyIndex (UInt32 childIndex) const override;
     virtual ECObjectsStatus             _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override;
     virtual bool                        _IsPropertyReadOnly (UInt32 propertyIndex) const override;
 //__PUBLISH_CLASS_VIRTUAL__

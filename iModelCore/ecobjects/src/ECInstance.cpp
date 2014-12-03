@@ -257,7 +257,23 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return GetValue (v, propertyIndex, false, 0); 
+    return GetValue (v, propertyIndex, false, 0); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus     IECInstance::GetValueOrAdhoc (ECValueR v, WCharCP accessString) const
+    {
+    auto status = GetValue (v, accessString);
+    if (ECOBJECTS_STATUS_PropertyNotFound == status)
+        {
+        AdhocPropertyQuery adhocs (*this);
+        UInt32 propertyIndex;
+        if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+            status = adhocs.GetValue (v, propertyIndex);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,7 +351,40 @@ ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECVa
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    return ChangeValue (propertyIndex, v); 
+    return ChangeValue (propertyIndex, v);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::ChangeValueOrAdhoc (WCharCP propertyAccessString, ECValueCR v)
+    {
+    auto status = ChangeValue (propertyAccessString, v);
+    if (ECOBJECTS_STATUS_PropertyNotFound == status)
+        {
+        AdhocPropertyEdit adhocs (*this);
+        UInt32 propertyIndex;
+        if (adhocs.GetPropertyIndex (propertyIndex, propertyAccessString))
+            {
+            bool isReadOnly = true;
+            status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
+            if (SUCCESS == status)
+                {
+                if (isReadOnly)
+                    status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
+                else
+                    {
+                    ECValue curV;
+                    if (SUCCESS == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
+                        status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                    else
+                        status = adhocs.SetValue (propertyIndex, v);
+                    }
+                }
+            }
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,6 +394,18 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
     {
     ECObjectsStatus status = ChangeValue (propertyAccessString, v);
 
+    if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
+        return ECOBJECTS_STATUS_Success;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECInstance::SetValueOrAdhoc (WCharCP propertyAccessString, ECValueCR v)
+    {
+    auto status = ChangeValueOrAdhoc (propertyAccessString, v);
     if (ECOBJECTS_STATUS_PropertyValueMatchesNoChange == status)
         return ECOBJECTS_STATUS_Success;
 
@@ -491,6 +552,30 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UI
 
 bool                IECInstance::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const { return _IsPropertyReadOnly (accessString); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
+    {
+    UInt32 propertyIndex;
+    auto status = GetEnabler().GetPropertyIndex (propertyIndex, accessString);
+    if (ECOBJECTS_STATUS_PropertyNotFound == status)
+        {
+        AdhocPropertyQuery adhocs (*this);
+        bool readOnly = true;
+        if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+            status = adhocs.IsReadOnly (readOnly, propertyIndex);
+
+        return SUCCESS != status || readOnly;
+        }
+
+    return SUCCESS != status || IsPropertyReadOnly (propertyIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
 
 #define NUM_INDEX_BUFFER_CHARS 63
 #define NUM_ACCESSSTRING_BUFFER_CHARS 1023
@@ -709,9 +794,21 @@ static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, E
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValueAccessorCR accessor) const
     {
+    if (accessor.IsAdhocProperty())
+        {
+        // The array index is already pointing to the index of the desired ad-hoc property
+        if (1 != accessor.GetDepth() || ECValueAccessor::INDEX_ROOT == accessor[0].GetArrayIndex())
+            {
+            BeAssert (false);
+            return ECOBJECTS_STATUS_Error;
+            }
+
+        AdhocPropertyQuery adhoc (*this);
+        return adhoc.GetValue (v, accessor[0].GetArrayIndex());
+        }
+
     ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance   = const_cast <IECInstance*> (this);
-
     for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
         {
         v.Clear();
@@ -740,6 +837,19 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 +---------------+---------------+---------------+---------------+---------------+------*/ 
 ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
+    if (accessor.IsAdhocProperty())
+        {
+        // The array index is already pointing to the index of the desired ad-hoc property
+        if (1 != accessor.GetDepth() || ECValueAccessor::INDEX_ROOT == accessor[0].GetArrayIndex())
+            {
+            BeAssert (false);
+            return ECOBJECTS_STATUS_Error;
+            }
+
+        AdhocPropertyEdit adhoc (*this);
+        return adhoc.SetValue (accessor[0].GetArrayIndex(), valueToSet);
+        }
+
     ECObjectsStatus status          = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance = this;
 
@@ -1967,7 +2077,7 @@ WString                         IECInstance::ToString (WCharCP indent) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClassCR ecClass)
+static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClassCR ecClass, bool& alwaysUseClassLabel)
     {
     IECInstancePtr caInstance = ecClass.GetCustomAttribute (L"InstanceLabelSpecification");
     if (caInstance.IsValid())
@@ -1980,10 +2090,18 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
             }
         }
 
+    if (ecClass.GetCustomAttribute (L"ClassLabelIsInstanceLabel").IsValid())
+        {
+        alwaysUseClassLabel = true;
+        return false;
+        }
+
     for (ECClassCP baseClass: ecClass.GetBaseClasses())
         {
-        if (getInstanceLabelPropertyNameFromClass (propertyName, *baseClass))
+        if (getInstanceLabelPropertyNameFromClass (propertyName, *baseClass, alwaysUseClassLabel))
             return true;
+        else if (alwaysUseClassLabel)
+            return false;
         }
 
     return false;
@@ -2001,8 +2119,11 @@ static const WCharCP s_standardInstanceLabelPropertyNames[] =
 bool                         IECInstance::GetInstanceLabelPropertyName (WStringR propName) const
     {
     ECClassCR ecClass = GetClass();
-    if (getInstanceLabelPropertyNameFromClass (propName, ecClass))
+    bool alwaysUseClassLabel = false;
+    if (getInstanceLabelPropertyNameFromClass (propName, ecClass, alwaysUseClassLabel))
         return true;
+    else if (alwaysUseClassLabel)
+        return false;
 
     const WCharCP* standardName = s_standardInstanceLabelPropertyNames;
     while (*standardName)

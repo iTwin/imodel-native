@@ -152,6 +152,10 @@
     <ClCompile Include="Units\ECUnitsClassLocater.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
+
+    <ClCompile Include="DateTimeInfoAccessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">

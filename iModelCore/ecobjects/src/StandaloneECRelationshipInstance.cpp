@@ -313,11 +313,12 @@ void     StandaloneECRelationshipInstance::SetName (WCharCP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationshipClassCR ecClass) :
-    ECEnabler (ecClass, NULL),
+StandaloneECRelationshipEnabler::StandaloneECRelationshipEnabler (ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater) :
+    StandaloneECEnabler (ecClass, classLayout, structStandaloneEnablerLocater),
     m_relationshipClass (ecClass)
     {
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/13
@@ -332,31 +333,6 @@ ClassLayoutCR StandaloneECRelationshipEnabler::GetClassLayout() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnabler::~StandaloneECRelationshipEnabler ()
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP           StandaloneECRelationshipEnabler::_GetName() const
-    {
-    return L"Bentley::ECN::StandaloneECEnabler";
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndex(UInt32& propertyIndex, WCharCP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
-ECObjectsStatus StandaloneECRelationshipEnabler::_GetAccessString(WCharCP& accessString, UInt32 propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
-UInt32          StandaloneECRelationshipEnabler::_GetFirstPropertyIndex (UInt32 parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
-UInt32          StandaloneECRelationshipEnabler::_GetNextPropertyIndex (UInt32 parentIndex, UInt32 inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
-ECObjectsStatus StandaloneECRelationshipEnabler::_GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Paul.Connelly                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            StandaloneECRelationshipEnabler::_HasChildProperties (UInt32 parentIndex) const
-    {
-    return GetClassLayout().HasChildProperties (parentIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,7 +365,15 @@ ECEnablerCR StandaloneECRelationshipEnabler::GetECEnabler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass)
     {
-    return new StandaloneECRelationshipEnabler (ecClass);
+    return new StandaloneECRelationshipEnabler (ecClass, ecClass.GetDefaultStandaloneEnabler()->GetClassLayout(), NULL);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StandaloneECRelationshipEnablerPtr StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ECN::ECRelationshipClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)
+    {
+    return new StandaloneECRelationshipEnabler (ecClass, classLayout, structStandaloneEnablerLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
