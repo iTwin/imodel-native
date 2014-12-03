@@ -3560,7 +3560,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler)
     if (attr.IsNull())
         return;
 
-    static const WCharCP s_propertyNames[Index::MAX] =
+    static const WCharCP s_propertyNames[(size_t)Index::MAX] =
         {
         L"NameProperty", L"DisplayLabelProperty", L"ValueProperty", L"TypeProperty", L"UnitProperty", L"ExtendTypeProperty", L"IsReadOnlyProperty", L"IsHiddenProperty"
         };
@@ -3615,14 +3615,14 @@ bool AdhocPropertyMetadata::PrimitiveTypeForCode (PrimitiveType& type, Int32 cod
     {
     switch (code)
         {
-        case PrimitiveTypeCode::String:     type = PRIMITIVETYPE_String; return true;
-        case PrimitiveTypeCode::Integer:    type = PRIMITIVETYPE_Integer; return true;
-        case PrimitiveTypeCode::Long:       type = PRIMITIVETYPE_Long; return true;
-        case PrimitiveTypeCode::Double:     type = PRIMITIVETYPE_Double; return true;
-        case PrimitiveTypeCode::DateTime:   type = PRIMITIVETYPE_DateTime; return true;
-        case PrimitiveTypeCode::Boolean:    type = PRIMITIVETYPE_Boolean; return true;
-        case PrimitiveTypeCode::Point2D:    type = PRIMITIVETYPE_Point2D; return true;
-        case PrimitiveTypeCode::Point3D:    type = PRIMITIVETYPE_Point3D; return true;
+        case (Int32)PrimitiveTypeCode::String:     type = PRIMITIVETYPE_String; return true;
+        case (Int32)PrimitiveTypeCode::Integer:    type = PRIMITIVETYPE_Integer; return true;
+        case (Int32)PrimitiveTypeCode::Long:       type = PRIMITIVETYPE_Long; return true;
+        case (Int32)PrimitiveTypeCode::Double:     type = PRIMITIVETYPE_Double; return true;
+        case (Int32)PrimitiveTypeCode::DateTime:   type = PRIMITIVETYPE_DateTime; return true;
+        case (Int32)PrimitiveTypeCode::Boolean:    type = PRIMITIVETYPE_Boolean; return true;
+        case (Int32)PrimitiveTypeCode::Point2D:    type = PRIMITIVETYPE_Point2D; return true;
+        case (Int32)PrimitiveTypeCode::Point3D:    type = PRIMITIVETYPE_Point3D; return true;
         default:                            return false;
         }
     }

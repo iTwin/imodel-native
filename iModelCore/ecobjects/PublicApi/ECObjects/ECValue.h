@@ -631,7 +631,7 @@ private:
     friend struct AdhocPropertyQuery;
     friend struct AdhocPropertyEdit;
 
-    WString                 m_metadataPropertyNames[Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
+    WString                 m_metadataPropertyNames[(size_t)Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
     UInt32                  m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
 protected:
     WCharCP                 GetPropertyName (Index index) const;
