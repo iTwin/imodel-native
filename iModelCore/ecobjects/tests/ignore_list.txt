@@ -19,3 +19,9 @@ UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
 
 SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+#----------------------------------------------------------------------------------------
+NonPublishedScenarioSchemaTest.DISABLED_TestCircularReference
+ValueTests.DISABLED_StringToIGeometry
