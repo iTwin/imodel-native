@@ -368,14 +368,14 @@ ECObjectsStatus IECInstance::ChangeValueOrAdhoc (WCharCP propertyAccessString, E
             {
             bool isReadOnly = true;
             status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
-            if (SUCCESS == status)
+            if (ECOBJECTS_STATUS_Success == status)
                 {
                 if (isReadOnly)
                     status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
                 else
                     {
                     ECValue curV;
-                    if (SUCCESS == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
+                    if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
                         status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
                     else
                         status = adhocs.SetValue (propertyIndex, v);
@@ -567,10 +567,10 @@ bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
         if (adhocs.GetPropertyIndex (propertyIndex, accessString))
             status = adhocs.IsReadOnly (readOnly, propertyIndex);
 
-        return SUCCESS != status || readOnly;
+        return ECOBJECTS_STATUS_Success != status || readOnly;
         }
 
-    return SUCCESS != status || IsPropertyReadOnly (propertyIndex);
+    return ECOBJECTS_STATUS_Success != status || IsPropertyReadOnly (propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
