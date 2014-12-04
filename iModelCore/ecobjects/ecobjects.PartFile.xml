@@ -137,6 +137,7 @@
     <ProductDirectoryList ListName="ECObjects">
         <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
         <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
@@ -170,6 +171,7 @@
 
     <ProductDirectoryList ListName="ECObjectsTest">
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
         <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
         <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
@@ -179,6 +181,7 @@
 
         <ProductDirectory Name="PublicAPI"  LibType="Static"        Deliver="false"/>
         <ProductDirectory Name="VendorAPI"  LibType="Static"        Deliver="false" />
+        <ProductDirectory Name="VendorNotices"  LibType="Static"    Deliver="false" />
         <ProductDirectory Name="libs"       LibType="Static"        Deliver="false"/>
 
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="SeedData"/>
