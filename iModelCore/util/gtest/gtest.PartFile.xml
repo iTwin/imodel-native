@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <!-- Use part TestRunner instead. -->
+    <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86">
+        <SubPart PartName="dbghelp"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"      Repository="bin-dbghelp" />
+        <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
+        <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
+        <SubPart PartName="bentley_gtest"/>
+        <Bindings>
+            <Files ProductDirectoryName="TestBin">
+                Delivery\TestRunner.exe
+                Delivery\TestRunner.exe.local<!-- Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version. -->
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- This is the part to use; it will bind from the static build to the dynamic build context. -->
+    <Part Name="TestRunner" BentleyBuildMakeFile="testrunner.postwire.mke">
+        <SubPart PartName="TestRunnerBuild" LibType="Static"/>
+        <Bindings>
+            <Files ProductDirectoryName="TestBin">
+                Delivery\TestRunner.exe
+                Delivery\TestRunner.exe.local<!-- Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version. -->
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Use part TestRunnerPagalloc instead. -->
+    <Part Name="TestRunnerPagallocBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="+dTOOLSUBS_AVAILABLE_FROM_GTEST" 
+                                         ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86" >
+        <SubPart PartName="dbghelp"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"      Repository="bin-dbghelp" />
+        <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
+        <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
+        <SubPart PartName="bentley_gtest"/>
+        <SubPart PartName="PublicAPI"       PartFile="DgnPlatform"                Repository="DgnPlatform" />
+        <SubPart PartName="PublicAPI"       PartFile="GeomLibs"                   Repository="GeomLibs" />
+        <SubPart PartName="RmgrToolsDll"      PartFile="RmgrTools"                  Repository="RmgrTools" />
+        <Bindings>
+            <Files ProductDirectoryName="TestBin">
+                Delivery\TestRunnerPagalloc.exe,
+                Delivery\TestRunnerPagalloc.exe.local<!-- Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version. -->
+            </Files>
+        </Bindings>
+    </Part>
+    
+    <!-- This is the part to use; it will bind from the static build to the dynamic build context. -->
+    <Part Name="TestRunnerPagalloc" BentleyBuildMakeFile="testrunnerpag.postwire.mke">
+        <SubPart PartName="TestRunnerPagallocBuild" LibType="Static"/>
+        <Bindings>
+            <Files ProductDirectoryName="TestBin">
+                Delivery\TestRunnerPagalloc.exe,
+                Delivery\TestRunnerPagalloc.exe.local<!-- Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version. -->
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="TestRunner">
+        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
+        <ProductDirectory Name="PublicAPI"                  Deliver="false"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"    Deliver="false"/>
+        <ProductDirectory Name="Libs"                       Deliver="false"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="TestBin"                    Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="google_gtest_lib" BentleyBuildMakeFile="gtestlib.mke" BMakeOptions="" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,iOSARM,iOSX86,WinRTx86,WinRTx64,WinRTARM">
+        <SubPart PartName="google_gtest"/>
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)gtest$(stlibext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="bentley_gtest" BentleyBuildMakeFile="bentleytest.prewire.mke">
+        <SubPart PartName="google_gtest"/>
+        <Bindings>
+            <PublicAPI Domain="BentleyTest"/>
+            <Directory SourceName="Delivery/google_gtest/BentleyTest/PublicAPI"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="google_gtest" BentleyBuildMakeFile="google_gtest.prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="gtest"/>
+            <Directory SourceName="Delivery/google_gtest" SubPartDirectory="google_gtest" Required="false"/>
+            <Files SubPartDirectory="google_gtest_mki" Required="false">Delivery/gtestobj.mki</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
+

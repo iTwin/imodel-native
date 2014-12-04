@@ -1,0 +1,24 @@
+#----------------------------------------------------------------------------------------
+#  $Source: BentleyTest/TestRunner/TestRunnerPolicy.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+%include $(SharedMki)DefinePublicApiIncludes.mki
+
+PublicApiIncludes + -I$(SrcDgnPlatformTest)src/TestRunner/
+PublicApiIncludes + -I$(SrcDgnPlatformTest)src/
+
+%ifdef TOOLSUBS_AVAILABLE_FROM_GTEST
+    nameToDefine = TOOLSUBS_AVAILABLE_FROM_GTEST
+    %include cdefapnd.mki
+    nameToDefine = DGNPLATFORM_TOOLS_DLL_NAME=\"DgnPlatform5.dll\"
+    %include cdefapnd.mki
+%endif 
+
+#----------------------------------------------------------------------------------------
+# Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
+#----------------------------------------------------------------------------------------
+%include DefaultToolSet.mki
+
+ENABLE_WCHAR_TYPE=1
+

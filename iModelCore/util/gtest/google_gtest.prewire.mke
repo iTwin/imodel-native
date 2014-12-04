@@ -1,0 +1,14 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: google_gtest.prewire.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(InternalSystemPolicy)
+
+%include mdl.mki
+always:
+    @CreateSymLinks.py "$(BuildContext)VendorAPI/gtest=$(_MakeFilePath)include/gtest"
+    @CreateSymLinks.py "$(BuildContext)Delivery/google_gtest=$(_MakeFilePath)"
+    @CreateSymLinks.py "$(BuildContext)Delivery/gtestobj.mki=$(_MakeFilePath)gtestobj.mki"

@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------
+#
+#     $Source: testrunnerpag.postwire.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+# Make links between static builds and dynamic build to use tools
+always:
+   @CreateSymLinks.py "$(BuildContext)Delivery/TestRunnerPagalloc.exe"="$(OutputRootDir)static/BuildContexts/gtest/Delivery/TestRunnerPagalloc.exe" \
+                      "$(BuildContext)Delivery/TestRunnerPagalloc.exe.local"="$(OutputRootDir)static/BuildContexts/gtest/Delivery/TestRunnerPagalloc.exe.local"
+

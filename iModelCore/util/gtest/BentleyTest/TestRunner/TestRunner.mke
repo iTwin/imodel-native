@@ -1,0 +1,87 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: BentleyTest/TestRunner/TestRunner.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+SolutionPolicyMki=$(_MakeFilePath)TestRunnerPolicy.mki 
+SrcGtest=$(SrcRoot)util/gtest/
+PolicyFile=$(SrcGtest)GTestPolicyNoUnicode.mki
+%include mdl.mki
+
+
+%include $(SharedMki)bsioutputdirs.mki
+
+BuildContext=$(OutputRootDir)BuildContexts/gtest/
+ContextDeliveryDir  =$(BuildContext)Delivery/
+
+#----------------------------------------------------------------------------------------
+# For now, create two *.exes for the TestRunner. With and without pagalloc.
+#----------------------------------------------------------------------------------------
+%ifdef TOOLSUBS_AVAILABLE_FROM_GTEST
+    appName = TestRunnerPagalloc
+    o = $(OutputRootDir)Build/gtest/TestRunnerPagalloc/
+    DgnPlatformToolsLib = DgnPlatformTools.lib
+    testRunnerDependencies = $(BuildContext)SubParts/Libs/Bentley.lib \
+                             $(BuildContext)SubParts/Libs/BentleyAllocator.lib \
+                             $(BuildContext)SubParts/Libs/Toolsubs.lib
+%else
+    appName = TestRunner
+    o = $(OutputRootDir)Build/gtest/TestRunner/
+    testRunnerDependencies = $(BuildContext)SubParts/Libs/Bentley.lib $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT - define a way to specify OS libraries symbolically, without naming them
+    testRunnerDependencies + Shlwapi.lib
+%endif
+
+TestRunnerDir = $(SrcGtest)BentleyTest/TestRunner/
+
+always: 
+    ~mkdir $(o)
+
+# this is necessary to use the static BentleyStaticLib.lib library
+nameToDefine = CREATE_STATIC_LIBRARIES=
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------
+# Pre-Compiled Header Sections
+#----------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)TestRunner$(oext)          : $(TestRunnerDir)TestRunner.cpp                      ${MultiCompileDepends}
+
+$(o)ArgParser$(oext)           : $(SrcGtest)BentleyTest/Misc/ArgParser.cpp           $(SrcGtest)BentleyTest/PublicAPI/Misc/ArgParser.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------------------------
+objs = $(MultiCompileObjectList) 
+
+%undef CPchOpts
+%undef CCPchOpts
+
+EXE_DEST            = $(o)
+EXE_NAME            = $(appName)
+EXE_OBJS            = $(objs)
+LINKER_LIBRARIES    = advapi32.lib User32.lib shlwapi.lib $(testRunnerDependencies) wininet.lib
+EXE_TMP_DIR         = $(o)
+EXE_SYMB_DEST       = $(o)
+EXE_MAP_DEST        = $(o)
+EXE_NO_SIGN         = 1
+EXE_LOPT1           = -LargeAddressAware
+
+%include $(SharedMki)linktool.mki
+
+$(o)$(appName).exe.local:
+    > $@
+    This should just be a text file. The filename is used to determine which version of dbghelp is used in the StackWalker. 
+    <
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe.local=$(o)$(appName).exe.local"    # Force stackwalker to use dbghelp.dll in the Product directory instead of searching for installed version.
+

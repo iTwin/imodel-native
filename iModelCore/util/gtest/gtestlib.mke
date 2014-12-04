@@ -1,0 +1,76 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: gtestlib.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+NO_DEFAULT_CLANG_WARNINGS = 1
+
+PolicyFile = $(SrcRoot)util/gtest/GTestPolicy.mki
+%include mdl.mki
+
+%include $(SharedMki)bsioutputdirs.mki
+
+name = gtest
+o = $(OutputRootDir)build/gtest/build/
+nameToDefine =GTEST_HAS_TR1_TUPLE=1
+%include cdefapnd.mki
+GUnitTestDir        = $(SrcRoot)util/gtest/
+
+%if $(BUILD_TOOLSET) == "VC10"
+    nameToDefine=GTEST_USE_OWN_TR1_TUPLE=0
+    %include cdefapnd.mki
+%endif
+
+%if $(BUILD_TOOLSET) == "VC11"
+    nameToDefine = _VARIADIC_MAX=10
+    %include cdefapnd.mki
+%endif
+
+#--------------------------------------------------------------------------------------
+# Create out dir
+#--------------------------------------------------------------------------------------
+always: 
+    ~mkdir $(o)
+
+# We shouldn't need external headers for this. Also, if we are building 1.3 and 1.4.0
+#  at some point, we need to make sure they are not looking in VendorAPI for the headers
+#  that are here.
+PublicApiIncludes = 
+
+#--------------------------------------------------------------------------------------
+# Create the Context directory and vars needed to create sym-links
+#--------------------------------------------------------------------------------------
+LIB_CREATE_CONTEXT_LINK = 1
+
+%if !defined (BuildContext)
+    %error define BuildContext before calling gtestlib.mke
+    %return
+%endif
+
+# Tell dlmlink.mki where to point symbolic links
+ContextDeliveryDir  = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+
+always:
+    ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
+
+
+#--------------------------------------------------------------------------------------
+# Create the objs
+#--------------------------------------------------------------------------------------
+GTEST_MAIN_IS_SUPPLIED = 1
+
+%include $(GUnitTestDir)gtestobj.mki
+
+#--------------------------------------------------------------------------------------
+# Create the lib
+#--------------------------------------------------------------------------------------
+LIB_DEST            = $(o)
+LIB_NAME            = $(name)
+LIB_OBJS            = $(LOCAL_GUNITTEST_OBJS)
+LIB_TMP_DIR         = $(o)
+
+%include creatlib.mki

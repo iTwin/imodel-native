@@ -1,0 +1,23 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: EnableUnicode.mki $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# CL options
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+ consoleAppUnicode   = 1
+ guiAppUnicode       = 1
+
+#-----------------------------------------------------------------------
+# Compiler options
+#-----------------------------------------------------------------------
+ENABLE_WCHAR_TYPE = 1
+
