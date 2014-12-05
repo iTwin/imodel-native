@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-#include <Serialization/GeomLibsSerializationApi.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 using namespace BentleyApi::ECN;
 
