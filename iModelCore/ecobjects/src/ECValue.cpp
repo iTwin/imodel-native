@@ -3579,7 +3579,7 @@ bool AdhocPropertyMetadata::GetContainerPropertyIndex (UInt32& propIdx, ECEnable
     IECInstancePtr attr = enabler.GetClass().GetCustomAttribute (L"AdhocPropertySpecification");
     ECValue v;
     v.SetAllowsPointersIntoInstanceMemory (true);
-    if (attr.IsNull() || SUCCESS != attr->GetValue (v, L"AdhocPropertyContainer") || v.IsNull() || SUCCESS != enabler.GetPropertyIndex (propIdx, v.GetString()))
+    if (attr.IsNull() || ECOBJECTS_STATUS_Success != attr->GetValue (v, L"AdhocPropertyContainer") || v.IsNull() || ECOBJECTS_STATUS_Success != enabler.GetPropertyIndex (propIdx, v.GetString()))
         return false;
 
     BeAssert (0 != propIdx);
@@ -3624,7 +3624,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler)
 
     for (size_t i = 0; i < _countof (s_propertyNames); i++)
         {
-        if (SUCCESS == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
+        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
             {
             prop = structClass->GetPropertyP (v.GetString());
             if (nullptr != prop)
@@ -3729,7 +3729,7 @@ IECInstancePtr AdhocPropertyQuery::GetEntry (UInt32 index) const
         return nullptr;
 
     ECValue v;
-    if (SUCCESS != m_host.GetValue (v, GetContainerPropertyIndex(), index) || v.IsNull())
+    if (ECOBJECTS_STATUS_Success != m_host.GetValue (v, GetContainerPropertyIndex(), index) || v.IsNull())
         return nullptr;
     else if (!v.IsStruct())
         {
@@ -3758,15 +3758,15 @@ bool AdhocPropertyQuery::GetPropertyIndex (UInt32& index, WCharCP accessString) 
         return false;
 
     ECValue v;
-    if (SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+    if (ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
         {
         UInt32 count = v.GetArrayInfo().GetCount();
         for (UInt32 i = 0; i < count; i++)
-            if (SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
+            if (ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
                 {
                 IECInstancePtr instance = v.GetStruct();
                 v.SetAllowsPointersIntoInstanceMemory (true);
-                if (SUCCESS == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == wcscmp (accessString, v.GetString()))
+                if (ECOBJECTS_STATUS_Success == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == wcscmp (accessString, v.GetString()))
                     {
                     index = i;
                     return true;
@@ -3783,7 +3783,7 @@ bool AdhocPropertyQuery::GetPropertyIndex (UInt32& index, WCharCP accessString) 
 UInt32 AdhocPropertyQuery::GetCount() const
     {
     ECValue v;
-    if (IsSupported() && SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+    if (IsSupported() && ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
         return v.GetArrayInfo().GetCount();
     else
         return 0;
@@ -3802,11 +3802,11 @@ ECObjectsStatus AdhocPropertyQuery::GetUnitName (WStringR name, UInt32 index) co
 ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel (WStringR label, UInt32 index) const
     {
     auto status = GetString (label, index, Index::DisplayLabel);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         {
         WString name;
         status = GetName (name, index);
-        if (SUCCESS == status)
+        if (ECOBJECTS_STATUS_Success == status)
             ECNameValidation::DecodeFromValidName (label, name);
         }
 
@@ -3831,7 +3831,7 @@ ECObjectsStatus AdhocPropertyQuery::GetPrimitiveType (PrimitiveType& type, UInt3
         }
 
     ECValue v;
-    if (SUCCESS != entry->GetValue (v, propName) || !v.IsInteger())
+    if (ECOBJECTS_STATUS_Success != entry->GetValue (v, propName) || !v.IsInteger())
         return ECOBJECTS_STATUS_Error;
     else if (v.IsNull())
         {
@@ -3859,20 +3859,20 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, UInt32 ind
     if (nullptr != propName)
         {
         auto status = entry->GetValue (v, propName);
-        if (SUCCESS == status)
+        if (ECOBJECTS_STATUS_Success == status)
             {
             // null => use default type (string)
             if (!v.IsNull() && (!v.IsInteger() || !PrimitiveTypeForCode (type, v.GetInteger())))
                 status = ECOBJECTS_STATUS_Error;
             }
 
-        if (SUCCESS != status)
+        if (ECOBJECTS_STATUS_Success != status)
             return status;
         }
 
     // get value
     auto status = GetValue (propertyValue, *entry, Index::Value);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
     else if (!propertyValue.IsString() && !propertyValue.IsNull())
         {
@@ -3892,7 +3892,7 @@ ECObjectsStatus AdhocPropertyQuery::IsReadOnly (bool& isReadOnly, UInt32 index) 
     ECValue v;
     auto status = GetValue (v, index, Index::IsReadOnly);
     isReadOnly = false;
-    if (SUCCESS == status && v.IsBoolean() && !v.IsNull())
+    if (ECOBJECTS_STATUS_Success == status && v.IsBoolean() && !v.IsNull())
         isReadOnly = v.GetBoolean();
 
     return status;
@@ -3906,7 +3906,7 @@ ECObjectsStatus AdhocPropertyQuery::IsHidden (bool& isHidden, UInt32 index) cons
     ECValue v;
     auto status = GetValue (v, index, Index::IsHidden);
     isHidden = false;
-    if (SUCCESS == status && v.IsBoolean() && !v.IsNull())
+    if (ECOBJECTS_STATUS_Success == status && v.IsBoolean() && !v.IsNull())
         isHidden = v.GetBoolean();
 
     return status;
@@ -3929,7 +3929,7 @@ ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, IECInstanceCR insta
     ECValue v;
     v.SetAllowsPointersIntoInstanceMemory (true);
     auto status = GetValue (v, instance, which);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
     else if (!v.IsString() && !v.IsNull())
         return ECOBJECTS_STATUS_DataTypeMismatch;
@@ -4016,7 +4016,7 @@ ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (UInt32 index, WCharCP label,
     else
         {
         auto status = entry->SetValue (propName, ECValue (label, false));
-        if (SUCCESS != status)
+        if (ECOBJECTS_STATUS_Success != status)
             return status;
         }
 
@@ -4037,7 +4037,7 @@ ECObjectsStatus AdhocPropertyEdit::SetValue (UInt32 index, ECValueCR inputV)
     {
     PrimitiveType type;
     auto status = GetPrimitiveType (type, index);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
 
     ECValue v (inputV);
@@ -4139,12 +4139,12 @@ ECObjectsStatus AdhocPropertyEdit::Swap (UInt32 propIdxA, UInt32 propIdxB)
     ECValue v;
     v.SetStruct (entryA.get());
     auto status = GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxB);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
 
     v.SetStruct (entryB.get());
     status = GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxA);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         {
         v.SetStruct (entryA.get());
         GetHostR().SetValue (GetContainerPropertyIndex(), v, propIdxA);
@@ -4202,7 +4202,7 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
     bool replacing = GetPropertyIndex (existingPropertyIndex, name);
 
     auto status = replacing ? ECOBJECTS_STATUS_Success : GetHostR().AddArrayElements (GetContainerPropertyIndex(), 1);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
 
     BeAssert (GetCount() > 0);
@@ -4219,34 +4219,34 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
         return ECOBJECTS_STATUS_Error;
         }
 
-    if (SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false))) ||
-        SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false))))
+    if (ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Name), ECValue (name, false))) ||
+        ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Value), ECValue (strRep.c_str(), false))))
         return status;
 
-    if (nullptr != displayLabel && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::DisplayLabel), ECValue (displayLabel, false))))
+    if (nullptr != displayLabel && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::DisplayLabel), ECValue (displayLabel, false))))
         return status;
 
-    if (nullptr != unitName && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Unit), ECValue (unitName, false))))
+    if (nullptr != unitName && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Unit), ECValue (unitName, false))))
         return status;
 
-    if (nullptr != extendedTypeName && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::ExtendType), ECValue (extendedTypeName, false))))
+    if (nullptr != extendedTypeName && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::ExtendType), ECValue (extendedTypeName, false))))
         return status;
 
-    if (isReadOnly && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::IsReadOnly), ECValue (isReadOnly))))
+    if (isReadOnly && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::IsReadOnly), ECValue (isReadOnly))))
         return status;
 
-    if (hidden && SUCCESS != (status = entry->SetValue (GetPropertyName (Index::IsHidden), ECValue (hidden))))
+    if (hidden && ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::IsHidden), ECValue (hidden))))
         return status;
 
     Int32 typeCode;
-    if (PRIMITIVETYPE_String != type && (!CodeForPrimitiveType (typeCode, type) || SUCCESS != (status = entry->SetValue (GetPropertyName (Index::Type), ECValue (typeCode)))))
+    if (PRIMITIVETYPE_String != type && (!CodeForPrimitiveType (typeCode, type) || ECOBJECTS_STATUS_Success != (status = entry->SetValue (GetPropertyName (Index::Type), ECValue (typeCode)))))
         return status;
 
     // set the struct to the array
     ECValue structV;
     structV.SetStruct (entry.get());
     status = GetHostR().SetValue (GetContainerPropertyIndex(), structV, replacing ? existingPropertyIndex : GetCount() - 1);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         {
         BeAssert (false);
         return status;
@@ -4299,13 +4299,13 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
             IECInstancePtr entry = GetEntry (i);
             WString name;
             ECValue v;
-            if (entry.IsValid() && SUCCESS == GetString (name, *entry, Index::Name) && SUCCESS == GetValue (v, *entry, Index::Value))
+            if (entry.IsValid() && ECOBJECTS_STATUS_Success == GetString (name, *entry, Index::Name) && ECOBJECTS_STATUS_Success == GetValue (v, *entry, Index::Value))
                 preservedValues[name] = v;
             }
         }
 
     auto status = Clear();
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
 
     UInt32 count = query.GetCount();
@@ -4313,7 +4313,7 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
         return ECOBJECTS_STATUS_Success;
 
     status = GetHostR().AddArrayElements (GetContainerPropertyIndex(), count);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         {
         BeAssert (false && "Failed to add array elements...existing values will be lost");
         return ECOBJECTS_STATUS_Error;
@@ -4333,17 +4333,17 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
         auto newEntry = enabler->CreateInstance();
         ECValue v;
         v.SetStruct (newEntry.get());
-        if (newEntry.IsNull() || SUCCESS != newEntry->CopyValues (*from) || SUCCESS != GetHostR().SetValue (GetContainerPropertyIndex(), v, i))
+        if (newEntry.IsNull() || ECOBJECTS_STATUS_Success != newEntry->CopyValues (*from) || ECOBJECTS_STATUS_Success != GetHostR().SetValue (GetContainerPropertyIndex(), v, i))
             {
             GetHostR().RemoveArrayElement (GetContainerPropertyIndex(), i);
             continue;
             }
 
-        if (preserveValues && SUCCESS == query.GetString (name, *from, Index::Name) && preservedValues.end() != (found = preservedValues.find (name)))
+        if (preserveValues && ECOBJECTS_STATUS_Success == query.GetString (name, *from, Index::Name) && preservedValues.end() != (found = preservedValues.find (name)))
             {
             ECValue v = found->second;
             PrimitiveType type;
-            if (SUCCESS == GetPrimitiveType (type, i) && v.ConvertToPrimitiveType (type))
+            if (ECOBJECTS_STATUS_Success == GetPrimitiveType (type, i) && v.ConvertToPrimitiveType (type))
                 SetValue (i, v);
             }
         }
