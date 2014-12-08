@@ -1,0 +1,20 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsCommon.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
+%include mdl.mki
+
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+
+%endif
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+%endif

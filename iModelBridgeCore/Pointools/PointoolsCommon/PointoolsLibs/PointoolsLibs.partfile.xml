@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+********************************************************************************************************
+* Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved.
+*
+* Main PointoolsLibs Build (VS2005 and VS2012)
+*
+* Author: Lee Bull
+*
+******************************************************************************************************** 
+-->
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../build/PartFile.xsd">
+
+  <Part Name="PointoolsLibs">
+
+    <SubPart PartName="PointoolsLibs_VS2005" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2005"/>
+    
+    <SubPart PartName="PointoolsLibs_VS2012" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012"/>
+
+    <Bindings>
+      <VendorAPI Domain="Dummy"/>
+      <Libs>
+      </Libs>
+    </Bindings>
+
+
+  </Part>
+
+  
+</BuildContext>

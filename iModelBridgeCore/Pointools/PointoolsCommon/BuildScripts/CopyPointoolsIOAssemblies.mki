@@ -1,0 +1,81 @@
+%message *********************************************************************
+%message * Copying PointoolsIO Third Party DLLs
+%message *
+%message * Source                : $(PointoolsIOAssemblySource)
+%message * Dest                  : $(PointoolsIOAssemblyDest)
+%message * Target Architecture   : $(TARGET_PROCESSOR_ARCHITECTURE)
+%if defined(POINTOOLS_BUILD_USING_VS2005)
+%message * Visual Studio Version : VS2005
+%endif
+%if defined(POINTOOLS_BUILD_USING_VS2012)
+%message * Visual Studio Version : VS2012
+%endif
+%message *
+%message *********************************************************************
+
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+
+%if defined(POINTOOLS_BUILD_USING_VS2005)
+
+always:
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\FARO.LS.SDK.dll=$(PointoolsIOAssemblySource)FARO.LS.SDK.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\geotifflib.dll=$(PointoolsIOAssemblySource)geotifflib.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\hasp_windows_79264.dll=$(PointoolsIOAssemblySource)hasp_windows_79264.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\IQBase.dll=$(PointoolsIOAssemblySource)IQBase.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\IQLib.dll=$(PointoolsIOAssemblySource)IQLib.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\IQOpen.dll=$(PointoolsIOAssemblySource)IQOpen.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\jsoncpp.dll=$(PointoolsIOAssemblySource)jsoncpp.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\laszip.dll=$(PointoolsIOAssemblySource)laszip.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\libxml2.dll=$(PointoolsIOAssemblySource)libxml2.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\LSBase.dll=$(PointoolsIOAssemblySource)LSBase.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\MSPCoordinateConversionService.dll=$(PointoolsIOAssemblySource)MSPCoordinateConversionService.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_calib3d242.dll=$(PointoolsIOAssemblySource)opencv_calib3d242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_core242.dll=$(PointoolsIOAssemblySource)opencv_core242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_features2d242.dll=$(PointoolsIOAssemblySource)opencv_features2d242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_flann242.dll=$(PointoolsIOAssemblySource)opencv_flann242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_imgproc242.dll=$(PointoolsIOAssemblySource)opencv_imgproc242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\ptzreader80.dll=$(PointoolsIOAssemblySource)ptzreader80.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\scanifc-mt.dll=$(PointoolsIOAssemblySource)scanifc-mt.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\scannermod.dll=$(PointoolsIOAssemblySource)scannermod.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\_tbb.dll=$(PointoolsIOAssemblySource)_tbb.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\TopconCodec.dll=$(PointoolsIOAssemblySource)TopconCodec.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\xerces-c_3_1.dll=$(PointoolsIOAssemblySource)xerces-c_3_1.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\zfs.dll=$(PointoolsIOAssemblySource)zfs.dll"
+%endif
+
+%endif
+
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+%if defined(POINTOOLS_BUILD_USING_VS2012)
+always:
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\FARO.LS.SDK.dll=$(PointoolsIOAssemblySource)FARO.LS.SDK.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\geotifflib.dll=$(PointoolsIOAssemblySource)geotifflib.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\hasp_act_windows_x64.dll=$(PointoolsIOAssemblySource)hasp_act_windows_x64.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\hasp_windows_x64_79264.dll=$(PointoolsIOAssemblySource)hasp_windows_x64_79264.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\IQBase.dll=$(PointoolsIOAssemblySource)IQBase.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\IQLib.dll=$(PointoolsIOAssemblySource)IQLib.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\IQOpen.dll=$(PointoolsIOAssemblySource)IQOpen.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\jsoncpp.dll=$(PointoolsIOAssemblySource)jsoncpp.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\laszip.dll=$(PointoolsIOAssemblySource)laszip.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\libxml2.dll=$(PointoolsIOAssemblySource)libxml2.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\LSBase.dll=$(PointoolsIOAssemblySource)LSBase.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\MSPCoordinateConversionService.dll=$(PointoolsIOAssemblySource)MSPCoordinateConversionService.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_calib3d242.dll=$(PointoolsIOAssemblySource)opencv_calib3d242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_core242.dll=$(PointoolsIOAssemblySource)opencv_core242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_features2d242.dll=$(PointoolsIOAssemblySource)opencv_features2d242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_flann242.dll=$(PointoolsIOAssemblySource)opencv_flann242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\opencv_imgproc242.dll=$(PointoolsIOAssemblySource)opencv_imgproc242.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\ptzreader80x64.dll=$(PointoolsIOAssemblySource)ptzreader80x64.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\scanifc-mt.dll=$(PointoolsIOAssemblySource)scanifc-mt.dll"
+%ifndef PointoolsIOAssemblyOmitShared
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\_tbb.dll=$(PointoolsIOAssemblySource)_tbb.dll"
+%endif
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\TopconCodec.dll=$(PointoolsIOAssemblySource)TopconCodec.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\xerces-c_3_1.dll=$(PointoolsIOAssemblySource)xerces-c_3_1.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\libiconv.dll=$(PointoolsIOAssemblySource)libiconv.dll"
+    @CreateSymLinks.py -f"$(PointoolsIOAssemblyDest)\zfs.dll=$(PointoolsIOAssemblySource)zfs.dll"
+%endif
+%endif
