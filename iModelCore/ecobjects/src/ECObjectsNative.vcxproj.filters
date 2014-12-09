@@ -128,12 +128,6 @@
     <ClCompile Include="ECcontext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BeXmlCGReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BeXmlCGWriter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ECDBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -152,7 +146,6 @@
     <ClCompile Include="Units\ECUnitsClassLocater.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
-
     <ClCompile Include="DateTimeInfoAccessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

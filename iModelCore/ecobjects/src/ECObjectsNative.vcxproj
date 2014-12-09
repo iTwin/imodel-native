@@ -51,8 +51,6 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BeXmlCGReader.cpp" />
-    <ClCompile Include="BeXmlCGWriter.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
