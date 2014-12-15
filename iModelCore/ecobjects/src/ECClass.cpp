@@ -1976,7 +1976,7 @@ ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (WS
         {
         ECN::ECValue value;
         WCharCP propertyName=L"OrderIdProperty";
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             {
             propertyName = value.GetString ();
             return ECOBJECTS_STATUS_Success;
@@ -2008,7 +2008,7 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
         {
         ECN::ECValue value;
         WCharCP propertyName=L"OrderIdStorageMode";
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             return (OrderIdStorageMode)value.GetInteger ();
         }
     return ORDERIDSTORAGEMODE_None;
@@ -2144,7 +2144,7 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
         if (end == ECRelationshipEnd_Source)
             propertyName = L"OrderIdSourceProperty";
 
-        if (SUCCESS == caInstance->GetValue (value, propertyName))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, propertyName))
             {
             propertyName = value.GetString ();
             return ECOBJECTS_STATUS_Success;

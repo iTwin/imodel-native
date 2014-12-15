@@ -79,7 +79,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"SerializerName"))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"SerializerName"))
             {
             ICustomECStructSerializerP serializerP = GetCustomSerializer (value.GetString());
             if (serializerP)
@@ -352,14 +352,14 @@ ECObjectsStatus IECInstance::ChangeValueOrAdhoc (WCharCP propertyAccessString, E
                 {
                 bool isReadOnly = true;
                 status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
-                if (SUCCESS == status)
+                if (ECOBJECTS_STATUS_Success == status)
                     {
                     if (isReadOnly)
                         status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
                     else
                         {
                         ECValue curV;
-                        if (SUCCESS == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
+                        if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
                             status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
                         else
                             status = adhocs.SetValue (propertyIndex, v);
@@ -2063,7 +2063,7 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
             {
             propertyName = value.GetString();
             return true;
@@ -2129,7 +2129,7 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
     if (GetInstanceLabelPropertyName (propertyName))
         {
         ECN::ECValue ecValue;
-        if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+        if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
             {
             if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !WString::IsNullOrEmpty (ecValue.GetString()))
                 {
@@ -2164,7 +2164,7 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLa
     ECN::ECValue ecValue;
     ecValue.SetString (displayLabel, false);
 
-    if (SUCCESS == SetValue (propertyName.c_str(), ecValue))
+    if (ECOBJECTS_STATUS_Success == SetValue (propertyName.c_str(), ecValue))
         return ECOBJECTS_STATUS_Success;
 
     return  ECOBJECTS_STATUS_Error;
