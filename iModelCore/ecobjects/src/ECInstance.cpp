@@ -2900,7 +2900,8 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 LOG.warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
                 return INSTANCE_READ_STATUS_TypeMismatch;
                 }
-            ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
+            if (!byteArray.empty())
+                ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
             break;
             }
 
