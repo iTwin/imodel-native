@@ -3609,7 +3609,7 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, UInt32 containerIndex, bo
 
     for (size_t i = 0; i < _countof (s_propertyNames); i++)
         {
-        if (SUCCESS == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
+        if (ECOBJECTS_STATUS_Success == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
             {
             prop = structClass->GetPropertyP (v.GetString());
             if (nullptr != prop)
@@ -3747,15 +3747,15 @@ bool AdhocPropertyQuery::GetPropertyIndex (UInt32& index, WCharCP accessString) 
         return false;
 
     ECValue v;
-    if (SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+    if (ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
         {
         UInt32 count = v.GetArrayInfo().GetCount();
         for (UInt32 i = 0; i < count; i++)
-            if (SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
+            if (ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex(), i) && !v.IsNull() && v.IsStruct())
                 {
                 IECInstancePtr instance = v.GetStruct();
                 v.SetAllowsPointersIntoInstanceMemory (true);
-                if (SUCCESS == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == wcscmp (accessString, v.GetString()))
+                if (ECOBJECTS_STATUS_Success == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == wcscmp (accessString, v.GetString()))
                     {
                     index = i;
                     return true;
@@ -3772,7 +3772,7 @@ bool AdhocPropertyQuery::GetPropertyIndex (UInt32& index, WCharCP accessString) 
 UInt32 AdhocPropertyQuery::GetCount() const
     {
     ECValue v;
-    if (IsSupported() && SUCCESS == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
+    if (IsSupported() && ECOBJECTS_STATUS_Success == m_host.GetValue (v, GetContainerPropertyIndex()) && v.IsArray())
         return v.GetArrayInfo().GetCount();
     else
         return 0;
@@ -3795,7 +3795,7 @@ ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel (WStringR label, UInt32 inde
         {
         WString name;
         status = GetName (name, index);
-        if (SUCCESS == status)
+        if (ECOBJECTS_STATUS_Success == status)
             ECNameValidation::DecodeFromValidName (label, name);
         }
 
@@ -3848,7 +3848,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, UInt32 ind
     if (nullptr != propName)
         {
         auto status = entry->GetValue (v, propName);
-        if (SUCCESS == status)
+        if (ECOBJECTS_STATUS_Success == status)
             {
             // null => use default type (string)
             if (!v.IsNull() && (!v.IsInteger() || !PrimitiveTypeForCode (type, v.GetInteger())))
@@ -3861,7 +3861,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, UInt32 ind
 
     // get value
     auto status = GetValue (propertyValue, *entry, Index::Value);
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
     else if (!propertyValue.IsString() && !propertyValue.IsNull())
         {
@@ -3881,7 +3881,7 @@ ECObjectsStatus AdhocPropertyQuery::IsReadOnly (bool& isReadOnly, UInt32 index) 
     ECValue v;
     auto status = GetValue (v, index, Index::IsReadOnly);
     isReadOnly = false;
-    if (SUCCESS == status && v.IsBoolean() && !v.IsNull())
+    if (ECOBJECTS_STATUS_Success == status && v.IsBoolean() && !v.IsNull())
         isReadOnly = v.GetBoolean();
 
     return status;
@@ -3895,7 +3895,7 @@ ECObjectsStatus AdhocPropertyQuery::IsHidden (bool& isHidden, UInt32 index) cons
     ECValue v;
     auto status = GetValue (v, index, Index::IsHidden);
     isHidden = false;
-    if (SUCCESS == status && v.IsBoolean() && !v.IsNull())
+    if (ECOBJECTS_STATUS_Success == status && v.IsBoolean() && !v.IsNull())
         isHidden = v.GetBoolean();
 
     return status;
@@ -4297,13 +4297,13 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
             IECInstancePtr entry = GetEntry (i);
             WString name;
             ECValue v;
-            if (entry.IsValid() && SUCCESS == GetString (name, *entry, Index::Name) && SUCCESS == GetValue (v, *entry, Index::Value))
+            if (entry.IsValid() && ECOBJECTS_STATUS_Success == GetString (name, *entry, Index::Name) && ECOBJECTS_STATUS_Success == GetValue (v, *entry, Index::Value))
                 preservedValues[name] = v;
             }
         }
 
     auto status = Clear();
-    if (SUCCESS != status)
+    if (ECOBJECTS_STATUS_Success != status)
         return status;
 
     UInt32 count = query.GetCount();
@@ -4337,11 +4337,11 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
             continue;
             }
 
-        if (preserveValues && SUCCESS == query.GetString (name, *from, Index::Name) && preservedValues.end() != (found = preservedValues.find (name)))
+        if (preserveValues && ECOBJECTS_STATUS_Success == query.GetString (name, *from, Index::Name) && preservedValues.end() != (found = preservedValues.find (name)))
             {
             ECValue v = found->second;
             PrimitiveType type;
-            if (SUCCESS == GetPrimitiveType (type, i) && v.ConvertToPrimitiveType (type))
+            if (ECOBJECTS_STATUS_Success == GetPrimitiveType (type, i) && v.ConvertToPrimitiveType (type))
                 SetValue (i, v);
             }
         }
