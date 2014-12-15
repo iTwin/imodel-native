@@ -545,15 +545,18 @@ bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
     auto status = GetEnabler().GetPropertyIndex (propertyIndex, accessString);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
+        bool readOnly = true;
         for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
             {
             AdhocPropertyQuery adhocs (*this, containerIndex);
-            bool readOnly = true;
             if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+                {
                 status = adhocs.IsReadOnly (readOnly, propertyIndex);
-
-            return SUCCESS != status || readOnly;
+                break;
+                }
             }
+
+        return ECOBJECTS_STATUS_Success != status || readOnly;
         }
 
     return SUCCESS != status || IsPropertyReadOnly (propertyIndex);
