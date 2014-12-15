@@ -94,6 +94,7 @@ public:
     bool                    IsEquivalent (UnitSpecCR other) const   { return m_converter.IsEquivalent (other.m_converter) && IsCompatible (other); }
     UnitConverterCR         GetConverter() const                    { return m_converter; }
     bool                    IsUnspecified() const                   { return m_baseUnitName.empty(); }
+    void                    SetUnspecified()                        { m_baseUnitName.clear(); }
 
     void                    SetConverter (UnitConverterCR converter)    { m_converter = converter; }
 
