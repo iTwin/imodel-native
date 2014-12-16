@@ -1,0 +1,13 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: prewire.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(InternalSystemPolicy)
+
+%include mdl.mki
+
+always:
+    @CreateSymLinks.py  -d"$(BuildContext)PublicAPI/BeGTest=$(srcDir)PublicAPI/BeGTest"

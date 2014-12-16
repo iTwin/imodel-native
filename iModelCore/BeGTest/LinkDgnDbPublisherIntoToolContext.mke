@@ -1,0 +1,24 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: LinkDgnDbPublisherIntoToolContext.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+%warn Needs work: BentleyBuild itself should set up a ToolContext with needed toolchain programs
+
+always:
+    !~@mkdir $(OutputRootDir)ToolContext
+
+#$(OutputRootDir)ToolContext/DgnDbPublisher.exe : $(OutputRootDir)Product/SampleIDgnToIDgnDbPublisher/SampleIDgnToIDgnDbPublisher.exe
+#    $(LinkFirstDepToFirstTarget)
+    
+$(OutputRootDir)ToolContext/DgnDbPublisher.bat : $(OutputRootDir)Product/SampleDgnV8Converter/SampleDgnV8Converter.exe $(_MakeFileSpec)
+    $(msg)
+    >$@
+    $(OutputRootDir)Product/SampleDgnV8Converter/SampleDgnV8Converter.exe %*
+    <
+    ~time  
