@@ -2902,6 +2902,8 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                 }
             if (!byteArray.empty())
                 ecValue.SetBinary (&byteArray.front(), byteArray.size(), true);
+            else
+                ecValue.SetBinary (NULL, 0, true);
             break;
             }
 
