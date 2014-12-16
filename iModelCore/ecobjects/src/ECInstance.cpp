@@ -79,7 +79,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"SerializerName"))
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"SerializerName"))
             {
             ICustomECStructSerializerP serializerP = GetCustomSerializer (value.GetString());
             if (serializerP)
@@ -265,10 +265,13 @@ ECObjectsStatus     IECInstance::GetValueOrAdhoc (ECValueR v, WCharCP accessStri
     auto status = GetValue (v, accessString);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
-        AdhocPropertyQuery adhocs (*this);
-        UInt32 propertyIndex;
-        if (adhocs.GetPropertyIndex (propertyIndex, accessString))
-            status = adhocs.GetValue (v, propertyIndex);
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
+            {
+            AdhocPropertyQuery adhocs (*this, containerIndex);
+            UInt32 propertyIndex;
+            if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+                status = adhocs.GetValue (v, propertyIndex);
+            }
         }
 
     return status;
@@ -341,23 +344,26 @@ ECObjectsStatus IECInstance::ChangeValueOrAdhoc (WCharCP propertyAccessString, E
     auto status = ChangeValue (propertyAccessString, v);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
-        AdhocPropertyEdit adhocs (*this);
-        UInt32 propertyIndex;
-        if (adhocs.GetPropertyIndex (propertyIndex, propertyAccessString))
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
             {
-            bool isReadOnly = true;
-            status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
-            if (SUCCESS == status)
+            AdhocPropertyEdit adhocs (*this, containerIndex);
+            UInt32 propertyIndex;
+            if (adhocs.GetPropertyIndex (propertyIndex, propertyAccessString))
                 {
-                if (isReadOnly)
-                    status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
-                else
+                bool isReadOnly = true;
+                status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
+                if (ECOBJECTS_STATUS_Success == status)
                     {
-                    ECValue curV;
-                    if (SUCCESS == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
-                        status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                    if (isReadOnly)
+                        status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
                     else
-                        status = adhocs.SetValue (propertyIndex, v);
+                        {
+                        ECValue curV;
+                        if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
+                            status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                        else
+                            status = adhocs.SetValue (propertyIndex, v);
+                        }
                     }
                 }
             }
@@ -539,12 +545,15 @@ bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
     auto status = GetEnabler().GetPropertyIndex (propertyIndex, accessString);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
-        AdhocPropertyQuery adhocs (*this);
-        bool readOnly = true;
-        if (adhocs.GetPropertyIndex (propertyIndex, accessString))
-            status = adhocs.IsReadOnly (readOnly, propertyIndex);
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
+            {
+            AdhocPropertyQuery adhocs (*this, containerIndex);
+            bool readOnly = true;
+            if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+                status = adhocs.IsReadOnly (readOnly, propertyIndex);
 
-        return SUCCESS != status || readOnly;
+            return SUCCESS != status || readOnly;
+            }
         }
 
     return SUCCESS != status || IsPropertyReadOnly (propertyIndex);
@@ -780,7 +789,7 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
             return ECOBJECTS_STATUS_Error;
             }
 
-        AdhocPropertyQuery adhoc (*this);
+        AdhocPropertyQuery adhoc (*this, accessor[0].GetPropertyIndex());
         return adhoc.GetValue (v, accessor[0].GetArrayIndex());
         }
 
@@ -823,7 +832,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
             return ECOBJECTS_STATUS_Error;
             }
 
-        AdhocPropertyEdit adhoc (*this);
+        AdhocPropertyEdit adhoc (*this, accessor[0].GetPropertyIndex());
         return adhoc.SetValue (accessor[0].GetArrayIndex(), valueToSet);
         }
 
@@ -2054,7 +2063,7 @@ static bool getInstanceLabelPropertyNameFromClass (WStringR propertyName, ECClas
     if (caInstance.IsValid())
         {
         ECValue value;
-        if (SUCCESS == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
             {
             propertyName = value.GetString();
             return true;
@@ -2120,7 +2129,7 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
     if (GetInstanceLabelPropertyName (propertyName))
         {
         ECN::ECValue ecValue;
-        if (SUCCESS == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
+        if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
             {
             if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !WString::IsNullOrEmpty (ecValue.GetString()))
                 {
@@ -2155,7 +2164,7 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLa
     ECN::ECValue ecValue;
     ecValue.SetString (displayLabel, false);
 
-    if (SUCCESS == SetValue (propertyName.c_str(), ecValue))
+    if (ECOBJECTS_STATUS_Success == SetValue (propertyName.c_str(), ecValue))
         return ECOBJECTS_STATUS_Success;
 
     return  ECOBJECTS_STATUS_Error;
