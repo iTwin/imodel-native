@@ -657,6 +657,11 @@ private:
 
     WString                 m_metadataPropertyNames[(size_t)Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
     UInt32                  m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
+
+    AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString, bool loadMetadata);
+    AdhocPropertyMetadata (ECEnablerCR enabler, UInt32 containerPropertyIndex, bool loadMetadata);
+
+    bool                    Init (ECEnablerCR enabler, UInt32 containerPropertyIndex, bool loadMetadata);
 protected:
     WCharCP                 GetPropertyName (Index index) const;
 
@@ -664,13 +669,14 @@ protected:
     static bool             PrimitiveTypeForCode (PrimitiveType& primType, Int32 code);
     static bool             CodeForPrimitiveType (Int32& code, PrimitiveType primType);
 public:
-    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler);
+    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, UInt32 containerPropertyIndex);
 
     ECOBJECTS_EXPORT bool   IsSupported() const;
     UInt32                  GetContainerPropertyIndex() const { return m_containerIndex; }
 
-    ECOBJECTS_EXPORT static bool    GetContainerPropertyIndex (UInt32& propertyIndex, ECEnablerCR enabler);
-    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler);
+    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, UInt32 containerPropertyIndex);
     };
 
 typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
@@ -690,7 +696,8 @@ struct AdhocPropertyQuery : AdhocPropertyMetadata
 private:
     IECInstanceCR           m_host;
 public:
-    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host);
+    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, UInt32 containerPropertyIndex);
 
     IECInstanceCR                       GetHost() const { return m_host; }
 
@@ -725,7 +732,8 @@ public:
 struct AdhocPropertyEdit : AdhocPropertyQuery
     {
 public:
-    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host);
+    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, UInt32 containerPropertyIndex);
 
     IECInstanceR            GetHostR()  { return const_cast<IECInstanceR>(GetHost()); }
 
@@ -744,6 +752,40 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, WCharCP accessor, ECValueCR v);
 
     ECOBJECTS_EXPORT ECObjectsStatus    Swap (UInt32 propIdxA, UInt32 propIdxB);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AdhocContainerPropertyIndexCollection
+    {
+private:
+    ECEnablerCR     m_enabler;
+public:
+    AdhocContainerPropertyIndexCollection (ECEnablerCR enabler) : m_enabler (enabler) { }
+
+    struct const_iterator : std::iterator<std::forward_iterator_tag, UInt32 const>
+        {
+    private:
+        ECEnablerCR         m_enabler;
+        UInt32              m_current;
+
+        bool                IsEnd() const { return 0 == m_current; }
+        bool                ValidateCurrent() const;
+        void                MoveNext();
+    public:
+        const_iterator (ECEnablerCR enabler, bool isEnd);
+
+        UInt32 const&   operator*() const   { return m_current; }
+        bool            operator==(const_iterator const& rhs) const { return &rhs.m_enabler == &m_enabler && rhs.m_current == m_current; }
+        bool            operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
+        const_iterator& operator++()                                { MoveNext(); return *this; }
+        };
+
+    typedef const_iterator iterator;
+
+    const_iterator      begin() const   { return const_iterator (m_enabler, false); }
+    const_iterator      end() const     { return const_iterator (m_enabler, true); }
     };
 
 //__PUBLISH_SECTION_START__

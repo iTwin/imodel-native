@@ -267,10 +267,13 @@ ECObjectsStatus     IECInstance::GetValueOrAdhoc (ECValueR v, WCharCP accessStri
     auto status = GetValue (v, accessString);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
-        AdhocPropertyQuery adhocs (*this);
-        UInt32 propertyIndex;
-        if (adhocs.GetPropertyIndex (propertyIndex, accessString))
-            status = adhocs.GetValue (v, propertyIndex);
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
+            {
+            AdhocPropertyQuery adhocs (*this, containerIndex);
+            UInt32 propertyIndex;
+            if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+                status = adhocs.GetValue (v, propertyIndex);
+            }
         }
 
     return status;
@@ -362,23 +365,26 @@ ECObjectsStatus IECInstance::ChangeValueOrAdhoc (WCharCP propertyAccessString, E
     auto status = ChangeValue (propertyAccessString, v);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
-        AdhocPropertyEdit adhocs (*this);
-        UInt32 propertyIndex;
-        if (adhocs.GetPropertyIndex (propertyIndex, propertyAccessString))
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
             {
-            bool isReadOnly = true;
-            status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
-            if (ECOBJECTS_STATUS_Success == status)
+            AdhocPropertyEdit adhocs (*this, containerIndex);
+            UInt32 propertyIndex;
+            if (adhocs.GetPropertyIndex (propertyIndex, propertyAccessString))
                 {
-                if (isReadOnly)
-                    status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
-                else
+                bool isReadOnly = true;
+                status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
+            if (ECOBJECTS_STATUS_Success == status)
                     {
-                    ECValue curV;
-                    if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
-                        status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                    if (isReadOnly)
+                        status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
                     else
-                        status = adhocs.SetValue (propertyIndex, v);
+                        {
+                        ECValue curV;
+                    if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
+                            status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
+                        else
+                            status = adhocs.SetValue (propertyIndex, v);
+                        }
                     }
                 }
             }
@@ -562,11 +568,16 @@ bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
     auto status = GetEnabler().GetPropertyIndex (propertyIndex, accessString);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
-        AdhocPropertyQuery adhocs (*this);
         bool readOnly = true;
-        if (adhocs.GetPropertyIndex (propertyIndex, accessString))
-            status = adhocs.IsReadOnly (readOnly, propertyIndex);
-
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
+            {
+            AdhocPropertyQuery adhocs (*this, containerIndex);
+            if (adhocs.GetPropertyIndex (propertyIndex, accessString))
+                {
+                status = adhocs.IsReadOnly (readOnly, propertyIndex);
+                break;
+                }
+            }
         return ECOBJECTS_STATUS_Success != status || readOnly;
         }
 
@@ -803,7 +814,7 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
             return ECOBJECTS_STATUS_Error;
             }
 
-        AdhocPropertyQuery adhoc (*this);
+        AdhocPropertyQuery adhoc (*this, accessor[0].GetPropertyIndex());
         return adhoc.GetValue (v, accessor[0].GetArrayIndex());
         }
 
@@ -846,7 +857,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
             return ECOBJECTS_STATUS_Error;
             }
 
-        AdhocPropertyEdit adhoc (*this);
+        AdhocPropertyEdit adhoc (*this, accessor[0].GetPropertyIndex());
         return adhoc.SetValue (accessor[0].GetArrayIndex(), valueToSet);
         }
 
