@@ -79,10 +79,10 @@ struct AdhocPropertyTest : ECTestFixture
 TEST_F (AdhocPropertyTest, AdhocInterface)
     {
     auto noAdhocs = m_schema->GetClassP (L"NoAdhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    EXPECT_FALSE (AdhocPropertyQuery (*noAdhocs).IsSupported());
+    EXPECT_FALSE (AdhocPropertyQuery (*noAdhocs, L"NONE").IsSupported());
 
     auto instance = m_schema->GetClassP (L"Adhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    AdhocPropertyEdit adhocs (*instance);
+    AdhocPropertyEdit adhocs (*instance, L"AdhocHolder");
     EXPECT_TRUE (adhocs.IsSupported());
     EXPECT_EQ (0, adhocs.GetCount());
 

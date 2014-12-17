@@ -2542,13 +2542,16 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IEC
         {
         // Find the array index of the ad-hoc property value with the specified name
         va.Clear();
-        AdhocPropertyQuery adhoc (instance);
-        UInt32 arrayIndex;
-        if (adhoc.GetPropertyIndex (arrayIndex, accessor))
+        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (instance.GetEnabler()))
             {
-            va.PushLocation (instance.GetEnabler(), adhoc.GetContainerPropertyIndex(), arrayIndex);
-            va.m_isAdhoc = true;
-            return ECOBJECTS_STATUS_Success;
+            AdhocPropertyQuery adhoc (instance, containerIndex);
+            UInt32 arrayIndex;
+            if (adhoc.GetPropertyIndex (arrayIndex, accessor))
+                {
+                va.PushLocation (instance.GetEnabler(), adhoc.GetContainerPropertyIndex(), arrayIndex);
+                va.m_isAdhoc = true;
+                return ECOBJECTS_STATUS_Success;
+                }
             }
         }
 
@@ -3564,8 +3567,17 @@ bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host)
-    : AdhocPropertyMetadata (host.GetEnabler()), m_host (host)
+AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host, WCharCP accessString)
+    : AdhocPropertyMetadata (host.GetEnabler(), accessString), m_host (host)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host, UInt32 propertyIndex)
+    : AdhocPropertyMetadata (host.GetEnabler(), propertyIndex), m_host (host)
     {
     //
     }
@@ -3573,49 +3585,79 @@ AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::GetContainerPropertyIndex (UInt32& propIdx, ECEnablerCR enabler)
+bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler, WCharCP accessString)
     {
-    propIdx = 0;
-    IECInstancePtr attr = enabler.GetClass().GetCustomAttribute (L"AdhocPropertySpecification");
-    ECValue v;
-    v.SetAllowsPointersIntoInstanceMemory (true);
-    if (attr.IsNull() || ECOBJECTS_STATUS_Success != attr->GetValue (v, L"AdhocPropertyContainer") || v.IsNull() || ECOBJECTS_STATUS_Success != enabler.GetPropertyIndex (propIdx, v.GetString()))
-        return false;
+    AdhocPropertyMetadata meta (enabler, accessString, false);
+    return meta.IsSupported();
+    }
 
-    BeAssert (0 != propIdx);
-    return true;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler, UInt32 propIdx)
+    {
+    AdhocPropertyMetadata meta (enabler, propIdx, false);
+    return meta.IsSupported();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler)
-    {
-    UInt32 propIdx;
-    return GetContainerPropertyIndex (propIdx, enabler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler)
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString, bool loadMetadata)
     : m_containerIndex (0)
     {
     UInt32 containerIndex = 0;
-    if (!GetContainerPropertyIndex (containerIndex, enabler))
-        return; // no ad-hoc property specification, or cannot find container property
+    if (ECOBJECTS_STATUS_Success == enabler.GetPropertyIndex (containerIndex, containerAccessString))
+        Init (enabler, containerIndex, loadMetadata);
+    }
 
-    ECValue v;
-    v.SetAllowsPointersIntoInstanceMemory (true);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, UInt32 propIdx, bool loadMetadata)
+    : m_containerIndex (0)
+    {
+    Init (enabler, propIdx, loadMetadata);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString)
+    : AdhocPropertyMetadata (enabler, containerAccessString, true)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, UInt32 propIdx)
+    : AdhocPropertyMetadata (enabler, propIdx, true)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, UInt32 containerIndex, bool loadMetadata)
+    {
+    // find struct array property
     ECPropertyCP prop = enabler.LookupECProperty (containerIndex);
     ArrayECPropertyCP arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
     ECClassCP structClass = nullptr;
     if (nullptr == arrayProp || ARRAYKIND_Struct != arrayProp->GetKind() || nullptr == (structClass = arrayProp->GetStructElementType()))
-        return;
+        return false;
 
+    // find custom attribute on struct class
     IECInstancePtr attr = structClass->GetCustomAttribute (L"AdhocPropertyContainerDefinition");
     if (attr.IsNull())
-        return;
+        return false;
+
+    // validate required metadata is defined, and load it if requested
+    ECValue v;
+    v.SetAllowsPointersIntoInstanceMemory (true);
 
     static const WCharCP s_propertyNames[(size_t)Index::MAX] =
         {
@@ -3628,16 +3670,20 @@ AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler)
             {
             prop = structClass->GetPropertyP (v.GetString());
             if (nullptr != prop)
-                m_metadataPropertyNames[i] = v.GetString(); 
+                {
+                if (loadMetadata)
+                    m_metadataPropertyNames[i] = v.GetString(); 
+                }
             else
-                return;
+                return false;
             }
         else if (IsRequiredMetadata (static_cast<Index>(i)))
-            return;
+            return false;
         }
 
     // only considered valid when m_containerIndex set to non-zero
     m_containerIndex = containerIndex;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3968,8 +4014,17 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, IECInstanceCR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host)
-    : AdhocPropertyQuery (host)
+AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host, WCharCP accessString)
+    : AdhocPropertyQuery (host, accessString)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host, UInt32 propIdx)
+    : AdhocPropertyQuery (host, propIdx)
     {
     //
     }
@@ -4349,6 +4404,37 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
         }
 
     return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+AdhocContainerPropertyIndexCollection::const_iterator::const_iterator (ECEnablerCR enabler, bool isEnd)
+    : m_enabler (enabler), m_current (isEnd ? 0 : enabler.GetFirstPropertyIndex (0))
+    {
+    if (!ValidateCurrent())
+        MoveNext();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AdhocContainerPropertyIndexCollection::const_iterator::ValidateCurrent() const
+    {
+    return !IsEnd() && AdhocPropertyMetadata::IsSupported (m_enabler, m_current);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void AdhocContainerPropertyIndexCollection::const_iterator::MoveNext()
+    {
+    if (!IsEnd())
+        {
+        m_current = m_enabler.GetNextPropertyIndex (0, m_current);
+        if (!IsEnd() && !ValidateCurrent())
+            MoveNext();
+        }
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
