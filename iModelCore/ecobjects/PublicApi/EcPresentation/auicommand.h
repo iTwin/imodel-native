@@ -17,14 +17,15 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef RefCountedPtr<IUICommand> IUICommandPtr;
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
+//! NEEDSWORK: Add comment here
 * @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
++===============+===============+===============+===============+===============+======*/
 struct IUICommand : public RefCountedBase
     {
     public:
     /*=================================================================================**//**
-    * the possible "marks" that can be placed to the left of menu entries for Edit Actions.
+    //! The possible "marks" that can be placed to the left of menu entries for Edit Actions.
     * @bsiinterface
     +===============+===============+===============+===============+===============+======*/
     enum EditActionMenuMark
@@ -38,7 +39,7 @@ struct IUICommand : public RefCountedBase
         };
 
     /*=================================================================================**//**
-    * recommended priority values for Edit Actions. Higher values appear higher in the popup menu.
+    //! Recommended priority values for Edit Actions. Higher values appear higher in the popup menu.
     * @bsiinterface
     +===============+===============+===============+===============+===============+======*/
     enum EditActionPriority
@@ -81,6 +82,10 @@ struct IUICommand : public RefCountedBase
         EDITACTION_PRIORITY_MiscGroup6
         };
 
+    /*=================================================================================**//**
+    //! NEEDSWORK: Add comment here
+    * @bsiinterface
+    +===============+===============+===============+===============+===============+======*/
     enum ApplicationPurpose
         {
         Unknown              = 0,
@@ -89,15 +94,13 @@ struct IUICommand : public RefCountedBase
         ExplorerMenu         = 3,
         };
 
-    //__PUBLISH_SECTION_END__
+//__PUBLISH_SECTION_END__
 
     protected:
-    
-        //!Execute the action that this command supports.
+        //! Execute the action that this command supports.
         virtual BentleyStatus       _ExecuteCmd(IAUIDataContextCP instance) = 0;
 
-        //!Describe how you want to journal your command by calling methods on journal item
-        //! entry.
+        //! Describe how you want to journal your command by calling methods on journal item entry.
         virtual void                _Journal (IJournalItemR journalEntry) = 0;
 
         virtual WCharCP             _GetCommandId () const = 0;
@@ -132,56 +135,72 @@ struct IUICommand : public RefCountedBase
 
 //__PUBLISH_SECTION_START__
     public:
-        //!virtual destructor.
-        virtual ~IUICommand ()
-            {}
+        //! Virtual destructor.
+        virtual ~IUICommand () {}
 
         //! Execute the action associated with this command. If a journal provider is registered 
         //! the call results in the creation of the corresponding journal entry.
-        ECOBJECTS_EXPORT BentleyStatus  ExecuteCmd (IAUIDataContextCP instance);
+        //! @param[in] instance      NEEDSWORK: Add comment here
+        ECOBJECTS_EXPORT BentleyStatus      ExecuteCmd (IAUIDataContextCP instance);
 
-                //!Describe how you want to journal your command by calling methods on journal item
-        //! entry.
+        //! Describe how you want to journal your command by calling methods on journal item entry.
         ECOBJECTS_EXPORT void               Journal (IJournalItemR journalEntry);
 
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT WCharCP            GetCommandId () const;
         
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT WString            GetLabel ()  const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetLabel (WCharCP label);
 
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT WString            GetDescription ()  const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetDescription (WCharCP description);
         
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT ECImageKeyCP       GetImageId ()  const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetImageId (ECImageKeyCR key);
         
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT bool               IsSeparator ()  const;
         
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT WString            GetApplicatonArg ()  const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetApplicationArg (WCharCP arg);
 
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT EditActionMenuMark GetMenuMark() const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetMenuMark(EditActionMenuMark mark);
 
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT bool               GetIsEnabled () const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetIsEnabled (bool enabled);
 
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT IUICommand*        GetParent() const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               GetChildren (bvector<IUICommandPtr>& children) const;
-        /*---------------------------------------------------------------------------------**//**
-        * Get the priority value for this Edit Action. Higher values are placed higher in the popup menu.
-        * @return       the priority for this Edit Action.
-        +---------------+---------------+---------------+---------------+---------------+------*/
+        //! Get the priority value for this Edit Action. Higher values are placed higher in the popup menu.
+        //! @returns the priority for this Edit Action.
         ECOBJECTS_EXPORT EditActionPriority GetPriority () const;
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               SetPriority (EditActionPriority priority);
 
+        //! NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void               GetChildren (bvector<IUICommandPtr>& children);
     };
 
 typedef RefCountedPtr<UICommand> UICommandPtr;
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
+//! NEEDSWORK: Add comment here
 * @bsimethod                                    Abeesh.Basheer                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
++===============+===============+===============+===============+===============+======*/
 struct ActionPriorityComparer
     {
     bool operator () (IUICommandPtr const& lhs, IUICommandPtr const& rhs)
@@ -189,10 +208,11 @@ struct ActionPriorityComparer
         return lhs->GetPriority() > rhs->GetPriority();
         }
     };
-/*---------------------------------------------------------------------------------**//**
-//! A UIcommand represents an action that can be applied on a data context. (Usually an ecinstnace)
-* @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+
+/*=================================================================================**//**
+//! A UICommand represents an action that can be applied on a data context. (Usually an ECInstance)
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct UICommand : public IUICommand
     {
 //__PUBLISH_SECTION_END__
@@ -247,11 +267,11 @@ struct UICommand : public IUICommand
 
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 //! A provider that registers with the presentation manager to provide actions for specific 
 //! data contexts. The presentation manager providers a union.
-* @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct ECPresentationCommandProvider : public IECPresentationProvider
     {
 
@@ -261,8 +281,13 @@ struct ECPresentationCommandProvider : public IECPresentationProvider
         virtual ProviderType    _GetProviderType (void) const {return CommandService;}
 //__PUBLISH_SECTION_START__
     public:
+        //! Virtual destructor.
         virtual ~ECPresentationCommandProvider() {}
 
+        //! NEEDSWORK: Add comment here
+        //! @param[out] commands     NEEDSWORK: Add comment here
+        //! @param[in]  instance     NEEDSWORK: Add comment here
+        //! @param[in]  purpose      NEEDSWORK: Add comment here
         ECOBJECTS_EXPORT void GetCommand (bvector<IUICommandPtr>&commands, IAUIDataContextCR instance, int purpose);
     };
 
