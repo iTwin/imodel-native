@@ -13,9 +13,9 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
@@ -50,41 +50,41 @@ struct  ECPresentationManager: public NonCopyableClass
     //! Get the presentation manager.
     ECOBJECTS_EXPORT static ECPresentationManagerR  GetManager();
 
-    //! Add or remove the journal provider
+    //! Add or remove the journal provider.
     ECOBJECTS_EXPORT void                           AddProvider (IJournalProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IJournalProviderR provider);
 
-    //! Add or remove the command provider
+    //! Add or remove the command provider.
     ECOBJECTS_EXPORT void                           AddProvider (ECPresentationCommandProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationCommandProviderR provider);
 
-    //! Obtain command provider by id
+    //! Obtain command provider by id.
     ECOBJECTS_EXPORT ECPresentationCommandProviderCP GetCommandProviderById (size_t providerId);
 
-    //! Add or remove the view definition provider
+    //! Add or remove the view definition provider.
     ECOBJECTS_EXPORT void                           AddProvider (IECPresentationViewProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IECPresentationViewProviderR provider);
 
-    //! Add or remove the view definition provider
+    //! Add or remove the view definition provider.
     ECOBJECTS_EXPORT void                           AddProvider (IAUIContentServiceProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (IAUIContentServiceProviderR provider);
 
-    //! Add or remove the image provider
+    //! Add or remove the image provider.
     ECOBJECTS_EXPORT void                           AddProvider (ECPresentationImageProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationImageProviderR provider);
 
-    //! Add or remove the localization provider
+    //! Add or remove the localization provider.
     ECOBJECTS_EXPORT void                           AddProvider (ECPresentationLocalizationProviderR provider);
     ECOBJECTS_EXPORT void                           RemoveProvider (ECPresentationLocalizationProviderR provider);
 
-    //!Get the view definition associated with a particular data context.
-    //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
-    //!@param[in] dataContext   The data context for which the view definition is requested.
+    //! Get the view definition associated with a particular data context.
+    //! @param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
+    //! @param[in] dataContext   The data context for which the view definition is requested.
     ECOBJECTS_EXPORT IECPresentationViewDefinitionPtr   GetViewDefinition (IAUIItemInfoCR itemInfo, IAUIDataContextCR instanceData) const;
 
-    //!Get the view definition associated with a particular data context.
-    //!@param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
-    //!@param[in] dataContext   The data context for which the view definition is requested.
+    //! Get the view definition associated with a particular data context.
+    //! @param[in] itemInfo      A hint to provide the context in which the view definition will be used. eg. MenuItem
+    //! @param[in] dataContext   The data context for which the view definition is requested.
     ECOBJECTS_EXPORT IECContentDefinitionPtr            GetContentDefinition (IECPresentationViewDefinitionCR viewDef) const;
 
     //! Get the list of commands that is associated with this data context for a given purpose. Its a union of all 
@@ -98,23 +98,23 @@ struct  ECPresentationManager: public NonCopyableClass
     ECOBJECTS_EXPORT IECNativeImagePtr                  GetOverlayImage (IAUIDataContextCR imageKey, DPoint2dCR size);
 
     //! Get string from localization providers.
-    //!@param[in] rscFileName   Dll name which contains the resource.
-    //!@param[in] tableId       Table ID form which resource shoud be taken.
-    //!@param[in] rscId         Resource ID.
+    //! @param[in] rscFileName   Dll name which contains the resource.
+    //! @param[in] tableId       Table ID form which resource shoud be taken.
+    //! @param[in] rscId         Resource ID.
     ECOBJECTS_EXPORT WString                            GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
 
     //! Get current selection or sub-selection.
-    //!@param[in] eventHub      Event hub.
-    //!@param[in] subSelection  If true then returns sub-selection.
+    //! @param[in] eventHub      Event hub.
+    //! @param[in] subSelection  If true then returns sub-selection.
     ECOBJECTS_EXPORT IAUIDataContextCP                  GetSelection (void const* eventHub, bool subSelection);
 
-    //!This returns the ECQueryProcessFlags that is to be used when creating a datacontext that represents a selection set.
+    //! This returns the ECQueryProcessFlags that is to be used when creating a datacontext that represents a selection set.
     ECOBJECTS_EXPORT int                                GetSelectionQueryScope ();
     //! Execute command automatically calls these. So explicit call is usually un necessary.
     void                                                JournalCmd (IUICommandCR cmd, IAUIDataContextCP instanceData);
 
 
-    //!Hooks for individual EC events
+    //! Hooks for individual EC events
     ECOBJECTS_EXPORT    void RegisterSelectionHook (ECSelectionListener& listener);
     ECOBJECTS_EXPORT    void UnRegisterSelectionHook (ECSelectionListener& listener);
 

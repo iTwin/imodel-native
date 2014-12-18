@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/ECImageProvider.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,9 +16,9 @@
 #include <Bentley/BeAssert.h>
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
++===============+===============+===============+===============+===============+======*/
 struct IECNativeImage : public RefCountedBase
     {
     typedef BeIconUtilities::Icon   NativeImage;
@@ -47,9 +47,9 @@ struct IECNativeImage : public RefCountedBase
 
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  ECNativeImage :public IECNativeImage
     {
     private:
@@ -74,9 +74,9 @@ struct  ECNativeImage :public IECNativeImage
     };
 #pragma warning(default:4189)
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 * @bsiclass                                     Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
++===============+===============+===============+===============+===============+======*/
 struct ECPresentationImageProvider : public IECPresentationProvider
     {
     protected:

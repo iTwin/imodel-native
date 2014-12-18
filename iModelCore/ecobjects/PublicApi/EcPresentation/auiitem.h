@@ -15,10 +15,10 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-A Uiitem is an instance of a control facing a user. 
-* @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+//! A AUIItem is an instance of a control facing a user. 
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct IAUIItem : public RefCountedBase // Content Service Element
     {
 /*__PUBLISH_SECTION_END__*/
@@ -33,17 +33,17 @@ struct IAUIItem : public RefCountedBase // Content Service Element
         //! Get the data instance bind with this ui instance.
         ECOBJECTS_EXPORT IAUIDataContextCP GetDataInstance() const;
 
-        //! Get the command associated with this ui instance if any
-        ECOBJECTS_EXPORT IAUIItemInfoCR GetUIItemInfo () const;
+        //! Get the command associated with this ui instance if any.
+        ECOBJECTS_EXPORT IAUIItemInfoCR    GetUIItemInfo () const;
 
         //! Get the parent instance associated with this instance.
-        ECOBJECTS_EXPORT IAUIItemCP     GetParent () const;
+        ECOBJECTS_EXPORT IAUIItemCP        GetParent () const;
     };
 
-/*---------------------------------------------------------------------------------**//**
-A AUIITemInfo describes the type of a control in a platform independent fashion.
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+//! A AUIItemInfo describes the type of a control in a platform independent fashion.
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  IAUIItemInfo 
     {
     //! Describes the primitive UI type an item info represents.
@@ -68,20 +68,22 @@ struct  IAUIItemInfo
 
 /*__PUBLISH_SECTION_START__*/
     public:
-    //Constructor that initializes an item from a primitive type.
+    //! Constructor that initializes an item from a primitive type.
     virtual ~IAUIItemInfo ()
         {}
 
-    ECOBJECTS_EXPORT bool IsAggregatable() const;
+    //! NEEDSWORK: Add comment here
+    ECOBJECTS_EXPORT bool     IsAggregatable() const;
+    //! NEEDSWORK: Add comment here
     ECOBJECTS_EXPORT ItemType GetItemType () const;
 
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 //! A variant class which describes the data that is represented in the UI. The view definition
 //! provider, and data context work in unison to describe the UI.
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  IAUIDataContext 
     {
     //!Describes the different type of context available to the user
@@ -102,21 +104,25 @@ struct  IAUIDataContext
     //! Get context type which can be used to call the appropriate Get function
     virtual ContextType             _GetContextType() const = 0;
 
-    //!Get the data instance that this datacontext stores.
+    //! Get the data instance that this datacontext stores.
     virtual IECInstanceInterfaceCP  GetInstanceInterface () const {return NULL;}
-    virtual void*                   GetCustomData() const {return NULL;}
-    virtual ECInstanceIterableCP    GetInstanceIterable () const {return NULL;}
-    virtual WString                 GetMoniker () const {return NULL;}
+    //! NEEDSWORK: Add comment here
+    virtual void*                   GetCustomData() const         {return NULL;}
+    //! NEEDSWORK: Add comment here
+    virtual ECInstanceIterableCP    GetInstanceIterable () const  {return NULL;}
+    //! NEEDSWORK: Add comment here
+    virtual WString                 GetMoniker () const           {return NULL;}
+    //! NEEDSWORK: Add comment here
     ECOBJECTS_EXPORT ContextType    GetContextType () const;
-    //!Virtual destructor
+    //! Virtual destructor.
     virtual ~IAUIDataContext () {}
     };
 
 /*__PUBLISH_SECTION_END__*/
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  06/2012
++===============+===============+===============+===============+===============+======*/
 struct ECInstanceIterableDataContext: public IAUIDataContext
     {
     private:
@@ -145,10 +151,10 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
             }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
-* @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 template<typename InstanceType>
 struct  AUIInstanceDataContext : public IAUIDataContext
     {
@@ -163,9 +169,9 @@ public:
     InstanceType*                       GetDataInstnce () const { return m_instancePtr.get(); }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 * @bsistruct                                                    Paul.Connelly   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
++===============+===============+===============+===============+===============+======*/
 struct AUIInstanceInterfaceDataContext : IAUIDataContext
     {
 private:
@@ -179,10 +185,10 @@ public:
 
 typedef AUIInstanceDataContext<IECInstanceP>   ECInstanceDataContext;
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
-* @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  ECGroupingNodeDataContext : public IAUIDataContext
     {
     private:
@@ -197,10 +203,10 @@ struct  ECGroupingNodeDataContext : public IAUIDataContext
         virtual WString     GetMoniker () const override { return m_nodeMoniker; }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*=================================================================================**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
-* @bsiclass                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+* @bsiclass                                     Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  ECNodeCollectionDataContext : public IAUIDataContext
     {
     private:
