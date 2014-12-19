@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecprovider.cpp $
 |
-|   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -13,7 +13,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt16          IECProvider::GetProviderId () const
+uint16_t        IECProvider::GetProviderId () const
     {
     return _GetProviderId ();
     }

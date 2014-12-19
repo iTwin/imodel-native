@@ -19,7 +19,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, UInt32& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
+extern ECObjectsStatus GetSchemaFileName (WStringR fullFileName, uint32_t& foundVersionMinor, WCharCP schemaPath, bool useLatestCompatibleMatch);
 
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
@@ -61,7 +61,7 @@ void ECNameValidation::AppendEncodedCharacter (WStringR encoded, WChar c)
     {
     WChar buf[5];
     HexFormatOptions opts = (HexFormatOptions)(static_cast<int>(HexFormatOptions::LeadingZeros) | static_cast<int>(HexFormatOptions::Uppercase));
-    BeStringUtilities::FormatUInt64 (buf, _countof(buf), (UInt64)c, opts, 4);
+    BeStringUtilities::FormatUInt64 (buf, _countof(buf), (uint64_t)c, opts, 4);
     encoded.append (L"__x");
     encoded.append (buf);
     encoded.append (L"__");
@@ -98,7 +98,7 @@ bool ECNameValidation::DecodeFromValidName (WStringR decoded, WStringCR name)
         {
         if ('_' == decoded[pos+7] && '_' == decoded[pos+8])
             {
-            UInt32 charCode;
+            uint32_t charCode;
             if (1 == BE_STRING_UTILITIES_SWSCANF (decoded.c_str() + pos + 3, L"%x", &charCode))
                 {
                 decoded[pos] = (WChar)charCode;
@@ -479,7 +479,7 @@ bool ECSchema::ShouldNotBeStored (SchemaKeyCR key)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECSchema::GetVersionMajor () const
+uint32_t ECSchema::GetVersionMajor () const
     {
     return m_key.m_versionMajor;
     }
@@ -487,7 +487,7 @@ UInt32 ECSchema::GetVersionMajor () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionMajor (const UInt32 versionMajor)
+ECObjectsStatus ECSchema::SetVersionMajor (const uint32_t versionMajor)
     {
     if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
 
@@ -498,7 +498,7 @@ ECObjectsStatus ECSchema::SetVersionMajor (const UInt32 versionMajor)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECSchema::GetVersionMinor
+uint32_t ECSchema::GetVersionMinor
 (
 ) const
     {
@@ -508,7 +508,7 @@ UInt32 ECSchema::GetVersionMinor
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetVersionMinor (const UInt32 versionMinor)
+ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
     {
     if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
 
@@ -735,7 +735,7 @@ WString ECSchema::GetFullSchemaName () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, UInt32& versionMajor, UInt32& versionMinor, WStringCR  fullName)
+ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, WStringCR  fullName)
     {
     if (fullName.empty())
         return ECOBJECTS_STATUS_ParseError;
@@ -764,7 +764,7 @@ ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, UInt32& vers
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, UInt32& versionMajor, UInt32& versionMinor, WCharCP fullName)
+ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, WCharCP fullName)
     {
     if (NULL == fullName || '\0' == *fullName)
         return ECOBJECTS_STATUS_ParseError;
@@ -791,7 +791,7 @@ ECObjectsStatus ECSchema::ParseSchemaFullName (WStringR schemaName, UInt32& vers
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor)
+WString ECSchema::FormatSchemaVersion (uint32_t& versionMajor, uint32_t& versionMinor)
     {
     wchar_t versionString[80];
     BeStringUtilities::Snwprintf (versionString, _countof(versionString), L"%02d.%02d", versionMajor, versionMinor);
@@ -802,7 +802,7 @@ WString ECSchema::FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMino
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, WCharCP versionString)
+ECObjectsStatus ECSchema::ParseVersionString (uint32_t& versionMajor, uint32_t& versionMinor, WCharCP versionString)
     {
     versionMajor = DEFAULT_VERSION_MAJOR;
     versionMinor = DEFAULT_VERSION_MINOR;
@@ -832,7 +832,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         }
 
     WCharP end = NULL;
-    UInt32    localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
+    uint32_t  localMajor = BeStringUtilities::Wcstoul (versionString, &end, 10);
     if (versionString == end)
         {
         LOG.errorv (L"Invalid ECSchema Version String: '%ls' The characters before the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -843,7 +843,7 @@ ECObjectsStatus ECSchema::ParseVersionString (UInt32& versionMajor, UInt32& vers
         versionMajor = localMajor;
         }
 
-    UInt32 localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
+    uint32_t localMinor = BeStringUtilities::Wcstoul (&theDot[1], &end, 10);
     if (&theDot[1] == end)
         {
         LOG.errorv (L"Invalid ECSchema Version String: '%ls' The characters after the '.' must be numeric!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
@@ -864,8 +864,8 @@ ECObjectsStatus ECSchema::SetVersionFromString (WCharCP versionString)
     {
     if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
 
-    UInt32 versionMajor;
-    UInt32 versionMinor;
+    uint32_t versionMajor;
+    uint32_t versionMinor;
     ECObjectsStatus status;
     if ((ECOBJECTS_STATUS_Success != (status = ParseVersionString (versionMajor, versionMinor, versionString))) ||
         (ECOBJECTS_STATUS_Success != (status = this->SetVersionMajor (versionMajor))) ||
@@ -878,7 +878,7 @@ ECObjectsStatus ECSchema::SetVersionFromString (WCharCP versionString)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, UInt32 versionMajor, UInt32 versionMinor)
+ECObjectsStatus ECSchema::CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName, uint32_t versionMajor, uint32_t versionMinor)
     {
     schemaOut = new ECSchema();
 
@@ -976,11 +976,11 @@ ECClassContainerCR ECSchema::GetClasses () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECSchema::GetClassCount
+uint32_t ECSchema::GetClassCount
 (
 ) const
     {
-    return (UInt32) m_classMap.size();
+    return (uint32_t) m_classMap.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1371,7 +1371,7 @@ ECSchemaPtr     ECSchema::LocateSchema (SchemaKeyR key, ECSchemaReadContextR sch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath)
+ECObjectsStatus GetMinorVersionFromSchemaFileName (uint32_t& versionMinor, WCharCP filePath)
     {
     BeFileName  fileName (filePath);
 
@@ -1388,21 +1388,21 @@ ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP
         }
 
     WString     versionString = name.substr (firstDot+1);
-    UInt32      versionMajor;
+    uint32_t    versionMajor;
     return ECSchema::ParseVersionString (versionMajor, versionMinor, versionString.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus GetSchemaFileName (WString& fullFileName, UInt32& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
+ECObjectsStatus GetSchemaFileName (WString& fullFileName, uint32_t& foundMinorVersion, WCharCP schemaPath, bool useLatestCompatibleMatch)
     {
     WString     schemaPathWithWildcard = schemaPath;
     schemaPathWithWildcard += L"*";
 
     BeFileListIterator  fileList (schemaPathWithWildcard.c_str(), false);
     BeFileName          filePath;
-    UInt32 currentMinorVersion=0;
+    uint32_t currentMinorVersion=0;
 
     while (SUCCESS == fileList.GetNextFileName (filePath))
         {
@@ -1588,7 +1588,7 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UInt32 checkSum, ECSchemaReadContextR schemaContext)
+SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, uint32_t checkSum, ECSchemaReadContextR schemaContext)
     {
     SchemaReadStatus status = SCHEMA_READ_STATUS_Success;
     StopWatch overallTimer(L"Overall schema de-serialization timer", true);
@@ -1612,8 +1612,8 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UI
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
-    UInt32  versionMajor = DEFAULT_VERSION_MAJOR;
-    UInt32  versionMinor = DEFAULT_VERSION_MINOR;
+    uint32_t versionMajor = DEFAULT_VERSION_MAJOR;
+    uint32_t versionMinor = DEFAULT_VERSION_MINOR;
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
@@ -1915,7 +1915,7 @@ The crc 32 function should be moved to use the boost version once the run time c
 has been addressed by boost. This is the version used by the zip library
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static const UInt32 crc_table[256] = {
+static const uint32_t crc_table[256] = {
       0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
       0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
       0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -1977,7 +1977,7 @@ struct          CheckSumHelper
     #define DO4(buf)  DO2(buf); DO2(buf)
     #define DO8(buf)  DO4(buf); DO4(buf)
 
-    static UInt32 crc32(UInt32 crc, const Byte* buf, size_t len)
+    static uint32_t crc32(uint32_t crc, const Byte* buf, size_t len)
     { if (buf==NULL) return 0L;
       crc = crc ^ 0xffffffffL;
       while (len >= 8) {DO8(buf); len -= 8;}
@@ -1988,15 +1988,15 @@ struct          CheckSumHelper
 
     static const int BUFFER_SIZE = 1024;
     public:
-        static UInt32 ComputeCheckSumForString (Utf8CP string, size_t bufferSize);
-        static UInt32 ComputeCheckSumForString (WCharCP string, size_t bufferSize);
-        static UInt32 ComputeCheckSumForFile (WCharCP schemaFile);
+        static uint32_t ComputeCheckSumForString (Utf8CP string, size_t bufferSize);
+        static uint32_t ComputeCheckSumForString (WCharCP string, size_t bufferSize);
+        static uint32_t ComputeCheckSumForFile (WCharCP schemaFile);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Krischan.Eberle                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSize)
+uint32_t CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -2004,7 +2004,7 @@ UInt32 CheckSumHelper::ComputeCheckSumForString (Utf8CP string, size_t bufferSiz
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
+uint32_t CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSize)
     {
     return crc32 (0, (Byte*) string, bufferSize);
     }
@@ -2012,9 +2012,9 @@ UInt32 CheckSumHelper::ComputeCheckSumForString (WCharCP string, size_t bufferSi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
+uint32_t        CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
     {
-    UInt32 checkSum = 0;
+    uint32_t checkSum = 0;
     BeFile file;
     if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read))
         {
@@ -2022,11 +2022,11 @@ UInt32          CheckSumHelper::ComputeCheckSumForFile (WCharCP schemaFile)
         return checkSum;
         }
 
-    byte buffer [BUFFER_SIZE];
+    Byte buffer [BUFFER_SIZE];
     do
         {
-        memset(buffer, 0, BUFFER_SIZE * sizeof(byte));
-        UInt32 bytesRead = 0;
+        memset(buffer, 0, BUFFER_SIZE * sizeof(Byte));
+        uint32_t bytesRead = 0;
         file.Read(buffer, &bytesRead, BUFFER_SIZE);
         if (bytesRead == 0)
             break;
@@ -2058,7 +2058,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         }
 
     AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
-    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForFile(ecSchemaXmlFile);
+    uint32_t checkSum = CheckSumHelper::ComputeCheckSumForFile(ecSchemaXmlFile);
 
     status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
@@ -2103,7 +2103,7 @@ ECSchemaReadContextR schemaContext
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
-    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
+    uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
     status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
@@ -2152,7 +2152,7 @@ ECSchemaReadContextR schemaContext
         return SCHEMA_READ_STATUS_FailedToParseXml;
         }
 
-    UInt32 checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
+    uint32_t checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
     status = ReadXml (schemaOut, *xmlDom.get(), checkSum, schemaContext);
     if (SCHEMA_READ_STATUS_DuplicateSchema == status)
         return status; // already logged
@@ -2757,7 +2757,7 @@ ECClassP        SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32          ECSchema::ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len)
+uint32_t        ECSchema::ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len)
     {
     return CheckSumHelper::ComputeCheckSumForString (str, len);
     }
@@ -2880,7 +2880,7 @@ void IECTypeAdapterContext::RegisterFactory (FactoryFn fn)  { s_typeAdapterConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, UInt32 componentIndex)
+IECTypeAdapterContextPtr IECTypeAdapterContext::Create (ECPropertyCR prop, IECInstanceCR instance, uint32_t componentIndex)
     {
     return NULL != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, componentIndex) : NULL;
     }

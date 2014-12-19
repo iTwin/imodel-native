@@ -42,8 +42,8 @@ StandaloneECRelationshipInstance::~StandaloneECRelationshipInstance()
 size_t                StandaloneECRelationshipInstance::_GetOffsetToIECInstance () const
     {
     ECN::IECInstanceCP iecInstanceP   = dynamic_cast<ECN::IECInstanceCP>(this);
-    byte const* baseAddressOfIECInstance = (byte const *)iecInstanceP;
-    byte const* baseAddressOfConcrete = (byte const *)this;
+    Byte const* baseAddressOfIECInstance = (Byte const *)iecInstanceP;
+    Byte const* baseAddressOfConcrete = (Byte const *)this;
     return (size_t)(baseAddressOfIECInstance - baseAddressOfConcrete);
     }
 
@@ -54,7 +54,7 @@ size_t                StandaloneECRelationshipInstance::_GetObjectSize () const
     {
     size_t objectSize = sizeof(*this);
     size_t primaryInstanceDataSize = (size_t)_GetBytesAllocated(); //GetBytesUsed();
-    size_t perPropertyDataSize = sizeof(UInt32) * GetPerPropertyFlagsSize();
+    size_t perPropertyDataSize = sizeof(uint32_t) * GetPerPropertyFlagsSize();
     size_t supportingInstanceDataSize = 0; // CalculateSupportingInstanceDataSize ();
 
     return objectSize+primaryInstanceDataSize+perPropertyDataSize+supportingInstanceDataSize;
@@ -120,7 +120,7 @@ bool                StandaloneECRelationshipInstance::_IsReadOnly() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const
     {
     return GetValueFromMemory (v, propertyIndex, useArrayIndex, arrayIndex);
     }
@@ -128,7 +128,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetValue (ECValueR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const
     {
     return GetIsNullValueFromMemory (isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
@@ -136,7 +136,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_GetIsPropertyNull (
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex)
     {
     SetIsLoadedBit (propertyIndex);
 
@@ -146,7 +146,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_SetValue (UInt32 pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex)
     {
     return SetValueInternal (propertyIndex, v, useArrayIndex, arrayIndex);
     }
@@ -154,7 +154,7 @@ ECObjectsStatus StandaloneECRelationshipInstance::_SetInternalValue (UInt32 prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size)
+ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size)
     {
     ECObjectsStatus status = InsertNullArrayElementsAt (propIdx, index, size);
     
@@ -164,7 +164,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_InsertArrayElements
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (UInt32 propIdx, UInt32 size)
+ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (uint32_t propIdx, uint32_t size)
     {
     ECObjectsStatus status = AddNullArrayElementsAt (propIdx, size);
     
@@ -174,7 +174,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_AddArrayElements (U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (UInt32 propIdx, UInt32 index)
+ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement (uint32_t propIdx, uint32_t index)
     {
     ECObjectsStatus status = RemoveArrayElementsAt (propIdx, index, 1);
     
@@ -184,7 +184,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_RemoveArrayElement 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (UInt32 propIdx)
+ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (uint32_t propIdx)
     {
     return ECOBJECTS_STATUS_OperationNotSupported;
     }                      
@@ -229,7 +229,7 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetSource () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (Int64& sourceOrderId) const 
+ECObjectsStatus StandaloneECRelationshipInstance::_GetSourceOrderId (int64_t& sourceOrderId) const 
     {
     sourceOrderId = m_sourceOrderId;
     return ECOBJECTS_STATUS_Success;
@@ -283,7 +283,7 @@ IECInstancePtr  StandaloneECRelationshipInstance::_GetTarget () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (Int64& targetOrderId) const 
+ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (int64_t& targetOrderId) const 
     {
     targetOrderId = m_targetOrderId;
     return ECOBJECTS_STATUS_Success;

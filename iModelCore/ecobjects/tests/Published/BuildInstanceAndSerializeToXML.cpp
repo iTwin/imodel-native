@@ -61,11 +61,11 @@ struct  SampleData
     DPoint3d                 m_endPoint;
     DPoint2d                 m_xySize;
     double                   m_length;
-    UInt32                   m_numReadings;
-    Int64*                   m_readings;
+    uint32_t                 m_numReadings;
+    int64_t*                   m_readings;
     bool                     m_tested;
 
-    SampleData (int id, UInt32 numReadings)
+    SampleData (int id, uint32_t numReadings)
         {
         m_name.Sprintf (L"Sample_%d", id);
         m_id = id;
@@ -73,9 +73,9 @@ struct  SampleData
 
         if (numReadings > 0)
             {
-            m_readings = (Int64*) calloc (m_numReadings, sizeof(Int64));
-            for (UInt32 i=0; i<m_numReadings; i++)
-                m_readings[i] = (Int64)i*100;     
+            m_readings = (int64_t*) calloc (m_numReadings, sizeof(int64_t));
+            for (uint32_t i=0; i<m_numReadings; i++)
+                m_readings[i] = (int64_t)i*100;     
             }
         else
             {
@@ -150,7 +150,7 @@ struct  SampleDataInstanceManager
             {
             // add room for the array members and then set the values for each
             instance->AddArrayElements(L"Readings", data.m_numReadings);
-            for (UInt32 i=0; i<data.m_numReadings; i++)
+            for (uint32_t i=0; i<data.m_numReadings; i++)
                 instance->SetValue(L"Readings", ECValue (data.m_readings[i]), i);
             }
 
@@ -170,7 +170,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
 
     for (int i=0; i<5; i++)
         {
-        SampleData sampleData (i, (UInt32)(i%2)*3);
+        SampleData sampleData (i, (uint32_t)(i%2)*3);
         ECN::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance (sampleData);
         ASSERT_TRUE (testInstance.IsValid());
 

@@ -187,9 +187,9 @@ public:
 /*__PUBLISH_SECTION_START__*/
 };
 
-typedef Int64 ECClassId;
-typedef Int64 ECPropertyId;
-typedef Int64 ECSchemaId;
+typedef int64_t ECClassId;
+typedef int64_t ECPropertyId;
+typedef int64_t ECSchemaId;
 
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
@@ -381,30 +381,30 @@ struct IECTypeAdapterContext : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
 protected:
     virtual ECPropertyCP                        _GetProperty() const = 0;
-    virtual UInt32                              _GetComponentIndex() const = 0;
+    virtual uint32_t                            _GetComponentIndex() const = 0;
     virtual bool                                _Is3d() const = 0;
     virtual IECInstanceCP                       _GetECInstance() const = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex) const;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, uint32_t arrayIndex) const;
     ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
 public:
 
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
-    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, UInt32 arrayIndex = -1) const;
+    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, uint32_t arrayIndex = -1) const;
 
     //! The following are relevant to adapters for point types.
-    ECOBJECTS_EXPORT  UInt32                    GetComponentIndex() const;
+    ECOBJECTS_EXPORT  uint32_t                  GetComponentIndex() const;
     ECOBJECTS_EXPORT  bool                      Is3d() const;
 
     IECClassLocaterR                    GetUnitsECClassLocater() const {return _GetUnitsECClassLocater();}
 
     //! internal use only, primarily for ECExpressions
-    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, UInt32 componentIndex);
+    typedef RefCountedPtr<IECTypeAdapterContext> (* FactoryFn)(ECPropertyCR, IECInstanceCR instance, uint32_t componentIndex);
     ECOBJECTS_EXPORT static void                RegisterFactory (FactoryFn fn);
-    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, UInt32 componentIndex = COMPONENT_INDEX_None);
+    static RefCountedPtr<IECTypeAdapterContext> Create (ECPropertyCR ecproperty, IECInstanceCR instance, uint32_t componentIndex = COMPONENT_INDEX_None);
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
-    static const UInt32 COMPONENT_INDEX_None = -1;
+    static const uint32_t COMPONENT_INDEX_None = -1;
     };
 
 typedef RefCountedPtr<IECTypeAdapterContext> IECTypeAdapterContextPtr;
@@ -766,8 +766,8 @@ struct ArrayECProperty : public ECProperty
 friend struct ECClass;
 
 private:
-    UInt32                                      m_minOccurs;
-    UInt32                                      m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
+    uint32_t                                    m_minOccurs;
+    uint32_t                                    m_maxOccurs;    // D-106653 we store this as read from the schema, but all arrays are considered to be of unbounded size
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
     union
         {
@@ -814,18 +814,18 @@ public:
     //! Gets the ECClass of the array's struct elements
     ECOBJECTS_EXPORT ECClassCP          GetStructElementType() const;
     //! Sets the Minimum number of array members.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMinOccurs(UInt32 value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMinOccurs(uint32_t value);
     //! Gets the Minimum number of array members.
-    ECOBJECTS_EXPORT UInt32             GetMinOccurs() const;
+    ECOBJECTS_EXPORT uint32_t           GetMinOccurs() const;
     //! Sets the Maximum number of array members.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(UInt32 value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
     //! Gets the Maximum number of array members.
-    ECOBJECTS_EXPORT UInt32             GetMaxOccurs() const;
+    ECOBJECTS_EXPORT uint32_t           GetMaxOccurs() const;
 
 //__PUBLISH_SECTION_END__
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
     //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
-    UInt32                              GetStoredMaxOccurs () const { return m_maxOccurs; }
+    uint32_t                            GetStoredMaxOccurs () const { return m_maxOccurs; }
 //__PUBLISH_SECTION_START__
     };
 
@@ -989,7 +989,7 @@ protected:
 
     void                                InvalidateDefaultStandaloneEnabler() const;
 public:
-    ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (UInt32 index) const;
+    ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (uint32_t index) const;
     ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);
     ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
@@ -1172,7 +1172,7 @@ public:
 
 //! Used to define how the relationship OrderId is handled.
 //! @ingroup ECObjectsGroup
-enum OrderIdStorageMode: UInt8
+enum OrderIdStorageMode: uint8_t
     {
     ORDERIDSTORAGEMODE_None                     = 0,
     ORDERIDSTORAGEMODE_ProvidedByPersistence    = 1,         
@@ -1231,8 +1231,8 @@ enum StrengthType
 struct RelationshipCardinality
 {
 private:
-    UInt32     m_lowerLimit;
-    UInt32     m_upperLimit;
+    uint32_t   m_lowerLimit;
+    uint32_t   m_upperLimit;
 
 public:
     //! Default constructor.  Creates a cardinality of (0, 1)
@@ -1241,12 +1241,12 @@ public:
     //! Constructor with lower and upper limit parameters.
     //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
     //! @param[in]  upperLimit  must be greater than or equal to lowerLimit and greater than 0
-    ECOBJECTS_EXPORT RelationshipCardinality(UInt32 lowerLimit, UInt32 upperLimit);
+    ECOBJECTS_EXPORT RelationshipCardinality(uint32_t lowerLimit, uint32_t upperLimit);
 
     //! Returns the lower limit of the cardinality
-    ECOBJECTS_EXPORT UInt32 GetLowerLimit() const;
+    ECOBJECTS_EXPORT uint32_t GetLowerLimit() const;
     //! Returns the upper limit of the cardinality
-    ECOBJECTS_EXPORT UInt32 GetUpperLimit() const;
+    ECOBJECTS_EXPORT uint32_t GetUpperLimit() const;
 
     //! Indicates if the cardinality is unbound (ie, upper limit is equal to "n")
     ECOBJECTS_EXPORT bool     IsUpperLimitUnbounded() const;
@@ -1395,7 +1395,7 @@ private:
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
 
-    ECObjectsStatus             SetCardinality(UInt32& lowerLimit, UInt32& upperLimit);
+    ECObjectsStatus             SetCardinality(uint32_t& lowerLimit, uint32_t& upperLimit);
 
     SchemaWriteStatus           WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
@@ -1563,15 +1563,15 @@ enum SchemaMatchType
 struct SchemaKey
     {
     WString       m_schemaName;
-    UInt32        m_versionMajor;
-    UInt32        m_versionMinor;
-    UInt32        m_checkSum;
+    uint32_t      m_versionMajor;
+    uint32_t      m_versionMinor;
+    uint32_t      m_checkSum;
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  major   The major portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey (WCharCP name, UInt32 major, UInt32 minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor), m_checkSum(0){}
+    SchemaKey (WCharCP name, uint32_t major, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor), m_checkSum(0){}
 
     //! Default constructor
     SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
@@ -1625,8 +1625,8 @@ struct SchemaKey
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT WStringCR GetName() const {return m_schemaName;}
     ECOBJECTS_EXPORT WString GetFullSchemaName() const;
-    ECOBJECTS_EXPORT UInt32 GetVersionMajor() const { return m_versionMajor; };
-    ECOBJECTS_EXPORT UInt32 GetVersionMinor() const { return m_versionMinor; };
+    ECOBJECTS_EXPORT uint32_t GetVersionMajor() const { return m_versionMajor; };
+    ECOBJECTS_EXPORT uint32_t GetVersionMinor() const { return m_versionMinor; };
 
 /*__PUBLISH_SECTION_START__*/
     };
@@ -2075,7 +2075,7 @@ private:
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
     bool                                IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
-    static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, UInt32 checkSum, ECSchemaReadContextR context);
+    static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, uint32_t checkSum, ECSchemaReadContextR context);
     SchemaWriteStatus                   WriteXml (BeXmlDomR xmlDoc) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
@@ -2147,13 +2147,13 @@ public:
     //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema
     ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
     //! Sets the major version of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(UInt32 value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
     //! Gets the major version of this schema
-    ECOBJECTS_EXPORT UInt32             GetVersionMajor() const;
+    ECOBJECTS_EXPORT uint32_t           GetVersionMajor() const;
     //! Sets the minor version of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(UInt32 value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMinor(uint32_t value);
     //! Gets the minor version of this schema
-    ECOBJECTS_EXPORT UInt32             GetVersionMinor() const;
+    ECOBJECTS_EXPORT uint32_t           GetVersionMinor() const;
     //! Returns an iterable container of ECClasses sorted by name. For unsorted called overload.
     ECOBJECTS_EXPORT ECClassContainerCR GetClasses() const;
     
@@ -2180,7 +2180,7 @@ public:
     ECOBJECTS_EXPORT bool IsSystemSchema () const;
 
     //! Gets the number of classes in the schema
-    ECOBJECTS_EXPORT UInt32             GetClassCount() const;
+    ECOBJECTS_EXPORT uint32_t           GetClassCount() const;
 
     //! Returns true if the display label has been set explicitly for this schema or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
@@ -2315,7 +2315,7 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
     //! Given a str containing SchemaXml, will compute the CheckSum
-    ECOBJECTS_EXPORT static UInt32          ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len);
+    ECOBJECTS_EXPORT static uint32_t        ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len);
 
     //! If the given schemaName is valid, this will create a new schema object
     //! @param[out] schemaOut   if successful, will contain a new schema object
@@ -2324,13 +2324,13 @@ public:
     //! @param[in]  versionMinor The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName,
-                                                          UInt32 versionMajor, UInt32 versionMinor);
+                                                          uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in]  versionMajor    The major version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static WString        FormatSchemaVersion (UInt32& versionMajor, UInt32& versionMinor);
+    ECOBJECTS_EXPORT static WString        FormatSchemaVersion (uint32_t& versionMajor, uint32_t& versionMinor);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -2338,7 +2338,7 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, UInt32& versionMajor, UInt32& versionMinor, WCharCP fullName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, WCharCP fullName);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -2346,14 +2346,14 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, UInt32& versionMajor, UInt32& versionMinor, WStringCR fullName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, WStringCR fullName);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (UInt32& versionMajor, UInt32& versionMinor, WCharCP versionString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (uint32_t& versionMajor, uint32_t& versionMinor, WCharCP versionString);
 
     //! Given two schemas, will check to see if the second schema is referenced by the first schema
     //! @param[in]    thisSchema            The base schema to check the references of

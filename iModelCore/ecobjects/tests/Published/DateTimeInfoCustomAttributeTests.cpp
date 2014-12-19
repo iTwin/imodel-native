@@ -280,7 +280,7 @@ protected:
             ASSERT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (propertyName, value)) << "AssertGetValue:Setup> Setting datetime value in ECInstance";
             }
 
-        Int64 expectedTicks = 0LL;
+        int64_t expectedTicks = 0LL;
         expectedDateTime.ToCommonEraTicks (expectedTicks);
 
         ECValue value;
@@ -291,7 +291,7 @@ protected:
 
         bool actualHasMetadata = false;
         DateTime::Info actualMetadata;
-        Int64 actualTicks = value.GetDateTimeTicks (actualHasMetadata, actualMetadata);
+        int64_t actualTicks = value.GetDateTimeTicks (actualHasMetadata, actualMetadata);
 
         if (expectedMatch)
             {
@@ -508,7 +508,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
     ASSERT_TRUE (testClass != NULL);
 
     DateTime expectedDate = DateTime::GetCurrentTimeUtc ();
-    Int64 ceTicks = 0LL;
+    int64_t ceTicks = 0LL;
     ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (ceTicks));
 
     ECValue ticksOnlyValue;
@@ -574,7 +574,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicksGetAsDateTime)
 
     //test 1: Original date is UTC
     DateTime expectedDate = DateTime::GetCurrentTimeUtc ();
-    Int64 expectedTicks = 0LL;
+    int64_t expectedTicks = 0LL;
     ASSERT_EQ (SUCCESS, expectedDate.ToCommonEraTicks (expectedTicks));
 
     ECValue v;
@@ -675,7 +675,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeWithLocalDateTimeKind)
         ECValue value;
         const BentleyStatus expectedStat = isLocal ? ERROR : SUCCESS;
         EXPECT_EQ (expectedStat, value.SetDateTime (testDateTime)) << "Return value of ECValue::SetDateTime ('" << testDateTime.ToString ().c_str () << "')";
-        Int64 ceTicks = 0LL;
+        int64_t ceTicks = 0LL;
         testDateTime.ToCommonEraTicks (ceTicks);
         EXPECT_EQ (expectedStat, value.SetDateTimeTicks (ceTicks, testDateTime.GetInfo ())) << "Return value of ECValue::SetDateTimeTicks () with '" << value.ToString ().c_str ();
 
@@ -762,14 +762,14 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, DateTimeArrayRoundtrip)
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ASSERT_TRUE (instance.IsValid ());
 
-    const UInt32 expectedArraySize = 3;
+    const uint32_t expectedArraySize = 3;
     DateTime expected [expectedArraySize];
     expected[0] = DateTime::GetCurrentTimeUtc ();
     expected[1] = DateTime (DateTime::Kind::Utc, 2012, 1, 1, 13, 14);
     expected[2] = DateTime (DateTime::Kind::Utc, 2011, 1, 1, 13, 14);
 
     instance->AddArrayElements (propertyName, expectedArraySize);
-    for (UInt32 i = 0; i < expectedArraySize; i++)
+    for (uint32_t i = 0; i < expectedArraySize; i++)
         {
         ECValue v (expected[i]);
         ECObjectsStatus stat = instance->SetValue (propertyName, v, i);
@@ -785,7 +785,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, DateTimeArrayRoundtrip)
     EXPECT_TRUE (PRIMITIVETYPE_DateTime == actualArrayInfo.GetElementPrimitiveType ());
     EXPECT_EQ (expectedArraySize, actualArrayInfo.GetCount ());
 
-    for (UInt32 i = 0; i < expectedArraySize; i++)
+    for (uint32_t i = 0; i < expectedArraySize; i++)
         {
         ECValue v;
         ECObjectsStatus stat = instance->GetValue (v, propertyName, i);
@@ -810,7 +810,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ASSERT_TRUE (instance.IsValid ());
 
-    const UInt32 expectedArraySize = 3;
+    const uint32_t expectedArraySize = 3;
     DateTime expected [expectedArraySize];
     ECObjectsStatus expectedSuccess [expectedArraySize];
     expected[0] = DateTime::GetCurrentTimeUtc ();
@@ -821,7 +821,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     expectedSuccess[2] = ECOBJECTS_STATUS_DataTypeMismatch;
     
     instance->AddArrayElements (propertyName, expectedArraySize);
-    for (UInt32 i = 0; i < expectedArraySize; i++)
+    for (uint32_t i = 0; i < expectedArraySize; i++)
         {
         ECValue v (expected[i]);
         ECObjectsStatus stat = instance->SetValue (propertyName, v, i);
@@ -838,7 +838,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     //array was initialized with the full size, although only one element was actually successfully inserted.
     EXPECT_EQ (expectedArraySize, actualArrayInfo.GetCount ());
 
-    for (UInt32 i = 0; i < expectedArraySize; i++)
+    for (uint32_t i = 0; i < expectedArraySize; i++)
         {
         ECValue v;
         ECObjectsStatus stat = instance->GetValue (v, propertyName, i);

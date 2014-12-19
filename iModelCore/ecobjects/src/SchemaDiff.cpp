@@ -68,10 +68,10 @@ void ECDiffValue::SetValue (WCharCP v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffValue::SetValue (byte const* v, size_t size) 
+void ECDiffValue::SetValue (Byte const* v, size_t size) 
     { 
     m_type = VALUETYPE_Binary;
-    m_valueBinary = (byte*)malloc(size);
+    m_valueBinary = (Byte*)malloc(size);
     memcpy (m_valueBinary, v, size);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -81,11 +81,11 @@ void ECDiffValue::SetValue (WStringCR v) { m_valueString = v ; m_type = VALUETYP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffValue::SetValue (Int32 v) { m_valueInt32 = v ; m_type = VALUETYPE_Int32; }
+void ECDiffValue::SetValue (int32_t v) { m_valueInt32 = v ; m_type = VALUETYPE_Int32; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffValue::SetValue (Int64 v) { m_valueInt64 = v ; m_type = VALUETYPE_Int64; }
+void ECDiffValue::SetValue (int64_t v) { m_valueInt64 = v ; m_type = VALUETYPE_Int64; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -97,7 +97,7 @@ void ECDiffValue::SetValue (bool v) { m_valueBool = v ; m_type = VALUETYPE_Boole
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffValue::SetDateTimeValue(Int64 v) { m_valueDateTime = v ; m_type = VALUETYPE_DateTimeTicks; }
+void ECDiffValue::SetDateTimeValue(int64_t v) { m_valueDateTime = v ; m_type = VALUETYPE_DateTimeTicks; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -126,7 +126,7 @@ WCharCP ECDiffValue::GetValueWCharCP() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int32 ECDiffValue::GetValueInt32() const
+int32_t ECDiffValue::GetValueInt32() const
     { 
     BeAssert(m_type == VALUETYPE_Int32); 
     return m_valueInt32;
@@ -134,7 +134,7 @@ Int32 ECDiffValue::GetValueInt32() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECDiffValue::GetValueInt64() const
+int64_t ECDiffValue::GetValueInt64() const
     { 
     BeAssert(m_type == VALUETYPE_Int64); 
     return m_valueInt64;
@@ -351,10 +351,10 @@ bool ECDiffNode::SetValue (bool left, bool right)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffNode::SetValue (UInt32 left, UInt32 right)
+bool ECDiffNode::SetValue (uint32_t left, uint32_t right)
     {
-    m_valueLeft.SetValue ((Int32)left);
-    m_valueRight.SetValue ((Int32)right);
+    m_valueLeft.SetValue ((int32_t)left);
+    m_valueRight.SetValue ((int32_t)right);
     return true;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -979,8 +979,8 @@ ECDiffNodeP ECSchemaDiff::AppendArrayBounds (ECDiffNodeR parent , ECPropertyCR e
     if (ecProperty.GetIsArray())
         {
         ECDiffNodeP arrayBounds = parent.Add (SchemaDiffType::ARRAYINFO);
-        arrayBounds->Add (SchemaDiffType::MAXOCCURS)->GetValue(direction).SetValue ((Int32)ecProperty.GetAsArrayProperty()->GetMaxOccurs());
-        arrayBounds->Add (SchemaDiffType::MINOCCURS)->GetValue(direction).SetValue ((Int32)ecProperty.GetAsArrayProperty()->GetMinOccurs());
+        arrayBounds->Add (SchemaDiffType::MAXOCCURS)->GetValue(direction).SetValue ((int32_t)ecProperty.GetAsArrayProperty()->GetMaxOccurs());
+        arrayBounds->Add (SchemaDiffType::MINOCCURS)->GetValue(direction).SetValue ((int32_t)ecProperty.GetAsArrayProperty()->GetMinOccurs());
         return arrayBounds;
         }
     return NULL;

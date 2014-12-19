@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex, IECInstanceCR rootInstance)
+ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR rootInstance)
     {
     BeAssert(m_initialized);
 
@@ -126,7 +126,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 return ExprStatus_PrimitiveRequired;
                 }
 
-            ::UInt32     propertyIndex;
+            ::uint32_t   propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
@@ -184,7 +184,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 }
 
             //  Need to convert this to an int if it is not already an int
-            UInt32         arrayIndex = (UInt32)indexResult.GetECValue()->GetInteger();
+            uint32_t       arrayIndex = (uint32_t)indexResult.GetECValue()->GetInteger();
 
             //  May need to get an instance or primitive value.
             if (arrayProp->GetKind() == ECN::ARRAYKIND_Primitive)
@@ -204,7 +204,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
 
             BeAssert(ECN::ARRAYKIND_Struct == arrayProp->GetKind());
 
-            ::UInt32     propertyIndex;
+            ::uint32_t   propertyIndex;
             if (enabler->GetPropertyIndex(propertyIndex, accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
                 {
                 evalResult.Clear();
@@ -249,9 +249,9 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 getComponentIndex (NodeCP node, bool is2d)
+static uint32_t getComponentIndex (NodeCP node, bool is2d)
     {
-    UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+    uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
     IdentNodeCP ident = dynamic_cast<IdentNodeCP>(node);
     WCharCP componentName = nullptr != ident ? ident->GetName() : nullptr;
     if (nullptr != componentName && 0 != *componentName && 0 == *(componentName + 1))
@@ -390,7 +390,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         }
 
     bool is2d = false;
-    UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+    uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
     if (TOKEN_Dot == nextOperation && isPointProperty (is2d, currentProperty))
         {
         // handle point member access
@@ -409,7 +409,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             return ExprStatus_UnknownSymbol;
         else if (currentProperty->GetIsArray())
             {
-            UInt32 propIdx;
+            uint32_t propIdx;
             if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
                 return ExprStatus_UnknownSymbol;
 
@@ -464,7 +464,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         bool isPrimitive = (ARRAYKIND_Primitive == arrayProp->GetKind());
         bool is2d = false;
-        UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+        uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
         if (isPrimitive && TOKEN_Dot == nextOperation && isPointArrayProperty (is2d, currentProperty))
             {
             componentIndex = getComponentIndex (primaryList.GetOperatorNode (index), is2d);
@@ -489,7 +489,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         ECValue arrayVal;
         UnitSpec units;
-        if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (UInt32)indexResult.GetECValue()->GetInteger()))
+        if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (uint32_t)indexResult.GetECValue()->GetInteger()))
             { evalResult.Clear(); return ExprStatus_UnknownError; }
 
         if (isPrimitive && IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
@@ -554,7 +554,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         // we get here if we find a dot following something that is not a struct. e.g., 'someArray.Count', 'someArray.Any (x => x < 5)', etc.
         if (NULL != currentProperty && currentProperty->GetIsArray())
             {
-            UInt32 propIdx;
+            uint32_t propIdx;
             if (ECOBJECTS_STATUS_Success == instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
                 {
                 IValueListResultPtr list = IValueListResult::Create (const_cast<IECInstanceR>(instance), propIdx);
@@ -569,12 +569,12 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 {
                 IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
                 WCharCP arrayPropName = NULL != ident ? ident->GetName() : NULL;
-                UInt32 count = list->GetCount();
+                uint32_t count = list->GetCount();
                 if (NULL != arrayPropName)
                     {
                     if (0 == wcscmp (L"Count", arrayPropName))
                         {
-                        evalResult.InitECValue().SetInteger ((Int32)count);
+                        evalResult.InitECValue().SetInteger ((int32_t)count);
                         return ExprStatus_Success;
                         }
 
@@ -650,7 +650,7 @@ static bool convertResultToInstanceList (EvaluationResultR result, bool requireI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus InstanceListExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     Initialize();
 
@@ -877,7 +877,7 @@ MethodSymbolPtr MethodSymbol::Create(wchar_t const* name, ExpressionStaticMethod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     //  We only get here if the symbol was resolved directly from a context. The context may be a global context, or a namespace context. If the
     //  context is a global context then startIndex is 1 and the callNode should be 0. If the context is a namespace context, then startIndex - 1
@@ -887,7 +887,7 @@ ExpressionStatus MethodSymbol::_GetValue(EvaluationResultR evalResult, PrimaryLi
     //  method receive a pointer to the context used to invoke it.
 
     BeAssert(1 <= startIndex);
-    ::UInt32        callNodeIndex = startIndex - 1;
+    ::uint32_t      callNodeIndex = startIndex - 1;
 
     if (primaryList.GetOperation(callNodeIndex) != TOKEN_LParen)
         {
@@ -978,7 +978,7 @@ SymbolExpressionContextPtr SymbolExpressionContext::Create(ExpressionContextP ou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     wchar_t const* ident = primaryList.GetName(startIndex);
     if (NULL == ident)
@@ -1001,7 +1001,7 @@ ExpressionStatus SymbolExpressionContext::_GetValue(EvaluationResultR evalResult
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus SymbolExpressionContext::_GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     wchar_t const* ident = primaryList.GetName(startIndex);
     if (NULL == ident)
@@ -1046,7 +1046,7 @@ ExpressionStatus SymbolExpressionContext::_ResolveMethod(MethodReferencePtr& res
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     return m_context->GetValue(evalResult, primaryList, globalContext, startIndex);
     }
@@ -1054,7 +1054,7 @@ ExpressionStatus ContextSymbol::_GetValue(EvaluationResultR evalResult, PrimaryL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus ContextSymbol::_GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     return m_context->GetReference(evalResult, refResult, primaryList, globalContext, startIndex);
     }
@@ -1089,7 +1089,7 @@ ValueSymbol::ValueSymbol (wchar_t const* name, EvaluationResultCR value) : Symbo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus ValueSymbol::_GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     if (primaryList.GetNumberOfOperators() > startIndex)
         {
@@ -1147,7 +1147,7 @@ RefCountedPtr<PropertySymbol> PropertySymbol::Create (WCharCP name, RefCountedPt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+ExpressionStatus PropertySymbol::_GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
     {
     if (primaryList.GetNumberOfOperators() > startIndex)
         {
@@ -1252,7 +1252,7 @@ void InstanceListExpressionContext::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, UInt32 startIndex)
+ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, uint32_t startIndex)
     {
     Initialize();
 

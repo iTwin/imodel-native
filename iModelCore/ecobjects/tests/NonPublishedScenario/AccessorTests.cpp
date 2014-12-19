@@ -20,7 +20,7 @@ struct ValueAccessorTests : ECTestFixture
     ECSchemaPtr          m_schema;
     ECClassP             m_ecClass;
     IECInstancePtr       m_instance;
-    UInt32               propIndex;
+    uint32_t             propIndex;
 
     void CreateSchema(WString schemaName = L"TestSchema", WString className = L"TestClass")
         {
