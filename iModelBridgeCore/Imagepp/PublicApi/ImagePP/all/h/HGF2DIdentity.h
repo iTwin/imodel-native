@@ -1,0 +1,115 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: PublicApi/ImagePP/all/h/HGF2DIdentity.h $
+//:>
+//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+// Class : HGF2DIdentity
+//-----------------------------------------------------------------------------
+// Description of 2D transformation model.
+//-----------------------------------------------------------------------------
+#pragma once
+
+#include "HGF2DTransfoModel.h"
+
+
+/** -----------------------------------------------------------------------------
+    @version 1.0
+    @author Alain Robert
+    This class encapsulates a 2D-transformation model. An object of this class
+    expresses the bidirectionnal transformations to apply to coordinates.
+    Coordinates can be transformed directly or inverse.
+    The inverse or direct labels can be seen as simple labels to two bi-directional
+    doors that lead to a black box, which is the transformation model, itself.
+
+    To each input/output channel is assigned distance units. If the units are not
+    the same, unit conversion will be performed.
+
+    The present class implements an identity model. Even the model being described
+    is neutral, unit conversion if they are required will be performed.
+
+    -----------------------------------------------------------------------------
+*/
+class HGF2DIdentity : public HGF2DTransfoModel
+    {
+    HDECLARE_CLASS_ID(1025, HGF2DTransfoModel)
+
+public:
+
+    // Primary methods
+    _HDLLg                 HGF2DIdentity();
+    _HDLLg                 HGF2DIdentity(const HGF2DIdentity& pi_rObj);
+    _HDLLg virtual         ~HGF2DIdentity();
+    HGF2DIdentity&
+    operator=(const HGF2DIdentity& pi_rObj);
+
+    // Conversion interface
+    virtual void    ConvertDirect(double*   pio_pXInOut,
+                                  double*   pio_pYInOut) const;
+
+    virtual void    ConvertDirect(double    pi_YIn,
+                                  double    pi_XInStart,
+                                  size_t     pi_NumLoc,
+                                  double    pi_XInStep,
+                                  double*   po_aXOut,
+                                  double*   po_aYOut) const;
+
+    virtual void    ConvertDirect(double    pi_XIn,
+                                  double    pi_YIn,
+                                  double*   po_pXOut,
+                                  double*   po_pYOut) const;
+
+    virtual void    ConvertInverse(double*   pio_pXInOut,
+                                   double*   pio_pYInOut) const;
+
+    virtual void    ConvertInverse(double    pi_YIn,
+                                   double    pi_XInStart,
+                                   size_t     pi_NumLoc,
+                                   double    pi_XInStep,
+                                   double*   po_aXOut,
+                                   double*   po_aYOut) const;
+
+    virtual void    ConvertInverse(double    pi_XIn,
+                                   double    pi_YIn,
+                                   double*   po_pXOut,
+                                   double*   po_pYOut) const;
+
+    // Miscalenious
+    virtual bool   IsIdentity() const;
+    virtual bool   IsStretchable(double pi_AngleTolerance = 0) const;
+    virtual void    GetStretchParams(double*  po_pScaleFactorX,
+                                     double*  po_pScaleFactorY,
+                                     HGF2DDisplacement* po_pDisplacement) const;
+
+    virtual HGF2DTransfoModel* Clone() const override;
+
+    virtual HFCPtr<HGF2DTransfoModel>    ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const;
+    virtual bool   CanBeRepresentedByAMatrix() const;
+    virtual HFCMatrix<3, 3>    GetMatrix() const;
+    virtual HFCMatrix<3, 3>&    GetMatrix(HFCMatrix<3, 3>& po_rRecipient) const;
+
+
+    // Geometric properties
+    virtual bool   PreservesLinearity() const;
+    virtual bool   PreservesParallelism() const;
+    virtual bool   PreservesShape() const;
+    virtual bool   PreservesDirection() const;
+
+
+    // Operations
+    virtual void    Reverse ();
+
+
+protected:
+
+    virtual void    Prepare ();
+
+private:
+
+    double         m_XDirectRatio;
+    double         m_YDirectRatio;
+    double         m_XInverseRatio;
+    double         m_YInverseRatio;
+
+    };

@@ -1,0 +1,525 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: all/utl/hpa/src/HPATokenizer.cpp $
+//:>
+//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+// Methods for class HPATokenizer
+//---------------------------------------------------------------------------
+
+#include <ImagePP/h/hstdcpp.h>
+#include <ImagePP/h/HDllSupport.h>
+#include <Imagepp/all/h/HPATokenizer.h>
+#include <Imagepp/all/h/HPAToken.h>
+#include <Imagepp/all/h/HPAException.h>
+#include <Imagepp/all/h/HFCBinStream.h>
+
+
+// Global token descriptors
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPATokenizer::HPATokenizer()
+    {
+    // Nothing to do!
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPATokenizer::~HPATokenizer()
+    {
+    // Nothing to do!
+    }
+
+//---------------------------------------------------------------------------
+//--START FLOAT-ENABLED TOKENIZER----------------------------------------------
+//---------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPAFloatEnabledDefaultTokenizer::HPAFloatEnabledDefaultTokenizer(bool pi_IsCaseSensitive)
+    : HPADefaultTokenizer(pi_IsCaseSensitive)
+    {
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPAFloatEnabledDefaultTokenizer::~HPAFloatEnabledDefaultTokenizer()
+    {
+    // Nothing to do!
+    }
+
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPANode* HPAFloatEnabledDefaultTokenizer::GetToken()
+    {
+    if (!m_StreamRefStack.size())
+        return 0;
+
+    HFCBinStream* pStream = m_StreamRefStack.front();
+
+    // Checks first char : if numeric, we have a number, if alpha, we have
+    // an ident of a symbol, other : we have a symbol.
+
+    HPANode* pNode = 0;
+    WString ReadToken;
+    WString UppercaseToken;
+    HPAToken* pFoundToken = 0;
+    WChar LastChar;
+    bool CharAvailable = GetChar(pStream, &LastChar);
+    if (CharAvailable)
+        {
+        HPASourcePos LeftPos = m_StreamInfoStack.front();
+        LeftPos.m_Column++;
+
+        // Skipping whitespace, counting lines
+
+        while (CharAvailable && (iswspace(LastChar) || iswcntrl(LastChar)))
+            {
+            if (LastChar == L'\n')
+                {
+                LeftPos.m_Line++;
+                LeftPos.m_Column = 1;
+                }
+            CharAvailable = GetChar(pStream, &LastChar);
+            LeftPos.m_Column++;
+            }
+
+        if (!CharAvailable)
+            return 0;
+
+        HPASourcePos RightPos = LeftPos;
+
+        // Extracting a number
+
+        if (iswdigit(LastChar))
+            {
+            while (CharAvailable && (iswdigit(LastChar) ||
+                                     (LastChar == L'.') ||
+                                     (LastChar == L'-') ||
+                                     (LastChar == L'+') ||
+                                     (LastChar == L'E') ||
+                                     (LastChar == L'e')))
+                {
+                ReadToken.append(1, LastChar);
+                CharAvailable = GetChar(pStream, &LastChar);
+                RightPos.m_Column++;
+                }
+#if (0)
+            while (CharAvailable && (iswdigit(LastChar) || (LastChar == L'.')))
+                {
+                ReadToken.append(1, LastChar);
+                CharAvailable = GetChar(pStream, &LastChar);
+                RightPos.m_Column++;
+                }
+#endif
+            if (CharAvailable)
+                {
+                PushChar(LastChar);
+                RightPos.m_Column--;
+                }
+            pFoundToken = m_pNumberToken;
+            }
+
+        // Extracting an alphanumeric symbol
+
+        else if (iswalpha(LastChar) || (LastChar == L'_'))
+            {
+            while (CharAvailable && (iswalnum(LastChar) || (LastChar == L'_')))
+                {
+                ReadToken.append(1, LastChar);
+                UppercaseToken.append(1, towupper(LastChar));
+                CharAvailable = GetChar(pStream, &LastChar);
+                RightPos.m_Column++;
+                }
+            if (CharAvailable)
+                {
+                PushChar(LastChar);
+                RightPos.m_Column--;
+                }
+
+            SymbolTable::iterator itr;
+            if (m_IsCaseSensitive)
+                itr = m_SymbolTable.find(ReadToken);
+            else
+                itr = m_SymbolTable.find(UppercaseToken);
+            if (itr != m_SymbolTable.end())
+                pFoundToken = (*itr).second;
+            else
+                pFoundToken = m_pIdentifierToken;
+            }
+
+        // Extracting a string
+
+        else if (LastChar == L'"')
+            {
+            do
+                {
+                CharAvailable = GetChar(pStream, &LastChar);
+                if (LastChar == L'"')
+                    break;
+                else
+                    ReadToken.append(1, LastChar);
+                RightPos.m_Column++;
+                }
+            while (CharAvailable);
+            pFoundToken = m_pStringToken;
+            }
+
+        // Skipping a comment and getting next token
+
+        else if (LastChar == m_CommentMarker)
+            {
+            while (CharAvailable && (LastChar != L'\n'))
+                CharAvailable = GetChar(pStream, &LastChar);
+            LeftPos.m_Line++;
+            LeftPos.m_Column = 1;
+            m_StreamInfoStack.front() = LeftPos;
+            return GetToken();
+            // no need to handle RightPos, we have returned.
+            }
+
+        // Otherwise : extracting a non-alphanumeric symbol
+
+        else {
+            ReadToken.append(1, LastChar);
+            SymbolTable::iterator itr;
+            itr = m_SymbolTable.find(ReadToken);
+            if (itr != m_SymbolTable.end())
+                pFoundToken = (*itr).second;
+            else
+                {
+                if (m_pErrorToken)
+                    pFoundToken = m_pErrorToken;
+                else
+                    {
+                    HFCPtr<HPANode> pExceptionNode(new HPANode(0, LeftPos, RightPos, m_pSession));
+                    throw HPAException(HPA_NO_TOKEN_EXCEPTION, pExceptionNode);
+                    }
+                }
+            }
+
+        // Updating position info
+
+        m_StreamInfoStack.front() = RightPos;
+
+        // Making the node with found token.
+
+        if (pFoundToken)
+            {
+            pNode = MakeNode(pFoundToken, ReadToken, LeftPos, RightPos, m_pSession);
+            }
+        }
+
+    // If EOF occurred, look at the stream-stack :  maybe we were scanning
+    // an included file, so we should get back to previously scanned file.
+
+    else {
+        if (m_StreamRefStack.size() > 1)
+            {
+            delete m_StreamRefStack.front();
+            m_StreamRefStack.pop_front();
+            m_StreamInfoStack.pop_front();
+            pNode = GetToken();
+            }
+        }
+    return pNode;
+    }
+
+
+//---------------------------------------------------------------------------
+//--END FLOAT-ENABLED TOKENIZER----------------------------------------------
+//---------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPADefaultTokenizer::HPADefaultTokenizer(bool pi_IsCaseSensitive)
+    : m_IsCaseSensitive(pi_IsCaseSensitive)
+    {
+    m_CommentMarker = 0;
+    m_CurrentLine = 1;
+    m_pNumberToken = 0;
+    m_pStringToken = 0;
+    m_pIdentifierToken = 0;
+    m_pErrorToken = 0;
+    m_CurrentLine = 0;
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPADefaultTokenizer::~HPADefaultTokenizer()
+    {
+    // Nothing to do!
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+inline bool HPADefaultTokenizer::GetChar(HFCBinStream* pi_pStream,
+                                          WChar* po_pChar)
+    {
+    if (m_PushedChars.size())
+        {
+        *po_pChar = m_PushedChars.front();
+        m_PushedChars.pop_front();
+        return true;
+        }
+    else
+        {
+        return pi_pStream->Read(po_pChar, 1) == 1;
+        }
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+inline void HPADefaultTokenizer::PushChar(WChar pi_Char)
+    {
+    m_PushedChars.push_front(pi_Char);
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPANode* HPADefaultTokenizer::GetToken()
+    {
+    if (!m_StreamRefStack.size())
+        return 0;
+
+    HFCBinStream* pStream = m_StreamRefStack.front();
+
+    // Checks first char : if numeric, we have a number, if alpha, we have
+    // an ident of a symbol, other : we have a symbol.
+
+    HPANode* pNode = 0;
+    WString ReadToken;
+    WString UppercaseToken;
+    HPAToken* pFoundToken = 0;
+    WChar LastChar;
+    bool CharAvailable = GetChar(pStream, &LastChar);
+    if (CharAvailable)
+        {
+        HPASourcePos LeftPos = m_StreamInfoStack.front();
+        LeftPos.m_Column++;
+
+        // Skipping whitespace, counting lines
+
+        while (CharAvailable && (iswspace(LastChar) || iswcntrl(LastChar)))
+            {
+            if (LastChar == L'\n')
+                {
+                LeftPos.m_Line++;
+                LeftPos.m_Column = 1;
+                }
+            CharAvailable = GetChar(pStream, &LastChar);
+            LeftPos.m_Column++;
+            }
+
+        if (!CharAvailable)
+            return 0;
+
+        HPASourcePos RightPos = LeftPos;
+
+        // Extracting a number
+
+        if (iswdigit(LastChar))
+            {
+            while (CharAvailable && (iswdigit(LastChar) || (LastChar == L'.')))
+                {
+                ReadToken.append(1, LastChar);
+                CharAvailable = GetChar(pStream, &LastChar);
+                RightPos.m_Column++;
+                }
+            if (CharAvailable)
+                {
+                PushChar(LastChar);
+                RightPos.m_Column--;
+                }
+            pFoundToken = m_pNumberToken;
+            }
+
+        // Extracting an alphanumeric symbol
+
+        else if (iswalpha(LastChar) || (LastChar == L'_'))
+            {
+            while (CharAvailable && (iswalnum(LastChar) || (LastChar == L'_')))
+                {
+                ReadToken.append(1, LastChar);
+                UppercaseToken.append(1, towupper(LastChar));
+                CharAvailable = GetChar(pStream, &LastChar);
+                RightPos.m_Column++;
+                }
+            if (CharAvailable)
+                {
+                PushChar(LastChar);
+                RightPos.m_Column--;
+                }
+
+            SymbolTable::iterator itr;
+            if (m_IsCaseSensitive)
+                itr = m_SymbolTable.find(ReadToken);
+            else
+                itr = m_SymbolTable.find(UppercaseToken);
+            if (itr != m_SymbolTable.end())
+                pFoundToken = (*itr).second;
+            else
+                pFoundToken = m_pIdentifierToken;
+            }
+
+        // Extracting a string
+
+        else if (LastChar == L'"')
+            {
+            do
+                {
+                CharAvailable = GetChar(pStream, &LastChar);
+                if (LastChar == L'"')
+                    break;
+                else
+                    ReadToken.append(1, LastChar);
+                RightPos.m_Column++;
+                }
+            while (CharAvailable);
+            pFoundToken = m_pStringToken;
+            }
+
+        // Skipping a comment and getting next token
+
+        else if (LastChar == m_CommentMarker)
+            {
+            while (CharAvailable && (LastChar != L'\n'))
+                CharAvailable = GetChar(pStream, &LastChar);
+            LeftPos.m_Line++;
+            LeftPos.m_Column = 1;
+            m_StreamInfoStack.front() = LeftPos;
+            return GetToken();
+            // no need to handle RightPos, we have returned.
+            }
+
+        // Otherwise : extracting a non-alphanumeric symbol
+
+        else {
+            ReadToken.append(1, LastChar);
+            SymbolTable::iterator itr;
+            itr = m_SymbolTable.find(ReadToken);
+            if (itr != m_SymbolTable.end())
+                pFoundToken = (*itr).second;
+            else
+                {
+                if (m_pErrorToken)
+                    pFoundToken = m_pErrorToken;
+                else
+                    {
+                    HFCPtr<HPANode> pExceptionNode(new HPANode(0, LeftPos, RightPos, m_pSession));
+                    throw HPAException(HPA_NO_TOKEN_EXCEPTION, pExceptionNode);
+                    }
+                }
+            }
+
+        // Updating position info
+
+        m_StreamInfoStack.front() = RightPos;
+
+        // Making the node with found token.
+
+        if (pFoundToken)
+            {
+            pNode = MakeNode(pFoundToken, ReadToken, LeftPos, RightPos, m_pSession);
+            }
+        }
+
+    // If EOF occurred, look at the stream-stack :  maybe we were scanning
+    // an included file, so we should get back to previously scanned file.
+
+    else {
+        if (m_StreamRefStack.size() > 1)
+            {
+            delete m_StreamRefStack.front();
+            m_StreamRefStack.pop_front();
+            m_StreamInfoStack.pop_front();
+            pNode = GetToken();
+            }
+        }
+    return pNode;
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+HPANode* HPADefaultTokenizer::MakeNode(HPAToken* pi_pToken, const WString& pi_rText,
+                                       const HPASourcePos& pi_rLeft,
+                                       const HPASourcePos& pi_rRight,
+                                       HPASession* pi_pSession)
+    {
+    HPANode* pNode;
+    if (pi_pToken == m_pNumberToken)
+        {
+        WChar* pDummy;
+        pNode = new HPANumberTokenNode(pi_pToken, pi_rText,
+                                       pi_rLeft, pi_rRight,
+                                       pi_pSession,
+                                       wcstod(pi_rText.c_str(), &pDummy));
+        }
+    else
+        pNode = new HPATokenNode(pi_pToken, pi_rText,
+                                 pi_rLeft, pi_rRight,
+                                 pi_pSession);
+    return pNode;
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+void HPADefaultTokenizer::BeginSession(HFCBinStream* pi_pStream,
+                                       HPASession* pi_pSession)
+    {
+    m_pSession = pi_pSession;
+    m_BackupTable = m_SymbolTable;
+    Include(pi_pStream);
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+void HPADefaultTokenizer::EndSession()
+    {
+    m_SymbolTable = m_BackupTable;
+    m_StreamRefStack.clear();
+    m_PushedChars.clear();
+    m_CurrentLine = 1;
+    m_pSession = 0;
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+bool HPADefaultTokenizer::Include(HFCBinStream* pi_pStream)
+    {
+    HPRECONDITION(pi_pStream != 0);
+    StreamRefStack::iterator itr(m_StreamRefStack.begin());
+    while (itr != m_StreamRefStack.end())
+        {
+        if ((*itr)->GetURL()->GetURL() == pi_pStream->GetURL()->GetURL())
+            return false;
+        ++itr;
+        }
+    m_StreamRefStack.push_front(pi_pStream);
+    HPASourcePos NewPos;
+    NewPos.m_pURL = pi_pStream->GetURL();
+    NewPos.m_Line = 1;
+    NewPos.m_Column = 1;
+    m_StreamInfoStack.push_front(NewPos);
+    return true;
+    }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+void HPADefaultTokenizer::AddSymbol(const WString& pi_rString, HPAToken& pi_rToken)
+    {
+    WString SymbolText = pi_rString;
+    if (m_IsCaseSensitive)
+        CaseInsensitiveStringTools().ToUpper(SymbolText);
+
+    m_SymbolTable.insert(SymbolTable::value_type(SymbolText, &pi_rToken));
+    pi_rToken.SetName(L"Token : " + pi_rString);
+    }
+
+
+

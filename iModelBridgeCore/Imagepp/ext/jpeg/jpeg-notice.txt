@@ -1,0 +1,2 @@
+Certain Portions based in part on the work of the Independent JPEG Group (c) 1991-2012, 
+Thomas G. Lane, Guido Vollbeding. All Rights Reserved. 

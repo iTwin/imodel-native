@@ -1,0 +1,181 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: Abbreviations.txt $
+//:>
+//:>  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+// Complete abbreviations listing
+//-----------------------------------------------------------------------------
+
+ABBREV.     MEANING
+
+CD          Codec
+
+Coord       Coordinate
+
+CP          Coordinate Projection
+
+CS          Connection System/Server
+
+Dst         Destination
+
+Ext         External
+
+FC          Foundation Classes
+
+FPX         Flash Pix (File Format)
+
+FS          File System
+
+Geo         Geographic
+
+GF          Graphic Foundations
+
+Gra         Graphic
+
+GS          Graphic Surface
+
+H           HMR
+
+IDX         Index
+
+IM          Image
+
+Impl        Implementation
+
+Lib         Library
+
+LM          Logs Manager
+
+Max         Maximum
+
+Min         Minimum
+
+MD          Meta Data
+
+MG          Message
+
+Net         Network
+
+PA          Parser
+
+Pos         Position
+
+PM          Persistence Model
+
+PS          Picture Script
+
+PU          Packet utils
+
+RA          Raster (Foundations)
+
+RF          Raster Files
+
+RP          Raster Pixel
+
+RS          Raster Store
+
+RSC         Ressources
+
+RU          Raster Utils
+
+SLO         Scan Line Orientation
+
+Src         Source
+
+UT          Utils
+
+Utl         Utils
+
+VE          Vector
+
+W           WinLibs
+
+Win         Windows
+
+
+//-----------------------------------------------------------------------------
+// Abbreviations listing for GraLibs modules
+//-----------------------------------------------------------------------------
+
+ABBREV.     MEANING                                 DETAILLED DESCRIPTION
+
+HCP         See H and CD                            ?
+
+HGF         See H and GF                            Graphic foundation library. All major graphic concepts are defined there.
+
+HGS         See H and GS                            Library containing implementation of graphic surfaces used to draw upon.
+
+HIM         See H and IM                            Imagery library. Contains implementation concerning high-level image
+                                                    concepts such as mosaics, virtual images, etc.
+
+HPS         See H and PS                            Module for the support of picture scripts. Contains a complete parser
+                                                    that could be specialized for other purposes if need be.
+
+HRA         See H and RA                            Raster foundation implementations.
+
+HRF         See H and RF                            Raster File. Contains raster file definition as well as all specific format
+                                                    implementations for simple formats.
+
+HRP         See H and RP                            Raster pixels and filtering mechanisms definitions.
+
+HRS         See H and RS                            ?
+
+HRU         See H and RU                            ?
+
+HUT         See H and UT                            ?
+
+HVE         See H and VE                            Vector definition including shape oriented operations.
+
+
+
+
+//-----------------------------------------------------------------------------
+// Abbreviations listing for UtlLibs modules
+//-----------------------------------------------------------------------------
+
+ABBREV.     MEANING                                 DETAILLED DESCRIPTION
+
+HCD         See H and CD                            ?
+
+HFC         See H and FC                            ?
+
+HFS         See H and FS                            ?
+
+HIDX        See H and IDX                           ?
+
+HLM         See H and LM                            ?
+
+HMD         See H and MD                            ?
+
+HMG         See H and MG                            ?
+
+HPA         See H and PA                            ?
+
+HPM         See H and PM                            ?
+
+HPU         See H and PU                            ?
+
+//-----------------------------------------------------------------------------
+// Abbreviations listing for WinLibs modules
+//-----------------------------------------------------------------------------
+
+ABBREV.     MEANING                                 DETAILLED DESCRIPTION
+
+HFPX        See H and FPX                           ?
+
+WHCS        See W, H and CS                         ?
+
+WHDB        See W, H and DB                         ?
+
+WHFC        See W, H and FC                         ?
+
+WHFS        See W, H and FS                         ?
+
+WHGS        See W, H and GS                         ?
+
+WHRF        See W, H and RF                         ?

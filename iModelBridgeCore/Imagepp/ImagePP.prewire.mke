@@ -1,0 +1,37 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: ImagePP.prewire.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(_MakeFilePath)mki/AssertImagePPPolicy.mki 
+
+%include mdl.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(ippOutPrivateLibs)
+     ~@mkdir $(ippOutPrivateApi)
+     
+PublicApiDir    = $(OutBuildContexts)ImagePP/PublicAPI/
+srcDir          = $(_MakeFilePath)
+
+# Wire in my own public header files.
+always:
+   @CreateSymLinks.py -d"$(PublicApiDir)ImagePP=$(srcDir)PublicAPI\ImagePP"
+
+ippExternalLibDir   = $(SrcImagepp)ext/
+
+# Wire in header files of private libs.
+always:
+   @CreateSymLinks.py   -m"$(ippOutPrivateApi)ImagePPInternal/ext/Base64=$(ippExternalLibDir)Base64/h/base64.h" \
+                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h" \
+                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/gcore/*.h" \
+                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/port/*.h" \
+                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/port/cpl_config.h.vc" \
+                        -m"$(ippOutPrivateApi)ImagePPInternal/ext/gdal=$(ippExternalLibDir)gdal/ogr/*.h"
+
+

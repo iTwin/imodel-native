@@ -1,0 +1,25 @@
+/*mh================================================================== HMR
+**
+**  hbasemod.hi
+**
+**      This file declares the private definitions for the TileProcess
+**      class.
+**
+**========================================================================*/
+/*----------------------------------------------------------------------+
+|                                                                       |
+|       $Source: ext/MatrixFromTiePts/src/hbasemod.hi $
+|                                                                       |
++----------------------------------------------------------------------*/
+
+#ifndef __HBASEMOD_HI__
+#define __HBASEMOD_HI__
+
+typedef struct tagHBasicModelerAttr
+{
+        pMAT_   m_pMatrix;
+
+} HBasicModelerAttr;
+
+
+#endif /* __HBASEMOD_HI__ */

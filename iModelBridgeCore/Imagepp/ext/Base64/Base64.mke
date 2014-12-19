@@ -1,0 +1,40 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ext/Base64/Base64.mke $
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile=$(_MakeFilePath)../AssertIppExtLibsPolicy.mki
+
+appName = Base64
+
+%include mdl.mki
+
+Base64Dir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+$(o)base64$(oext) : $(Base64Dir)src/base64.cpp $(Base64Dir)h/base64.h
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+LIB_NAME    = $(appName)
+LIB_DEST    = $(o)
+LIB_OBJS    = $(o)base64$(oext)
+
+%include creatlib.mki
+

@@ -1,0 +1,17 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: all/gra/hrf/src/HRFGeoTiffUnitsTable.tbl $
+//:>
+//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+//:> This file containt the definition of the table data
+
+Byte   HRFGeoTiffUnitsTable::s_NbColumns = 6;
+unsigned short HRFGeoTiffUnitsTable::s_RecordSize = 216;
+HRFGeoTiffCompressedTable::ColumnInfo   HRFGeoTiffUnitsTable::s_TableDef[] = { HRFGeoTiffCompressedTable::ColumnInfo(0,  6,  "Code"),
+                                                                                                                                                           HRFGeoTiffCompressedTable::ColumnInfo(6,      80, "EPSG Name"),
+                                                                                                                                                           HRFGeoTiffCompressedTable::ColumnInfo(86, 80, "EPSG Abbr"),
+                                                                                                                                                           HRFGeoTiffCompressedTable::ColumnInfo(166, 6,  "Target Unit Code"),
+                                                                                                                                                           HRFGeoTiffCompressedTable::ColumnInfo(172, 22, "Factor B"),
+                                                                                                                                                           HRFGeoTiffCompressedTable::ColumnInfo(194, 22, "Factor C")};

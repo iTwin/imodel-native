@@ -1,0 +1,14 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: all/gra/hrf/src/HRFGeoTiffProjectionTable.tbl $
+//:>
+//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+//:> This file containt the definition of the table data
+
+Byte    HRFGeoTiffProjectionTable::s_NbColumns = 2;
+unsigned short HRFGeoTiffProjectionTable::s_RecordSize = 12;
+
+HRFGeoTiffCompressedTable::ColumnInfo   HRFGeoTiffProjectionTable::s_TableDef[] = { HRFGeoTiffCompressedTable::ColumnInfo(0,  6,  "Code"),
+                                                                                    HRFGeoTiffCompressedTable::ColumnInfo(6,  6,  "Units Code")};

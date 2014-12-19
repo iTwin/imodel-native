@@ -1,0 +1,72 @@
+#--------------------------------------------------------------------------------------
+#
+#    $RCSfile: ImagePPPolicy.mki,v $
+#   $Revision: 1.8 $
+#       $Date: 2009/03/20 18:17:50 $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+BUILD_NO_STACK_CHECK = 1
+DLMLINK_WARNINGS_AS_ERRORS=1
+
+%include $(SrcImagepp)mki/imageppdirs.mki
+
+#----------------------------------------------------------
+# Compile and link settings
+#----------------------------------------------------------
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+
+PublicApiIncludes + -I$(ippOutPrivateApi)
+
+# All warnings on
+WARNINGS_UP=1
+
+#----------------------------------------------------------
+# Common Preprocessor definition.
+#----------------------------------------------------------
+%if defined(IMAGEPP_DLLMODE)
+    nameToDefine=_HDLL_SUPPORT
+    %include cdefapnd.mki
+%endif
+
+# ** We don't want to be calling upon any functionality that is available only post Windows XP **
+# ** These will be passed through as #defines to the compiler by winntmdl.mki **
+_WIN32_WINNT=0x0502 #Windows Server 2003 with SP1, Windows XP with SP2. required for SetDllDirectory
+MSB-_WIN32_WINNT=$(_WIN32_WINNT)
+WINVER=0x0502
+MSB-WINVER=$(WINVER)
+_WIN32_IE=0x0501
+MSB-_WIN32_IE=$(_WIN32_IE)
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
+
+# creatlib.mki common options
+LIB_TMP_DIR = $(o)
+
+# Common library names for linking.  Originally macro-ized when they had numbers in the name of the LIB
+IppGraLibsLib       = $(ContextSubpartsLibs)IppGraLibs$(libext)
+IppNetLibsLib       = $(ContextSubpartsLibs)IppNetLibs$(libext)
+IppUtlLibsLib       = $(ContextSubpartsLibs)IppUtlLibs$(libext)
+IppWinLibsLib       = $(ContextSubpartsLibs)IppWinLibs$(libext)
+
+BeLibJpegTurbo      = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
+IppJpegLib12Bits    = $(ippOutPrivateLibs)$(libprefix)IppJpeg12Bits$(stlibext)
+
+PdfLibInitializer              = $(libprefix)PdfLibInitializer$(libext)
+PdfLibInitializerExportLib     = $(ContextSubpartsLibs)$(PdfLibInitializer)
+BaseGeocoordLib                = $(libprefix)basegeocoord$(libext)
+BaseGeocoordLibExportLib       = $(ContextSubpartsLibs)$(BaseGeocoordLib)
+BeSQLiteLib                    = $(libprefix)BeSQLite$(libext)
+
+OCIName             = Oci

@@ -1,0 +1,17 @@
+//:>--------------------------------------------------------------------------------------+
+//:>
+//:>     $Source: all/gra/hrf/src/HRFGeoTiffCoordSysTable.tbl $
+//:>
+//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>
+//:>+--------------------------------------------------------------------------------------
+//:> This file containt the definition of the table data
+
+Byte   HRFGeoTiffCoordSysTable::s_NbColumns = 5;
+unsigned short HRFGeoTiffCoordSysTable::s_RecordSize = 104;
+
+HRFGeoTiffCompressedTable::ColumnInfo   HRFGeoTiffCoordSysTable::s_TableDef[] = { HRFGeoTiffCompressedTable::ColumnInfo(0,       6,  "Code"),
+                                                                                                                                                                  HRFGeoTiffCompressedTable::ColumnInfo(6,       6,  "TransfoModel Code"),
+                                                                                                                                                                  HRFGeoTiffCompressedTable::ColumnInfo(12,  6,  "Units Code"),
+                                                                                  HRFGeoTiffCompressedTable::ColumnInfo(18,  6,  "Source CS Code"),
+                                                                                  HRFGeoTiffCompressedTable::ColumnInfo(24,  80, "HorizCS - EPSG Name")};

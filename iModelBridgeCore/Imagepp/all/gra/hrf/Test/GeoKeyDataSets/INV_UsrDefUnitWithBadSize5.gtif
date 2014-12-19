@@ -1,0 +1,23 @@
+Geotiff_Information:
+ Version: 1
+ Key_Revision: 1.0
+ Tagged_Information:
+  ModelTransformationTag (4,4):
+        -1.005448        -2.139216         0.000000     330136.194543
+         2.139216        -1.005448         0.000000   -4692672.185011
+         0.000000         0.000000         1.000000          0.000000
+         0.000000         0.000000         0.000000          1.000000
+ End_Of_Tags.
+ Keyed_Information:
+    GTModelTypeGeoKey                 (Short,1): ModelTypeProjected
+    GTRasterTypeGeoKey                (Short,1): RasterPixelIsArea
+    ProjectedCSTypeGeoKey             (Short,1): 32611
+    GTCitationGeoKey                  (Ascii,13): "GT  citation"
+    GeogCitationGeoKey                (Ascii,13): "GEO citation"
+    PCSCitationGeoKey                 (Ascii,13): "PCS citation"
+    GeogLinearUnitsGeoKey             (Short,1): 32767
+    GeogLinearUnitSizeGeoKey          (Double,1): 0.0
+ End_Of_Keys.
+End_Of_Geotiff.
+
+

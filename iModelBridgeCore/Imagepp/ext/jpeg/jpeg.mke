@@ -1,0 +1,179 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ext/jpeg/jpeg.mke $
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile=$(_MakeFilePath)../AssertIppExtLibsPolicy.mki
+
+%if defined(JPEGLIB_SUPPORT_12BITS)
+    appName = IppJpeg12Bits
+%else
+    appName = IppJpegLib
+%endif
+
+%include mdl.mki
+
+jpegSrcDir = $(_MakeFilePath)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+%if defined(JPEGLIB_SUPPORT_12BITS)
+    nameToDefine=JPEGLIB_SUPPORT_12BITS
+    %include cdefapnd.mki
+%endif
+
+#----------------------------------------------------------
+#       Compiler options
+#----------------------------------------------------------   
+# Disable some warnings in this external lib, we do not want to modify it.
+CCompOpts+-wd4267
+    
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)jcapimin$(oext) : $(jpegSrcDir)jcapimin.c ${MultiCompileDepends}
+
+$(o)jcapistd$(oext) : $(jpegSrcDir)jcapistd.c ${MultiCompileDepends}
+
+$(o)jccoefct$(oext) : $(jpegSrcDir)jccoefct.c ${MultiCompileDepends}
+
+$(o)jccolor$(oext) : $(jpegSrcDir)jccolor.c ${MultiCompileDepends}
+
+$(o)jcdctmgr$(oext) : $(jpegSrcDir)jcdctmgr.c ${MultiCompileDepends}
+
+$(o)jchuff$(oext) : $(jpegSrcDir)jchuff.c ${MultiCompileDepends}
+
+$(o)jcinit$(oext) : $(jpegSrcDir)jcinit.c ${MultiCompileDepends}
+
+$(o)jcmainct$(oext) : $(jpegSrcDir)jcmainct.c ${MultiCompileDepends}
+
+$(o)jcmarker$(oext) : $(jpegSrcDir)jcmarker.c ${MultiCompileDepends}
+
+$(o)jcmaster$(oext) : $(jpegSrcDir)jcmaster.c ${MultiCompileDepends}
+
+$(o)jcomapi$(oext) : $(jpegSrcDir)jcomapi.c ${MultiCompileDepends}
+
+$(o)jcparam$(oext) : $(jpegSrcDir)jcparam.c ${MultiCompileDepends}
+
+$(o)jcprepct$(oext) : $(jpegSrcDir)jcprepct.c ${MultiCompileDepends}
+
+$(o)jcsample$(oext) : $(jpegSrcDir)jcsample.c ${MultiCompileDepends}
+
+$(o)jctrans$(oext) : $(jpegSrcDir)jctrans.c ${MultiCompileDepends}
+
+$(o)jdapimin$(oext) : $(jpegSrcDir)jdapimin.c ${MultiCompileDepends}
+
+$(o)jdapistd$(oext) : $(jpegSrcDir)jdapistd.c ${MultiCompileDepends}
+
+$(o)jdatadst$(oext) : $(jpegSrcDir)jdatadst.c ${MultiCompileDepends}
+
+$(o)jdatasrc$(oext) : $(jpegSrcDir)jdatasrc.c ${MultiCompileDepends}
+
+$(o)jdcoefct$(oext) : $(jpegSrcDir)jdcoefct.c ${MultiCompileDepends}
+
+$(o)jdcolor$(oext) : $(jpegSrcDir)jdcolor.c ${MultiCompileDepends}
+
+$(o)jddctmgr$(oext) : $(jpegSrcDir)jddctmgr.c ${MultiCompileDepends}
+
+$(o)jdhuff$(oext) : $(jpegSrcDir)jdhuff.c ${MultiCompileDepends}
+
+$(o)jdinput$(oext) : $(jpegSrcDir)jdinput.c ${MultiCompileDepends}
+
+$(o)jdmainct$(oext) : $(jpegSrcDir)jdmainct.c ${MultiCompileDepends}
+
+$(o)jdmarker$(oext) : $(jpegSrcDir)jdmarker.c ${MultiCompileDepends}
+
+$(o)jdmaster$(oext) : $(jpegSrcDir)jdmaster.c ${MultiCompileDepends}
+
+$(o)jdmerge$(oext) : $(jpegSrcDir)jdmerge.c ${MultiCompileDepends}
+
+$(o)jdpostct$(oext) : $(jpegSrcDir)jdpostct.c ${MultiCompileDepends}
+
+$(o)jdsample$(oext) : $(jpegSrcDir)jdsample.c ${MultiCompileDepends}
+
+$(o)jdtrans$(oext) : $(jpegSrcDir)jdtrans.c ${MultiCompileDepends}
+
+$(o)jerror$(oext) : $(jpegSrcDir)jerror.c ${MultiCompileDepends}
+
+$(o)jfdctflt$(oext) : $(jpegSrcDir)jfdctflt.c ${MultiCompileDepends}
+
+$(o)jfdctfst$(oext) : $(jpegSrcDir)jfdctfst.c ${MultiCompileDepends}
+
+$(o)jfdctint$(oext) : $(jpegSrcDir)jfdctint.c ${MultiCompileDepends}
+
+$(o)jidctflt$(oext) : $(jpegSrcDir)jidctflt.c ${MultiCompileDepends}
+
+$(o)jidctfst$(oext) : $(jpegSrcDir)jidctfst.c ${MultiCompileDepends}
+
+$(o)jidctint$(oext) : $(jpegSrcDir)jidctint.c ${MultiCompileDepends}
+
+$(o)jmemnobs$(oext) : $(jpegSrcDir)jmemnobs.c ${MultiCompileDepends}
+
+$(o)jmemmgr$(oext) : $(jpegSrcDir)jmemmgr.c ${MultiCompileDepends}
+
+$(o)jquant1$(oext) : $(jpegSrcDir)jquant1.c ${MultiCompileDepends}
+
+$(o)jquant2$(oext) : $(jpegSrcDir)jquant2.c ${MultiCompileDepends}
+
+$(o)jutils$(oext) : $(jpegSrcDir)jutils.c ${MultiCompileDepends}
+
+$(o)jcarith$(oext) : $(jpegSrcDir)jcarith.c ${MultiCompileDepends}
+
+$(o)jaricom$(oext) : $(jpegSrcDir)jaricom.c ${MultiCompileDepends}
+
+$(o)jdarith$(oext) : $(jpegSrcDir)jdarith.c ${MultiCompileDepends}
+
+$(o)transupp$(oext) : $(jpegSrcDir)transupp.c ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+LIB_NAME  = $(appName)
+LIB_DEST  = $(o)
+LIB_OBJS  = $(MultiCompileObjectList)
+
+%if !defined(JPEGLIB_SUPPORT_12BITS)
+    LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+%endif
+
+%include creatlib.mki
+
+%if !defined(JPEGLIB_SUPPORT_12BITS)
+CreateBuildContext:
+    CreateSymLinks.py -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jpeglib.h" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.h" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jmorecfg.h" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.vc" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jconfig.dj" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)jerror.h" \
+                      -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-jpeglib=$(jpegSrcDir)transupp.h"
+
+$(BuildContext)Delivery/jpeg-notice.txt : $(jpegSrcDir)jpeg-notice.txt
+    $(LinkFirstDepToFirstTarget)
+
+%endif

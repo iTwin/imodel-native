@@ -1,0 +1,37 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: ext/gdal/GdalData.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+PolicyFile = $(_MakeFilePath)../../mki/AssertImagePPPolicy.mki 
+
+#----------------------------------------------------------------
+#
+# Make file for CS_MAP GeoCoordinate Data that must be shipped with the GeoCoord libraries.
+#
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+#   Define standard macros.
+#----------------------------------------------------------------------
+%include mdl.mki
+
+GdalData = $(OutBuildContexts)ImagePP/Delivery/GdalData/
+
+#----------------------------------------------------------------------
+#   We link the Imagepp Gdal data subdirectories to our output directory
+#----------------------------------------------------------------------
+gdDataDir    = $(baseDir)data/
+
+#----------------------------------------------------------------------
+#   Create output directories.
+#----------------------------------------------------------------------
+always:
+    ~@mkdir $(GdalData)
+
+always:
+    CreateSymLinks.py   -m"$(GdalData)=$(gdDataDir)*.*"
+    
+

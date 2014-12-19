@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: hgpush.txt $
+#
+#  $Copyright: (c) 2008 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# This file is used by firebug for pushing to gold repositories and for blame.
+# Format is:
+#   server/repository:local directory name
+
+PB:imagepp-hg:gold-imagepp:imagepp
+ B:util-hg:gold-bsicommon:bsicommon

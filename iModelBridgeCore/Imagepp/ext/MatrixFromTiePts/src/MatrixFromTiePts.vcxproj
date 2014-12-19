@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="CurrentEnv|Win32">
+      <Configuration>CurrentEnv</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="CurrentEnv|x64">
+      <Configuration>CurrentEnv</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(IMAGEPPOUTPUT)\$(Configuration)_$(Platform)\obj\ext\lib\</OutDir>
+    <IntDir>$(IMAGEPPOUTPUT)\$(Configuration)_$(Platform)\obj\ext\MatrixFromTiePts\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(IMAGEPPOUTPUT)\$(Configuration)_$(Platform)\obj\ext\lib\</OutDir>
+    <IntDir>$(IMAGEPPOUTPUT)\$(Configuration)_$(Platform)\obj\ext\MatrixFromTiePts\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions>$(RASTER_OPTCMP_DBG) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\..\..\PublicApi</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <ProgramDataBaseFileName>$(OutDir)/ExtLibs.pdb</ProgramDataBaseFileName>
+      <CompileAs>CompileAsC</CompileAs>
+      <StringPooling>true</StringPooling>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <UseUnicodeForAssemblerListing>false</UseUnicodeForAssemblerListing>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <BuildLog>
+      <Path>$(IntDir)\$(ProjectName).log</Path>
+    </BuildLog>
+    <Lib>
+      <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
+      <AdditionalOptions>$(RASTER_OPTLIB) %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+    <Xdcmake>
+      <DocumentLibraryDependencies>true</DocumentLibraryDependencies>
+    </Xdcmake>
+    <Bscmake>
+      <OutputFile>$(OutDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions>$(RASTER_OPTCMP_DBG) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\..\..\PublicApi</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <ProgramDataBaseFileName>$(OutDir)/ExtLibs.pdb</ProgramDataBaseFileName>
+      <CompileAs>CompileAsC</CompileAs>
+      <StringPooling>true</StringPooling>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+      <UseUnicodeForAssemblerListing>false</UseUnicodeForAssemblerListing>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <BuildLog>
+      <Path>$(IntDir)\$(ProjectName).log</Path>
+    </BuildLog>
+    <Lib>
+      <UseUnicodeResponseFiles>true</UseUnicodeResponseFiles>
+      <AdditionalOptions>$(RASTER_OPTLIB) %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+    <Xdcmake>
+      <DocumentLibraryDependencies>true</DocumentLibraryDependencies>
+    </Xdcmake>
+    <Bscmake>
+      <OutputFile>$(OutDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="afficoef.c" />
+    <ClCompile Include="affitran.c" />
+    <ClCompile Include="alist.c" />
+    <ClCompile Include="geom3d.c" />
+    <ClCompile Include="hbasemod.c" />
+    <ClCompile Include="hcnvrtif.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|Win32'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'">CompileAsCpp</CompileAs>
+    </ClCompile>
+    <ClCompile Include="helmcoef.c" />
+    <ClCompile Include="helmtran.c" />
+    <ClCompile Include="libgeom.c" />
+    <ClCompile Include="list.c" />
+    <ClCompile Include="matcoef.c" />
+    <ClCompile Include="matrix.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="MatrixFromTiePts.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|Win32'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='CurrentEnv|x64'">CompileAsCpp</CompileAs>
+    </ClCompile>
+    <ClCompile Include="mattran.c" />
+    <ClCompile Include="polycoef.c" />
+    <ClCompile Include="polytran.c" />
+    <ClCompile Include="projcoef.c" />
+    <ClCompile Include="projtran.c" />
+    <ClCompile Include="server.c" />
+    <ClCompile Include="simicoef.c" />
+    <ClCompile Include="simitran.c" />
+    <ClCompile Include="tpscoef.c" />
+    <ClCompile Include="tpstran.c" />
+    <ClCompile Include="trancoef.c" />
+    <ClCompile Include="trantran.c" />
+    <ClCompile Include="trfutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\h\MatrixFromTiePts.h" />
+    <ClInclude Include="alist.h" />
+    <ClInclude Include="hbasemod.h" />
+    <ClInclude Include="hcnvrtif.h" />
+    <ClInclude Include="hlist.h" />
+    <ClInclude Include="libgeom.h" />
+    <ClInclude Include="matrix.h" />
+    <ClInclude Include="oldhmrerror.h" />
+    <ClInclude Include="oldhmrmacro.h" />
+    <ClInclude Include="oldhmrtypes.h" />
+    <ClInclude Include="oldhtypes.h" />
+    <ClInclude Include="trfmodel.h" />
+    <ClInclude Include="trfmoids.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

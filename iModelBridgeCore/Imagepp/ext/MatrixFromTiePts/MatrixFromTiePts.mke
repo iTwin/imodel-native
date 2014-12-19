@@ -1,0 +1,101 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ext/MatrixFromTiePts/MatrixFromTiePts.mke $
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile=$(_MakeFilePath)../AssertIppExtLibsPolicy.mki
+
+appName = MatrixFromTiePts
+
+%include mdl.mki
+
+
+MatrixFromTiePtsSrc = $(_MakeFilePath)src/
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+    
+$(o)afficoef$(oext) : $(MatrixFromTiePtsSrc)afficoef.c ${MultiCompileDepends}
+
+$(o)affitran$(oext) : $(MatrixFromTiePtsSrc)affitran.c ${MultiCompileDepends}
+
+$(o)alist$(oext) : $(MatrixFromTiePtsSrc)alist.c ${MultiCompileDepends}
+
+$(o)geom3d$(oext) : $(MatrixFromTiePtsSrc)geom3d.c ${MultiCompileDepends}
+
+$(o)hbasemod$(oext) : $(MatrixFromTiePtsSrc)hbasemod.c ${MultiCompileDepends}
+
+$(o)hcnvrtif$(oext) : $(MatrixFromTiePtsSrc)hcnvrtif.cpp ${MultiCompileDepends}
+
+$(o)helmcoef$(oext) : $(MatrixFromTiePtsSrc)helmcoef.c ${MultiCompileDepends}
+
+$(o)helmtran$(oext) : $(MatrixFromTiePtsSrc)helmtran.c ${MultiCompileDepends}
+
+$(o)libgeom$(oext) : $(MatrixFromTiePtsSrc)libgeom.c ${MultiCompileDepends}
+
+$(o)list$(oext) : $(MatrixFromTiePtsSrc)list.c ${MultiCompileDepends}
+
+$(o)matcoef$(oext) : $(MatrixFromTiePtsSrc)matcoef.c ${MultiCompileDepends}
+
+$(o)matrix$(oext) : $(MatrixFromTiePtsSrc)matrix.c ${MultiCompileDepends}
+
+$(o)MatrixFromTiePts$(oext) : $(MatrixFromTiePtsSrc)MatrixFromTiePts.cpp ${MultiCompileDepends}
+
+$(o)mattran$(oext) : $(MatrixFromTiePtsSrc)mattran.c ${MultiCompileDepends}
+
+$(o)polycoef$(oext) : $(MatrixFromTiePtsSrc)polycoef.c ${MultiCompileDepends}
+
+$(o)polytran$(oext) : $(MatrixFromTiePtsSrc)polytran.c ${MultiCompileDepends}
+
+$(o)projcoef$(oext) : $(MatrixFromTiePtsSrc)projcoef.c ${MultiCompileDepends}
+
+$(o)projtran$(oext) : $(MatrixFromTiePtsSrc)projtran.c ${MultiCompileDepends}
+
+$(o)server$(oext) : $(MatrixFromTiePtsSrc)server.c ${MultiCompileDepends}
+
+$(o)simicoef$(oext) : $(MatrixFromTiePtsSrc)simicoef.c ${MultiCompileDepends}
+
+$(o)simitran$(oext) : $(MatrixFromTiePtsSrc)simitran.c ${MultiCompileDepends}
+
+$(o)tpscoef$(oext) : $(MatrixFromTiePtsSrc)tpscoef.c ${MultiCompileDepends}
+
+$(o)tpstran$(oext) : $(MatrixFromTiePtsSrc)tpstran.c ${MultiCompileDepends}
+
+$(o)trancoef$(oext) : $(MatrixFromTiePtsSrc)trancoef.c ${MultiCompileDepends}
+
+$(o)trantran$(oext) : $(MatrixFromTiePtsSrc)trantran.c ${MultiCompileDepends}
+
+$(o)trfutil$(oext) : $(MatrixFromTiePtsSrc)trfutil.c ${MultiCompileDepends}
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+LIB_NAME    = $(appName)
+LIB_DEST    = $(o)
+LIB_OBJS    = $(MultiCompileObjectList)
+
+%include creatlib.mki
