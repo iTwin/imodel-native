@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="StartupCompany" nameSpacePrefix="stco" version="1.0" description="Startup Company Sample ECSchema" displayLabel="Startup Company"
+             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+    xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="ecschema ECSchema.xsd" >
+
+  <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.07" prefix="bsca" />
+
+    <ECCustomAttributes>
+        <ECDbSchemaHint xmlns="Bentley_Standard_CustomAttributes.01.07">
+            <TablePrefix>stco</TablePrefix>
+        </ECDbSchemaHint>
+    </ECCustomAttributes>
+
+<ECClass typeName="Company" isDomainClass="True">
+    <ECProperty propertyName="Name" typeName="string" />
+  </ECClass>
+     
+<ECClass typeName="Employee" isDomainClass="True">
+    <ECProperty propertyName="EmployeeID" typeName="int" displayLabel="Employee ID" />
+    <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" />
+    <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" />
+    <ECProperty propertyName="Birthday" typeName="dateTime" displayLabel="Birthday">
+        <ECCustomAttributes>
+            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <DateTimeComponent>Date</DateTimeComponent>
+            </DateTimeInfo>
+        </ECCustomAttributes>
+    </ECProperty>
+    <ECProperty propertyName="JobTitle" typeName="string" displayLabel="Job Title" />
+    <ECArrayProperty propertyName="WorkPhones" typeName="string" displayLabel="Work Phone(s)" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="MobilePhones" typeName="string" displayLabel="Mobile Phone(s)" minOccurs="0" maxOccurs="unbounded" />
+    <ECArrayProperty propertyName="Certifications" typeName="Certification" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    <ECStructProperty propertyName="Address" typeName="Location" />
+    <ECProperty propertyName="LastModified" typeName="dateTime" displayLabel="Last Modified">
+        <ECCustomAttributes>
+            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <DateTimeKind>Utc</DateTimeKind>
+            </DateTimeInfo>
+        </ECCustomAttributes>
+    </ECProperty>
+</ECClass>
+
+ <ECClass typeName="Certification" displayLabel="Employee Certification" isStruct="True">
+    <ECProperty propertyName="Name" typeName="string" displayLabel="Certification Name" />
+    <ECProperty propertyName="StartDate" typeName="dateTime" displayLabel="Starts On" />
+    <ECProperty propertyName="ExpiryDate" typeName="dateTime" displayLabel="Expires On" />
+    <ECProperty propertyName="Technology" typeName="string" />
+    <ECProperty propertyName="Level" typeName="int" />
+ </ECClass>
+
+ <ECClass typeName="Location" isStruct="True">
+    <ECProperty propertyName="Street" typeName="string" />
+    <ECProperty propertyName="City" typeName="string" />
+    <ECProperty propertyName="State" typeName="string" />
+    <ECProperty propertyName="Country" typeName="string" />
+    <ECProperty propertyName="Zip" typeName="int" displayLabel="Zip Code" />
+  </ECClass>
+      
+  <ECClass typeName="Asset" isDomainClass="True">
+    <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" />
+    <ECProperty propertyName="AssetOwner" typeName="string" />
+    <ECProperty propertyName="BarCode" typeName="string" displayLabel="Bar Code" />
+    <ECProperty propertyName="AssetUserID" typeName="string" />
+    <ECProperty propertyName="Cost" typeName="double" />
+    <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle" />
+  </ECClass>
+
+  <ECClass typeName="Phone" isDomainClass="True">
+    <BaseClass>Asset</BaseClass>
+    <ECProperty propertyName="Number" typeName="string" />
+    <ECProperty propertyName="Owner" typeName="string" />
+    <ECProperty propertyName="User" typeName="int" />
+  </ECClass>
+  
+  <ECClass typeName="Furniture" isDomainClass="True">
+    <BaseClass>Asset</BaseClass>
+    <ECProperty propertyName="Condition" typeName="int" />
+    <ECProperty propertyName="Material" typeName="int" displayLabel="Furniture Made Of" />
+    <ECProperty propertyName="Weight" typeName="double" />
+  </ECClass>
+  
+  <ECClass typeName="Chair" displayLabel="Office Chair" isDomainClass="True">
+    <BaseClass>Furniture</BaseClass>
+    <ECProperty propertyName="Type" typeName="string" />
+    <ECProperty propertyName="Color" typeName="string" />
+  </ECClass>
+  
+  <ECClass typeName="Desk" isDomainClass="True">
+    <BaseClass>Furniture</BaseClass>
+    <ECProperty propertyName="DeskFootprint" typeName="string" />
+    <ECProperty propertyName="NumberOfCabinets" typeName="int" displayLabel="Number Of Cabinets" />
+    <ECProperty propertyName="Size" typeName="string" />
+    <ECProperty propertyName="Type" typeName="string" />
+    <ECProperty propertyName="Length" typeName="double" />
+    <ECProperty propertyName="Breadth" typeName="double" />
+  </ECClass>
+
+  <ECClass typeName="Hardware" isDomainClass="True">
+    <BaseClass>Asset</BaseClass>
+    <ECProperty propertyName="HasTrackingDevice" typeName="boolean" displayLabel="Has Tracking Device" />
+    <ECProperty propertyName="HasWarranty" typeName="boolean" displayLabel="Has Warranty" />
+    <ECProperty propertyName="IsCompanyProperty" typeName="boolean" displayLabel="Is Company Property" />
+    <ECProperty propertyName="Make" typeName="string" />
+    <ECProperty propertyName="Model" typeName="string" />
+    <ECProperty propertyName="WarrantyExpiryDate" typeName="dateTime" displayLabel="Warranty Expiry Date" >
+        <ECCustomAttributes>
+            <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.07">
+                <DateTimeComponent>Date</DateTimeComponent>
+            </DateTimeInfo>
+        </ECCustomAttributes>
+    </ECProperty>
+  </ECClass>
+  
+  <ECClass typeName="Computer" isDomainClass="True">
+    <BaseClass>Hardware</BaseClass>
+    <ECProperty propertyName="Vendor" typeName="string" />
+    <ECProperty propertyName="Weight" typeName="double" />
+    <ECProperty propertyName="Type" typeName="int" />
+  </ECClass>
+
+ <ECClass typeName="Laptop" isDomainClass="True">
+    <BaseClass>Computer</BaseClass>
+    <ECProperty propertyName="HasDockingStation" typeName="boolean" />
+  </ECClass>
+
+  <ECClass typeName="Monitor" isDomainClass="True">
+    <BaseClass>Hardware</BaseClass>
+    <ECProperty propertyName="Size" typeName="int" />
+    <ECProperty propertyName="Type" typeName="string" />
+    <ECProperty propertyName="Vendor" typeName="string" />
+    <ECProperty propertyName="Weight" typeName="double" />
+  </ECClass>
+      
+  <ECRelationshipClass typeName="ManagerReports" isDomainClass="True" strength="referencing" >
+    <Source cardinality="(0,1)" roleLabel="Manager" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,N)" roleLabel="Report" polymorphic="True">
+      <Class class="Employee" />
+    </Target>
+  </ECRelationshipClass>
+	  
+  <ECRelationshipClass typeName="AssetRelationshipsBase" displayLabel="Asset Relationships Base" isDomainClass="False" strength="referencing">
+    <Source cardinality="(0,1)" polymorphic="True" />
+    <Target cardinality="(0,1)" polymorphic="True" />
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="CompanyHasEmployees" isDomainClass="True" strength="referencing" >
+    <Source cardinality="(1,1)" roleLabel="Employee of Company" polymorphic="True">
+      <Class class="Company" />
+    </Source>
+    <Target cardinality="(1,N)" roleLabel="Employee working for the Company" polymorphic="True">
+      <Class class="Employee" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="FurnitureUsedByEmployee" isDomainClass="True" strength="referencing" >
+    <BaseClass>AssetRelationshipsBase</BaseClass>
+    <Source cardinality="(0,1)" roleLabel="Employee using furniture" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,N)" roleLabel="Furniture assigned to employee" polymorphic="True">
+      <Class class="Chair" />
+      <Class class="Desk" />
+    </Target>
+  </ECRelationshipClass>
+  <ECRelationshipClass typeName="HardwareUsedByEmployee" isDomainClass="True" strength="referencing" >
+   <BaseClass>AssetRelationshipsBase</BaseClass>
+    <Source cardinality="(0,N)" roleLabel="Employee using hardware" polymorphic="True">
+      <Class class="Employee" />
+    </Source>
+    <Target cardinality="(0,N)" roleLabel="Hardware assigned to employee" polymorphic="True">
+      <Class class="Hardware" />
+    </Target>
+  </ECRelationshipClass>
+</ECSchema>

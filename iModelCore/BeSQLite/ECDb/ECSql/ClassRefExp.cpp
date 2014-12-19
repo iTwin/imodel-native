@@ -1,0 +1,62 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/ECSql/ClassRefExp.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ECDbPch.h"
+
+#include "ClassRefExp.h"
+#include "SelectStatementExp.h"
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+using namespace std;
+
+//****************************** ClassNameExp *****************************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const 
+    {
+    BeAssert (m_info != nullptr);
+    auto& classMap = m_info->GetMap();
+
+    for(auto propertyMap : classMap.GetPropertyMaps ())
+        {
+        auto propName = Utf8String (propertyMap->GetPropertyAccessString ());
+        auto policy = ECDbPolicyManager::GetPropertyPolicy (*propertyMap, IsValidInECSqlPolicyAssertion::Get ());
+        if (!policy.IsSupported ())
+            {
+            LOG.warningv ("Ignored ECProperty '%s' when resolving * expression against ECClass '%s'. %s", propName.c_str (), ToECSql ().c_str (), policy.GetNotSupportedMessage ());
+            continue;
+            }
+
+        auto newExp = unique_ptr<PropertyNameExp> (new PropertyNameExp (propName.c_str (), *this, classMap));
+        addDelegate (newExp);
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+
+//****************************** RangeClassRefExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlStatus RangeClassRefExp::CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+    {
+    return _CreatePropertyNameExpList (ctx, addDelegate);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool RangeClassRefExp::ContainProperty( Utf8StringCR propertyName ) const
+    {
+    return _ContainProperty(propertyName);
+    }
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

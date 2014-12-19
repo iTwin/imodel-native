@@ -1,0 +1,247 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/ECSql/ECSqlParameterValue.h $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__BENTLEY_INTERNAL_ONLY__
+
+#include <BeSQLite/ECDb/IECSqlBinder.h>
+#include <BeSQLite/ECDb/IECSqlValue.h>
+#include "IECSqlPrimitiveBinder.h"
+#include "IECSqlPrimitiveValue.h"
+#include "ECSqlTypeInfo.h"
+#include "ECSqlStatusContext.h"
+#include "ECSqlStatementNoopImpls.h"
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct ECSqlParameterValue;
+struct ArrayECSqlParameterValue;
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    03/2014
+//+===============+===============+===============+===============+===============+======
+struct ECSqlParameterValueFactory
+    {
+private:
+    ECSqlParameterValueFactory ();
+    ~ECSqlParameterValueFactory ();
+
+public:
+    static std::unique_ptr<ECSqlParameterValue> Create (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    static std::unique_ptr<ECSqlParameterValue> CreateStruct (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    static std::unique_ptr<ECSqlParameterValue> CreatePrimitive (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    static std::unique_ptr<ArrayECSqlParameterValue> CreateArray (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    03/2014
+//+===============+===============+===============+===============+===============+======
+struct ECSqlParameterValue : public IECSqlBinder, public IECSqlValue
+    {
+private:
+    ECSqlTypeInfo m_typeInfo;
+    ECSqlStatusContext& m_statusContext;
+
+    virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
+    virtual IECSqlStructBinder& _BindStruct () override;
+    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+
+    virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
+
+    virtual IECSqlPrimitiveValue const& _GetPrimitive () const override;
+    virtual IECSqlStructValue const& _GetStruct () const override;
+    virtual IECSqlArrayValue const& _GetArray () const override;
+
+    virtual void _Clear () = 0;
+
+    static ECSqlStatus BindTo (ECSqlStatusContext& statusContext, ECSqlParameterValue const& from, IECSqlBinder& to);
+
+protected:
+    ECSqlParameterValue (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+
+    ECSqlTypeInfo const& GetTypeInfo () const { return m_typeInfo; }
+    ECSqlStatusContext& GetStatusContext () const { return m_statusContext; }
+    ECSqlStatus ResetStatus () const;
+
+public:
+    virtual ~ECSqlParameterValue () {}
+
+
+    IECSqlPrimitiveBinder& BindPrimitive () const;
+
+    ECSqlStatus BindTo (IECSqlBinder& targetBinder) const;
+
+    void Clear ();
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    03/2014
+//+===============+===============+===============+===============+===============+======
+struct PrimitiveECSqlParameterValue : ECSqlParameterValue, public IECSqlPrimitiveBinder, public IECSqlPrimitiveValue
+    {
+private:
+    ECN::ECValue m_value;
+
+    virtual ECSqlStatus _BindNull () override;
+
+    virtual ECSqlStatus _BindBoolean (bool value) override;
+    virtual ECSqlStatus _BindBinary (const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
+    virtual ECSqlStatus _BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata) override;
+    virtual ECSqlStatus _BindDouble (double value) override;
+    virtual ECSqlStatus _BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
+    virtual ECSqlStatus _BindInt (int value) override;
+    virtual ECSqlStatus _BindInt64 (Int64 value) override;
+    virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
+    virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
+    virtual ECSqlStatus _BindText (Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+    virtual ECSqlStatus _BindId (BeRepositoryBasedId value) override;
+
+    virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
+
+    virtual bool _IsNull () const override;
+
+    virtual void const* _GetBinary (int* binarySize) const override;
+    virtual bool _GetBoolean () const override;
+    virtual UInt64 _GetDateTimeJulianDays (DateTime::Info& metadata) const override;
+    virtual double _GetDouble () const override;
+    virtual int _GetInt () const override;
+    virtual Int64 _GetInt64 () const override;
+    virtual Utf8CP _GetText () const override;
+    virtual DPoint2d _GetPoint2D () const override;
+    virtual DPoint3d _GetPoint3D () const override;
+    virtual void const* _GetGeometryBlob (int* blobSize) const override;
+    virtual IECSqlPrimitiveValue const& _GetPrimitive () const override;
+
+    virtual void _Clear () override;
+    void DoClear ();
+
+    bool CanBindValue (ECN::PrimitiveType actualType) const;
+
+    static ECSqlStatus ToECSqlStatus (BentleyStatus bStat);
+
+public:
+    PrimitiveECSqlParameterValue (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    virtual ~PrimitiveECSqlParameterValue () {}
+    };
+
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    03/2014
+//+===============+===============+===============+===============+===============+======
+struct StructECSqlParameterValue : ECSqlParameterValue, public IECSqlStructBinder, public IECSqlStructValue
+    {
+private:
+    std::map<ECN::ECPropertyId, std::unique_ptr<ECSqlParameterValue>> m_propertyValueMap;
+
+    virtual ECSqlStatus _BindNull () override;
+    virtual IECSqlStructBinder& _BindStruct () override;
+    virtual IECSqlBinder& _GetMember (WCharCP structMemberPropertyName) override;
+    virtual IECSqlBinder& _GetMember (ECN::ECPropertyId structMemberPropertyId) override;
+
+    virtual IECSqlStructValue const& _GetStruct () const override;
+    virtual bool _IsNull () const override;
+
+    virtual int _GetMemberCount () const override;
+    virtual IECSqlValue const& _GetValue (int columnIndex) const override;
+
+    virtual void _Clear () override;
+    void DoClear ();
+
+public:
+    StructECSqlParameterValue (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    virtual ~StructECSqlParameterValue () {}
+
+    IECSqlValue const& GetValue (ECN::ECPropertyId structMemberPropertyId) const;
+    };
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle    03/2014
+//+===============+===============+===============+===============+===============+======
+struct ArrayECSqlParameterValue : ECSqlParameterValue, public IECSqlArrayBinder, public IECSqlArrayValue
+    {
+private:
+    //=======================================================================================
+    //! Collection for the array elements of the parameter value.
+    //! Reuses already allocated array element values after a call to ClearBindings.
+    // @bsiclass                                                 Krischan.Eberle    08/2014
+    //+===============+===============+===============+===============+===============+======
+    struct Collection
+        {
+    public:
+        //=======================================================================================
+        //! Iterator for Collection
+        // @bsiclass                                                 Krischan.Eberle    08/2014
+        //+===============+===============+===============+===============+===============+======
+        struct const_iterator : std::iterator<std::forward_iterator_tag, ECSqlParameterValue const*>
+            {
+        private:
+            Collection const* m_collection;
+            size_t m_maxIndex;
+            size_t m_currentIndex;
+        
+        public:
+            const_iterator (Collection const& coll, bool isEndIterator);
+
+            const_iterator (const_iterator const& rhs);
+            const_iterator& operator= (const_iterator const& rhs);
+
+            ECSqlParameterValue const* operator* () const;
+            const_iterator& operator++ ();
+            bool operator== (const_iterator const& rhs) const;
+            bool operator!= (const_iterator const& rhs) const;
+            };
+
+    private:
+        std::vector<std::unique_ptr<ECSqlParameterValue>> m_collection;
+        mutable size_t m_size;
+
+    public:
+        Collection ();
+
+        ECSqlParameterValue* operator[] (size_t index) const;
+
+        //! Indicates whether an already allocated parameter value can be reused or
+        //! a new one needs to be appended.
+        bool HasNextAllocated () const;
+        //! Appends a new parameter value element and increases the capacity by one.
+        void Append (std::unique_ptr<ECSqlParameterValue>& value);
+        //! Gets the next already allocated parameter value
+        ECSqlParameterValue* GetNextAllocated () const;
+
+        size_t Size () const;
+        size_t Capacity () const;
+        void Reserve (size_t count);
+        void Clear ();
+
+        const_iterator begin () const;
+        const_iterator end () const;
+        };
+
+    mutable Collection m_arrayElementValues;
+    mutable Collection::const_iterator m_iterator;
+
+    virtual ECSqlStatus _BindNull () override;
+    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+    virtual IECSqlBinder& _AddArrayElement () override;
+
+    virtual bool _IsNull () const override;
+    virtual void _MoveNext (bool onInitializingIterator = false) const override;
+    virtual bool _IsAtEnd () const override;
+    virtual IECSqlValue const* _GetCurrent () const override;
+    virtual int _GetArrayLength () const override;
+
+    virtual IECSqlArrayValue const& _GetArray () const override { return *this; }
+
+    virtual void _Clear () override;
+    void DoClear ();
+
+public:
+    ArrayECSqlParameterValue (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& typeInfo);
+    virtual ~ArrayECSqlParameterValue () {}
+    };
+
+END_BENTLEY_SQLITE_EC_NAMESPACE
+

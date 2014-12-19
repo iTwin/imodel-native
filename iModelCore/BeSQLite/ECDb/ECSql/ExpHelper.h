@@ -1,0 +1,42 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/ECSql/ExpHelper.h $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__BENTLEY_INTERNAL_ONLY__
+
+#include <BeSQLite/ECDb/ECSqlBuilder.h>
+#include "Exp.h"
+#include "SelectStatementExp.h"
+#include "JoinExp.h"
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      03/2013
+//+===============+===============+===============+===============+===============+======
+struct ExpHelper
+    {
+private:
+    ExpHelper ();
+    ~ExpHelper ();
+
+public:
+    static ECSqlStatus ToPrimitiveType (ECN::PrimitiveType& primitiveType, Utf8StringCR type);
+    static Utf8CP ToString(ECN::PrimitiveType type);
+    static Utf8CP ToString(SqlCompareListType type);
+    static Utf8CP ToString(JoinDirection direction);
+    static Utf8CP ToString(ECSqlJoinType joinType);
+    static Utf8CP ToString(SqlSetQuantifier setQuantifier);
+    static Utf8CP ToString(SubqueryTestOperator op);
+    static Utf8CP ToString(SqlBinaryOperator op);
+    static Utf8CP ToString(SqlBooleanOperator op);
+    static Utf8CP ToString(SqlUnaryOperator op);
+    static Utf8CP ToString(SqlBooleanUnaryOperator op);
+    };
+
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

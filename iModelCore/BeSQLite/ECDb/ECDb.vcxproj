@@ -1,0 +1,322 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\BeSQLite.cpp" />
+    <ClCompile Include="..\BeSQLiteProfileManager.cpp" />
+    <ClCompile Include="..\L10N.cpp" />
+    <ClCompile Include="ClassMap.cpp" />
+    <ClCompile Include="ClassMapFactory.cpp" />
+    <ClCompile Include="ClassMapInfo.cpp" />
+    <ClCompile Include="ClassMapSubclasses.cpp" />
+    <ClCompile Include="DbColumn.cpp" />
+    <ClCompile Include="DbTable.cpp" />
+    <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
+    <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
+    <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
+    <ClCompile Include="ECDb.cpp" />
+    <ClCompile Include="ECDbClassDependencyAnalyzer.cpp" />
+    <ClCompile Include="ECDbLogger.cpp" />
+    <ClCompile Include="ECDbPolicyManager.cpp" />
+    <ClCompile Include="ECDbSchemaManager.cpp" />
+    <ClCompile Include="ECDbSchemaPersistence.cpp" />
+    <ClCompile Include="ECDbStore.cpp" />
+    <ClCompile Include="ECDbMap.cpp" />
+    <ClCompile Include="ECDbPch.cpp" />
+    <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
+    <ClCompile Include="ECDbUseCases.cpp" />
+    <ClCompile Include="ECDbUtility.cpp" />
+    <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
+    <ClCompile Include="ECInstanceId.cpp" />
+    <ClCompile Include="ECInstanceFinder.cpp" />
+    <ClCompile Include="ECInstanceSerializer.cpp" />
+    <ClCompile Include="ECPersistence.cpp" />
+    <ClCompile Include="ECDbProfileManager.cpp" />
+    <ClCompile Include="ECDbProfileUpgrader.cpp" />
+    <ClCompile Include="ECSchemaComparers.cpp" />
+    <ClCompile Include="ECDbSchemaWriter.cpp" />
+    <ClCompile Include="ECDbSchemaReader.cpp" />
+    <ClCompile Include="ECSchemaValidator.cpp" />
+    <ClCompile Include="ECSqlBuilder.cpp" />
+    <ClCompile Include="ECSqlBuilderClauses.cpp" />
+    <ClCompile Include="ECSql\ClassRefExp.cpp" />
+    <ClCompile Include="ECSql\DeleteStatementExp.cpp" />
+    <ClCompile Include="ECSql\ECInstanceDeleter.cpp" />
+    <ClCompile Include="ECSql\ECInstanceUpdater.cpp" />
+    <ClCompile Include="ECSql\ECJsonUtility.cpp" />
+    <ClCompile Include="ECSql\ECInstanceInserter.cpp" />
+    <ClCompile Include="ECSql\ECRelationshipPath.cpp" />
+    <ClCompile Include="ECSql\ECInstanceAdapterHelper.cpp" />
+    <ClCompile Include="ECSql\ECSqlDeletePreparer.cpp" />
+    <ClCompile Include="ECSql\ECSqlEventManager.cpp" />
+    <ClCompile Include="ECSql\ECSqlInsertPreparer.cpp" />
+    <ClCompile Include="ECSql\ECSqlParameterValue.cpp" />
+    <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp" />
+    <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp" />
+    <ClCompile Include="ECSql\ECSqlSelectPreparer.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatementBase.cpp" />
+    <ClCompile Include="ECSql\ComputedExp.cpp" />
+    <ClCompile Include="ECSql\DynamicSelectClauseECClass.cpp" />
+    <ClCompile Include="ECSql\ECInstanceECSqlSelectAdapter.cpp" />
+    <ClCompile Include="ECSql\ECJsonPersistence.cpp" />
+    <ClCompile Include="ECSql\ECSqlColumnInfo.cpp" />
+    <ClCompile Include="ECSql\ECSqlFieldFactory.cpp" />
+    <ClCompile Include="ECSql\ECSqlParseTreeFormatter.cpp" />
+    <ClCompile Include="ECSql\ECSqlField.cpp" />
+    <ClCompile Include="ECSql\ECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\ECSqlBinderFactory.cpp" />
+    <ClCompile Include="ECSql\ECSqlParseContext.cpp" />
+    <ClCompile Include="ECSql\ECSqlParser.cpp" />
+    <ClCompile Include="ECSql\ECSqlPrepareContext.cpp" />
+    <ClCompile Include="ECSql\ECSqlPreparer.cpp" />
+    <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatusContext.cpp" />
+    <ClCompile Include="ECSql\ECSqlStepTask.cpp" />
+    <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />
+    <ClCompile Include="ECSql\ECSqlUpdatePreparer.cpp" />
+    <ClCompile Include="ECSql\EmbeddedECSqlStatement.cpp" />
+    <ClCompile Include="ECSql\Exp.cpp" />
+    <ClCompile Include="ECSql\ExpHelper.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatement.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatementNoopImpls.cpp" />
+    <ClCompile Include="ECSql\IECSqlValue.cpp" />
+    <ClCompile Include="ECSql\IECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\InsertStatementExp.cpp" />
+    <ClCompile Include="ECSql\JoinExp.cpp" />
+    <ClCompile Include="ECSql\JsonDeleter.cpp" />
+    <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp" />
+    <ClCompile Include="ECSql\JsonInserter.cpp" />
+    <ClCompile Include="ECSql\JsonReader.cpp" />
+    <ClCompile Include="ECSql\JsonReaderImpl.cpp" />
+    <ClCompile Include="ECSql\JsonUpdater.cpp" />
+    <ClCompile Include="ECSql\ListExp.cpp" />
+    <ClCompile Include="ECSql\NativeSqlBuilder.cpp" />
+    <ClCompile Include="ECSql\Parser\InternalNode.cpp" />
+    <ClCompile Include="ECSql\Parser\SqlBison.cpp" />
+    <ClCompile Include="ECSql\Parser\SqlError.cpp" />
+    <ClCompile Include="ECSql\Parser\SqlFlex.cpp" />
+    <ClCompile Include="ECSql\Parser\SqlNode.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatementImpl.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatementScenarios.cpp" />
+    <ClCompile Include="ECsql\PointMappedToColumnsECSqlField.cpp" />
+    <ClCompile Include="ECSql\PointECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\PrimitiveArrayMappedToSingleColumnECSqlField.cpp" />
+    <ClCompile Include="ECSql\PrimitiveArrayToColumnECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\PrimitiveMappedToSingleColumnECSqlField.cpp" />
+    <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\PropertyNameExp.cpp" />
+    <ClCompile Include="ECSql\SelectStatementExp.cpp" />
+    <ClCompile Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.cpp" />
+    <ClCompile Include="ECSql\StructArrayToSecondaryTableECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
+    <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
+    <ClCompile Include="ECSql\ValueExp.cpp" />
+    <ClCompile Include="ECSql\WhereExp.cpp" />
+    <ClCompile Include="InstanceDeleter.cpp" />
+    <ClCompile Include="InstanceInserter.cpp" />
+    <ClCompile Include="InstanceUpdater.cpp" />
+    <ClCompile Include="MapGenerator.cpp" />
+    <ClCompile Include="MapHintReader.cpp" />
+    <ClCompile Include="PropertyMap.cpp" />
+    <ClCompile Include="RelationshipClassMap.cpp" />
+    <ClCompile Include="SchemaImportContext.cpp" />
+    <ClCompile Include="SqlGenerator.cpp" />
+    <ClCompile Include="SystemPropertyMap.cpp" />
+    <ClCompile Include="ViewGenerator.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\BeSQLiteProfileManager.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\BeSQLite.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDb.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbSchemaManager.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbStore.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbApi.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbTypes.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECInstanceAdapter.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECInstanceId.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECInstanceFinder.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECJsonPersistence.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECJsonUtility.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECPersistence.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECRelationshipPath.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlBuilder.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlColumnInfo.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlStatement.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\IECSqlValue.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\IECSqlBinder.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\JsonAdapter.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\BeRepositoryBasedIdSequence.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\RTreeMatch.h" />
+    <ClInclude Include="..\PublicAPI\BeSQLite\SQLiteAPI.h" />
+    <ClInclude Include="ClassMap.h" />
+    <ClInclude Include="ClassMapFactory.h" />
+    <ClInclude Include="ClassMapInfo.h" />
+    <ClInclude Include="ClassMapSubclasses.h" />
+    <ClInclude Include="DbColumn.h" />
+    <ClInclude Include="DbTable.h" />
+    <ClInclude Include="ECDbClassDependencyAnalyzer.h" />
+    <ClInclude Include="ECDbInternalTypes.h" />
+    <ClInclude Include="ECDbLogger.h" />
+    <ClInclude Include="ECDbMap.h" />
+    <ClInclude Include="ECDbPch.h" />
+    <ClInclude Include="ECDbPolicyManager.h" />
+    <ClInclude Include="ECDbSchemaPersistence.h" />
+    <ClInclude Include="ECDbSchemaReader.h" />
+    <ClInclude Include="ECDbSchemaWriter.h" />
+    <ClInclude Include="ECDbSystemSchemaHelper.h" />
+    <ClInclude Include="ECDbUtility.h" />
+    <ClInclude Include="ECInstanceSerializer.h" />
+    <ClInclude Include="ECDbProfileManager.h" />
+    <ClInclude Include="ECDbProfileUpgrader.h" />
+    <ClInclude Include="ECSchemaComparers.h" />
+    <ClInclude Include="ECSchemaValidator.h" />
+    <ClInclude Include="ECSql\ClassRefExp.h" />
+    <ClInclude Include="ECSql\DeleteStatementExp.h" />
+    <ClInclude Include="ECSql\ECInstanceAdapterHelper.h" />
+    <ClInclude Include="ECSql\ECSqlDeletePreparer.h" />
+    <ClInclude Include="ECSql\ECSqlEventManager.h" />
+    <ClInclude Include="ECSql\ECSqlInsertPreparer.h" />
+    <ClInclude Include="ECSql\ECSqlParameterValue.h" />
+    <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h" />
+    <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h" />
+    <ClInclude Include="ECSql\ECSqlSelectPreparer.h" />
+    <ClInclude Include="ECSql\ECSqlStatementBase.h" />
+    <ClInclude Include="ECSql\ComputedExp.h" />
+    <ClInclude Include="ECSql\DynamicSelectClauseECClass.h" />
+    <ClInclude Include="ECSql\ECSqlFieldFactory.h" />
+    <ClInclude Include="ECSql\ECSqlBinderFactory.h" />
+    <ClInclude Include="ECSql\ECSqlParseContext.h" />
+    <ClInclude Include="ECSql\ECSqlParser.h" />
+    <ClInclude Include="ECSql\ECSqlPrepareContext.h" />
+    <ClInclude Include="ECSql\ECSqlPreparer.h" />
+    <ClInclude Include="ECSql\ECSqlField.h" />
+    <ClInclude Include="ECSql\ECSqlPreparedStatement.h" />
+    <ClInclude Include="ECSql\ECSqlStatusContext.h" />
+    <ClInclude Include="ECSql\ECSqlStepTask.h" />
+    <ClInclude Include="ECSql\ECSqlTypeInfo.h" />
+    <ClInclude Include="ECSql\ECSqlUpdatePreparer.h" />
+    <ClInclude Include="ECSql\EmbeddedECSqlStatement.h" />
+    <ClInclude Include="ECSql\Exp.h" />
+    <ClInclude Include="ECSql\ExpHelper.h" />
+    <ClInclude Include="ECSql\ECSqlStatementNoopImpls.h" />
+    <ClInclude Include="ECSql\IECSqlPrimitiveBinder.h" />
+    <ClInclude Include="ECSql\IECSqlPrimitiveValue.h" />
+    <ClInclude Include="ECSql\InsertStatementExp.h" />
+    <ClInclude Include="ECSql\JoinExp.h" />
+    <ClInclude Include="ECSql\JsonReaderImpl.h" />
+    <ClInclude Include="ECSql\ListExp.h" />
+    <ClInclude Include="ECSql\NativeSqlBuilder.h" />
+    <ClInclude Include="ECSql\Parser\DataType.h" />
+    <ClInclude Include="ECSql\Parser\ErrorCondition.h" />
+    <ClInclude Include="ECSql\Parser\InternalNode.h" />
+    <ClInclude Include="ECSql\Parser\IParseContext.h" />
+    <ClInclude Include="ECSql\Parser\SqlBison.h" />
+    <ClInclude Include="ECSql\Parser\SqlBison.hpp" />
+    <ClInclude Include="ECSql\Parser\SqlError.h" />
+    <ClInclude Include="ECSql\Parser\SqlNode.h" />
+    <ClInclude Include="ECSql\Parser\SqlParse.h" />
+    <ClInclude Include="ECSql\Parser\SqlScan.h" />
+    <ClInclude Include="ECSql\Parser\SqlTypes.h" />
+    <ClInclude Include="ECSql\Parser\TextEncoding.h" />
+    <ClInclude Include="ECSql\ECSqlStatementImpl.h" />
+    <ClInclude Include="ECSql\PointECSqlBinder.h" />
+    <ClInclude Include="ECsql\PointMappedToColumnsECSqlField.h" />
+    <ClInclude Include="ECsql\PrimitiveArrayMappedToSingleColumnECSqlField.h" />
+    <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h" />
+    <ClInclude Include="ECsql\PrimitiveMappedToSingleColumnECSqlField.h" />
+    <ClInclude Include="ECSql\ECSqlBinder.h" />
+    <ClInclude Include="ECSql\PrimitiveToSingleColumnECSqlBinder.h" />
+    <ClInclude Include="ECSql\PropertyNameExp.h" />
+    <ClInclude Include="ECSql\SelectStatementExp.h" />
+    <ClInclude Include="ECSql\StructArrayMappedToSecondaryTableECSqlField.h" />
+    <ClInclude Include="ECSql\StructArrayToSecondaryTableECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
+    <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
+    <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h" />
+    <ClInclude Include="ECSql\UpdateStatementExp.h" />
+    <ClInclude Include="ECSql\ValueExp.h" />
+    <ClInclude Include="ECSql\WhereExp.h" />
+    <ClInclude Include="InstanceDeleter.h" />
+    <ClInclude Include="InstanceInserter.h" />
+    <ClInclude Include="InstanceUpdater.h" />
+    <ClInclude Include="MapGenerator.h" />
+    <ClInclude Include="MapHintReader.h" />
+    <ClInclude Include="PropertyMap.h" />
+    <ClInclude Include="RelationshipClassMap.h" />
+    <ClInclude Include="SchemaImportContext.h" />
+    <ClInclude Include="SqlGenerator.h" />
+    <ClInclude Include="SystemPropertyMap.h" />
+    <ClInclude Include="ViewGenerator.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="docs\preparedocgeneration.mke" />
+    <None Include="docs\source\ECDb.overviewPage" />
+    <None Include="docs\source\ECDbExamples.overviewPage" />
+    <None Include="docs\source\ECSQL.overviewPage" />
+    <None Include="docs\source\ECSqlStatement.overviewPage" />
+    <None Include="ECDb.mke" />
+    <None Include="ECDbPolicy.mki" />
+    <None Include="ECSql\Parser\LICENSE" />
+    <None Include="ECSql\Parser\NOTICE" />
+    <None Include="ECSql\parser\sqlbison.y" />
+    <None Include="ECSql\parser\sqlflex.l" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1B1D0762-AF1F-447F-BBE6-749055F1C200}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\Build\ECDb\BeSQLiteECG.dll</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\ECSql\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLite\PublicAPI\;$(SrcRoot)ecobjects\PublicApi\;$(SrcRoot)\GeomLibs\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\;$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\;$(SrcRoot)DgnPlatform\PrivateApi\;$(SrcRoot)DgnPlatform\PublicApi\;$(SrcRoot)DgnPlatform\DgnCore\;$(SrcRoot)DgnPlatform\ecobjects\PublicApi\;$(VCInstallDir)INCLUDE\;$(SrcRoot)Bentley\PublicApi\;$(SrcRoot)\BentleyApi\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>ECDb.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,878 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: Tests/Published/BeSQLiteDb_Test.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "BeSQLitePublishedTests.h"
+#ifdef WIP_PUBLISHED_API
+#include <BeSQLite/SQLiteAPI.h> //only needed for test to directly work with SQLite
+#endif
+
+#include <vector>
+
+/*---------------------------------------------------------------------------------**//**
+* Test fixture for testing Db
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BeSQLiteDbTests : public ::testing::Test
+    {
+    public:
+        Db              m_db;
+        DbResult        m_result;
+
+        static DbResult SetupDb (Db& db, WCharCP dbName);
+        void SetupDb (WCharCP dbName);
+        static BeFileName getDbFilePath (WCharCP dbName);
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Creating a new Db for the test
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName BeSQLiteDbTests::getDbFilePath (WCharCP dbName)
+    {
+    BeFileName dbFileName;
+    BeTest::GetHost().GetOutputRoot (dbFileName);
+    dbFileName.AppendToPath (dbName);
+    return dbFileName;
+    }
+
+//---------------------------------------------------------------------------------------
+// Creating a new Db for the test
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult BeSQLiteDbTests::SetupDb (Db& db, WCharCP dbName)
+    {
+    BeFileName temporaryDir;
+    BeTest::GetHost ().GetOutputRoot (temporaryDir);
+    BeSQLiteLib::Initialize (temporaryDir);
+
+    BeFileName dbFullName = getDbFilePath(dbName);
+    if (BeFileName::DoesPathExist (dbFullName))
+        BeFileName::BeDeleteFile (dbFullName);
+    DbResult result = db.CreateNewDb (dbFullName.GetNameUtf8().c_str());
+    EXPECT_EQ (BE_SQLITE_OK, result) << "Db Creation failed";
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Creating a new Db for the test
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeSQLiteDbTests::SetupDb (WCharCP dbName)
+    {
+    m_result = SetupDb (m_db, dbName);
+    ASSERT_EQ (BE_SQLITE_OK, m_result) << "Db Creation failed";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Creating a new Db
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, CreateNewDb)
+    {
+    SetupDb (L"blank");
+    EXPECT_FALSE (m_db.IsReadonly());
+    EXPECT_TRUE (m_db.IsDbOpen());
+
+    //Verifying it's name
+    Utf8CP dbName = m_db.GetDbFileName();
+    WString strName (dbName, true);
+    WString shortName = strName.substr (strName.length() - 5, strName.length());
+    EXPECT_STREQ (L"blank", shortName.c_str()) << L"The returned DbFileName is not correct. it is: " << shortName.c_str();
+    m_db.CloseDb();
+    EXPECT_FALSE (m_db.IsDbOpen());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Creating a Db twice
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, CreateDbTwice)
+    {
+    //This is failing and needs investigation
+    //BeSQLite::BeSQLiteLib::Initialize();
+    //SetupDb (L"dup.db");
+    
+    //Create it again and it should return an error now
+    //m_result = m_db.CreateNewDb (getDbFilePath(L"new.db"));
+    //ASSERT_EQ (BE_SQLITE_ERROR_FileExists, m_result) << "Db created again which should not have been";
+    }
+/*---------------------------------------------------------------------------------**//**
+* Opening an existing Db
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, OpenDb)
+    {
+    SetupDb (L"one.db");
+    EXPECT_TRUE (m_db.IsDbOpen());
+
+    //now close and re-open it
+    m_db.CloseDb();
+    EXPECT_FALSE (m_db.IsDbOpen());
+    m_result = m_db.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    EXPECT_EQ (BE_SQLITE_OK, m_result);
+    EXPECT_TRUE (m_db.IsDbOpen());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Setting ProjectGuid
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, SetGuids)
+    {
+    SetupDb (L"SetGuids.db");
+
+    EXPECT_FALSE (m_db.QueryMyProjectGuid().IsValid());
+    BeProjectGuid projGuid;
+    m_db.SaveMyProjectGuid(projGuid);
+    BeProjectGuid projGuidOut = m_db.QueryMyProjectGuid();
+
+    EXPECT_TRUE (projGuidOut.IsValid());
+    EXPECT_TRUE (projGuidOut==projGuid);
+
+    // try round-tripping a GUID through a string and back
+    Utf8String guidstr(projGuid.ToString());
+    EXPECT_EQ (SUCCESS, projGuidOut.FromString(guidstr.c_str()));
+    EXPECT_TRUE (projGuidOut==projGuid);
+
+    //get the BeGUID
+    BeDbGuid dbGuid = m_db.GetDbGuid();
+    EXPECT_TRUE (dbGuid.IsValid());
+
+    //create a new Db with explicit BeDbGuid value
+    Db db2;
+    BeDbGuid dbGuid2(false), dbGuid3(false);
+    dbGuid2.Init (400, 100);
+
+    BeFileName dbName2 = getDbFilePath (L"new.db");
+    if (BeFileName::DoesPathExist (dbName2))
+        BeFileName::BeDeleteFile (dbName2);
+    m_result = db2.CreateNewDb (dbName2.GetNameUtf8().c_str(), dbGuid2);
+    dbGuid3 = db2.GetDbGuid();
+    EXPECT_TRUE (dbGuid3.IsValid());
+    //get the RepositoryId
+    BeRepositoryId repId = m_db.GetRepositoryId();
+    EXPECT_TRUE (repId.IsValid());
+    EXPECT_EQ (0, repId.GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Attach and then Detach Db
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, AttachDb)
+    {
+    SetupDb (L"Main.db");
+    Db db2;
+    BeFileName dbName2 = getDbFilePath (L"sub.db");
+    if (BeFileName::DoesPathExist (dbName2))
+        BeFileName::BeDeleteFile (dbName2);
+    m_result = db2.CreateNewDb (dbName2.GetNameUtf8().c_str());
+    ASSERT_EQ (BE_SQLITE_OK, m_result) << "Db Creation failed";
+
+    m_result = m_db.AttachDb (db2.GetDbFileName(), "Attachment1");
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "AttachDb() failed";
+    m_result = m_db.DetachDb ("Attachment1");
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "DetachDb() failed";
+
+    //crash on DetachDb on incorrect alias
+    //m_result = m_db.DetachDb ("Aaaaa");
+
+    //AttachDb() passes for any values
+    m_result = m_db.AttachDb (getDbFilePath(L"dummy.db").GetNameUtf8().c_str(), "dummy");
+    EXPECT_EQ (BE_SQLITE_OK, m_result);
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   01/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, TableExists)
+    {
+    SetupDb (L"tableexists.db");
+
+    Utf8CP testTableName = "testtable";
+
+    EXPECT_FALSE (m_db.TableExists (testTableName)) << "Table '" << testTableName << "' is expected to not exist.";
+
+    EXPECT_EQ (BE_SQLITE_OK, m_db.CreateTable (testTableName, "id NUMERIC, name TEXT")) << "Creating test table '" << testTableName << "' failed.";
+
+    EXPECT_TRUE (m_db.TableExists (testTableName)) << "Table '" << testTableName << "' is expected to exist as it was created right before this check.";
+
+    //now test with closed connection
+    m_db.CloseDb ();
+
+    //The following might throw assertions, so disable them
+    BeTest::SetFailOnAssert (false);
+        {
+        EXPECT_FALSE (m_db.TableExists (testTableName)) << "Db::TableExists is expected to return false if database connection is not open.";
+        EXPECT_FALSE (m_db.TableExists ("garbage")) << "Db::TableExists is expected to return false if database connection is not open.";
+        }
+    BeTest::SetFailOnAssert (true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   07/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (BeSQLiteDbTests, BlobTest)
+    {
+    SetupDb (L"blobtest.db");
+
+    Utf8CP testTableName = "testtable";
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable (testTableName, "val BLOB")) << "Creating test table '" << testTableName << "' failed.";
+
+    const Int64 expectedValue = 123456789LL;
+    Statement insertStmt;
+    ASSERT_EQ (BE_SQLITE_OK, insertStmt.Prepare (m_db, "INSERT INTO testtable (val) VALUES (?)"));
+
+    ASSERT_EQ (BE_SQLITE_OK, insertStmt.BindBlob (1, &expectedValue, sizeof (expectedValue), Statement::BindMakeCopy::MAKE_COPY_Yes));
+    ASSERT_EQ (BE_SQLITE_DONE, insertStmt.Step ());
+
+    Statement selectStmt;
+    ASSERT_EQ (BE_SQLITE_OK, selectStmt.Prepare (m_db, "SELECT val FROM testtable LIMIT 1"));
+    ASSERT_EQ (BE_SQLITE_ROW, selectStmt.Step ());
+
+    void const* actualBlob = selectStmt.GetValueBlob (0);
+    Int64 actualValue = -1LL;
+    memcpy (&actualValue, actualBlob, sizeof (actualValue));
+    ASSERT_EQ (expectedValue, actualValue);
+
+    int actualBlobSize = selectStmt.GetColumnBytes (0);
+    ASSERT_EQ ((int) sizeof(Int64), actualBlobSize);
+
+    //now read Int64 directly
+    selectStmt.Reset ();
+    ASSERT_EQ (BE_SQLITE_ROW, selectStmt.Step ());
+    ASSERT_EQ (0LL, selectStmt.GetValueInt64 (0)) << "is expected to not convert the blob implicitly to the expected Int64";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save and Query PropertyString
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, PropertyString)
+    {
+    SetupDb (L"props.db");
+
+    PropertySpec spec1 ("TestSpec", "TestApplication");
+    Utf8String stringValue ("This is test value");
+    
+    m_result = m_db.SavePropertyString (spec1, stringValue); 
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "SavePropertyString failed";
+    EXPECT_TRUE (m_db.HasProperty (spec1));
+
+    Utf8String stringValue2;
+    m_result = m_db.QueryProperty (stringValue2, spec1);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    
+    EXPECT_STREQ (stringValue.c_str(), stringValue2.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save and Query Property
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, Property)
+    {
+    SetupDb (L"Props2.db");
+
+    PropertySpec spec1 ("TestSpec", "TestApplication");
+    m_result = m_db.SaveProperty (spec1, L"Any Value", 10, 400, 10); 
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveProperty failed";
+    
+    EXPECT_TRUE (m_db.HasProperty (spec1, 400, 10));
+
+    Utf8CP buffer[10];
+    m_result = m_db.QueryProperty (buffer, 10, spec1, 400, 10);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    //EXPECT_TRUE (false) << buffer;
+
+    m_result = m_db.DeleteProperty (spec1, 400, 10);
+    EXPECT_EQ (BE_SQLITE_DONE, m_result) << "DeleteProperty failed";
+    EXPECT_FALSE (m_db.HasProperty (spec1, 400, 10));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, CachedProperties)
+    {
+    SetupDb (L"Props3.db");
+
+    byte values[] = {1,2,3,4,5,6};
+    PropertySpec spec1 ("TestSpec", "CachedProp", PropertySpec::TXN_MODE_Cached);
+    m_result = m_db.SaveProperty (spec1, values, sizeof(values), 400, 10); 
+    EXPECT_TRUE (m_db.HasProperty (spec1, 400, 10));
+
+    PropertySpec spec2 ("TestSpec", "CachedProp2", PropertySpec::TXN_MODE_Cached);
+    m_result = m_db.SaveProperty (spec2, values, sizeof(values));
+    EXPECT_TRUE (m_db.HasProperty (spec2));
+
+    Utf8CP spec3Val="Spec 3 value";
+    PropertySpec spec3 ("Spec3", "CachedProp", PropertySpec::TXN_MODE_Cached);
+    m_result = m_db.SavePropertyString (spec3, spec3Val);
+    EXPECT_TRUE (m_db.HasProperty (spec3));
+
+    Utf8String origStr = "String value";
+    m_result = m_db.SavePropertyString (spec1, origStr, 400, 10);
+
+    byte buffer[10];
+    m_result = m_db.QueryProperty (buffer, sizeof(values), spec1, 400, 10);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    EXPECT_TRUE(0==memcmp(values, buffer, sizeof(values)));
+
+    byte values2[] = {10,20};
+    m_result = m_db.SaveProperty (spec1, values2, sizeof(values2), 400, 10); 
+
+    m_db.SaveChanges();
+
+    Utf8String strval;
+    m_result = m_db.QueryProperty (strval, spec1, 400, 10);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    EXPECT_TRUE(0==strval.CompareTo(origStr));
+
+    m_result = m_db.QueryProperty (strval, spec2);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    EXPECT_TRUE(0==strval.CompareTo(""));
+
+    m_result = m_db.QueryProperty (buffer, sizeof(values), spec2);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    EXPECT_TRUE(0==memcmp(values, buffer, sizeof(values)));
+
+    m_result = m_db.QueryProperty (strval, spec3);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    EXPECT_TRUE(0==strval.CompareTo(spec3Val));
+    //EXPECT_TRUE (false) << buffer;
+
+    m_result = m_db.DeleteProperty (spec1, 400, 10);
+    EXPECT_EQ (BE_SQLITE_DONE, m_result) << "DeleteProperty failed";
+    EXPECT_FALSE (m_db.HasProperty (spec1, 400, 10));
+
+    Utf8String val2Str = "value 2";
+    m_result = m_db.SavePropertyString (spec1, val2Str, 400, 10);
+
+    if (true)
+        {
+        Savepoint savepoint (m_db, "intermediate");
+        m_result = m_db.SavePropertyString (spec1, "ChangedStr", 400, 10);
+        savepoint.Cancel();
+        }
+
+    m_result = m_db.QueryProperty (strval, spec1, 400, 10);
+    EXPECT_EQ (BE_SQLITE_ROW, m_result);
+    EXPECT_TRUE(0==strval.CompareTo(val2Str));
+    EXPECT_TRUE (m_db.HasProperty (spec1, 400, 10));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save and Query RepositoryLocal Values
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
+    {
+    SetupDb(L"local.db");
+    int val = -1345;
+
+    Utf8CP testPropValueName = "TestProp";
+    size_t rlvIndex = 0;
+    ASSERT_EQ (BE_SQLITE_OK, m_db.RegisterRepositoryLocalValue (rlvIndex, testPropValueName));
+    m_result = m_db.SaveRepositoryLocalValue (rlvIndex, val);
+    EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveRepositoryLocalValue failed";
+
+    Int64 actualVal = -1LL;
+    m_result = m_db.QueryRepositoryLocalValue (actualVal, rlvIndex);
+    EXPECT_EQ (BE_SQLITE_OK, m_result);
+    EXPECT_EQ (val, (int) actualVal);
+
+    m_db.SaveChanges();
+
+    actualVal = -1LL;
+    m_result = m_db.QueryRepositoryLocalValue (actualVal, rlvIndex);
+    EXPECT_EQ (BE_SQLITE_OK, m_result);
+    EXPECT_EQ (val, (int) actualVal);
+
+    ASSERT_TRUE (m_db.TryGetRepositoryLocalValueIndex (rlvIndex, testPropValueName));
+    ASSERT_FALSE (m_db.TryGetRepositoryLocalValueIndex (rlvIndex, "GarbageProp"));
+
+    ASSERT_EQ (BE_SQLITE_ERROR, m_db.RegisterRepositoryLocalValue (rlvIndex, testPropValueName));
+
+    m_db.CloseDb ();
+    BeTest::SetFailOnAssert (false);
+        {
+        ASSERT_FALSE (m_db.TryGetRepositoryLocalValueIndex (rlvIndex, testPropValueName)) << "After closing the Db any registered RepositoryLocalValue is expected to be gone.";
+        }
+    BeTest::SetFailOnAssert (true);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* Simulate a LineStyle dgndb case
+* @bsimethod                                    Majd.Uddin                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, linestyleDB)
+    {
+    SetupDb(L"linestyle.db");
+
+    //creating a table
+    EXPECT_EQ (BE_SQLITE_OK, m_db.CreateTable ("linestyles", "lsId NUMERIC, lsName TEXT"));
+    EXPECT_TRUE (m_db.TableExists ("linestyles"));
+    EXPECT_TRUE (m_db.ColumnExists ("linestyles", "lsId"));
+
+    //Add data
+    ASSERT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("INSERT INTO linestyles (lsId, lsName) values (10, 'ARROW')"));
+
+    //Dump the result for display
+    m_db.DumpSqlResults ("SELECT * from linestyles");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void IncrementRepositoryLocalValue
+(
+Db& db,
+size_t repositoryLocalKeyIndex
+)
+    {
+    Int64 newValue = 0LL;
+    /*auto stat = */db.IncrementRepositoryLocalValue (newValue, repositoryLocalKeyIndex);
+    //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementRepositoryLocalValueInt64 failed.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void IncrementRepositoryLocalValueWithSaveChanges
+(
+Db& db,
+size_t repositoryLocalKeyIndex
+)
+    {
+    IncrementRepositoryLocalValue (db, repositoryLocalKeyIndex);
+    DbResult stat = db.SaveChanges ();
+    ASSERT_EQ (BE_SQLITE_OK, stat) << L"SaveChanges failed.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void IncrementRepositoryLocalValueWithinSavepoint
+(
+Db& db,
+size_t repositoryLocalKeyIndex
+)
+    {
+    Savepoint savepoint (db, "IncrementRepositoryLocalValue");
+    IncrementRepositoryLocalValue (db, repositoryLocalKeyIndex);
+    DbResult stat = savepoint.Commit ();
+    ASSERT_EQ (BE_SQLITE_OK, stat) << L"Committing savepoint failed.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+void SetupIncrementRepositoryLocalValueTestDgnDb
+(
+Db& testDb,
+Utf8CP repositoryLocalKey
+)
+    {
+    Utf8String dbPath;
+
+    //create test DgnDb file with a mock sequence being set up
+        {
+        Db db;
+        DbResult stat = BeSQLiteDbTests::SetupDb (db, L"repositorylocalvalueperformance.ecdb");
+        dbPath.assign (db.GetDbFileName ());
+
+        size_t repositoryLocalKeyIndex = 0;
+        ASSERT_EQ (BE_SQLITE_OK, db.RegisterRepositoryLocalValue (repositoryLocalKeyIndex, repositoryLocalKey));
+        const Int64 zero = 0LL;
+        stat = db.SaveRepositoryLocalValue (repositoryLocalKeyIndex, zero);
+        ASSERT_EQ (BE_SQLITE_OK, stat) << L"Saving initial value of repository local value failed";
+        ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges ()) << L"Committing repository local values failed.";
+        }
+
+    //reopen test db
+    DbResult stat = testDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str () << L"' failed.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
+    {
+    const Int64 iterationCount = 10000000LL;
+
+    Utf8CP const mockSequenceKey = "mocksequence";
+    Db testDb;
+    SetupIncrementRepositoryLocalValueTestDgnDb ( testDb, mockSequenceKey);
+
+    size_t mockSequenceKeyIndex = 0;
+    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+    //printf ("Attach to profiler and press any key...\r\n"); getchar ();
+    StopWatch stopwatch (true);
+    for (Int64 i = 0LL; i < iterationCount; i++)
+        {
+        IncrementRepositoryLocalValue (testDb, mockSequenceKeyIndex);
+        }
+
+    const double totalSecs = stopwatch.GetCurrentSeconds ();
+    //printf ("Detach to profiler and press any key...\r\n"); getchar ();
+    testDb.SaveChanges ();
+    stopwatch.Stop ();
+    LOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+                        iterationCount, 
+                        totalSecs * 1000.0,
+                        stopwatch.GetElapsedSeconds () * 1000.0);
+
+    //timing an in-memory sequence as base line
+    struct CacheValue
+        {
+    private:
+        bool m_isunset;
+        bool m_isdirty;
+        Int64 m_value;
+
+    public:
+        CacheValue ()
+            : m_value (0LL)
+            {}
+
+        Int64 Increment ()
+            {
+            m_value++;
+            return m_value;
+            }
+
+        Int64 GetValue () const { return m_value; }
+        };
+
+    std::vector<std::unique_ptr<CacheValue>> sequenceVector;
+    sequenceVector.push_back (std::move (std::unique_ptr<CacheValue> (new CacheValue ())));
+    sequenceVector.push_back (std::move (std::unique_ptr<CacheValue> (new CacheValue ())));
+    sequenceVector.push_back (std::move (std::unique_ptr<CacheValue> (new CacheValue ())));
+
+    std::vector<Utf8String> keyVector = { "sequence_1", "sequence_2", "sequence_3" };
+
+    bmap<Utf8CP, CacheValue> sequenceMap;
+    for (auto const& key : keyVector)
+        {
+        sequenceMap[key.c_str ()] = CacheValue ();
+        }
+
+    stopwatch.Start ();
+    for (Int64 i = 0LL; i < iterationCount; i++)
+        {
+        sequenceVector[2]->Increment ();
+        }
+    stopwatch.Stop ();
+    ASSERT_EQ (iterationCount, sequenceVector[2]->GetValue ());
+    LOG.infov ("Incrementing simple in-memory sequence with vector lookup %d times took: %.4f msecs.", iterationCount,
+        stopwatch.GetElapsedSeconds () * 1000.0);
+
+    stopwatch.Start ();
+    for (Int64 i = 0LL; i < iterationCount; i++)
+        {
+        auto it = sequenceMap.find (keyVector[2].c_str ());
+        if (it != sequenceMap.end ())
+            it->second.Increment ();
+        }
+    stopwatch.Stop ();
+    ASSERT_EQ (iterationCount, sequenceMap[keyVector[2].c_str ()].GetValue ());
+    LOG.infov ("Incrementing simple in-memory sequence with bmap lookup %d times took: %.4f msecs.", iterationCount,
+        stopwatch.GetElapsedSeconds () * 1000.0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryCache)
+    {
+    const int iterationCount = 1000000;
+
+    Utf8CP const mockSequenceKey = "mocksequence";
+    Db testDb;
+    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+
+    size_t mockSequenceKeyIndex = 0;
+    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+
+    Statement queryStmt;
+    DbResult stat = queryStmt.Prepare (testDb, SqlPrintfString ("select Val from " BEDB_TABLE_Local " where Name='%s'", mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, stat) << L"Preparing query repo local value SQL failed.";
+    Statement updateStmt;
+    stat = updateStmt.Prepare (testDb, SqlPrintfString ("update " BEDB_TABLE_Local " set Val=?1 where Name='%s'", mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, stat) << L"Preparing update repo local value SQL failed.";
+
+    StopWatch stopwatch ("", true);
+    for (int i = 0; i < iterationCount; i++)
+        {
+        //query last value
+        queryStmt.Reset ();
+        EXPECT_EQ (BE_SQLITE_ROW, queryStmt.Step ()) << L"Executing query SQL didn't return the expected row";
+        const void* blob = queryStmt.GetValueBlob (0);
+        int blobSize = queryStmt.GetColumnBytes (0);
+        Int64 lastValue = -1LL;
+        memcpy ((byte*) &lastValue, blob, blobSize);
+        EXPECT_EQ (static_cast<Int64> (i), lastValue) << L"Retrieved repository local value is wrong.";
+
+        lastValue++;
+
+        //now save incremented value back
+        updateStmt.Reset ();
+        updateStmt.ClearBindings ();
+        EXPECT_EQ (BE_SQLITE_OK, updateStmt.BindBlob (1, &lastValue, sizeof(lastValue), Statement::MAKE_COPY_No)) << L"Binding blob to update statement failed";
+        EXPECT_EQ (BE_SQLITE_DONE, updateStmt.Step ()) << L"Executing update SQL failed";
+        }
+
+    const double totalSecs = stopwatch.GetCurrentSeconds ();
+    testDb.SaveChanges ();
+    stopwatch.Stop ();
+    LOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+        iterationCount, 
+        totalSecs * 1000.0,
+        stopwatch.GetElapsedSeconds () * 1000.0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWrappedInSavepoint)
+    {
+    const int iterationCount = 1000000;
+
+    Utf8CP const mockSequenceKey = "mocksequence";
+    Db testDb;
+    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+
+    size_t mockSequenceKeyIndex = 0;
+    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+
+    StopWatch stopwatch ("", true);
+    for (int i = 0; i < iterationCount; i++)
+        {
+        IncrementRepositoryLocalValueWithinSavepoint (testDb, mockSequenceKeyIndex);
+        }
+
+    const double totalSecs = stopwatch.GetCurrentSeconds ();
+    testDb.SaveChanges ();
+    stopwatch.Stop ();
+    LOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+        iterationCount, 
+        totalSecs * 1000.0,
+        stopwatch.GetElapsedSeconds () * 1000.0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/12
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueAndCommittingOutermostTransactionInEachIteration)
+    {
+    const int iterationCount = 1000;
+
+    Utf8CP const mockSequenceKey = "mocksequence";
+    Db testDb;
+    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+
+    size_t mockSequenceKeyIndex = 0;
+    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+
+    StopWatch stopwatch ("", true);
+    for (int i = 0; i < iterationCount; i++)
+        {
+        IncrementRepositoryLocalValueWithSaveChanges (testDb, mockSequenceKeyIndex);
+        }
+
+    const double totalSecs = stopwatch.GetCurrentSeconds ();
+    testDb.SaveChanges ();
+    stopwatch.Stop ();
+    LOG.infov ("Incrementing repository local value %d times took: %.4f msecs. %.4f msecs with saving outermost transaction at end.", 
+        iterationCount, 
+        totalSecs * 1000.0,
+        stopwatch.GetElapsedSeconds () * 1000.0);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   03/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(PerformanceBeSQLiteDbTests, SaveRepositoryLocalValueWithSavepointPerIteration)
+    {
+    const int iterationCount = 10000;
+
+    Utf8CP const mockSequenceKey = "mocksequence";
+    Db testDb;
+    SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
+
+    size_t mockSequenceKeyIndex = 0;
+    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+
+    StopWatch stopwatch ("", true);
+    for (int i = 0; i < iterationCount; i++)
+        {
+        Savepoint savepoint (testDb, "", true);
+        
+        Int64 val = i * 1000LL;
+        DbResult stat = testDb.SaveRepositoryLocalValue (mockSequenceKeyIndex, val);
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "SaveRepositoryLocalValue failed";
+        savepoint.Commit ();
+        }
+
+    stopwatch.Stop ();
+
+    LOG.infov ("Calling SaveRepositoryLocalValue %d times took: %.4f msecs.", 
+        iterationCount, 
+        stopwatch.GetElapsedSeconds () * 1000.0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   03/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerIteration)
+    {
+    Utf8String dbPath;
+
+    //create test DgnDb file with a mock sequence being set up
+        {
+        Db db;
+        DbResult stat = BeSQLiteDbTests::SetupDb (db, L"repositorylocalvalueperformance.idgndb");
+        dbPath.assign (db.GetDbFileName ());
+
+        //mimick be_local table
+        stat = db.ExecuteSql ("CREATE TABLE test (name CHAR NOT NULL COLLATE NOCASE UNIQUE, intval integer, blobval blob)");
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "Creating test table failed.";
+        }
+
+    //reopen test db
+    Db dgndb;
+    DbResult stat = dgndb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Reopening test DgnDb '" << dbPath.c_str () << "' failed.";
+
+    const int iterationCount = 10000;
+
+    //insert ints
+        {
+        Statement stmt;
+        stat = stmt.Prepare (dgndb, "INSERT OR REPLACE INTO test (name, intval) VALUES ('ec_ecinstanceidsequence_int', ?)");
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparing insert statement failed";
+
+        StopWatch stopwatch ("", true);
+        for (int i = 0; i < iterationCount; i++)
+            {
+            Savepoint savepoint (dgndb, "insertint", true);
+            stmt.BindInt64 (1, i * 1000LL);
+            stat = stmt.Step ();
+            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Executing insert statement failed";
+            stmt.Reset ();
+            stmt.ClearBindings ();
+            savepoint.Commit ();
+            }
+
+        stopwatch.Stop ();
+        LOG.infov ("Inserting or replacing integers %d times took: %.4f msecs.", 
+            iterationCount, 
+            stopwatch.GetElapsedSeconds () * 1000.0);
+        }
+
+        //insert int as blob
+        {
+        Statement stmt;
+        stat = stmt.Prepare (dgndb, "INSERT OR REPLACE INTO test (name, blobval) VALUES ('ec_ecinstanceidsequence_blob', ?)");
+        ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparing insert statement failed";
+
+        StopWatch stopwatch ("", true);
+        for (int i = 0; i < iterationCount; i++)
+            {
+            Savepoint savepoint (dgndb, "insertblob", true);
+            const Int64 val = i * 1000LL;
+            stmt.BindBlob (1, &val, sizeof (val), Statement::MAKE_COPY_No);
+            stat = stmt.Step ();
+            ASSERT_EQ (BE_SQLITE_DONE, stat) << "Executing insert statement failed";
+            stmt.Reset ();
+            stmt.ClearBindings ();
+            savepoint.Commit ();
+            }
+
+        stopwatch.Stop ();
+        LOG.infov ("Inserting or replacing integers as blobs %d times took: %.4f msecs.", 
+            iterationCount, 
+            stopwatch.GetElapsedSeconds () * 1000.0);
+        }
+    }
+
+#ifdef PUBLISHER_WONT_PUBLISH_EXPIRED_FILES
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDbOpenTest, Expired)
+    {
+    BeFileName tempDir;
+    BeTest::GetHost ().GetTempDir (tempDir);
+    BeSQLiteLib::Initialize (tempDir);
+    
+    BeFileName docDir;
+    BeTest::GetHost ().GetDocumentsRoot (docDir);
+
+    BeFileName expiredFileNameW (docDir);
+    expiredFileNameW.AppendToPath (L"DgnDb");
+    expiredFileNameW.AppendToPath (L"expired.idgndb");
+    ASSERT_TRUE( BeFileName::DoesPathExist (expiredFileNameW) );
+
+    Utf8String expiredFileName (expiredFileNameW);
+
+    BeSQLite::Db::OpenParams parms (BeSQLite::Db::OPEN_Readonly);
+
+    BeSQLite::Db db;
+    ASSERT_TRUE( db.OpenBeSQLiteDb (expiredFileName.c_str(), parms) == BE_SQLITE_OK );
+    ASSERT_TRUE( db.IsDbOpen() );
+    ASSERT_TRUE( db.IsExpired() );
+    DateTime xdate;
+    ASSERT_TRUE( db.GetExpirationDate (xdate) == BE_SQLITE_OK );
+    ASSERT_TRUE( DateTime::Compare (DateTime::GetCurrentTimeUtc(), xdate) != DateTime::CompareResult::EarlierThan );
+
+    db.CloseDb();
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BeSQLiteDbOpenTest, Expired2)
+    {
+    BeFileName tempDir;
+    BeTest::GetHost ().GetTempDir (tempDir);
+    BeSQLiteLib::Initialize (tempDir);
+    
+    Utf8String expiredFileName;
+    if (true)
+        {
+        BeFileName dbFullName = BeSQLiteDbTests::getDbFilePath (L"expired2.idgndb");
+        if (BeFileName::DoesPathExist (dbFullName))
+            BeFileName::BeDeleteFile (dbFullName);
+        BeSQLite::Db db;
+        BeSQLite::Db::CreateParams createParms;
+        createParms.SetExpirationDate (DateTime::GetCurrentTimeUtc());
+        ASSERT_EQ( BE_SQLITE_OK, db.CreateNewDb (dbFullName.GetNameUtf8().c_str(), BeDbGuid(), createParms) );
+        ASSERT_TRUE( db.IsDbOpen() );
+        ASSERT_TRUE( db.IsExpired() );
+        expiredFileName.assign (db.GetDbFileName ());
+        }    
+
+    BeSQLite::Db::OpenParams parms (BeSQLite::Db::OPEN_Readonly);
+
+    BeSQLite::Db db;
+    ASSERT_TRUE( db.OpenBeSQLiteDb (expiredFileName.c_str(), parms) == BE_SQLITE_OK );
+    ASSERT_TRUE( db.IsDbOpen() );
+    ASSERT_TRUE( db.IsExpired() );
+    DateTime xdate;
+    ASSERT_TRUE( db.GetExpirationDate (xdate) == BE_SQLITE_OK );
+    ASSERT_TRUE( DateTime::Compare (DateTime::GetCurrentTimeUtc(), xdate) != DateTime::CompareResult::EarlierThan );
+
+    db.CloseDb();
+    }

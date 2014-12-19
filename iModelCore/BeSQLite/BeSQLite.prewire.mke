@@ -1,0 +1,18 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: BeSQLite.prewire.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(InternalSystemPolicy)
+%include mdl.mki
+
+$(BuildContext)PublicAPI/BeSQLite : $(_MakeFilePath)PublicAPI/BeSQLite
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/sqlite-notice.txt : $(_MakeFilePath)SQLite/sqlite-notice.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/snappy-notice.txt : $(_MakeFilePath)snappy/snappy-notice.txt
+    $(LinkFirstDepToFirstTarget)

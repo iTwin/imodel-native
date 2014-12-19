@@ -1,0 +1,300 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="NonPublished\ECDb\ECDbSchemas_Test.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbInstances_Test.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbTestProject.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceTestFixture.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\TestSchemaHelper.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbDateTime_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbReadTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbRelationshipTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FieldEngineer_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbProfile_Test.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbBrownBag_Demo.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDb_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlTestFixture.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatement_Tests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\Backdoor.cpp">
+      <Filter>Backdoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\general\CompressionTests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECSqlStatementTestFixture.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceAdapterTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlQueryAdapter_Tests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementCrud_Tests.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementCrudAsserter.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementCrudTestDatasetHelper.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlCrudTestFixture.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlCrudAsserter.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlDeleteStatementCrudTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlInsertStatementCrudTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlSelectStatementCrudTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlUpdateStatementCrudTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlCommonTestDataset.cpp">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlBuilder_Tests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\JsonLibrary_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\ECDbTestLogger.cpp">
+      <Filter>Backdoor</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECInstanceIdSequence_Tests.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\QueryTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECInstanceECSqlSelectAdpaterTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp">
+      <Filter>Performance\BisDesign</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp">
+      <Filter>Performance\BisDesign</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\DevSummitPerformanceTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECInstanceInserterTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECInstanceAdaptersTestFixture.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECInstanceUpdaterTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\InstanceCRUDTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\RandomECInstanceGenerator.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbSchemas_Test_Old.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECJsonInserterTests_Old.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbRelationshipStrength_Test_Old.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbRelationshipTests_Old.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FieldEngineer_Test_Old.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\WriteAndVerifyGeometryInstances.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbInstances_Test_Old.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\DbLogHelper.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementEvents_Tests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbSchemaManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\FSRTests.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbFileInfoTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Performance\PerformanceTests.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceTestFixture.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\TestSchemaHelper.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\ProfileBreak.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECDbPublishedTests.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlTestFixture.h">
+      <Filter>Published\ECSql</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\Backdoor.h">
+      <Filter>Backdoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">
+      <Filter>Backdoor</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\PublicApi\NonPublished\ECDb\ECDbTestProject.h">
+      <Filter>NonPublished\PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceECSqlStatementTestFixture.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementCrudAsserter.h">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementCrudTestDatasetHelper.h">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlCrudTestFixture.h">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlExpectedResultImpls.h">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlCrudAsserter.h">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlTestDataset.h">
+      <Filter>Published\ECSql\ECSqlCrud</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlDeleteStatementCrudTestDataset.h">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlInsertStatementCrudTestDataset.h">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlSelectStatementCrudTestDataset.h">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlUpdateStatementCrudTestDataset.h">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlCommonTestDataset.h">
+      <Filter>Published\ECSql\ECSqlCrud\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h">
+      <Filter>Performance\BisDesign</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECInstanceAdaptersTestFixture.h">
+      <Filter>Published\ECSql</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\RandomECInstanceGenerator.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\DbLogHelper.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="NonPublished">
+      <UniqueIdentifier>{ddecf192-6907-4ed1-befd-59402b488323}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NonPublished\ECDb">
+      <UniqueIdentifier>{28a7cb59-54b2-4f5c-96c2-a48bde96df7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate Files">
+      <UniqueIdentifier>{ec07e436-edb0-4501-9d77-00baee770a6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Performance">
+      <UniqueIdentifier>{5448cd01-fe0e-4fa3-9e29-90affdeaff23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published">
+      <UniqueIdentifier>{bb23112c-0b1b-4756-9e82-b0b0d8e7301b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NonPublished\PublicApi">
+      <UniqueIdentifier>{078a114f-653a-42cf-896d-5484ba1a041d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\ECSql">
+      <UniqueIdentifier>{cf8fae63-4351-4d33-98af-816e66e0d708}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backdoor">
+      <UniqueIdentifier>{4888a13a-3bdb-4b36-b77c-5a4d589ea3f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\ECSql\ECSqlCrud">
+      <UniqueIdentifier>{cdf49771-97d3-40e0-95d9-91bc31c7c801}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Published\ECSql\ECSqlCrud\Datasets">
+      <UniqueIdentifier>{f364ac37-147d-4c5d-a6df-8f9a0270b4da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Performance\BisDesign">
+      <UniqueIdentifier>{f9eb09bd-e1ae-40d4-a895-d9bbc9798957}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ignore_list.txt" />
+  </ItemGroup>
+</Project>

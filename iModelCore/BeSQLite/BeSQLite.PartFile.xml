@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my notices. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="BeSQLite.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BeSQLite" />
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/sqlite-notice.txt</Files>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/snappy-notice.txt</Files>
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="BeSQLite" BentleyBuildMakeFile="BeSQLite.mke" ApiNumber="G">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="BentleyApi" PartFile="BentleyApi" Repository="BentleyApi" />
+        <SubPart PartName="Zlib" PartFile="Zlib" Repository="Libsrc-Compress" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECDb">
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="ECDbPrepareDocGeneration" />
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke" ApiNumber="G">
+        <SubPart PartName="BeSQLite" />
+        <SubPart PartName="ECObjectsNative" PartFile="ecobjects" Repository="ecobjects" />
+        <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
+        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/openoffice-notice.txt</Files>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
+                ECSchemas/ECDb/*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+   
+    <Part Name="ECDbPrepareDocGeneration" BentleyBuildMakeFile="ECDb/docs/preparedocgeneration.mke">
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="ECDbExtractCodeSamples" />
+        <SubPart PartName="ECDbBuildCodeSamples" />
+        <Bindings>
+            <Directory SourceName="Docs/Source/ECDb" SubPartDirectory="Docs/Source/ECDb"/>
+            <Directory SourceName="Docs/Images/ECDb" SubPartDirectory="Docs/Images/ECDb"/>
+            <Directory SourceName="Docs/Files/ECDb" SubPartDirectory="Docs/Files/ECDb"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECDbExtractCodeSamples" BentleyBuildMakeFile="${SrcBsiCommon}build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)BeSQLite/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE">
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+    </Part>
+
+    <Part Name="ECDbBuildCodeSamples" BentleyBuildMakeFile="${SrcBsiCommon}build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)BeSQLite/ECDb/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecdbsamplecode -dPolicyFile=$(SrcRoot)BeSQLite/ECDb/ECDbPolicy.mki">
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+    </Part>
+  
+    <!-- TRICKY: There are two sets of public APIs, BeSQLite and ECDb. There is only one published API for this repository, and it must do for both. 
+         To avoid that we run the publishing twice this part cares for it and symlinks the same published API once under the name of BeSQLite and
+         once under the name of ECDb-->
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <SubPart PartName="ECDbLibrary" />
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/BeSQLite"/>
+            <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/ECDb"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeSQLiteUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)BeSQLite/Tests/ -dBEGTEST_NAME=BeSQLite">
+        <!-- Get GTest API directory -->
+        <SubPart    PartName="google_gtest_lib"     PartFile="gtest"        Repository="util-gtest" />
+        <!-- Get the tested API -->
+        <SubPart    PartName="BeSQLite"             PartFile="BeSQLite"     Repository="BeSQLite" />
+        <!-- Needed for published unit tests -->
+        <SubPart    PartName="PublishedApi"         PartFile="BeSQLite"     Repository="BeSQLite" />
+    </Part>
+
+    <Part Name="ECDbUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)BeSqlite/Tests/ECDB/ -dBEGTEST_NAME=ECDb -dBEGTEST_DEPENDENCIES=$(SrcRoot)BeSQLite/Tests/ECDB/dependencies.mki">
+        <!-- Get GTest API directory -->
+        <SubPart PartName="google_gtest_lib"                 PartFile="gtest"        Repository="util-gtest" />
+        <!-- Get the tested API -->
+        <SubPart PartName="ECDb"                             PartFile="BeSQLite"     Repository="BeSQLite" />
+        <!-- Depends on/links with the following libraries  -->
+        <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
+        <!-- Get the test documents -->
+        <SubProduct ProductName="BeTestDocuments"               PartFile="BeGTest"      Repository="BeGTest" />
+    </Part>
+
+    <!-- TRICKY: Documents are only actually published for x64,x86 but we must do other processing for other platforms and other cases so no platforms can be excluded! -->
+    <Part Name="UnitTests_Documents" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishDocuments.mke" BMakeOptions="-dUNIT_TESTS_NAME=ECDbUnitTests -dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnPlatformTest/DgnDbUnitTests/ -dUNIT_TESTS_DOCUMENTS_PREBUILTS_SUBDIR=DgnDb -dUNIT_TESTS_PUBLISH_CONFIG=${SrcRoot}/BeSqlite/Tests/ECDB/UnitTestPublisherConfiguration.xml">
+        <SubPart PartName="DgnDbUnitTestsData"/>
+        <Bindings>
+            <Directory SourceName="Delivery/UnitTests/Documents" SubPartDirectory="Documents/DgnDb" ProductDirectoryName="UnitTests_Documents_DgnDb" />
+            <!-- Note: for BTest, use pre-published documents -->
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
+        <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // ECSqlConsole                                                           // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="ECSqlConsole" SaveProduct="true">
+        <SubPart PartName="ECSqlConsoleExe" />
+        <Directories DirectoryListName="ECSqlConsoleDirList" />
+    </Product>
+
+    <Part Name="ECSqlConsoleExe" BentleyBuildMakeFile="ECSqlConsole/ECSqlConsole.mke">
+        <SubPart PartName="ECDb"/>
+        <Bindings>
+            <Files ProductDirectoryName="ECSqlConsole">Delivery/ECSqlConsole$(exeext)
+                                                       Delivery/logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="ECSqlConsoleDirList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
+        
+        <ProductDirectory Name="ECSqlConsole"                       Path=""/>
+        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
+        <ProductDirectory Name="geomnativeassemblies"               Path=""/>
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
+</BuildContext>

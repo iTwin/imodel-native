@@ -1,0 +1,2 @@
+# Tests that should not be run
+Performance*

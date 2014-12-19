@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ImportConfig
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="urn:schemas-bentley-com:xml-dgndbimportconfiguration DgnDbImportConfiguration.xsd"
+      >
+    <Levels/>
+    <Models/>
+    <References newLevelDisplay="false" mergeIntoParent="false"/>
+    <Raster importAttachments="true" compressData="true"/>
+    <ECSchemas exportDiscovered="false" stopPublishingAfterExport="false">
+        <SupplementalPaths/>
+        <ForcedSelections/>
+    </ECSchemas>
+    <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
+    <Fonts>
+        <AlwaysEmbed>
+            <Font type="TrueType" name="Arial"/>
+            <Font type="RSC" name="STANDARD"/>
+        </AlwaysEmbed>
+    </Fonts>
+    <Options>
+        <OptionBool name="CompactDatabase" value="true"/>
+        <OptionBool name="ConvertSeedDrawingsTo3d" value="false"/>
+        <OptionBool name="EmbedIssues" value="true"/>
+        <OptionBool name="EmbedConfigFile" value="true"/>
+        <OptionBool name="EmbedDgnLinkFiles" value="false"/>
+    </Options>
+</ImportConfig>

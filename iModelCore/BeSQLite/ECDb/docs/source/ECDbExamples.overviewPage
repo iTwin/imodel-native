@@ -1,0 +1,406 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/docs/source/ECDbExamples.overviewPage $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+    /**
+    @page ECDbCodeSamples Code Examples
+
+    This page shows code examples of how to work with @ref ECDbFile "ECDb files"
+    using the @ref ECDbOverview "ECDb API". Note that for the sake of readability
+    error handling is only shown if it was crucial for the understanding of the specific example.
+
+    All code samples use the same sample ECSchema which can be found here:
+    <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>
+
+    @tableofcontents
+
+    @section ECDbCodeSampleRecommendedIncludeFile Recommended include file
+
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_Include.sampleCode
+
+    @section ECDbCodeSampleCreateECDb Create an empty ECDb file
+
+    Before creating an @ref ECDbFile "ECDb file", the assets like standard ECSchemas that come with the %MobileDgn SDK
+    need to be deployed to an appropriate location on the target machine.
+    Then ECDb needs to be initialized (once per process)
+    as shown in the sample code, passing the app's assets folder.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_CreateECDb,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_CreateECDb.sampleCode
+    $SAMPLECODE_END
+
+    @section ECDbCodeSampleOpenCloseECDb Open and close an ECDb file
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_OpenCloseECDb,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_OpenCloseECDb.sampleCode
+    $SAMPLECODE_END
+
+    @section ECDbCodeSampleImportECSchema Import an ECSchema into an ECDb file
+
+    ECSchema(s) are imported into the @ref ECDbFile "ECDb file" using the ECDbSchemaManager.
+    The following shows a code snippet that imports an ECSchema from an ECSchema XML file on disk.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ImportSchema,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ImportSchema.sampleCode
+    $SAMPLECODE_END
+
+    @note An @ref ECDbFile "ECDb file" is self-contained, i.e. it does not reference any ECSchemas XML files
+    held outside of the @ref ECDbFile "ECDb file".
+
+    @section ECDbCodeSampleGetSchema Get an ECSchema from an ECDb file
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_SchemaManagerGetSchema,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_SchemaManagerGetSchema.sampleCode
+    $SAMPLECODE_END
+
+    @section ECDbCodeSampleGetClass Get an ECClass from an ECDb file
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_SchemaManagerGetClass,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_SchemaManagerGetClass.sampleCode
+    $SAMPLECODE_END
+
+    @section ECDbCodeSampleExecuteECSqlSelect Execute an ECSQL Select statement
+
+    This sample shows how to select instances from an ECDb file.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelect,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelect.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleExecuteECSqlSelectBuilder Execute an ECSQL Select statement using an ECSqlBuilder
+
+    This sample shows how to select instances from an ECDb file using the 
+    @ref BentleyApi::BeSQLite::EC::ECSqlSelectBuilder "ECSqlSelectBuilder".
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectBuilder,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectBuilder.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleExecuteECSqlSelectStruct Select struct properties in an ECSQL Select statement
+
+    The first example shows how to select struct properties as a whole:
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectStructProps,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectStructProps.sampleCode
+    $SAMPLECODE_END
+
+    The second example shows how to explicitly select specific members of a struct property:
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectStructPropMembers,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectStructPropMembers.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleExecuteECSqlSelectArray Select array properties in an ECSQL Select statement
+
+    The first example shows how to select primitive array properties:
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectPrimArrayProps,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectPrimArrayProps.sampleCode
+    $SAMPLECODE_END
+
+    The following example shows how to select struct array properties where @c Certifications is a @c Certification array property:
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectStructArrayProps,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectStructArrayProps.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementAndDateTimeProperties ECSqlStatement and date time properties
+    In the API date time values are represented by the Bentley::DateTime class (as in @ref ECObjectsGroup).
+    Each DateTime instance can contain metadata about the actual date time value (see also Bentley::DateTime::Info).
+    ECDb persists date times in the Julian Day format which is one of the preferred formats to store date times in SQLite
+    (see Bentley::DateTime::ToJulianDay).
+    The metadata that comes along with a DateTime instance is not persisted per-instance. Instead, clients can
+    decorate the respective ECProperty with the @b %DateTimeInfo custom attribute from the standard ECSchema
+    @b Bentley_Standard_CustomAttributes. So all date times within a given ECProperty have the same date time metadata.
+    @see @ref ECInstancesDateTimePropertiesHowTos
+
+    ### How the @b %DateTimeInfo custom attribute affects ECSqlStatement::GetValueDateTime
+    @li If the custom attribute is present, the resulting DateTime object will have the metadata from the custom attribute.
+    @li If the custom attribute is not present, the resulting DateTime object will get @e default metadata as defined by 
+    BentleyApi::ECN::DateTimeInfo::GetDefault
+
+    @note Only the use of the %DateTimeInfo custom attribute preserves the full information of a DateTime object during a roundtrip. 
+    Not using the custom attribute is applicable for use cases where the metadata is irrelevant or of no interest.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementAndDateTime,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementAndDateTime.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleExecuteECSqlSelectWithJoin Execute an ECSQL Select statement with join
+
+    This sample shows how to select EC data using a join. It also demonstrates
+    how to use parameter bindings, so that a prepared statement can be reused for a sequence of queries.
+    The sample ECSchema to which the sample refers to is the same as in @ref ECDbCreatingECDbFromScratch.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlSelectWithJoin,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlSelectWithJoin.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementBindingPrimitives Bind primitive values to an ECSQL statement
+
+    This sample shows how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s API 
+    to bind parameter values to parameters in an ECSQL statement.
+
+    @note This example also illustrates the use of the LIMIT and OFFSET clauses in ECSQL.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingPrimitives,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingPrimitives.sampleCode
+    $SAMPLECODE_END
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementBindingWithNamedParameters ECSQL statement binding with named parameters
+
+    This sample shows how to use named parameters with the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s 
+    binding API.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingWithNamedParameters,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingWithNamedParameters.sampleCode
+    $SAMPLECODE_END
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementBindingStructs Bind struct values to an ECSQL statement
+
+    This sample shows how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s API to 
+    bind struct values to parameters in an ECSQL statement.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingStructs,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingStructs.sampleCode
+    $SAMPLECODE_END
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementBindingArrays Bind arrays to an ECSQL statement
+
+    The following samples show how to use @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement"'s API to 
+    bind primitive and struct arrays to parameters in an ECSQL statement.
+
+    Binding primitive arrays:
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingPrimArrays,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingPrimArrays.sampleCode
+    $SAMPLECODE_END
+
+    Binding struct arrays:
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementBindingStructArrays,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementBindingStructArrays.sampleCode
+    $SAMPLECODE_END
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECSqlStatementGetColumnInfo Retrieving metadata of columns of result set of ECSQL SELECT statement
+
+    The following example shows how to retrieve the BentleyApi::BeSQLite::EC::ECSqlColumnInfo for columns in the result set. 
+    It also shows how the ECSqlColumnInfo can be retrieved for members of struct columns and elements of array columns.
+
+    See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    Further assume that the @c Certification array has 2 elements in the sample ECSQL statement
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlColumnInfoOnNestedLevels,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlColumnInfoOnNestedLevels.sampleCode
+    $SAMPLECODE_END
+
+    The code's output:
+
+        Top level
+        FirstName: Primitive type
+        Certifications: ECStruct array type
+    
+        Struct array element level
+        Certifications[0].Name: Primitive type
+        Certifications[0].StartDate: Primitive type
+        Certifications[0].EndDate: Primitive type
+        Certifications[0].Technology: Primitive type
+        Certifications[0].Level: Primitive type
+
+        Certifications[1].Name: Primitive type
+        Certifications[1].StartDate: Primitive type
+        Certifications[1].EndDate: Primitive type
+        Certifications[1].Technology: Primitive type
+        Certifications[1].Level: Primitive type
+
+
+    @section ECDbCodeSampleECSqlStatementGetValueErrorHandling Detecting errors when getting values from an ECSQL SELECT statement
+
+    This sample shows how errors can be detected when retrieving values from an ECSQL SELECT statement as those methods are designed to
+    make for concise client code which directly return the column values. They therefore do not return an error status directly.
+
+    @note The same approach is used for all methods of ECSqlStatement that do not return an error code. This, in particular,
+    applies to the binding API, e.g. @ref BentleyApi::BeSQLite::EC::ECSqlStatement::BindArray "ECSqlStatement::BindArray" or 
+    @ref BentleyApi::BeSQLite::EC::ECSqlStatement::BindStruct "ECSqlStatement::BindStruct"
+
+    @see @ref ECSqlStatementErrorReporting "ECSqlStatement Error Reporting"
+    @see BentleyApi::BeSQLite::EC::IECSqlValue
+    @see @ref ECDbCodeSampleECSqlStatementBindingStructs
+    @see @ref ECDbCodeSampleECSqlStatementBindingArrays
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlStatementGetValueErrorHandling,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlStatementGetValueErrorHandling.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleInsertECInstance Insert an instance
+
+    This sample shows how to insert an instance into an @ref ECDbFile "ECDb file".
+    Updating and deleting instances works likewise.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlInsert,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlInsert.sampleCode
+    $SAMPLECODE_END
+
+    @note Deleting an instance also deletes any of its relationships. The relationship
+    strengths are honored during the delete.
+    i.e., if the relationships are setup to have embedding strength, the child instances are
+    also automatically deleted.
+    If the relationships are setup with holding strength, the child instances are deleted
+    only if the children don't have any parents left.
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleInsertRelationship Insert a relationship
+
+    This sample shows how to insert a relationship between two instances into an @ref ECDbFile "ECDb file".
+
+    Deleting relationships works likewise.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECSqlInsertRelation,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECSqlInsertRelation.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleECInstanceAdapter Using the ECInstance ECSQL SELECT Adapter
+
+    This sample shows how to use the @ref BentleyApi::BeSQLite::EC::ECInstanceECSqlSelectAdapter "ECInstanceECSqlSelectAdapter" 
+    over an @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" that implicitly aggregates
+    the raw data of an ECSqlStatement into an @ref BentleyApi::ECN::IECInstance "ECInstance".
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECInstanceECSqlSelectAdapter,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECInstanceECSqlSelectAdapter.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleJsonAdapter Using the JSON ECSQL SELECT Adapter
+
+    This sample shows how to use the @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter" 
+    over an @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" that implicitly aggregates
+    the raw data of an ECSqlStatement into a @ref Json::Value "JSON" object.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_JsonECSqlSelectAdapter,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_JsonECSqlSelectAdapter.sampleCode
+    $SAMPLECODE_END
+
+    @see See <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">Sample ECSchema</a> for the
+    definition of the ECClasses and ECProperties used in the ECSQL statement.
+
+    @section ECDbCodeSampleNonSelectAdapters Using the non-SELECT Adapters for ECInstances and JSON
+
+    This sample shows how to use the @ref BentleyApi::BeSQLite::EC::ECInstanceInserter "ECInstanceInserter" which 
+    inserts an @ref BentleyApi::ECN::IECInstance "IECInstance" into 
+    the @ref ECDbFile "ECDb file". It internally creates the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement", 
+    binds the corresponding values to it, and finally executes it.
+    The @ref BentleyApi::BeSQLite::EC::ECInstanceUpdater "ECInstanceUpdater" and 
+    @ref BentleyApi::BeSQLite::EC::ECInstanceDeleter "ECInstanceDeleter" work likewise.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ECInstanceInserter,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ECInstanceInserter.sampleCode
+    $SAMPLECODE_END
+
+    This sample shows how to use the @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter" to insert instances in the form of 
+    @ref Json::Value "JSON" objects into the @ref ECDbFile "ECDb file". It internally
+    creates the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement", binds the corresponding values to it, and
+    finally executes it.
+    The @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater" and
+    @ref BentleyApi::BeSQLite::EC::JsonDeleter "JsonDeleter" work likewise.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_JsonInserter,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_JsonInserter.sampleCode
+    $SAMPLECODE_END
+
+    @see @ref WorkingWithECDb
+
+    */
+
+    //****** ECDbCreatingECDbFromScratch *******
+
+    /** @page ECDbCreatingECDbFromScratch Creating an ECDb file from scratch
+
+    This section describes how you create an empty @ref ECDbFile "ECDb file" so that you can start adding EC content to and querying it from the file.
+
+    ### 1) Create ECSchema as conceptual model of the business domain
+    An @ref BentleyApi::ECN::ECSchema "ECSchema" is the key ingredient in order to create EC content in an @ref ECDbFile "ECDb file". So the first step
+    is to create an @ref BentleyApi::ECN::ECSchema "ECSchema" that describes the conceptual model of your business domain.
+
+    An @ref BentleyApi::ECN::ECSchema "ECSchema" is made up of @ref BentleyApi::ECN::ECClass "ECClasses" which in turn
+    consist of @ref BentleyApi::ECN::ECProperty "ECProperties".
+    See @ref ECObjectsGroup for more information about an ECSchema and the generic repository agnostic EC API in general.
+
+    Creating an ECSchema can be done if several ways:
+    @li Use a tool like the <em>%Bentley ECClassEditor</em> to author an ECSchema. Its output is an ECSchema XML file.
+    @li Create the ECSchema XML file manually
+
+    An basic example of an ECSchema can be found here: <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>.
+
+    ### 2) Create an %ECDb file
+    At first, the assets like standard ECSchemas that come with the %MobileDgn SDK need to be deployed to
+    an appropriate location on the target machine. Then ECDb needs to be initialized (once per process)
+    by a call to BentleyApi::BeSQLite::EC::ECDb::Initialize, passing the app's assets folder.
+
+    Afterwards you can use the BentleyApi::BeSQLite::EC::ECDb class to create an empty @ref ECDbFile "ECDb file".
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_CreateECDb,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_CreateECDb.sampleCode
+    $SAMPLECODE_END
+
+    ### 3) Import ECSchema into an %ECDb file
+    The ECSchema(s) you created in step 1) are imported into the @ref ECDbFile "ECDb file" using the ECDbSchemaManager.
+    The following shows a code snippet that imports an ECSchema from an ECSchema XML file on disk.
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_ImportSchema,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_ImportSchema.sampleCode
+    $SAMPLECODE_END
+
+    @note An @ref ECDbFile "ECDb file" is self-contained, i.e. it does not reference any ECSchemas XML files held outside of the @ref ECDbFile "ECDb file".
+
+    ### 4) Use %ECDb CRUD API to populate the %ECDb file
+    Now you can use the @ref ECDbOverview "ECDb API" to insert, modify and retrieve EC content from the @ref ECDbFile "ECDb file".
+
+    @see @ref ECDbCodeSamples
+    @see @ref WorkingWithECDb
+
+    */
+

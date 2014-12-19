@@ -1,0 +1,108 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BeSQLite.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+GCC_DEFAULT_VISIBILITY=default
+GCC_NOSTRICT=1
+
+%include $(SrcRoot)bsicommon/sharedmki/CommonCompileLinkPolicy.mki
+
+# disable checking of assignment to smaller data types. SQLite does this a lot.
+VCRuntimeCheckOption=\/RTCsu
+
+%include mdl.mki
+
+cDefs +% -D__BE_SQLITE_HOST_DLL__
+
+%if $(TARGET_PLATFORM) == "WinRT"
+    cDefs + -D__BE_SQLITE_WINRT__
+%endif
+
+# Make 7z single threaded on everything other than Windows.
+%if $(TARGET_PLATFORM) != "Windows"
+    cDefs + -D_7ZIP_ST
+%endif
+
+baseDir = $(_MakeFilePath)
+sevenDir = $(baseDir)seven/
+snappyDir = $(baseDir)snappy/
+SQLiteDir = $(baseDir)SQLite/
+SubpartLibs = $(BuildContext)SubParts/Libs/
+
+warnLevel = -W3
+
+o = $(OutputRootDir)build/BeSQLite/
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+appName         = BeSQLite
+CCompPDBName    = $(appName)
+
+always:
+    !~@mkdir $(o)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)LzmaEnc$(oext)      : $(sevenDir)LzmaEnc.c ${MultiCompileDepends}
+
+$(o)LzmaDec$(oext)      : $(sevenDir)LzmaDec.c ${MultiCompileDepends}
+
+$(o)Lzma2Enc$(oext)     : $(sevenDir)Lzma2Enc.c ${MultiCompileDepends}
+
+$(o)Lzma2Dec$(oext)     : $(sevenDir)Lzma2Dec.c ${MultiCompileDepends}
+
+$(o)LzFind$(oext)       : $(sevenDir)LzFind.c ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM) == "Windows"
+    $(o)MtCoder$(oext)      : $(sevenDir)MtCoder.c ${MultiCompileDepends}
+
+    $(o)LzFindMt$(oext)     : $(sevenDir)LzFindMt.c ${MultiCompileDepends}
+
+    $(o)Threads$(oext)      : $(sevenDir)Threads.c ${MultiCompileDepends}
+%endif
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)snappy$(oext)       : $(snappyDir)snappy.cpp ${MultiCompileDepends}
+
+$(o)BeSQLite$(oext)     : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
+
+$(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
+
+$(o)DownloadVfs$(oext)  : $(SQLiteDir)DownloadVfs.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
+
+$(o)L10N$(oext)         : $(baseDir)L10N.cpp $(baseDir)/PublicAPI/BeSQLite/L10N.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+CCompFpOpts=precise
+$(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
+            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)closure.c
+
+
+objs + $(o)SQLite$(oext)
+
+DLM_OBJECT_FILES    = $(objs)
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_NOINITFUNC      = 1
+DLM_NOMSBUILTINS    = 1
+DLM_NO_DEF          = 1
+DLM_NO_DLS          = 1
+DLM_NOENTRY         = 1
+DLM_OBJECT_DEST     = $(o)
+ASSEMBLY_STRONGNAME = 1
+
+LINKER_LIBRARIES    =  $(SubpartLibs)$(libprefix)BeZlib$(stlibext)
+
+# We support shared or static linking.
+%include $(sharedMki)linkLibrary.mki
