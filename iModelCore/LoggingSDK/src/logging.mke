@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: logging/logging.mke $
+#
+#   $Copyright: (c) 2010 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+ALWAYS:
+   $(_bmake) $(make_opt) $(_MakeFilePath)native/native.mke
+   $(_bmake) $(make_opt) $(_MakeFilePath)managed/managed.mke
+   $(_bmake) $(make_opt) $(_MakeFilePath)server/server.mke
+   $(_bmake) $(make_opt) $(_MakeFilePath)install/install.mke
+   $(_bmake) $(make_opt) $(SrcBsiCommon)sharedpart/logging/ValidateSharedPartDelivery.mke
+

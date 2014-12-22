@@ -1,0 +1,40 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/managed/console/console.mke $
+#
+#   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   ECObjects assembly
+#-----------------------------------------------------------------------
+
+programName       = Bentley.logging.console-2.0
+
+prodSrc             = $(_MakeFilePath)
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_VERSION = 2.0.0.0
+ASSEMBLY_DESCRIPTION = Console Logging Provider
+ASSEMBLY_PRODUCT_NAME = Console Logging Provider
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_STRONGNAME = 1
+
+
+ASSEMBLY_SOURCE_LIST = $(prodSrc)console.cs
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+#-----------------------------------------------------------------------

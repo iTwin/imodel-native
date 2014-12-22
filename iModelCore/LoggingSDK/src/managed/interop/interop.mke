@@ -1,0 +1,80 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/managed/interop/interop.mke $
+#
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+programName = Bentley.logging.interop-2.0
+#programName = interop
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+prodSrc             = $(_MakeFilePath)
+
+#STATIC_C_RUNTIME = 1
+
+%include mdl.mki
+
+ASSEMBLY_PRODUCT_NAME = $(programName)
+ASSEMBLY_NAME       = $(programName)
+ASSEMBLY_TITLE      = Bentley logging native interop assembly
+ASSEMBLY_DESCRIPTION = Bentley logging native interop assembly
+
+TARGET_DIRECTORY    = $(binDir)
+
+nameToDefine = BSILOG_INTEROP_EXPORTS
+%include cdefapnd.mki
+
+#-----------------------------------------------------------------------
+#                           Include Path
+#-----------------------------------------------------------------------
+dirToSearch =           $(nativeIntDir)
+%include cincapnd.mki
+
+assemDirToSearch =           $(BuildContextDelivery)
+%include cincapnd.mki
+
+#------------------------------------------------------------------------------
+#       Compile
+#------------------------------------------------------------------------------
+%include compileForCLRStart.mki
+
+$(o)nativeinterop.obj       :   $(prodSrc)nativeinterop.cpp \
+                                $(BuildContext)PublicAPI/Logging/bentleylogging.h
+
+$(o)managedinterop.obj      :   $(prodSrc)managedinterop.cpp \
+                                $(prodSrc)bentleyloginterop.h \
+                                $(BuildContext)PublicAPI/Logging/bentleylogging.h
+
+%include compileForCLRStop.mki
+
+#-----------------------------------------------------------------------
+#       Link
+#-----------------------------------------------------------------------
+DLM_NAME            = $(ASSEMBLY_NAME)
+DLM_OBJECT_DEST     = $(o)
+DLM_DEST            = $(TARGET_DIRECTORY)
+DLM_NO_RCSIGN       = 1
+DLM_NOMSBUILTINS    = 1
+DLM_NO_DEF          = 1
+DLM_NO_DLS          = 1
+DLM_NO_SIGN         = 1
+ASSEMBLY_VERSION    = 2.0.0.0
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_STRONGNAME = 1
+
+LINKER_LIBRARIES   = $(BuildContextSubParts)libs/Bentley.lib
+LINKER_LIBRARIES   + $(BuildContextSubParts)libs/BentleyAllocator.lib
+
+DLM_OBJECT_FILES    = $(o)nativeinterop.obj $(o)managedinterop.obj
+
+%include $(SharedMki)VersionedPartLinkMixedAssembly.mki
+
+
+#-----------------------------------------------------------------------
+#   Copy the files required for the SDK
+#-----------------------------------------------------------------------
+$(includeDir)bentleyloginterop.h : $(baseDir)bentleyloginterop.h
+    $(bcopycmd) $(<) $(@)

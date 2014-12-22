@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) Microsoft Corporation.  All rights reserved.
+
+    The use and distribution terms for this software are cov    Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+    which can be found in the file CPL.TXT at the root of this distribution.
+    By using this software in any fashion, you are agreeing to be bound by
+    the terms of this license.
+
+    You must not remove this notice, or any other, from this software.
+
+    Product.MSI - example source code for Product from "Getting Started" in help
+-->
+<?if $(var.PACKAGE_TARGETPLATFORM) = "x64"?>
+    <?define PackageId="45BC088C-8843-425c-BA9A-99E7899EEA7D" ?>
+    <?define ComponentGuid="A2855A22-95E4-41b2-9EE3-864F17F97D86" ?>
+<?else?>
+    <?define PackageId="B1C02C38-2D28-4e15-9215-60D4884E0C92" ?>
+    <?define ComponentGuid="B58135DE-9AC6-4739-B091-0D29F252B4FE" ?>
+<?endif?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+        <Module Id="NativeLoggingClient" Codepage="1252" Language="0" Version="$(var.INSTALLER_PRODUCT_VERSION)">
+                <Package Id="$(var.PackageId)" Description="Bentley Native Logging Client Merge Module" Platforms="$(var.PACKAGE_TARGETPLATFORM)" Comments="Contact:  Your local administrator" InstallerVersion="200" Manufacturer="Bentley Systems, Inc" Keywords="MergeModule,MSI,Database"/>
+                <Directory Id="TARGETDIR" Name="SourceDir">
+                        <Directory Id="INSTALLDIR" Name=".">
+                                <Component Id="NativeLogging" Guid="$(var.ComponentGuid)" Win64="$(var.COMPONENT_WIN64)">
+                                        <File Id="Log4Cxx" Name="bentleylog4cxx-2.0.dll" Source="$(var.INSTALLER_FILE_BASE)bentleylog4cxx-2.0.dll"/>
+                                        <File Id="confgigDTD" Name="log4j.dtd" Source="$(var.INSTALLER_FILE_BASE)log4j.dtd"/>
+                                </Component>
+                        </Directory>
+                </Directory>
+        </Module>
+</Wix>

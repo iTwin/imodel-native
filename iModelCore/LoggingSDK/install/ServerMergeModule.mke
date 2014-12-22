@@ -1,0 +1,35 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: install/ServerMergeModule.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+programName         = LoggingServerMergeModule
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+#---------------------------------------------------------------------------------------
+# MSI Installer file Setup.
+#---------------------------------------------------------------------------------------
+
+baseDir             = $(_MakeFilePath)
+
+#---------------------------------------------------------------------------------------
+# Compile the MSI File
+#---------------------------------------------------------------------------------------
+
+INSTALLER_OUTPUT_FILENAME   = $(programName)
+INSTALLER_OUTPUT_FILEDIR    = $(installDir)
+INSTALLER_FILE_BASE         = $(BuildContextDelivery)
+INSTALLER_SOURCE_LIST       = $(baseDir)ServerMergeModule.wxs
+INSTALLER_OBJECT_LIST       = $(o)ServerMergeModule.wixobj
+INSTALLER_MAKE_MERGEMODULE  = 1
+INSTALLER_PRODUCT_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+INSTALLER_COMPILER_OPT      + -sw1086 -sw1088
+%include $(SharedMki)wix.mki
+
+
+
+

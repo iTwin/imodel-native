@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- D-15000 : This logging configuration file is embedded in the assembly and is used as default configuration when tht
+         real logging configuration file (specified in the dll's configuration file) is not found. -->
+<configuration>
+
+    <log4net>
+
+        <appender name="ConsoleAppender" type="log4net.Appender.ConsoleAppender">
+            <layout type="log4net.Layout.PatternLayout">
+                <param name="ConversionPattern" value="%date{HH:mm:ss,fff} %-5level - %logger - %message%newline"/>
+            </layout>
+        </appender>
+
+        <logger name = "Bentley.ATP"               additivity = "true" >  <level value = "WARN" /> </logger>
+        <logger name = "ATP"                       additivity = "true" >  <level value = "WARN" /> </logger>
+        <logger name = "ATP.PerformanceTests"      additivity = "true" >  <level value = "WARN" />  </logger>
+        <logger name = "Bentley.Exceptions.Logger" additivity = "true" >  <level value = "WARN" /> </logger>
+
+        <root>
+            <level value="WARN" />
+            <appender-ref ref="ConsoleAppender" />
+        </root>
+    </log4net>
+
+</configuration>

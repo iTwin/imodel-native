@@ -1,0 +1,92 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: logging/native/log4cxxsrv/server.mke $
+#
+#   $Copyright: (c) 2008 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#       Project Setup
+#-----------------------------------------------------------------------
+programName         = bsilogserv-1.1
+
+baseDir             = $(_MakeFilePath)
+
+srvhlprDir          = $(UTILROOT)servhlpr/
+
+#-----------------------------------------------------------------------
+#       Include compile options and pw macros
+#-----------------------------------------------------------------------
+UNICODE = 1
+consoleAppUnicode = 1
+
+%include mdl.mki
+
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+nameToDefine = SERVHLPR_NOIMPORT
+%include cdefapnd.mki
+
+#nameToDefine = NO_SYNCHRONIZED_MACRO
+#%include cdefapnd.mki
+
+nameToDefine = LOG4CXX_STATIC
+%include cdefapnd.mki
+
+nameToDefine = HAVE_XML
+%include cdefapnd.mki
+
+dirToSearch = $(nativeIntDir)
+%include cincapnd.mki
+
+dirToSearch = $(nativeDir)log4cxx/
+%include cincapnd.mki
+
+dirToSearch = $(LIBSRC)log4cxx/log4cxx-0.9.7/include/
+%include cincapnd.mki
+
+dirToSearch = $(UTILROOT)butil/pubinc/
+%include cincapnd.mki
+
+dirToSearch = $(srvhlprDir)
+%include cincapnd.mki
+
+#-----------------------------------------------------------------------
+#       Include Files
+#-----------------------------------------------------------------------
+Includes    =   $(nativeDir)log4cxx/log4cxx.h $(nativeIntDir)bsilog.h $(srvhlprDir)servhlpr.h
+
+#-----------------------------------------------------------------------
+#       Object Files
+#-----------------------------------------------------------------------
+Objects     =   $(o)server$(oext) \
+                $(o)servhlpr$(oext) \
+                $(o)servmain$(oext)
+
+#-----------------------------------------------------------------------
+#       Compile Source
+#-----------------------------------------------------------------------
+$(o)server$(oext)       :   $(baseDir)server.cpp $(Includes)
+
+$(o)servhlpr$(oext)     :   $(srvhlprDir)servhlpr.cpp  $(Includes)
+
+$(o)servmain$(oext)     :   $(srvhlprDir)servmain.cpp  $(Includes)
+
+#-----------------------------------------------------------------------
+#   Create the Windows NT DLL from Objects
+#-----------------------------------------------------------------------
+EXE_LIBS        = $(libraryDir)liblog4cxx010.lib $(smtpLib)libsmtp08.lib $(libraryDir)libapr010302.lib $(libraryDir)libaprutil010302.lib $(libraryDir)libapriconv010201.lib
+EXE_NT_LIBS     = ws2_32.lib odbc32.lib advapi32.lib shell32.lib mswsock.lib
+
+%include linktool.mki
+
+$(binDir)log4j.dtd : $(LIBSRC)log4cxx/log4cxx-0.9.7/tests/log4j.dtd
+    $(bcopycmd) $(<) $(@)
+
+$(binDir)$(programName).xml : $(baseDir)bsilogserv.xml
+    $(bcopycmd) $(<) $(@)

@@ -1,0 +1,37 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: install/ServerInstaller.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+programName         = BentleyLoggingServer
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+#---------------------------------------------------------------------------------------
+# MSI Installer file Setup.
+#---------------------------------------------------------------------------------------
+
+baseDir             = $(_MakeFilePath)
+
+#---------------------------------------------------------------------------------------
+# Compile the MSI File
+#---------------------------------------------------------------------------------------
+
+INSTALLER_OUTPUT_FILENAME   = $(programName).$(TARGET_PROCESSOR_ARCHITECTURE)
+INSTALLER_OUTPUT_FILEDIR    = $(installDir)
+INSTALLER_FILE_BASE         = $(BuildContextDelivery)
+INSTALLER_SOURCE_LIST       = $(baseDir)ServerInstaller.wxs
+INSTALLER_OBJECT_LIST       = $(o)ServerInstaller.wixobj
+INSTALLER_IMAGE_BANNER      = $(SrcRoot)miscdev/eula/winstall/bentleyStdInstallBanner.bmp
+INSTALLER_IMAGE_SIDE        = $(SrcRoot)miscdev/eula/winstall/bentleyStdInstall.bmp
+INSTALLER_LICENSE_FILE      = $(SrcRoot)miscdev/eula/lang/English/eula.rtf
+INSTALLER_COMPILER_OPT      + -sw1086 -sw1088 -dBuildContext=$(BuildContext)
+INSTALLER_PRODUCT_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+%include $(SharedMki)wix.mki
+
+
+
+

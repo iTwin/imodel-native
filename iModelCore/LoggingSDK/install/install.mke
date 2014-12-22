@@ -1,0 +1,18 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: logging/install/install.mke $
+#
+#   $Copyright: (c) 2007 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+baseDir             = $(_MakeFilePath)
+
+ALWAYS:
+   $(_bmake) $(make_opt) $(baseDir)NativeMergeModule.mke
+   $(_bmake) $(make_opt) $(baseDir)ManagedMergeModule.mke
+   $(_bmake) $(make_opt) $(baseDir)ServerMergeModule.mke
+   $(_bmake) $(make_opt) $(baseDir)ServerInstaller.mke
+
+
+#-----------------------------------------------------------------------

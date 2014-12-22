@@ -1,0 +1,48 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/server/server.mke $
+#
+#   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   ECObjects assembly
+#-----------------------------------------------------------------------
+
+programName       = BentleyLoggingServer-2.0
+
+prodSrc             = $(_MakeFilePath)
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging.log4net-2.0.dll
+%include csrefapnd.mki
+
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+ASSEMBLY_VERSION = 2.0.0.0
+ASSEMBLY_DESCRIPTION = Bentley Logging Server
+ASSEMBLY_PRODUCT_NAME = Bentley Logging Server
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_STRONGNAME = 1
+
+
+ASSEMBLY_SOURCE_LIST = $(prodSrc)Program.cs \
+$(prodSrc)ProjectInstaller.cs \
+$(prodSrc)ProjectInstaller.Designer.cs \
+$(prodSrc)Service.cs \
+$(prodSrc)Service.Designer.cs
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+$(BuildContextDelivery)BentleyLoggingServer.exe.config :  $(prodSrc)BentleyLoggingServer.exe.config
+    $(LinkFirstDepToFirstTarget)
+

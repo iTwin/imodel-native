@@ -1,0 +1,14 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: src/LoggingSDK.prewire.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(SrcRoot)LoggingSDK/mki/AssertLoggingSdkPolicy.mki 
+%include mdl.mki
+
+# NB: Do not try to link anything into $(BuildContext)PublicAPI/Logging. That directory points to
+#       $(SrcRoot)Bentley/PublicAPI/Logging. If you want to publish any .h files, you must put them into 
+#       a different subdirectory, e.g., $(BuildContext)PublicAPI/LoggingSDK or $(BuildContext)PublicAPI/LoggingUtils.
+

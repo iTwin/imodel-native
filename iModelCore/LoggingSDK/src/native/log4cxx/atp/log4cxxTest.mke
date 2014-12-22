@@ -1,0 +1,86 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/native/log4cxx/atp/log4cxxTest.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#       Include compile options and pw macros
+#-----------------------------------------------------------------------
+programName = log4cxxtest
+executableName = log4cxxtest
+
+baseDir = $(_MakeFilePath)
+incDir = $(baseDir)../
+unitTestDir = $(UTILROOT)cpp/cppunittest/
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+
+# Need to set this or fix the compiler warnings in CppUnitTest.
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%include mdl.mki
+
+dirToSearch = $(incDir)
+%include cincapnd.mki
+
+dirToSearch = $(nativeIntDir)
+%include cincapnd.mki
+
+
+#-----------------------------------------------------------------------
+#       Include Files
+#-----------------------------------------------------------------------
+allIncs         = $(incDir)log4cxx.h $(BuildContextVendorAPI)cppunittest/testharness.h
+
+#-----------------------------------------------------------------------
+#       Object Files
+#-----------------------------------------------------------------------
+allObjs         =   $(o)log4cxxtest$(oext) \
+                    $(o)loggingconfigtest$(oext)
+
+#-----------------------------------------------------------------------
+#       Compile Source
+#-----------------------------------------------------------------------
+$(o)log4cxxtest$(oext)         :   $(baseDir)log4cxxtest.cpp  $(allIncs)
+
+$(o)loggingconfigtest$(oext)         :   $(baseDir)loggingconfigtest.cpp  $(allIncs)
+
+
+#-----------------------------------------------------------------------
+#   Copy the files required for the SDK
+#-----------------------------------------------------------------------
+$(atpDir)log4j.dtd : $(BuildContextSubParts)Libs/log4j.dtd
+    $(LinkFirstDepToFirstTarget)
+
+$(atpDir)logtest.log.xml : $(baseDir)logtest.log.xml
+    $(bcopycmd) $(<) $(@)
+
+$(atpDir)logtest2.log.xml : $(baseDir)logtest2.log.xml
+    $(bcopycmd) $(<) $(@)
+
+# Link the DLL into the test directory
+$(atpDir)bentleylog4cxx-2.0.dll : $(BuildContext)Delivery/bentleylog4cxx-2.0.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(atpDir)Bentley5.dll : $(BuildContext)SubParts/Assemblies/Bentley5.dll
+    $(LinkFirstDepToFirstTarget)
+
+#-----------------------------------------------------------------------
+#   Create the Windows NT DLL from Objects
+#-----------------------------------------------------------------------
+
+CPPUNITTEST_OUT     = $(o)
+CPPUNITTEST_NAME    = $(executableName)
+CPPUNITTEST_DEST    = $(atpDir)
+CPPUNITTEST_LIBS    = $(BuildContext)Delivery/bentleylog4cxx-2.0.lib \
+                      $(BuildContext)SubParts/Libs/bentley.lib \
+                      $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+CPPUNITTEST_LIBS_DELAYLOAD  =
+CPPUNITTEST_OBJS    = $(allObjs)
+CPPUNITTEST_PATH    = $(binDir)
+CPPUNITTEST_SYMB    = $(atpDir)
+
+%include $(SharedMki)cppunittest.mki        # Create .DLL

@@ -1,0 +1,63 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/managed/interop/atp/atp.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#       Include compile options and pw macros
+#-----------------------------------------------------------------------
+programName = bentleymanagedloggingtest
+executableName = bentleymanagedloggingtest
+
+baseDir = $(_MakeFilePath)
+incDir = $(_MakeFilePath)../../../native/interface/
+unitTestDir = $(UTILROOT)cpp/cppunittest/
+
+SKIP_NTBSADDR       = 1
+
+%include mdl.mki
+
+%undef EXE_BASE_ADDRESS
+
+dirToSearch = $(UTILROOT)cpp/
+%include cincapnd.mki
+
+dirToSearch = $(incDir)
+%include cincapnd.mki
+
+dirToSearch = $(_MakeFilePath)../
+%include cincapnd.mki
+
+
+#-----------------------------------------------------------------------
+#       Include Files
+#-----------------------------------------------------------------------
+allIncs         = $(BuildContext)PublicAPI/Logging/bentleylogging.h  $(baseDir)../bentleyloginterop.h $(unitTestDir)testharness.h
+
+#-----------------------------------------------------------------------
+#       Object Files
+#-----------------------------------------------------------------------
+allObjs         =   $(o)atp$(oext)
+
+#-----------------------------------------------------------------------
+#       Compile Source
+#-----------------------------------------------------------------------
+$(o)atp$(oext)           :   $(baseDir)atp.cpp  $(allIncs)
+
+#-----------------------------------------------------------------------
+#   Create the Windows NT DLL from Objects
+#-----------------------------------------------------------------------
+
+CPPUNITTEST_OUT     = $(o)
+CPPUNITTEST_NAME    = $(executableName)
+CPPUNITTEST_DEST    = $(atpDir)
+CPPUNITTEST_LIBS    = $(libraryDir)bentleylogging-2.0.lib $(libraryDir)Bentley.logging.interop-2.0.lib
+CPPUNITTEST_NTLIBS  =
+CPPUNITTEST_OBJS    = $(allObjs)
+CPPUNITTEST_PATH    = $(binDir)
+CPPUNITTEST_SYMB    = $(atpDir)
+
+%include cppunittest.mki        # Create .DLL

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<!-- This is the configuration file for the ProjectWise server (dmskrnl.exe). This controls all output
+     from the server and can direct messages in numerous ways. Please see the documentation for further
+     details.
+
+     NOTE: The file "log4j.dtd" referenced above must be present in the same directory as this
+     configuration file. -->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+   <!-- In this section we will configure the logging appenders. Appenders are equivalent to
+        destinations for log messages. We will set up a single log file that will "roll" when it
+        reaches a size of 10mb. We will then keep around the last 5 of these files to assist in
+        diagnostics if needed.
+
+        RollingFileAppender extends FileAppender to backup the log files when they reach a certain size.
+
+        <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+            <param name="File" value="dmskrnl.log"/>                REQUIRED
+            <param name="MaxFileSize" value="10000000" />           REQUIRED
+            <param name="MaxBackupIndex" value="5"/>                REQUIRED
+            <param name="Append" value="true"/>                     OPTIONAL Default: true
+            <param name="bufferedio" value="true"/>                 OPTIONAL Default: true
+            <param name="immediateflush" value="false"/>            OPTIONAL Default: false
+            <param name="buffersize" value="8192"/>                 OPTIONAL Default: 8k
+            <layout class="org.apache.log4j.PatternLayout">
+                <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c - %m%n"/>
+            </layout>
+        </appender> -->
+
+    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${ALLUSERSPROFILE}\\Application Data\\Bentley\\Logs\\dmskrnl.log"/>   <!-- Required -->
+        <param name="MaxFileSize" value="10000000" />                                                   <!-- Required -->
+        <param name="MaxBackupIndex" value="5"/>                                                        <!-- Required -->
+        <param name="CreatePath" value="true"/>                                                         <!-- optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- Establishing a category for a logger allows you to customize the output
+         settings for the log output. The 'name' attribute needs to correspond to
+         a logger established via the LoggerRegistry::getLogger() method.
+
+         If you do not choose to establish a category for a logger, log output
+         configuration is handled by the 'root' configuration file element.
+
+         For example, adding a 'category' element with the "pwise.system" name attribute,
+         having a child 'priority' element with a value attribute of 'info' means that
+         all logging messages logged to the category pwise.system with a severity of 'info' or
+         greater will be passed on to the log destination (console, file, etc).  In this example,
+         all priorities below 'info' would be suppressed.
+
+         Possible priorities: all, debug, info, warn, error, fatal, off. -->
+
+    <!-- Messages related to the server operations itself and its infrastructure. -->
+    <category name="pwise.system">      <priority value="warn"/></category>
+
+    <!-- Messages related to licensing and SelectServer interactions. -->
+    <category name="pwise.licensing">   <priority value="warn"/></category>
+
+    <!-- Messages related to requests and responses handled by the server.
+         Depending on server load this category can receive significant
+         traffic at the info level and below. -->
+    <category name="pwise.request">     <priority value="warn"/></category>
+
+    <!-- Messages related to document operations. -->
+    <category name="pwise.dms">         <priority value="warn"/></category>
+
+    <!-- Messages related to interactions with the database by the server. Depending on server load
+         this category can receive significant traffic at the info level and below. -->
+    <category name="pwise.database">    <priority value="warn"/></category>
+
+    <!-- Messages related to pw component operations. -->
+    <category name="pwise.ods">         <priority value="warn"/></category>
+
+    <!-- Messages related to file transfers handled by the server. Depending on server load this
+        category can receive significant traffic at the info level and below. -->
+    <category name="pwise.filetrans">   <priority value="warn"/></category>
+
+    <!-- Messages related to file transfer operations (dmsft.dll). -->
+    <category name="pwise.ft">          <priority value="warn"/></category>
+
+    <!-- Messages related to operating system threads. -->
+    <category name="pwise.thread">      <priority value="warn"/></category>
+
+    <!-- Messages related to security and encryption. -->
+    <category name="pwise.security">    <priority value="warn"/></category>
+
+    <!-- Messages related to connections to the server. -->
+    <category name="pwise.connection">  <priority value="warn"/></category>
+
+    <!-- Messages related to connections to the server. -->
+    <category name="pwise.connect">     <priority value="warn"/></category>
+
+    <!-- Messages related to server logging of incoming socket connections. -->
+    <category name="pwise.network">     <priority value="warn"/></category>
+
+    <!-- Messages related to network sockets. -->
+    <category name="pwise.socket">      <priority value="warn"/></category>
+
+    <!-- Messages related to Microstation Design File operations. -->
+    <category name="pwise.MCM.dgnfileio"> <priority value="warn"/></category>
+
+    <!-- The root category will be used to specify the options for any category or option
+         not explicitly specified in a category, above. -->
+    <root>
+        <priority value="warn" />
+        <appender-ref ref="RollingFileAppender"/>
+    </root>
+
+</log4j:configuration>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) Microsoft Corporation.  All rights reserved.
+
+    The use and distribution terms for this software are cov    Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+    which can be found in the file CPL.TXT at the root of this distribution.
+    By using this software in any fashion, you are agreeing to be bound by
+    the terms of this license.
+
+    You must not remove this notice, or any other, from this software.
+
+    Product.MSI - example source code for Product from "Getting Started" in help
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="9DAF1975-4158-4a88-A7E8-B16C75A0AEF9" Name="Bentley Logging Server" Manufacturer="Bentley Systems, Inc." Codepage="1252" Language="0" Version="$(var.INSTALLER_PRODUCT_VERSION)" UpgradeCode="246FF38E-7FA9-4751-BAEB-E0D2595B6A91">
+        <Package Description="Bentley Logging Server" Comments="Contact:  Your local administrator" InstallerVersion="200" Manufacturer="Bentley Systems, Inc" Platforms="$(var.PACKAGE_TARGETPLATFORM)" Keywords="MergeModule,MSI,Database" />
+        <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="$(var.DIRECTORY_PROGFILES)" Name="PFiles">
+                <Directory Id="BentleyDir" Name="Bentley">
+                    <Directory Id="INSTALLDIR" Name="LoggingServer">
+                        <Merge Id="file1.415D2E99-5F4C-4ECA-93A6-FD09CA9521CF" Language="1033" SourceFile="$(var.BuildContext)install\ManagedLogClientMergeModule.msm" DiskId="1" FileCompression="yes" />
+                        <Merge Id="file2.415D2E99-5F4C-4ECA-93A6-FD09CA9521CF" Language="1033" SourceFile="$(var.BuildContext)install\LoggingServerMergeModule.msm" DiskId="1" FileCompression="yes" />
+                    </Directory>
+                </Directory>
+            </Directory>
+        </Directory>
+    <Feature Id="Msm" Title="Bentley Logging Server" Description="Bentley Logging Server" Level="1" ConfigurableDirectory="INSTALLDIR">
+        <MergeRef Id="file1.415D2E99-5F4C-4ECA-93A6-FD09CA9521CF" />
+        <MergeRef Id="file2.415D2E99-5F4C-4ECA-93A6-FD09CA9521CF" />
+    </Feature>
+
+    <UIRef Id="WixUI_Mondo" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+
+    </Product>
+</Wix>
+
+

@@ -1,0 +1,60 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/managed/test/test.mke $
+#
+#   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   ECObjects assembly
+#-----------------------------------------------------------------------
+
+programName       = Bentley.Logging.test-2.0
+
+prodSrc             = $(_MakeFilePath)
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.Logging.console-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.Logging.log4net-2.0.dll
+%include csrefapnd.mki
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.Logging.interop-2.0.dll
+%include csrefapnd.mki
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_CONSOLE = 1
+ASSEMBLY_VERSION = 2.0.0.0
+ASSEMBLY_DESCRIPTION = Logging Test App
+ASSEMBLY_PRODUCT_NAME = Logging Test App
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_STRONGNAME = 1
+
+
+ASSEMBLY_SOURCE_LIST        = $(prodSrc)class1.cs
+ASSEMBLY_TARGET_DIRECTORY   = $(atpDir)
+ASSEMBLY_SYMB_DIR           = $(atpDir)
+
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+#-----------------------------------------------------------------------
+#   Copy Supporting Files
+#-----------------------------------------------------------------------
+$(atpDir)example_log4net_configuration.xml : $(prodSrc)example_log4net_configuration.xml
+    $(bcopyCmd) $(stdBcopyOpts)  $(prodSrc)example_log4net_configuration.xml $(atpDir)
+
+$(BuildContextDelivery)example_log4net_configuration.xml :  $(atpDir)example_log4net_configuration.xml
+    $(LinkFirstDepToFirstTarget)
+#-----------------------------------------------------------------------

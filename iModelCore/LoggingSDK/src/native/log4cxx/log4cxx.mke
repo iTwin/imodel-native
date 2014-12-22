@@ -1,0 +1,78 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/native/log4cxx/log4cxx.mke $
+#
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#       Project Setup
+#-----------------------------------------------------------------------
+appName         = bentleylog4cxx
+programName     = $(appName)
+
+baseDir             = $(_MakeFilePath)
+
+#-----------------------------------------------------------------------
+#       Include compile options and pw macros
+#-----------------------------------------------------------------------
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+nameToDefine = BSILOG_LOG4CXX_EXPORTS
+%include cdefapnd.mki
+
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = LOG4CXX_STATIC
+%include cdefapnd.mki
+
+dirToSearch = $(nativeIntDir)
+%include cincapnd.mki
+
+#dirToSearch = $(LIBSRC)log4cxx/log4cxx-0.10.0/src/main/include/
+#%include cincapnd.mki
+
+CCompPDBName = $(appName)
+
+#-----------------------------------------------------------------------
+#       Include Files
+#-----------------------------------------------------------------------
+Includes    =   $(baseDir)log4cxx.h $(BuildContext)PublicApi/Logging/bentleylogging.h
+
+#-----------------------------------------------------------------------
+#       Compile Source
+#-----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec) $(Includes)
+%include MultiCppCompileRule.mki
+
+$(o)log4cxx.obj     :   $(baseDir)log4cxx.cpp       ${MultiCompileDepends}
+
+$(o)cinterface.obj  :   $(baseDir)cinterface.cpp    ${MultiCompileDepends}
+
+$(o)dllmain.obj     :   $(baseDir)dllmain.cpp       ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+Objects =% $(MultiCompileObjectList)
+
+#-----------------------------------------------------------------------
+#   Create the Windows NT DLL from Objects
+#-----------------------------------------------------------------------
+LINKER_LIBRARIES   =   $(BuildContextSubParts)libs/Bentley.lib \
+                        $(BuildContextSubParts)libs/BentleyAllocator.lib \
+                        $(BuildContextSubParts)libs/libsmtp08.lib \
+                        $(BuildContextSubParts)libs/liblog4cxx010.lib \
+                        $(BuildContextSubParts)staticlibs/libapr010302.lib \
+                        $(BuildContextSubParts)staticlibs/libaprutil010302.lib \
+                        ws2_32.lib odbc32.lib advapi32.lib mswsock.lib
+
+%include linklibrary.mki
+
+#-----------------------------------------------------------------------
+#   Copy the files required for the SDK
+#-----------------------------------------------------------------------
+$(BuildContextDelivery)log4j.dtd : $(BuildContextSubParts)Libs/log4j.dtd
+    $(LinkFirstDepToFirstTarget)
+

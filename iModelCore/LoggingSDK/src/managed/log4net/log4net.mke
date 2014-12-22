@@ -1,0 +1,259 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/managed/log4net/log4net.mke $
+#
+#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+programName       = Bentley.logging.log4net-2.0
+
+PolicyFile=$(SrcRoot)LoggingSDK/mki/AssertLoggingSDKPolicy.mki
+%include mdl.mki
+
+ASSEMBLY_WARN_AS_ERROR=2
+
+prodSrc             = $(_MakeFilePath)
+
+ASSEMBLY_REFERENCE           = $(BuildContextDelivery)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+
+CSCOpt + -d:NET_2_0
+
+# Embed default configuration file in the assembly. It is used in case the file specified for configuration
+# does not exist.
+ASSEMBLY_RES_TO_ADD_FILENAME = default.logging.xml
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(prodSrc)
+%include assemblyResourceAppend.mki
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_DESCRIPTION = Log4Net Logging Provider
+ASSEMBLY_PRODUCT_NAME = Log4Net Logging Provider
+ASSEMBLY_VERSION = 2.0.0.0
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_STRONGNAME = 1
+
+ASSEMBLY_SOURCE_LIST = $(prodSrc)log4net.cs            \
+$(log4netSrc)GlobalContext.cs \
+$(log4netSrc)ILog.cs \
+$(log4netSrc)LogicalThreadContext.cs \
+$(log4netSrc)LogManager.cs \
+$(log4netSrc)MDC.cs \
+$(log4netSrc)NDC.cs \
+$(log4netSrc)ThreadContext.cs \
+$(log4netSrc)Appender\AdoNetAppender.cs \
+$(log4netSrc)Appender\AnsiColorTerminalAppender.cs \
+$(log4netSrc)Appender\AppenderCollection.cs \
+$(log4netSrc)Appender\AppenderSkeleton.cs \
+$(log4netSrc)Appender\AspNetTraceAppender.cs \
+$(log4netSrc)Appender\BufferingAppenderSkeleton.cs \
+$(log4netSrc)Appender\BufferingForwardingAppender.cs \
+$(log4netSrc)Appender\ColoredConsoleAppender.cs \
+$(log4netSrc)Appender\ConsoleAppender.cs \
+$(log4netSrc)Appender\DebugAppender.cs \
+$(log4netSrc)Appender\EventLogAppender.cs \
+$(log4netSrc)Appender\FileAppender.cs \
+$(log4netSrc)Appender\ForwardingAppender.cs \
+$(log4netSrc)Appender\IAppender.cs \
+$(log4netSrc)Appender\IBulkAppender.cs \
+$(log4netSrc)Appender\LocalSyslogAppender.cs \
+$(log4netSrc)Appender\MemoryAppender.cs \
+$(log4netSrc)Appender\NetSendAppender.cs \
+$(log4netSrc)Appender\OutputDebugStringAppender.cs \
+$(log4netSrc)Appender\RemoteSyslogAppender.cs \
+$(log4netSrc)Appender\RemotingAppender.cs \
+$(log4netSrc)Appender\RollingFileAppender.cs \
+$(log4netSrc)Appender\SmtpAppender.cs \
+$(log4netSrc)Appender\SmtpPickupDirAppender.cs \
+$(log4netSrc)Appender\TelnetAppender.cs \
+$(log4netSrc)Appender\TextWriterAppender.cs \
+$(log4netSrc)Appender\TraceAppender.cs \
+$(log4netSrc)Appender\UdpAppender.cs \
+$(log4netSrc)Config\AliasDomainAttribute.cs \
+$(log4netSrc)Config\AliasRepositoryAttribute.cs \
+$(log4netSrc)Config\BasicConfigurator.cs \
+$(log4netSrc)Config\ConfiguratorAttribute.cs \
+$(log4netSrc)Config\DomainAttribute.cs \
+$(log4netSrc)Config\DOMConfigurator.cs \
+$(log4netSrc)Config\DOMConfiguratorAttribute.cs \
+$(log4netSrc)Config\Log4NetConfigurationSectionHandler.cs \
+$(log4netSrc)Config\PluginAttribute.cs \
+$(log4netSrc)Config\RepositoryAttribute.cs \
+$(log4netSrc)Config\SecurityContextProviderAttribute.cs \
+$(log4netSrc)Config\XmlConfigurator.cs \
+$(log4netSrc)Config\XmlConfiguratorAttribute.cs \
+$(log4netSrc)Core\CompactRepositorySelector.cs \
+$(log4netSrc)Core\DefaultRepositorySelector.cs \
+$(log4netSrc)Core\ErrorCode.cs \
+$(log4netSrc)Core\ExceptionEvaluator.cs \
+$(log4netSrc)Core\IAppenderAttachable.cs \
+$(log4netSrc)Core\IErrorHandler.cs \
+$(log4netSrc)Core\IFixingRequired.cs \
+$(log4netSrc)Core\ILogger.cs \
+$(log4netSrc)Core\ILoggerWrapper.cs \
+$(log4netSrc)Core\IOptionHandler.cs \
+$(log4netSrc)Core\IRepositorySelector.cs \
+$(log4netSrc)Core\ITriggeringEventEvaluator.cs \
+$(log4netSrc)Core\Level.cs \
+$(log4netSrc)Core\LevelCollection.cs \
+$(log4netSrc)Core\LevelEvaluator.cs \
+$(log4netSrc)Core\LevelMap.cs \
+$(log4netSrc)Core\LocationInfo.cs \
+$(log4netSrc)Core\LogException.cs \
+$(log4netSrc)Core\LoggerManager.cs \
+$(log4netSrc)Core\LoggerWrapperImpl.cs \
+$(log4netSrc)Core\LoggingEvent.cs \
+$(log4netSrc)Core\LogImpl.cs \
+$(log4netSrc)Core\SecurityContext.cs \
+$(log4netSrc)Core\SecurityContextProvider.cs \
+$(log4netSrc)Core\TimeEvaluator.cs \
+$(log4netSrc)Core\WrapperMap.cs \
+$(log4netSrc)DateFormatter\AbsoluteTimeDateFormatter.cs \
+$(log4netSrc)DateFormatter\DateTimeDateFormatter.cs \
+$(log4netSrc)DateFormatter\IDateFormatter.cs \
+$(log4netSrc)DateFormatter\Iso8601DateFormatter.cs \
+$(log4netSrc)DateFormatter\SimpleDateFormatter.cs \
+$(log4netSrc)Filter\DenyAllFilter.cs \
+$(log4netSrc)Filter\FilterDecision.cs \
+$(log4netSrc)Filter\FilterSkeleton.cs \
+$(log4netSrc)Filter\IFilter.cs \
+$(log4netSrc)Filter\LevelMatchFilter.cs \
+$(log4netSrc)Filter\LevelRangeFilter.cs \
+$(log4netSrc)Filter\LoggerMatchFilter.cs \
+$(log4netSrc)Filter\MdcFilter.cs \
+$(log4netSrc)Filter\NdcFilter.cs \
+$(log4netSrc)Filter\PropertyFilter.cs \
+$(log4netSrc)Filter\StringMatchFilter.cs \
+$(log4netSrc)Layout\ExceptionLayout.cs \
+$(log4netSrc)Layout\ILayout.cs \
+$(log4netSrc)Layout\IRawLayout.cs \
+$(log4netSrc)Layout\Layout2RawLayoutAdapter.cs \
+$(log4netSrc)Layout\LayoutSkeleton.cs \
+$(log4netSrc)Layout\PatternLayout.cs \
+$(log4netSrc)Layout\RawLayoutConverter.cs \
+$(log4netSrc)Layout\RawPropertyLayout.cs \
+$(log4netSrc)Layout\RawTimeStampLayout.cs \
+$(log4netSrc)Layout\RawUtcTimeStampLayout.cs \
+$(log4netSrc)Layout\SimpleLayout.cs \
+$(log4netSrc)Layout\XMLLayout.cs \
+$(log4netSrc)Layout\XMLLayoutBase.cs \
+$(log4netSrc)Layout\XmlLayoutSchemaLog4j.cs \
+$(log4netSrc)Layout\Pattern\AppDomainPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\AspNetCachePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\AspNetContextPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\AspNetPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\AspNetRequestPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\AspNetSessionPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\DatePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\ExceptionPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\FileLocationPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\FullLocationPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\IdentityPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\LevelPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\LineLocationPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\LoggerPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\MessagePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\MethodLocationPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\NamedPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\NdcPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\PatternLayoutConverter.cs \
+$(log4netSrc)Layout\Pattern\PropertyPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\RelativeTimePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\StackTraceDetailPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\StackTracePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\ThreadPatternConverter.cs \
+$(log4netSrc)Layout\Pattern\TypeNamePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\UserNamePatternConverter.cs \
+$(log4netSrc)Layout\Pattern\UtcDatePatternConverter.cs \
+$(log4netSrc)ObjectRenderer\DefaultRenderer.cs \
+$(log4netSrc)ObjectRenderer\IObjectRenderer.cs \
+$(log4netSrc)ObjectRenderer\RendererMap.cs \
+$(log4netSrc)Plugin\IPlugin.cs \
+$(log4netSrc)Plugin\IPluginFactory.cs \
+$(log4netSrc)Plugin\PluginCollection.cs \
+$(log4netSrc)Plugin\PluginMap.cs \
+$(log4netSrc)Plugin\PluginSkeleton.cs \
+$(log4netSrc)Plugin\RemoteLoggingServerPlugin.cs \
+$(log4netSrc)Repository\ConfigurationChangedEventArgs.cs \
+$(log4netSrc)Repository\IBasicRepositoryConfigurator.cs \
+$(log4netSrc)Repository\ILoggerRepository.cs \
+$(log4netSrc)Repository\IXmlRepositoryConfigurator.cs \
+$(log4netSrc)Repository\LoggerRepositorySkeleton.cs \
+$(log4netSrc)Repository\Hierarchy\DefaultLoggerFactory.cs \
+$(log4netSrc)Repository\Hierarchy\Hierarchy.cs \
+$(log4netSrc)Repository\Hierarchy\ILoggerFactory.cs \
+$(log4netSrc)Repository\Hierarchy\Logger.cs \
+$(log4netSrc)Repository\Hierarchy\LoggerKey.cs \
+$(log4netSrc)Repository\Hierarchy\ProvisionNode.cs \
+$(log4netSrc)Repository\Hierarchy\RootLogger.cs \
+$(log4netSrc)Repository\Hierarchy\XmlHierarchyConfigurator.cs \
+$(log4netSrc)Util\AppenderAttachedImpl.cs \
+$(log4netSrc)Util\CompositeProperties.cs \
+$(log4netSrc)Util\ContextPropertiesBase.cs \
+$(log4netSrc)Util\ConverterInfo.cs \
+$(log4netSrc)Util\CountingQuietTextWriter.cs \
+$(log4netSrc)Util\CyclicBuffer.cs \
+$(log4netSrc)Util\EmptyCollection.cs \
+$(log4netSrc)Util\EmptyDictionary.cs \
+$(log4netSrc)Util\FormattingInfo.cs \
+$(log4netSrc)Util\GlobalContextProperties.cs \
+$(log4netSrc)Util\LevelMapping.cs \
+$(log4netSrc)Util\LevelMappingEntry.cs \
+$(log4netSrc)Util\LogicalThreadContextProperties.cs \
+$(log4netSrc)Util\LogLog.cs \
+$(log4netSrc)Util\NativeError.cs \
+$(log4netSrc)Util\NullDictionaryEnumerator.cs \
+$(log4netSrc)Util\NullEnumerator.cs \
+$(log4netSrc)Util\NullSecurityContext.cs \
+$(log4netSrc)Util\OnlyOnceErrorHandler.cs \
+$(log4netSrc)Util\OptionConverter.cs \
+$(log4netSrc)Util\PatternConverter.cs \
+$(log4netSrc)Util\PatternParser.cs \
+$(log4netSrc)Util\PatternString.cs \
+$(log4netSrc)Util\PropertiesDictionary.cs \
+$(log4netSrc)Util\PropertyEntry.cs \
+$(log4netSrc)Util\ProtectCloseTextWriter.cs \
+$(log4netSrc)Util\QuietTextWriter.cs \
+$(log4netSrc)Util\ReaderWriterLock.cs \
+$(log4netSrc)Util\ReadOnlyPropertiesDictionary.cs \
+$(log4netSrc)Util\ReusableStringWriter.cs \
+$(log4netSrc)Util\SystemInfo.cs \
+$(log4netSrc)Util\SystemStringFormat.cs \
+$(log4netSrc)Util\TextWriterAdapter.cs \
+$(log4netSrc)Util\ThreadContextProperties.cs \
+$(log4netSrc)Util\ThreadContextStack.cs \
+$(log4netSrc)Util\ThreadContextStacks.cs \
+$(log4netSrc)Util\Transform.cs \
+$(log4netSrc)Util\WindowsSecurityContext.cs \
+$(log4netSrc)Util\PatternStringConverters\AppDomainPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\DatePatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\EnvironmentFolderPathPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\EnvironmentPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\IdentityPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\LiteralPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\NewLinePatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\ProcessIdPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\PropertyPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\RandomStringPatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\UserNamePatternConverter.cs \
+$(log4netSrc)Util\PatternStringConverters\UtcDatePatternConverter.cs \
+$(log4netSrc)Util\TypeConverters\BooleanConverter.cs \
+$(log4netSrc)Util\TypeConverters\ConversionNotSupportedException.cs \
+$(log4netSrc)Util\TypeConverters\ConverterRegistry.cs \
+$(log4netSrc)Util\TypeConverters\EncodingConverter.cs \
+$(log4netSrc)Util\TypeConverters\IConvertFrom.cs \
+$(log4netSrc)Util\TypeConverters\IConvertTo.cs \
+$(log4netSrc)Util\TypeConverters\IPAddressConverter.cs \
+$(log4netSrc)Util\TypeConverters\PatternLayoutConverter.cs \
+$(log4netSrc)Util\TypeConverters\PatternStringConverter.cs \
+$(log4netSrc)Util\TypeConverters\TypeConverter.cs \
+$(log4netSrc)Util\TypeConverters\TypeConverterAttribute.cs \
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) Microsoft Corporation.  All rights reserved.
+
+    The use and distribution terms for this software are cov    Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+    which can be found in the file CPL.TXT at the root of this distribution.
+    By using this software in any fashion, you are agreeing to be bound by
+    the terms of this license.
+
+    You must not remove this notice, or any other, from this software.
+
+    Product.MSI - example source code for Product from "Getting Started" in help
+-->
+<?if $(var.PACKAGE_TARGETPLATFORM) = "x64"?>
+    <?define PackageId="41952B9D-4297-450c-8404-107ED629E11C" ?>
+    <?define ComponentGuid="4616ABD1-63A0-4282-84B6-8800EB7446AD" ?>
+<?else?>
+    <?define PackageId="87465571-476E-4e8b-BD0D-4DB90B27262F" ?>
+    <?define ComponentGuid="FAB4FBC7-81D4-44b6-9069-6B9F794EF0D3" ?>
+<?endif?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+        <Module Id="ManagedLoggingClient" Codepage="1252" Language="0" Version="$(var.INSTALLER_PRODUCT_VERSION)">
+                <Package Id="$(var.PackageId)" Description="Bentley Managed Logging Client Merge Module" Platforms="$(var.PACKAGE_TARGETPLATFORM)" Comments="Contact:  Your local administrator" InstallerVersion="200" Manufacturer="Bentley Systems, Inc" Keywords="MergeModule,MSI,Database"/>
+                <Directory Id="TARGETDIR" Name="SourceDir">
+                        <Directory Id="INSTALLDIR" Name=".">
+                                <Component Id="ManagedLogging" Guid="$(var.ComponentGuid)" Win64="$(var.COMPONENT_WIN64)">
+                                        <File Id="Console" Name="Bentley.logging.console-2.0.dll" Source="$(var.INSTALLER_FILE_BASE)Bentley.logging.console-2.0.dll"/>
+                                        <File Id="Interface" Name="Bentley.logging-2.0.dll" Source="$(var.INSTALLER_FILE_BASE)Bentley.logging-2.0.dll"/>
+                                        <File Id="Interop" Name="Bentley.logging.interop-2.0.dll" Source="$(var.INSTALLER_FILE_BASE)Bentley.logging.interop-2.0.dll"/>
+                                        <File Id="Log4net" Name="Bentley.logging.log4net-2.0.dll" Source="$(var.INSTALLER_FILE_BASE)Bentley.logging.log4net-2.0.dll"/>
+                                </Component>
+                        </Directory>
+                </Directory>
+        </Module>
+</Wix>
