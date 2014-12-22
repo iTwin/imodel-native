@@ -79,7 +79,7 @@
     </Part>
 
     <Part Name="ECObjectsTestsDependencies">
-        <SubPart PartName="GeomlibsSerialization" PartFile="GeomLibs" Repository="GeomLibs" />
+        <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="Logging" />
