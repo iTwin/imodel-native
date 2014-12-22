@@ -84,7 +84,7 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
     EXPECT_EQ (0, adhocs.GetCount());
 
     // Try to find non-existent adhoc
-    UInt32 propIdx;
+    uint32_t propIdx;
     EXPECT_FALSE (adhocs.GetPropertyIndex (propIdx, L"DoesNotExist"));
 
     // Name must be valid

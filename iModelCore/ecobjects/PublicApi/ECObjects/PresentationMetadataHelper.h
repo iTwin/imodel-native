@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 * Standard sorting priorities for properties.
 * @bsistruct                                                    Paul.Connelly   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-enum class PropertySortPriority : Int32
+enum class PropertySortPriority : int32_t
     {
     VeryHigh   = 400000,//!>Very High
     High       = 300000,//!>High
@@ -30,7 +30,7 @@ enum class PropertySortPriority : Int32
 * Standard sorting priorities for property categories.
 * @bsistruct                                                    Paul.Connelly   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-enum class CategorySortPriority : Int32
+enum class CategorySortPriority : int32_t
     {
     VeryHigh   = 400000,//!>Very High
     High       = 300000,//!>High
@@ -74,7 +74,7 @@ public:
     //! @param[in]      ecproperty         
     //! @param[in]      standardCategoryId 
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetStandardCategory (ECPropertyR ecproperty, Int32 standardCategoryId) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetStandardCategory (ECPropertyR ecproperty, int32_t standardCategoryId) const;
 
     //! Applies a custom category to a property
     //! @param[in]      ecproperty   
@@ -84,14 +84,14 @@ public:
     //! @param[in]      expand       
     //! @param[in]      description  
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, Int32 priority, bool expand = false, WCharCP description = NULL) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, int32_t priority, bool expand = false, WCharCP description = NULL) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for the property
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param standardTypeId   The ID of a standard extended type. Must be a valid DgnECExtendedType::StandardType.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, Int32 standardTypeId) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, int32_t standardTypeId) const;
 
     //! Sets the extended type name for the property
     //! @param ecproperty       The property to which to apply the custom attribute
@@ -104,7 +104,7 @@ public:
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param standardTypeId   The ID of a standard extended type. Must be a valid DgnECExtendedType::StandardType.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, Int32 standardTypeId) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, int32_t standardTypeId) const;
 
     //! Sets the extended type name for the members of the array property
     //! @param ecproperty       The property to which to apply the custom attribute
@@ -116,7 +116,7 @@ public:
     //! @param ecproperty   The property to which to apply the custom attribute
     //! @param priority     The desired priority
     //! @return ECOBJECTS_STATUS_Success if the priority was applied to the property
-    ECOBJECTS_EXPORT ECObjectsStatus    SetPriority (ECPropertyR ecproperty, Int32 priority) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetPriority (ECPropertyR ecproperty, int32_t priority) const;
 
     //! Applies a custom attribute which prevents the Z coordinate of a Point3D property from being displayed in the UI
     //! @param ecproperty   The property to which to apply the custom attribute

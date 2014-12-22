@@ -131,7 +131,7 @@ public:
     static ECObjectsStatus ParseStrengthType (StrengthType& strength, WStringCR strengthString);
     static WCharCP DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString);
-    static ECObjectsStatus ParseCardinalityString (UInt32& lowerLimit, UInt32& upperLimit, WStringCR cardinalityString);
+    static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, WStringCR cardinalityString);
     static void FormatXml(BeXmlDomR xmlDom);
 };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -82,9 +82,9 @@ ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighestLocatorInRange (UInt32& priority)
+ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighestLocatorInRange (uint32_t& priority)
     {
-    UInt32 category = (priority - priority % CATEGORY_PARTITION_SIZE);
+    uint32_t category = (priority - priority % CATEGORY_PARTITION_SIZE);
     SchemaLocatorKey dummy(NULL, category + CATEGORY_PARTITION_SIZE);
     
     //Find the last insertion point of external schema
@@ -105,7 +105,7 @@ ECSchemaReadContext::SchemaLocatorSet::iterator  ECSchemaReadContext::GetHighest
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& locators) 
     {
-    UInt32 priority = External;
+    uint32_t priority = External;
     SchemaLocatorSet::iterator iter =  GetHighestLocatorInRange (priority);
     
     for (bvector<ECN::IECSchemaLocaterP>::const_iterator locatorIter = locators.begin(); locatorIter != locators.end(); ++locatorIter)
@@ -117,7 +117,7 @@ void  ECSchemaReadContext::AddExternalSchemaLocaters (bvector<ECN::IECSchemaLoca
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  ECSchemaReadContext::AddSchemaLocater (IECSchemaLocaterR locater)
     {
-    UInt32 priority = UserSpace;
+    uint32_t priority = UserSpace;
     SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
     m_locators.insert (iter, SchemaLocatorKey(&locater, priority));
     }
@@ -147,7 +147,7 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
     if (m_searchPaths.end() != m_searchPaths.find (pathStr.GetName()))
         return;
 
-    UInt32 priority = UserSpace;
+    uint32_t priority = UserSpace;
     SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
 
     bvector<WString> pathVector;
@@ -164,7 +164,7 @@ void  ECSchemaReadContext::AddSchemaPath (WCharCP path)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                        ECSchemaReadContext::SetFinalSchemaLocater (IECSchemaLocaterR locater) 
     {
-    UInt32 priority = Final;
+    uint32_t priority = Final;
     SchemaLocatorSet::iterator iter = GetHighestLocatorInRange (priority);
     m_locators.insert (iter, SchemaLocatorKey(&locater, priority));
     }

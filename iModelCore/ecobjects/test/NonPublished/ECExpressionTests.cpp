@@ -306,7 +306,7 @@ struct InstanceListExpressionTests : InstanceExpressionTests
         {
         ECValue arrayVal;
         EXPECT_SUCCESS (instance.GetValue (arrayVal, accessString));
-        UInt32 index = arrayVal.GetArrayInfo().GetCount();
+        uint32_t index = arrayVal.GetArrayInfo().GetCount();
         EXPECT_SUCCESS (instance.AddArrayElements (accessString, 1));
         EXPECT_SUCCESS (instance.SetValue (accessString, entryVal, index));
         }
@@ -372,7 +372,7 @@ TEST_F (InstanceListExpressionTests, ComplexExpressions)
             continue;
 
         EXPECT_TRUE (result.IsECValue());
-        EXPECT_EQ (result.GetECValue()->GetInteger(), (Int32)i+1);
+        EXPECT_EQ (result.GetECValue()->GetInteger(), (int32_t)i+1);
         }
 
 #ifdef NEEDSWORK_COMPLEX_ACCESS_STRINGS
@@ -401,7 +401,7 @@ TEST_F (InstanceListExpressionTests, ComplexExpressions)
             continue;
 
         EXPECT_TRUE (result.IsECValue());
-        EXPECT_EQ (result.GetECValue()->GetInteger(), (Int32)i+1);
+        EXPECT_EQ (result.GetECValue()->GetInteger(), (int32_t)i+1);
         }
 #endif
     }
@@ -420,14 +420,14 @@ struct ArrayExpressionTests : InstanceListExpressionTests
         return const_cast<IValueListResultP>(result.GetValueList());
         }
 
-    void                    TestIValueList (IValueListResultP list, UInt32 expectedCount)
+    void                    TestIValueList (IValueListResultP list, uint32_t expectedCount)
         {
         EXPECT_NOT_NULL (list);
         if (NULL != list)
             {
             EXPECT_EQ (list->GetCount(), expectedCount);
 
-            for (UInt32 i = 0; i < expectedCount; i++)
+            for (uint32_t i = 0; i < expectedCount; i++)
                 {
                 EvaluationResult elem;
                 EXPECT_SUCCESS (list->GetValueAt (elem, i));
@@ -437,11 +437,11 @@ struct ArrayExpressionTests : InstanceListExpressionTests
 
     static ExpressionStatus     SumArrayMembers (EvaluationResultR result, IValueListResultCR valueList, EvaluationResultVector& args)
         {
-        UInt32 count = valueList.GetCount();
-        Int32 sum = 0;
+        uint32_t count = valueList.GetCount();
+        int32_t sum = 0;
         ExpressionStatus status = ExprStatus_Success;
 
-        for (UInt32 i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
             {
             EvaluationResult member;
             status = valueList.GetValueAt (member, i);
@@ -476,9 +476,9 @@ TEST_F (ArrayExpressionTests, ArrayProperties)
     AddArrayElement (*s2, L"Structs", v);
 
     IECInstancePtr a = CreateInstance (L"ClassA");
-    for (UInt32 i = 0; i < 5; i++)
+    for (uint32_t i = 0; i < 5; i++)
         {
-        v.SetInteger ((Int32)i);
+        v.SetInteger ((int32_t)i);
         AddArrayElement (*a, L"Ints", v);
         }
 
@@ -536,8 +536,8 @@ TEST_F (ArrayExpressionTests, ArrayProperties)
 TEST_F (ArrayExpressionTests, ArrayMethods)
     {
     IECInstancePtr a = CreateInstance (L"ClassA");
-    Int32 expectedSum = 0;
-    for (Int32 i = 0; i < 4; i++)
+    int32_t expectedSum = 0;
+    for (int32_t i = 0; i < 4; i++)
         {
         expectedSum += i;
         AddArrayElement (*a, L"Ints", ECValue (i));

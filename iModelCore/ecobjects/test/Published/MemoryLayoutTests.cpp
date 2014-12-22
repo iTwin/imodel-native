@@ -26,7 +26,7 @@ struct MemoryLayoutTests : ECTestFixture {};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, WCharCP value)
+void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, uint32_t index, WCharCP value)
     {
     v.Clear();
     if (useIndex)
@@ -57,7 +57,7 @@ void SetAndVerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, uint32_t index, uint32_t value)
     {
     v.Clear();
     if (useIndex)
@@ -70,7 +70,7 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t value)
     {
     return VerifyInteger (instance, v, accessString, false, 0, value);
     }    
@@ -78,7 +78,7 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
+void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t value)
     {
     v.SetInteger(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -108,7 +108,7 @@ void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, WCharCP accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64 value)
+void VerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, uint64_t value)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -118,7 +118,7 @@ void VerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt64 value)
+void SetAndVerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, uint64_t value)
     {
     v.SetLong(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
@@ -128,7 +128,7 @@ void SetAndVerifyLong (IECInstanceR instance, ECValueR v, WCharCP accessString, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 count, bool isFixedCount)
+void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t count, bool isFixedCount)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -139,7 +139,7 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 index)
+void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t index)
     {
     v.Clear();    
     EXPECT_TRUE (ECOBJECTS_STATUS_IndexOutOfRange == instance.GetValue (v, accessString, index));
@@ -149,11 +149,11 @@ void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, WCharCP accessSt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, UInt32 start, UInt32 count)
+void VerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, uint32_t start, uint32_t count)
     {
     WString incrementingString = value;
    
-    for (UInt32 i=start ; i < start + count ; i++)        
+    for (uint32_t i=start ; i < start + count ; i++)        
         {
         incrementingString.append (L"X");
         VerifyString (instance, v, accessString, true, i, incrementingString.c_str());
@@ -164,10 +164,10 @@ void VerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, UInt32 count)
+void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value, uint32_t count)
     {
     WString incrementingString = value;
-    for (UInt32 i=0 ; i < count ; i++)        
+    for (uint32_t i=0 ; i < count ; i++)        
         {
         incrementingString.append (L"X");
         v.SetString(incrementingString.c_str());
@@ -182,9 +182,9 @@ void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, WCharCP accessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 baseValue, UInt32 start, UInt32 count)
+void VerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t baseValue, uint32_t start, uint32_t count)
     {       
-    for (UInt32 i=start ; i < start + count ; i++)        
+    for (uint32_t i=start ; i < start + count ; i++)        
         {
         VerifyInteger (instance, v, accessString, true, i, baseValue++);
         }
@@ -193,9 +193,9 @@ void VerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    AdamKlatzkin     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 baseValue, UInt32 count)
+void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t baseValue, uint32_t count)
     {
-    for (UInt32 i=0 ; i < count ; i++)        
+    for (uint32_t i=0 ; i < count ; i++)        
         {
         v.SetInteger(baseValue + i); 
 
@@ -209,9 +209,9 @@ void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, WCharCP access
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 start, UInt32 count, bool isNull)
+void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t start, uint32_t count, bool isNull)
     {
-    for (UInt32 i = start ; i < start + count ; i++)    
+    for (uint32_t i = start ; i < start + count ; i++)    
         {
         v.Clear();
         EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
@@ -222,7 +222,7 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP acces
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString    GetTestSchemaXMLString (WCharCP schemaName, UInt32 versionMajor, UInt32 versionMinor, WCharCP className)
+WString    GetTestSchemaXMLString (WCharCP schemaName, uint32_t versionMajor, uint32_t versionMinor, WCharCP className)
     {
     wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                     L"<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -868,10 +868,10 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v2.SetDouble  (2.0);
     EXPECT_FALSE  (v1.Equals (v2));
 
-    v1.SetLong    ((Int64)345);
-    v2.SetLong    ((Int64)345);
+    v1.SetLong    ((int64_t)345);
+    v2.SetLong    ((int64_t)345);
     EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetLong    ((Int64)345345);
+    v2.SetLong    ((int64_t)345345);
     EXPECT_FALSE  (v1.Equals (v2));
 
     v1.SetBoolean (false);
@@ -888,15 +888,15 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v2.SetDateTime(timeInput2);
     EXPECT_FALSE  (v1.Equals (v2));
 
-    v1.SetDateTimeTicks((Int64)633487865666864601);
-    v2.SetDateTimeTicks((Int64)633487865666864601);
+    v1.SetDateTimeTicks((int64_t)633487865666864601);
+    v2.SetDateTimeTicks((int64_t)633487865666864601);
     EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetDateTimeTicks((Int64)633487865666866601);
+    v2.SetDateTimeTicks((int64_t)633487865666866601);
     EXPECT_FALSE  (v1.Equals (v2));
 
     const static bool HOLD_AS_DUPLICATE = true;
-    const byte binaryValue0[4] = {0x00, 0x01, 0x02, 0x03};
-    const byte binaryValue1[4] = {0x10, 0x11, 0x12, 0x13};
+    const Byte binaryValue0[4] = {0x00, 0x01, 0x02, 0x03};
+    const Byte binaryValue1[4] = {0x10, 0x11, 0x12, 0x13};
     EXPECT_EQ (sizeof(binaryValue0), 4);
     EXPECT_EQ (sizeof(binaryValue0), 4);
     v1.SetBinary(binaryValue0, sizeof(binaryValue0), HOLD_AS_DUPLICATE);
@@ -973,11 +973,11 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
         L"SomeBinaries"
         };
 
-    for (UInt32 i=0; i < expectedPropertyCount; i++)
+    for (uint32_t i=0; i < expectedPropertyCount; i++)
         {
         WCharCP expectedPropertyName = expectedProperties [i];
         WCharCP propertyName         = NULL;
-        UInt32 propertyIndex          = 0;
+        uint32_t propertyIndex          = 0;
 
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == enabler->GetPropertyIndex (propertyIndex, expectedPropertyName));
         EXPECT_TRUE (ECOBJECTS_STATUS_Success == enabler->GetAccessString  (propertyName,  propertyIndex));
@@ -989,18 +989,18 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     printfIndent (UInt32 indentDepth)
+static void     printfIndent (uint32_t indentDepth)
     {
-    for (UInt32 i = 0; i < indentDepth; i++)
+    for (uint32_t i = 0; i < indentDepth; i++)
         printf ("  ");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray, UInt32 indentDepth)
+static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray, uint32_t indentDepth)
     {
-    UInt32  arrayIndex = 0;
+    uint32_t arrayIndex = 0;
 
     for each (ECPropertyValueCR propertyValue in collection)
         {
@@ -1008,7 +1008,7 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
 
         printfIndent (indentDepth);
         ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
-        UInt32  accessorDepth = accessor.GetDepth();
+        uint32_t accessorDepth = accessor.GetDepth();
         WCharCP accessString = accessor.GetAccessString (accessorDepth- 1);
 
         if (isArray)
@@ -1035,9 +1035,9 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool isArray, UInt32 indentDepth, bool printValues, int& count)
+static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool isArray, uint32_t indentDepth, bool printValues, int& count)
     {
-    UInt32  arrayIndex = 0;
+    uint32_t arrayIndex = 0;
 
     for each (ECPropertyValueCR propertyValue in collection)
         {
@@ -1050,7 +1050,7 @@ static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool i
             {
             printfIndent (indentDepth);
             ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
-            UInt32  accessorDepth = accessor.GetDepth();
+            uint32_t accessorDepth = accessor.GetDepth();
             WCharCP accessString = accessor.GetAccessString (accessorDepth- 1);
 
             if (isArray)
@@ -1080,7 +1080,7 @@ typedef bpair<WString, ECValue>  AccessStringValuePair;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, UInt32& iValue, bool isDup)
+static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, uint32_t& iValue, bool isDup)
     {
     for each (ECPropertyValueCR propertyValue in collection)
         {
@@ -1137,7 +1137,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     /*--------------------------------------------------------------------------
         Iterate through its values - shouldn't find any
     --------------------------------------------------------------------------*/
-    UInt32 foundValues = 0;
+    uint32_t foundValues = 0;
     for each(ECPropertyValueCR propertyValue in *collection)
         {
         propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
@@ -1202,7 +1202,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
-    UInt32                  iValue = 0;
+    uint32_t                iValue = 0;
 
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
@@ -1263,7 +1263,7 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
-    UInt32                  iValue = 0;
+    uint32_t                iValue = 0;
 
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
@@ -1338,7 +1338,7 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*mergeToInstance);
     dumpPropertyValues (*collection, false, 0);
 
-    UInt32                  iValue = 0;
+    uint32_t                iValue = 0;
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     }
 
@@ -1422,7 +1422,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
-    UInt32                  iValue = 0;
+    uint32_t                iValue = 0;
 
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
@@ -1619,7 +1619,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
-    UInt32                  iValue = 0;
+    uint32_t                iValue = 0;
 
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
@@ -1706,7 +1706,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
     ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
-    UInt32                  iValue = 0;
+    uint32_t                iValue = 0;
 
     verifyECValueEnumeration (*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
@@ -1851,7 +1851,7 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
 
     v.SetDouble(10.0/3.0);
     sourceInstance1->SetValue(L"ADouble", v);
-    v.SetLong((Int64)2345978);
+    v.SetLong((int64_t)2345978);
     sourceInstance1->SetValue(L"ALong", v);
     v.SetString(L"Dominant source instance");
     sourceInstance1->SetValue(L"AString", v);
@@ -1973,7 +1973,7 @@ TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;
-    Int64      inTicks = 634027121070910000;
+    int64_t    inTicks = 634027121070910000;
 
     instance->SetValue (L"Count",        ECValue (inCount));
     instance->SetValue (L"Name",         ECValue (L"Test"));
@@ -2041,7 +2041,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     instance->SetValue  (accessString, ECValue (stringValue));
 
     ECValue value;    
-    UInt32  propertyIndex=0;
+    uint32_t propertyIndex=0;
     
     EXPECT_TRUE (SUCCESS  == enabler->GetPropertyIndex (propertyIndex, accessString));
     EXPECT_TRUE (SUCCESS  == instance->GetValue (value, propertyIndex));
@@ -2049,12 +2049,12 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     EXPECT_STREQ (stringValue, value.GetString());
 
 #if defined (TIMING_ACCESS_BYINDEX)
-    UInt32      numAccesses = 10000000;
+    uint32_t    numAccesses = 10000000;
 
     double      elapsedTime1 = 0.0;
     StopWatch   timer1 (L"Time getting values using index", true);
 
-    for (UInt32 i = 0; i < numAccesses; i++)
+    for (uint32_t i = 0; i < numAccesses; i++)
         {
         timer1.Start();
         instance->GetValue (value, propertyIndex);
@@ -2066,7 +2066,7 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     double      elapsedTime2 = 0.0;
     StopWatch   timer2 (L"Time getting values using accessString", true);
 
-    for (UInt32 i = 0; i < numAccesses; i++)
+    for (uint32_t i = 0; i < numAccesses; i++)
         {
         timer2.Start();
         instance->GetValue (value, accessString);
@@ -2275,8 +2275,8 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
     
     WCharCP nameAccessString = L"Name";
     WCharCP wheelsAccessString = L"Wheels";
-    UInt32  namePropertyIndex = 9999;
-    UInt32  wheelsPropertyIndex = 9998;
+    uint32_t namePropertyIndex = 9999;
+    uint32_t wheelsPropertyIndex = 9998;
     EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
     EXPECT_TRUE (SUCCESS == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
 
@@ -2313,8 +2313,8 @@ TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
 TEST_F (MemoryLayoutTests, TestBinarySetGet)
     {
     const static bool HOLD_AS_DUPLICATE = true;
-    const byte binaryValue0[4] = {0x00, 0x01, 0x02, 0x03};
-    const byte binaryValue1[2] = {0x99, 0x88};
+    const Byte binaryValue0[4] = {0x00, 0x01, 0x02, 0x03};
+    const Byte binaryValue1[2] = {0x99, 0x88};
 
     EXPECT_EQ (sizeof(binaryValue0), 4);
     EXPECT_EQ (sizeof(binaryValue1), 2);
@@ -2349,16 +2349,16 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, uint32_t expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
-    UInt32 count = varray.GetArrayInfo().GetCount();
+    uint32_t count = varray.GetArrayInfo().GetCount();
     EXPECT_TRUE (count == expectedCount);
 
     ECValue ventry;
 
-    for (UInt32 i=0; i<count; i++)
+    for (uint32_t i=0; i<count; i++)
         {
         EXPECT_TRUE (SUCCESS == instance.GetValue (ventry, propertyName, i));
         }

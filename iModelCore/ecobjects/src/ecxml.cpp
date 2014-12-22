@@ -169,7 +169,7 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upperLimit, const WString &cardinalityString)
+ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &upperLimit, const WString &cardinalityString)
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     if (0 == cardinalityString.compare(L"1"))
@@ -225,7 +225,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (UInt32 &lowerLimit, UInt32 &upper
 
 #if defined (DONT_THINK_WE_NEED)
 
-void FormatXmlNode (MSXML2::IXMLDOMNode& domNode, UInt32 indentLevel)
+void FormatXmlNode (MSXML2::IXMLDOMNode& domNode, uint32_t indentLevel)
     {
     MSXML2::IXMLDOMTextPtr textPtr = NULL;
     if (domNode.nodeType == NODE_TEXT)
@@ -265,7 +265,7 @@ void FormatXmlNode (MSXML2::IXMLDOMNode& domNode, UInt32 indentLevel)
     if (indentLevel > 0)
         {
         char *spaces = new char[indentLevel+1];
-        for (UInt32 i = 0; i < indentLevel; i++)
+        for (uint32_t i = 0; i < indentLevel; i++)
             spaces[i] = ' ';
         spaces[indentLevel] = '\0';
         // Indent before this element

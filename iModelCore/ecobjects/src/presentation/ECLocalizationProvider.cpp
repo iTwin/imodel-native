@@ -14,7 +14,7 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         ECPresentationLocalizationProvider::GetString (WCharCP rscFileName, UInt tableId, UInt rscId)
+WString         ECPresentationLocalizationProvider::GetString (WCharCP rscFileName, unsigned int tableId, unsigned int rscId)
     {
     return _GetString (rscFileName, tableId, rscId);
     }

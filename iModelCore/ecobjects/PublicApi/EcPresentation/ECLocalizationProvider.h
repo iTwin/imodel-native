@@ -17,10 +17,10 @@ struct ECPresentationLocalizationProvider : public IECPresentationProvider
     {
     protected:
         virtual ProviderType      _GetProviderType() const override {return LocalizationService;}
-        virtual WString           _GetString (WCharCP rscFileName,  UInt tableId, UInt rscId) = 0;
+        virtual WString           _GetString (WCharCP rscFileName,  unsigned int tableId, unsigned int rscId) = 0;
 
     public:
-        ECOBJECTS_EXPORT WString  GetString (WCharCP rscFileName, UInt tableId, UInt rscId);
+        ECOBJECTS_EXPORT WString  GetString (WCharCP rscFileName, unsigned int tableId, unsigned int rscId);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

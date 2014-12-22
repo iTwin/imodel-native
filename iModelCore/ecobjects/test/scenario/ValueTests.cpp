@@ -33,7 +33,7 @@ struct ValueTests : ECTestFixture
 //SetIGeometry uses SetBinary which throws exception for this type
 TEST_F(ValueTests, DISABLED_IGeometrySetGet)
     {
-    const byte binary[] = {0x00, 0x01, 0x02, 0x03};
+    const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     ECValue value;
     EXPECT_EQ (value.SetIGeometry(binary, sizeof(binary)), ECOBJECTS_STATUS_Success);
     
@@ -41,7 +41,7 @@ TEST_F(ValueTests, DISABLED_IGeometrySetGet)
     EXPECT_FALSE (value.IsBinary());
     
     size_t sizeOut;
-    const byte *binaryOut = value.GetIGeometry(sizeOut);
+    const Byte *binaryOut = value.GetIGeometry(sizeOut);
     EXPECT_TRUE (binaryOut != NULL);
     EXPECT_EQ (sizeOut, 4);
     
@@ -54,7 +54,7 @@ TEST_F(ValueTests, DISABLED_IGeometrySetGet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ValueTests, ECValueToString)
     {
-    const byte binary[] = {0x00, 0x01, 0x02, 0x03};
+    const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     DateTime dateTime = DateTime(DateTime::Kind::Utc, 2013, 2, 14, 9, 58, 17, 4560000);
     DPoint2d point2d = {123.456, 456.789};
     DPoint3d point3d = {1.2, -3.4, 5.6};
@@ -96,7 +96,7 @@ TEST_F(ValueTests, ECValueToString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ValueTests, DISABLED_IGeometryToString)
     {
-    byte binary[] = {0x00, 0x01, 0x02, 0x03};
+    Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     ECValue value;
     
     EXPECT_EQ (value.SetIGeometry(binary, sizeof(binary)), ECOBJECTS_STATUS_Success);

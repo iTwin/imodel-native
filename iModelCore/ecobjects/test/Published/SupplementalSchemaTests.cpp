@@ -22,11 +22,11 @@ struct SchemaHolderTestFixture : ECTestFixture
         ECSchemaPtr& supplementalSchema,
         WString primarySchemaName,
         WString purpose,
-        UInt32 precedence,
-        UInt32 primaryMajorVersion,
-        UInt32 primaryMinorVersion,
-        UInt32 supplementalMajorVersion,
-        UInt32 supplementalMinorVersion
+        uint32_t precedence,
+        uint32_t primaryMajorVersion,
+        uint32_t primaryMinorVersion,
+        uint32_t supplementalMajorVersion,
+        uint32_t supplementalMinorVersion
         )
             {
             WString supplementalName = primarySchemaName + L"_Supplemental_" + purpose;
@@ -256,7 +256,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
         void BuildSupplementedSchemaForCustomAttributeTests(ECClassP& classA, ECClassP& classB, ECSchemaPtr& schema)
             {
             ECSchemaPtr customAttributeSchema;
-            ECSchema::CreateSchema(customAttributeSchema, L"CustomAttributes", (UInt32) 1, (UInt32) 0);
+            ECSchema::CreateSchema(customAttributeSchema, L"CustomAttributes", (uint32_t) 1, (uint32_t) 0);
             ECClassP customAttributeA = NULL;
             customAttributeSchema->CreateClass(customAttributeA, L"CustomAttributeA");
             customAttributeA->SetIsCustomAttributeClass(true);
@@ -270,7 +270,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             customAttributeSchema->CreateClass(customAttributeD, L"CustomAttributeD");
             customAttributeD->SetIsCustomAttributeClass(true);
 
-            ECSchema::CreateSchema(schema, L"testPrimary", (UInt32) 1, (UInt32) 0);
+            ECSchema::CreateSchema(schema, L"testPrimary", (uint32_t) 1, (uint32_t) 0);
             schema->AddReferencedSchema(*customAttributeSchema, L"cas");
 
             StandaloneECEnablerPtr customAttributeEnablerA = customAttributeA->GetDefaultStandaloneEnabler();
@@ -287,7 +287,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             primaryClassB->AddBaseClass(*primaryClassA);
 
             ECSchemaPtr supplementalSchema;
-            ECSchema::CreateSchema(supplementalSchema, L"testSupplemental", (UInt32) 1, (UInt32) 0);
+            ECSchema::CreateSchema(supplementalSchema, L"testSupplemental", (uint32_t) 1, (uint32_t) 0);
             SupplementalSchemaMetaData metaData(L"testPrimary", 1, 0, 354, L"None", false);
             supplementalSchema->AddReferencedSchema(*customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -309,7 +309,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreatePrimarySchemaForRelationshipTests(ECSchemaPtr& schema)
             {
-            ECSchema::CreateSchema(schema, L"RelationshipTestSchema", (UInt32) 1, (UInt32) 2);
+            ECSchema::CreateSchema(schema, L"RelationshipTestSchema", (uint32_t) 1, (uint32_t) 2);
             ECClassP targetClass = NULL;
             schema->CreateClass(targetClass, L"TargetClass");
             ECClassP sourceClass = NULL;
@@ -328,7 +328,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema0ForRelationshipTests(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental", (UInt32) 3, (UInt32) 4);
+            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental", (uint32_t) 3, (uint32_t) 4);
             SupplementalSchemaMetaData metaData(L"RelationshipTestSchema", 1, 2, 200, L"Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -350,7 +350,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema1ForRelationshipTests(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental2", (UInt32) 5, (UInt32) 6);
+            ECSchema::CreateSchema(supplementalSchema, L"RTS_Supplemental2", (uint32_t) 5, (uint32_t) 6);
             SupplementalSchemaMetaData metaData(L"RelationshipTestSchema", 1, 2, 200, L"Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -594,7 +594,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         bool CustomAttributesAreEqual(ECCustomAttributeInstanceIterable customAttributesA, ECCustomAttributeInstanceIterable customAttributesB)
             {
-            UInt32 countA = 0;
+            uint32_t countA = 0;
             for(IECInstancePtr attributeA: customAttributesA)
                 {
                 countA++;
@@ -614,7 +614,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                     return false;
                 }
 
-            UInt32 countB = 0;
+            uint32_t countB = 0;
             for(IECInstancePtr attributeB: customAttributesB)
                 {
                 countB++;
@@ -686,7 +686,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             // validate custom attributes on ReadOnly property
             propertyP = consolidatedClass->GetPropertyP(L"ReadOnly");
             ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
-            UInt32 count = 0;
+            uint32_t count = 0;
             for(IECInstancePtr attribute: attributes)
                 {
                 count++;
@@ -731,7 +731,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             // validate custom attributes on BitDepth property
             ECPropertyP propertyP = consolidatedClass->GetPropertyP(L"BitDepth");
             ECCustomAttributeInstanceIterable attributes = propertyP->GetCustomAttributes(false);
-            UInt32 count = 0;
+            uint32_t count = 0;
             for(IECInstancePtr attribute: attributes)
                 {
                 count++;
@@ -758,7 +758,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
             EXPECT_TRUE(CustomAttributesAreEqual(preCustomAttributes, postCustomAttributes));
 
-            UInt32 preClassCount = 0;
+            uint32_t preClassCount = 0;
             for(ECClassP preSupplementClass: schemaPreSupplement->GetClasses())
                 {
                 EXPECT_TRUE(NULL != preSupplementClass);
@@ -770,7 +770,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
                 }
             EXPECT_TRUE(0 < preClassCount);
 
-            UInt32 postClassCount = 0;
+            uint32_t postClassCount = 0;
             for(ECClassP postSupplementClass: schemaPostSupplement->GetClasses())
                 {
                 EXPECT_TRUE(NULL != postSupplementClass);
@@ -846,7 +846,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     {
     ECSchemaPtr supplemental;
-    CreateSupplementalSchema(supplemental, L"TestSchema", L"OverrideWidgets", (UInt32) 200, (UInt32) 1, (UInt32) 0, 4, 2);
+    CreateSupplementalSchema(supplemental, L"TestSchema", L"OverrideWidgets", (uint32_t) 200, (uint32_t) 1, (uint32_t) 0, 4, 2);
 
     EXPECT_TRUE(supplemental.IsValid());
                 ECSchemaP tempSchema = supplemental.get();
@@ -955,7 +955,7 @@ TEST_F(SupplementedSchemaBuilderTests, BuildANonConflictingConsolidatedSchema)
 void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     {
     ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetCustomAttributes(false);
-    UInt32 localCustomAttributesCount = 0;
+    uint32_t localCustomAttributesCount = 0;
     for(IECInstancePtr attribute: localCustomAttributes)
         {
         localCustomAttributesCount++;
@@ -963,7 +963,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     EXPECT_EQ(2, localCustomAttributesCount);
 
     ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetCustomAttributes(true);
-    UInt32 allCustomAttributesCount = 0;
+    uint32_t allCustomAttributesCount = 0;
     for(IECInstancePtr attribute: allCustomAttributes)
         {
         allCustomAttributesCount++;
@@ -982,7 +982,7 @@ void ValidateCustomAttributesOnDerivedClass(ECClassP supplementedClass)
 void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     {
     ECCustomAttributeInstanceIterable localCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(false);
-    UInt32 localCustomAttributesCount = 0;
+    uint32_t localCustomAttributesCount = 0;
     for(IECInstancePtr attribute: localCustomAttributes)
         {
         localCustomAttributesCount++;
@@ -990,7 +990,7 @@ void ValidatePrimaryCustomAttributesOnDerivedClass(ECClassP supplementedClass)
     EXPECT_EQ(1, localCustomAttributesCount);
 
     ECCustomAttributeInstanceIterable allCustomAttributes = supplementedClass->GetPrimaryCustomAttributes(true);
-    UInt32 allCustomAttributesCount = 0;
+    uint32_t allCustomAttributesCount = 0;
     for(IECInstancePtr attribute: allCustomAttributes)
         {
         allCustomAttributesCount++;

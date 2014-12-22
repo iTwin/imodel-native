@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SupplementalSchema.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,9 +39,9 @@ struct SupplementalSchemaMetaData : RefCountedBase
 {
 private:
     WString m_primarySchemaName;
-    UInt32    m_primarySchemaMajorVersion;
-    UInt32    m_primarySchemaMinorVersion;
-    UInt32    m_supplementalSchemaPrecedence;
+    uint32_t  m_primarySchemaMajorVersion;
+    uint32_t  m_primarySchemaMinorVersion;
+    uint32_t  m_supplementalSchemaPrecedence;
     WString m_supplementalSchemaPurpose;
     bool   m_isUserSpecific;
 
@@ -52,9 +52,9 @@ public:
     ECOBJECTS_EXPORT SupplementalSchemaMetaData
         (
         WString     primarySchemaName,              //!< Name of the primary schema that this schema supplements
-        UInt32      primarySchemaMajorVersion,      //!< Major version of the primary schema that this schema supplements
-        UInt32      primarySchemaMinorVersion,      //!< Minor version of the primary schema that this schema supplements
-        UInt32      supplementalSchemaPrecedence,   //!< custom attributes with higher precedence overrride custom attributes with lower precedence
+        uint32_t    primarySchemaMajorVersion,      //!< Major version of the primary schema that this schema supplements
+        uint32_t    primarySchemaMinorVersion,      //!< Minor version of the primary schema that this schema supplements
+        uint32_t    supplementalSchemaPrecedence,   //!< custom attributes with higher precedence overrride custom attributes with lower precedence
         WString     supplementalSchemaPurpose,      //!< Purpose of this supplemental schema
         bool        isUserSpecific                  //!< if true this schema supplements the primary schema on a per user basis
         );
@@ -63,9 +63,9 @@ public:
     ECOBJECTS_EXPORT static SupplementalSchemaMetaDataPtr Create
         (
         WString     primarySchemaName,              //!< Name of the primary schema that this schema supplements
-        UInt32      primarySchemaMajorVersion,      //!< Major version of the primary schema that this schema supplements
-        UInt32      primarySchemaMinorVersion,      //!< Minor version of the primary schema that this schema supplements
-        UInt32      supplementalSchemaPrecedence,   //!< custom attributes with higher precedence overrride custom attributes with lower precedence
+        uint32_t    primarySchemaMajorVersion,      //!< Major version of the primary schema that this schema supplements
+        uint32_t    primarySchemaMinorVersion,      //!< Minor version of the primary schema that this schema supplements
+        uint32_t    supplementalSchemaPrecedence,   //!< custom attributes with higher precedence overrride custom attributes with lower precedence
         WString     supplementalSchemaPurpose,      //!< Purpose of this supplemental schema
         bool        isUserSpecific                  //!< if true this schema supplements the primary schema on a per user basis
         );
@@ -92,22 +92,22 @@ public:
     ECOBJECTS_EXPORT void SetPrimarySchemaName(WStringCR name);
 
     //! Gets the major version of the Primary schema
-    ECOBJECTS_EXPORT UInt32 GetPrimarySchemaMajorVersion() const;
+    ECOBJECTS_EXPORT uint32_t GetPrimarySchemaMajorVersion() const;
 
     //! Sets the major version of the Primary schema
-    ECOBJECTS_EXPORT void SetPrimarySchemaMajorVersion(UInt32 major);
+    ECOBJECTS_EXPORT void SetPrimarySchemaMajorVersion(uint32_t major);
 
     //! Gets the minor version of the Primary schema
-    ECOBJECTS_EXPORT UInt32 GetPrimarySchemaMinorVersion() const;
+    ECOBJECTS_EXPORT uint32_t GetPrimarySchemaMinorVersion() const;
 
     //! Sets the minor version of the Primary schema
-    ECOBJECTS_EXPORT void SetPrimarySchemaMinorVersion(UInt32 minor);
+    ECOBJECTS_EXPORT void SetPrimarySchemaMinorVersion(uint32_t minor);
 
     //! Gets the supplemental schema precedence
-    ECOBJECTS_EXPORT UInt32 GetSupplementalSchemaPrecedence() const;
+    ECOBJECTS_EXPORT uint32_t GetSupplementalSchemaPrecedence() const;
 
     //! Sets the supplemental schema precedence
-    ECOBJECTS_EXPORT void SetSupplementalSchemaPrecedence(UInt32 precedence);
+    ECOBJECTS_EXPORT void SetSupplementalSchemaPrecedence(uint32_t precedence);
 
     //! Gets the supplemental schema purpose
     ECOBJECTS_EXPORT WStringCR GetSupplementalSchemaPurpose() const;
@@ -126,7 +126,7 @@ public:
     //! @param[in]  primarySchemaMajorVersion   The major version of the primary schema
     //! @param[in]  primarySchemaMinorVersion   The minor version of the primary schema
     //! @param[in]  matchType                   The matching requirements for the primary schema
-    ECOBJECTS_EXPORT bool IsForPrimarySchema(WStringCR primarySchemaName, UInt32 primarySchemaMajorVersion, UInt32 primarySchemaMinorVersion, SchemaMatchType matchType) const;
+    ECOBJECTS_EXPORT bool IsForPrimarySchema(WStringCR primarySchemaName, uint32_t primarySchemaMajorVersion, uint32_t primarySchemaMinorVersion, SchemaMatchType matchType) const;
 
 // Statics
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
@@ -261,7 +261,7 @@ private:
 
     static const int PRECEDENCE_THRESHOLD = 199;
 
-    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<UInt32, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
+    SupplementedSchemaStatus OrderSupplementalSchemas(bmap<uint32_t, ECSchemaP>& schemasByPrecedence, ECSchemaR primarySchema, const bvector<ECSchemaP>& supplementalSchemaList, bvector<ECSchemaP> localizationSchemas );
 
     //! Merges two schemas of the same precedence into one schema.
     //! @remarks Used internally if two schemas are input that have the same precedence
@@ -276,7 +276,7 @@ private:
     //! Takes a map of supplemental schemas sorted by precedence and merges them one by one to create the consolidated schema
     //! @param[in,out]  primarySchema   The schema to merge the supplemental schemas into
     //! @param[in]      schemasByPrecedence A map of supplemental schemas sorted by precedence
-    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<UInt32, ECSchemaP> schemasByPrecedence);
+    SupplementedSchemaStatus MergeSchemasIntoSupplementedSchema (ECSchemaR primarySchema, bmap<uint32_t, ECSchemaP> schemasByPrecedence);
 
     //! Merges a supplemental schema into the consolidated schema
     //! @param[in,out]  primarySchema   The consolidated schema that will get supplemented

@@ -2,7 +2,7 @@
 |
 |  $Source: src/PresentationMetadataHelper.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -178,7 +178,7 @@ ECObjectsStatus PresentationMetadataHelper::SetExtendedType (ECPropertyR ecprope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PresentationMetadataHelper::SetExtendedType (ECPropertyR ecproperty, Int32 standardTypeId) const
+ECObjectsStatus PresentationMetadataHelper::SetExtendedType (ECPropertyR ecproperty, int32_t standardTypeId) const
     {
     return CreateCustomAttribute (ecproperty, EXTENDEDTYPE_CLASSNAME, CustomAttributeData (L"Standard", standardTypeId));
     }
@@ -194,7 +194,7 @@ ECObjectsStatus PresentationMetadataHelper::SetMemberExtendedType (ArrayECProper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PresentationMetadataHelper::SetMemberExtendedType (ArrayECPropertyR ecproperty, Int32 standardTypeId) const
+ECObjectsStatus PresentationMetadataHelper::SetMemberExtendedType (ArrayECPropertyR ecproperty, int32_t standardTypeId) const
     {
     return CreateCustomAttribute (ecproperty, MEMBER_EXTENDEDTYPE_CLASSNAME, CustomAttributeData (L"Standard", standardTypeId));
     }
@@ -202,7 +202,7 @@ ECObjectsStatus PresentationMetadataHelper::SetMemberExtendedType (ArrayECProper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PresentationMetadataHelper::SetPriority (ECPropertyR ecproperty, Int32 priority) const
+ECObjectsStatus PresentationMetadataHelper::SetPriority (ECPropertyR ecproperty, int32_t priority) const
     {
     return CreateCustomAttribute (ecproperty, PROPERTY_PRIORITY_CLASSNAME, CustomAttributeData (L"Priority", priority));
     }
@@ -273,7 +273,7 @@ ECObjectsStatus PresentationMetadataHelper::SetRequiresReload (ECPropertyR ecpro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PresentationMetadataHelper::SetStandardCategory (ECPropertyR ecproperty, Int32 standardCategoryId) const
+ECObjectsStatus PresentationMetadataHelper::SetStandardCategory (ECPropertyR ecproperty, int32_t standardCategoryId) const
     {
     return CreateCustomAttribute (ecproperty, CATEGORY_CLASSNAME, CustomAttributeData (L"Standard", standardCategoryId));
     }
@@ -281,7 +281,7 @@ ECObjectsStatus PresentationMetadataHelper::SetStandardCategory (ECPropertyR ecp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus PresentationMetadataHelper::SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, Int32 priority, bool expand, WCharCP description) const
+ECObjectsStatus PresentationMetadataHelper::SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, int32_t priority, bool expand, WCharCP description) const
     {
     if (NULL == uniqueName || 0 == *uniqueName)
         return ECOBJECTS_STATUS_Error;

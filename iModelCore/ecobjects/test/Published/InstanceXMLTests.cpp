@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceXMLTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -27,12 +27,12 @@ struct  Struct2
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
-    UInt32          arraySize;
+    uint32_t        arraySize;
     };
 
 
 // set thie binary data member, and then
-static byte testBinaryData[] = { 0, 255,  1, 254,  2, 253,  3, 252,  4, 251,  5, 250,  6, 249,  7, 248,  8, 247,  9, 246, 10, 245, 11, 244, 12, 243, 13, 242, 14, 241, 15, 240, 16, 239, 17, 238, 18, 237,
+static Byte testBinaryData[] = { 0, 255,  1, 254,  2, 253,  3, 252,  4, 251,  5, 250,  6, 249,  7, 248,  8, 247,  9, 246, 10, 245, 11, 244, 12, 243, 13, 242, 14, 241, 15, 240, 16, 239, 17, 238, 18, 237,
                                 19, 236, 20, 235, 21, 234, 22, 233, 23, 232, 24, 231, 25, 230, 26, 229, 27, 228, 28, 227, 29, 226, 30, 225, 31, 224, 32, 223, 33, 222, 34, 221, 35, 220, 36, 219, 37, 218,
                                 38, 217, 39, 216, 40, 215, 41, 214, 42, 213, 43, 212, 44, 211, 45, 210, 46, 209, 47, 208, 48, 207, 49, 206, 50, 205, 51, 204, 52, 203, 53, 202, 54, 201, 55, 200, 56, 199, 
                                 57 };
@@ -97,14 +97,14 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     EXPECT_EQ (true, ecValue.GetBoolean());
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
-    for (UInt32 index=0; index < _countof (expectedInts); index++)
+    for (uint32_t index=0; index < _countof (expectedInts); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray", index));
         EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
-    for (UInt32 index=0; index < _countof (moreInts); index++)
+    for (uint32_t index=0; index < _countof (moreInts); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray", index));
         EXPECT_EQ (moreInts[index], ecValue.GetInteger());
@@ -114,7 +114,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     EXPECT_EQ (3, ecValue.GetInteger());
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
-    for (UInt32 index=0; index < _countof (expectedPoints); index++)
+    for (uint32_t index=0; index < _countof (expectedPoints); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray", index));
         EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
@@ -122,12 +122,12 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
         }
 
-    for (UInt32 index=0; index < 300; index++)
+    for (uint32_t index=0; index < 300; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index));
         }
 
-    for (UInt32 index=0; index < 300; index++)
+    for (uint32_t index=0; index < 300; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
         wchar_t     expectedString[128];
@@ -135,7 +135,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         EXPECT_STREQ (expectedString, ecValue.GetString());
         }
 
-    for (UInt32 index=0; index < 100; index++)
+    for (uint32_t index=0; index < 100; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray", index));
         EXPECT_EQ (index, ecValue.GetInteger());
@@ -176,7 +176,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             },
         };
 
-    for (UInt32 index=0; index < _countof (struct2ExpectedValues); index++)
+    for (uint32_t index=0; index < _countof (struct2ExpectedValues); index++)
         {
         ECValue         structArrayMember;
         EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray", index));
@@ -209,7 +209,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         if (NULL == struct2ExpectedValues[index].nestedArray)
             continue;
 
-        for (UInt32 nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
+        for (uint32_t nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
             {
             ECValue     nestedArrayMember;
             EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray", nestedIndex));
@@ -231,7 +231,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     EXPECT_EQ (SUCCESS, testInstance->GetValue (binaryMember, L"TestBinary"));
 
     size_t      numBytes;
-    const byte* byteData; 
+    const Byte* byteData; 
     if (NULL != (byteData = binaryMember.GetBinary (numBytes)))
         {
         EXPECT_EQ (_countof (testBinaryData), numBytes);

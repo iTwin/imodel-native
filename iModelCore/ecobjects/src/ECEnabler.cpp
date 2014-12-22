@@ -54,7 +54,7 @@ StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (Schem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
+bool ECEnabler::_IsPropertyReadOnly (uint32_t propertyIndex) const
     {
     // Note: this is the default implementation, and it causes significant performance issues because every call to IECInstance::SetValue() checks if the property is read-only
     // Subclasses are capable of implementing this much more efficiently
@@ -66,7 +66,7 @@ bool ECEnabler::_IsPropertyReadOnly (UInt32 propertyIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyCP ECEnabler::_LookupECProperty (UInt32 propertyIndex) const
+ECPropertyCP ECEnabler::_LookupECProperty (uint32_t propertyIndex) const
     {
     WCharCP accessString;
     return ECOBJECTS_STATUS_Success == GetAccessString (accessString, propertyIndex) ? _LookupECProperty (accessString) : NULL;
@@ -109,18 +109,18 @@ ECPropertyCP ECEnabler::_LookupECProperty (WCharCP accessString) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
 WCharCP             ECEnabler::GetName() const { return _GetName(); }
-ECObjectsStatus     ECEnabler::GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
+ECObjectsStatus     ECEnabler::GetPropertyIndex (uint32_t& propertyIndex, WCharCP accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
-ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, UInt32 propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
-UInt32              ECEnabler::GetFirstPropertyIndex (UInt32 parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
-UInt32              ECEnabler::GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
-bool                ECEnabler::HasChildProperties (UInt32 parentIndex) const { return _HasChildProperties (parentIndex); }
-UInt32              ECEnabler::GetParentPropertyIndex (UInt32 childIndex) const { return _GetParentPropertyIndex (childIndex); }
-ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
+ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, uint32_t propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
+uint32_t            ECEnabler::GetFirstPropertyIndex (uint32_t parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
+uint32_t            ECEnabler::GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
+bool                ECEnabler::HasChildProperties (uint32_t parentIndex) const { return _HasChildProperties (parentIndex); }
+uint32_t            ECEnabler::GetParentPropertyIndex (uint32_t childIndex) const { return _GetParentPropertyIndex (childIndex); }
+ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
 IStandaloneEnablerLocaterR ECEnabler::GetStandaloneEnablerLocater() { return *this; }
-ECPropertyCP        ECEnabler::LookupECProperty (UInt32 propertyIndex) const { return _LookupECProperty (propertyIndex); }
+ECPropertyCP        ECEnabler::LookupECProperty (uint32_t propertyIndex) const { return _LookupECProperty (propertyIndex); }
 ECPropertyCP        ECEnabler::LookupECProperty (WCharCP accessString) const { return _LookupECProperty (accessString); }
-bool                ECEnabler::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
+bool                ECEnabler::IsPropertyReadOnly (uint32_t propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)
 /*---------------------------------------------------------------------------------**//**
@@ -186,7 +186,7 @@ ECEnabler::PropertyProcessingResult ECEnabler::_ProcessPrimitiveProperties (bset
             if (!isStructArray && !allTypes && ai.GetElementPrimitiveType() != primitiveType)
                 continue;
 
-            for (UInt32 idx = 0, count = ai.GetCount(); idx < count; ++idx)
+            for (uint32_t idx = 0, count = ai.GetCount(); idx < count; ++idx)
                 {
                 ECValue vitem;
                 instance.GetValue (vitem, prop->GetName().c_str(), idx);
@@ -334,7 +334,7 @@ bool PropertyIndexFlatteningIterator::InitForCurrent()
         return InitForCurrent();
         }
     
-    UInt32 curPropIdx = m_states.back().GetPropertyIndex();
+    uint32_t curPropIdx = m_states.back().GetPropertyIndex();
     if (!m_enabler.HasChildProperties (curPropIdx))
         return true;
 
@@ -355,7 +355,7 @@ bool PropertyIndexFlatteningIterator::InitForCurrent()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyIndexFlatteningIterator::GetCurrent (UInt32& propIdx) const
+bool PropertyIndexFlatteningIterator::GetCurrent (uint32_t& propIdx) const
     {
     if (m_states.empty())
         return false;
@@ -381,7 +381,7 @@ bool PropertyIndexFlatteningIterator::MoveNext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyIndexFlatteningIterator::State::Init (ECEnablerCR enabler, UInt32 parentPropertyIndex)
+bool PropertyIndexFlatteningIterator::State::Init (ECEnablerCR enabler, uint32_t parentPropertyIndex)
     {
     m_listIndex = 0;
     m_propertyIndices.clear();
