@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/eccontentdefinition.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,25 +10,24 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct IECContentDefinition: public IAUIItem
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
+struct          IECContentDefinition : public IAUIItem
     {
 
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct          IAUIContentServiceProvider : public IECPresentationProvider
     {
     protected:
-        
         virtual IECContentDefinitionPtr _GetContent (IECPresentationViewDefinitionCR viewDef) const = 0;
-        virtual ProviderType    _GetProviderType() const override {return ContentService;}
-    public:
+        virtual ProviderType            _GetProviderType() const override {return ContentService;}
 
+    public:
         ECOBJECTS_EXPORT IECContentDefinitionPtr GetContent (IECPresentationViewDefinitionCR viewDef) const;
 
     };

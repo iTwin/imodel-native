@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auiprovider.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -10,11 +10,13 @@
 
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+//! NEEDSWORK: Add comment here
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct          IECPresentationProvider : public RefCountedBase
     {
+    //! NEEDSWORK: Add comment here
     enum ProviderType
         {
         ViewService         = 1,
@@ -27,18 +29,21 @@ struct          IECPresentationProvider : public RefCountedBase
         };
 
     protected:
+        //! NEEDSWORK: Add comment here
         virtual size_t          _GetProviderId(void) const {return reinterpret_cast<size_t>(this);}
+        //! NEEDSWORK: Add comment here
         virtual WCharCP         _GetProviderName (void) const = 0;
+        //! NEEDSWORK: Add comment here
         virtual ProviderType    _GetProviderType (void) const = 0;
 
     public:
-        //! Get a unique identifier associated with this  UI Provider
+        //! Get a unique identifier associated with this UI Provider.
         ECOBJECTS_EXPORT    size_t  GetProviderId () const;
 
-        //! Get a unique name associated with this  UI Provider
+        //! Get a unique name associated with this UI Provider.
         ECOBJECTS_EXPORT    WCharCP GetProviderName () const;
 
-        //! Get a unique name associated with this  UI Provider
+        //! Get a unique name associated with this UI Provider.
         ECOBJECTS_EXPORT    ProviderType GetProviderType () const;
     };
 
