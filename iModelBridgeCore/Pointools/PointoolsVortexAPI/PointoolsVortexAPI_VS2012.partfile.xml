@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+********************************************************************************************************
+* Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved.
+*
+* PointoolsVortexAPI VS2012 Build
+*
+* Author: Lee Bull
+*
+******************************************************************************************************** 
+-->
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\PartFile.xsd">
+
+  <Part Name="PointoolsVortexAPI_VS2012" OnlyPlatforms="x86,x64" BMakeFile="PointoolsVortexAPI" PrgOutputDir="PointoolsVortexAPI" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+
+    <Directories DirectoryListName="PointoolsVortexAPIDirectoryList_VS2012_NULL"/>
+
+    <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1"/>
+
+    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012"/>
+    
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012"/>
+
+    <SubPart PartName="PointoolsIO_VS2012" PartFile="${srcroot}Pointools/PointoolsIO/PointoolsIO_VS2012" Repository="PointoolsIO"/>
+
+  </Part>
+
+
+<!--
+********************************************************************************************************
+* PointoolsVortexAPI VS2012 Part
+********************************************************************************************************
+-->
+
+  <Part Name="EncryptShaders_VS2012" BMakeFile="EncryptShaders\EncryptShaders.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+
+    <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
+
+    <Bindings>
+      <Files>
+        Delivery\enc-shaders.exe
+      </Files>
+    </Bindings>
+  </Part>
+
+  
+  <Part Name="PointoolsVortexAPI_Vortex_DLL_Makefile_VS2012" BMakeFile="Makefile\PointoolsVortexAPI_Vortex_DLL_Makefile.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    
+    <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
+    
+  </Part>
+  
+  
+  <Part Name="PointoolsVortexAPI_DLL_VS2012" BMakeFile="PointoolsVortexAPI_DLL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+
+    <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
+
+    <SubPart PartName="PointoolsVortexAPI_Vortex_DLL_Makefile_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1"/>
+
+    <SubPart PartName="EncryptShaders_VS2012" />
+
+    <SubPart PartName="PointoolsLibsVortex_2_VS2012" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012" Repository="PointoolsLibs"/>
+
+    <Bindings>
+      <VendorAPI Domain="PointoolsVortexAPI_DLL"/>
+      <Libs>
+        Delivery\PointoolsVortexAPI.lib
+      </Libs>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\PointoolsVortexAPI.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+
+<!--
+********************************************************************************************************
+* Pointools Vortex FeatureExtract VS2012 Part
+********************************************************************************************************
+-->
+
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL_Makefile_VS2012" BMakeFile="Makefile\PointoolsVortexAPI_FeatureExtract_DLL_Makefile.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    
+    <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
+
+  </Part>
+
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" BMakeFile="PointoolsVortexAPI_FeatureExtract_DLL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+
+    <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
+
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_Makefile_VS2012"/>
+
+    <SubPart PartName="WildMagic4_VS2012" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012" Repository="PointoolsLibs"/>
+
+    <Bindings>
+      
+      <VendorAPI Domain="PointoolsVortexAPI_FeatureExtract_DLL"/>
+      
+      <Libs>
+        Delivery\VortexFeatureExtract.lib
+      </Libs>
+      
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\VortexFeatureExtract.dll
+      </Assemblies>
+    </Bindings>
+
+  </Part>
+
+</BuildContext>

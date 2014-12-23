@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 
+********************************************************************************************************
+* Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved.
+*
+* Main PointoolsVortexAPI Build (VS2005 and VS2012)
+*
+* Author: Lee Bull
+*
+******************************************************************************************************** 
+-->
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\PartFile.xsd">
+
+
+  <Product PrgOutputDir="PointoolsVortexAPI" Name="PointoolsVortexAPI_VS2005_PowerPlatform" SaveProduct="False">
+    <SubProduct ProductName="Pointools32Ext" PartFile="${srcroot}\Pointools\PointoolsIO\PointoolsIO" Repository="PointoolsIO"/>  
+    <!-- <SubProduct ProductName="PointoolsVortexAPI_VS2005_Main"/> -->
+  </Product>
+  
+  <Product Name="PointoolsVortexAPI_VS2005_Main" SaveProduct="False">
+    <SubPart PartName="PointoolsVortexAPI_VS2005" PartFile="PointoolsVortexAPI_VS2005"/>  
+    <Directories DirectoryListName="PointoolsVortexAPIDirectoryListNull"/>
+  </Product>
+  
+
+<!-- *************************************************************************************************** -->
+
+  <Product Name="Distribution" SaveProduct="False">    
+    <SubProduct ProductName="PointoolsVortex"/>
+    <SubProduct ProductName="PointoolsIO"/>
+  </Product>
+
+  <Product Name="PointoolsVortex" SaveProduct="False">    
+    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012_Distribution"/>
+    <Directories DirectoryListName="PointoolsVortexAPIDirectoryList"/>
+  </Product>
+
+  <Product Name="PointoolsIO" SaveProduct="False">    
+    <SubPart PartName="PointoolsIO_VS2012_Distribution"/>
+    <Directories DirectoryListName="PointoolsVortexAPIDirectoryList"/>
+  </Product>
+ 
+  <Part Name="PointoolsVortexAPI_DLL_VS2012_Distribution">
+	
+    <SubPart PartName="PointoolsVortexAPI_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
+    
+    <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012" PartFile="PointoolsVortexAPI_VS2012"/>
+
+    <Bindings>
+      <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Includes">
+        VendorAPI\PointoolsVortexAPI_DLL\PTAPI\PointoolsVortexAPI_import.h  
+        VendorAPI\PointoolsVortexAPI_DLL\PTAPI\PointoolsVortexAPI_ResultCodes.h
+      </Files>
+      <Libs ProductDirectoryName="PointoolsVortexAPI_VS2012_Libs">
+        Subparts\Libs\PointoolsVortexAPI.lib
+        Subparts\Libs\VortexFeatureExtract.lib
+      </Libs>	  
+      <Assemblies ProductDirectoryName="PointoolsVortexAPI_VS2012_Assemblies">
+        Subparts\Assemblies\PointoolsVortexAPI.dll
+      </Assemblies>
+	  
+    </Bindings>
+  </Part>
+
+  
+  <Part Name="PointoolsIO_VS2012_Distribution">
+	
+    <SubPart PartName="PointoolsIO_VS2012" PartFile="${srcroot}Pointools/PointoolsIO/PointoolsIO_VS2012" Repository="PointoolsIO"/>
+    
+    <Bindings>
+      <Files ProductDirectoryName="PointoolsIO_VS2012_Includes">
+        VendorAPI\PointoolsIO_PODFormats_DLL\PODFormats.h  
+        VendorAPI\PointoolsIO_PODWriter_DLL\PODWriter.h  
+      </Files>
+	  
+      <Files ProductDirectoryName="PointoolsIO_VS2012_Src"> 
+      <!-- LoadPDWriter.cpp etc -->
+      </Files>
+	  
+      <Libs ProductDirectoryName="PointoolsIO_VS2012_Libs">
+        Subparts\Libs\PODFormats.lib
+      </Libs>	  
+      <Assemblies ProductDirectoryName="PointoolsIO_VS2012_Assemblies">
+        Subparts\Assemblies\PODFormats.dll
+        Subparts\Assemblies\PODWriter.dll
+      </Assemblies>
+	  
+    </Bindings>
+  </Part>
+  
+  <ProductDirectoryList ListName="PointoolsVortexAPIDirectoryListNull">
+
+    <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
+    <ProductDirectory Name="PointoolsAssemblies32Ext" Path="" Deliver="false"/>
+	
+    <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
+    <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
+    <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
+	
+  </ProductDirectoryList>
+ 
+  <ProductDirectoryList ListName="PointoolsVortexAPIDirectoryList">
+
+    <ProductDirectory Name="PointoolsAssemblies" Path="" Deliver="false"/>
+    <ProductDirectory Name="PointoolsAssemblies32Ext" Path="" Deliver="false"/>
+	
+    <ProductDirectory Name="VendorAPI" Path="VendorAPI" Deliver="false"/>
+    <ProductDirectory Name="Libs" Path="Libs" Deliver="false"/>
+    <ProductDirectory Name="Assemblies" Path="Assemblies" Deliver="false"/>
+    
+    <ProductDirectory Name="PointoolsVortexAPI_VS2005" Path="PointoolsVortexAPI_VS2005" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_VS2005_Includes" Path="PointoolsVortexAPI_VS2005\include" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_VS2005_Libs" Path="PointoolsVortexAPI_VS2005\lib" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_VS2005_Assemblies" Path="PointoolsVortexAPI_VS2005\bin" Deliver="true"/>
+    
+    <ProductDirectory Name="PointoolsIO_VS2005_Includes" Path="PointoolsIO_VS2005\include" Deliver="true"/>
+    <ProductDirectory Name="PointoolsIO_VS2005_Src" Path="PointoolsIO_VS2005\src" Deliver="true"/>
+    <ProductDirectory Name="PointoolsIO_VS2005_Libs" Path="PointoolsIO_VS2005\lib" Deliver="true"/>
+    <ProductDirectory Name="PointoolsIO_VS2005_Assemblies" Path="PointoolsIO_VS2005\bin" Deliver="true"/>
+    
+    
+    <ProductDirectory Name="PointoolsVortexAPI_VS2012" Path="PointoolsVortexAPI_VS2012" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_VS2012_Includes" Path="PointoolsVortexAPI_VS2012\include" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_VS2012_Libs" Path="PointoolsVortexAPI_VS2012\lib" Deliver="true"/>
+    <ProductDirectory Name="PointoolsVortexAPI_VS2012_Assemblies" Path="PointoolsVortexAPI_VS2012\bin" Deliver="true"/>
+
+    <ProductDirectory Name="PointoolsIO_VS2012_Includes" Path="PointoolsIO_VS2012\include" Deliver="true"/>
+    <ProductDirectory Name="PointoolsIO_VS2012_Src" Path="PointoolsIO_VS2012\src" Deliver="true"/>
+    <ProductDirectory Name="PointoolsIO_VS2012_Libs" Path="PointoolsIO_VS2012\lib" Deliver="true"/>
+    <ProductDirectory Name="PointoolsIO_VS2012_Assemblies" Path="PointoolsIO_VS2012\bin" Deliver="true"/>
+
+  </ProductDirectoryList>
+          
+</BuildContext>

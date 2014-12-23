@@ -1,0 +1,59 @@
+#----------------------------------------------------------------------------------------
+#  $Source: Makefile/PointoolsVortexAPI_FeatureExtract_DLL_Makefile.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
+%include mdl.mki
+
+baseDir = ${_MakeFilePath}/
+
+o=$(OutputRootDir)Build/Pointools/PointoolsVortexAPI_$(VSOutputSubfolder)
+
+always:
+    ~mkdir $(o)
+
+always:
+    ~putenv POINTOOLSLIBS=$(PointoolsLibs)
+    ~putenv POINTOOLSVORTEX=$(PointoolsVortex)
+
+%if debug
+PT_BuildName = Debug
+%else
+PT_BuildName = Release
+%endif
+
+%if $(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)=="x86"
+PT_BuildPlatform = Win32
+%else
+PT_BuildPlatform = x64
+%endif
+
+
+%if defined(BUILD_USING_VS2005)
+PT_PROJECT_FILE=$(basedir)\..\extensions\VortexFeatureExtract\VortexFeatureExtract.vcproj
+%endif
+
+%if defined(BUILD_USING_VS2012)
+PT_PROJECT_FILE=$(basedir)\..\extensions\VortexFeatureExtract\VortexFeatureExtract_2012.vcxproj
+%endif
+
+%message **********************************************************
+%message Creating Makefile
+%message $(PT_BuildName)
+%message $(PT_BuildPlatform)
+%ifdef BUILD_USING_VS2005
+%message Visual Studio 2005 Conversion $(PT_PROJECT_FILE)
+%endif
+%ifdef BUILD_USING_VS2012
+%message Visual Studio 2012 Conversion $(PT_PROJECT_FILE)
+%endif
+%message **********************************************************
+
+$(o)PointoolsVortexAPI_FeatureExtract_DLL.mki : $(basedir)PointoolsVortexAPI_FeatureExtract_DLL.conf $(PT_PROJECT_FILE)
+	python $(PointoolsCommon)BuildTools\abmake.py -configFile=$(basedir)PointoolsVortexAPI_FeatureExtract_DLL.conf -projectSourceFile=$(PT_PROJECT_FILE) -output=$(o)PointoolsVortexAPI_FeatureExtract_DLL.mki -buildName=$(PT_BuildName) -buildPlatform=$(PT_BuildPlatform) -createBuildContextLibraries=True
+ 
+
+
+
+

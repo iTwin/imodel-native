@@ -1,0 +1,7 @@
+#----------------------------------------------------------------------------------------
+#  $Source: EncryptShaders/Policy.mki $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+
+%include ../../PointoolsCommon/BuildScripts/PolicyCommon.mki

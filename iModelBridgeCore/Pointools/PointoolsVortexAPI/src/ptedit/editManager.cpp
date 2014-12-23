@@ -1,0 +1,1016 @@
+//-----------------------------------------------------------------------------------------------
+//
+// PT_EDIT Point cloud editing plugin
+//
+//-----------------------------------------------------------------------------------------------
+#pragma warning (disable : 4786 )
+
+#include <WildMagic4/Wm4matrix3.h>
+#include <WildMagic4/Wm4ApprPlaneFit3.h>
+
+#include <pt/os.h>
+#include <pt/trace.h>
+
+#include <ptedit/EditManager.h>
+#include <ptedit/constriants.h>
+#include <ptedit/editStackState.h>
+#include <ptedit/cloudSelect.h>
+
+#include <ptengine/renderengine.h>
+#include <ptengine/pointLayers.h>
+#include <ptengine/PointsFilter.h>
+#include <ptengine/engine.h>
+
+#include <fastdelegate/fastdelegate.h>
+#include <ptl/dispatcher.h>
+
+
+#include <stack>
+#include <map>
+#include <string>
+
+using namespace pt;
+using namespace ptl;
+using namespace ptedit;
+using namespace pcloud;
+using namespace pointsengine;
+
+#define HIDDEN_LAYER_MASK 0x80
+
+namespace ptedit
+{
+	struct SelectionFilters
+	{
+		FilterOpClearAll				clearAll;
+		FilterOpSelectAll				selectAll;
+		FilterOpDeselectAll				deselectAll;
+		FilterOpHideSelected			hideSelected;
+		FilterOpShowAll					showAll;
+		FilterOpCopyToLayer				copyToLayer;
+		FilterOpMoveToLayer				moveToLayer;
+		FilterOpInvertSelection			invertSelection;
+		FilterOpInvertVisibility		invertVisibility;
+		FilterOpIsolateSelected			isolateSelected;
+		FilterOpConsolidate				consolidate;
+		FilterOpConsolidateAllLayers	consolidateAllLayers;
+		FilterOpSetLayer				setLayer;
+		FilterOpDeselectLayer			deselectLayer;
+		FilterOpSelectLayer				selectLayer;
+
+		CloudSelect						cloudselect;
+	};
+	static SelectionFilters	*s_filters=0;
+}
+
+/*****************************************************************************/
+/**
+* @brief	PointEditManager constructor
+*/
+/*****************************************************************************/
+PointEditManager::PointEditManager()
+{
+	omp_set_num_threads(4);
+	m_units = 1.0;
+
+	g_editWorkingMode = EditWorkOnView;
+
+	s_filters = new SelectionFilters;
+}
+
+/*****************************************************************************/
+/**
+* @brief						singleton instance
+* @return PointEditManager *
+*/
+/*****************************************************************************/
+PointEditManager * PointEditManager::instance()
+{
+	static PointEditManager *_instance = 0;
+	if (!_instance) _instance = new PointEditManager();
+	return _instance;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return OperationStack*
+*/
+/*****************************************************************************/
+OperationStack* PointEditManager::getCurrentEdit()
+{
+	return &m_currentEdit;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param name
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::storeEdit( const pt::String name )
+{
+	if (m_edits.find(name) != m_edits.end()) return false;
+
+	OperationStack *edit = new OperationStack( m_currentEdit.stack() );
+
+	m_edits.insert(EditMap::value_type(name, edit));
+	return true; 
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param name
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::restoreEdit( const pt::String name )
+{
+	EditMap::iterator i = m_edits.find(name);
+	if (i!= m_edits.end())
+	{
+		clearEdit();
+		OperationStack *edit = (OperationStack*)(i->second);
+		m_currentEdit.readStack( edit->stack() );
+		m_currentEdit.execute();
+		return true;
+	}
+	else return false;
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param name
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::removeEdit (const pt::String name )
+{
+	boost::mutex::scoped_lock lock( m_processMutex );
+
+	EditMap::iterator i = m_edits.find(name);
+	if (i!= m_edits.end())
+	{
+		delete i->second;
+		m_edits.erase(i);
+	}
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::removeAllEdits ()
+{
+	boost::mutex::scoped_lock lock( m_processMutex );
+
+	EditMap::iterator i = m_edits.begin();
+	while (i!=m_edits.end())
+	{	
+		delete i->second;
+		++i;
+	}
+	m_edits.clear();
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param use
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::setUseMultiThreading( bool use ) 
+{ 
+	g_state.multithreaded = use; 
+}
+
+
+/*****************************************************************************/
+/**
+* @brief
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::getUseMultiThreading() const 
+{ 
+	return g_state.multithreaded; 
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return ptedit::SelectionMode
+*/
+/*****************************************************************************/
+SelectionMode PointEditManager::editMode() const
+{
+	return g_state.selmode;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param mode
+* @return void
+*/
+/*****************************************************************************/
+void			PointEditManager::workingMode( EditWorkingMode mode )
+{
+	g_editWorkingMode = (uint)mode;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return ptedit::EditWorkingMode
+*/
+/*****************************************************************************/
+EditWorkingMode	PointEditManager::workingMode() const
+{
+	return (EditWorkingMode)g_editWorkingMode;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return int
+*/
+/*****************************************************************************/
+int		PointEditManager::stateId() const
+{
+	return m_currentEdit.stateId();
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return uint
+*/
+/*****************************************************************************/
+uint PointEditManager::numEdits() const
+{
+	return m_edits.size();
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param index
+* @return const pt::String &
+*/
+/*****************************************************************************/
+const pt::String &PointEditManager::editName( uint index )
+{
+	EditMap::iterator i = m_edits.begin();
+	for (int id=0; (id<index && i!=m_edits.end()); id++)
+	{
+		++i;
+	}
+	if (i!=m_edits.end()) return i->first;
+	static pt::String undef("undefined");
+	return undef;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param unitsPerMetre
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::setUnits( double unitsPerMetre )
+{
+	if (unitsPerMetre > 0 && unitsPerMetre < 1e6)
+		m_units = unitsPerMetre;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return double
+*/
+/*****************************************************************************/
+double PointEditManager::getUnits() const
+{
+	return m_units;
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::selectMode()	
+{ 
+	g_state.selmode = SelectPoint; 
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::deselectMode()	
+{ 
+	g_state.selmode = DeselectPoint; 
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::unhideMode()	
+{ 
+	g_state.selmode = UnhidePoint; 
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param guid
+* @param sceneScope
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::setEditingScope( pcloud::PointCloudGUID guid, bool sceneScope, int sceneInstance )
+{
+	g_state.scope = guid;
+	g_state.scopeIsScene = sceneScope;
+	g_state.scopeInstance = sceneInstance;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::clearEditingScope()
+{
+	g_state.scope = 0;
+	g_state.scopeIsScene = false;
+	g_state.scopeInstance = 0;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::updateActiveLayers()
+{
+	g_activeLayers = g_visibleLayers;
+	g_activeLayers &= ~g_lockedLayers;
+
+	pointsengine::thePointLayersState().setCurrentBitMask( (uint)g_currentLayer );
+	pointsengine::thePointLayersState().setVisibleBitMask( (uint)g_visibleLayers );
+}
+
+/*****************************************************************************/
+/**
+* @brief		Performs the task of updating the node level layer states
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::updateLayerVisibility()
+{
+	EditNodeDef::applyByName( "SetLayer" );
+
+	pointsengine::thePointLayersState().setCurrentBitMask( (uint)g_currentLayer );
+	pointsengine::thePointLayersState().setVisibleBitMask( (uint)g_visibleLayers );
+}
+/*****************************************************************************/
+/**
+* @brief		Calculates the approximate layer bounding gboc
+* @return void
+*/
+/*****************************************************************************/
+bool	PointEditManager::getVisibleLayersBoundingBox( pt::BoundingBoxD &bb, bool fast_approx ) const
+{
+	ComputeLayerBoundsVisitor boundscompute( g_visibleLayers, fast_approx );
+	TraverseScene::withVisitor(&boundscompute);
+
+	bb = boundscompute.boundingBox();
+
+	return bb.isEmpty() ? false : true;
+}
+/*****************************************************************************/
+/**
+* @brief		Performs the task of updating the node level layer states
+* @return void
+*/
+/*****************************************************************************/
+bool	PointEditManager::getLayerBoundingBox( int layerIndex, pt::BoundingBoxD &bb, bool fast_approx ) const 
+{
+	if (layerIndex < 0) return false;
+
+	ubyte layerMask = 1 << layerIndex;
+
+	ComputeLayerBoundsVisitor boundscompute( layerMask, fast_approx );
+	TraverseScene::withVisitor(&boundscompute);
+
+	bb = boundscompute.boundingBox();
+
+	return bb.isEmpty() ? false : true;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param layer
+* @param lock
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::lockLayer( int layer, bool lock )
+{
+	if (lock)
+		g_lockedLayers |= (1<<layer);
+	else g_lockedLayers &= ~(1<<layer);
+	
+	updateActiveLayers();
+
+	return true;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param layer
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::isLayerVisible( int layer ) const
+{
+	if (g_visibleLayers & (1 << layer)) return true;
+	return false;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param layer
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::isLayerLocked( int layer ) const
+{
+	if (g_lockedLayers & (1 << layer)) return true;
+	return false;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param layer
+* @param show
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::showLayer( int layer, bool show )
+{
+	ubyte layerMask = (1 << layer);
+
+	if ( layerMask == g_currentLayer )
+		return show;
+	
+	if (show)	g_visibleLayers |= layerMask;
+	else		g_visibleLayers &= ~layerMask;
+
+	updateActiveLayers();
+
+	return true;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param layer
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::setCurrentLayer( int layer, bool maskValue )
+{
+	ubyte blyr = maskValue ? layer : (1 << layer);
+
+	if (g_lockedLayers & blyr) return false;
+
+	g_visibleLayers |= blyr;
+	g_currentLayer = blyr;
+	g_activeLayers = g_visibleLayers & ~g_lockedLayers;
+
+	//EditNodeDef::applyByName( "Consolidate" );
+
+	pointsengine::thePointLayersState().setCurrentBitMask( (uint)g_currentLayer );
+	pointsengine::thePointLayersState().setVisibleBitMask( (uint)g_visibleLayers );
+
+	updateLayerVisibility();
+
+	return true;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return int
+*/
+/*****************************************************************************/
+int PointEditManager::getCurrentLayer() const
+{
+	switch (g_currentLayer)
+	{
+	case 0: return 8; /* hidden layer */ 
+	case 1: return 0;
+	case 2: return 1;
+	case 4: return 2;
+	case 8: return 3;
+	case 16: return 4;
+	case 32: return 5;
+	case 64: return 6;
+	case 128: return 7;
+	default: return 0;
+	}
+}
+
+
+/*****************************************************************************/
+/**
+* @brief
+* @param deselect
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::moveSelToLayer( bool deselect )
+{
+	if (g_activeLayers & HIDDEN_LAYER_MASK)
+	{
+		/* move to hidden layer */ 
+		hideSelPoints();
+	}
+	else
+	{
+		m_currentEdit.addOperation( "MoveToLayer" );	
+		setCurrentLayer( getCurrentLayer() );
+	}
+	return true;
+}
+//
+/*****************************************************************************/
+/**
+* @brief
+* @param deselect
+* @return bool
+*/
+/*****************************************************************************/
+bool PointEditManager::copySelToLayer( bool deselect )
+{
+	if (g_activeLayers & HIDDEN_LAYER_MASK) return false;
+
+	m_currentEdit.addOperation( "CopyToLayer" );
+	setCurrentLayer( getCurrentLayer() );
+
+	return true;
+}
+//
+bool	PointEditManager::selectPointsInLayer( int layer )
+{
+	s_filters->selectLayer.targetLayer(layer);
+	m_currentEdit.addOperation( &s_filters->selectLayer );
+
+	return true;
+}
+//
+bool	PointEditManager::deselectPointsInLayer( int layer )
+{
+	s_filters->deselectLayer.targetLayer(layer);
+	m_currentEdit.addOperation( &s_filters->deselectLayer );
+
+	return true;
+}
+//
+// These cloud and scene selection funcs are not exposed 
+// since scope can be used to the same effect
+//
+bool	PointEditManager::selectPointcloud( pcloud::PointCloud *cloud )
+{
+	s_filters->cloudselect.setCloud( cloud );
+	m_currentEdit.addOperation( &s_filters->cloudselect );
+
+	return true;
+}
+bool	PointEditManager::selectScene( pcloud::Scene *scene )
+{
+	// not implemented
+	return false;
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::regenEditQuick()
+{
+	{
+		PreserveState save;
+
+		g_editApplyMode = EditIntentFlagged;
+
+		/* flag every leaf that needs a refresh */ 
+		FlagPartEditedVisitor fv;
+		TraverseScene::withVisitor(&fv);
+
+		/* clear those that have already been 100% processed */ 
+		ClearFlaggedIfProcessed cfv;
+		TraverseScene::withVisitor(&cfv);
+
+		/* consolidate octree, otherwise flagged status of parent nodes will not be updated */ 
+		TraverseScene::consolidateFlags();
+
+		/* remove RGB edits from these leaves */ 
+		//clearColourEdits();
+
+		/* clear the filter state from these nodes */ 
+		ClearFilterVisitor v;
+		TraverseScene::withVisitor(&v);
+
+		/* not sure this is needed */ 
+		//ClearFlagVisitor cf;
+		//TraverseScene::withVisitor(&cf);
+
+		/* run the ops on these leaves only */ 
+		m_currentEdit.execute();
+
+		g_editApplyMode = EditNormal;
+
+		EditNodeDef::applyByName( "ConsolidateAllLayers" );	
+	}
+	setCurrentLayer( g_currentLayer, true );
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::regenEditComplete()
+{
+	//clearColourEdits();
+
+	g_editApplyMode = EditIntentRegen;
+
+	clearAll();
+
+	m_currentEdit.execute();
+
+	g_editApplyMode = EditNormal;
+
+	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
+
+	setCurrentLayer( g_currentLayer, true );
+}
+
+//-----------------------------------------------------------------------------
+// complete regen from scratch - not optimised
+//-----------------------------------------------------------------------------
+void PointEditManager::regenOOCComplete()
+{
+	//clearColourEdits( g_visibleLayers );
+
+	g_editApplyMode = EditIntentRegen | EditIncludeOOC;
+
+	clearAll();
+	m_currentEdit.execute();
+
+	g_editApplyMode = EditNormal;
+
+	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::clearEdit()
+{
+	{
+		PreserveState save;
+		uint saveApplyMode = g_editApplyMode;
+		g_editApplyMode = 0;
+
+		//clearColourEdits();
+
+		g_editApplyMode = 0;
+		m_currentEdit.clear();
+		clearAll();
+
+		g_editApplyMode = saveApplyMode;
+	}
+	setCurrentLayer( g_currentLayer, true );
+}
+
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+PaintBrush *_activeBrush = &g_selBrush.brush;
+
+void PointEditManager::paintSelSphere()
+{
+	_activeBrush = &g_selBrush.brush;
+	_activeBrush->shape( BrushShapeBall );
+
+	g_paint.brush.shape(BrushShapeBall);
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::paintSelCube()
+{
+	_activeBrush = &g_selBrush.brush;
+	_activeBrush->shape( BrushShapeBox );
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::selectAll()
+{
+	m_currentEdit.addOperation( "SelectAll" );
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::deselectAll()
+{
+	m_currentEdit.addOperation( "DeselectAll" );
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::clearAll()
+{
+	ClearFilterVisitor v;
+	TraverseScene::withVisitor(&v);
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::showAll()
+{
+	m_currentEdit.addOperation( "ShowAll" );
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::invertSelection()
+{	
+	m_currentEdit.addOperation( "InvertSel" );
+}
+
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::invertVisibility()
+{	
+	m_currentEdit.addOperation( "InvertVis" );
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::isolateSelPoints()
+{
+	m_currentEdit.addOperation( "IsolateSelected" );
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::hideSelPoints()
+{
+	m_currentEdit.addOperation( "HideSelected" );
+}
+
+
+/*****************************************************************************/
+/**
+* @brief
+* @param radius
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::paintRadius( double radius )
+{
+	_activeBrush->radius( radius );
+
+	g_paint.brush.radius(radius);
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @return float
+*/
+/*****************************************************************************/
+float PointEditManager::getPaintRadius( )
+{
+	return _activeBrush->radius();
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param params
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::setViewParams( const pt::ViewParams &params )
+{
+	m_view = params;
+	m_view.updatePipeline();
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param pnt
+* @param limit_range
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::paintSelectAtPoint( const pt::vector3d &pnt, bool limit_range )
+{
+	static pt::vector3d lastpoint(0,0,0);
+
+	pt::vector3d cam;
+
+	///* check for depth jump */ 
+	float ddepth = lastpoint.dist(pnt);//fabs(cam.dist(pnt) - cam.dist(lastpoint));
+	
+	if ( !limit_range || lastpoint.is_zero() || ddepth  <  _activeBrush->radius() * 3)
+	{
+		m_paintSelect.setCenter( pnt );
+		m_currentEdit.addOperation( &m_paintSelect, true, true );
+		lastpoint = pnt;
+	}
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param l
+* @param r
+* @param b
+* @param t
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::rectangleSelect( int l, int r, int b, int t)
+{
+	Recti rect(l, t, r, b);
+	rect.makeValid();
+
+	m_frustumSelect.buildFromScreenRect(rect, m_view, m_units) ;//these parameters also needeed:, m_view, m_units);
+	m_currentEdit.addOperation(&m_frustumSelect);
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param lower
+* @param upper
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::boxSelect( const pt::vector3d &lower, const pt::vector3d &upper )
+{
+	m_boxSelect.set(lower, upper);
+
+	m_currentEdit.addOperation(&m_boxSelect);
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param lower
+* @param upper
+* @param position
+* @param uAxis
+* @param vAxis
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::orientedBoxSelect( const pt::vector3d &lower, const pt::vector3d &upper, const pt::vector3d &pos, const pt::vector3d &uAxis, const pt::vector3d &vAxis)
+{
+	m_orientedBoxSelect.set(lower, upper);
+	m_orientedBoxSelect.setTransform(pos, uAxis, vAxis);
+
+	m_currentEdit.addOperation(&m_orientedBoxSelect);
+
+	//s_orientedBoxSelFilter.filterData.box.set(lower, upper);
+	//s_orientedBoxSelFilter.filterData.setTransform(position, uAxis, vAxis);
+	//m_currentEdit.addEditOperation( s_orientedBoxSelFilter );
+	//s_lastTime = s_frustumSelFilter.lastProcessTimeInMs();
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param origin
+* @param normal
+* @param thickness
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::planeSelect( const pt::vector3d &origin, const pt::vector3d &normal, double thickness )
+{
+	vector3d od( origin );
+	vector3d nd( normal );
+
+
+	//s_planeSelect.
+	m_planeSelect.setPlane( vector3d(origin), vector3d(normal) );
+	m_planeSelect.thickness = thickness;
+	m_planeSelect.unbounded = true;
+
+	m_currentEdit.addOperation( &m_planeSelect );
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param fence
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
+{
+	m_fenceSelect.buildFromScreenFence(fence, m_view, m_units);
+	m_currentEdit.addOperation(&m_fenceSelect);
+}
+
+/*****************************************************************************/
+/**
+* @brief
+* @param index
+* @return pt::datatree::Branch *
+*/
+/*****************************************************************************/
+pt::datatree::Branch *PointEditManager::_getEditDatatree( int index )
+{
+	int c=0;
+	EditMap::iterator i = m_edits.begin();
+
+	while (c++ < index) ++i;
+
+	if (i!= m_edits.end())
+	{
+		OperationStack *edit = (OperationStack*)(i->second);
+		datatree::Branch *root = const_cast<datatree::Branch*>(edit->stack());
+		
+		root->addNode( "name", i->first );
+		return root;
+	}
+	return 0;
+}
+/*****************************************************************************/
+/**
+* @brief
+* @param dtree
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::_createEditFromDatatree( pt::datatree::Branch * dtree )
+{
+	OperationStack *edit = new OperationStack(dtree);
+	pt::String name;
+	if (dtree->getNode( "name", name))
+		m_edits.insert(EditMap::value_type(name, edit));
+}

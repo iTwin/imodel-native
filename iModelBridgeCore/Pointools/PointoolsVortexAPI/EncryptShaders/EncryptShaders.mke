@@ -1,0 +1,92 @@
+#----------------------------------------------------------------------
+# Do not edit, generated automatically by proj2mke.exe
+#----------------------------------------------------------------------
+
+BUILD_USING_VS2005=1
+NOSTRICT=1
+warnLevel = -W1
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
+
+appName = enc-shaders.exe
+sAppName = $(appName)
+baseDir = ${_MakeFilePath}/
+privateInc = $(baseDir)
+%if debug
+DEBUG_RUNTIME = 1
+%else
+%endif
+
+%include mdl.mki
+
+#----------------------------------------------------------------------------------------
+#   Get output directories ready to put built *.obj and *.exe files in.
+#----------------------------------------------------------------------------------------
+
+PointoolsVortexAPISrc=$(SrcRoot)Pointools/PointoolsVortexAPI/EncryptShaders/
+PointoolsVortexAPIOut=$(OutputRootDir)Build/Pointools/PointoolsVortexAPI_$(VSOutputSubfolder)EncryptShaders/
+
+BuildContext        = $(OutputRootDir)BuildContexts/PointoolsVortexAPI_$(VSOutputSubfolder)/
+ContextDeliveryDir  = $(BuildContext)Delivery/
+o                   = $(PointoolsVortexAPIOut)
+
+
+always:
+    ~mkdir $(o)
+
+CCompOpts + -AI$(SDAssemblies)
+
+CCompOpts + -D"_MBCS"
+
+#----------------------------------------------------------------------
+# Preprocessor definitions
+#----------------------------------------------------------------------
+%if debug
+    CCompOpts + -D"WIN32"
+    CCompOpts + -D"_DEBUG"
+    CCompOpts + -D"_CONSOLE"
+    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
+%else
+    CCompOpts + -D"WIN32"
+    CCompOpts + -D"NDEBUG"
+    CCompOpts + -D"_CONSOLE"
+    CCompOpts + -D"_CRT_SECURE_NO_WARNINGS"
+%endif
+
+ASSEMBLY_NO_STRONGNAME = 1
+
+
+#----------------------------------------------------------------------
+# Compile Source Files
+#----------------------------------------------------------------------
+
+$(o)EncryptShaders$(oext): $(baseDir)EncryptShaders.cpp
+
+
+#----------------------------------------------------------------------
+# Object Files
+#----------------------------------------------------------------------
+dlmObjs = \
+    $(o)EncryptShaders$(oext)
+
+#----------------------------------------------------------------------------------------
+#   Set up the linker options and create the exe with linktool.mki
+#----------------------------------------------------------------------------------------
+EXE_NAME            = enc-shaders
+EXE_OBJS            = $(o)EncryptShaders$(oext)
+EXE_DEST            = $(o)
+EXE_TMP_DIR         = $(o)
+EXE_SYMB_DEST       = $(o)
+EXE_MAP_DEST        = $(o)
+EXE_NO_SIGN         = 1
+LINKER_LIBRARIES    = shlwapi.lib
+
+%include $(SharedMki)linktool.mki
+
+ASSEMBLY_NAME             = $(appName)
+ASSEMBLY_TITLE            = $(appName)
+ASSEMBLY_DESCRIPTION      = $(appName)
+
+
+#%include creatLib.mki
+always:
+    @CreateSymLinks.py "$(ContextDeliveryDir)\enc-shaders.exe=$(o)enc-shaders.exe"

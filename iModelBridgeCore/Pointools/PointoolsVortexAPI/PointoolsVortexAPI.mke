@@ -1,0 +1,31 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  $Source: PointoolsVortexAPI.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+%include PointoolsVortexAPI_Version.mki
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
+
+%include mdl.mki
+
+%message >>>>>>>>>>>>>> $(VSOutputSubfolder) <<<<<<<<<<<<<<<<<<<<<<<
+
+DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI_$(VSOutputSubfolder)Delivery/
+
+
+BuildContextSubpartsAssemblies=$(OutBuildContexts)PointoolsIO_$(VSOutputSubfolder)SubParts/Assemblies/
+
+#always:
+#    @CreateSymLinks.py -f"$(DeliveryDir)\PODFormats.dll=$(BuildContextSubpartsAssemblies)PODFormats.dll"
+#    @CreateSymLinks.py -f"$(DeliveryDir)\PODWriter.dll=$(BuildContextSubpartsAssemblies)PODWriter.dll"
+
+
+PointoolsIOAssemblySource = $(BuildContextSubpartsAssemblies)
+PointoolsIOAssemblyDest   = $(DeliveryDir)
+
+# %include ${srcroot}\Pointools\PointoolsCommon\BuildScripts\CopyPointoolsIOAssemblies.mki
+

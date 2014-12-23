@@ -1,0 +1,13 @@
+Syntax:
+	ptvlic [-commercial] [-company "company-name"] [-module "any"] [-output "vortexEvalLicense.c"] [-expiry 900101] [-declare "vortexLicCode"]
+
+Purpose: 
+	Encodes license information into a C file to be used by users of the vortex engine
+
+Options:
+	-commerical : 	prevents timeout within a single session or data degradation
+	-eval : 	data will degrade after 5mins
+	-module : 	locks to a particular host module name, use where possible
+	-expiry : 	in YYMMDD format, always set
+	-declare: 	sets the variable declared in the c file
+	-output: 	the filename of the output C file

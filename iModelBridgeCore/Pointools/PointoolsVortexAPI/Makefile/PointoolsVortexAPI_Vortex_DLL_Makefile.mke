@@ -1,0 +1,87 @@
+#----------------------------------------------------------------------------------------
+#  $Source: Makefile/PointoolsVortexAPI_Vortex_DLL_Makefile.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+
+%warn Starting PointoolsVortexAPI_Vortex_DLL_Makefile.mke
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/AssertPolicy.mki
+
+%warn P1
+%include mdl.mki
+
+%warn P2
+
+%message *******************************************************
+%message * FrameworkSDKDir = $(FrameworkSDKDir)
+%message * VS2005Dir       = $(VS2005Dir)
+%message * VS2012Dir       = $(VS2012Dir)
+%message *******************************************************
+
+%warn P3
+
+baseDir = ${_MakeFilePath}/
+
+o=$(OutputRootDir)Build/Pointools/PointoolsVortexAPI_$(VSOutputSubfolder)/
+
+always:
+    ~mkdir $(o)
+
+%warn P4
+
+always:
+    ~putenv POINTOOLSLIBS=$(PointoolsLibs)
+    ~putenv POINTOOLSVORTEX=$(PointoolsVortex)
+
+%warn P5
+
+%if debug
+PT_BuildName = Debug
+%warn Debug
+%else
+PT_BuildName = Release
+%warn Release
+%endif
+
+%if $(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)=="x86"
+PT_BuildPlatform = Win32
+%warn Win32
+%else
+PT_BuildPlatform = x64
+%warn x64
+%endif
+
+%if defined(BUILD_USING_VS2005)
+PT_PROJECT_FILE=$(basedir)..\PointoolsVortexAPI.vcproj
+%warn VS2005 Project
+%endif
+
+%if defined(BUILD_USING_VS2012)
+PT_PROJECT_FILE=$(basedir)..\PointoolsVortexAPI_2012.vcxproj
+%warn VS2012 Project
+%endif
+
+%message **********************************************************
+%message Creating Makefile
+%message $(PT_BuildName)
+%message $(PT_BuildPlatform)
+%ifdef BUILD_USING_VS2005
+%message Visual Studio 2005 Conversion $(PT_PROJECT_FILE)
+%endif
+%ifdef BUILD_USING_VS2012
+%message Visual Studio 2012 Conversion $(PT_PROJECT_FILE)
+%endif
+%message **********************************************************
+
+%warn Starting abmake for PointoolsVortexAPI_Vortex_DLL_Makefile.mke
+
+$(o)PointoolsVortexAPI_FeatureExtract_DLL.mki : $(basedir)PointoolsVortexAPI_Vortex_DLL.conf $(PT_PROJECT_FILE)
+	python $(PointoolsCommon)BuildTools\abmake.py -configFile=$(basedir)PointoolsVortexAPI_Vortex_DLL.conf -projectSourceFile=$(PT_PROJECT_FILE) -output=$(o)PointoolsVortexAPI_DLL.mki -buildName=$(PT_BuildName) -buildPlatform=$(PT_BuildPlatform) -createBuildContextLibraries=True
+
+
+%warn Ended abmake for PointoolsVortexAPI_Vortex_DLL_Makefile.mke
+
+
+
+

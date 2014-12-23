@@ -1,0 +1,59 @@
+floater	VortexMonitor("Pointools Vortex Diagnostics Monitor", 100,100,900,1040)
+{	
+	string currTimestamp;
+	
+	panel Queries
+	{
+	
+		cols 1;
+		row
+		{
+			rowspan 25;
+			grid queries(8,500)
+			{
+				box raised;
+			}
+		}
+		cols 8;		
+		row
+		{
+			button { label "Clear"; command "clearQueries"; }
+			llabel  { bind currTimestamp; }
+		}
+	}
+	panel Shortfall
+	{
+		cols 1;
+		row
+		{
+			rowspan 25;
+			grid loading(4,500)
+			{
+				box raised;
+			}
+		}
+		cols 8;
+		row
+		{
+			button { label "Clear"; command "clearShortfall"; }
+		}		
+	}
+	panel Visibility
+	{
+		cols 1;
+		row
+		{
+			rowspan 25;
+			grid visibility(10,50)
+			{
+				box raised;
+			}
+		}		
+		cols 8;		
+		row
+		{
+			button { label "Clear"; command "clearVis"; }
+			llabel  { bind currTimestamp; }
+		}		
+	}
+}

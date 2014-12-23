@@ -1,0 +1,117 @@
+(c)2009 Pointools Ltd.
+Pointools Vortex / Pointools IO API Release Notes
+
+
+Version: 1.4.3.091209
+
+Date: 12 December 2009
+
+
+Overview of Changes
+===================
+
+General
+-------
+- Fixed: Crash when using spatial density with some settings
+- Fixed: Area's of point cloud appearing patchy in GL rendering
+
+
+Version: 1.4.2.091030
+
+Date: 30 October 2009
+
+Overview of Changes
+===================
+
+General
+-------
+
+- PointoolsIO and Vortex DLLs built against Microsoft.VC80.CRT version 8.0.50727.762
+
+
+PointoolsIO
+-----------
+
+- Format capabilities
+	- Capability information is provided for each supported format
+	- Every supported format is now referred to by a permanently fixed enumeration value
+	- Every supported format parameter is now referred to by a permanently fixed enumeration value
+	- Each format's supported parameters can be obtained
+	- Min, Max and Default value hints are given for each parameter
+	- Logical user interface grouping information is given for supported parameters
+
+- Feedback
+	- FeedbackA and FeedbackW objects reduced to one single stringless struct named Feedback
+	- Text handling removed due to internationalization requirements
+	- Now supports total progress percentage and current file progress percentage
+
+- Batch conversion can now be cancelled (e.g. by separate thread OR in feedback callbacks)
+	
+- New error codes are now enumerated values given in the Result enumeration
+
+- Improved memory handling for binary file imports
+
+- Fixed 2GB size limit per scan for RSP/3DD format
+
+
+Vortex
+------
+
+- New stub function with prototype:
+
+	PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, PTdouble maxy, PTdouble maxz, PTdouble posx, PTdouble posy, PTdouble posz, PTdouble ux, PTdouble uy, PTdouble uz, PTdouble vx, PTdouble vy, PTdouble vz);
+
+	where:
+	
+	minx, miny, minz	Define bounding box minimum vertex (in local coordinate system)
+	maxx, maxy, maxz	Define bounding box maximum vertex (in local coordinate system)
+	posx, posy, posz	Define position of local coordinate system
+	ux, uy, uz			Define first (X) axis of local coordinate system (orientation)
+	vx, vy, vz			Define second(Y) axis of local coordinate system (orientation)
+						(Note: The third axis is automatically calculated internally)	
+	
+- A number of general fixes
+
+
+
+PointoolsIO API Code Level Changes
+==================================
+
+- Note: These 
+
+- Deprecated Functions:
+
+	PTFAPI int					NumSupportedFormats				( void );
+	PTFAPI bool					FormatInfo						( int format, char* extension, char* desc );
+	PTFAPI bool					FormatInfo						( int format, wchar_t* extension, wchar_t* desc );
+
+- Deprecated classes:
+
+	- FeedbackA
+	- FeedbackW
+
+- New Functions:
+
+	PTFAPI int					GetNumSupportedFormats			( void );
+	PTFAPI FormatID				GetFormatID						( int format );
+	PTFAPI bool					GetFormatInfo					( FormatID formatID, char *name, char *extension, bool *projectFormat, bool *internalFormat );
+	PTFAPI int					GetNumSupportedFormatParameters	( FormatID formatID );
+	PTFAPI FormatParameterI *	GetSupportedFormatParameter		( FormatID formatID, int param );
+	PTFAPI ParamID				GetSupportedFormatParameterID	( FormatID formatID, int param );
+	PTFAPI FormatParameterI *	GetFormatParameter				( FormatID formatID, ParamID paramID );
+	PTFAPI ParamType			GetFormatParameterType			( ParamID paramID );
+	PTFAPI Result				CancelBatchToPOD				( ImportBatch *batch );
+
+- New classes:
+
+	- Feedback
+	- FormatParameterI
+
+	
+
+Pointools Vortex API Code Level Changes
+=======================================
+
+- New oriented bounding box query stub (not yet implemented):
+
+	PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, PTdouble maxy, PTdouble maxz, PTdouble posx, PTdouble posy, PTdouble posz, PTdouble ux, PTdouble uy, PTdouble uz, PTdouble vx, PTdouble vy, PTdouble vz);
