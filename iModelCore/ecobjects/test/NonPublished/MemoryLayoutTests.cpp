@@ -2044,12 +2044,16 @@ TEST_F (ECDBufferTests, ConvertDataBuffer_StructArrays)
     StandaloneECInstancePtr instance2 = class2->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ (ECOBJECTS_STATUS_Success, instance2->CopyDataBuffer (*instance1, true));
 
-    ECValue null;
     ECValue arrayVal;
     arrayVal.SetStructArrayInfo (2, false);
     TestValue (*instance2, L"StructArray", arrayVal);
-    TestValue (*instance2, L"StructArray", null, 0);
-    TestValue (*instance2, L"StructArray", null, 1);
+#ifdef STRUCT_ENTRIES_COPIED
+    // this used to expect the struct array entries to be null, which happened to work due to a bug in the copying code
+    // After fixing the bug the struct entry IDs are copied, but (as advertised in method documentation) the struct array ECInstances themselves
+    // are not, so trying to access them with invalid ID raises an error.
+    TestValue (*instance2, L"StructArray", ECValue (/*null*/), 0);
+    TestValue (*instance2, L"StructArray", ECValue (/*null*/), 1);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
