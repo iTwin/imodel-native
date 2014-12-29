@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaDiff.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -113,28 +113,28 @@ private:
     ValueType m_type;
     union 
         {
-        Int32 m_valueInt32;
+        int32_t m_valueInt32;
         double m_valueDouble;
-        Int64 m_valueInt64;
+        int64_t m_valueInt64;
         bool m_valueBool;
-        byte* m_valueBinary;
-        Int64 m_valueDateTime;
+        Byte* m_valueBinary;
+        int64_t m_valueDateTime;
         };
 public:
     ECDiffValue();
     void SetValue(WCharCP v) ;
-    void SetValue(byte const* v, size_t size) ;
+    void SetValue(Byte const* v, size_t size) ;
     void SetValue(WStringCR v);
-    void SetValue(Int32 v);
-    void SetValue(Int64 v);
+    void SetValue(int32_t v);
+    void SetValue(int64_t v);
     void SetValue(double v);
     void SetValue(bool v);
-    void SetDateTimeValue(Int64 v);
+    void SetDateTimeValue(int64_t v);
     void SetNil();
     Byte const* GetBinary(size_t& size) const;
     WCharCP GetValueWCharCP() const;
-    Int32 GetValueInt32() const;
-    Int64 GetValueInt64() const;
+    int32_t GetValueInt32() const;
+    int64_t GetValueInt64() const;
     bool  GetValueBool() const;
     double GetValueDouble() const;
     bool IsValueNill() const;
@@ -184,7 +184,7 @@ public:
     ECDiffValue& GetValue (ValueDirection direction);
     bool SetValue (WCharCP left, WCharCP right);
     bool SetValue (bool left, bool right);
-    bool SetValue (UInt32 left, UInt32 right);
+    bool SetValue (uint32_t left, uint32_t right);
     const_iterator begin();
     const_iterator end();
     ECDiffNodeList::size_type size ();

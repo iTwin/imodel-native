@@ -277,8 +277,8 @@ protected:
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
     //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExprStatus_NotImpl; }
     //  The globalContext may be used to find instance methods
-    virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) = 0;
-    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) { return ExprStatus_NotImpl; }
+    virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) { return ExprStatus_NotImpl; }
 
 public:
 
@@ -287,10 +287,10 @@ public:
     ExpressionStatus            ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary)
                                     { return _ResolveMethod(result, ident, useOuterIfNecessary); }
 
-    ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex = 0)
+    ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex = 0)
                                     { return _GetValue(evalResult, primaryList, globalContext, startIndex); }
 
-    ExpressionStatus            GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex = 0)
+    ExpressionStatus            GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex = 0)
 
                                     { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 
@@ -334,10 +334,10 @@ private:
     ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, IECInstanceCR instance);
     ExpressionStatus                            GetInstanceValue (EvaluationResultR evalResult, size_t& index, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ECInstanceListCR instanceList);
 
-    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus   _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
-    ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex, IECInstanceCR instance);
+    ExpressionStatus   GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex, IECInstanceCR instance);
 protected:
     // The following protected methods are only relevant to derived classes, which may want to:
     //  -lazily load the instance list, and/or
@@ -398,8 +398,8 @@ private:
 protected:
 
     ECOBJECTS_EXPORT virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
     ECOBJECTS_EXPORT virtual bool                _IsNamespace() const { return true; }
                                 SymbolExpressionContext(ExpressionContextP outer) : ExpressionContext(outer) {}
@@ -437,18 +437,18 @@ protected:
     Symbol (wchar_t const* name) : m_name (name) { }
 
     virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     { return ExprStatus_MethodRequired; };
-    virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) = 0;
-    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) = 0;
+    virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
+    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
 
 public:
     wchar_t const*                       GetName() const { return m_name.c_str(); }
 
     ExpressionStatus                CreateMethodResult (MethodReferencePtr& result) const { return _CreateMethodResult (result); }
 
-    ExpressionStatus                GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+    ExpressionStatus                GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
                                                 { return _GetValue(evalResult, primaryList, globalContext, startIndex); }
 
-    ExpressionStatus                GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex)
+    ExpressionStatus                GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex)
                                                 { return _GetReference(evalResult, refResult, primaryList, globalContext, startIndex); }
 // constructors are hidden from published API -> make it abstract in the published API
 //__PUBLISH_CLASS_VIRTUAL__
@@ -469,8 +469,8 @@ protected:
                 ContextSymbol (wchar_t const* name, ExpressionContextR context)
                                     : Symbol(name), m_context(&context) {}
 
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
+    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -493,8 +493,8 @@ private:
     MethodReferencePtr  m_methodReference;
 
 protected:
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
+    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
                                                 { return ExprStatus_NeedsLValue; }
     virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const
         {
@@ -556,8 +556,8 @@ private:
 
 protected:
     ECOBJECTS_EXPORT PropertySymbol (WCharCP name, RefCountedPtr<PropertyEvaluator> evaluator);
-    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override 
+    ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
         {
         return ExprStatus_NeedsLValue;
         }
@@ -701,7 +701,7 @@ struct          ReferenceResult
 {
     ECN::ECPropertyCP    m_property;
     WString             m_accessString;
-    ::UInt32            m_arrayIndex;
+    ::uint32_t          m_arrayIndex;
     int                 m_memberSelector;   // 1 for x, 2, for y, 3 for z
 };
 
@@ -712,15 +712,15 @@ struct          ReferenceResult
 struct IValueListResult : RefCountedBase
     {
 protected:
-    virtual UInt32              _GetCount() const = 0;
-    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const = 0;
+    virtual uint32_t            _GetCount() const = 0;
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, uint32_t index) const = 0;
 
     IValueListResult() { }
 public:
-    ECOBJECTS_EXPORT UInt32                     GetCount() const;
-    ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, UInt32 index) const;
+    ECOBJECTS_EXPORT uint32_t                   GetCount() const;
+    ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, uint32_t index) const;
 
-    ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, UInt32 arrayPropertyIndex);
+    ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, uint32_t arrayPropertyIndex);
     ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
 
@@ -748,7 +748,7 @@ public:
     bool                IsValueList() const     { return ValType_ValueList == m_valueType; }
     bool                IsLambda() const        { return ValType_Lambda == m_valueType; }
 
-    ExpressionStatus    GetInteger(Int32& result);
+    ExpressionStatus    GetInteger(int32_t& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
 
     //  Constructors and destructors
@@ -795,8 +795,8 @@ protected:
     ValueSymbol (wchar_t const* name, EvaluationResultCR exprValue);
 
     virtual                         ~ValueSymbol();
-    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override;
-    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
+    virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
+    virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
                                                 { return ExprStatus_NeedsLValue; }
 public:
     ECOBJECTS_EXPORT static ValueSymbolPtr  Create (wchar_t const* name, EvaluationResultCR value);
@@ -1013,10 +1013,10 @@ public:
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateBooleanLiteral(bool literalValue);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateStringLiteral (wchar_t const* value, bool quoted);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateIntegerLiteral (int value);
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(Int64 value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(int64_t value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateFloatLiteral(double value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateNullLiteral();
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (Int64 ticks);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (int64_t ticks);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2DLiteral (DPoint2dCR value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3DLiteral (DPoint3dCR value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);

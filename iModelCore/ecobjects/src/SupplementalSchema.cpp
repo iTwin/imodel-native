@@ -16,9 +16,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 SupplementalSchemaMetaData::SupplementalSchemaMetaData
 (
 WString primarySchemaName, 
-UInt32 primarySchemaMajorVersion, 
-UInt32 primarySchemaMinorVersion, 
-UInt32 supplementalSchemaPrecedence, 
+uint32_t primarySchemaMajorVersion, 
+uint32_t primarySchemaMinorVersion, 
+uint32_t supplementalSchemaPrecedence, 
 WString supplementalSchemaPurpose, 
 bool isUserSpecific 
 )
@@ -69,9 +69,9 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
 SupplementalSchemaMetaDataPtr SupplementalSchemaMetaData::Create
 ( 
 WString primarySchemaName, 
-UInt32 primarySchemaMajorVersion, 
-UInt32 primarySchemaMinorVersion, 
-UInt32 supplementalSchemaPrecedence, 
+uint32_t primarySchemaMajorVersion, 
+uint32_t primarySchemaMinorVersion, 
+uint32_t supplementalSchemaPrecedence, 
 WString supplementalSchemaPurpose, 
 bool isUserSpecific
 )
@@ -200,9 +200,9 @@ IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
     {
     IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
-    instance->SetValue(GetPrimarySchemaMajorVersionPropertyAccessor(), ECValue((::Int32)GetPrimarySchemaMajorVersion()));
-    instance->SetValue(GetPrimarySchemaMinorVersionPropertyAccessor(), ECValue((::Int32)GetPrimarySchemaMinorVersion()));
-    instance->SetValue(GetPrecedencePropertyAccessor(), ECValue((::Int32)GetSupplementalSchemaPrecedence()));
+    instance->SetValue(GetPrimarySchemaMajorVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaMajorVersion()));
+    instance->SetValue(GetPrimarySchemaMinorVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaMinorVersion()));
+    instance->SetValue(GetPrecedencePropertyAccessor(), ECValue((::int32_t)GetSupplementalSchemaPrecedence()));
     instance->SetValue(GetPurposePropertyAccessor(), ECValue(GetSupplementalSchemaPurpose().c_str()));
     instance->SetValue(GetIsUserSpecificPropertyAccessor(), ECValue(IsUserSpecific()));
 
@@ -231,7 +231,7 @@ WStringCR name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 SupplementalSchemaMetaData::GetPrimarySchemaMajorVersion() const
+uint32_t SupplementalSchemaMetaData::GetPrimarySchemaMajorVersion() const
     {
     return m_primarySchemaMajorVersion;
     }
@@ -241,7 +241,7 @@ UInt32 SupplementalSchemaMetaData::GetPrimarySchemaMajorVersion() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SupplementalSchemaMetaData::SetPrimarySchemaMajorVersion
 (
-UInt32 major
+uint32_t major
 )
     {
     m_primarySchemaMajorVersion = major;
@@ -250,7 +250,7 @@ UInt32 major
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 SupplementalSchemaMetaData::GetPrimarySchemaMinorVersion() const
+uint32_t SupplementalSchemaMetaData::GetPrimarySchemaMinorVersion() const
     {
     return m_primarySchemaMinorVersion;
     }
@@ -260,7 +260,7 @@ UInt32 SupplementalSchemaMetaData::GetPrimarySchemaMinorVersion() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SupplementalSchemaMetaData::SetPrimarySchemaMinorVersion
 (
-UInt32 minor
+uint32_t minor
 )
     {
     m_primarySchemaMinorVersion = minor;
@@ -269,7 +269,7 @@ UInt32 minor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 SupplementalSchemaMetaData::GetSupplementalSchemaPrecedence() const
+uint32_t SupplementalSchemaMetaData::GetSupplementalSchemaPrecedence() const
     {
     return m_supplementalSchemaPrecedence;
     }
@@ -279,7 +279,7 @@ UInt32 SupplementalSchemaMetaData::GetSupplementalSchemaPrecedence() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SupplementalSchemaMetaData::SetSupplementalSchemaPrecedence
 (
-UInt32 precedence
+uint32_t precedence
 )
     {
     m_supplementalSchemaPrecedence = precedence;
@@ -329,8 +329,8 @@ bool userSpecific
 bool SupplementalSchemaMetaData::IsForPrimarySchema
 (
 WStringCR querySchemaName, 
-UInt32 querySchemaMajorVersion, 
-UInt32 querySchemaMinorVersion, 
+uint32_t querySchemaMajorVersion, 
+uint32_t querySchemaMinorVersion, 
 SchemaMatchType matchType
 ) const
     {
@@ -352,7 +352,7 @@ bool createCopyOfSupplementalCustomAttribute
     m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
     StopWatch timer (L"", true);
 
-    bmap<UInt32, ECSchemaP> schemasByPrecedence;
+    bmap<uint32_t, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
     SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
@@ -386,7 +386,7 @@ bool createCopyOfSupplementalCustomAttribute
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementedSchemaStatus SupplementedSchemaBuilder::OrderSupplementalSchemas
 (
-bmap<UInt32, ECSchemaP>& schemasByPrecedence, 
+bmap<uint32_t, ECSchemaP>& schemasByPrecedence, 
 ECSchemaR primarySchema, 
 const bvector<ECSchemaP>& supplementalSchemaList, 
 bvector<ECSchemaP> localizationSchemas 
@@ -403,11 +403,11 @@ bvector<ECSchemaP> localizationSchemas
             return SUPPLEMENTED_SCHEMA_STATUS_Metadata_Missing;
 
         m_supplementalSchemaNamesAndPurposes[supplemental->GetFullSchemaName()] = metaData->GetSupplementalSchemaPurpose();
-        UInt32 precedence = metaData->GetSupplementalSchemaPrecedence();
+        uint32_t precedence = metaData->GetSupplementalSchemaPrecedence();
 
         // Not supporting localization schemas
 
-        bmap<UInt32, ECSchemaP>::const_iterator precedenceIterator = schemasByPrecedence.find(precedence);
+        bmap<uint32_t, ECSchemaP>::const_iterator precedenceIterator = schemasByPrecedence.find(precedence);
 
         // If multiple schemas have the same precedence, they need to be merged into a single schema.  
         if (precedenceIterator != schemasByPrecedence.end())
@@ -507,14 +507,14 @@ WStringCR mergedSchemaFullName
 SupplementedSchemaStatus SupplementedSchemaBuilder::MergeSchemasIntoSupplementedSchema
 (
 ECSchemaR primarySchema,
-bmap<UInt32, ECSchemaP> schemasByPrecedence
+bmap<uint32_t, ECSchemaP> schemasByPrecedence
 )
     {
     bvector<ECSchemaP> lowPrecedenceSchemas;
 
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
 
-    for ( bmap<UInt32, ECSchemaP>::iterator schemaWithPrecedence = schemasByPrecedence.begin(); 
+    for ( bmap<uint32_t, ECSchemaP>::iterator schemaWithPrecedence = schemasByPrecedence.begin(); 
           schemaWithPrecedence != schemasByPrecedence.end(); schemaWithPrecedence++)
         {
         int precedence = schemaWithPrecedence->first;
@@ -870,10 +870,10 @@ static SupplementedSchemaStatus mergeAttributeProperty (IECInstanceR to, IECInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool allowableUnitsContains (WCharCP search, IECInstanceCR instance, UInt32 size)
+static bool allowableUnitsContains (WCharCP search, IECInstanceCR instance, uint32_t size)
     {
     ECValue v;
-    for (UInt32 i = 0; i < size; i++)
+    for (uint32_t i = 0; i < size; i++)
         {
         if (ECOBJECTS_STATUS_Success == instance.GetValue (v, L"AllowableUnits", i) && !v.IsNull() && 0 == wcscmp (search, v.GetString()))
             return true;
@@ -911,8 +911,8 @@ static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInst
                 return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException; // they differ
 
             // compare contents.
-            UInt32 size = infoTo.GetCount();
-            for (UInt32 i = 0; i < size; i++)
+            uint32_t size = infoTo.GetCount();
+            for (uint32_t i = 0; i < size; i++)
                 {
                 ECValue v;
                 if (ECOBJECTS_STATUS_Success == to.GetValue (v, L"AllowableUnits", i) && !v.IsNull() && !allowableUnitsContains (v.GetString(), from, size))
@@ -999,7 +999,7 @@ SchemaPrecedence precedence
         // build the set UnitSpecification instances in destination list
         bmap<WString, IECInstancePtr> toSpecs;
         WString unitSpecKey;
-        for (UInt32 i = 0; i < toInfo.GetCount(); i++)
+        for (uint32_t i = 0; i < toInfo.GetCount(); i++)
             {
             ECValue spec;
             if (ECOBJECTS_STATUS_Success == to->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
@@ -1010,8 +1010,8 @@ SchemaPrecedence precedence
             }
 
         // merge each UnitSpecification instance from source list
-        UInt32 specCount = toInfo.GetCount();
-        for (UInt32 i = 0; i < fromInfo.GetCount(); i++)
+        uint32_t specCount = toInfo.GetCount();
+        for (uint32_t i = 0; i < fromInfo.GetCount(); i++)
             {
             ECValue spec;
             if (ECOBJECTS_STATUS_Success == from->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
@@ -1204,7 +1204,7 @@ IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     StandaloneECEnablerPtr memberEnabler = classEnabler->GetEnablerForStructArrayMember (schemaNameAndPurpose->GetSchema().GetSchemaKey(), schemaNameAndPurpose->GetName().c_str()); 
 
     SchemaNamePurposeMap::const_iterator iter;
-    UInt32 arrayIndex = 0;
+    uint32_t arrayIndex = 0;
     for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
         {
         bpair<WString, WString>const& entry = *iter;
