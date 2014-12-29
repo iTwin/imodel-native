@@ -3613,7 +3613,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         case TOKEN_ShiftRight:
             return left >> right;
         case TOKEN_UnsignedShiftRight:
-            return (::int32_t)((uint32_t)left >> right);
+            return (int32_t)((uint32_t)left >> right);
         }
 
     BeAssert(false && L"bad shift operator");
@@ -3637,7 +3637,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         case TOKEN_ShiftRight:
             return left >> right;
         case TOKEN_UnsignedShiftRight:
-            return (::int64_t)((uint64_t)left >> right);
+            return (int64_t)((uint64_t)left >> right);
         }
 
     BeAssert(false && L"bad shift operator");

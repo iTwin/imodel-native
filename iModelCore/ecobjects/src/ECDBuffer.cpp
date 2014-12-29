@@ -3885,8 +3885,12 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
 
                         for (uint32_t i = 0; i < count; i++)
                             {
-                            if (ECOBJECTS_STATUS_Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, true, i) && v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
-                                SetPrimitiveValueToMemory (v, *dstPropLayout, true, i, true);
+                            if (ECOBJECTS_STATUS_Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, true, i))
+                                {
+                                // already established struct array primitive types match - only need to convert primitive array types
+                                if (!srcType.IsPrimitiveArray() || v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
+                                    SetPrimitiveValueToMemory (v, *dstPropLayout, true, i, true);
+                                }
                             }
                         }
                     }

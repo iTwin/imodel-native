@@ -208,11 +208,11 @@ public:
     ECOBJECTS_EXPORT void   InitializeMemoryForInstance(Byte * data, uint32_t bytesAllocated) const;
     ECOBJECTS_EXPORT uint32_t GetSizeOfFixedSection() const;
 
-    ECOBJECTS_EXPORT uint32_t                GetFirstChildPropertyIndex (uint32_t parentIndex) const;
-    ECOBJECTS_EXPORT uint32_t                GetNextChildPropertyIndex (uint32_t parentIndex, uint32_t childIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus         GetAccessStringByIndex (WCharCP& accessString, uint32_t propertyIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<uint32_t>& properties, uint32_t parentIndex) const;
-    ECOBJECTS_EXPORT bool                    HasChildProperties (uint32_t parentIndex) const;
+    ECOBJECTS_EXPORT uint32_t               GetFirstChildPropertyIndex (uint32_t parentIndex) const;
+    ECOBJECTS_EXPORT uint32_t               GetNextChildPropertyIndex (uint32_t parentIndex, uint32_t childIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetAccessStringByIndex (WCharCP& accessString, uint32_t propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetPropertyIndices (bvector<uint32_t>& properties, uint32_t parentIndex) const;
+    ECOBJECTS_EXPORT bool                   HasChildProperties (uint32_t parentIndex) const;
     ECOBJECTS_EXPORT uint32_t               GetParentPropertyIndex (uint32_t childIndex) const;
 
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)

@@ -578,6 +578,7 @@ bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
                 break;
                 }
             }
+
         return ECOBJECTS_STATUS_Success != status || readOnly;
         }
 
@@ -936,6 +937,17 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
             status = setValueHelper (*currentInstance, accessor, depth, compatible, valueForSettingStructClass);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
+
+            // TFS#159623: Cannot use the StandaloneECInstance here...the containing ECInstance may have allocated a different ECInstance!
+            // Obtain the struct ECInstance from the containing ECInstance.
+            status = getValueHelper (valueForSettingStructClass, *currentInstance, accessor, depth, compatible);
+            if (ECOBJECTS_STATUS_Success != status || valueForSettingStructClass.IsNull() || !valueForSettingStructClass.IsStruct())
+                {
+                BeAssert (false);
+                return status;
+                }
+
+            newInstance = valueForSettingStructClass.GetStruct();
             }
 
         currentInstance = newInstance;
