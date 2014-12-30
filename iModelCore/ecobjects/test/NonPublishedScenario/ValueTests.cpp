@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublishedScenario/ValueTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -17,13 +17,13 @@ struct ValueTests : ECTestFixture
     
 void checkBinary(WCharCP text, ECValue &value)
     {
-    const byte binary[] = {0x00, 0x01, 0x02, 0x03};
+    const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     
     EXPECT_EQ (value.SetString(text), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_Binary));
     EXPECT_TRUE (value.IsBinary());
     size_t sizeOut;
-    const byte *binaryOut = value.GetBinary(sizeOut);
+    const Byte *binaryOut = value.GetBinary(sizeOut);
     EXPECT_EQ (sizeOut, sizeof(binary));
     for (size_t i=0; i<sizeOut; i++)
         EXPECT_EQ (binaryOut[i], binary[i]);
@@ -106,13 +106,13 @@ TEST_F(ValueTests, StringToECValue)
 TEST_F(ValueTests, DISABLED_StringToIGeometry)
     {
     ECValue value;
-    const byte binary[] = {0x00, 0x01, 0x02, 0x03};
+    const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
     
     EXPECT_EQ (value.SetString(L"AEgADw=="), ECOBJECTS_STATUS_Success);
     EXPECT_TRUE (value.ConvertToPrimitiveType(PRIMITIVETYPE_IGeometry));
     EXPECT_TRUE (value.IsBinary());
     size_t sizeOut;
-    const byte *binaryOut = value.GetBinary(sizeOut);
+    const Byte *binaryOut = value.GetBinary(sizeOut);
     EXPECT_EQ (sizeOut, sizeof(binary));
     for (size_t i=0; i<sizeOut; i++)
         EXPECT_EQ (binaryOut[i], binary[i]);

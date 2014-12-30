@@ -979,7 +979,7 @@ NodePtr         ECEvaluator::ParsePrimary
             //  May want to have these parse the strings immediately and convert to constants
             case TOKEN_IntegerConstant:
                 {
-                Int64     value;
+                int64_t   value;
                 
                 swscanf(m_lexer->GetTokenStringCP (), L"%lld", &value);
 
@@ -1045,7 +1045,7 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_DateTimeConst:
                 {
                 m_lexer->Advance();
-                Int64 ticks;
+                int64_t ticks;
                 if (1 != swscanf (m_lexer->GetTokenStringCP(), L"%lld", &ticks))
                     return GetErrorNode (L"DateTimeLiteralExpected");
 
@@ -1136,7 +1136,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
         m_lexer->Advance();
         result = UnitSpecNode::Create (*result, m_lexer->GetTokenStringCP());
         m_lexer->Advance();
-        UInt32 nQualifiers = 0;
+        uint32_t nQualifiers = 0;
         double factor = 0.0;
         while (TOKEN_DoubleColon == m_lexer->GetTokenType())
             {

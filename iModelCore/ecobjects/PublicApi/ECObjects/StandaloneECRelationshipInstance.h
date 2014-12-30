@@ -28,13 +28,13 @@ typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationship
 struct OrderIdEntries
     {
     private:
-        Int64    m_sourceOrderId;        
-        Int64    m_targetOrderId;        
+        int64_t  m_sourceOrderId;        
+        int64_t  m_targetOrderId;        
         bool     m_isSourceOrderIdDefined;
         bool     m_isTargetOrderIdDefined;
-        Int64    m_sourceNextOrderId;
+        int64_t  m_sourceNextOrderId;
         bool     m_isSourceNextOrderIdDefined;
-        Int64    m_targetNextOrderId;
+        int64_t  m_targetNextOrderId;
         bool     m_isTargetNextOrderIdDefined;
 
     public:
@@ -43,34 +43,34 @@ struct OrderIdEntries
         OrderIdEntries();
         //! Sets the source order Id.
         //! @param[in] sourceOrderId Contains the orderId to set for the source instance
-        ECOBJECTS_EXPORT ECObjectsStatus    SetSourceOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetSourceOrderId (int64_t sourceOrderId);
         //! Sets the target order Id.
         //! @param[in] targetOrderId Contains the orderId to set for the target instance
-        ECOBJECTS_EXPORT ECObjectsStatus    SetTargetOrderId (Int64 targetOrderId);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetTargetOrderId (int64_t targetOrderId);
         //! Sets the orderId of the next source instance in case of ordered relationship.
         //! This is set by the client of a persistence provider and allows the provider 
         //! determining the orderid for this relationship.
-        ECOBJECTS_EXPORT ECObjectsStatus    SetSourceNextOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetSourceNextOrderId (int64_t sourceOrderId);
         //! Sets the orderId of the next target instance in case of ordered relationship.
         //! This is set by the client of a persistence provider and allows the provider 
         //! determining the orderid for this relationship.
-        ECOBJECTS_EXPORT ECObjectsStatus    SetTargetNextOrderId (Int64 sourceOrderId);
+        ECOBJECTS_EXPORT ECObjectsStatus    SetTargetNextOrderId (int64_t sourceOrderId);
         //! Gets the source order id
         //! @param[out] sourceOrderId contains the orderId of the source instance, if return value is true.
-        ECOBJECTS_EXPORT bool               TryGetSourceOrderId (Int64& sourceOrderId) const;
+        ECOBJECTS_EXPORT bool               TryGetSourceOrderId (int64_t& sourceOrderId) const;
         //! Gets the target order id
         //! @param[out] targetOrderId contains the orderId of the target instance, if return value is true.
-        ECOBJECTS_EXPORT bool               TryGetTargetOrderId (Int64& targetOrderId) const;
+        ECOBJECTS_EXPORT bool               TryGetTargetOrderId (int64_t& targetOrderId) const;
         //! Gets the orderId of the next source instance in case of ordered relationship.
         //! @param[out] orderId contains the next orderId of the source instance, if return value is true.
         //! This is used by the persistence provider to get the value assigned by the client 
         //! and compute the orderId of this relationship.
-        ECOBJECTS_EXPORT bool               TryGetSourceNextOrderId (Int64& orderId) const;
+        ECOBJECTS_EXPORT bool               TryGetSourceNextOrderId (int64_t& orderId) const;
         //! Gets the orderId of the next target instance in case of ordered relationship.
         //! @param[out] orderId contains the next orderId of the target instance, if return value is true.
         //! This is used by the persistence provider to get the value assigned by the client 
         //! and compute the orderId of this relationship.
-        ECOBJECTS_EXPORT bool               TryGetTargetNextOrderId (Int64& orderId) const;
+        ECOBJECTS_EXPORT bool               TryGetTargetNextOrderId (int64_t& orderId) const;
         //! Clears the entries.
         ECOBJECTS_EXPORT ECObjectsStatus    Clear ();
     };
@@ -93,8 +93,8 @@ private:
     IECInstancePtr                      m_target;
     StandaloneECRelationshipEnablerCP   m_relationshipEnabler;
     WString                             m_instanceId;
-    Int64                               m_sourceOrderId;
-    Int64                               m_targetOrderId;
+    int64_t                             m_sourceOrderId;
+    int64_t                             m_targetOrderId;
     OrderIdEntries                      m_orderIdEntries;
     WString                             m_sourceAssociatedString;
     WString                             m_targetAssociatedString;
@@ -105,21 +105,21 @@ protected:
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetSource () const;
     ECOBJECTS_EXPORT virtual void            _SetTarget (IECInstanceP instance);
     ECOBJECTS_EXPORT virtual IECInstancePtr  _GetTarget () const;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetSourceOrderId (Int64& sourceOrderId) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetTargetOrderId (Int64& targetOrderId) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetSourceOrderId (int64_t& sourceOrderId) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus _GetTargetOrderId (int64_t& targetOrderId) const override;
     // IECInstance
     ECOBJECTS_EXPORT virtual WString             _GetInstanceId () const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId (WCharCP id) override;
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly () const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
 
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (UInt32 propIdx, UInt32 index, UInt32 size) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (UInt32 propIdx, UInt32 size) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (UInt32 propIdx, UInt32 index) override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (UInt32 propIdx) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _InsertArrayElements (uint32_t propIdx, uint32_t index, uint32_t size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (uint32_t propIdx, uint32_t index) override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (uint32_t propIdx) override;
     ECOBJECTS_EXPORT virtual WString             _ToString (WCharCP indent) const override;
     ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler () const override;
@@ -137,10 +137,10 @@ protected:
 public:
     //! Sets the source order Id.
     //! @param[in] sourceOrderId Contains the orderId to set for the source instance
-    ECOBJECTS_EXPORT ECObjectsStatus                    SetSourceOrderId (Int64 sourceOrderId);
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetSourceOrderId (int64_t sourceOrderId);
     //! Sets the target order Id.
     //! @param[in] targetOrderId Contains the orderId to set for the target instance
-    ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetOrderId (Int64 targetOrderId);
+    ECOBJECTS_EXPORT ECObjectsStatus                    SetTargetOrderId (int64_t targetOrderId);
     //! Returns the RelationshipEnabler for the RelationshipClass that this RelationshipInstance represents
     ECOBJECTS_EXPORT StandaloneECRelationshipEnablerCR  GetRelationshipEnabler () const;
     //! Returns the RelationshipClass that this Instance is an instance of

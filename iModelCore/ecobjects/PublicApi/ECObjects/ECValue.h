@@ -34,22 +34,22 @@ private:
         PrimitiveType   m_elementPrimitiveType;
         };    
     bool                m_isFixedCount;
-    UInt32              m_count;
+    uint32_t            m_count;
             
 public:
     //! Initialize the array as a struct array with the given number of entries
     //! @param[in] count        How many elements the array (initially) holds
     //! @param[in] isFixedSize  Indicates whether the array can grow or not
-    void InitializeStructArray (UInt32 count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
+    void InitializeStructArray (uint32_t count, bool isFixedSize); // cannot have a real constructor due to inclusion in a union
 
     //! Initialize the array as a primitive array with the given number of entries
     //! @param[in] elementPrimitiveType The PrimitiveType of elements that this array can hold
     //! @param[in] count                How many elements the array (initially) holds
     //! @param[in] isFixedCount         Indicates whether the array can grow or not
-    void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, UInt32 count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
+    void InitializePrimitiveArray (PrimitiveType elementPrimitiveType, uint32_t count, bool isFixedCount); // cannot have a real constructor due to inclusion in a union
     
     //! Returns the number of entries in this array
-    ECOBJECTS_EXPORT UInt32          GetCount() const;
+    ECOBJECTS_EXPORT uint32_t        GetCount() const;
     //! Returns whether this is a fixed size array or not
     ECOBJECTS_EXPORT bool            IsFixedCount() const;
     //! Returns whether this is a primitive array
@@ -81,11 +81,11 @@ private:
         PrimitiveType   m_primitiveType;
         };
 
-    UInt8               m_stateFlags;
-    mutable UInt8       m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
+    uint8_t             m_stateFlags;
+    mutable uint8_t     m_ownershipFlags;       // mutable because string ownership may change when we perform on-demand encoding conversions...
 
     void                InitForString (void const * str);
-    BentleyStatus       SetBinaryInternal (const byte * data, size_t size, bool holdADuplicate = false);
+    BentleyStatus       SetBinaryInternal (const Byte * data, size_t size, bool holdADuplicate = false);
     bool                ConvertToPrimitiveFromString (PrimitiveType primitiveType);
 
 protected:    
@@ -95,7 +95,7 @@ protected:
     //! Structure to hold information about a binary type
     struct BinaryInfo
         {
-        const byte *        m_data; //!< The actual binary data
+        const Byte *        m_data; //!< The actual binary data
         size_t              m_size; //!< The size of the data
         };
 
@@ -113,8 +113,8 @@ protected:
         WCharCP             m_wchar;        // On Windows we use m_utf16. The presence of the extra pointer wouldn't hurt anything but want to ensure it's only used on unix.
 #endif
 //__PUBLISH_SECTION_END__
-        void                ConvertToUtf8 (UInt8& flags);
-        void                ConvertToUtf16 (UInt8& flags);
+        void                ConvertToUtf8 (uint8_t& flags);
+        void                ConvertToUtf16 (uint8_t& flags);
     public:
         bool                IsUtf8 () const;
         // All the business with the flags parameters is so that StringInfo can modify ECValue's ownership flags.
@@ -123,39 +123,39 @@ protected:
         //! Returns the stored string information as a WChar
         //! @param[out]  flags   A flag indicating whether this ECValue owns the data
         //! @returns The data as a WChar const pointer
-        WCharCP             GetWChar (UInt8& flags);
+        WCharCP             GetWChar (uint8_t& flags);
 
         //! Returns the stored string information as Utf8
         //! @param[out]  flags   A flag indicating whether this ECValue owns the data
         //! @returns The data as a Utf8 const pointer
-        Utf8CP              GetUtf8 (UInt8& flags);
+        Utf8CP              GetUtf8 (uint8_t& flags);
 
         //! Returns the stored string information as Utf16
         //! @param[out]  flags   A flag indicating whether this ECValue owns the data
         //! @returns The data as a Utf16 const pointer
-        Utf16CP             GetUtf16 (UInt8& flags);
+        Utf16CP             GetUtf16 (uint8_t& flags);
 
         //! Sets the string data as WChar
         //!@param[in] str       The string data to store
         //!@param[out] flags    A flag indicating whether this ECValue owns the data
         //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
-        void                SetWChar (WCharCP str, UInt8& flags, bool makeCopy);
+        void                SetWChar (WCharCP str, uint8_t& flags, bool makeCopy);
 
         //! Sets the string data as Utf8
         //!@param[in] str       The string data to store
         //!@param[out] flags    A flag indicating whether this ECValue owns the data
         //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
-        void                SetUtf8 (Utf8CP str, UInt8& flags, bool makeCopy);
+        void                SetUtf8 (Utf8CP str, uint8_t& flags, bool makeCopy);
 
         //! Sets the string data as Utf16
         //!@param[in] str       The string data to store
         //!@param[out] flags    A flag indicating whether this ECValue owns the data
         //!@param[in] makeCopy  Indicates whether the passed in WCharCP str should be stored, or whether a copy should be made
-        void                SetUtf16 (Utf16CP str, UInt8& flags, bool makeCopy);
+        void                SetUtf16 (Utf16CP str, uint8_t& flags, bool makeCopy);
 
         //! Frees (if necessary) the string data and clears out the memory
         //! @param[out] flags   Gets reset to 0, indicating the data is not owned
-        void                FreeAndClear (UInt8& flags);
+        void                FreeAndClear (uint8_t& flags);
 
         //! does not free pointers - used to init from Uninitialized ECValue state
         void                SetNull();
@@ -163,7 +163,7 @@ protected:
         //! Compares two StringInfo objects for equality
         //! @param[in] rhs  The StringInfo object to compare this object to
         //! @param[out] flags   A flag indicating whether the ECValue owns the data in the StringInfo object
-        bool                Equals (StringInfo const& rhs, UInt8& flags);
+        bool                Equals (StringInfo const& rhs, uint8_t& flags);
 //__PUBLISH_SECTION_START__
         };
 
@@ -272,7 +272,7 @@ public:
     //! @see ECValue::SetBinary
     //! @param[in] blob Value to initialize this ECValue from
     //! @param[in] size Size in bytes of the blob
-    ECOBJECTS_EXPORT explicit ECValue (const byte * blob, size_t size);
+    ECOBJECTS_EXPORT explicit ECValue (const Byte * blob, size_t size);
 
     //! Initializes a new instance of ECValue from the given value.  Type is set to ::PRIMITIVETYPE_Point2D
     //! @param[in] point2d Value to initialize this ECValue from
@@ -433,30 +433,30 @@ public:
     //! Defines the StructArray for this ECValue
     //! @param[in] count        The initial size of the array
     //! @param[in] isFixedSize  Indicates whether this array can grow or not
-    ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (UInt32 count, bool isFixedSize);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetStructArrayInfo (uint32_t count, bool isFixedSize);
 
     //! Defines the primitive array for this ECValue
     //! @param[in] primitiveElementtype The type of primitive the array will hold
     //! @param[in] count                The initial size of the array
     //! @param[in] isFixedSize          Indicates whether this array can grow or not
-    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, UInt32 count, bool isFixedSize);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveArrayInfo (PrimitiveType primitiveElementtype, uint32_t count, bool isFixedSize);
     
     //! Returns the array information defining this ECValue
     ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
     
     //! Returns the integer value, if this ECValue holds an Integer 
-    ECOBJECTS_EXPORT Int32          GetInteger () const;  
+    ECOBJECTS_EXPORT int32_t        GetInteger () const;  
     //! Sets the value of this ECValue to the given integer
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to an Integer Primitive
     //! @param[in] integer  The value to set
-    ECOBJECTS_EXPORT BentleyStatus  SetInteger (Int32 integer); 
+    ECOBJECTS_EXPORT BentleyStatus  SetInteger (int32_t integer); 
     
     //! Returns the long value, if this ECValue holds a long
-    ECOBJECTS_EXPORT Int64          GetLong () const;
+    ECOBJECTS_EXPORT int64_t        GetLong () const;
     //! Sets the value of this ECValue to the given long
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a Long Primitive
     //! @param[in] long64  The value to set
-    ECOBJECTS_EXPORT BentleyStatus  SetLong (Int64 long64);
+    ECOBJECTS_EXPORT BentleyStatus  SetLong (int64_t long64);
  
     //! Returns the boolean value, if this ECValue holds a boolean
     ECOBJECTS_EXPORT bool           GetBoolean () const;
@@ -503,19 +503,19 @@ public:
 
     //! Returns the binary value, if this ECValue holds binary data
     //! @param[in]  size    The size of the binary data
-    ECOBJECTS_EXPORT const byte *   GetBinary (size_t& size) const;
+    ECOBJECTS_EXPORT const Byte *   GetBinary (size_t& size) const;
 
     //! Sets the value of this ECValue to the given byte array
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a binary Primitive
     //! @param[in] data             The value to set
     //! @param[in] size             The size of the data
     //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
-    ECOBJECTS_EXPORT BentleyStatus  SetBinary (const byte * data, size_t size, bool holdADuplicate = false);
+    ECOBJECTS_EXPORT BentleyStatus  SetBinary (const Byte * data, size_t size, bool holdADuplicate = false);
 
     //! Returns the IGeometry as binary data, and sets the size of the data, if this ECValue holds an IGeometry
-    ECOBJECTS_EXPORT const byte *   GetIGeometry (size_t& size) const;
+    ECOBJECTS_EXPORT const Byte *   GetIGeometry (size_t& size) const;
     //! Sets the value of this ECValue to the given IGeometry, as binary byte data.
-    ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const byte * data, size_t size, bool holdADuplicate = false);
+    ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const Byte * data, size_t size, bool holdADuplicate = false);
 
     //! Gets the struct instance of this ECValue, if the ECValue holds a struct
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;
@@ -539,14 +539,14 @@ public:
     //! epoch begins at 0001-01-01 00:00:00 UTC.
     //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
-    ECOBJECTS_EXPORT Int64          GetDateTimeTicks () const;
+    ECOBJECTS_EXPORT int64_t        GetDateTimeTicks () const;
 
     //! Returns the DateTime value as milliseconds since the beginning of the Unix epoch.
     //! The Unix epoch begins at 1970-01-01 00:00:00 UTC.
     //! DateTimes before the Unix epoch are negative.
     //! @Note Ignores the date time metadata. Use ECValue::GetDateTime if you need the metadata.
     //! @return DateTime as milliseconds since the beginning of the Unix epoch.
-    ECOBJECTS_EXPORT Int64          GetDateTimeUnixMillis() const;
+    ECOBJECTS_EXPORT int64_t        GetDateTimeUnixMillis() const;
 
     //! Gets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
@@ -554,7 +554,7 @@ public:
     //! @param[out] hasMetadata true, if this ECValue objects contains date time metadata. false otherwise
     //! @param[out] metadata if \p hasMetadata is true, contains the metadata available in this ECValue.
     //! @return DateTime value as ticks since the beginning of the Common Era epoch.
-    ECOBJECTS_EXPORT Int64          GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
+    ECOBJECTS_EXPORT int64_t        GetDateTimeTicks (bool& hasMetadata, DateTime::Info& metadata) const;
 
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
@@ -563,7 +563,7 @@ public:
     //! the ticks will be enriched with the metadata from the custom attribute.
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks);
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (int64_t ceTicks);
 
     //! Sets the DateTime value as ticks since the beginning of the Common Era epoch.
     //! @remarks Ticks are 100 nanosecond intervals (i.e. 1 tick is 1 hecto-nanosecond). The Common Era
@@ -571,14 +571,14 @@ public:
     //! @param[in] ceTicks DateTime Common Era ticks to set
     //! @param[in] dateTimeMetadata DateTime metadata to set along with the ticks.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (Int64 ceTicks, DateTime::Info const& dateTimeMetadata);
+    ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks (int64_t ceTicks, DateTime::Info const& dateTimeMetadata);
 
 //__PUBLISH_SECTION_END__
     BentleyStatus                   SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
     bool                            IsDateTimeMetadataSet () const;
     bool                            DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
     WString                         DateTimeMetadataToString () const;
-    ECOBJECTS_EXPORT BentleyStatus  SetLocalDateTimeFromUnixMillis (Int64 unixMillis);
+    ECOBJECTS_EXPORT BentleyStatus  SetLocalDateTimeFromUnixMillis (int64_t unixMillis);
 //__PUBLISH_SECTION_START__
 //
     //! Returns the DPoint2d value, if this ECValue holds a Point2d
@@ -598,7 +598,7 @@ public:
     //! For fixed primitive types, returns the number of bytes required to represent the type
     //! @param[in]  primitiveType   The type to measure
     //! @returns The sizeof the given type, if it is a fixed size primitive 
-    static UInt32                   GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
+    static uint32_t                 GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
     ECOBJECTS_EXPORT WString       ToString () const;
@@ -632,27 +632,27 @@ private:
     friend struct AdhocPropertyEdit;
 
     WString                 m_metadataPropertyNames[(size_t)Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
-    UInt32                  m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
+    uint32_t                m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
 
     AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString, bool loadMetadata);
-    AdhocPropertyMetadata (ECEnablerCR enabler, UInt32 containerPropertyIndex, bool loadMetadata);
+    AdhocPropertyMetadata (ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
 
-    bool                    Init (ECEnablerCR enabler, UInt32 containerPropertyIndex, bool loadMetadata);
+    bool                    Init (ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
 protected:
     WCharCP                 GetPropertyName (Index index) const;
 
     static bool             IsRequiredMetadata (Index index);
-    static bool             PrimitiveTypeForCode (PrimitiveType& primType, Int32 code);
-    static bool             CodeForPrimitiveType (Int32& code, PrimitiveType primType);
+    static bool             PrimitiveTypeForCode (PrimitiveType& primType, int32_t code);
+    static bool             CodeForPrimitiveType (int32_t& code, PrimitiveType primType);
 public:
     ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString);
-    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, UInt32 containerPropertyIndex);
+    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, uint32_t containerPropertyIndex);
 
     ECOBJECTS_EXPORT bool   IsSupported() const;
-    UInt32                  GetContainerPropertyIndex() const { return m_containerIndex; }
+    uint32_t                GetContainerPropertyIndex() const { return m_containerIndex; }
 
     ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, WCharCP containerAccessString);
-    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, UInt32 containerPropertyIndex);
+    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, uint32_t containerPropertyIndex);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -672,29 +672,29 @@ private:
     IECInstanceCR           m_host;
 public:
     ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, WCharCP containerAccessString);
-    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, UInt32 containerPropertyIndex);
+    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, uint32_t containerPropertyIndex);
 
     IECInstanceCR                       GetHost() const { return m_host; }
 
-    ECOBJECTS_EXPORT bool               GetPropertyIndex (UInt32& index, WCharCP accessString) const;
-    ECOBJECTS_EXPORT UInt32             GetCount() const;
+    ECOBJECTS_EXPORT bool               GetPropertyIndex (uint32_t& index, WCharCP accessString) const;
+    ECOBJECTS_EXPORT uint32_t           GetCount() const;
 
-    ECOBJECTS_EXPORT ECObjectsStatus    GetName (WStringR name, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WStringR label, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetPrimitiveType (PrimitiveType& type, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (WStringR typeName, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (WStringR unitName, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    IsReadOnly (bool& isReadOnly, UInt32 index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    IsHidden (bool& isHidden, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetName (WStringR name, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WStringR label, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetPrimitiveType (PrimitiveType& type, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (WStringR typeName, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (WStringR unitName, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    IsReadOnly (bool& isReadOnly, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    IsHidden (bool& isHidden, uint32_t index) const;
 
     // For getting additional ad-hoc metadata
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, UInt32 index, WCharCP accessor) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t index, WCharCP accessor) const;
 
-    IECInstancePtr          GetEntry (UInt32 index) const;
-    ECObjectsStatus         GetString (WStringR str, UInt32 index, Index which) const;
+    IECInstancePtr          GetEntry (uint32_t index) const;
+    ECObjectsStatus         GetString (WStringR str, uint32_t index, Index which) const;
     ECObjectsStatus         GetString (WStringR str, IECInstanceCR instance, Index which) const;
-    ECObjectsStatus         GetValue (ECValueR v, UInt32 index, Index which) const;
+    ECObjectsStatus         GetValue (ECValueR v, uint32_t index, Index which) const;
     ECObjectsStatus         GetValue (ECValueR v, IECInstanceCR instance, Index which) const;
     ECClassCP               GetStructClass() const;
     StandaloneECEnablerPtr  GetStructEnabler() const;
@@ -708,25 +708,25 @@ struct AdhocPropertyEdit : AdhocPropertyQuery
     {
 public:
     ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, WCharCP containerAccessString);
-    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, UInt32 containerPropertyIndex);
+    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, uint32_t containerPropertyIndex);
 
     IECInstanceR            GetHostR()  { return const_cast<IECInstanceR>(GetHost()); }
 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetName (UInt32 index, WCharCP name);
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (UInt32 index, WCharCP displayLabel, bool andSetName = false);
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, ECValueCR v);
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (UInt32 index, bool isReadOnly);
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsHidden (UInt32 index, bool isHidden);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName (uint32_t index, WCharCP name);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (uint32_t index, WCharCP displayLabel, bool andSetName = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t index, ECValueCR v);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (uint32_t index, bool isReadOnly);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsHidden (uint32_t index, bool isHidden);
 
     ECOBJECTS_EXPORT ECObjectsStatus    Add (WCharCP name, ECValueCR v, WCharCP displayLabel = nullptr, WCharCP unitName = nullptr, WCharCP extendedTypeName = nullptr, bool isReadOnly = false, bool hidden = false);
-    ECOBJECTS_EXPORT ECObjectsStatus    Remove (UInt32 index);
+    ECOBJECTS_EXPORT ECObjectsStatus    Remove (uint32_t index);
     ECOBJECTS_EXPORT ECObjectsStatus    Clear();
     ECOBJECTS_EXPORT ECObjectsStatus    CopyFrom (AdhocPropertyQueryCR src, bool preserveValues);
 
     // For setting additional ad-hoc metadata
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (UInt32 index, WCharCP accessor, ECValueCR v);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t index, WCharCP accessor, ECValueCR v);
 
-    ECOBJECTS_EXPORT ECObjectsStatus    Swap (UInt32 propIdxA, UInt32 propIdxB);
+    ECOBJECTS_EXPORT ECObjectsStatus    Swap (uint32_t propIdxA, uint32_t propIdxB);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -739,11 +739,11 @@ private:
 public:
     AdhocContainerPropertyIndexCollection (ECEnablerCR enabler) : m_enabler (enabler) { }
 
-    struct const_iterator : std::iterator<std::forward_iterator_tag, UInt32 const>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, uint32_t const>
         {
     private:
         ECEnablerCR         m_enabler;
-        UInt32              m_current;
+        uint32_t            m_current;
 
         bool                IsEnd() const { return 0 == m_current; }
         bool                ValidateCurrent() const;
@@ -751,7 +751,7 @@ public:
     public:
         const_iterator (ECEnablerCR enabler, bool isEnd);
 
-        UInt32 const&   operator*() const   { return m_current; }
+        uint32_t const&   operator*() const   { return m_current; }
         bool            operator==(const_iterator const& rhs) const { return &rhs.m_enabler == &m_enabler && rhs.m_current == m_current; }
         bool            operator!=(const_iterator const& rhs) const { return !(*this == rhs); }
         const_iterator& operator++()                                { MoveNext(); return *this; }
@@ -842,7 +842,7 @@ private:
 public:
     bool                                IsAdhocProperty() const { return m_isAdhoc; }
 
-    ECOBJECTS_EXPORT Location&          operator[] (UInt32 depth);
+    ECOBJECTS_EXPORT Location&          operator[] (uint32_t depth);
 
     //! Constructs an ECValueAccessor for a given instance.
     //! @param[in]      instance         The instance that the accessor is representative of.
@@ -864,14 +864,14 @@ public:
     //! @param[in]      accessor          The accessor to clone.
     ECOBJECTS_EXPORT void Clone (ECValueAccessorCR accessor);
 
-    ECOBJECTS_EXPORT const Location&        operator[] (UInt32 depth) const;
-    ECOBJECTS_EXPORT ECEnablerCR            GetEnabler (UInt32 depth) const;
+    ECOBJECTS_EXPORT const Location&        operator[] (uint32_t depth) const;
+    ECOBJECTS_EXPORT ECEnablerCR            GetEnabler (uint32_t depth) const;
  
     //! Determines whether or not the ECEnabler matches that of the accessor at the given depth.
     //! @param[in]      depth           The stack depth of the Accessor's ECEnablerPtr.
     //! @param[in]      other           The ECEnablerPtr to compare to.
     //! @return         true if the ECEnablerPtr are equivalent, otherwise false.
-    ECOBJECTS_EXPORT bool                   MatchesEnabler (UInt32 depth, ECEnablerCR other) const;
+    ECOBJECTS_EXPORT bool                   MatchesEnabler (uint32_t depth, ECEnablerCR other) const;
 
     //! Looks up and returns the ECProperty associated with this accessor
     ECOBJECTS_EXPORT ECN::ECPropertyCP      GetECProperty() const;
@@ -881,14 +881,14 @@ public:
 public:
     //! Gets the depth of this Location within the ECValueAccessor.
     //! @return     The depth of this Location within the containing ECValueAccessor.
-    ECOBJECTS_EXPORT UInt32                 GetDepth() const;
+    ECOBJECTS_EXPORT uint32_t               GetDepth() const;
 
     //! Gets the native-style access string for a given stack depth.  This access string does 
     //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.
     //! @param[in]      depth           The stack depth of the native access string.
     //! @return         The access string.
     //! @see            IECInstance
-    ECOBJECTS_EXPORT WCharCP                GetAccessString (UInt32 depth) const;
+    ECOBJECTS_EXPORT WCharCP                GetAccessString (uint32_t depth) const;
 
     //! Gets the native-style access string for the deepest Location in this ECValueAccessor. This access string does
     //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.

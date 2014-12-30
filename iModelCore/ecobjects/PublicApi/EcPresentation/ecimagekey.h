@@ -12,8 +12,8 @@
 #include <ECObjects/ECObjects.h>
 
 typedef struct mdlDesc  MdlDesc;
-typedef UInt32          RscType;            /* Resource Type */
-typedef Int32           RscId;              /* Resource Id */
+typedef uint32_t        RscType;            /* Resource Type */
+typedef int32_t         RscId;              /* Resource Id */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -52,7 +52,7 @@ struct ECImageKey
         //! @param[in] iconId        NEEDSWORK: Add comment here
         //! @param[in] iconType      NEEDSWORK: Add comment here
         //! @param[in] mdlDesc       NEEDSWORK: Add comment here
-        ECImageKey (long iconId, UInt32 iconType, MdlDesc* mdlDesc)
+        ECImageKey (long iconId, uint32_t iconType, MdlDesc* mdlDesc)
             :m_type(RscIcon), m_iconType(iconType), m_iconId(iconId), m_mdlDesc(mdlDesc)
             {}
 

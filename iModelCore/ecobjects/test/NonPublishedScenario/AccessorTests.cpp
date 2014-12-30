@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublishedScenario/AccessorTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -18,7 +18,7 @@ struct ValueAccessorTests : ECTestFixture
     ECSchemaPtr          m_schema;
     ECClassP             m_ecClass;
     IECInstancePtr       m_instance;
-    UInt32               propIndex;
+    uint32_t             propIndex;
 
     void CreateSchema(WString schemaName = L"TestSchema", WString className = L"TestClass")
         {

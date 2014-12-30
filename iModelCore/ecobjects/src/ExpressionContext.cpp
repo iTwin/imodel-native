@@ -184,7 +184,7 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
                 }
 
             //  Need to convert this to an int if it is not already an int
-            UInt32         arrayIndex = (UInt32)indexResult.GetECValue()->GetInteger();
+            uint32_t       arrayIndex = (uint32_t)indexResult.GetECValue()->GetInteger();
 
             //  May need to get an instance or primitive value.
             if (arrayProp->GetKind() == ECN::ARRAYKIND_Primitive)
@@ -249,9 +249,9 @@ ExpressionStatus InstanceListExpressionContext::GetReference(EvaluationResultR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static UInt32 getComponentIndex (NodeCP node, bool is2d)
+static uint32_t getComponentIndex (NodeCP node, bool is2d)
     {
-    UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+    uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
     IdentNodeCP ident = dynamic_cast<IdentNodeCP>(node);
     WCharCP componentName = nullptr != ident ? ident->GetName() : nullptr;
     if (nullptr != componentName && 0 != *componentName && 0 == *(componentName + 1))
@@ -390,7 +390,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         }
 
     bool is2d = false;
-    UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+    uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
     if (TOKEN_Dot == nextOperation && isPointProperty (is2d, currentProperty))
         {
         // handle point member access
@@ -409,7 +409,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             return ExprStatus_UnknownSymbol;
         else if (currentProperty->GetIsArray())
             {
-            UInt32 propIdx;
+            uint32_t propIdx;
             if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
                 return ExprStatus_UnknownSymbol;
 
@@ -464,7 +464,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         bool isPrimitive = (ARRAYKIND_Primitive == arrayProp->GetKind());
         bool is2d = false;
-        UInt32 componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
+        uint32_t componentIndex = IECTypeAdapterContext::COMPONENT_INDEX_None;
         if (isPrimitive && TOKEN_Dot == nextOperation && isPointArrayProperty (is2d, currentProperty))
             {
             componentIndex = getComponentIndex (primaryList.GetOperatorNode (index), is2d);
@@ -489,7 +489,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
 
         ECValue arrayVal;
         UnitSpec units;
-        if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (UInt32)indexResult.GetECValue()->GetInteger()))
+        if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayVal, accessString.c_str(), (uint32_t)indexResult.GetECValue()->GetInteger()))
             { evalResult.Clear(); return ExprStatus_UnknownError; }
 
         if (isPrimitive && IECTypeAdapterContext::COMPONENT_INDEX_None != componentIndex)
@@ -554,7 +554,7 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
         // we get here if we find a dot following something that is not a struct. e.g., 'someArray.Count', 'someArray.Any (x => x < 5)', etc.
         if (NULL != currentProperty && currentProperty->GetIsArray())
             {
-            UInt32 propIdx;
+            uint32_t propIdx;
             if (ECOBJECTS_STATUS_Success == instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
                 {
                 IValueListResultPtr list = IValueListResult::Create (const_cast<IECInstanceR>(instance), propIdx);
@@ -569,12 +569,12 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
                 {
                 IdentNodeCP ident = dynamic_cast<IdentNodeCP>(primaryList.GetOperatorNode (index));
                 WCharCP arrayPropName = NULL != ident ? ident->GetName() : NULL;
-                UInt32 count = list->GetCount();
+                uint32_t count = list->GetCount();
                 if (NULL != arrayPropName)
                     {
                     if (0 == wcscmp (L"Count", arrayPropName))
                         {
-                        evalResult.InitECValue().SetInteger ((Int32)count);
+                        evalResult.InitECValue().SetInteger ((int32_t)count);
                         return ExprStatus_Success;
                         }
 
@@ -1120,7 +1120,7 @@ void InstanceListExpressionContext::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, UInt32 startIndex)
+ExpressionStatus InstanceListExpressionContext::_GetReference (EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, uint32_t startIndex)
     {
     Initialize();
 

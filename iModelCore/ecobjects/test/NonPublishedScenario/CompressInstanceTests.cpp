@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublishedScenario/CompressInstanceTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -72,7 +72,7 @@ static ECSchemaPtr   CreateKitchenSinkSchema ()
     return schema;
     }
 
-void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 count, bool isFixedCount)
+void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t count, bool isFixedCount)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -80,17 +80,17 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, U
     EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
     }
 
-void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 start, UInt32 count
+void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t start, uint32_t count
 , bool isNull)
     {
-    for (UInt32 i = start ; i < start + count ; i++)
+    for (uint32_t i = start ; i < start + count ; i++)
         {
         v.Clear();
         EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, i));
         EXPECT_TRUE (isNull == v.IsNull());
         }
     }
-void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, WCharCP value)
+void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, uint32_t index, WCharCP value)
     {
     v.Clear();
     if (useIndex)
@@ -110,7 +110,7 @@ void SetAndVerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString
     VerifyString (instance, v, accessString, value);
     }
 
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, UInt32 index, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, uint32_t index, uint32_t value)
     {
     v.Clear();
     if (useIndex)
@@ -120,28 +120,28 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, boo
     EXPECT_EQ (value, v.GetInteger());
     }
 
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t value)
     {
     return VerifyInteger (instance, v, accessString, false, 0, value);
     }
 
 
-void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, UInt32 value)
+void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t value)
     {
     v.SetInteger(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyInteger (instance, v, accessString, value);
     }
-static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, UInt32 expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, uint32_t expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
-    UInt32 count = varray.GetArrayInfo().GetCount();
+    uint32_t count = varray.GetArrayInfo().GetCount();
     EXPECT_TRUE (count == expectedCount);
 
     ECValue ventry;
 
-    for (UInt32 i=0; i<count; i++)
+    for (uint32_t i=0; i<count; i++)
         {
         EXPECT_TRUE (SUCCESS == instance.GetValue (ventry, propertyName, i));
         }

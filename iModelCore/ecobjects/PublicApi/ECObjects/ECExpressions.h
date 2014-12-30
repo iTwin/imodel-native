@@ -625,15 +625,15 @@ struct          ReferenceResult
 struct IValueListResult : RefCountedBase
     {
 protected:
-    virtual UInt32              _GetCount() const = 0;
-    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, UInt32 index) const = 0;
+    virtual uint32_t            _GetCount() const = 0;
+    virtual ExpressionStatus    _GetValueAt (EvaluationResultR result, uint32_t index) const = 0;
 
     IValueListResult() { }
 public:
-    ECOBJECTS_EXPORT UInt32                     GetCount() const;
-    ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, UInt32 index) const;
+    ECOBJECTS_EXPORT uint32_t                   GetCount() const;
+    ECOBJECTS_EXPORT ExpressionStatus           GetValueAt (EvaluationResultR result, uint32_t index) const;
 
-    ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, UInt32 arrayPropertyIndex);
+    ECOBJECTS_EXPORT static IValueListResultPtr Create (IECInstanceR owningInstance, uint32_t arrayPropertyIndex);
     ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
 
@@ -661,7 +661,7 @@ public:
     bool                IsValueList() const     { return ValType_ValueList == m_valueType; }
     bool                IsLambda() const        { return ValType_Lambda == m_valueType; }
 
-    ExpressionStatus    GetInteger(Int32& result);
+    ExpressionStatus    GetInteger(int32_t& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
 
     //  Constructors and destructors
@@ -925,10 +925,10 @@ public:
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateBooleanLiteral(bool literalValue);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateStringLiteral (wchar_t const* value, bool quoted);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateIntegerLiteral (int value);
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(Int64 value);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(int64_t value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateFloatLiteral(double value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateNullLiteral();
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (Int64 ticks);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (int64_t ticks);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2DLiteral (DPoint2dCR value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3DLiteral (DPoint3dCR value);
     static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);

@@ -72,7 +72,7 @@ private:
     bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
 
     
-    SchemaLocatorSet::iterator  GetHighestLocatorInRange (UInt32& prioirty);
+    SchemaLocatorSet::iterator  GetHighestLocatorInRange (uint32_t& prioirty);
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
 protected:

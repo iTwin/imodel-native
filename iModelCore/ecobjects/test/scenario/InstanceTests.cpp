@@ -23,7 +23,7 @@ struct  Struct2
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
-    UInt32          arraySize;
+    uint32_t        arraySize;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,14 +86,14 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     EXPECT_EQ (true, ecValue.GetBoolean());
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
-    for (UInt32 index=0; index < _countof (expectedInts); index++)
+    for (uint32_t index=0; index < _countof (expectedInts); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray", index));
         EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
-    for (UInt32 index=0; index < _countof (moreInts); index++)
+    for (uint32_t index=0; index < _countof (moreInts); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray", index));
         EXPECT_EQ (moreInts[index], ecValue.GetInteger());
@@ -103,7 +103,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
     EXPECT_EQ (3, ecValue.GetInteger());
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
-    for (UInt32 index=0; index < _countof (expectedPoints); index++)
+    for (uint32_t index=0; index < _countof (expectedPoints); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray", index));
         EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
@@ -111,12 +111,12 @@ void VerifyTestInstance (IECInstanceCP testInstance)
         EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
         }
 
-    for (UInt32 index=0; index < 300; index++)
+    for (uint32_t index=0; index < 300; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index));
         }
 
-    for (UInt32 index=0; index < 300; index++)
+    for (uint32_t index=0; index < 300; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
         wchar_t     expectedString[128];
@@ -124,7 +124,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
         EXPECT_STREQ (expectedString, ecValue.GetString());
         }
 
-    for (UInt32 index=0; index < 100; index++)
+    for (uint32_t index=0; index < 100; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray", index));
         EXPECT_EQ (index, ecValue.GetInteger());
@@ -165,7 +165,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
             },
         };
 
-    for (UInt32 index=0; index < _countof (struct2ExpectedValues); index++)
+    for (uint32_t index=0; index < _countof (struct2ExpectedValues); index++)
         {
         ECValue         structArrayMember;
         EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray", index));
@@ -198,7 +198,7 @@ void VerifyTestInstance (IECInstanceCP testInstance)
         if (NULL == struct2ExpectedValues[index].nestedArray)
             continue;
 
-        for (UInt32 nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
+        for (uint32_t nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
             {
             ECValue     nestedArrayMember;
             EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray", nestedIndex));
@@ -222,7 +222,7 @@ struct InstanceTests : ECTestFixture
     ECSchemaPtr          m_schema;
     ECClassP             m_ecClass;
     IECInstancePtr       m_instance;
-    UInt32               propIndex;
+    uint32_t             propIndex;
 
     void CreateSchema(WString schemaName = L"TestSchema", WString className = L"TestClass")
         {

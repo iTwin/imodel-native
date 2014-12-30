@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/StringEncodingTests.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -103,7 +103,7 @@ struct StringEncodingTests : ECTestFixture
         EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"String", v));
         EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"Struct.Name", v));
         EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->AddArrayElements (L"StringArray", 5));
-        for (UInt32 i = 0; i < 3; i++)
+        for (uint32_t i = 0; i < 3; i++)
             EXPECT_EQ (ECOBJECTS_STATUS_Success, instance->SetValue (L"StringArray", v, i));
 
         EXPECT_EQ (encoding, instance->GetStringEncoding());

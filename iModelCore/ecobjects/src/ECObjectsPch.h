@@ -25,7 +25,7 @@
 
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-extern ECObjectsStatus GetMinorVersionFromSchemaFileName (UInt32& versionMinor, WCharCP filePath);
+extern ECObjectsStatus GetMinorVersionFromSchemaFileName (uint32_t& versionMinor, WCharCP filePath);
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 

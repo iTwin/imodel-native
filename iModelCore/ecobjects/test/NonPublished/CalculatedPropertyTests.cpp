@@ -27,7 +27,7 @@ struct CalculatedPropertyTests : ECTestFixture
 
     IECInstancePtr      CreateTestCase (WCharCP propName, WCharCP ecExpr, int options, WCharCP failureValue, WCharCP parserRegex = L"Unused");
     template <typename T>
-    void SetValue (IECInstanceR instance, WCharCP accessor, T const& val, UInt32 arrayIndex = -1)
+    void SetValue (IECInstanceR instance, WCharCP accessor, T const& val, uint32_t arrayIndex = -1)
         {
         ECValue v (val);
         if (-1 == arrayIndex)
@@ -35,7 +35,7 @@ struct CalculatedPropertyTests : ECTestFixture
         else
             instance.SetValue (accessor, v, arrayIndex);
         }
-    void SetNullValue (IECInstanceR instance, WCharCP accessor, UInt32 arrayIndex = -1)
+    void SetNullValue (IECInstanceR instance, WCharCP accessor, uint32_t arrayIndex = -1)
         {
         ECValue v;
         if (-1 == arrayIndex)
@@ -152,7 +152,7 @@ static ECSchemaP       CreateTestSchema (ECSchemaCacheR schemaOwner)
 IECInstancePtr CalculatedPropertyTests::CreateTestCase (WCharCP propName, WCharCP ecExpr, int options, WCharCP failureValue, WCharCP parserRegex)
     {
     // We need to generate a new schema for each test case because we will apply different custom attributes to different properties
-    static Int32 s_schemaNumber = 0;
+    static int32_t s_schemaNumber = 0;
     
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
     SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 5);
