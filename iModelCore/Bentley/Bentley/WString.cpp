@@ -1,0 +1,327 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Bentley/WString.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    #include <Windows.h>
+    #include <objbase.h>
+#elif defined (__unix__)
+    // TBD
+#else
+    #error unknown compiler
+#endif
+#include <exception>
+
+#include "BentleyInternal.h"
+#include <Bentley/WString.h>
+#include <Bentley/BeAssert.h>
+
+USING_NAMESPACE_BENTLEY
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t WString::ReplaceAll (WCharCP subStringToReplace, WCharCP replacement)
+    {
+    if (WString::IsNullOrEmpty(subStringToReplace) || NULL == replacement)
+        return 0;
+
+    size_t  currPos = 0;
+    size_t  numReplaced = 0;
+    size_t  oldSubLen = wcslen (subStringToReplace);
+    size_t  newSubLen = wcslen (replacement);
+
+    while (WString::npos != (currPos = find (subStringToReplace, currPos)))
+        {
+        replace (currPos, oldSubLen, replacement);
+        currPos += newSubLen;
+
+        ++numReplaced;
+        }
+
+    return numReplaced;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    09/11
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t Utf8String::ReplaceAll (Utf8CP subStringToReplace, Utf8CP replacement)
+    {
+    if (Utf8String::IsNullOrEmpty(subStringToReplace) || NULL == replacement)
+        return 0;
+
+    size_t  currPos = 0;
+    size_t  numReplaced = 0;
+    size_t  oldSubLen = strlen (subStringToReplace);
+    size_t  newSubLen = strlen (replacement);
+
+    while (Utf8String::npos != (currPos = find (subStringToReplace, currPos)))
+        {
+        replace (currPos, oldSubLen, replacement);
+        currPos += newSubLen;
+
+        ++numReplaced;
+        }
+
+    return numReplaced;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WString::WString (CharCP in, bool useUtf8) : bwstring()
+    {
+    if (useUtf8)
+        AssignUtf8 (in);
+    else // encoding == BentleyCharEncoding::Locale
+        AssignA (in);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+WString::WString (CharCP in, BentleyCharEncoding encoding) : bwstring()
+    {
+    if (encoding == BentleyCharEncoding::Utf8)
+        AssignUtf8 (in);
+    else // encoding == BentleyCharEncoding::Locale
+        AssignA (in);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringR WString::AssignA (CharCP in)
+    {
+    if (NULL == in)
+        {
+        clear();
+        return *this;
+        }
+
+    BeStringUtilities::CurrentLocaleCharToWChar (*this, in);
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringR WString::AssignUtf8 (Utf8CP in)
+    {
+    if (NULL == in)
+        clear();
+    else
+        BeStringUtilities::Utf8ToWChar (*this, in);
+
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+WStringR WString::AssignUtf16 (Utf16CP in)
+    {
+    if (NULL == in)
+        clear();
+    else
+        BeStringUtilities::Utf16ToWChar (*this, in);
+
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void WString::Trim ()
+    {
+    if (empty ())
+        return;
+
+    size_t firstNonSpaceIdx = 0;
+    for (; (firstNonSpaceIdx < length ()) && iswspace (at (firstNonSpaceIdx)); ++firstNonSpaceIdx)
+        ;
+    
+    size_t lastNonSpaceIdx = length () - 1;
+    for (; (lastNonSpaceIdx > firstNonSpaceIdx) && iswspace (at (lastNonSpaceIdx)); --lastNonSpaceIdx)
+        ;
+    
+    erase ((begin () + lastNonSpaceIdx + 1), end ());
+    erase (begin (), (begin () + firstNonSpaceIdx));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void WString::Trim (WCharCP trimCharacters)
+    {
+    if (empty ())
+        return;
+    
+    size_t firstNonTrimIdx = 0;
+    for (; (firstNonTrimIdx < length ()) && (NULL != wcschr (trimCharacters, at (firstNonTrimIdx))); ++firstNonTrimIdx)
+        ;
+    
+    size_t lastNonTrimIdx = length () - 1;
+    for (; (lastNonTrimIdx > firstNonTrimIdx) && (NULL != wcschr (trimCharacters, at (lastNonTrimIdx))); --lastNonTrimIdx)
+        ;
+    
+    erase ((begin() + lastNonTrimIdx + 1), end ());
+    erase (begin(), (begin () + firstNonTrimIdx));
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void WString::PadLeft (size_t totalSize, value_type charToPadWith)
+    {
+    if (length () >= totalSize)
+        return;
+
+    insert (begin (), (totalSize - length ()), charToPadWith);
+    }
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void WString::PadRight (size_t totalSize, value_type charToPadWith)
+    {
+    if (length () >= totalSize)
+        return;
+
+    insert (end (), (totalSize - length ()), charToPadWith);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::Contains (WStringCR other) const
+    {
+    return Contains (other.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::Contains (WCharCP other) const
+    {
+    size_type position = this->find (other);
+    return (WString::npos != position);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::ContainsI (WStringCR other) const
+    {
+    return Contains (other.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Dan.East                        12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WString::ContainsI (WCharCP other) const
+    {
+    WString thisLower (this->c_str());
+    thisLower.ToLower();
+    WString otherLower (other);
+    otherLower.ToLower();
+    return thisLower.Contains (otherLower.c_str());
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Utf8String::IsAscii ()
+    {
+    for (Utf8CP p = c_str(); 0 != *p; p++)
+        {
+        if (0 != (*p & 0x80))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void Utf8String::Trim ()
+    {
+    if (empty ())
+        return;
+
+    size_t firstNonSpaceIdx = 0;
+    for (; (firstNonSpaceIdx < length ()) && isspace (at (firstNonSpaceIdx)); ++firstNonSpaceIdx)
+        ;
+    
+    size_t lastNonSpaceIdx = length () - 1;
+    for (; (lastNonSpaceIdx > firstNonSpaceIdx) && isspace (at (lastNonSpaceIdx)); --lastNonSpaceIdx)
+        ;
+    
+    erase ((begin () + lastNonSpaceIdx + 1), end ());
+    erase (begin (), (begin () + firstNonSpaceIdx));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void Utf8String::TrimEnd()
+    {
+    if (empty())
+        return;
+
+    size_t lastNonSpaceIdx = length() - 1;
+    for (; (lastNonSpaceIdx > 0) && isspace(at(lastNonSpaceIdx)); --lastNonSpaceIdx)
+        ;
+
+    erase((begin() + lastNonSpaceIdx + 1), end());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void Utf8String::Trim (Utf8CP trimCharacters)
+    {
+    if (empty ())
+        return;
+    
+    size_t firstNonTrimIdx = 0;
+    for (; (firstNonTrimIdx < length ()) && (NULL != strchr (trimCharacters, at (firstNonTrimIdx))); ++firstNonTrimIdx)
+        ;
+    
+    size_t lastNonTrimIdx = length () - 1;
+    for (; (lastNonTrimIdx > firstNonTrimIdx) && (NULL != strchr (trimCharacters, at (lastNonTrimIdx))); --lastNonTrimIdx)
+        ;
+    
+    erase ((begin () + lastNonTrimIdx + 1), end ());
+    erase (begin (), (begin () + firstNonTrimIdx));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+AString::AString (WCharCP source)
+    {
+    BeStringUtilities::WCharToCurrentLocaleChar (*this, source);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2014
+//---------------------------------------------------------------------------------------
+void Utf8String::ToUpper()
+    {
+    if (IsAscii())
+        {
+        std::transform(begin(), end(), begin(), [](char const& c){return toupper(c);});
+        return;
+        }
+    
+    WString wstr(c_str(), BentleyCharEncoding::Utf8);
+    wstr.ToUpper();
+    clear();
+    BeStringUtilities::WCharToUtf8(*this, wstr.c_str());
+    }

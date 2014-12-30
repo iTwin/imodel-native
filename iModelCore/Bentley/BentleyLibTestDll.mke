@@ -1,0 +1,61 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: BentleyLibTestDll.mke $
+#
+#  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+SrcBentley=$(SrcRoot)Bentley/
+BuildContext=$(OutputRootDir)BuildContexts/Bentley/
+TestDir=$(BuildContext)SubParts/UnitTests/source/
+PolicyFile=$(SrcBentley)AssertBentleyPolicy.mki
+
+%include mdl.mki
+
+%include $(SharedMki)bsioutputdirs.mki
+
+TEST_LOCATION = $(TestDir)Published/
+name = BentleyLibTest_Published
+UsingPublished = 1
+o = $(OutputRootDir)Build/Bentley/test/Published/
+
+always: 
+    ~mkdir $(o)
+
+$(o)BentleyLibTest$(oext)          : $(SrcBentley)BentleyLibTest.cpp
+
+#----------------------------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------------------------
+%if defined(COMPILE_PUBLISHED_TESTS)
+    objs = $[@wildcard $(BuildContext)SubParts/GUnitTests/objs/Published/*$(oext)]
+%endif
+
+objs + $(o)BentleyLibTest$(oext)
+
+#----------------------------------------------------------------------------------------
+#   Libs
+#----------------------------------------------------------------------------------------
+DLM_NAME            = $(name)
+DLM_DEST            = $(o)
+DLM_EXTENSION       = $(shlibext)
+DLM_OBJECT_FILES    = $(objs)
+DLM_EXPORT_OBJS     = $(objs)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_SYMB_DEST       = $(o)
+DLM_MAP_DEST        = $(o)
+DLM_NO_SIGN         = 1
+DLM_NO_DEF          = 1
+DLM_NO_DLS          = 1
+DLM_NOENTRY         = 0
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+LINKER_LIBRARIES   =   $(BuildContext)SubParts/Libs/$(libprefix)Bentley$(libext) \
+                        $(BuildContext)SubParts/Libs/$(stlibprefix)gtest$(stlibext)
+
+%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT - define a way to specify OS libraries symbolically, without naming them
+LINKER_LIBRARIES   +	advapi32$(libext)
+%endif
+
+%include dlmlink.mki
+

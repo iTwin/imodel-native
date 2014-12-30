@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Published">
+      <UniqueIdentifier>{843b3d19-42d8-4234-8511-79b28f73e4e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NonPublished">
+      <UniqueIdentifier>{c86c3377-b624-44cf-9fa9-f970b0fb418b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\bentleylogging_test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\consoleatp.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\fileatp.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeFileName_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeNumerical_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\WString_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeTimeUtilities_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\bmap_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\bset_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\bvector_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Cpp_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\OsEnvUnitTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\printf_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\printf_test2.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\scanf_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTime_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTime_DstAnalysis.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTimeTestHelpers.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTimeTestDataset.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BeStringUtilities_tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BentleyUnitTests.PartFile.xml" />
+    <None Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\DateTimeTestHelpers.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\DateTimeTestDataset.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

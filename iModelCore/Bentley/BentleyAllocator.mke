@@ -1,0 +1,119 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BentleyAllocator.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+nameToDefine = __BENTLEYALLOCATOR_BUILD__
+%include cdefapnd.mki
+
+PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+bentleyDir = $(baseDir)Bentley/
+nonportDir = $(bentleyDir)nonport/
+loggingSdkDir=$(baseDir)LoggingSDK/
+
+BentleyAPISrc = $(baseDir)PublicAPI/Bentley/
+
+appName = BentleyAllocator
+
+%if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT")
+    targetPlatformUsesDlls = 1
+%endif 
+
+%if defined (CREATE_STATIC_LIBRARIES) && !defined (TMP_BUILD_STATIC)
+    partReallyWantsStaticLibrary = 1
+    appName = BentleyAllocatorStaticLib
+%endif
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+DLM_NAME        =% $(appName)
+CCompPDBName    =% $(appName)
+
+%if ($[@findstring Win, $(TARGET_PLATFORM)] == " ")
+
+    dirToSearch = $(BuildContext)VendorAPI/icu4c/
+    %include cincapnd.mki
+
+%endif
+
+o = $(OutputRootDir)build/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+# Use multi-compile
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)RefCounted$(oext) : $(bentleyDir)RefCounted.cpp $(BentleyAPISrc)RefCounted.h  ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+%undef MultiCompileDepends
+
+#----------------------------------------------------------------------
+#   Create the DLL
+#----------------------------------------------------------------------
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NO_BENTLEY_LIB          = 1
+
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+    LINKER_LIBRARIES       = $(CLibs)
+%endif
+
+%if defined(targetPlatformUsesDlls) && defined(CREATE_STATIC_LIBRARIES) && !defined(partReallyWantsStaticLibrary)
+    %warn Building BentleyAllocator as DLL even in static part
+
+    %include dlmlink.mki
+
+    # Tricky, bentleybuild expects a pdb, since it thinks this is a static build. Put it out there.
+    $(BuildContext)Delivery/$(appName).pdb : $(o)$(appName).pdb
+        $(LinkFirstDepToFirstTarget)
+%else
+    %include $(sharedMki)linkLibrary.mki
+%endif
+
+#--------------------------------------------------------------------------------------
+#
+# BentleyAllocatorBinaries
+#
+# On Windows, we deliver .lib, .dll, .pdb to BentleyAllocatorBinaries, so that a 
+# dependent product can include these binary files.
+#
+#--------------------------------------------------------------------------------------
+%if !defined(partReallyWantsStaticLibrary)
+
+    always:
+        !~@mkdir $(o)BentleyAllocatorBinaries
+
+    %if defined(targetPlatformUsesDlls) && !defined(partReallyWantsStaticLibrary)
+    $(o)BentleyAllocatorBinaries/$(libprefix)$(appName)$(libext) : $(DLM_LIB_CONTEXT_LOCATION)$(libprefix)$(appName)$(libext)
+        $(LinkFirstDepToFirstTarget)
+
+    $(o)BentleyAllocatorBinaries/$(shlibprefix)$(appName)$(shlibext) : $(DLM_CONTEXT_LOCATION)$(shlibprefix)$(appName)$(shlibext)
+        $(LinkFirstDepToFirstTarget)
+    %endif
+
+    $(BuildContext)Delivery/BentleyAllocatorBinaries : $(o)BentleyAllocatorBinaries
+        $(LinkFirstDepToFirstTargetAsDirectory)
+
+%endif

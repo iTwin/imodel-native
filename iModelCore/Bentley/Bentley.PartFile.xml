@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <ProductDirectoryList ListName="Bentley">
+        <ProductDirectory Name="PublicAPI"/>
+        <ProductDirectory Name="VendorAPI"/>
+        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="Libs"            Path="Libs"/>
+        <ProductDirectory Name="TestBin"         Path="Dlls"/>
+    </ProductDirectoryList>
+    
+    <Part Name="BentleyLib" PrgOutputDir="BentleyLib">
+        <SubPart PartName="BentleyDll" />
+    </Part>
+  
+    <Part Name="Base" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="Bentley" />
+            <PublicAPI Domain="Logging" />
+            <PublicAPI Domain="BentleyManagedUtil" />
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/bentley-notice.txt</Files>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/btree-notice.txt</Files>
+            <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/bvector-notice.txt</Files>
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: BentleyAllocator.dll must have NO VERSION NUMBER! The SAME dll must be used by all products. -->
+    <!-- WIP Move BentleyAllocator into its own repository. -->
+    <Part Name="BentleyAllocator" BentleyBuildMakeFile="BentleyAllocator.mke" BMakeOptions="+dTMP_BUILD_STATIC">
+        <SubPart PartName="Base"/>
+        <Bindings>
+            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)BentleyAllocator$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)BentleyAllocator$(shlibext)</Assemblies>
+            <Directory ProductDirectoryName="BentleyAllocatorBinaries" SubPartDirectory="BentleyAllocatorBinaries" SourceName="Delivery/BentleyAllocatorBinaries" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <!-- For when you really do need a static BentleyAllocator library. This is useful when building a standalone .EXE. -->
+    <Part Name="BentleyAllocatorStaticLib" BentleyBuildMakeFile="BentleyAllocator.mke">
+        <SubPart PartName="Base"/>
+        <Bindings>
+            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)BentleyAllocatorStaticLib$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)BentleyAllocatorStaticLib$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G" BMakeOptions="+dTMP_BUILD_STATIC">
+        <SubPart PartName="Base"/>
+        <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
+        <SubPart PartName="BentleyAllocator"/>
+        <Bindings>
+            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)Bentley$(libext)</Libs>
+            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+        <SubPart PartName="Base"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/Bentley"/>
+        </Bindings>
+    </Part>
+ <Part Name="BentleyUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Bentley/Tests/ -dBEGTEST_NAME=Bentley">
+        <SubPart PartName="BentleyDll"/>
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"    Repository="util-gtest" />
+        <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
+    </Part>
+</BuildContext>

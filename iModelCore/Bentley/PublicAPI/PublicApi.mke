@@ -1,0 +1,35 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PublicAPI/PublicApi.mke $
+#
+#  $Copyright: (c) 2011 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile      = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+%if !defined (OutputApiDir)
+    %error You must define OutputApiDir to tell me where to put the published API files
+    %return
+%endif
+
+# Scope1 - optional. If defined, then MakePublicApi.py is called with --publicScope1. This causes the header files to include __PUBLISH_SCOPE_1_START__ sections
+
+%if defined (Scope1)
+    genDir       = $(OutputRootDir)build/Bentley/PublishedAPI_Scope1
+    scope1Arg = --publishScope1
+%else
+    genDir       = $(OutputRootDir)build/Bentley/PublishedAPI
+%endif
+
+stampFileName = $(genDir).stamp
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+cleanopt = --clean
+%else
+cleanopt =
+%endif
+
+always:
+    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt)
+    @CreateSymLinks.py -d"$(BuildContext)$(OutputApiDir)=$(genDir)"

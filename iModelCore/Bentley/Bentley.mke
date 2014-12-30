@@ -1,0 +1,132 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Bentley.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile=$(SrcRoot)Bentley/AssertBentleyPolicy.mki
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+bentleyDir = $(baseDir)Bentley/
+nonportDir = $(bentleyDir)nonport/
+loggingSdkDir=$(baseDir)LoggingSDK/
+
+BentleyAPISrc = $(baseDir)PublicAPI/Bentley/
+
+appName = Bentley
+
+%if defined (CREATE_STATIC_LIBRARIES) && !defined (TMP_BUILD_STATIC)     # Temporary.
+    appName = BentleyStaticLib
+%endif
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+DLM_NAME        =% $(appName)
+CCompPDBName    =% $(appName)
+
+# For ICU; prefer this vs. modifying third-party library code.
+dirToSearch = $(BuildContext)VendorAPI/icu4c/
+%include cincapnd.mki
+
+o = $(OutputRootDir)build/$(appName)/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+# Use multi-compile
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)WString$(oext) : $(bentleyDir)WString.cpp $(BentleyAPISrc)WString.h ${MultiCompileDepends}
+
+$(o)GlobalHandleContainer$(oext) : $(bentleyDir)GlobalHandleContainer.cpp  ${MultiCompileDepends}
+
+$(o)DateTime$(oext)             : $(bentleyDir)DateTime.cpp $(BentleyAPISrc)DateTime.h ${MultiCompileDepends}
+
+$(o)DateTimeConverter$(oext)    : $(bentleyDir)DateTimeConverter.cpp $(bentleyDir)DateTimeConverter.h $(BentleyAPISrc)DateTime.h ${MultiCompileDepends}
+
+$(o)BeTest$(oext)               : $(nonportDir)BeTest.cpp $(BentleyAPISrc)BeTest.h $(BentleyAPISrc)BeAssert.h ${MultiCompileDepends}
+
+$(o)BeFile$(oext)               : $(nonportDir)BeFile.cpp $(BentleyAPISrc)BeFile.h ${MultiCompileDepends}
+
+$(o)BeFileName$(oext)           : $(nonportDir)BeFileName.cpp $(BentleyAPISrc)BeFileName.h ${MultiCompileDepends}
+
+$(o)BeFileListIterator$(oext)   : $(nonportDir)BeFileListIterator.cpp $(BentleyAPISrc)BeFileListIterator.h ${MultiCompileDepends}
+
+$(o)BeDirectoryIterator$(oext)  : $(nonportDir)BeDirectoryIterator.cpp $(BentleyAPISrc)BeDirectoryIterator.h ${MultiCompileDepends}
+
+%if defined (BENTLEY_CPP_MISSING_WCHAR_SUPPORT)
+$(o)strfunc$(oext)          : $(nonportDir)strfunc.cpp ${MultiCompileDepends}
+%endif
+
+$(o)BeStringUtilities$(oext)    : $(nonportDir)BeStringUtilities.cpp $(BentleyAPISrc)BeFileListIterator.h ${MultiCompileDepends}
+
+$(o)BeSystemInfo$(oext)         : $(nonportDir)BeSystemInfo.cpp $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
+
+$(o)BeTimeUtilities$(oext)      : $(nonportDir)BeTimeUtilities.cpp $(BentleyAPISrc)BeTimeUtilities.h ${MultiCompileDepends}
+
+
+$(o)BeIconUtilities$(oext)      : $(nonportDir)BeIconUtilities.cpp $(BentleyAPISrc)BeIconUtilities.h ${MultiCompileDepends}
+
+$(o)BeThread$(oext)             : $(nonportDir)BeThread.cpp $(BentleyAPISrc)BeThreadLocalStorage.h $(BentleyAPISrc)BeThread.h ${MultiCompileDepends}
+
+$(o)BeDebugLog$(oext)           : $(nonportDir)BeDebugLog.cpp $(BentleyAPISrc)BeDebugLog.h ${MultiCompileDepends}
+
+$(o)ValueFormat$(oext)          : $(nonportDir)ValueFormat.cpp $(BentleyAPISrc)ValueFormat.h ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Windows-specific COM-related utilities
+    $(o)ReleaseMarshaller$(oext) : $(nonportDir)ReleaseMarshaller.cpp $(BentleyAPISrc)ReleaseMarshaller.h ${MultiCompileDepends}
+%endif
+
+%if $(TARGET_PLATFORM)=="Android"
+    # Android-specific jstring conversion utilities
+    $(o)BeJStringUtilities$(oext) : $(nonportDir)BeJStringUtilities.cpp $(BentleyAPISrc)BeJStringUtilities.h ${MultiCompileDepends}
+%endif
+
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+%undef MultiCompileDepends
+
+#----------------------------------------------------------------------
+#   Logging
+#----------------------------------------------------------------------
+%include $(loggingSdkDir)src/native/interface/interface.mki
+
+objs + $(loggingSdkInterfaceObjFiles)
+
+#----------------------------------------------------------------------
+#   Create the Bentley DLL
+#----------------------------------------------------------------------
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_NO_BENTLEY_LIB          = 1
+
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BentleyAllocator$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeIcu4c$(libext)
+
+%if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+    LINKER_LIBRARIES           + $(CLibs)
+%endif
+
+%if defined (DGN_DISPLAY_KERNEL_WX)
+    LINKER_LIBRARIES           + $(WX_LIBS)
+%endif
+
+%include $(sharedMki)linkLibrary.mki
+

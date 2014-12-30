@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
+    <ClCompile Include="NonPublished\consoleatp.cpp" />
+    <ClCompile Include="NonPublished\fileatp.cpp" />
+    <ClCompile Include="Published\BeFileName_test.cpp" />
+    <ClCompile Include="Published\BeNumerical_Test.cpp" />
+    <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
+    <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
+    <ClCompile Include="Published\bmap_test.cpp" />
+    <ClCompile Include="Published\bset_test.cpp" />
+    <ClCompile Include="Published\bvector_test.cpp" />
+    <ClCompile Include="Published\Cpp_Test.cpp" />
+    <ClCompile Include="Published\DateTimeTestDataset.cpp" />
+    <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
+    <ClCompile Include="Published\DateTime_Tests.cpp" />
+    <ClCompile Include="Published\OsEnvUnitTests.cpp" />
+    <ClCompile Include="Published\printf_test.cpp" />
+    <ClCompile Include="Published\printf_test2.cpp" />
+    <ClCompile Include="Published\scanf_test.cpp" />
+    <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
+    <ClCompile Include="Published\WString_test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BentleyUnitTests.PartFile.xml" />
+    <None Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\DateTimeTestDataset.h" />
+    <ClInclude Include="Published\DateTimeTestHelpers.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{18CE72BD-2296-43A0-91BC-C76D2EC910C9}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\Bentley\PublishedBentleyUnitTests\PublicAPI\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Bentley\VendorAPI\;$(ProjectDir)\NonPublished\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\UnitTests\Bentley\NonPublishedBentleyUnitTests\PublicAPI\;$(ProjectDir)\Published\;$(OutRoot)\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BentleyUnitTests\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c &amp; bb -v4  re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 re -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) BentleyUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>BentleyUnitTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
