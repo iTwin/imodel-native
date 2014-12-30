@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -513,9 +513,13 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
             IECInstancePtr  customAttributeInstance;
             WString         customAttributeXmlString;
             customAttributeClassNode->GetXmlString (customAttributeXmlString);
-            status = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
-            if ( (INSTANCE_READ_STATUS_Success != status) && (INSTANCE_READ_STATUS_CommentOnly != status) )
-                return status;
+            InstanceReadStatus thisStatus = IECInstance::ReadFromBeXmlNode (customAttributeInstance, *customAttributeClassNode, *context);
+            if (INSTANCE_READ_STATUS_Success != thisStatus && INSTANCE_READ_STATUS_CommentOnly != thisStatus)
+                {
+                // skip this attribute, but continue processing any remaining.
+                if (INSTANCE_READ_STATUS_Success == status)
+                    status = thisStatus;
+                }
 
             if (customAttributeInstance.IsValid())
                 SetCustomAttribute (*customAttributeInstance);
