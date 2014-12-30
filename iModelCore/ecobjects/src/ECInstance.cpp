@@ -99,7 +99,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECInstance::IsFixedArrayProperty (ECN::IECInstanceR instance, WCharCP accessString, UInt32* numFixedEntries)
+bool IECInstance::IsFixedArrayProperty (ECN::IECInstanceR instance, WCharCP accessString, uint32_t* numFixedEntries)
     {
     ECValue         arrayVal;
 
@@ -223,14 +223,14 @@ bool                IECInstance::_IsPropertyReadOnly (WCharCP accessString) cons
         return true;
 */
 
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     return ECOBJECTS_STATUS_Success != GetEnabler().GetPropertyIndex (propertyIndex, accessString) || IsPropertyReadOnly (propertyIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-bool                IECInstance::_IsPropertyReadOnly (UInt32 propertyIndex) const
+bool                IECInstance::_IsPropertyReadOnly (uint32_t propertyIndex) const
     {
     return /*_IsReadOnly() || */ GetEnabler().IsPropertyReadOnly (propertyIndex);
     }
@@ -251,7 +251,7 @@ MemoryECInstanceBase*       IECInstance::GetAsMemoryECInstanceP () { return _Get
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessString) const 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -270,7 +270,7 @@ ECObjectsStatus     IECInstance::GetValueOrAdhoc (ECValueR v, WCharCP accessStri
         for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
             {
             AdhocPropertyQuery adhocs (*this, containerIndex);
-            UInt32 propertyIndex;
+            uint32_t propertyIndex;
             if (adhocs.GetPropertyIndex (propertyIndex, accessString))
                 status = adhocs.GetValue (v, propertyIndex);
             }
@@ -282,9 +282,9 @@ ECObjectsStatus     IECInstance::GetValueOrAdhoc (ECValueR v, WCharCP accessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessString, UInt32 arrayIndex) const 
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessString, uint32_t arrayIndex) const 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -296,7 +296,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, WCharCP propertyAccessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) const 
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, uint32_t propertyIndex) const 
     { 
     return GetValue (v, propertyIndex, false, 0); 
     }
@@ -305,7 +305,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UInt32 arrayIndex) const
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, uint32_t propertyIndex, uint32_t arrayIndex) const
     {
     return GetValue (v, propertyIndex, true, arrayIndex); 
     }
@@ -313,7 +313,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, UIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    02/13
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const 
+ECObjectsStatus     IECInstance::GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const 
     {
     ECObjectsStatus stat = _GetValue (v, propertyIndex, useArrayIndex, arrayIndex); 
     if (stat != ECOBJECTS_STATUS_Success)
@@ -334,7 +334,7 @@ ECObjectsStatus     IECInstance::GetValue (ECValueR v, UInt32 propertyIndex, boo
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v) 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -348,7 +348,7 @@ ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString,
 +---------------+---------------+---------------+---------------+---------------+------*/   
 ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECValueCR v) 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -368,19 +368,19 @@ ECObjectsStatus IECInstance::ChangeValueOrAdhoc (WCharCP propertyAccessString, E
         for (auto const& containerIndex : AdhocContainerPropertyIndexCollection (GetEnabler()))
             {
             AdhocPropertyEdit adhocs (*this, containerIndex);
-            UInt32 propertyIndex;
+            uint32_t propertyIndex;
             if (adhocs.GetPropertyIndex (propertyIndex, propertyAccessString))
                 {
                 bool isReadOnly = true;
                 status = adhocs.IsReadOnly (isReadOnly, propertyIndex);
-            if (ECOBJECTS_STATUS_Success == status)
+                if (ECOBJECTS_STATUS_Success == status)
                     {
                     if (isReadOnly)
                         status = ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
                     else
                         {
                         ECValue curV;
-                    if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
+                        if (ECOBJECTS_STATUS_Success == adhocs.GetValue (curV, propertyIndex) && curV.Equals (v))
                             status = ECOBJECTS_STATUS_PropertyValueMatchesNoChange;
                         else
                             status = adhocs.SetValue (propertyIndex, v);
@@ -421,9 +421,9 @@ ECObjectsStatus IECInstance::SetValueOrAdhoc (WCharCP propertyAccessString, ECVa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString, ECValueCR v, uint32_t arrayIndex) 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -435,9 +435,9 @@ ECObjectsStatus     IECInstance::SetInternalValue (WCharCP propertyAccessString,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECValueCR v, uint32_t arrayIndex) 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -449,7 +449,7 @@ ECObjectsStatus     IECInstance::ChangeValue (WCharCP propertyAccessString, ECVa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValueCR v, uint32_t arrayIndex) 
     {
     ECObjectsStatus status = ChangeValue (propertyAccessString, v, arrayIndex);
 
@@ -462,7 +462,7 @@ ECObjectsStatus     IECInstance::SetValue (WCharCP propertyAccessString, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v) 
+ECObjectsStatus     IECInstance::SetInternalValue (uint32_t propertyIndex, ECValueCR v) 
     {
     return _SetInternalValue (propertyIndex, v, false, 0); 
     }
@@ -470,7 +470,7 @@ ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/   
-ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v) 
+ECObjectsStatus     IECInstance::SetValue (uint32_t propertyIndex, ECValueCR v) 
     {
     ECObjectsStatus status = ChangeValue (propertyIndex, v);
 
@@ -483,7 +483,7 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::SetInternalValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex) 
     { 
 
     return _SetInternalValue (propertyIndex, v, true, arrayIndex); 
@@ -492,7 +492,7 @@ ECObjectsStatus     IECInstance::SetInternalValue (UInt32 propertyIndex, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex)
+ECObjectsStatus IECInstance::_SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex)
     {
     // Default impl; instances that support calculated properties should override
     return _SetValue (propertyIndex, v, useArrayIndex, arrayIndex);
@@ -501,7 +501,7 @@ ECObjectsStatus IECInstance::_SetInternalValue (UInt32 propertyIndex, ECValueCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::ChangeValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex) 
     {
     return ChangeValue (propertyIndex, v, true, arrayIndex);
     }
@@ -509,7 +509,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                    CaseyMullen     09/09
 //+---------------+---------------+---------------+---------------+---------------+-----
-ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v) 
+ECObjectsStatus     IECInstance::ChangeValue (uint32_t propertyIndex, ECValueCR v) 
     {
     return ChangeValue (propertyIndex, v, false, 0);
     }
@@ -517,7 +517,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
-ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::ChangeValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) 
     {
     if ( ! ChangeValuesAllowed())
         return ECOBJECTS_STATUS_UnableToSetReadOnlyInstance;
@@ -546,7 +546,7 @@ ECObjectsStatus     IECInstance::ChangeValue (UInt32 propertyIndex, ECValueCR v,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UInt32 arrayIndex) 
+ECObjectsStatus     IECInstance::SetValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex) 
     {
     ECObjectsStatus status = ChangeValue (propertyIndex, v, arrayIndex);
 
@@ -556,7 +556,7 @@ ECObjectsStatus     IECInstance::SetValue (UInt32 propertyIndex, ECValueCR v, UI
     return  status;
     }
 
-bool                IECInstance::IsPropertyReadOnly (UInt32 propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
+bool                IECInstance::IsPropertyReadOnly (uint32_t propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const { return _IsPropertyReadOnly (accessString); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -564,7 +564,7 @@ bool                IECInstance::IsPropertyReadOnly (WCharCP accessString) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
     {
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     auto status = GetEnabler().GetPropertyIndex (propertyIndex, accessString);
     if (ECOBJECTS_STATUS_PropertyNotFound == status)
         {
@@ -578,6 +578,7 @@ bool IECInstance::IsPropertyOrAdhocReadOnly (WCharCP accessString) const
                 break;
                 }
             }
+
         return ECOBJECTS_STATUS_Success != status || readOnly;
         }
 
@@ -656,7 +657,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     wcsncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
     indexBuffer[numChars]=0;
 
-    UInt32 indexValue = -1;
+    uint32_t indexValue = -1;
     BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue);
 
     ECValue         arrayVal;
@@ -678,7 +679,7 @@ static ECObjectsStatus getECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         }
 
     ArrayInfo arrayInfo = arrayVal.GetArrayInfo();
-    UInt32    size      = arrayInfo.GetCount();
+    uint32_t  size      = arrayInfo.GetCount();
 
     if (indexValue >= size)
         return ECOBJECTS_STATUS_Error;
@@ -721,16 +722,16 @@ static ECObjectsStatus getECValueFromInstance (ECValueR v, IECInstanceCR instanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible)
+static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCR instance, ECValueAccessorCR accessor, uint32_t depth, bool compatible)
     {
     ECValueAccessor::Location const& loc = accessor[depth];
     int arrayIndex = loc.GetArrayIndex();
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)loc.GetPropertyIndex();
+        uint32_t propertyIndex = (uint32_t)loc.GetPropertyIndex();
         if (arrayIndex < 0)
             return instance.GetValue (value, propertyIndex);
-        return instance.GetValue (value, propertyIndex,  (UInt32)arrayIndex);
+        return instance.GetValue (value, propertyIndex,  (uint32_t)arrayIndex);
         }
 
     WCharCP accessString = accessor.GetAccessString (depth);
@@ -740,24 +741,24 @@ static ECObjectsStatus          getValueHelper (ECValueR value, IECInstanceCR in
     if (arrayIndex < 0)
         return instance.GetValue (value, accessString);
 
-    return instance.GetValue (value, accessString, (UInt32)arrayIndex);
+    return instance.GetValue (value, accessString, (uint32_t)arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible, ECValueCR value)
+static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, uint32_t depth, bool compatible, ECValueCR value)
     {
     int arrayIndex = accessor[depth].GetArrayIndex();
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)accessor[depth].GetPropertyIndex();
+        uint32_t propertyIndex = (uint32_t)accessor[depth].GetPropertyIndex();
 
         if(arrayIndex < 0)
             {
             return instance.SetValue(propertyIndex, value);
             }
-        return instance.SetValue (propertyIndex, value, (UInt32)arrayIndex);
+        return instance.SetValue (propertyIndex, value, (uint32_t)arrayIndex);
         }
 
     // not the same enabler between accessor and instance so use access string to set value
@@ -768,25 +769,25 @@ static ECObjectsStatus          setValueHelper (IECInstanceR instance, ECValueAc
     if (arrayIndex < 0)
         return instance.SetValue (accessString, value);
 
-    return instance.SetValue (accessString, value, (UInt32)arrayIndex);
+    return instance.SetValue (accessString, value, (uint32_t)arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, UInt32 depth, bool compatible, ECValueCR value)
+static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, ECValueAccessorCR accessor, uint32_t depth, bool compatible, ECValueCR value)
     {
     int arrayIndex = accessor[depth].GetArrayIndex();
     if (compatible)
         {
-        UInt32 propertyIndex = (UInt32)accessor[depth].GetPropertyIndex();
+        uint32_t propertyIndex = (uint32_t)accessor[depth].GetPropertyIndex();
 
         if(arrayIndex < 0)
             {
             return instance.SetInternalValue(propertyIndex, value);
             }
 
-        return instance.SetInternalValue (propertyIndex, value, (UInt32)arrayIndex);
+        return instance.SetInternalValue (propertyIndex, value, (uint32_t)arrayIndex);
         }
 
     // not the same enabler between accessor and instance so use access string to set value
@@ -797,7 +798,7 @@ static ECObjectsStatus          setInternalValueHelper (IECInstanceR instance, E
     if (arrayIndex < 0)
         return instance.SetInternalValue (accessString, value);
 
-    return instance.SetInternalValue (accessString, value, (UInt32)arrayIndex);
+    return instance.SetInternalValue (accessString, value, (uint32_t)arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -820,7 +821,7 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor (ECValueR v, ECValu
 
     ECObjectsStatus status            = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance   = const_cast <IECInstance*> (this);
-    for (UInt32 depth = 0; depth < accessor.GetDepth(); depth ++)
+    for (uint32_t depth = 0; depth < accessor.GetDepth(); depth ++)
         {
         v.Clear();
         bool compatible = (accessor[depth].GetEnabler() == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
@@ -864,7 +865,7 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
     ECObjectsStatus status          = ECOBJECTS_STATUS_Success;
     IECInstancePtr  currentInstance = this;
 
-    for (UInt32 depth = 0; depth < accessor.GetDepth(); depth++)
+    for (uint32_t depth = 0; depth < accessor.GetDepth(); depth++)
         {
         bool compatible = (accessor[depth].GetEnabler() == &currentInstance->GetEnabler()); // if same enabler then use property index to set value else use access string
         int  propertyIndex   = accessor[depth].GetPropertyIndex();
@@ -876,21 +877,21 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 
             //Get the array value to check its size. Expand array if necessary.
             if (compatible)
-                currentInstance->GetValue(arrayInfoPlaceholder, (UInt32)propertyIndex);
+                currentInstance->GetValue(arrayInfoPlaceholder, (uint32_t)propertyIndex);
             else
                 currentInstance->GetValue(arrayInfoPlaceholder, accessor.GetAccessString (depth));
 
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
 
-            UInt32 arraySize = arrayInfoPlaceholder.GetArrayInfo().GetCount();
+            uint32_t arraySize = arrayInfoPlaceholder.GetArrayInfo().GetCount();
 
-            if ((UInt32)arrayIndex >= arraySize)
+            if ((uint32_t)arrayIndex >= arraySize)
                 {
                 if (arrayInfoPlaceholder.GetArrayInfo().IsFixedCount())
                     return ECOBJECTS_STATUS_IndexOutOfRange;
 
-                UInt32 numToInsert = 1 + (UInt32)arrayIndex - arraySize;
+                uint32_t numToInsert = 1 + (uint32_t)arrayIndex - arraySize;
 
                 WCharCP accessorWithBrackets = accessor.GetAccessString (depth);
                 if (NULL == accessorWithBrackets)
@@ -936,6 +937,17 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
             status = setValueHelper (*currentInstance, accessor, depth, compatible, valueForSettingStructClass);
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
+
+            // TFS#159623: Cannot use the StandaloneECInstance here...the containing ECInstance may have allocated a different ECInstance!
+            // Obtain the struct ECInstance from the containing ECInstance.
+            status = getValueHelper (valueForSettingStructClass, *currentInstance, accessor, depth, compatible);
+            if (ECOBJECTS_STATUS_Success != status || valueForSettingStructClass.IsNull() || !valueForSettingStructClass.IsStruct())
+                {
+                BeAssert (false);
+                return status;
+                }
+
+            newInstance = valueForSettingStructClass.GetStruct();
             }
 
         currentInstance = newInstance;
@@ -958,7 +970,7 @@ ECObjectsStatus           IECInstance::SetValueUsingAccessor (ECValueAccessorCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus    IECInstance::GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus    IECInstance::GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const
     {
     return  _GetIsPropertyNull (isNull, propertyIndex, useArrayIndex, arrayIndex);
     }
@@ -966,7 +978,7 @@ ECObjectsStatus    IECInstance::GetIsPropertyNull (bool& isNull, UInt32 property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Paul.Connelly                   03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIndex, bool useArrayIndex, UInt32 arrayIndex) const
+ECObjectsStatus IECInstance::_GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const
     {
     // default implementation. ECD-based implementations can be more efficient.
     isNull = true;
@@ -983,7 +995,7 @@ ECObjectsStatus IECInstance::_GetIsPropertyNull (bool& isNull, UInt32 propertyIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, WCharCP propertyAccessString) const 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -995,9 +1007,9 @@ ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, WCharCP propertyA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, WCharCP propertyAccessString, UInt32 arrayIndex) const 
+ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, WCharCP propertyAccessString, uint32_t arrayIndex) const 
     {
-    UInt32 propertyIndex=0;
+    uint32_t propertyIndex=0;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
 
     if (ECOBJECTS_STATUS_Success != status)
@@ -1009,7 +1021,7 @@ ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, WCharCP propertyA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIndex) const 
+ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, uint32_t propertyIndex) const 
     {
     return _GetIsPropertyNull (isNull, propertyIndex, false, 0); 
     }
@@ -1017,7 +1029,7 @@ ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIndex, UInt32 arrayIndex) const 
+ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, uint32_t propertyIndex, uint32_t arrayIndex) const 
     {
     return _GetIsPropertyNull (isNull, propertyIndex, true, arrayIndex); 
     }
@@ -1025,7 +1037,7 @@ ECObjectsStatus     IECInstance::IsPropertyNull (bool& isNull, UInt32 propertyIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECValueCR v) const
+ECObjectsStatus IECInstance::ValidateDateTimeMetadata (uint32_t propertyIndex, ECValueCR v) const
     {
     if (v.IsDateTime () && !v.IsNull ())
         {
@@ -1051,7 +1063,7 @@ ECObjectsStatus IECInstance::ValidateDateTimeMetadata (UInt32 propertyIndex, ECV
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 propertyIndex) const
+ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, uint32_t propertyIndex) const
     {
     //only set date time meta data if the value is not null and if the metadata wasn't already set (by impl of _GetValue)
     if (!v.IsNull () && v.IsDateTime () && !v.IsDateTimeMetadataSet ())
@@ -1073,7 +1085,7 @@ ECObjectsStatus IECInstance::SetDateTimeMetadataInECValue (ECValueR v, UInt32 pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus IECInstance::GetDateTimeInfo (DateTimeInfoR dateTimeInfo, UInt32 propertyIndex) const
+ECObjectsStatus IECInstance::GetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32_t propertyIndex) const
     {
     //TODO: Need to profile this. The implementation does look up the access string from the prop index
     //and then parses to access string (to check whether it might refer to a struct member) before
@@ -1101,7 +1113,7 @@ ECObjectsStatus                 ECInstanceInteropHelper::GetValue (IECInstanceCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 & value, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, int64_t & value, WCharCP managedPropertyAccessor)
     {
     ECValue v;
 
@@ -1213,7 +1225,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, Da
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, Int64 & value, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, int64_t & value, WCharCP managedPropertyAccessor)
     {
     ECValue v;
 
@@ -1255,7 +1267,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
     wcsncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
     indexBuffer[numChars]=0;
 
-    UInt32 indexValue = 0;
+    uint32_t indexValue = 0;
     if (1 != BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue))
         return ECOBJECTS_STATUS_Error;
 
@@ -1266,14 +1278,14 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
         return status;
 
     ArrayInfo arrayInfo = arrayVal.GetArrayInfo();
-    UInt32    size      = arrayInfo.GetCount();
+    uint32_t  size      = arrayInfo.GetCount();
 
     if (indexValue >= size)
         {
         if (arrayInfo.IsFixedCount())
             return ECOBJECTS_STATUS_Error;
 
-        UInt numToInsert = (indexValue + 1) - size;
+        unsigned int numToInsert = (indexValue + 1) - size;
         status =  instance.AddArrayElements (asBuffer, numToInsert);    
         if (ECOBJECTS_STATUS_Success != status)
             return status;
@@ -1301,7 +1313,7 @@ static ECObjectsStatus setECValueUsingFullAccessString (wchar_t* asBuffer, wchar
 
             ECValue                     arrayEntryVal;
 
-            for (UInt32 i=0; i<numToInsert; i++)
+            for (uint32_t i=0; i<numToInsert; i++)
                 {
                 // only set new struct value if AddArrayElements did not already set it
                 if (ECOBJECTS_STATUS_Success != instance.GetValue (arrayEntryVal, asBuffer, size+i) || arrayEntryVal.IsNull ())
@@ -1353,7 +1365,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, WChar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, WCharCP managedPropertyAccessor, Int64 value)
+ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, WCharCP managedPropertyAccessor, int64_t value)
     {
     ECValue v(value);
     return setECValueInInstance (v, instance, managedPropertyAccessor);
@@ -1425,7 +1437,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, WCharCP managedPropertyAccessor, Int64 value)
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, WCharCP managedPropertyAccessor, int64_t value)
     {
     ECValue v;
     v.SetDateTimeTicks (value);
@@ -1438,7 +1450,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, Int64 & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetLong (IECInstanceCR instance, int64_t & value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
@@ -1550,7 +1562,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetDateTime (IECInstanceCR instance, Da
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, Int64 & value, ECValueAccessorCR accessor)
+ECObjectsStatus ECInstanceInteropHelper::GetDateTimeTicks (IECInstanceCR instance, int64_t & value, ECValueAccessorCR accessor)
     {
     ECValue v;
 
@@ -1575,7 +1587,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetValue  (IECInstanceR instance, ECVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/       
-ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, ECValueAccessorCR accessor, Int64 value)
+ECObjectsStatus ECInstanceInteropHelper::SetLongValue (IECInstanceR instance, ECValueAccessorCR accessor, int64_t value)
     {
     ECValue v(value);
     return  instance.SetValueUsingAccessor (accessor, v);
@@ -1647,7 +1659,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetDateTimeValue (IECInstanceR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, ECValueAccessorCR accessor, Int64 value)
+ECObjectsStatus ECInstanceInteropHelper::SetDateTimeTicks (IECInstanceR instance, ECValueAccessorCR accessor, int64_t value)
     {
     ECValue v;
     v.SetDateTimeTicks (value);
@@ -1685,7 +1697,7 @@ void            ECInstanceInteropHelper::SetToNull (IECInstanceR instance, ECVal
 bool            ECInstanceInteropHelper::IsPropertyReadOnly (IECInstanceCR instance, ECValueAccessorR accessor)
     {
     ECObjectsStatus status;
-    UInt32 propertyIndex = accessor.DeepestLocation().GetPropertyIndex();
+    uint32_t propertyIndex = accessor.DeepestLocation().GetPropertyIndex();
     if (1 < accessor.GetDepth())
         {
         ECValue v;
@@ -1771,7 +1783,7 @@ ECN::ECEnablerP                  ECInstanceInteropHelper::GetEnablerForStructArr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, UInt32 index, ECN::ECValueAccessorCR structArrayValueAccessor, 
+ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, uint32_t index, ECN::ECValueAccessorCR structArrayValueAccessor, 
                                                              bool createPropertyIfNotFound, WCharCP wcharAccessString, 
                                                              SchemaKeyCR schemaKey, WCharCP className)
     {
@@ -1787,7 +1799,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
     instance.GetValueUsingAccessor (arrayVal, structArrayValueAccessor);
 
     ArrayInfo   arrayInfo  = arrayVal.GetArrayInfo();
-    UInt32      arrayCount = arrayInfo.GetCount();
+    uint32_t    arrayCount = arrayInfo.GetCount();
 
     // adjust the ECVAlueAccessor to include the array index
     ECN::ECValueAccessor arrayEntryValueAccessor (structArrayValueAccessor);
@@ -1810,7 +1822,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
             return ECOBJECTS_STATUS_Error;
             }
 
-        ::UInt32 numToInsert = (index + 1) - arrayCount;
+        ::uint32_t numToInsert = (index + 1) - arrayCount;
         if (ECN::ECOBJECTS_STATUS_Success != parentNativeInstance->AddArrayElements (wcharAccessString, numToInsert))
             {
             LOG.errorv(L"Unable to add array element(s) to native instance - access string \"%ls\"", structArrayValueAccessor.GetManagedAccessString().c_str());
@@ -1818,7 +1830,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
             }
 
         ECN::ECValue  arrayEntryVal;
-        for (::UInt32 i=0; i<numToInsert; i++)
+        for (::uint32_t i=0; i<numToInsert; i++)
             {
             arrayEntryVal.SetStruct (standaloneEnabler->CreateInstance().get());
             if (ECOBJECTS_STATUS_Success != parentNativeInstance->SetValue (wcharAccessString, arrayEntryVal, arrayCount+i))
@@ -1865,7 +1877,7 @@ ECObjectsStatus  ECInstanceInteropHelper::GetStructArrayEntry (ECN::ECValueAcces
 bool  ECInstanceInteropHelper::IsCalculatedECProperty  (IECInstanceCR instance, int propertyIndex)
     {
     WCharCP accessor;
-    if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetAccessString (accessor, (UInt32) propertyIndex))
+    if (ECOBJECTS_STATUS_Success != instance.GetEnabler().GetAccessString (accessor, (uint32_t) propertyIndex))
         return false;
 
     ECClassCR ecClass = instance.GetClass();
@@ -1888,15 +1900,15 @@ bool  ECInstanceInteropHelper::IsCalculatedECProperty  (IECInstanceCR instance, 
 ECObjectsStatus ECInstanceInteropHelper::SetValueByIndex (IECInstanceR instance, int propertyIndex, int arrayIndex, ECValueCR value)
     {
     if (-1 == arrayIndex)
-        return instance.SetValue ((UInt32) propertyIndex, value);
+        return instance.SetValue ((uint32_t) propertyIndex, value);
 
     ECN::ECValue v;
     instance.GetValue (v, propertyIndex);
-    UInt32 count = v.GetArrayInfo().GetCount();
-    if ((UInt32)arrayIndex >= count)
+    uint32_t count = v.GetArrayInfo().GetCount();
+    if ((uint32_t)arrayIndex >= count)
         {
         ECObjectsStatus status;
-        UInt32 size = 1 + ((UInt32)arrayIndex - count);
+        uint32_t size = 1 + ((uint32_t)arrayIndex - count);
         WCharCP accessString;
         status = instance.GetEnabler().GetAccessString (accessString, propertyIndex);
         if (ECOBJECTS_STATUS_Success != status)
@@ -1905,7 +1917,7 @@ ECObjectsStatus ECInstanceInteropHelper::SetValueByIndex (IECInstanceR instance,
         if (ECN::ECOBJECTS_STATUS_Success != status)
             return status;
         }
-    return instance.SetValue ((UInt32) propertyIndex, value, (UInt32) arrayIndex);
+    return instance.SetValue ((uint32_t) propertyIndex, value, (uint32_t) arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1914,16 +1926,16 @@ ECObjectsStatus ECInstanceInteropHelper::SetValueByIndex (IECInstanceR instance,
 ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECInstanceCR instance, int propertyIndex, int arrayIndex)
     {
     if (-1 == arrayIndex)
-        return instance.GetValue (value, (UInt32) propertyIndex);
+        return instance.GetValue (value, (uint32_t) propertyIndex);
 
     ECN::ECValue v;
     instance.GetValue (v, propertyIndex);
-    UInt32 count = v.GetArrayInfo().GetCount();
-    if ((UInt32)propertyIndex >= count)
+    uint32_t count = v.GetArrayInfo().GetCount();
+    if ((uint32_t)propertyIndex >= count)
         {
         value.SetToNull ();
         }
-    return instance.GetValue (value, (UInt32) propertyIndex, (UInt32) arrayIndex);
+    return instance.GetValue (value, (uint32_t) propertyIndex, (uint32_t) arrayIndex);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1932,7 +1944,7 @@ ECObjectsStatus ECInstanceInteropHelper::GetValueByIndex (ECValueR value, IECIns
 * ex: "SomeStruct.SomeStructArray[0].SomeArray"
 * @bsimethod                                                    Paul.Connelly   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus  resolveArrayAccessString (IECInstancePtr& resolvedInstance, UInt32& resolvedPropertyIndex, IECInstanceR rootInstance, WCharCP fullAccessString)
+static ECObjectsStatus  resolveArrayAccessString (IECInstancePtr& resolvedInstance, uint32_t& resolvedPropertyIndex, IECInstanceR rootInstance, WCharCP fullAccessString)
     {
     ECValueAccessor accessor;
     ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (accessor, rootInstance, fullAccessString);
@@ -1944,7 +1956,7 @@ static ECObjectsStatus  resolveArrayAccessString (IECInstancePtr& resolvedInstan
     resolvedInstance = const_cast<IECInstanceP> (&rootInstance);
     resolvedPropertyIndex = 0;
 
-    UInt32 depth = 0;
+    uint32_t depth = 0;
     for ( ; depth < accessor.GetDepth() - 1; depth++)
         {
         ECValue v;
@@ -1993,7 +2005,7 @@ static ECObjectsStatus  resolveArrayAccessString (IECInstancePtr& resolvedInstan
 ECObjectsStatus ECInstanceInteropHelper::ClearArray (IECInstanceR rootInstance, WCharCP accessString)
     {
     IECInstancePtr resolvedInstance;
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
         status = resolvedInstance->ClearArray (propertyIndex);
@@ -2004,10 +2016,10 @@ ECObjectsStatus ECInstanceInteropHelper::ClearArray (IECInstanceR rootInstance, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootInstance, WCharCP accessString, UInt32 arrayIndex)
+ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootInstance, WCharCP accessString, uint32_t arrayIndex)
     {
     IECInstancePtr resolvedInstance;
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
         status = resolvedInstance->RemoveArrayElement (propertyIndex, arrayIndex);
@@ -2018,10 +2030,10 @@ ECObjectsStatus ECInstanceInteropHelper::RemoveArrayElement (IECInstanceR rootIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, UInt32 count, UInt32 atIndex)
+ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInstance, WCharCP accessString, uint32_t count, uint32_t atIndex)
     {
     IECInstancePtr resolvedInstance;
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = resolveArrayAccessString (resolvedInstance, propertyIndex, rootInstance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
         status = -1 == atIndex ? resolvedInstance->AddArrayElements (propertyIndex, count) : resolvedInstance->InsertArrayElements (propertyIndex, atIndex, count);
@@ -2032,9 +2044,9 @@ ECObjectsStatus ECInstanceInteropHelper::AddArrayElements (IECInstanceR rootInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, UInt32 index, UInt32 size)
+ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP propertyAccessString, uint32_t index, uint32_t size)
     {
-    UInt32 propIdx;
+    uint32_t propIdx;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
     return ECOBJECTS_STATUS_Success == status ? InsertArrayElements (propIdx, index, size) : status;
     } 
@@ -2042,9 +2054,9 @@ ECObjectsStatus                 IECInstance::InsertArrayElements (WCharCP proper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, UInt32 size)
+ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyAccessString, uint32_t size)
     {
-    UInt32 propIdx;
+    uint32_t propIdx;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
     return ECOBJECTS_STATUS_Success == status ? AddArrayElements (propIdx, size) : status;
     }        
@@ -2052,9 +2064,9 @@ ECObjectsStatus                 IECInstance::AddArrayElements (WCharCP propertyA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECInstance::RemoveArrayElement (WCharCP propertyAccessString, UInt32 index)
+ECObjectsStatus                 IECInstance::RemoveArrayElement (WCharCP propertyAccessString, uint32_t index)
     {
-    UInt32 propIdx;
+    uint32_t propIdx;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propIdx, propertyAccessString);
     return ECOBJECTS_STATUS_Success == status ? RemoveArrayElement (propIdx, index) : status;
     } 
@@ -2064,7 +2076,7 @@ ECObjectsStatus                 IECInstance::RemoveArrayElement (WCharCP propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus                 IECInstance::ClearArray (WCharCP propertyAccessString)
     {
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = GetEnabler().GetPropertyIndex (propertyIndex, propertyAccessString);
     return ECOBJECTS_STATUS_Success == status ? ClearArray (propertyIndex) : status;
     }           
@@ -2072,10 +2084,10 @@ ECObjectsStatus                 IECInstance::ClearArray (WCharCP propertyAccessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECInstance::ClearArray (UInt32 propIdx)                                    { return _ClearArray (propIdx); }
-ECObjectsStatus IECInstance::InsertArrayElements (UInt32 propIdx, UInt32 idx, UInt32 size)  { return _InsertArrayElements (propIdx, idx, size); }
-ECObjectsStatus IECInstance::AddArrayElements (UInt32 propIdx, UInt32 size)                 { return _AddArrayElements (propIdx, size); }
-ECObjectsStatus IECInstance::RemoveArrayElement (UInt32 propIdx, UInt32 idx)                { return _RemoveArrayElement (propIdx, idx); }
+ECObjectsStatus IECInstance::ClearArray (uint32_t propIdx)                                    { return _ClearArray (propIdx); }
+ECObjectsStatus IECInstance::InsertArrayElements (uint32_t propIdx, uint32_t idx, uint32_t size)  { return _InsertArrayElements (propIdx, idx, size); }
+ECObjectsStatus IECInstance::AddArrayElements (uint32_t propIdx, uint32_t size)                 { return _AddArrayElements (propIdx, size); }
+ECObjectsStatus IECInstance::RemoveArrayElement (uint32_t propIdx, uint32_t idx)                { return _RemoveArrayElement (propIdx, idx); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -2247,7 +2259,7 @@ IECInstancePtr                  IECRelationshipInstance::GetTarget () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (Int64& sourceOrderId) const
+ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (int64_t& sourceOrderId) const
     {
     return _GetSourceOrderId (sourceOrderId);
     }
@@ -2255,7 +2267,7 @@ ECObjectsStatus                 IECRelationshipInstance::GetSourceOrderId (Int64
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
- ECObjectsStatus                IECRelationshipInstance::GetTargetOrderId (Int64& targetOrderId) const
+ ECObjectsStatus                IECRelationshipInstance::GetTargetOrderId (int64_t& targetOrderId) const
     {
     return _GetTargetOrderId (targetOrderId);
     }
@@ -2274,7 +2286,7 @@ BentleyStatus                   IECWipRelationshipInstance::SetName (WCharCP nam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetSourceOrderId (Int64 sourceOrderId)
+BentleyStatus                   IECWipRelationshipInstance::SetSourceOrderId (int64_t sourceOrderId)
     {
     return _SetSourceOrderId (sourceOrderId);
     }
@@ -2282,7 +2294,7 @@ BentleyStatus                   IECWipRelationshipInstance::SetSourceOrderId (In
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (Int64 targetOrderId)
+BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (int64_t targetOrderId)
     {
     return _SetTargetOrderId (targetOrderId);
     }
@@ -2290,7 +2302,7 @@ BentleyStatus                   IECWipRelationshipInstance::SetTargetOrderId (In
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void              convertByteArrayToString (WStringR outString, const byte *byteData, size_t numBytes)
+void              convertByteArrayToString (WStringR outString, const Byte *byteData, size_t numBytes)
     {
     static const wchar_t    base64Chars[] = {L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"};
 
@@ -2299,11 +2311,11 @@ void              convertByteArrayToString (WStringR outString, const byte *byte
     // from each 3 bytes we get 4 output characters, rounded up.
     for (size_t iByte=0; iByte < numBytes; iByte += 3)
         {
-        UInt32      nextThreeBytes = byteData[iByte] | (byteData[iByte+1] << 8) | (byteData[iByte+2] << 16);
+        uint32_t    nextThreeBytes = byteData[iByte] | (byteData[iByte+1] << 8) | (byteData[iByte+2] << 16);
 
         for (size_t jPos=0; jPos < 4; jPos++)
             {
-            byte    sixBits = nextThreeBytes & 0x3f;
+            Byte sixBits = nextThreeBytes & 0x3f;
 
             if ( (iByte + jPos) < (numBytes + 1) )
                 outString.append (1, base64Chars[sixBits]);
@@ -2315,7 +2327,7 @@ void              convertByteArrayToString (WStringR outString, const byte *byte
         }
     }
 
-typedef bvector<byte>   T_ByteArray;
+typedef bvector<Byte>   T_ByteArray;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2329,7 +2341,7 @@ bool   convertStringToByteArray (T_ByteArray& byteData, WCharCP stringData)
     // from each 4 characters we get 3 byte values.
     for (size_t iPos=0; iPos < stringLen; iPos+= 4)
         {
-        Int32   nextThreeBytes = 0;
+        int32_t nextThreeBytes = 0;
         int     numBytesToPush = 3;
         int     shift;
         int     jPos;
@@ -2360,7 +2372,7 @@ bool   convertStringToByteArray (T_ByteArray& byteData, WCharCP stringData)
                 }
             }
 
-        byte*   bytes = (byte*)&nextThreeBytes;
+        Byte*   bytes = (Byte*)&nextThreeBytes;
         byteData.push_back (*bytes);
         if (numBytesToPush > 1)
             byteData.push_back (*(bytes+1));
@@ -2703,7 +2715,7 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
         AppendAccessString (accessString, *baseAccessString, arrayProperty->GetName());
 
     // start the address out as zero.
-    UInt32      index = 0;
+    uint32_t    index = 0;
 
     // we have to find out what type the array is.
     ArrayKind   arrayKind = arrayProperty->GetKind();
@@ -2827,7 +2839,7 @@ InstanceReadStatus   ReadCustomSerializedStruct (StructECPropertyP structPropert
     #pragma warning(disable:4189) // setStatus unused if NDEBUG set.
 #endif // defined (_MSC_VER)
 
-InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, UInt32 index, BeXmlNodeR arrayMemberValue)
+InstanceReadStatus   ReadStructArrayMember (ECClassCR structClass, IECInstanceP owningInstance, WString& accessString, uint32_t index, BeXmlNodeR arrayMemberValue)
     {
     // On entry, arrayMemberValue is an XML Node for the element that starts the struct.
 
@@ -2937,7 +2949,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
         case PRIMITIVETYPE_DateTime:
             {
-            Int64   ticks;
+            int64_t ticks;
             BeXmlStatus status = primitiveValueNode.GetContentInt64Value (ticks);
             if (BEXML_Success != status)
                 {
@@ -2971,7 +2983,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
         case PRIMITIVETYPE_Integer:
             {
-            Int32   intValue;
+            int32_t intValue;
             BeXmlStatus status = primitiveValueNode.GetContentInt32Value (intValue);
             if (BEXML_Success != status)
                 {
@@ -2987,7 +2999,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
         case PRIMITIVETYPE_Long:
             {
-            Int64   longValue;
+            int64_t longValue;
             BeXmlStatus status = primitiveValueNode.GetContentInt64Value (longValue);
             if (BEXML_Success != status)
                 {
@@ -3248,7 +3260,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
         case PRIMITIVETYPE_Binary:
             {
             size_t      numBytes;
-            const byte* byteData; 
+            const Byte* byteData; 
             if (NULL != (byteData = ecValue.GetBinary (numBytes)))
                 {
                 WString    byteString;
@@ -3343,7 +3355,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
     if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
         return INSTANCE_WRITE_STATUS_Success;
 
-    UInt32 nElements = ecValue.GetArrayInfo().GetCount();
+    uint32_t nElements = ecValue.GetArrayInfo().GetCount();
 
     BeXmlNodeP  arrayNode = propertyValueNode.AddEmptyElement (arrayProperty.GetName().c_str());
 
@@ -3352,7 +3364,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         {
         PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
         Utf8CP          typeString  = GetPrimitiveTypeString (memberType);
-        for (UInt32 index=0; index < nElements ; index++)
+        for (uint32_t index=0; index < nElements ; index++)
             {
             if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3369,7 +3381,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {
-        for (UInt32 index=0; index < nElements ; index++)
+        for (uint32_t index=0; index < nElements ; index++)
             {
             if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
@@ -3556,7 +3568,7 @@ template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ec
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (instance, writeInstanceId)))
         return status;
 
-    UInt64  opts = BeXmlDom::TO_STRING_OPTION_Default;
+    uint64_t opts = BeXmlDom::TO_STRING_OPTION_Default;
     if ( ! isStandAlone)
         opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
 

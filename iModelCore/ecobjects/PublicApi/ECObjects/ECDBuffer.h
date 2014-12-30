@@ -21,21 +21,21 @@ EC_TYPEDEFS(ECDBuffer);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef UInt32 NullflagsBitmask;
-typedef UInt16 ClassIndex;
-typedef UInt16 SchemaIndex;
+typedef uint32_t NullflagsBitmask;
+typedef uint16_t ClassIndex;
+typedef uint16_t SchemaIndex;
 typedef RefCountedPtr<ClassLayout> ClassLayoutPtr;
 
 /*__PUBLISH_SECTION_END__*/
 
-typedef UInt32 SecondaryOffset;
-typedef UInt32 ArrayCount;
+typedef uint32_t SecondaryOffset;
+typedef uint32_t ArrayCount;
 
 #define NULLFLAGS_BITMASK_AllOn     0xFFFFFFFF
 
 /*__PUBLISH_SECTION_START__*/
 
-enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (UInt32)
+enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (uint32_t)
     {
     PROPERTYLAYOUTMODIFIERFLAGS_None              = 0x00,
     PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount = 0x01,
@@ -53,20 +53,20 @@ struct PropertyLayout
 friend struct ClassLayout;
 private:
     WString                 m_accessString;
-    UInt32                  m_parentStructIndex;
+    uint32_t                m_parentStructIndex;
     ECTypeDescriptor        m_typeDescriptor;
 
     // Using UInt32 instead of size_t below because we will persist this struct in an XAttribute. It will never be very big.
     //! An offset to either the data holding that property's value (for fixed-size values) or to the offset at which the properties value can be found.
-    UInt32              m_offset;
+    uint32_t            m_offset;
     //! Indicates some special handling for the ECProperty, e.g. PROPERTYLAYOUTMODIFIERFLAGS_IsReadOnly, PROPERTYLAYOUTMODIFIERFLAGS_IsCalculated, etc.
-    UInt32              m_modifierFlags;
+    uint32_t            m_modifierFlags;
     //! Data used with the modifier flag, like the length of a fixed-sized string.
-    UInt32              m_modifierData;
-    UInt32              m_nullflagsOffset;
+    uint32_t            m_modifierData;
+    uint32_t            m_nullflagsOffset;
     NullflagsBitmask    m_nullflagsBitmask;
 public:
-    PropertyLayout (WCharCP accessString, UInt32 psi, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags = 0,  UInt32 modifierData = 0) : //, ECPropertyCP property) :
+    PropertyLayout (WCharCP accessString, uint32_t psi, ECTypeDescriptor typeDescriptor, uint32_t offset, uint32_t nullflagsOffset, uint32_t nullflagsBitmask, uint32_t modifierFlags = 0,  uint32_t modifierData = 0) : //, ECPropertyCP property) :
         m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset),
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
@@ -77,9 +77,9 @@ private:
 
 public:
     ECOBJECTS_EXPORT WCharCP                     GetAccessString() const;       //!< Returns the access string for retrieving this property
-    ECOBJECTS_EXPORT UInt32                      GetParentStructIndex() const;  //!< Returns the property index of the struct parent of this property. If this is a root property an index of zero is returned.
-    ECOBJECTS_EXPORT UInt32                      GetOffset() const;             //!< Returns the offset to either the data holding this property's value (for fixed-size values) or to the offset at which the property's value can be found
-    ECOBJECTS_EXPORT UInt32                      GetNullflagsOffset() const;    //!< Returns the offset to Null flags bit mask.
+    ECOBJECTS_EXPORT uint32_t                    GetParentStructIndex() const;  //!< Returns the property index of the struct parent of this property. If this is a root property an index of zero is returned.
+    ECOBJECTS_EXPORT uint32_t                    GetOffset() const;             //!< Returns the offset to either the data holding this property's value (for fixed-size values) or to the offset at which the property's value can be found
+    ECOBJECTS_EXPORT uint32_t                    GetNullflagsOffset() const;    //!< Returns the offset to Null flags bit mask.
     ECOBJECTS_EXPORT NullflagsBitmask            GetNullflagsBitmask() const;   //!< Returns a bit mask that has the a single bit set. It can be used to AND with the bitmask at the offset returned by GetNullflagsOffset() to determine if the property is NULL.
     ECOBJECTS_EXPORT ECTypeDescriptor            GetTypeDescriptor() const;     //!< Returns an ECTypeDescriptor that defines this property
 
@@ -89,8 +89,8 @@ public:
     //! @li that a longer fixed size type should be treated as an optional variable-sized type
     //! @li that for a string, only an entry to the string table is stored
     //! @li a default value should be used
-    ECOBJECTS_EXPORT UInt32                      GetModifierFlags() const; 
-    ECOBJECTS_EXPORT UInt32                      GetModifierData() const;       //!< Returns the data used with the modifier flag, like the length of a fixed-sized string.
+    ECOBJECTS_EXPORT uint32_t                    GetModifierFlags() const; 
+    ECOBJECTS_EXPORT uint32_t                    GetModifierData() const;       //!< Returns the data used with the modifier flag, like the length of a fixed-sized string.
     ECOBJECTS_EXPORT bool                        IsReadOnlyProperty () const;   //!< Returns whether this is a read-only property
 
     //! Sets the readonly flag for this property
@@ -102,7 +102,7 @@ public:
 
     //! Gets the size required for this PropertyValue in the fixed Section of the IECInstance's memory
     //! Variable-sized types will have 4 byte SecondaryOffset stored in the fixed Section.
-    ECOBJECTS_EXPORT UInt32                       GetSizeInFixedSection() const;
+    ECOBJECTS_EXPORT uint32_t                     GetSizeInFixedSection() const;
     
     //! Returns a string containing detailed information about this property's characteristics
     //! (including access string, type name, offset, nullflagsOffset, nullflagsBitmask
@@ -129,14 +129,14 @@ struct ClassLayout : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
     friend struct ECDBuffer;
 private:
-    struct AccessStringIndexPair : bpair<WCharCP, UInt32>
+    struct AccessStringIndexPair : bpair<WCharCP, uint32_t>
         {
-        AccessStringIndexPair (WCharCP accessor, UInt32 index) : bpair<WCharCP, UInt32> (accessor, index) { }
+        AccessStringIndexPair (WCharCP accessor, uint32_t index) : bpair<WCharCP, uint32_t> (accessor, index) { }
         };
 
     typedef bvector<AccessStringIndexPair>                          IndicesByAccessString;
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
-    typedef bmap<UInt32, bvector<UInt32> >                          LogicalStructureMap;
+    typedef bmap<uint32_t, bvector<uint32_t> >                          LogicalStructureMap;
 
     enum State
         {
@@ -153,19 +153,19 @@ private:
     LogicalStructureMap     m_logicalStructureMap;
 
     // These members are transient
-    UInt32                            m_sizeOfFixedSection;
+    uint32_t                          m_sizeOfFixedSection;
     bool                              m_isRelationshipClass;         // make this a bitmask IsRelationshipClass, OnPartialInstanceLoaded (this should allow roundtrip native-managed-native
     int                               m_propertyIndexOfSourceECPointer;
     int                               m_propertyIndexOfTargetECPointer;
     int                               m_uniqueId;
     mutable CompatibleClassLayoutsMap m_compatibleClassLayouts;
-    mutable UInt32                    m_checkSum;
+    mutable uint32_t                  m_checkSum;
 
     void                            CheckForECPointers (WCharCP accessString);
 
     // returns an iterator into m_indicesByAccessStrings at which accessString exists (if forCreate=false), or would be inserted (if forCreate=true)
     IndicesByAccessString::const_iterator GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const;
-    UInt32  ComputeCheckSum () const;
+    uint32_t ComputeCheckSum () const;
 
     struct  Factory
     {
@@ -174,19 +174,19 @@ private:
     private:
         State           m_state;
         ECClassCR       m_ecClass;
-        UInt32          m_offset;
-        UInt32          m_nullflagsOffset;
-        UInt32          m_nonStructPropertyCount;
+        uint32_t        m_offset;
+        uint32_t        m_nullflagsOffset;
+        uint32_t        m_nonStructPropertyCount;
         ClassLayoutPtr  m_underConstruction;
 
-        UInt32      GetParentStructIndex (WCharCP accessString) const;
+        uint32_t    GetParentStructIndex (WCharCP accessString) const;
 
-        void        AddProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 size, UInt32 modifierFlags = 0, UInt32 modifierData = 0);
+        void        AddProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, uint32_t size, uint32_t modifierFlags = 0, uint32_t modifierData = 0);
         void        AddStructProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor);
         void        AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
-        void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, UInt32 arrayCount, bool isReadOnly, bool isCalculated);
+        void        AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, uint32_t arrayCount, bool isReadOnly, bool isCalculated);
         void        AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor propertyDescriptor, bool isReadOnly, bool isCalculated);
-        void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, UInt32 arrayCount, bool isReadOnly, bool isCalculated);
+        void        AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, uint32_t arrayCount, bool isReadOnly, bool isCalculated);
         void        AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addFixedSize);
 
         Factory (ECClassCR ecClass);
@@ -197,28 +197,28 @@ private:
     virtual ~ClassLayout();
 
     WString                GetShortDescription() const;
-    WString                LogicalStructureToString (UInt32 parentStructIndex = 0, UInt32 indentLevel = 0) const;
+    WString                LogicalStructureToString (uint32_t parentStructIndex = 0, uint32_t indentLevel = 0) const;
     BentleyStatus          SetClass (WCharCP  className);
 
 public:
     WString                 GetName() const;
     int                     GetUniqueId() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
-    void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, UInt32 propertyIndex);
-    ECOBJECTS_EXPORT void   InitializeMemoryForInstance(byte * data, UInt32 bytesAllocated) const;
-    ECOBJECTS_EXPORT UInt32 GetSizeOfFixedSection() const;
+    void                    AddToLogicalStructureMap (PropertyLayoutR propertyLayout, uint32_t propertyIndex);
+    ECOBJECTS_EXPORT void   InitializeMemoryForInstance(Byte * data, uint32_t bytesAllocated) const;
+    ECOBJECTS_EXPORT uint32_t GetSizeOfFixedSection() const;
 
-    ECOBJECTS_EXPORT UInt32                  GetFirstChildPropertyIndex (UInt32 parentIndex) const;
-    ECOBJECTS_EXPORT UInt32                  GetNextChildPropertyIndex (UInt32 parentIndex, UInt32 childIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus         GetAccessStringByIndex (WCharCP& accessString, UInt32 propertyIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& properties, UInt32 parentIndex) const;
-    ECOBJECTS_EXPORT bool                    HasChildProperties (UInt32 parentIndex) const;
-    ECOBJECTS_EXPORT UInt32                 GetParentPropertyIndex (UInt32 childIndex) const;
+    ECOBJECTS_EXPORT uint32_t               GetFirstChildPropertyIndex (uint32_t parentIndex) const;
+    ECOBJECTS_EXPORT uint32_t               GetNextChildPropertyIndex (uint32_t parentIndex, uint32_t childIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetAccessStringByIndex (WCharCP& accessString, uint32_t propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetPropertyIndices (bvector<uint32_t>& properties, uint32_t parentIndex) const;
+    ECOBJECTS_EXPORT bool                   HasChildProperties (uint32_t parentIndex) const;
+    ECOBJECTS_EXPORT uint32_t               GetParentPropertyIndex (uint32_t childIndex) const;
 
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
     ECOBJECTS_EXPORT bool                    Equals (ClassLayoutCR other) const;
 
-    ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, UInt32 parentStructIndex, ECTypeDescriptor typeDescriptor, UInt32 offset, UInt32 nullflagsOffset, UInt32 nullflagsBitmask, UInt32 modifierFlags, UInt32 modifierData);
+    ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, uint32_t parentStructIndex, ECTypeDescriptor typeDescriptor, uint32_t offset, uint32_t nullflagsOffset, uint32_t nullflagsBitmask, uint32_t modifierFlags, uint32_t modifierData);
     ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
@@ -245,13 +245,13 @@ public:
     ECOBJECTS_EXPORT int            GetECPointerIndex (ECRelationshipEnd end) const;
     
     //! Returns the checksum for this ClassLayout
-    ECOBJECTS_EXPORT UInt32          GetChecksum () const;
+    ECOBJECTS_EXPORT uint32_t        GetChecksum () const;
 
     //! Returns the number of properties this ClassLayout manages
-    ECOBJECTS_EXPORT UInt32          GetPropertyCount () const;
+    ECOBJECTS_EXPORT uint32_t        GetPropertyCount () const;
 
     //! Returns the number of properties this ClassLayout manages, not counting embedded structs
-    ECOBJECTS_EXPORT UInt32          GetPropertyCountExcludingEmbeddedStructs () const;
+    ECOBJECTS_EXPORT uint32_t        GetPropertyCountExcludingEmbeddedStructs () const;
 
     //! Given a property access string, will return the PropertyLayout
     //! @param[out] propertyLayout  Will point to the PropertyLayout if found
@@ -263,33 +263,33 @@ public:
     //! @param[out] propertyLayout  Will point to the PropertyLayout if found
     //! @param[in]  propertyIndex   The index in the ClassLayout of the desired property
     //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, uint32_t propertyIndex) const;
 
     //! Given a property layout, will return the property index within the ClassLayout
     //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
     //! @param[in]  propertyLayout  The propertyLayout of the property that we want the index for
     //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutIndex (UInt32& propertyIndex, PropertyLayoutCR propertyLayout) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyLayoutIndex (uint32_t& propertyIndex, PropertyLayoutCR propertyLayout) const;
 
     //! Given an access string, will return the property index within the ClassLayout
     //! @param[out] propertyIndex   Will contain the index of the given property within the ClassLayout, if found
     //! @param[in]  accessString    The access string for the desired property
     //! @returns ECOBJECTS_STATUS_PropertyNotFound if the property is not found, ECOBJECTS_STATUS_Success otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (UInt32& propertyIndex, WCharCP accessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus GetPropertyIndex (uint32_t& propertyIndex, WCharCP accessString) const;
 
     //! Given a propertyIndex, will return whether the property is read-only or not
     //! @param[in]  propertyIndex   The index within the ClassLayout of the property to check
     //! @returns true if the property is read-only, false otherwise
-    ECOBJECTS_EXPORT bool            IsPropertyReadOnly (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT bool            IsPropertyReadOnly (uint32_t propertyIndex) const;
 
     //! Sets the read-only status of a property, given its index within the ClassLayout
     //! @param[in]  propertyIndex   The index within the ClassLayout of the property to set the read-only flag for
     //! @param[in]  readOnly        Flag indicating whether this property is read-only
     //! @returns The value of readOnly if successfully set, otherwise false
-    ECOBJECTS_EXPORT bool            SetPropertyReadOnly (UInt32 propertyIndex, bool readOnly) const;
+    ECOBJECTS_EXPORT bool            SetPropertyReadOnly (uint32_t propertyIndex, bool readOnly) const;
 
     //! Determines the number of bytes used for property data, so far
-    ECOBJECTS_EXPORT UInt32         CalculateBytesUsed(byte const * propertyData) const;
+    ECOBJECTS_EXPORT uint32_t       CalculateBytesUsed(Byte const * propertyData) const;
 
     //! Checks the given classLayout to see if it is equal to, or a subset of, this layout
     //! @param[in]  layout  The ClassLayout to test compatibility of
@@ -361,7 +361,7 @@ public:
     //! @remarks This may often correspond to "number of ClassLayouts - 1", but not necessarily, because there can be gaps
     //!          so when you call GetClassLayout (index) you might get NULLs. Even the last one could be NULL.
     //! @remarks NOTE: Check IsEmpty() before GetMaxIndex() to ensure there is at least one ClassLayout, otherwise the return value of GetMaxIndex() is undefined
-    ECOBJECTS_EXPORT UInt32                 GetMaxIndex () const;
+    ECOBJECTS_EXPORT uint32_t               GetMaxIndex () const;
 
     //! Returns whether or not this SchemaLayout has any ClassLayouts defined.
     ECOBJECTS_EXPORT bool                   IsEmpty() const;
@@ -384,48 +384,48 @@ private:
     PropertyLayoutCR        m_propertyLayout;
     ECDBufferR  m_instance;
 
-    UInt32          m_arrayOffset;
+    uint32_t        m_arrayOffset;
 
-    UInt32          m_resizeIndex;
-    UInt32          m_resizeElementCount;
-    UInt32          m_resizeFixedSectionByteCount; // bytesNeeded
+    uint32_t        m_resizeIndex;
+    uint32_t        m_resizeElementCount;
+    uint32_t        m_resizeFixedSectionByteCount; // bytesNeeded
 
     PrimitiveType   m_elementType;
     bool            m_elementTypeIsFixedSize;
-    UInt32          m_elementSizeInFixedSection;
+    uint32_t        m_elementSizeInFixedSection;
 
     // state variables for pre resize
     ArrayCount      m_preAllocatedArrayCount;
-    UInt32          m_preNullFlagBitmasksCount;
-    UInt32          m_preHeaderByteCount;
-    UInt32          m_preFixedSectionByteCount;
-    UInt32          m_preArrayByteCount;
+    uint32_t        m_preNullFlagBitmasksCount;
+    uint32_t        m_preHeaderByteCount;
+    uint32_t        m_preFixedSectionByteCount;
+    uint32_t        m_preArrayByteCount;
 
     // state variables for post resize
     ArrayCount      m_postAllocatedArrayCount;
-    UInt32          m_postNullFlagBitmasksCount;
-    UInt32          m_postHeaderByteCount;
-    UInt32          m_postFixedSectionByteCount;
+    uint32_t        m_postNullFlagBitmasksCount;
+    uint32_t        m_postHeaderByteCount;
+    uint32_t        m_postFixedSectionByteCount;
     SecondaryOffset m_postSecondaryOffsetOfResizeIndex;
 
     // pointers to memory that must be shifted during resize
-    byte const *    m_pResizeIndexPreShift;
-    byte const *    m_pResizeIndexPostShift;
+    Byte const *    m_pResizeIndexPreShift;
+    Byte const *    m_pResizeIndexPostShift;
 
-    byte const *    m_propertyData;
+    Byte const *    m_propertyData;
 
-    ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 resizeIndex, UInt32 resizeElementCount);
+    ArrayResizer (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, uint32_t resizeIndex, uint32_t resizeElementCount);
 
     ECObjectsStatus       ShiftDataFollowingResizeIndex ();
     ECObjectsStatus       SetSecondaryOffsetsFollowingResizeIndex ();
     ECObjectsStatus       ShiftDataPreceedingResizeIndex ();
-    ECObjectsStatus       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, UInt32 byteCountToSet);
+    ECObjectsStatus       SetSecondaryOffsetsPreceedingResizeIndex (SecondaryOffset* pSecondaryOffset, uint32_t byteCountToSet);
     ECObjectsStatus       WriteArrayHeader ();
 
-    static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, UInt32 insertIndex, UInt32 insertCount);
+    static ECObjectsStatus    CreateNullArrayElementsAt (ClassLayoutCR classLayout, PropertyLayoutCR propertyLayout, ECDBufferR instance, uint32_t insertIndex, uint32_t insertCount);
     };
 
-enum ECDFormatVersion ENUM_UNDERLYING_TYPE(UInt8)
+enum ECDFormatVersion ENUM_UNDERLYING_TYPE(uint8_t)
     {
     // Invalid or unknown version, possibly result of corrupted ECD buffer
     ECDFormat_Invalid   = 0xFF,
@@ -447,7 +447,7 @@ enum ECDFormatVersion ENUM_UNDERLYING_TYPE(UInt8)
     ECDFormat_MinimumWritable = ECDFormat_v0,
     };
 
-enum ECDFlags ENUM_UNDERLYING_TYPE(UInt8)
+enum ECDFlags ENUM_UNDERLYING_TYPE(uint8_t)
     {
     // Encoding used for all strings in this buffer. If not set, encoding is Utf16
     ECDFLAG_Utf8Encoding            = 1 << 0,
@@ -465,18 +465,18 @@ struct ECDHeader_v0
     {
 protected:
     // The version of ECD format used by this buffer.
-    UInt8           m_formatVersion;
+    uint8_t         m_formatVersion;
     // The minimum version of ECD format which is read-compatible with the data in this buffer. Always less than or equal to m_formatVersion
     // Code compiled for an ECD format version less than m_readableByVersion should not attempt to read the buffer. All other code can safely read the buffer.
-    UInt8           m_readableByVersion;
+    uint8_t         m_readableByVersion;
     // The minimum version of ECD format which is write-compatible with the data in this buffer. Always less than or equal to m_formatVersion, always greater than or equal to m_readableByVersion.
     // Code compiled for an ECD format version less than m_writableByVersion should not attempt to modify the buffer.
     // All other code can safely modify the buffer, with the caveat that the persisted header is kept intact, aside from modifications to data understood by the compiled ECD format version.
-    UInt8           m_writableByVersion;
+    uint8_t         m_writableByVersion;
     // The size in bytes of this header. Adding this value to the base address of the buffer yields the beginning of the property data.
-    UInt8           m_headerSize;
+    uint8_t         m_headerSize;
     // A set of flags. See ECDFlags
-    UInt8           m_flags;
+    uint8_t         m_flags;
     // Additional data can be appended here in future versions by creating a subclass of ECDHeader_v0
 public:
     // Construct header with default string encoding
@@ -485,14 +485,14 @@ public:
     ECOBJECTS_EXPORT ECDHeader_v0 (bool useUtf8Encoding);
 
     // Read header from persisted ECData. Returns false if no ECDHeader could be extracted.
-    ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader_v0& header, byte const* data);
+    ECOBJECTS_EXPORT static bool    ReadHeader (ECDHeader_v0& header, Byte const* data);
 
     bool                GetFlag (ECDFlags flag) const       { return 0 != (m_flags & flag); }
     void                SetFlag (ECDFlags flag, bool set)   { m_flags = set ? (m_flags | flag) : (m_flags & ~flag); }
     bool                IsReadable() const                  { return ECDFormat_Current >= m_readableByVersion; }
     bool                IsWritable() const                  { return ECDFormat_Current >= m_writableByVersion; }
-    UInt8               GetFormatVersion() const            { return m_formatVersion; }
-    UInt8               GetSize() const                     { return m_headerSize; }
+    uint8_t             GetFormatVersion() const            { return m_formatVersion; }
+    uint8_t             GetSize() const                     { return m_headerSize; }
     };
 #pragma pack(pop)
 
@@ -516,41 +516,41 @@ private:
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_END__*/
 
-    UInt32              GetOffsetToPropertyData() const;
+    uint32_t            GetOffsetToPropertyData() const;
 
     //! Returns the offset of the property value relative to the start of the instance data.
     //! If useIndex is true then the offset of the array element value at the specified index is returned.
-    UInt32              GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
+    uint32_t            GetOffsetOfPropertyValue (PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0) const;
 
     //! Returns the size in bytes of the property value
-    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
+    uint32_t            GetPropertyValueSize (PropertyLayoutCR propertyLayout) const;
     //! Returns the size in bytes of the array element value at the specified index
-    UInt32              GetPropertyValueSize (PropertyLayoutCR propertyLayout, UInt32 index) const;
+    uint32_t            GetPropertyValueSize (PropertyLayoutCR propertyLayout, uint32_t index) const;
 
     //! Returns the address of the property value
-    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const;
+    Byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout) const;
     //! Returns the address of the array element value at the specified index
-    byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, UInt32 index) const;
+    Byte const *        GetAddressOfPropertyValue (PropertyLayoutCR propertyLayout, uint32_t index) const;
 
     //! Returns the offset of the specified array index relative to the start of the instance data.
     //! Note that this offset does not necessarily contain the index value.  If the element type is fixed it contains the value but if it is a variable
     //! size type then the index contains a secondary offset.  If you need the offset of the actual element value then use GetOffsetOfArrayIndexValue
     //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
     //! a valid range.
-    UInt32              GetOffsetOfArrayIndex (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    uint32_t            GetOffsetOfArrayIndex (uint32_t arrayOffset, PropertyLayoutCR propertyLayout, uint32_t index) const;
 
     //! Returns the offset of the specified array index value relative to the start of the instance data.
     //! This method does not do any parameter checking.  It is the responsibility of the caller to ensure the property is an array and the index is in
     //! a valid range.
-    UInt32              GetOffsetOfArrayIndexValue (UInt32 arrayOffset, PropertyLayoutCR propertyLayout, UInt32 index) const;
+    uint32_t            GetOffsetOfArrayIndexValue (uint32_t arrayOffset, PropertyLayoutCR propertyLayout, uint32_t index) const;
 
     //! Returns true if the property value is null; otherwise false
     //! If nIndices is > 0 then the null check is based on the array element at the specified index
-    bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;
+    bool                IsPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0) const;
 
     //! Sets the null bit of the specified property to the value indicated by isNull
     //! If nIndices is > 0 then the null bit is set for the array element at the specified index
-    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool isNull);
+    void                SetPropertyValueNull (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, bool isNull);
 
     //! Shifts the values' data and adjusts SecondaryOffsets for all variable-sized property values
     //! AFTER the given one, to make room for additional bytes needed for the property value of the given PropertyLayout
@@ -559,20 +559,20 @@ private:
     //! @param bytesAllocated How much memory is allocated for the data
     //! @param propertyLayout PropertyLayout of the variable-sized property whose size is increasing
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
-    ECObjectsStatus                   ShiftValueData(byte * data, UInt32 bytesAllocated, PropertyLayoutCR propertyLayout, Int32 shiftBy);
-    ECObjectsStatus                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 arrayCount,  UInt32 endOfValueDataOffset, Int32 shiftBy);
+    ECObjectsStatus                   ShiftValueData(Byte * data, uint32_t bytesAllocated, PropertyLayoutCR propertyLayout, int32_t shiftBy);
+    ECObjectsStatus                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, uint32_t arrayIndex, uint32_t arrayCount,  uint32_t endOfValueDataOffset, int32_t shiftBy);
 
-    ECObjectsStatus                   EnsureSpaceIsAvailable (UInt32& offset, PropertyLayoutCR propertyLayout, UInt32 bytesNeeded);
-    ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (PropertyLayoutCR propertyLayout, UInt32 arrayIndex, UInt32 bytesNeeded);
-    ECObjectsStatus                   GrowPropertyValue (PropertyLayoutCR propertyLayout, UInt32 additionalbytesNeeded);
+    ECObjectsStatus                   EnsureSpaceIsAvailable (uint32_t& offset, PropertyLayoutCR propertyLayout, uint32_t bytesNeeded);
+    ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (PropertyLayoutCR propertyLayout, uint32_t arrayIndex, uint32_t bytesNeeded);
+    ECObjectsStatus                   GrowPropertyValue (PropertyLayoutCR propertyLayout, uint32_t additionalbytesNeeded);
     // Updates the calculated value in memory and returns the updated value in existingValue
-    ECObjectsStatus                   EvaluateCalculatedProperty (PropertyLayoutCR propertyLayout, ECValueR existingValue, bool useArrayIndex, UInt32 arrayIndex) const;
+    ECObjectsStatus                   EvaluateCalculatedProperty (PropertyLayoutCR propertyLayout, ECValueR existingValue, bool useArrayIndex, uint32_t arrayIndex) const;
 
-    ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, bool alreadyCalculated);
+    ECObjectsStatus                   SetPrimitiveValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, bool alreadyCalculated);
 
-    ECObjectsStatus                   ModifyData (byte const* data, void const* newData, size_t dataLength);
-    ECObjectsStatus                   ModifyData (UInt32 const* data, UInt32 newData);
-    ECObjectsStatus                   MoveData (byte* to, byte const* from, size_t dataLength);
+    ECObjectsStatus                   ModifyData (Byte const* data, void const* newData, size_t dataLength);
+    ECObjectsStatus                   ModifyData (uint32_t const* data, uint32_t newData);
+    ECObjectsStatus                   MoveData (Byte* to, Byte const* from, size_t dataLength);
 
     // These methods are for internal use by ECDBuffer only. They should be used within a single scope and *must* be paired. ScopedDataAccessor helps ensure this.
     friend struct ScopedDataAccessor;
@@ -580,7 +580,7 @@ private:
     virtual bool                      _ReleaseData() const = 0;
 protected:
     //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
-    ECOBJECTS_EXPORT UInt32                 CalculateBytesUsed () const;
+    ECOBJECTS_EXPORT uint32_t               CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
 
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
@@ -599,28 +599,28 @@ protected:
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is obtained.
     //! This is protected because implementors of _GetStructArrayArrayValueFromMemory should call it to obtain the binary primitive value that they stored
     //! when _SetStructArrayValueToMemory was invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetPrimitiveValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0) const;    
     //! Sets the primitive value for the specified property
     //! If nIndices is > 0 then the primitive value for the array element at the specified index is set.
     //! This is protected because implementors of _SetStructArrayArrayValueToMemory should call it to store a binary primitive value that can be retrieved
     //! when _GetStructArrayValueFromMemory is invoked as a means to locate the externalized struct array value.
-    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, UInt32 index = 0);    
+    ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0);    
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, UInt32 index = 0) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, UInt32 propertyIndex, bool useArrayIndex = false, UInt32 arrayIndex = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, uint32_t index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, uint32_t propertyIndex, bool useArrayIndex = false, uint32_t arrayIndex = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout);          
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index);              
-    ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, UInt32 index = 0);
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, UInt32 index = 0);      
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (UInt32 propertyIndex, ECValueCR v, bool useArrayIndex = false, UInt32 arrayIndex = 0);      
-    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (UInt32 propIdx, UInt32 insertIndex, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (UInt32 propIdx, UInt32 insertCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (UInt32 propIdx, UInt32 removeIndex, UInt32 removeCount);
-    ECOBJECTS_EXPORT ECObjectsStatus  ClearArrayElementsFromMemory (UInt32 propIdx);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, uint32_t index);              
+    ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, uint32_t index = 0);
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, uint32_t index = 0);      
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex = false, uint32_t arrayIndex = 0);      
+    ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (uint32_t propIdx, uint32_t insertIndex, uint32_t insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (uint32_t propIdx, uint32_t insertCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsFromMemory (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  RemoveArrayElementsAt (uint32_t propIdx, uint32_t removeIndex, uint32_t removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus  ClearArrayElementsFromMemory (uint32_t propIdx);
     ECOBJECTS_EXPORT WString          InstanceDataToString (WCharCP indent) const;
-    ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (bool& isNull, UInt32 propertyIndex, bool useIndex, UInt32 index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  GetIsNullValueFromMemory (bool& isNull, uint32_t propertyIndex, bool useIndex, uint32_t index) const;
 
     ECOBJECTS_EXPORT ECObjectsStatus  CopyPropertiesFromBuffer (ECDBufferCR src);
 
@@ -633,28 +633,28 @@ protected:
     //! Note that top-level struct properties will automatically be stored in the data section of the instance.  It is only struct array values that must be stored
     //! externally.
     //! If isInitializing is true, we are in the process of copying ECD memory buffer from another ECDBuffer, in which case this buffer's struct value ID entries are not valid.
-    virtual ECObjectsStatus         _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, UInt32 index) = 0;
-    virtual ECObjectsStatus         _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index) const = 0;
+    virtual ECObjectsStatus         _SetStructArrayValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, uint32_t index) = 0;
+    virtual ECObjectsStatus         _GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index) const = 0;
     virtual ECN::PrimitiveType      _GetStructArrayPrimitiveType () const = 0;
 
-    virtual ECObjectsStatus         _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount) = 0;
+    virtual ECObjectsStatus         _RemoveStructArrayElementsFromMemory (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount) = 0;
     virtual bool                    _IsStructValidForArray (IECInstanceCR structInstance, PropertyLayoutCR propLayout) const = 0;
 
     //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
-    virtual void                    _HandleArrayResize (PropertyLayoutCP propertyLayout, UInt32 atIndex, Int32 countDelta) { };
+    virtual void                    _HandleArrayResize (PropertyLayoutCP propertyLayout, uint32_t atIndex, int32_t countDelta) { };
 
     virtual bool                   _IsMemoryInitialized () const = 0;
 
     //! Get a pointer to the first byte of the ECDBuffer's data. This points to the first byte of the ECDHeader
-    virtual byte const *          _GetData () const = 0;
-    virtual ECObjectsStatus       _ModifyData (UInt32 offset, void const * newData, UInt32 dataLength) = 0;
-    virtual ECObjectsStatus       _MoveData (UInt32 toOffset, UInt32 fromOffset, UInt32 dataLength) = 0;
-    virtual UInt32                _GetBytesAllocated () const = 0;
+    virtual Byte const *          _GetData () const = 0;
+    virtual ECObjectsStatus       _ModifyData (uint32_t offset, void const * newData, uint32_t dataLength) = 0;
+    virtual ECObjectsStatus       _MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) = 0;
+    virtual uint32_t              _GetBytesAllocated () const = 0;
 
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual ECObjectsStatus      _GrowAllocation (UInt32 additionalBytesNeeded) = 0;
+    virtual ECObjectsStatus      _GrowAllocation (uint32_t additionalBytesNeeded) = 0;
 
     //! Shrinks the allocated IECInstance data to be as small as possible
     virtual ECObjectsStatus    _ShrinkAllocation () = 0;
@@ -662,7 +662,7 @@ protected:
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
 
-    virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable) {};
+    virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, int flagIndex, bool enable) {};
 
     virtual void                _ClearValues() = 0;
     virtual ECObjectsStatus     _CopyFromBuffer (ECDBufferCR source) = 0;
@@ -676,10 +676,10 @@ protected:
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;
 
     // Get a pointer to the first byte of the ECDBuffer's property data. This is the first byte beyond the ECDHeader.
-    ECOBJECTS_EXPORT byte const*    GetPropertyData() const;
+    ECOBJECTS_EXPORT Byte const*    GetPropertyData() const;
 
 public:
-    ECOBJECTS_EXPORT ECObjectsStatus        GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, UInt32 index, int* structValueIdentifier = NULL) const;
+    ECOBJECTS_EXPORT ECObjectsStatus        GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index, int* structValueIdentifier = NULL) const;
 
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
     //! This is important when an array has a minimum size but has not yet been initialized.  We delay initializing the memory for the minimum # of elements until
@@ -693,17 +693,17 @@ public:
     // Does not copy struct array instances, only their identifiers. In general CopyFromBuffer() should be used instead.
     ECOBJECTS_EXPORT ECObjectsStatus        CopyDataBuffer (ECDBufferCR src, bool allowClassLayoutConversion);
     ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
-    ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, UInt32 removeIndex, UInt32 removeCount);
+    ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);
    
-    ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index, int flagIndex, bool enable);
+    ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, int flagIndex, bool enable);
     ECOBJECTS_EXPORT ECN::PrimitiveType     GetStructArrayPrimitiveType () const;
 
     // Compress the memory storing the data to as small a size as possible
     ECOBJECTS_EXPORT ECObjectsStatus        Compress();
     // Calculate how many bytes are required for an empty buffer using the specified classLayout
-    ECOBJECTS_EXPORT static UInt32          CalculateInitialAllocation (ClassLayoutCR classLayout);
+    ECOBJECTS_EXPORT static uint32_t        CalculateInitialAllocation (ClassLayoutCR classLayout);
     // Initialize a block of memory for a new ECDBuffer. If forceUtf8 is true, all strings in the buffer will be stored as Utf8; otherwise the default string encoding will be used.
-    ECOBJECTS_EXPORT static void            InitializeMemory(ClassLayoutCR classLayout, byte* data, UInt32 bytesAllocated, bool forceUtf8 = false);
+    ECOBJECTS_EXPORT static void            InitializeMemory(ClassLayoutCR classLayout, Byte* data, uint32_t bytesAllocated, bool forceUtf8 = false);
 
     //! Given a persisted ECD buffer, returns true if the data is compatible with ECDFormat_Current.
     //! This method must be called before attempting to instantiate an ECD-based instance from a block of persistent memory.
@@ -712,7 +712,7 @@ public:
     //! @param[in]  data            The ECD-formatted block of memory
     //! @param[in]  requireWritable If true, the method will return false if the block of memory is not write-compatible with ECDFormat_Current.
     //! @return     true if the memory is read-compatible (if requireWritable=false) or write-compatible(if requireWritable=true) with ECDFormat_Current
-    ECOBJECTS_EXPORT static bool            IsCompatibleVersion (ECDHeader* header, byte const* data, bool requireWritable = false);
+    ECOBJECTS_EXPORT static bool            IsCompatibleVersion (ECDHeader* header, Byte const* data, bool requireWritable = false);
 
     // Encoding used by all strings in the buffer
     enum StringEncoding
@@ -733,7 +733,7 @@ public:
     ECOBJECTS_EXPORT size_t                 GetBufferSize() const;
     // Copies the ECD memory buffer (including the header) to the specified block of memory. Caller is responsible for allocating a block of memory of sufficient size.
     // (Call GetBufferSize() to determine the required size of the allocation).
-    ECOBJECTS_EXPORT void                   GetBufferData (byte* dest) const;
+    ECOBJECTS_EXPORT void                   GetBufferData (Byte* dest) const;
 
     // Evaluates all calculated property values in the buffer. Recurses into struct array members.
     ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties ();
@@ -794,7 +794,7 @@ public:
             m_buffer->_ReleaseData();
         }
     bool            IsValid() const { return NULL != m_buffer; }
-    byte const*     GetData() const { return NULL != m_buffer ? m_buffer->_GetData() : NULL; }
+    Byte const*     GetData() const { return NULL != m_buffer ? m_buffer->_GetData() : NULL; }
     };
 
 /*__PUBLISH_SECTION_START__*/

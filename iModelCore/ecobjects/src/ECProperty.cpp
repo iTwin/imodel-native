@@ -862,7 +862,7 @@ ECObjectsStatus ArrayECProperty::SetStructElementType (ECClassCP structType)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ArrayECProperty::GetMinOccurs () const
+uint32_t ArrayECProperty::GetMinOccurs () const
     {
     return m_minOccurs;
     }
@@ -870,7 +870,7 @@ UInt32 ArrayECProperty::GetMinOccurs () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetMinOccurs (UInt32 minOccurs)
+ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
     {
     PRECONDITION (minOccurs <= m_maxOccurs, ECOBJECTS_STATUS_PreconditionViolated);
     m_minOccurs = minOccurs;
@@ -882,7 +882,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (UInt32 minOccurs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
     {    
-    UInt32 iMinOccurs;
+    uint32_t iMinOccurs;
     int count = BE_STRING_UTILITIES_SWSCANF (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
@@ -898,7 +898,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ArrayECProperty::GetMaxOccurs () const
+uint32_t ArrayECProperty::GetMaxOccurs () const
     {
     return /* m_maxOccurs; */ UINT_MAX; // D-106653
     }
@@ -906,7 +906,7 @@ UInt32 ArrayECProperty::GetMaxOccurs () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
+ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
     {
     // D-106653: Note: We store maxOccurs as read from schema, but we do not enforce it - callers can increase the size of the array beyond maxOccurs and array elements are always stored in variable-size section
     // of ECD buffer.
@@ -922,7 +922,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (UInt32 maxOccurs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
     {    
-    UInt32 iMaxOccurs;
+    uint32_t iMaxOccurs;
     int count = BE_STRING_UTILITIES_SWSCANF (maxOccurs.c_str(), L"%u", &iMaxOccurs);
     if (count != 1)
         {
@@ -970,15 +970,15 @@ bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) 
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP            IECTypeAdapterContext::GetProperty() const          { return _GetProperty(); }
-UInt32                  IECTypeAdapterContext::GetComponentIndex() const    { return _GetComponentIndex(); }
+uint32_t                IECTypeAdapterContext::GetComponentIndex() const    { return _GetComponentIndex(); }
 bool                IECTypeAdapterContext::Is3d() const                  { return _Is3d(); }
 IECInstanceCP       IECTypeAdapterContext::GetECInstance() const         { return _GetECInstance(); }
-ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
+ECObjectsStatus     IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, uint32_t arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, WCharCP accessor, UInt32 arrayIndex) const
+ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, WCharCP accessor, uint32_t arrayIndex) const
     {
     IECInstanceCP instance = GetECInstance();
     if (NULL != instance)

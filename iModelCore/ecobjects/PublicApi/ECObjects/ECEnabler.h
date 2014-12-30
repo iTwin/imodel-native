@@ -83,15 +83,15 @@ protected:
     ECOBJECTS_EXPORT ECEnabler(ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
 
     virtual WCharCP                 _GetName() const = 0;
-    virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const = 0;
-    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const = 0;
-    virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const = 0;
-    virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const = 0;
-    virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const = 0;
+    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const = 0;
+    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const = 0;
+    virtual uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const = 0;
+    virtual uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const = 0;
+    virtual ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const = 0;
 
-    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const;
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const;
-    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const;
 
     // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
@@ -100,14 +100,14 @@ protected:
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR, ECN::PrimitiveType, IPropertyProcessor const&, PropertyProcessingOptions) const;
     ECOBJECTS_EXPORT         bool                       ProcessStructProperty (bset<ECClassCP>& failedClasses, bool& allStructsFailed, ECValueCR propValue, ECN::PrimitiveType primitiveType, IPropertyProcessor const& proc, PropertyProcessingOptions opts) const;
 #endif
-    virtual bool                    _HasChildProperties (UInt32 parentIndex) const = 0;
-    virtual UInt32                  _GetParentPropertyIndex (UInt32 childIndex) const = 0;
+    virtual bool                    _HasChildProperties (uint32_t parentIndex) const = 0;
+    virtual uint32_t                _GetParentPropertyIndex (uint32_t childIndex) const = 0;
 
 
 public:
-    ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (uint32_t propertyIndex) const;
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (WCharCP accessString) const;
-    ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (uint32_t propertyIndex) const;
 
 // constructors are hidden from published API -> make it abstract in the published API
 //__PUBLISH_CLASS_VIRTUAL__
@@ -125,41 +125,41 @@ public:
     //! @param[out]     propertyIndex           Will be set to the corresponding property index
     //! @param[in]      propertyAccessString    Access string for which to obtain the property index
     //! @return ECOBJECTS_STATUS_Success if access string successfully converted, or an error code.
-    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (UInt32& propertyIndex, WCharCP propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetPropertyIndex     (uint32_t& propertyIndex, WCharCP propertyAccessString) const;
 
     //! Given a propertyIndex, find the corresponding property access string
     //! @param[out]     propertyAccessString    Will be set to the corresponding access string
     //! @param[in]      propertyIndex           Property index for which to obtain an access string
     //! @return ECOBJECTS_STATUS_Success if property index successfully converted, or an error code.
-    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, UInt32 propertyIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetAccessString      (WCharCP& propertyAccessString, uint32_t propertyIndex) const;
 
     //! Obtain the property index of the first property of this enabler's ECClass (if parentIndex == 0), or the first child property
     //! of the struct property indicated by parentIndex.
     //! @param[in]      parentIndex     The property index of the parent struct property, or 0 if not a member of a struct.
     //! @return The first property index, or 0 if no such property exists.
-    ECOBJECTS_EXPORT UInt32                     GetFirstPropertyIndex (UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT uint32_t                   GetFirstPropertyIndex (uint32_t parentIndex) const;
 
     //! Get the next (after inputIndex) propertyIndex (used in conjunction with GetFirstPropertyIndex for efficiently looping over property values.)
     //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
     //! @param[in]      inputIndex      Index of the preceding property.
     //! @return The index of the property following inputIndex, or 0 if no such property exists.
-    ECOBJECTS_EXPORT UInt32                     GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const;
+    ECOBJECTS_EXPORT uint32_t                   GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const;
 
     //! Return true if the property associated with parentIndex has child properties
     //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
     //! @return True if the specified property has child properties (i.e., is a struct property)
-    ECOBJECTS_EXPORT bool                       HasChildProperties (UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT bool                       HasChildProperties (uint32_t parentIndex) const;
 
     //! If childIndex refers to a member of a struct, returns the index of the struct property which contains it
     //! @param[in]      childIndex The index of the child property
     //! @return The index of the parent property, or 0 if the child property has no parent (i.e. is not a member of a struct)
-    ECOBJECTS_EXPORT UInt32                     GetParentPropertyIndex (UInt32 childIndex) const;
+    ECOBJECTS_EXPORT uint32_t                   GetParentPropertyIndex (uint32_t childIndex) const;
 
     //! Get vector of all property indices for property defined by parent index.
     //! @param[out]     indices         Vector to hold the property indices.
     //! @param[in]      parentIndex     Property index of the parent struct property, or 0 if not a member of a struct.
     //! @return ECOBJECTS_STATUS_Success if vector of indices populated, or an error code.
-    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const;
+    ECOBJECTS_EXPORT ECObjectsStatus         GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const;
 
     //! Get the IStandaloneEnablerLocater for this enabler
     //! @return an IStandaloneEnablerLocater
@@ -200,15 +200,15 @@ private:
     ECWrappedEnabler (ECEnablerR enabler) : ECEnabler (enabler.GetClass(), NULL), m_enabler (&enabler) { }
 
     virtual WCharCP                 _GetName() const { return m_enabler->GetName(); }
-    virtual ECObjectsStatus         _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const { return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
-    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
-    virtual UInt32                  _GetFirstPropertyIndex (UInt32 parentIndex) const { return m_enabler->GetFirstPropertyIndex (parentIndex); }
-    virtual UInt32                  _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
-    virtual ECObjectsStatus         _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
+    virtual ECObjectsStatus         _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const { return m_enabler->GetPropertyIndex (propertyIndex, propertyAccessString); }
+    virtual ECObjectsStatus         _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const { return m_enabler->GetAccessString (propertyAccessString, propertyIndex); }
+    virtual uint32_t                _GetFirstPropertyIndex (uint32_t parentIndex) const { return m_enabler->GetFirstPropertyIndex (parentIndex); }
+    virtual uint32_t                _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const { return m_enabler->GetNextPropertyIndex (parentIndex, inputIndex); }
+    virtual ECObjectsStatus         _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const { return m_enabler->GetPropertyIndices (indices, parentIndex); }
 
-    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (UInt32 propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
+    ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (uint32_t propertyIndex) const { return m_enabler->LookupECProperty (propertyIndex); }
     ECOBJECTS_EXPORT virtual ECPropertyCP   _LookupECProperty (WCharCP accessString) const { return m_enabler->LookupECProperty (accessString); }
-    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (UInt32 propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
+    ECOBJECTS_EXPORT virtual bool           _IsPropertyReadOnly (uint32_t propertyIndex) const { return m_enabler->IsPropertyReadOnly (propertyIndex); }
 
     // IStandaloneEnablerLocater
     ECOBJECTS_EXPORT virtual StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className) { return m_enabler->LocateStandaloneEnabler (schemaKey, className); }
@@ -217,8 +217,8 @@ private:
     ECOBJECTS_EXPORT virtual PropertyProcessingResult   _ProcessPrimitiveProperties (bset<ECClassCP>& failedClasses, IECInstanceCR instance, ECN::PrimitiveType primType, IPropertyProcessor const& processor, PropertyProcessingOptions opts) const
         { return m_enabler->ProcessPrimitiveProperties (failedClasses, instance, primType, processor, opts); }
 #endif
-    virtual bool                    _HasChildProperties (UInt32 parentIndex) const { return m_enabler->HasChildProperties (parentIndex); }
-    virtual UInt32                  _GetParentPropertyIndex (UInt32 childIndex) const override { return m_enabler->GetParentPropertyIndex (childIndex); }
+    virtual bool                    _HasChildProperties (uint32_t parentIndex) const { return m_enabler->HasChildProperties (parentIndex); }
+    virtual uint32_t                _GetParentPropertyIndex (uint32_t childIndex) const override { return m_enabler->GetParentPropertyIndex (childIndex); }
 public:
     static ECEnablerPtr Create (ECEnablerR enabler) { return new ECWrappedEnabler (enabler); }
     };
@@ -255,9 +255,9 @@ protected:
  struct          PropertyIndexedEnabler  : BaseEnablerClass
     {
     private:
-        virtual ECObjectsStatus _GetPropertyIndex (UInt32& propertyIndex, WCharCP propertyAccessString) const override
+        virtual ECObjectsStatus _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const override
             {
-            for (UInt32 index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
+            for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 {
                 if (0 == BeStringUtilities::Wcsicmp (propertyAccessString, DerivedClass::PropertyNameList[index]))
                     {
@@ -268,7 +268,7 @@ protected:
             return ECOBJECTS_STATUS_InvalidPropertyAccessString;
             }
 
-        virtual ECObjectsStatus _GetAccessString  (WCharCP& propertyAccessString, UInt32 propertyIndex) const override
+        virtual ECObjectsStatus _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const override
             {
             if (propertyIndex > DerivedClass::MAX_PROPERTY_COUNT || propertyIndex <= 0)
                 return ECOBJECTS_STATUS_IndexOutOfRange;
@@ -277,7 +277,7 @@ protected:
             return ECOBJECTS_STATUS_Success;
             }
 
-        virtual UInt32          _GetNextPropertyIndex  (UInt32 parentIndex, UInt32 inputIndex) const override
+        virtual uint32_t        _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override
             {
             if (inputIndex> 0 && inputIndex <= DerivedClass::MAX_PROPERTY_COUNT)
                 return ++inputIndex;
@@ -285,17 +285,17 @@ protected:
             }
 
         
-        virtual ECObjectsStatus _GetPropertyIndices (bvector<UInt32>& indices, UInt32 parentIndex) const override
+        virtual ECObjectsStatus _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override
             {
-            for (UInt32 index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
+            for (uint32_t index = 0; index < DerivedClass::MAX_PROPERTY_COUNT; ++index)
                 indices.push_back(index + 1);
             return ECOBJECTS_STATUS_Success;
 
             }
-        virtual UInt32          _GetFirstPropertyIndex (UInt32 parentIndex) const override {return 1;}
+        virtual uint32_t        _GetFirstPropertyIndex (uint32_t parentIndex) const override {return 1;}
 
-        virtual bool            _HasChildProperties (UInt32 parentIndex) const override {return false;}
-        virtual UInt32          _GetParentPropertyIndex (UInt32 childIndex) const override { return 0; }
+        virtual bool            _HasChildProperties (uint32_t parentIndex) const override {return false;}
+        virtual uint32_t        _GetParentPropertyIndex (uint32_t childIndex) const override { return 0; }
 
     protected:
         PropertyIndexedEnabler (ECClassCR ecClass, IStandaloneEnablerLocaterP structStandaloneEnablerLocater)
@@ -314,11 +314,11 @@ struct PropertyIndexFlatteningIterator
 private:
     struct State
         {
-        bvector<UInt32>     m_propertyIndices;
-        UInt32              m_listIndex;
+        bvector<uint32_t>     m_propertyIndices;
+        uint32_t            m_listIndex;
 
-        bool                Init (ECEnablerCR enabler, UInt32 parentPropertyIndex);
-        UInt32              GetPropertyIndex() const { return m_propertyIndices[m_listIndex]; }
+        bool                Init (ECEnablerCR enabler, uint32_t parentPropertyIndex);
+        uint32_t            GetPropertyIndex() const { return m_propertyIndices[m_listIndex]; }
         bool                IsEnd() const { return m_listIndex >= m_propertyIndices.size(); }
         };
 
@@ -328,7 +328,7 @@ private:
     bool                InitForCurrent();
 public:
     ECOBJECTS_EXPORT PropertyIndexFlatteningIterator (ECEnablerCR enabler);
-    ECOBJECTS_EXPORT bool   GetCurrent (UInt32& propertyIndex) const;
+    ECOBJECTS_EXPORT bool   GetCurrent (uint32_t& propertyIndex) const;
     ECOBJECTS_EXPORT bool   MoveNext();
     ECEnablerCR             GetEnabler() const { return m_enabler; }
     };

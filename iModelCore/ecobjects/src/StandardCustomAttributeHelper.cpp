@@ -202,8 +202,8 @@ StandardCustomAttributesSchemaHolderPtr StandardCustomAttributesSchemaHolder::s_
 
 static WCharCP s_supplementalMetaDataAccessor = L"SupplementalSchemaMetaData";
 static WCharCP s_supplementalProvenanceAccessor = L"SupplementalProvenance";
-static const UInt32 s_bscaVersionMajor = 1;
-static const UInt32 s_bscaVersionMinor = 8;
+static const uint32_t s_bscaVersionMajor = 1;
+static const uint32_t s_bscaVersionMinor = 8;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012

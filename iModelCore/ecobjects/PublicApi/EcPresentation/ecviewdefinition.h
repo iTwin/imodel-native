@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/ecviewdefinition.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,23 +10,23 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Abeesh.Basheer                  05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  05/2012
++===============+===============+===============+===============+===============+======*/
 struct IECPresentationViewTransform
     {
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  05/2012
++===============+===============+===============+===============+===============+======*/
 struct IECPresentationUIItemInfo: public IAUIItemInfo
     {
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  05/2012
++===============+===============+===============+===============+===============+======*/
 struct IECPresentationUIItem: public IAUIItem
     {
     protected:
@@ -34,9 +34,9 @@ struct IECPresentationUIItem: public IAUIItem
         virtual IECPresentationUIItemInfoCR _GetViewItemInfo () const = 0;
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  05/2012
++===============+===============+===============+===============+===============+======*/
 struct  ECPresentationMenuItemInfo : public IECPresentationUIItemInfo
     {
     private:
@@ -60,9 +60,9 @@ struct  ECPresentationMenuItemInfo : public IECPresentationUIItemInfo
         ECOBJECTS_EXPORT    bool    IsSeperator() const;
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  05/2012
++===============+===============+===============+===============+===============+======*/
 struct  ECPresentationMenuItem : public IECPresentationUIItem
     {
     private:
@@ -79,9 +79,9 @@ struct  ECPresentationMenuItem : public IECPresentationUIItem
         static ECPresentationMenuItem*  CreateSeperator();
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  IECPresentationViewDefinition : public RefCountedBase
     {
     typedef bvector <IECPresentationViewDefinitionPtr>  ChildDefinitions;
@@ -104,9 +104,9 @@ struct  IECPresentationViewDefinition : public RefCountedBase
         static IECPresentationViewDefinitionPtr CreateCompositeViewDef (bvector<IECPresentationViewDefinitionPtr> const& viewDefs);
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  04/2012
++===============+===============+===============+===============+===============+======*/
 struct  IECPresentationViewProvider : public IECPresentationProvider
     {
     protected:

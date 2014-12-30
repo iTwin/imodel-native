@@ -301,9 +301,9 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyByIndex (UInt32 index) const
+ECPropertyP ECClass::GetPropertyByIndex (uint32_t index) const
     {
-    if (index >= (UInt32)m_propertyList.size())
+    if (index >= (uint32_t)m_propertyList.size())
         return NULL;
 
     return m_propertyList[index];
@@ -319,12 +319,12 @@ ECObjectsStatus ECClass::ReplaceProperty (ECPropertyP& newProperty, ValueKind ki
 
     newProperty = NULL;
 
-    UInt32 propertyIndex = -1;
+    uint32_t propertyIndex = -1;
     for (size_t i = 0; i < m_propertyList.size(); i++)
         {
         if (m_propertyList[i] == &propertyToRemove)
             {
-            propertyIndex = (UInt32)i;
+            propertyIndex = (uint32_t)i;
             break;
             }
         }
@@ -1560,8 +1560,8 @@ RelationshipCardinality::RelationshipCardinality
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipCardinality::RelationshipCardinality
 (
-UInt32 lowerLimit,
-UInt32 upperLimit
+uint32_t lowerLimit,
+uint32_t upperLimit
 )
     {
     EXPECTED_CONDITION (lowerLimit <= upperLimit);
@@ -1574,7 +1574,7 @@ UInt32 upperLimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 RelationshipCardinality::GetLowerLimit
+uint32_t RelationshipCardinality::GetLowerLimit
 (
 ) const
     {
@@ -1584,7 +1584,7 @@ UInt32 RelationshipCardinality::GetLowerLimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 RelationshipCardinality::GetUpperLimit
+uint32_t RelationshipCardinality::GetUpperLimit
 (
 ) const
     {
@@ -1919,7 +1919,7 @@ RelationshipCardinalityCR ECRelationshipConstraint::GetCardinality () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::SetCardinality (UInt32& lowerLimit, UInt32& upperLimit)
+ECObjectsStatus ECRelationshipConstraint::SetCardinality (uint32_t& lowerLimit, uint32_t& upperLimit)
     {
     if (lowerLimit == 0 && upperLimit == 1)
         m_cardinality = &s_zeroOneCardinality;
@@ -1949,8 +1949,8 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (RelationshipCardinalit
 ECObjectsStatus ECRelationshipConstraint::SetCardinality (WCharCP cardinality)
     {
     PRECONDITION (NULL != cardinality, ECOBJECTS_STATUS_PreconditionViolated);
-    UInt32 lowerLimit;
-    UInt32 upperLimit;
+    uint32_t lowerLimit;
+    uint32_t upperLimit;
     ECObjectsStatus status = ECXml::ParseCardinalityString(lowerLimit, upperLimit, cardinality);
     if (ECOBJECTS_STATUS_Success != status)
         {

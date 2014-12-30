@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auievent.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,9 +10,9 @@
 #include <ECObjects/ECEvent.h>
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  06/2012
++===============+===============+===============+===============+===============+======*/
 struct ECSelectionEvent: public ECEvent
     {
     private:
@@ -30,9 +30,9 @@ struct ECSelectionEvent: public ECEvent
 
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+/*=================================================================================**//**
+* @bsistruct                                    Abeesh.Basheer                  06/2012
++===============+===============+===============+===============+===============+======*/
 struct ECSelectionListener : public IECPresentationProvider
     {
     friend struct ECPresentationManager;

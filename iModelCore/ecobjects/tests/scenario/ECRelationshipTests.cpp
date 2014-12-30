@@ -105,7 +105,7 @@ TEST_F(ECRelationshipTests, InheritedEnablerIterator)
     
     // Target/Source ECPointer are not properties of the ECClass, they are special access strings for relationship enablers...
     EXPECT_EQ (relationshipEnabler->GetClass().GetPropertyCount() + 2, sizeof(props)/sizeof(props[0])); 
-    UInt32 tempIndex = relationshipEnabler->GetFirstPropertyIndex(0);
+    uint32_t tempIndex = relationshipEnabler->GetFirstPropertyIndex(0);
     EXPECT_TRUE (relationshipEnabler->HasChildProperties(0));
     
     while (tempIndex != 0)
@@ -143,11 +143,11 @@ TEST_F(ECRelationshipTests, InheritedEnablerIndices)
     
     WCharCP props[] = {L"p", L"SourceOrderId", L"TargetOrderId", L"Name", L"Source ECPointer", L"Target ECPointer", L"ArrayProperty"};
     
-    bvector<UInt32> indices;
+    bvector<uint32_t> indices;
     EXPECT_EQ (relationshipEnabler->GetPropertyIndices (indices, 0), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (indices.size(), sizeof(props)/sizeof(props[0]));
     
-    for (UInt32 i=0; i<indices.size(); i++)
+    for (uint32_t i=0; i<indices.size(); i++)
         {
         WCharCP tempName = NULL;
         EXPECT_EQ (relationshipEnabler->GetAccessString(tempName, indices[i]), ECOBJECTS_STATUS_Success);
@@ -237,7 +237,7 @@ TEST_F(ECRelationshipTests, InheritedSetGetArrayValues)
 //Source and dest IDs are hardcoded to 0 in StandaloneECRelationshipInstance.cpp
 TEST_F(ECRelationshipTests, SourceDestOrderIDs)
     {
-    Int64 sourceId, targetId;
+    int64_t sourceId, targetId;
     
     CreateTestSchema();
     ECRelationshipClassCP relClass = m_schema->GetClassP (L"ALikesB")->GetRelationshipClassCP();

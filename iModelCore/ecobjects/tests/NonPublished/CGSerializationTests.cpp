@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: tests/Published/CGSerializationTests.cpp $
+|     $Source: tests/NonPublished/CGSerializationTests.cpp $
 |
 |  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |

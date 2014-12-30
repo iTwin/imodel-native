@@ -267,9 +267,9 @@ bool UnitLocater::GetUnitFromSpecifications (UnitR unit, WCharCP propName, WChar
     if (ECOBJECTS_STATUS_Success != specsAttr.GetValue (v, UNIT_SPECIFICATION_LIST))
         return false;
 
-    UInt32 nSpecs = v.GetArrayInfo().GetCount();
+    uint32_t nSpecs = v.GetArrayInfo().GetCount();
 
-    for (UInt32 i = 0; i < nSpecs; i++)
+    for (uint32_t i = 0; i < nSpecs; i++)
         {
         // Find the UnitSpecifications[] entry matching the input criterion
         IECInstancePtr spec;

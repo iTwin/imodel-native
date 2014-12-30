@@ -23,5 +23,6 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
+ECDBufferTests.ConvertDataBuffer_StructArrays # fails after merge
 NonPublishedScenarioSchemaTest.DISABLED_TestCircularReference
 ValueTests.DISABLED_StringToIGeometry

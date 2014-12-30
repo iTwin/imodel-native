@@ -23,8 +23,8 @@ private:
     ParserRegex() { }
 
     bool ConvertRegexString (WStringR converted, WCharCP in);
-    bool ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, Int32& depth);
-    bool ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth);
+    bool ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, int32_t& depth);
+    bool ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, int32_t& depth);
 public:
     bool                Apply (IECInstanceR instance, WCharCP calculatedValue) const;
 
@@ -70,14 +70,14 @@ bool ParserRegex::ConvertRegexString (WStringR converted, WCharCP in)
     PRECONDITION (in != NULL, false);
 
     WCharCP end = in + wcslen (in);
-    Int32 depth = 0;
+    int32_t depth = 0;
     return ProcessRegex (converted, in, end, depth) && 0 == depth;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, Int32& depth)
+bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, int32_t& depth)
     {
     PRECONDITION (in != NULL && end != NULL, false);
 
@@ -109,7 +109,7 @@ bool ParserRegex::ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, In
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ParserRegex::ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, Int32& depth)
+bool ParserRegex::ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, int32_t& depth)
     {
     if (in >= end || *in++ != '?')
         return false;
@@ -202,12 +202,12 @@ CalculatedPropertySpecification::CalculatedPropertySpecification (NodeR expr, Pa
     if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"UseLastValidValueOnFailure") && !v.IsNull())
         m_useLastValidOnFailure = v.GetBoolean();
 
-    UInt32 nSymbolSets;
+    uint32_t nSymbolSets;
     bvector<WString> requiredSymbolSets;
     if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"RequiredSymbolSets") && !v.IsNull() && 0 < ( nSymbolSets = v.GetArrayInfo().GetCount()))
         {
         requiredSymbolSets.reserve (nSymbolSets);
-        for (UInt32 i = 0; i < nSymbolSets; i++)
+        for (uint32_t i = 0; i < nSymbolSets; i++)
             {
             if (ECOBJECTS_STATUS_Success == customAttr.GetValue (v, L"RequiredSymbolSets", i) && !v.IsNull())
                 requiredSymbolSets.push_back (v.GetString());

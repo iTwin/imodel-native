@@ -190,12 +190,12 @@ ECSchemaPtr const&   schema
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing (WCharCP fullName, bool expectFailure, WCharCP expectName, UInt32 expectMajor, UInt32 expectMinor)
+static  void    ValidateSchemaNameParsing (WCharCP fullName, bool expectFailure, WCharCP expectName, uint32_t expectMajor, uint32_t expectMinor)
     {
     WString    shortName;
     WString    shortNameStr;
-    UInt32     versionMajor;
-    UInt32     versionMinor;
+    uint32_t   versionMajor;
+    uint32_t   versionMinor;
     WString    fullNameStr = WString(fullName);
 
     ECObjectsStatus status = ECSchema::ParseSchemaFullName (shortName, versionMajor, versionMinor, fullName);
