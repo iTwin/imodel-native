@@ -1,0 +1,970 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/ECDbMap.cpp $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ECDbPch.h"
+#include <vector>
+USING_NAMESPACE_BENTLEY_EC
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbTablePtr ECDbMap::s_nullTable (ECDbMap::CreateNullTable ());
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbMap::ECDbMap (ECDbR ecdb) 
+    : m_ecdb (ecdb), m_classMapLoadAccessCounter (0)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbMap::~ECDbMap()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    affan.khan      03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType primitiveType) const
+    {
+    ECSchemaCP ecdbSystemSchema = ECDbSystemSchemaHelper::GetSchema (m_ecdb.GetSchemaManager ());
+    EXPECTED_CONDITION (ecdbSystemSchema != nullptr);
+ 
+    //WIP_ECDB: The hard coded names should become constants in ECDbSystemSchemaHelper eventually
+    ECClassCP ecMapClass = nullptr;
+    switch(primitiveType)
+        {
+        case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBinary");
+            break;
+        case PRIMITIVETYPE_Boolean:                
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBoolean");
+            break;
+        case PRIMITIVETYPE_DateTime:                  
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfDateTime");
+            break;
+        case PRIMITIVETYPE_Double:                    
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfDouble");
+            break;
+        case PRIMITIVETYPE_Integer:                   
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfInteger");
+            break;
+        case PRIMITIVETYPE_Long:                      
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfLong");
+            break;
+        case PRIMITIVETYPE_Point2D:                   
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfPoint2d");
+            break;
+        case PRIMITIVETYPE_Point3D:                   
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfPoint3d");
+            break;
+        case PRIMITIVETYPE_String:                    
+            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfString");
+            break;
+        default:
+            BeAssert(0 && "Cannot map primitive type");
+        }
+
+    return *ecMapClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    04/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
+    {
+    auto stat = DoMapSchemas (schemaImportContext, mapSchemas, forceMapStrategyReevaluation);
+    if (stat != MapStatus::Success)
+        return stat;
+
+    if (BE_SQLITE_DONE != Save ())
+        {
+        ClearCache ();
+        schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
+            "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
+        return MapStatus::Error;
+        }
+
+    if (CreateOrUpdateRequiredTables () != CREATE_ECTABLE_Success)
+        {
+        schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
+            "Failed to import ECSchemas. Data tables could not be created or updated. Please see log for details.");
+
+        ClearCache ();
+        return MapStatus::Error;
+        }
+
+    return MapStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         09/2012
+//---------------------------------------------------------------------------------------
+MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
+    {
+    StopWatch timer (L"", true);
+
+    // Identify root classes/relationship-classes
+    bvector<ECClassCP> rootClasses;
+    bvector<ECRelationshipClassCP> rootRelationships;
+    int nClasses = 0;
+    int nRelationshipClasses = 0;
+    for (ECSchemaCP schema : mapSchemas)
+        {
+        SupplementalSchemaMetaDataPtr supplementalSchemaMetaData = nullptr;
+        if (SupplementalSchemaMetaData::TryGetFromSchema (supplementalSchemaMetaData, *schema) && supplementalSchemaMetaData != nullptr)
+            continue; // Don't map any supplemental schemas
+
+        for (ECClassCP ecClass : schema->GetClasses ())
+            {
+            ECRelationshipClassCP relationshipClass = ecClass->GetRelationshipClassCP ();
+            if (ecClass->GetBaseClasses ().size () == 0)
+                {
+                if (nullptr == relationshipClass)
+                    rootClasses.push_back (ecClass);
+                else
+                    rootRelationships.push_back (relationshipClass);
+                }
+
+            if (relationshipClass)
+                nRelationshipClasses++;
+            else
+                nClasses++;
+            }
+        }
+
+    if (forceMapStrategyReevaluation)
+        ClearCache ();
+
+    // Starting with the root, recursively map the entire class hierarchy. 
+    MapStatus status = MapStatus::Success;
+    for (ECClassCP rootClass : rootClasses)
+        {
+        status = MapClass (schemaImportContext, *rootClass, forceMapStrategyReevaluation);
+        if (status == MapStatus::Error)
+            return status;
+        }
+
+    BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
+    for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
+        {
+        status = MapClass (schemaImportContext, *rootRelationshipClass, forceMapStrategyReevaluation);
+        if (status == MapStatus::Error)
+            return status;
+        }
+    
+    BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
+    for (auto& key : m_classMapDictionary)
+        {
+        key.second->CreateIndices ();
+        }
+
+    if (!FinishTableDefinition ())
+        return MapStatus::Error;
+
+    timer.Stop ();
+    LOG.infov ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to db in %.4f seconds",
+        mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
+
+    return MapStatus::Success;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Casey.Mullen        11/2011
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+
+    BeAssert (GetClassMap (ecClass, false) == nullptr);
+
+    m_classMapLoadAccessCounter++;
+    MapStatus mapStatus;
+    auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
+    if (classMapPtr != nullptr)
+        {
+        if (MapStatus::Error == AddClassMap (classMapPtr))
+            {
+            LOG.errorv (L"Failed to add map for class %ls", ecClass.GetFullName ());
+            return nullptr;
+            }
+
+        m_classMapLoadTable.push_back (&ecClass);
+        //Also load associated .
+        //WIP_ECDB: Bad style because easy to misinterpret. Do decrement and comparison in two steps
+        if (--m_classMapLoadAccessCounter == 0)
+            {
+            for (ECClassCP classToFinish : m_classMapLoadTable)
+                FinishTableDefinition (*classToFinish);
+
+            m_classMapLoadTable.clear ();
+            }
+        return classMapPtr;
+        }
+
+    m_classMapLoadAccessCounter--;
+    return nullptr;
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                   Ramanujam.Raman                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
+MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
+    {
+    if (!ecClass.HasId())
+        {
+        if (0 == ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass))
+            {
+            LOG.errorv(L"ECClass %ls does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
+            BeAssert(false);
+            return MapStatus::Error;
+            }
+        }
+
+    /*
+     * Note: forceRevaluationOfMapStrategy is normally set to TRUE for the case the schemas
+     * are getting upgraded. If classes have new properties, loading the previous class map
+     * updates the class map with new property maps. If the schema has new classes, the fall
+     * through the code below creates the new class maps 
+     */
+    auto classMap = GetClassMap (ecClass);
+    bool revaluateMapStrategy = (classMap != nullptr && forceRevaluationOfMapStrategy);
+
+    MapStatus status = classMap == nullptr ? MapStatus::Success : MapStatus::AlreadyMapped;
+    if (status != MapStatus::AlreadyMapped)
+        {
+        auto newClassMap = ClassMapFactory::Create (status, schemaImportContext, ecClass, *this);
+
+        //error (and no reevaluation)
+        if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
+            return status;
+
+        BeAssert (newClassMap.IsValid () && "ClassMap just cannot be invalid at this point. Some logical flaw has crept in.");
+        status = AddClassMap (newClassMap);
+        if (status == MapStatus::Error)
+            return status;
+        }
+
+
+    for (ECClassP childClass : ecClass.GetDerivedClasses())
+        {
+        status = MapClass (schemaImportContext, *childClass, forceRevaluationOfMapStrategy);
+        if (status == MapStatus::Error)
+            return status;
+        } 
+
+    return MapStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+    ECClassCR ecClass = classMap->GetClass();
+    if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
+        {
+        LOG.errorv (L"Attempted to add a second ClassMap for ECClass %ls", ecClass.GetFullName());
+        BeAssert(false && "Attempted to add a second ClassMap for the same ECClass");
+        return MapStatus::Error;
+        }
+    m_classMapDictionary[ecClass.GetId()]= classMap;
+    MappedTableP mappedTable = GetMappedTable (*classMap);
+    BeAssert (nullptr != mappedTable);
+    return mappedTable ? MapStatus::Success : MapStatus::Error;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbMap::RemoveClassMap (IClassMap const& classMap)
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+    ECClassCR ecClass = classMap.GetClass();
+    if (!classMap.IsUnmapped ())
+        m_clustersByTable.erase (&classMap.GetTable());
+    m_classMapDictionary.erase(ecClass.GetId());
+    }
+
+//---------------------------------------------------------------------------------------
+//* @bsimethod                                                    Krischan.Eberle   02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+IClassMap const* ECDbMap::GetClassMap (ECN::ECClassCR ecClass, bool loadIfNotFound) const
+    {
+    ClassMapPtr classMap = nullptr;
+    if (TryGetClassMap (classMap, ecClass, loadIfNotFound))
+        {
+        BeAssert (classMap != nullptr);
+        return classMap.get ();
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//* @bsimethod                                                    Krischan.Eberle   02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMapCP ECDbMap::GetClassMapCP (ECN::ECClassCR ecClass, bool loadIfNotFound) const
+    {
+    ClassMapPtr classMap = nullptr;
+    if (TryGetClassMap (classMap, ecClass, loadIfNotFound))
+        {
+        BeAssert (classMap != nullptr);
+        return classMap.get ();
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//* @bsimethod                                                    Krischan.Eberle   02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMapP ECDbMap::GetClassMapP (ECN::ECClassCR ecClass, bool loadIfNotFound) const
+    {
+    ClassMapPtr classMap = nullptr;
+    if (TryGetClassMap (classMap, ecClass, loadIfNotFound))
+        {
+        BeAssert (classMap != nullptr);
+        return classMap.get ();
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//* @bsimethod                                                    Krischan.Eberle   02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+    if (!ecClass.HasId ())
+        {
+        ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, ecClass);
+        BeAssert (ecClass.HasId () && "ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema was not able to retrieve a class id.");
+        }
+
+    classMap = DoGetClassMap (ecClass);
+    const bool found = classMap != nullptr;
+    if (found || !loadIfNotFound)
+        return found;
+
+    //lazy loading the class map implemented with const-casting the actual loading so that the 
+    //get method itself can remain const (logically const)
+    classMap = const_cast<ECDbMap*> (this)->LoadAddClassMap (ecClass);
+    return classMap != nullptr;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan         08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
+    {
+    auto it = m_classMapDictionary.find (ecClass.GetId());
+    if (m_classMapDictionary.end () == it)
+        return nullptr;
+    else
+        return it->second;
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+DbTablePtr ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable, bool allowReplacingEmptyTableWithView) const
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+    auto it = m_tableCache.find(tableName);
+    if (m_tableCache.end () != it)
+        {
+        auto existingTable = it->second.get ();
+
+        //if virtuality and empty table handling mismatches, change the table to the stronger
+        //option so that both needs are met. (does some logging)
+        existingTable->TryAssign (isVirtual, allowReplacingEmptyTableWithView);
+
+        if (existingTable->IsMappedToExistingTable () != mapToExistingTable)
+            {
+            std::function<Utf8CP (bool)> toStr = [] (bool val) {return val ? "true" : "false"; };
+            LOG.warningv ("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
+                "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
+                tableName,
+                toStr (mapToExistingTable), toStr (existingTable->IsMappedToExistingTable ()));
+            BeAssert (false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
+            }
+
+        return existingTable;
+        }
+
+    DbTablePtr table = DbTable::Create (tableName, mapToSecondaryTable, isVirtual, primaryKeyColumnName, mapToExistingTable, allowReplacingEmptyTableWithView);
+    m_tableCache[table->GetName ()] = table;
+
+    return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle     06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+DbTablePtr ECDbMap::CreateNullTable ()
+    {
+    return DbTable::Create ("", false, true, nullptr, true, false);
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        09/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ECDbMap::ReplaceViewsWithEmptyTables () const
+    {
+    BeCriticalSectionHolder aGurad (m_criticalSection);
+    DbResult stat = BE_SQLITE_DONE;
+    StopWatch totalTimer ("", true);
+    LoadAllMetadata (); //Ensure all class map are loaded.
+    auto it = m_tableCache.begin ();
+    for (; it != m_tableCache.end (); ++it)
+        {
+        m_ecdb.GetStatementCache ().Empty ();
+        DbTablePtr const& table = it->second;
+
+        if (table->IsVirtual () || table->IsMappedToExistingTable() || table->IsNullTable())
+            continue;
+
+        auto type = DbMetaDataHelper::GetObjectType (GetECDbR(), table->GetName ());
+        if (type == DbMetaDataHelper::ObjectType::View || type == DbMetaDataHelper::ObjectType::None)
+            {
+            if (type == DbMetaDataHelper::ObjectType::View)
+                {
+                auto dropViewSQL = SqlPrintfString ("DROP VIEW IF EXISTS [%s]", table->GetName ());
+                auto stat = GetECDbR ().ExecuteSql (dropViewSQL.GetUtf8CP ());
+                if (stat != BE_SQLITE_OK)
+                    {
+                    LOG.errorv ("ReplaceViewsWithEmptyTables: Failed to execute '%s'", dropViewSQL.GetUtf8CP ());
+                    return stat;
+                    }
+                }
+
+            stat = table->CreateTableInDb (GetECDbR ());
+            if (stat != BE_SQLITE_OK)
+                {
+                LOG.errorv ("ReplaceViewsWithEmptyTables: Failed to create table [%s]", table->GetName ());
+                return stat;
+                }
+            }
+        }
+
+    const NativeLogging::SEVERITY debugSeverity = NativeLogging::LOG_DEBUG;
+    if (LOG.isSeverityEnabled (debugSeverity))
+        {
+        LOG.messagev (debugSeverity, "ReplaceViewsWithEmptyTables: Dropping views and recreating tables took %.2f secs.", totalTimer.GetCurrentSeconds ());
+        }
+    return stat;
+    }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ECDbMap::ReplaceEmptyTablesWithEmptyViews () const
+    {
+    BeCriticalSectionHolder aGurad (m_criticalSection);
+    StopWatch totalTimer ("", true);
+    LoadAllMetadata (); //Ensure all class map are loaded.
+    auto it = m_tableCache.begin();
+    bvector<DbTablePtr> candidatesToReplace;
+    for (; it != m_tableCache.end (); ++it)
+        {
+         DbTablePtr const& table = it->second;
+         if (table->IsAllowedToReplaceEmptyTableWithEmptyView() && 
+             !table->IsMappedToExistingTable() && !table->IsVirtual() &&
+             //pass false, so that non-existing tables are not treated as empty tables
+             table->IsEmpty (m_ecdb, false))
+             {
+             candidatesToReplace.push_back (table);
+             }
+        }
+
+    const NativeLogging::SEVERITY debugSeverity = NativeLogging::LOG_DEBUG;
+    if (LOG.isSeverityEnabled (debugSeverity))
+        {
+        LOG.messagev (debugSeverity, "ReplaceEmptyTablesWithEmptyViews: Finding out which tables are empty took %.2f secs.", totalTimer.GetCurrentSeconds ());
+        }
+
+    //clear statement cache as otherwise the cached statements would get re-prepared as we will now perform DDL statements
+    m_ecdb.GetStatementCache ().Empty ();
+
+    StopWatch partialTimer ("", true);
+    DbResult stat = BE_SQLITE_OK;
+    //Drop all empty tables
+    for (DbTablePtr table : candidatesToReplace)
+        {
+        Utf8CP const tableName = table->GetName ();
+        stat = m_ecdb.DropTable (tableName);
+        if (stat != BE_SQLITE_OK)
+            {
+            LOG.errorv ("Replacing empty tables with empty views: Dropping empty table %s failed. Error code: DbResult::%d", 
+                    tableName, stat);
+            return stat;
+            }
+        }
+
+    partialTimer.Stop ();
+    if (LOG.isSeverityEnabled (debugSeverity))
+        {
+        LOG.messagev (debugSeverity, "ReplaceEmptyTablesWithEmptyViews: Dropping empty tables took %.2f secs.", partialTimer.GetElapsedSeconds ());
+        }
+
+    //create views for empty tables
+    partialTimer.Start ();
+    for (DbTablePtr table : candidatesToReplace)
+        {
+        stat = table->CreateEmptyView (m_ecdb);
+        if (stat != BE_SQLITE_OK)
+            {
+            return stat;
+            }
+        }
+
+    partialTimer.Stop ();
+    if (LOG.isSeverityEnabled (debugSeverity))
+        {
+        LOG.messagev (debugSeverity, "ReplaceEmptyTablesWithEmptyViews: Creating empty views took %.2f secs.", partialTimer.GetElapsedSeconds ());
+        }
+
+    totalTimer.Stop();
+    LOG.infov ("Replaced %d tables with empty views in %.2f seconds.", candidatesToReplace.size (), totalTimer.GetElapsedSeconds());
+    return stat;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound)//ECDB_TODO this funtion name should be GetOrAddMappedTable()
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+
+    ClustersByTable::const_iterator it = m_clustersByTable.find (&classMap.GetTable());
+    if (m_clustersByTable.end() != it)
+        {
+        MappedTableP mappedTable = it->second.get();
+        if (createMappedTableEntryIfNotFound)
+            mappedTable->AddClassMap (classMap);
+        return mappedTable;
+        }
+    if (createMappedTableEntryIfNotFound)
+        {
+        MappedTablePtr mappedTable = MappedTable::Create (*this, classMap);
+        m_clustersByTable[&classMap.GetTable()] = mappedTable;
+        return mappedTable.get();
+        }
+    return nullptr;
+    }
+
+#if defined (_MSC_VER)
+    #pragma warning (push)
+    #pragma warning (disable:4063)
+#endif // defined (_MSC_VER)
+
+// TODO: Topaz merge - Check use of PRIMITIVETYPE_DbKey with Casey
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
+    {
+    switch (primitiveType)
+        {
+        // the values are intended only for logging and debugging purposes
+        case PRIMITIVETYPE_String  : return L"String";
+        case PRIMITIVETYPE_Integer : return L"Integer(32)";
+        case PRIMITIVETYPE_Long    : return L"Long(64)";
+        case PRIMITIVETYPE_Double  : return L"Double";
+        case PRIMITIVETYPE_DateTime: return L"DateTime";
+        case PRIMITIVETYPE_Binary  : return L"Binary";
+        case PRIMITIVETYPE_Boolean : return L"Boolean";
+        case PRIMITIVETYPE_Point2D : return L"Point2D";
+        case PRIMITIVETYPE_Point3D : return L"Point3D";
+        case PRIMITIVETYPE_DbKey   : return L"<db key (int64_t)>";
+        default:                     return L"<unknown>";
+        }
+    }
+
+#if defined (_MSC_VER)
+    #pragma warning (pop)
+#endif // defined (_MSC_VER)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+CreateTableStatus ECDbMap::FinishTableDefinition (DbTableR table) const
+    {
+    BeCriticalSectionHolder aGurad (m_criticalSection);
+    ClustersByTable::const_iterator cit = m_clustersByTable.find (&table);
+    if (m_clustersByTable.end() == cit)
+        {
+        LOG.errorv ("CreateTable: No mapped table found for table '%s'", table.GetName());
+        return CREATE_ECTABLE_MissingMappedTable;
+        }
+    MappedTableR mappedTable = *cit->second;
+    BeAssert (&table == &mappedTable.GetTable());
+
+    mappedTable.FinishTableDefinition();
+    return CREATE_ECTABLE_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+CreateTableStatus ECDbMap::FinishTableDefinition (ECN::ECClassCR ecClass) const
+    {
+    auto classMap = GetClassMap (ecClass, false);
+    if (classMap == nullptr)
+        {
+        LOG.errorv(L"In FinishTableDefinition, for '%ls' there is no ClassMap", ecClass.GetFullName());
+        return CREATE_ECTABLE_MapNotFound;
+        }
+
+    if (classMap->IsUnmapped ())
+        return CREATE_ECTABLE_IsEmpty;
+
+    CreateTableStatus createStatus = FinishTableDefinition (classMap->GetTable());
+    if (CREATE_ECTABLE_Success != createStatus)
+        return createStatus;
+
+    auto classId = ecClass.GetId ();
+    classMap->GetPropertyMaps ().Traverse ([&createStatus, this, classId] (TraversalFeedback& feedback, PropertyMapCP propMap)
+        {
+        auto propertyMapToTable = propMap->GetAsPropertyMapToTable ();
+        if (propertyMapToTable == nullptr)
+            return;
+
+        ECClassCR elementType = propertyMapToTable->GetElementType ();
+        if (elementType.GetId () == classId)
+            return;
+
+        createStatus = FinishTableDefinition (elementType);
+        if (createStatus >= CREATE_ECTABLE_Error)
+            {
+            feedback = TraversalFeedback::Cancel;
+            return;
+            }
+        }, true);
+
+    return CREATE_ECTABLE_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbMap::LoadAllMetadata () const
+    {
+    Statement stmt;
+    stmt.Prepare (GetECDbR (), "SELECT C.ECClassId FROM ec_Class C  ORDER BY C.ECClassId");
+
+    auto& schemaManager = GetECDbR ().GetSchemaManager ();
+    while (stmt.Step () == BE_SQLITE_ROW)
+        {
+        auto ecClass = schemaManager.GetECClass ((ECClassId)stmt.GetValueInt64 (0));
+        if (ecClass != nullptr)
+            GetClassMap (*ecClass);
+        }
+
+    for (auto& key : m_classMapDictionary)
+        {
+        key.second->CreateIndices ();
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
+    {
+    BeCriticalSectionHolder lock (m_criticalSection);
+    m_ecdb.GetStatementCache ().Empty ();
+    StopWatch timer(L"", true);
+    
+    int nCreated = 0;
+    int nUpdated = 0;
+    ClustersByTable::iterator it = m_clustersByTable.begin();
+
+    auto& schemaManager = GetECDbR ().GetSchemaManager ();
+    std::vector<ECClassId> classesMappedToDbTable;
+    
+    for (; it != m_clustersByTable.end(); ++it)
+        {
+        MappedTablePtr & mappedTable = it->second;
+        DbTableP table = it->first;
+
+        // <<-----------------
+        // Load all the classes mapped to this table. This is done to ensure that the table definition is complete.
+        classesMappedToDbTable.clear ();
+        if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToDbTable, *table, GetECDbR (), true) != BE_SQLITE_DONE)
+            return CREATE_ECTABLE_Error;
+
+        for (auto ecClassId : classesMappedToDbTable)
+            {
+            ECClassCP ecClass = schemaManager.GetECClass (ecClassId);
+            BeAssert (ecClass != nullptr);
+            if (ecClass != nullptr)
+                {
+                auto classMapP = GetClassMap (*ecClass);
+                if (classMapP == nullptr)
+                    {
+                    BeAssert (false && "Failed to find classmap for a ECClass");
+                    }
+                }
+            }
+           // -------------------->>
+                
+        if (!mappedTable->IsFinished())
+            {
+            if (mappedTable->FinishTableDefinition() != SUCCESS)
+                return CREATE_ECTABLE_Error;
+            }
+
+        if (IsMappedToExistingTable(*table) || table == &GetNullTable ())
+            continue; 
+        
+        
+        if (GetECDbR().TableExists(table->GetName()))
+            {
+            if (table->HasPendingModifications (GetECDbR ()))
+                {
+                auto r = table->SyncWithDb (GetECDbR ());
+                if (r != BE_SQLITE_OK)
+                    return CREATE_ECTABLE_Error;
+
+                nUpdated++;
+                }
+            continue;
+            }
+        if (table->CreateTableInDb (GetECDbR ()) != BE_SQLITE_OK)
+            return CREATE_ECTABLE_Error;
+
+        nCreated++;
+        }
+
+    timer.Stop();
+    LOG.infov("Created %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nUpdated, timer.GetElapsedSeconds());
+
+    return CREATE_ECTABLE_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      2/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDbMap::IsMappedToExistingTable (DbTableR table) const
+    {
+    if (table.IsMappedToExistingTable ())
+        return true;
+
+    auto itor = m_clustersByTable.find (&table);
+    if (itor == m_clustersByTable.end ())
+        {
+        BeAssert (false && "Failed to find DbTable");
+        return false;
+        }
+
+    MappedTableP mappedTable = itor->second.get ();
+    bool isMapToExistingTable = false;
+    for (auto& classMap : mappedTable->GetClassMaps ())
+        {
+        if (auto classHint = classMap->GetClass ().GetCustomAttribute (BSCAC_ECDbClassHint).get ())
+            {
+            ECValue ecValue;
+            if (classHint->GetValue (ecValue, L"MapToExistingTable") == ECObjectsStatus::ECOBJECTS_STATUS_Success)
+                {
+                if (!ecValue.IsNull ())
+                    isMapToExistingTable |= ecValue.GetBoolean ();
+                }
+            }
+
+        if (isMapToExistingTable)
+            break;
+        }
+
+    //is its a system class
+    if (!isMapToExistingTable)
+        {
+        for (auto& classMap : mappedTable->GetClassMaps ())
+            {
+            auto& schema = classMap->GetClass ().GetSchema ();
+            isMapToExistingTable &= (schema.IsSystemSchema () && schema.GetName () == L"dgn");
+            }
+        }
+
+    return isMapToExistingTable;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan      12/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDbMap::FinishTableDefinition () const
+    {
+    BeCriticalSectionHolder aGurad (m_criticalSection);
+    auto it = m_clustersByTable.begin();
+    for (; it != m_clustersByTable.end(); ++it)
+        {
+        MappedTablePtr const& mappedTable = it->second;
+        if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition() != SUCCESS)
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+DbTableCR ECDbMap::GetNullTable ()
+    {
+    return *s_nullTable;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                      06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMap::IsNullTable (DbTableCR table)
+    {
+    return Utf8String::IsNullOrEmpty (table.GetName ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipConstraintCR relationshipEnd) const
+    {
+    //for recursive lambdas, iOS requires us to define the lambda variable before assigning the actual function to it.
+    std::function<void (std::vector<ECClassCP>&, ECClassP, bool)> gatherClassesDelegate;
+    gatherClassesDelegate =
+        [this, &gatherClassesDelegate] (std::vector<ECClassCP>& classes, ECClassP ecClass, bool includeSubclasses)
+        {
+        classes.push_back (ecClass);
+        if (includeSubclasses)
+            {
+            for (auto childClass : ecClass->GetDerivedClasses ())
+                { 
+                gatherClassesDelegate (classes, childClass, includeSubclasses);
+                }
+            }
+        };
+
+    bool isPolymorphic = relationshipEnd.GetIsPolymorphic();
+    std::vector<ECClassCP> classes;
+    for (ECClassCP ecClass : relationshipEnd.GetClasses ())
+        {
+        ECClassP ecClassP = const_cast<ECClassP> (ecClass);
+        gatherClassesDelegate (classes, ecClassP, isPolymorphic);
+        }
+    
+    return std::move (classes);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* Gets the (count of) tables at the specified end of a relationship class. 
+* @param  tables [out] The tables that are at the specified end of the relationship. Can be nullptr
+* @param  relationshpEnd [in] Constraint at the end of the relationship
+* @return Number of tables at the specified end of the relationship. Returns 
+*         UINT_MAX if the end is AnyClass. 
+* @bsimethod                                 Ramanujam.Raman                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECDbMap::GetTablesFromRelationshipEnd (bset<DbTableP>* tables, ECRelationshipConstraintCR relationshipEnd) const
+    {
+    bset<DbTableP> tmpTables;
+    bset<DbTableP>* outTables = (tables == nullptr) ? &tmpTables : tables;
+    
+    auto classes = GetClassesFromRelationshipEnd (relationshipEnd);
+    for (ECClassCP ecClass : classes)
+        {
+        if (ClassMap::IsAnyClass (*ecClass))
+            {
+            outTables->clear();
+            return SIZE_MAX;
+            }
+
+        auto classMap = GetClassMap (*ecClass, false);
+        if (classMap->GetMapStrategy() == MapStrategy::DoNotMap)
+            continue;
+        BeAssert (!classMap->IsUnmapped());
+        DbTableR  table = classMap->GetTable();
+        outTables->insert(&table);
+        }
+    return outTables->size();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                      06/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassMaps, ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const
+    {
+    auto endClasses = GetClassesFromRelationshipEnd (relationshipEnd);
+    for (auto endClass : endClasses)
+        {
+        if (ClassMap::IsAnyClass (*endClass))
+            {
+            return;
+            }
+
+        auto endClassMap = GetClassMap (*endClass, loadIfNotFound);
+        if (endClassMap->IsUnmapped())
+            continue;
+
+        endClassMaps.insert (endClassMap);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Affan Khan                          08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbMap::ClearCache()
+    {
+    BeCriticalSectionHolder aGurad (m_criticalSection);
+    m_classMapDictionary.clear();
+    m_clustersByTable.clear();
+    m_tableCache.clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Save map
+* @bsimethod                                 Affan Khan                          08/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ECDbMap::Save()
+    {
+    BeCriticalSectionHolder aGurad (m_criticalSection);
+    DbResult r;
+    StopWatch stopWatch("", true);
+    int i = 0;
+    for (auto it =  m_classMapDictionary.begin(); it != m_classMapDictionary.end(); it++)
+        {
+        ClassMapPtr const& classMap = it->second;
+        ECClassCR ecClass = classMap->GetClass();
+        if (classMap->IsDirty())
+            {
+            i++;
+            r = classMap->Save (false);
+            if (r != BE_SQLITE_DONE)
+                {
+                LOG.errorv ("Failed to save ECDbMap for ECClass %s. db error: %s", Utf8String (ecClass.GetFullName ()).c_str (), GetECDbR ().GetLastError ());
+                return r;
+                }
+            }
+        }
+
+    stopWatch.Stop();
+    LOG.infov(L"Saving EC to db mappings took %.4lf seconds to save %d classes", stopWatch.GetElapsedSeconds(), i);
+
+    return BE_SQLITE_DONE;
+    }
+
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

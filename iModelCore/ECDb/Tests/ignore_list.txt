@@ -1,0 +1,36 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
+ECDbBrownBagDemo*       # Sample code for an ECDb BrownBag session which does not need to be run during a build.
+Performance*            # Performance tests are always excluded from being run during a build.
+ECSqlTestFixture.Debug  # This test only serves for debugging the ECSqlStatement API.
+InstanceCRUDTests.* # test data is not available yet, run by testing after buid. Majd.Uddin
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+# TFS Defect 140982
+ECDbRelationships.RelationshipProperties 
+ECDbRelationships.JoinTests
+
+# TFS143263 to address this
+ECDbInstances.RelationshipStrength
+
+ECDbSchemas.IntegrityCheck
+
+# TFS 139237 to address this
+ECDbSchema.Replace_TableWithNullView_And_ViewsWithTablesTest
+
+#----------------------------------------------------------------------------------------
+# *** Broken in 06; need to be re-visited ***
+#----------------------------------------------------------------------------------------
+ECDbProfile.ECInstanceECSqlSelectAdapterAgainstLegacyFilesWithoutCGColumns
+ECDbProfile.ECInstanceInserterUpdaterDeleterAgainstLegacyFilesWithoutCGColumns
+ECDbProfile.ECSqlDeleteAgainstLegacyFilesWithoutCGColumns
+ECDbProfile.ECSqlInsertAgainstLegacyFilesWithoutCGColumns
+ECDbProfile.ECSqlSelectAgainstLegacyFilesWithoutCGColumns
+ECDbProfile.ECSqlUpdateAgainstLegacyFilesWithoutCGColumns
+ECDbProfile.UpgradeReadonlyFileTest
+ECDbProfile.UpgradeReadwriteFileTest
+ECDbProfile.VerifyNoAutoUpgradeForLegacyFilesWithoutCGColumns
+ECSqlQueryAdapter.VerifyECSqlQueries

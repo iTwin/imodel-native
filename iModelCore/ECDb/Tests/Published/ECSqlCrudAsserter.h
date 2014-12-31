@@ -1,0 +1,60 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/ECDB/Published/ECSqlCrudAsserter.h $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+#include "ECSqlTestDataset.h"
+#include <Logging/bentleylogging.h>
+
+BEGIN_ECDBUNITTESTS_NAMESPACE
+//=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     04/2013
+//=======================================================================================    
+struct ECSqlCrudAsserter : NonCopyableClass
+    {
+protected:
+    struct DisableBeAsserts
+        {
+    public:
+        explicit DisableBeAsserts (bool disable = true)
+            {
+            BeTest::SetFailOnAssert (!disable);
+            }
+
+        ~DisableBeAsserts ()
+            {
+            BeTest::SetFailOnAssert (true);
+            }
+        };
+    #define DISABLE_BEASSERTS DisableBeAsserts disableBeAsserts;
+
+private:
+    static Bentley::NativeLogging::ILogger* s_logger;
+
+    ECDbTestProject& m_testProject;
+
+    virtual void _Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const = 0;
+    virtual Utf8CP _GetTargetOperationName () const = 0;
+
+    void LogECSqlSupport (ECSqlTestItem const& testItem, Utf8CP statementErrorMessage) const;
+    static Bentley::NativeLogging::ILogger& GetLogger ();
+
+protected:
+
+    ECDbTestProject& GetTestProject () const;
+    ECDbR GetDgnDb () const;
+
+public:
+    explicit ECSqlCrudAsserter (ECDbTestProject& testProject);
+    virtual ~ECSqlCrudAsserter ();
+
+    void Assert (ECSqlTestItem const& testItem) const;
+    Utf8CP GetTargetOperationName () const;
+    };
+
+typedef std::vector<std::unique_ptr<ECSqlCrudAsserter>> ECSqlCrudAsserterList;
+
+END_ECDBUNITTESTS_NAMESPACE

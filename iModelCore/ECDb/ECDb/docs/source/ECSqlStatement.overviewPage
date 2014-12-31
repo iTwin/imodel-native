@@ -1,0 +1,107 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: ECDb/docs/source/ECSqlStatement.overviewPage $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+    /**
+    @page ECSqlStatementOverview ECSqlStatement Overview
+
+    @tableofcontents
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement is the heart of the %ECDb CRUD API. It uses @ref ECSQLOverview "ECSQL" as its query and command protocol.
+
+    It is @b data-centric (in contrast to instance-centric)
+    which allows clients to work with ECInstances in a very flexible way. Like a database ECSqlStatement
+    allows to retrieve or edit individual property values of an instance - without
+    having to go through the overhead of generating or decomposing higher-level objects like @ref BentleyApi::ECN::IECInstance "IECInstances"
+    or JSON objects.
+
+    For clients that do need to work with the data in a more aggregated way (e.g. @ref BentleyApi::ECN::IECInstance "IECInstances", JSON), @b adapters are provided.
+    (see @ref BentleyApi::BeSQLite::EC::ECInstanceECSqlSelectAdapter "ECInstanceECSqlSelectAdapter", 
+    @ref BentleyApi::BeSQLite::EC::ECInstanceInserter "ECInstanceInserter", @ref BentleyApi::BeSQLite::EC::ECInstanceUpdater "ECInstanceUpdater",
+    @ref BentleyApi::BeSQLite::EC::ECInstanceDeleter "ECInstanceDeleter" for @ref BentleyApi::ECN::IECInstance "IECInstances" and
+    see @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter", 
+    @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter", @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater",
+    @ref BentleyApi::BeSQLite::EC::JsonDeleter "JsonDeleter" for JSON).
+
+    @see @ref ECDbCodeSamples
+
+    @section ECInstanceIdInECDb ECInstanceId in the ECDb API
+
+    In %ECDb @ref ECSqlECInstanceIdDetails "ECSQL's ECInstanceId" is always a @b numeric value and serves
+    as the primary key of the table that corresponds to the domain @ref BentleyApi::ECN::ECClass "ECClasses".
+    Furthermore it is <b>unique across the entire @ref ECDbFile "ECDb file"</b>.
+
+    You can use @ref BentleyApi::BeSQLite::EC::ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY "ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY"
+    instead of the hardcoded string literal @c ECInstanceId when building an ECSQL statement programmatically.
+
+    @e Details
+    @li ECDb issues the ECInstanceId automatically when inserting new ECInstances into an @ref ECDbFile "ECDb file".
+    @li It is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file")
+    @li The ECInstanceId is a number always greater than 0
+    @li It is a so-called @ref BentleyApi::BeRepositoryBasedId "repository-based id"
+    @li The columns in the @ref ECDbFile "ECDb file" holding the %ECInstanceId are equivalent to SQLite's system column @p rowid.
+    @li In the @ref ECDbGroup "ECDb API" the ECInstanceId is represented by the type @ref BentleyApi::BeSQLite::EC::ECInstanceId "ECInstanceId".
+
+    @section ECSqlStatementErrorReporting ECSqlStatement Error Reporting
+
+    ECSqlStatement provides @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetLastStatus "GetLastStatus" and 
+    @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetLastStatusMessage "GetLastStatusMessage"
+    to retrieve the status of the last call to this ECSqlStatement instance. This is in particular
+    useful for those methods which do not return a status itself, like all value reading methods,
+    e.g. @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetValueInt "GetValueInt" or 
+    @ref BentleyApi::BeSQLite::EC::ECSqlStatement::GetValueText "GetValueText".
+
+    @section ECSqlStatementDiagnostics ECSqlStatement Diagnostics
+
+    ### ECSQL Preparation Diagnostics
+    Preparing an @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" can be expensive. So applications should always consider to reuse
+    ECSqlStatements where applicable.
+
+    In order to help applications analyze which statements to reuse and which not, applications can turn on
+    ECSqlStatement preparation diagnostics:
+    - turn on the log4cxx based @ref Bentley::NativeLogging "Bentley logging"
+    - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
+    name <b>Diagnostics.ECSqlStatement.Prepare</b> and assign it the log severity @c @b TRACE.
+    With that enabled, %ECDb logs all prepared ECSQL statements (i.e. all calls to BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare). For each call
+    the ECSQL string and the preparation time (in @b milliseconds) is logged.
+    The log output can then be analyzed for repetition patterns.
+
+    #### Example log4cxx config snippet
+
+    @code{.html}
+    ...
+    <appender name="ECSqlStatementPrepareDiagnostics" class="org.apache.log4j.FileAppender">
+    <param name="File" value="${LOCALAPPDATA}\\MyApp\\Logs\\ecsqlstatement_prepare_diagnostics.log"/>
+    <param name="createpath" value="true"/>
+    <layout class="org.apache.log4j.PatternLayout">
+    <param name="ConversionPattern" value="%m%n"/>
+    </layout>
+    <param name="Append" value="false"/>
+    </appender>
+    ...
+    <logger name="Diagnostics.ECSqlStatement.Prepare">
+    <priority value="trace" />
+    <appender-ref ref="ECSqlStatementPrepareDiagnostics"/>
+    </logger>
+    ...
+    @endcode
+            
+
+    @section ECSqlStatementKnownLimitations ECSqlStatement API Known Limitations
+
+    ### Not yet implemented ECSQL features
+    - Point, struct, array literals.
+    - Polymorphical update and delete statements.
+    - Aggregation (e.g. <c>SELECT DISTINCT</c>, <c>GROUP BY</c>).
+    - Nested select statements, e.g. <c>DELETE FROM myschema.Document WHERE ECInstanceId IN (SELECT ECInstanceId FROM myschema.Document JOIN myschema.Folder USING myschema.FolderHasDocuments WHERE folder.ECInstanceId = 42)</c>.
+
+    @see @ref WorkingWithECDb
+
+    */
+

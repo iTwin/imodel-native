@@ -1,0 +1,367 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/BeSQLite/ECDb/ECDbSchemaManager.h $
+|
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+#include <BeSQLite/ECDb/ECDbTypes.h>
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//__PUBLISH_SECTION_END__
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct EXPORT_VTABLE_ATTRIBUTE DbECSchemaKey
+    {
+    private:
+        ECN::ECSchemaId  m_ecSchemaId;
+        Utf8String  m_schemaName;
+        Utf8String  m_displayLabel;
+        uint32_t    m_versionMajor;
+        uint32_t    m_versionMinor;
+    public:
+        ECDB_EXPORT         uint32_t            GetVersionMajor     () const;
+        ECDB_EXPORT         uint32_t            GetVersionMinor     () const;
+        ECDB_EXPORT         Utf8CP              GetName             () const;
+        ECDB_EXPORT         Utf8String          GetFullName         () const;
+        ECDB_EXPORT         Utf8CP              GetDisplayLabel     () const;
+                            ECN::ECSchemaId     GetECSchemaId       () const ;
+                            bool                HasECSchemaId       () const { return m_ecSchemaId != 0; };
+                            void                SetECSchemaId       (ECN::ECSchemaId ecSchemaId) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = ecSchemaId; };
+        ECDB_EXPORT                             DbECSchemaKey       (ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel=nullptr);
+        ECDB_EXPORT                             DbECSchemaKey       (); // WIP_FNV: stop exporting these
+        ECDB_EXPORT virtual                     ~DbECSchemaKey      ();
+        ECDB_EXPORT static  ECN::ECObjectsStatus ParseSchemaFullName (DbECSchemaKey& key, Utf8CP schemaFullName);
+    };
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct EXPORT_VTABLE_ATTRIBUTE DbECClassKey
+    {
+    private:
+        Utf8String        m_name;
+        Utf8String        m_displayLabel;
+        ECN::ECClassId         m_ecClassId;
+    public:
+        ECDB_EXPORT                    DbECClassKey    (ECN::ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel = nullptr);
+        ECDB_EXPORT          Utf8CP    GetName         () const;
+        ECDB_EXPORT          Utf8CP    GetDisplayLabel () const;
+        ECDB_EXPORT          ECN::ECClassId GetECClassId    () const;
+
+        ECDB_EXPORT virtual            ~DbECClassKey ();
+    };
+
+//__PUBLISH_SECTION_END__
+typedef DbECSchemaKey const& DbECSchemaKeyCR;
+typedef bvector<DbECSchemaKey> DbECSchemaKeys;
+typedef DbECSchemaKeys& DbECSchemaKeysR;
+
+typedef DbECClassKey const& DbECClassKeyCR;
+
+typedef bvector<DbECClassKey> DbECClassKeys;
+typedef DbECClassKeys& DbECClassKeysR;
+
+struct SchemaImportContext;
+
+//__PUBLISH_SECTION_START__
+
+typedef bvector<ECN::ECSchemaCP> ECSchemaList;
+typedef ECSchemaList& ECSchemaListR;
+
+
+//=======================================================================================
+//! The ECDbSchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
+//! Clients can import @ref ECN::ECSchema "ECSchemas" into or retrieve @ref ECN::ECSchema "ECSchemas" or 
+//! individual @ref ECN::ECClass "ECClasses" from the %ECDb file using the %ECDbSchemaManager.
+//!
+//! %ECDbSchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
+//! already stored in the %ECDb file when reading an ECSchema from disk, for example:
+//! 
+//!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext ();
+//!     ecSchemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+//!     ECN::SchemaKey schemaKey (L"foo", 1, 0);
+//!     ECN::ECSchemaPtr fooSchema = ECN::ECSchema::LocateSchema (schemaKey, *ecSchemaContext);
+//!     schemaManager.ImportECSchemas(ecSchemaContext->GetCache());
+//!
+//! @see @ref ECDbOverview, @ref ECDbTransactions, @ref ECDbCodeSamples
+//! @ingroup ECDbGroup
+// @bsimethod                                                  Affan.Khan        05/2012
+//+===============+===============+===============+===============+===============+======
+struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
+    {
+public:
+    //=======================================================================================
+    //! Options for resolving ECSchema in ECDbSchemaManager::GetECClass
+    // @bsiclass                                                Muhammad.zaighum      10/2014
+    //+===============+===============+===============+===============+===============+======
+    enum class ResolveSchema
+        {
+        BySchemaName, //!< Resolve class by schema name
+        BySchemaNamespacePrefix, //!< Resolve class by schema namespace prefix
+        AutoDetect//!< Detect automatically whether it is schema name or prefix
+        };
+    //=======================================================================================
+    //! Options for importing an ECSchema into an ECDb file.
+    //! @see ECDbSchemaManager::ImportECSchemas
+    // @bsiclass                                                Krischan.Eberle      04/2014
+    //+===============+===============+===============+===============+===============+======
+    struct ImportOptions : NonCopyableClass
+        {
+    private:
+        bool m_doSupplementation;
+        bool m_updateExistingSchemas;
+        bool m_supportLegacySchemas;
+
+    public:
+        //! Initializes an ImportOptions object with default settings:
+        //!     - ImportOptions::DoSupplementation : true
+        //!     - ImportOptions::UpdateExistingSchemas : false        
+        ECDB_EXPORT ImportOptions ();
+
+        //! Initializes an ImportOptions object
+        //! @param[in] doSupplementation Normally true. If the list of schemas to be imported contain supplemental ECSchemas, use 
+        //!                         them to supplement primary ECSchemas in the list of schemas to be imported.
+        //!                         Otherwise, supplemental ECSchemas will be ignored
+        //! @param[in] updateExistingSchemas Attempts to update any existing schema that is found in the list of schemas to import.
+        //!                         @b WARNING: List of supported features:
+        //!                           1. If a ECSchema already exist in ECDb and importing schema cache has same schema with minor version greater than existing ECSchema. 
+        //!                              The ECSchema would be marked for upgrade.
+        //!                           2. Add new ECClass to existing ECSchema
+        //!                           3. Add new ECProperties to existing ECClass  
+        //!                           4. Update only "DisplayLabel" and "Description" property of existing ECSchema.
+        //!                           5. Update only "DisplayLabel" and "Description" property of existing ECClass.
+        //!                           6. Update only "DisplayLabel" and "Description" property of existing ECProperty.
+        //!                           7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
+        //!                          Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
+        //!                          Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
+        //!                          Any existing references to ECSchemas, ECClasses, ECSqlStatements or ECPersistence become invalid.  
+        ECDB_EXPORT ImportOptions (bool doSupplementation, bool updateExistingSchemas);
+
+        //! Gets a value indicating whether supplementation should be performed or not.
+        //! If the list of schemas to be imported contain supplemental ECSchemas, use
+        //! them to supplement primary ECSchemas in the list of schemas to be imported.
+        //! Otherwise, supplemental ECSchemas will be ignored        
+        ECDB_EXPORT bool DoSupplementation () const;
+
+        //!Gets a value indicating whether existing ECSchemas should be updated or not.
+        //!If true, %ECDb attempts to update any existing schema that is found in the list of schemas to import.
+        //!
+        //!@b WARNING: List of supported features:
+        //!     1. If a ECSchema already exist in ECDb and importing schema cache has same schema with minor version greater than existing ECSchema. 
+        //!        The ECSchema would be marked for upgrade.
+        //!     2. Add new ECClass to existing ECSchema
+        //!     3. Add new ECProperties to existing ECClass  
+        //!     4. Update only "DisplayLabel" and "Description" property of existing ECSchema.
+        //!     5. Update only "DisplayLabel" and "Description" property of existing ECClass.
+        //!     6. Update only "DisplayLabel" and "Description" property of existing ECProperty.
+        //!     7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
+        //!        Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
+        //!     Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
+        //!     Any existing references to ECSchemas, ECClasses, ECSqlStatements or ECPersistence become invalid.  
+        ECDB_EXPORT bool UpdateExistingSchemas () const;
+
+        //__PUBLISH_SECTION_END__
+        //only to be used by publisher scenarios which have to support v8i legacy ECSchemas which do not comply to the current ECSchema design
+        //standards
+        ECDB_EXPORT void SetSupportLegacySchemas ();
+        ECDB_EXPORT bool SupportLegacySchemas () const;
+        //__PUBLISH_SECTION_START__
+        };
+
+    //=======================================================================================
+    //! Allows clients of a schema import to be notified of error or warning messages.
+    //! @remarks ECDb cares for logging any error and warnings sent to listeners. So implementors
+    //! don't have to do that anymore.
+    //! @see ECDbSchemaManager::ImportECSchemas
+    // @bsiclass                                                Krischan.Eberle      04/2014
+    //+===============+===============+===============+===============+===============+======
+    struct IImportIssueListener
+        {
+    public:
+        //=======================================================================================
+        //! Severity of import issue
+        // @bsiclass                                                Krischan.Eberle      04/2014
+        //+===============+===============+===============+===============+===============+======
+        enum class Severity
+            {
+            Warning, //!< Import warning
+            Error //!< Import error
+            };
+       
+
+    private:
+        //! Fired by ECDb whenever an issue occurred during the schema import.
+        //! @param[in] severity Issue severity
+        //! @param[in] message Issue message
+        virtual void _OnIssueReported (Severity severity, Utf8CP message) const = 0;
+
+    public:
+        ECDB_EXPORT virtual ~IImportIssueListener ();
+
+    //__PUBLISH_SECTION_END__
+        //! Called by ECDb to report an issue to clients.
+        //! @param[in] severity Issue severity
+        //! @param[in] message Issue message
+        void Report (Severity severity, Utf8CP message, ...) const;
+    //__PUBLISH_SECTION_START__
+        };
+
+//__PUBLISH_SECTION_END__
+private:
+    ECDbR                 m_ecdb;
+    ECDbMapR              m_map;
+    ECDbSchemaReaderPtr   m_ecReader;
+    ECDbSchemaWriterPtr   m_ecImporter;
+    mutable BeCriticalSection m_criticalSection;
+
+    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool saveSupplementals = true, bool addToReaderCache = false) const;
+    void GetSupplementalSchemas (bvector<ECN::ECSchemaP>& supplementalSchemas, bvector<ECN::ECSchemaP> const& schemas, ECN::SchemaKeyCR primarySchemaKey) const;
+    BentleyStatus ImportECSchema (SchemaImportContext const& context, ECN::ECSchemaCR ecSchema, bool addToReaderCache = false, CustomAttributeTrackerP tracker = nullptr) const;
+    BentleyStatus UpdateECSchema (SchemaImportContext const& context, ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema, CustomAttributeTrackerP tracker) const;
+    //! The list excludes ECSchemas that have already been imported into the ECDb file
+    void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
+    static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
+    static bool AssertOnDuplicateCopyOfSchema(const bvector<ECN::ECSchemaP>& schema);
+
+    ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
+    //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
+    //! @param[in] ecClass ECClass whose direct subclasses should be loaded
+    //! @return ::SUCCESS or ::ERROR
+    BentleyStatus EnsureDerivedClassesExist (ECN::ECClassCR ecClass) const;
+
+    //! Implementation of IECSchemaLocater
+    virtual ECN::ECSchemaPtr _LocateSchema (ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+
+    //! Implementation of IECClassLocater
+    virtual ECN::ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) override;
+
+public:
+    ECDbSchemaManager (ECDbR ecdb, ECDbMapR map);
+    virtual ~ECDbSchemaManager ();
+
+// constructors are hidden from published API -> make it abstract in the published API
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
+public:
+    //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache and all
+    //! their referenced @ref ECN::ECSchema "ECSchemas" into the @ref ECDbFile "ECDb file".
+    //! After importing the schemas, any pointers to the existing schemas should be discarded and
+    //! they should be obtained as needed through the ECDbECSchemaManager API.
+    //!
+    //! @param[in] schemaCache Typically obtained from ECSchemaReadContext.GetCache() that contains the imported ECSchema and all of its referenced ECSchemas.
+    //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
+    //!                     (the method detects that they are already imported, and simply skips them)
+    //!                     All schemas should be read from single ECSchemaReadContext.  if any dublicate schema is found in schemaCache the function will return error.
+    //! @param[in] options Schema import options
+    //! @param[in] issueListener Object through which ECDb reports any schema import issues back to the caller. Pass nullptr if not needed (issues get still logged)
+    //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+    ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions (), IImportIssueListener const* issueListener = nullptr) const;
+    
+
+    //! Get an ECSchema by name
+    //! @param[in] schemaName Name (not full name) of the ECSchema to retrieve
+    //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
+    //!                                   if they are loaded on-demand.
+    //! @return The retrieved ECSchema or nullptr if not found
+    ECDB_EXPORT ECN::ECSchemaCP GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded = true) const;
+
+    //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
+    //! @param[out] schemas The retrieved list of ECSchemas
+    //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
+    //!                                   if they are loaded on-demand.
+    //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
+    ECDB_EXPORT BentleyStatus GetECSchemas (ECSchemaListR schemas, bool ensureAllClassesLoaded = true) const;
+
+//__PUBLISH_SECTION_END__
+
+    //replace following and it should return DbECSchemaKeys
+    // Keys base functions
+    ECDB_EXPORT BentleyStatus GetECSchemaKeys (DbECSchemaKeysR keys) const;
+    ECDB_EXPORT BentleyStatus GetECClassKeys (DbECClassKeysR keys, DbECSchemaKeyCR schemaKey) const;
+    ECDB_EXPORT BentleyStatus GetECClassKeys (DbECClassKeysR keys, ECN::ECSchemaId schemaId) const;
+    ECDB_EXPORT BentleyStatus GetECClassKeys (DbECClassKeysR keys, Utf8CP schemaName) const;
+
+
+    //! The function accepts normal or full schema name. But it only considers ECSchema name without version.
+    ECDB_EXPORT bool ContainsECSchema (Utf8CP schemaName) const;
+    ECDB_EXPORT bool ContainsECSchema (ECN::ECSchemaId ecSchemaId) const;
+
+//__PUBLISH_SECTION_START__
+    //! Gets the ECClass for the specified name.
+    //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
+    //! @param[in] className Name of the class to be retrieved
+    //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
+    //! @return The retrieved ECClass or nullptr if not found
+    ECDB_EXPORT ECN::ECClassCP GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+
+    //! Gets the ECClass for the specified ECClassId.
+    //! @param[in] ecClassId Id of the ECClass to retrieve
+    //! @return The retrieved ECClass or nullptr if not found
+    ECDB_EXPORT ECN::ECClassCP GetECClass (ECN::ECClassId ecClassId) const;
+
+    //! Gets the ECClassId for the ECClass with the specified name.
+    //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
+    //! @param[in] className Name of the class to be retrieved
+    //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
+    //! @return The ECClassId of the specified ECClass or an invalid class id if not found
+    ECN::ECClassId GetECClassId (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const
+        {
+        auto ecClass = GetECClass (schemaNameOrPrefix, className, resolveSchema);
+        return ecClass != nullptr ? ecClass->GetId () : -1LL;
+        }
+
+    //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
+    //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure
+    //! that derived classes are actually loaded from the ECDb file.
+    //! This method allows to just load the inheritance hierarchy of a given ECClass without having
+    //! to load entire ECSchemas.
+    //! @note This does not recurse into derived classes of derived classes. It just returns the first level
+    //! of inheriting ECClasses.
+    //! @param[in] baseECClass ECClass to return derived classes for.
+    //! @return Derived classes list
+    //! @see ECN::ECClass::GetDerivedECClasses
+    ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses (ECN::ECClassCR baseECClass) const;
+
+//__PUBLISH_SECTION_END__
+    ECDB_EXPORT ECN::ECClassCP GetECClass (DbECClassKeyCR key) const;
+
+    
+    //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
+    //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
+    //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
+    //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
+    //! @param ecClass The ECClass in the duplicate ECSchema. Its Id will be set (as well as returned)
+    static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema (BeSQLite::Db& db, ECN::ECClassCR ecClass);
+
+    //! For cases where we are working with an ECProperty in a referenced ECSchema that is a duplicate of one already persisted
+    //! and therefore doesn't have the persistent ECPropertyId set. Generally, we would prefer that the primary ECSchema had
+    //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
+    //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
+    //! @param ecProperty. The ECProperty in the duplicate ECSchema. Its Id will be set (as well as returned)
+    static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema (BeSQLite::Db& db, ECN::ECPropertyCR ecProperty);
+
+    //! For cases where we are working with an ECSchema in a referenced ECSchema that is a duplicate of one already persisted
+    //! and therefore doesn't have the persistent ECSchemaId set. Generally, we would prefer that the primary ECSchema had
+    //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
+    //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
+    //! @param ecSchema. The duplicate ECSchema. Its Id will be set (as well as returned)
+    static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema (BeSQLite::Db& db, ECN::ECSchemaCR ecSchema);
+
+    void ClearCache () const;
+    ECDbCR GetECDb () const;
+
+//__PUBLISH_SECTION_START__
+    };
+
+typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
+//__PUBLISH_SECTION_END__
+typedef ECDbSchemaManager* ECDbSchemaManagerP;
+//__PUBLISH_SECTION_START__
+
+END_BENTLEY_SQLITE_EC_NAMESPACE
