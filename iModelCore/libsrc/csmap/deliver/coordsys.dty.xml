@@ -6250,7 +6250,7 @@
                     <KeyName>EPSG:5316</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>FMP</KeyName>
+                    <KeyName>FCS_DEN / FMP</KeyName>
                   </Member>
                 </Members>
                 <Groups>
@@ -7006,6 +7006,9 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:5243</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>FCS_GER / FMP</KeyName>
                   </Member>
                 </Members>
               </Group>
