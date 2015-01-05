@@ -392,9 +392,9 @@ bool PerformanceTestingFrameWork::writeTodb(WString dbName,StopWatch &timerCount
         break;
     }
     DbResult preparetResult = TestStatement.Prepare(m_Db, insertQuery);
-    TestStatement.BindText(1, testName, Statement::MAKE_COPY_No);
+    TestStatement.BindText(1, testName, Statement::MakeCopy::No);
     TestStatement.BindDouble(2, timeInSecods);
-    TestStatement.BindText(3, testDescription, Statement::MAKE_COPY_No);
+    TestStatement.BindText(3, testDescription, Statement::MakeCopy::No);
     if (preparetResult == DbResult::BE_SQLITE_OK)
     {
         DbResult stepResult = TestStatement.Step();
@@ -444,9 +444,9 @@ bool PerformanceTestingFrameWork::writeTodbForDouble(WString dbName, double time
         break;
     }
     DbResult preparetResult = TestStatement.Prepare(m_Db, insertQuery);
-    TestStatement.BindText(1, testName, Statement::MAKE_COPY_No);
+    TestStatement.BindText(1, testName, Statement::MakeCopy::No);
     TestStatement.BindDouble(2, timeInSecods);
-    TestStatement.BindText(3, testDescription, Statement::MAKE_COPY_No);
+    TestStatement.BindText(3, testDescription, Statement::MakeCopy::No);
     if (preparetResult == DbResult::BE_SQLITE_OK)
     {
         DbResult stepResult = TestStatement.Step();

@@ -21,10 +21,10 @@ DbResult ECDbSchemaPersistence::InsertECSchemaInfo (BeSQLite::Db& db, DbECSchema
         return stat;
 
     if (info.ColsInsert & DbECSchemaInfo::COL_ECSchemaId     ) stmt->BindInt64 (1,  info.m_ecSchemaId);
-    if (info.ColsInsert & DbECSchemaInfo::COL_Name           ) stmt->BindText (2,  info.m_name, Statement::MAKE_COPY_No);        
-    if (info.ColsInsert & DbECSchemaInfo::COL_DisplayLabel   ) stmt->BindText (3,  info.m_displayLabel, Statement::MAKE_COPY_No);
-    if (info.ColsInsert & DbECSchemaInfo::COL_Description    ) stmt->BindText (4,  info.m_description, Statement::MAKE_COPY_No);
-    if (info.ColsInsert & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (5,  info.m_namespacePrefix, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECSchemaInfo::COL_Name           ) stmt->BindText (2,  info.m_name, Statement::MakeCopy::No);        
+    if (info.ColsInsert & DbECSchemaInfo::COL_DisplayLabel   ) stmt->BindText (3,  info.m_displayLabel, Statement::MakeCopy::No);
+    if (info.ColsInsert & DbECSchemaInfo::COL_Description    ) stmt->BindText (4,  info.m_description, Statement::MakeCopy::No);
+    if (info.ColsInsert & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (5,  info.m_namespacePrefix, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECSchemaInfo::COL_VersionMajor   ) stmt->BindInt (6,  info.m_versionMajor);
     if (info.ColsInsert & DbECSchemaInfo::COL_VersionMinor   ) stmt->BindInt (7,  info.m_versionMinor);
     if (info.ColsInsert & DbECSchemaInfo::COL_SchemaType     ) stmt->BindInt (10, info.m_schemaType);
@@ -66,8 +66,8 @@ DbResult ECDbSchemaPersistence::FindECSchemaInfo (BeSQLite::CachedStatementPtr& 
 
     int nCol = 1;
     if (spec.ColsWhere & DbECSchemaInfo::COL_ECSchemaId     ) stmt->BindInt64 (nCol++, spec.m_ecSchemaId);  
-    if (spec.ColsWhere & DbECSchemaInfo::COL_Name           ) stmt->BindText (nCol++, spec.m_name, Statement::MAKE_COPY_No);        
-    if (spec.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (nCol++, spec.m_namespacePrefix, Statement::MAKE_COPY_No);    
+    if (spec.ColsWhere & DbECSchemaInfo::COL_Name           ) stmt->BindText (nCol++, spec.m_name, Statement::MakeCopy::No);        
+    if (spec.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (nCol++, spec.m_namespacePrefix, Statement::MakeCopy::No);    
     if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMajor   ) stmt->BindInt (nCol++, spec.m_versionMajor);
     if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMinor   ) stmt->BindInt (nCol++, spec.m_versionMinor);
     if (spec.ColsWhere & DbECSchemaInfo::COL_SchemaType     ) stmt->BindInt (nCol++, spec.m_schemaType);
@@ -117,9 +117,9 @@ DbResult ECDbSchemaPersistence::InsertECClassInfo (BeSQLite::Db& db, DbECClassIn
 
     if (info.ColsInsert & DbECClassInfo::COL_ECClassId                ) stmt->BindInt64 (1, info.m_ecClassId);
     if (info.ColsInsert & DbECClassInfo::COL_ECSchemaId               ) stmt->BindInt64 (2, info.m_ecSchemaId);
-    if (info.ColsInsert & DbECClassInfo::COL_Name                     ) stmt->BindText (3, info.m_name, Statement::MAKE_COPY_No);
-    if (info.ColsInsert & DbECClassInfo::COL_DisplayLabel             ) stmt->BindText (4, info.m_displayLabel, Statement::MAKE_COPY_No); 
-    if (info.ColsInsert & DbECClassInfo::COL_Description              ) stmt->BindText (5, info.m_description, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECClassInfo::COL_Name                     ) stmt->BindText (3, info.m_name, Statement::MakeCopy::No);
+    if (info.ColsInsert & DbECClassInfo::COL_DisplayLabel             ) stmt->BindText (4, info.m_displayLabel, Statement::MakeCopy::No); 
+    if (info.ColsInsert & DbECClassInfo::COL_Description              ) stmt->BindText (5, info.m_description, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECClassInfo::COL_IsDomainClass            ) stmt->BindInt (6, info.m_isDomainClass? 1 : 0);
     if (info.ColsInsert & DbECClassInfo::COL_IsStruct                 ) stmt->BindInt (7, info.m_isStruct? 1 : 0);
     if (info.ColsInsert & DbECClassInfo::COL_IsCustomAttribute        ) stmt->BindInt (8, info.m_isCustomAttribute? 1 : 0);
@@ -167,8 +167,8 @@ DbResult ECDbSchemaPersistence::FindECClassInfo (BeSQLite::CachedStatementPtr& s
     int nCol = 1;
     if (info.ColsWhere & DbECClassInfo::COL_ECClassId                ) stmt->BindInt64      (nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECClassInfo::COL_ECSchemaId               ) stmt->BindInt64      (nCol++, info.m_ecSchemaId);
-    if (info.ColsWhere & DbECClassInfo::COL_Name                     ) stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);
-    if (info.ColsWhere & DbECClassInfo::COL_Description              ) stmt->BindText (nCol++, info.m_description, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECClassInfo::COL_Name                     ) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
+    if (info.ColsWhere & DbECClassInfo::COL_Description              ) stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECClassInfo::COL_IsDomainClass            ) stmt->BindInt        (nCol++, info.m_isDomainClass? 1 : 0);
     if (info.ColsWhere & DbECClassInfo::COL_IsStruct                 ) stmt->BindInt        (nCol++, info.m_isStruct? 1 : 0);
     if (info.ColsWhere & DbECClassInfo::COL_IsCustomAttribute        ) stmt->BindInt        (nCol++, info.m_isCustomAttribute? 1 : 0);
@@ -248,13 +248,13 @@ DbResult ECDbSchemaPersistence::UpdateECSchemaInfo (BeSQLite::Db& db, DbECSchema
     if (info.ColsUpdate & DbECSchemaInfo::COL_ECSchemaId)
         if (info.ColsNull & DbECSchemaInfo::COL_ECSchemaId) nCol++; else stmt->BindInt64 (nCol++, info.m_ecSchemaId);
     if (info.ColsUpdate & DbECSchemaInfo::COL_Name)
-        if (info.ColsNull & DbECSchemaInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);  
+        if (info.ColsNull & DbECSchemaInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);  
     if (info.ColsUpdate & DbECSchemaInfo::COL_DisplayLabel)
-        if (info.ColsNull & DbECSchemaInfo::COL_DisplayLabel) nCol++; else stmt->BindText (nCol++, info.m_displayLabel, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECSchemaInfo::COL_DisplayLabel) nCol++; else stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECSchemaInfo::COL_Description)
-        if (info.ColsNull & DbECSchemaInfo::COL_Description) nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECSchemaInfo::COL_Description) nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECSchemaInfo::COL_NamespacePrefix)
-        if (info.ColsNull & DbECSchemaInfo::COL_NamespacePrefix) nCol++; else stmt->BindText (nCol++, info.m_namespacePrefix, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECSchemaInfo::COL_NamespacePrefix) nCol++; else stmt->BindText (nCol++, info.m_namespacePrefix, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECSchemaInfo::COL_VersionMajor)
         if (info.ColsNull & DbECSchemaInfo::COL_VersionMajor) nCol++; else stmt->BindInt (nCol++, info.m_versionMajor);
     if (info.ColsUpdate & DbECSchemaInfo::COL_VersionMinor)
@@ -263,8 +263,8 @@ DbResult ECDbSchemaPersistence::UpdateECSchemaInfo (BeSQLite::Db& db, DbECSchema
         if (info.ColsNull & DbECSchemaInfo::COL_SchemaType) nCol++; else stmt->BindInt (nCol++, info.m_schemaType);
  
     if (info.ColsWhere & DbECSchemaInfo::COL_ECSchemaId) stmt->BindInt64 (nCol++, info.m_ecSchemaId);
-    if (info.ColsWhere & DbECSchemaInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);        
-    if (info.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (nCol++, info.m_namespacePrefix, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECSchemaInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);        
+    if (info.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (nCol++, info.m_namespacePrefix, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECSchemaInfo::COL_VersionMajor) stmt->BindInt (nCol++, info.m_versionMajor);
     if (info.ColsWhere & DbECSchemaInfo::COL_VersionMinor) stmt->BindInt (nCol++, info.m_versionMinor);
     if (info.ColsWhere & DbECSchemaInfo::COL_SchemaType) stmt->BindInt (nCol++, info.m_schemaType);
@@ -320,11 +320,11 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
     if (info.ColsUpdate & DbECClassInfo::COL_ECSchemaId               )
         if (info.ColsNull & DbECClassInfo::COL_ECSchemaId) nCol++; else stmt->BindInt64(nCol++, info.m_ecSchemaId);
     if (info.ColsUpdate & DbECClassInfo::COL_Name                     )
-        if (info.ColsNull & DbECClassInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECClassInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECClassInfo::COL_DisplayLabel             )
-        if (info.ColsNull & DbECClassInfo::COL_DisplayLabel) nCol++; else stmt->BindText (nCol++, info.m_displayLabel, Statement::MAKE_COPY_No); 
+        if (info.ColsNull & DbECClassInfo::COL_DisplayLabel) nCol++; else stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No); 
     if (info.ColsUpdate & DbECClassInfo::COL_Description              )
-        if (info.ColsNull & DbECClassInfo::COL_Description) nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECClassInfo::COL_Description) nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECClassInfo::COL_IsDomainClass            )
         if (info.ColsNull & DbECClassInfo::COL_IsDomainClass) nCol++; else stmt->BindInt (nCol++, info.m_isDomainClass? 1 : 0);
     if (info.ColsUpdate & DbECClassInfo::COL_IsStruct                 )
@@ -340,9 +340,9 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
 
     if (info.ColsWhere & DbECClassInfo::COL_ECClassId                ) stmt->BindInt64      (nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECClassInfo::COL_ECSchemaId               ) stmt->BindInt64      (nCol++, info.m_ecSchemaId);
-    if (info.ColsWhere & DbECClassInfo::COL_Name                     ) stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);
-    if (info.ColsWhere & DbECClassInfo::COL_DisplayLabel             ) stmt->BindText (nCol++, info.m_displayLabel, Statement::MAKE_COPY_No);
-    if (info.ColsWhere & DbECClassInfo::COL_Description              ) stmt->BindText (nCol++, info.m_description, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECClassInfo::COL_Name                     ) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
+    if (info.ColsWhere & DbECClassInfo::COL_DisplayLabel             ) stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No);
+    if (info.ColsWhere & DbECClassInfo::COL_Description              ) stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECClassInfo::COL_IsDomainClass            ) stmt->BindInt        (nCol++, info.m_isDomainClass? 1 : 0);
     if (info.ColsWhere & DbECClassInfo::COL_IsStruct                 ) stmt->BindInt        (nCol++, info.m_isStruct? 1 : 0);
     if (info.ColsWhere & DbECClassInfo::COL_IsCustomAttribute        ) stmt->BindInt        (nCol++, info.m_isCustomAttribute? 1 : 0);
@@ -368,8 +368,8 @@ DbResult ECDbSchemaPersistence::InsertECClassMapInfo (BeSQLite::Db& db, DbECClas
     if (info.ColsInsert & DbECClassMapInfo::COL_ECClassId) stmt->BindInt64 (1, info.m_ecClassId);
     if (info.ColsInsert & DbECClassMapInfo::COL_MapParentECClassId) stmt->BindInt64 (2, info.m_mapParentECClassId);
     if (info.ColsInsert & DbECClassMapInfo::COL_MapStrategy) stmt->BindInt (3, ToInt (info.m_mapStrategy));
-    if (info.ColsInsert & DbECClassMapInfo::COL_MapToDbTable) stmt->BindText (4, info.m_mapToDbTable, Statement::MAKE_COPY_No);
-    if (info.ColsInsert & DbECClassMapInfo::COL_ECInstanceIdColumn) stmt->BindText (5, info.m_primaryKeyColumnName, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECClassMapInfo::COL_MapToDbTable) stmt->BindText (4, info.m_mapToDbTable, Statement::MakeCopy::No);
+    if (info.ColsInsert & DbECClassMapInfo::COL_ECInstanceIdColumn) stmt->BindText (5, info.m_primaryKeyColumnName, Statement::MakeCopy::No);
 
     return stmt->Step();
     }
@@ -415,7 +415,7 @@ DbResult ECDbSchemaPersistence::SetECPropertyMapColumnName (ECPropertyId propert
         return stat;
 
     stmt->BindInt64 (1, propertyId);
-    stmt->BindText (2, mapColumnName, Statement::MAKE_COPY_No);
+    stmt->BindText (2, mapColumnName, Statement::MakeCopy::No);
     return stmt->Step();
     }
 
@@ -495,9 +495,9 @@ DbResult ECDbSchemaPersistence::UpdateECClassMapInfo (BeSQLite::Db& db, DbECClas
     if (info.ColsUpdate & DbECClassMapInfo::COL_MapStrategy)
         if (info.ColsNull & DbECClassMapInfo::COL_MapStrategy) nCol++; else stmt->BindInt (nCol++, ToInt (info.m_mapStrategy));
     if (info.ColsUpdate & DbECClassMapInfo::COL_MapToDbTable) 
-        if (info.ColsNull & DbECClassMapInfo::COL_MapToDbTable) nCol++; else stmt->BindText (nCol++, info.m_mapToDbTable, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECClassMapInfo::COL_MapToDbTable) nCol++; else stmt->BindText (nCol++, info.m_mapToDbTable, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECClassMapInfo::COL_ECInstanceIdColumn)
-        if (info.ColsNull & DbECClassMapInfo::COL_ECInstanceIdColumn) nCol++; else stmt->BindText (nCol++, info.m_primaryKeyColumnName, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECClassMapInfo::COL_ECInstanceIdColumn) nCol++; else stmt->BindText (nCol++, info.m_primaryKeyColumnName, Statement::MakeCopy::No);
 
     if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
 
@@ -627,13 +627,13 @@ DbResult ECDbSchemaPersistence::InsertECPropertyInfo (BeSQLite::Db& db, DbECProp
 
     if (info.ColsInsert & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64 (1, info.m_ecClassId);
     if (info.ColsInsert & DbECPropertyInfo::COL_ECPropertyId) stmt->BindInt64 (2, info.m_ecPropertyId);
-    if (info.ColsInsert & DbECPropertyInfo::COL_Name) stmt->BindText (3, info.m_name, Statement::MAKE_COPY_No);
-    if (info.ColsInsert & DbECPropertyInfo::COL_DisplayLabel) stmt->BindText (4, info.m_displayLabel, Statement::MAKE_COPY_No);
-    if (info.ColsInsert & DbECPropertyInfo::COL_Description) stmt->BindText (5, info.m_description, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECPropertyInfo::COL_Name) stmt->BindText (3, info.m_name, Statement::MakeCopy::No);
+    if (info.ColsInsert & DbECPropertyInfo::COL_DisplayLabel) stmt->BindText (4, info.m_displayLabel, Statement::MakeCopy::No);
+    if (info.ColsInsert & DbECPropertyInfo::COL_Description) stmt->BindText (5, info.m_description, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECPropertyInfo::COL_IsArray) stmt->BindInt (6, info.m_isArray ? 1 : 0);
-    if (info.ColsInsert & DbECPropertyInfo::COL_TypeCustom) stmt->BindText (7, info.m_typeCustom, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECPropertyInfo::COL_TypeCustom) stmt->BindText (7, info.m_typeCustom, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECPropertyInfo::COL_TypeECPrimitive) stmt->BindInt (8, info.m_typeECPrimitive);
-    if (info.ColsInsert & DbECPropertyInfo::COL_TypeGeometry) stmt->BindText (9, info.m_typeGeometry, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECPropertyInfo::COL_TypeGeometry) stmt->BindText (9, info.m_typeGeometry, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECPropertyInfo::COL_TypeECStruct) stmt->BindInt64 (10, info.m_typeECStruct);
     if (info.ColsInsert & DbECPropertyInfo::COL_ECIndex) stmt->BindInt (11, info.m_ecIndex);
     if (info.ColsInsert & DbECPropertyInfo::COL_IsReadOnly) stmt->BindInt (12, info.m_isReadOnly ? 1 : 0);
@@ -686,7 +686,7 @@ DbResult ECDbSchemaPersistence::FindECPropertyInfo (BeSQLite::CachedStatementPtr
     int nCol = 1;
     if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECPropertyInfo::COL_ECPropertyId) stmt->BindInt64 (nCol++, info.m_ecPropertyId);
-    if (info.ColsWhere & DbECPropertyInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECPropertyInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
 
     return stat;
     }
@@ -785,19 +785,19 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
     if (info.ColsUpdate & DbECPropertyInfo::COL_ECPropertyId)
         if (info.ColsNull & DbECPropertyInfo::COL_ECPropertyId)  nCol++; else stmt->BindInt64 (nCol++, info.m_ecPropertyId);
     if (info.ColsUpdate & DbECPropertyInfo::COL_Name)
-        if (info.ColsNull & DbECPropertyInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECPropertyInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_DisplayLabel)
-        if (info.ColsNull & DbECPropertyInfo::COL_DisplayLabel) nCol++; else stmt->BindText (nCol++, info.m_displayLabel, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECPropertyInfo::COL_DisplayLabel) nCol++; else stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_Description)
-        if (info.ColsNull & DbECPropertyInfo::COL_Description)  nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECPropertyInfo::COL_Description)  nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_IsArray)
         if (info.ColsNull & DbECPropertyInfo::COL_IsArray) nCol++; else stmt->BindInt (nCol++, info.m_isArray ? 1 : 0);
     if (info.ColsUpdate & DbECPropertyInfo::COL_TypeCustom)
-        if (info.ColsNull & DbECPropertyInfo::COL_TypeCustom) nCol++; else stmt->BindText (nCol++, info.m_typeCustom, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECPropertyInfo::COL_TypeCustom) nCol++; else stmt->BindText (nCol++, info.m_typeCustom, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_TypeECPrimitive)
         if (info.ColsNull & DbECPropertyInfo::COL_TypeECPrimitive) nCol++; else stmt->BindInt (nCol++, info.m_typeECPrimitive);
     if (info.ColsUpdate & DbECPropertyInfo::COL_TypeGeometry)
-        if (info.ColsNull & DbECPropertyInfo::COL_TypeGeometry) nCol++; else stmt->BindText (nCol++, info.m_typeGeometry, Statement::MAKE_COPY_No);
+        if (info.ColsNull & DbECPropertyInfo::COL_TypeGeometry) nCol++; else stmt->BindText (nCol++, info.m_typeGeometry, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_TypeECStruct)
         if (info.ColsNull & DbECPropertyInfo::COL_TypeECStruct) nCol++; else stmt->BindInt64 (nCol++, info.m_typeECStruct);
     if (info.ColsUpdate & DbECPropertyInfo::COL_ECIndex)
@@ -811,13 +811,13 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
 
     if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECPropertyInfo::COL_ECPropertyId) stmt->BindInt64 (nCol++, info.m_ecPropertyId);
-    if (info.ColsWhere & DbECPropertyInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MAKE_COPY_No);
-    if (info.ColsWhere & DbECPropertyInfo::COL_DisplayLabel) stmt->BindText (nCol++, info.m_displayLabel, Statement::MAKE_COPY_No);
-    if (info.ColsWhere & DbECPropertyInfo::COL_Description) stmt->BindText (nCol++, info.m_description, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECPropertyInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
+    if (info.ColsWhere & DbECPropertyInfo::COL_DisplayLabel) stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No);
+    if (info.ColsWhere & DbECPropertyInfo::COL_Description) stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECPropertyInfo::COL_IsArray) stmt->BindInt (nCol++, info.m_isArray ? 1 : 0);
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeCustom) stmt->BindText (nCol++, info.m_typeCustom, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECPropertyInfo::COL_TypeCustom) stmt->BindText (nCol++, info.m_typeCustom, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECPropertyInfo::COL_TypeECPrimitive) stmt->BindInt (nCol++, info.m_typeECPrimitive);
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeGeometry) stmt->BindText (nCol++, info.m_typeGeometry, Statement::MAKE_COPY_No);
+    if (info.ColsWhere & DbECPropertyInfo::COL_TypeGeometry) stmt->BindText (nCol++, info.m_typeGeometry, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECPropertyInfo::COL_TypeECStruct) stmt->BindInt64 (nCol++, info.m_typeECStruct);
     if (info.ColsWhere & DbECPropertyInfo::COL_ECIndex) stmt->BindInt (nCol++, info.m_ecIndex);
     if (info.ColsWhere & DbECPropertyInfo::COL_IsReadOnly) stmt->BindInt (nCol++, info.m_isReadOnly ? 1 : 0);
@@ -840,7 +840,7 @@ DbResult ECDbSchemaPersistence::InsertECRelationConstraintInfo (BeSQLite::Db& db
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) stmt->BindInt (2, info.m_ecRelationshipEnd);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) stmt->BindInt (3, info.m_cardinalityLowerLimit);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) stmt->BindInt (4, info.m_cardinalityUpperLimit);
-    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RoleLabel) stmt->BindText (5, info.m_roleLabel, Statement::MAKE_COPY_No);
+    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RoleLabel) stmt->BindText (5, info.m_roleLabel, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_IsPolymorphic) stmt->BindInt (6, info.m_isPolymorphic ? 1 : 0);
 
     return stmt->Step();
@@ -903,7 +903,7 @@ DbResult ECDbSchemaPersistence::UpdateECRelationConstraintInfo (BeSQLite::Db& db
         if (info.ColsNull & DbECRelationshipConstraintInfo::COL_RoleLabel) 
             nCol++; 
         else 
-            stmt->BindText (nCol++, info.m_roleLabel.c_str(), Statement::BindMakeCopy::MAKE_COPY_No);
+            stmt->BindText (nCol++, info.m_roleLabel.c_str(), Statement::MakeCopy::No);
 
     if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_IsPolymorphic)
         if (info.ColsNull & DbECRelationshipConstraintInfo::COL_IsPolymorphic) 
@@ -1098,8 +1098,8 @@ DbResult ECDbSchemaPersistence::InsertCustomAttributeInfo (BeSQLite::Db& db, DbC
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ECInstanceId) stmt->BindId (6, info.m_ecInstanceId);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_Instance)
         {
-        //old format (ECD): stmt->BindBlob  (8, info.m_caAsBlob.GetData(), (int)info.m_caAsBlob.GetLength(), Statement::MAKE_COPY_No);
-        DbResult stat = stmt->BindText (7, info.GetCaInstanceXml (), Statement::MAKE_COPY_No);
+        //old format (ECD): stmt->BindBlob  (8, info.m_caAsBlob.GetData(), (int)info.m_caAsBlob.GetLength(), Statement::MakeCopy::No);
+        DbResult stat = stmt->BindText (7, info.GetCaInstanceXml (), Statement::MakeCopy::No);
         POSTCONDITION (stat == BE_SQLITE_OK, stat);
         }
 
@@ -1218,7 +1218,7 @@ DbResult ECDbSchemaPersistence::UpdateCustomAttributeInfo (BeSQLite::Db& db, DbC
 
     if (~info.ColsNull & info.ColsUpdate & DbCustomAttributeInfo::COL_Instance)
         {
-        stat = stmt->BindText (nCol++, info.GetCaInstanceXml (), Statement::MAKE_COPY_No);
+        stat = stmt->BindText (nCol++, info.GetCaInstanceXml (), Statement::MakeCopy::No);
         POSTCONDITION (stat == BE_SQLITE_OK, stat);
         }
     if (~info.ColsNull & info.ColsUpdate & DbCustomAttributeInfo::COL_OverridenByContainerId) stmt->BindInt64 (nCol++, info.m_overridenByContainerId);
@@ -1561,7 +1561,7 @@ ECSchemaId ECDbSchemaPersistence::GetECSchemaId (BeSQLite::Db& db, Utf8CP schema
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
-    stmt->BindText (1, schemaName, Statement::MAKE_COPY_No);
+    stmt->BindText (1, schemaName, Statement::MakeCopy::No);
     stat = stmt->Step();
     if (BE_SQLITE_ROW != stat)
         return 0LL;
@@ -1764,7 +1764,7 @@ DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>&
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stmt.BindText (1, table.GetName (), Statement::MAKE_COPY_No);
+    stmt.BindText (1, table.GetName (), Statement::MakeCopy::No);
 
     while ((stat = stmt.Step ()) == BE_SQLITE_ROW)
         {
@@ -1803,7 +1803,7 @@ DbResult ECDbSchemaPersistence::GetRelationshipEndsMappedToTable (std::vector<EC
         "   WHERE EndClassMap.MapToDbTable = ? AND RelationshipClassMap.MapStrategy = 10";
 
     stmt.Prepare (db, sql);
-    stmt.BindText (1, table.GetName (), Statement::MAKE_COPY_No);
+    stmt.BindText (1, table.GetName (), Statement::MakeCopy::No);
     DbResult r;
     while ((r = stmt.Step ()) == BE_SQLITE_ROW)
         {
@@ -1884,8 +1884,8 @@ ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaName (BeSQLite::Db& db, Utf
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
-    stmt->BindText (1, schemaName, Statement::MAKE_COPY_No);
-    stmt->BindText (2, className, Statement::MAKE_COPY_No);
+    stmt->BindText (1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText (2, className, Statement::MakeCopy::No);
     stat = stmt->Step ();
     if (BE_SQLITE_ROW != stat)
         return 0LL;
@@ -1903,8 +1903,8 @@ ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaNameSpacePrefix(BeSQLite::D
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
-    stmt->BindText(1, schemaName, Statement::MAKE_COPY_No);
-    stmt->BindText(2, className, Statement::MAKE_COPY_No);
+    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(2, className, Statement::MakeCopy::No);
     stat = stmt->Step();
     if (BE_SQLITE_ROW != stat)
         return 0LL;
@@ -1921,9 +1921,9 @@ ECPropertyId ECDbSchemaPersistence::GetECPropertyId (BeSQLite::Db& db, Utf8CP sc
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
-    stmt->BindText (1, schemaName, Statement::MAKE_COPY_No);
-    stmt->BindText (2, className, Statement::MAKE_COPY_No);
-    stmt->BindText (3, propertyName, Statement::MAKE_COPY_No);
+    stmt->BindText (1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText (2, className, Statement::MakeCopy::No);
+    stmt->BindText (3, propertyName, Statement::MakeCopy::No);
 
     stat = stmt->Step();
     if (BE_SQLITE_ROW != stat)
@@ -2274,7 +2274,7 @@ DbResult ECDbSchemaPersistence::UpdatePropertyPath (ECDb& db)
         stat = propertyPathInsertStmt.BindInt64 (2, newPropertyPathStmt.GetValueInt64 (0)); // RootECClassId
         stat = propertyPathInsertStmt.BindInt64 (3, newPropertyPathStmt.GetValueInt64 (1)); // RootECPropertyId
         stat = propertyPathInsertStmt.BindInt64 (4, newPropertyPathStmt.GetValueInt64 (2)); // LeafECPropertyId
-        stat = propertyPathInsertStmt.BindText (5, newPropertyPathStmt.GetValueText (3), Statement::BindMakeCopy::MAKE_COPY_No); //AccessString
+        stat = propertyPathInsertStmt.BindText (5, newPropertyPathStmt.GetValueText (3), Statement::MakeCopy::No); //AccessString
         stat = propertyPathInsertStmt.Step ();
         if (stat != BE_SQLITE_DONE)
             {
@@ -2300,7 +2300,7 @@ ECPropertyId ECDbSchemaPersistence::GetECPropertyAlias (ECClassId ecClassId, Utf
         }
 
     stmt.BindInt64 (1, ecClassId);
-    stmt.BindText (2, accessString, Statement::BindMakeCopy::MAKE_COPY_No);
+    stmt.BindText (2, accessString, Statement::MakeCopy::No);
     if (stmt.Step () == BE_SQLITE_ROW)
         return stmt.GetValueInt64 (0);
 

@@ -979,11 +979,11 @@ DbResult PropertyMapToColumn::BindECValueToParameter (Statement& statement, ECVa
             {
             if (v.IsUtf8 ())
                 {
-                return statement.BindText (parameterIndex, v.GetUtf8CP (), Statement::MAKE_COPY_Yes);
+                return statement.BindText (parameterIndex, v.GetUtf8CP (), Statement::MakeCopy::Yes);
                 }
             else
                 {
-                return statement.BindText (parameterIndex, Utf8String (v.GetString ()), Statement::MAKE_COPY_Yes);
+                return statement.BindText (parameterIndex, Utf8String (v.GetString ()), Statement::MakeCopy::Yes);
                 }
             }
 
@@ -992,14 +992,14 @@ DbResult PropertyMapToColumn::BindECValueToParameter (Statement& statement, ECVa
             // Only for the case where the Point2D was mapped to a single blob column, otherwise Point2d is mapped to two double columns
             // WIP_ECDB: start handling componentMask in case the caller only wants to bind some of the components of the point
             DPoint2d point = v.GetPoint2D();
-            return statement.BindBlob (parameterIndex, &point, sizeof(DPoint2d), Statement::MAKE_COPY_Yes);
+            return statement.BindBlob (parameterIndex, &point, sizeof(DPoint2d), Statement::MakeCopy::Yes);
             }
         case PRIMITIVETYPE_Point3D:
             {
             // Only for the case where the Point3D was mapped to a single blob column, otherwise Point2d is mapped to three double columns
             // WIP_ECDB: start handling componentMask in case the caller only wants to bind some of the components of the point
             DPoint3d point = v.GetPoint3D();
-            return statement.BindBlob (parameterIndex, &point, sizeof(DPoint3d), Statement::MAKE_COPY_Yes);
+            return statement.BindBlob (parameterIndex, &point, sizeof(DPoint3d), Statement::MakeCopy::Yes);
             }
         case PRIMITIVETYPE_DateTime:
             {
@@ -1015,7 +1015,7 @@ DbResult PropertyMapToColumn::BindECValueToParameter (Statement& statement, ECVa
             {
             size_t size;
             const Byte * blob = v.GetBinary (size);
-            return statement.BindBlob (parameterIndex, blob, (int)size, Statement::MAKE_COPY_No);
+            return statement.BindBlob (parameterIndex, blob, (int)size, Statement::MakeCopy::No);
             }
 
         default:
@@ -1335,7 +1335,7 @@ DbResult PropertyMapArrayOfPrimitives::_Bind (int& iBinding, Bindings const& par
     ECObjectsStatus status = instance.GetValue(v, binding.m_propertyIndex);
     PRECONDITION (status == ECOBJECTS_STATUS_Success, BE_SQLITE_ERROR);
     if (ECDbUtility::IsECValueEmpty (v))
-        return statement.BindBlob(binding.m_sqlIndex, nullptr, 0, Statement::MAKE_COPY_No); //Null it out in case it was not previously cleared
+        return statement.BindBlob(binding.m_sqlIndex, nullptr, 0, Statement::MakeCopy::No); //Null it out in case it was not previously cleared
 
     ArrayECPropertyCP arrayECProperty = GetProperty().GetAsArrayProperty();
     POSTCONDITION(arrayECProperty, BE_SQLITE_ERROR);
@@ -1350,7 +1350,7 @@ DbResult PropertyMapArrayOfPrimitives::_Bind (int& iBinding, Bindings const& par
 
     int nElements = v.GetArrayInfo().GetCount();
     if (nElements == 0)
-        return statement.BindBlob(binding.m_sqlIndex, nullptr, 0, Statement::MAKE_COPY_No); //Null it out in case it was not previously cleared
+        return statement.BindBlob(binding.m_sqlIndex, nullptr, 0, Statement::MakeCopy::No); //Null it out in case it was not previously cleared
 
     //Needswork: if incoming is ECDInstance and we make GetPropertyValueSize(*propertyLayout) public, this could always get the precise size
     int sizeOfPrimitive;
@@ -1383,7 +1383,7 @@ DbResult PropertyMapArrayOfPrimitives::_Bind (int& iBinding, Bindings const& par
     int bytesUsed = persistedInstance->GetBytesUsed();
     BeAssert(ECDBuffer::IsCompatibleVersion(nullptr, data, true) && "Should have a header that claims we can write it" );
 
-    return statement.BindBlob(binding.m_sqlIndex, data, bytesUsed, Statement::MAKE_COPY_Yes);
+    return statement.BindBlob(binding.m_sqlIndex, data, bytesUsed, Statement::MakeCopy::Yes);
     }
         
 END_BENTLEY_SQLITE_EC_NAMESPACE

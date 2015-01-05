@@ -1352,17 +1352,17 @@ void AssertImportedSchema (BeSQLiteDbR ecdb, Utf8CP expectedSchemaName, Utf8CP e
     {
     CachedStatementPtr findClassStmt = nullptr;
     ecdb.GetCachedStatement (findClassStmt, "SELECT NULL FROM ec_Class c, ec_Schema s WHERE c.ECSchemaId = s.ECSchemaId AND s.Name = ? AND c.Name = ? LIMIT 1");
-    findClassStmt->BindText (1, expectedSchemaName, Statement::MAKE_COPY_No);
-    findClassStmt->BindText (2, expectedClassName, Statement::MAKE_COPY_No);
+    findClassStmt->BindText (1, expectedSchemaName, Statement::MakeCopy::No);
+    findClassStmt->BindText (2, expectedClassName, Statement::MakeCopy::No);
     EXPECT_EQ (BE_SQLITE_ROW, findClassStmt->Step ()) << "ECClass " << expectedClassName << " of ECSchema " << expectedSchemaName << " is expected to be found in ec_Class table.";
 
     if (expectedPropertyName != nullptr)
         {
         CachedStatementPtr findPropertyStmt = nullptr;
         ecdb.GetCachedStatement (findPropertyStmt, "SELECT NULL FROM ec_Property p, ec_Class c, ec_Schema s WHERE p.ECClassId = c.ECClassId AND c.ECSchemaId = s.ECSchemaId AND s.Name = ? AND c.Name = ? AND p.Name = ? LIMIT 1");
-        findPropertyStmt->BindText (1, expectedSchemaName, Statement::MAKE_COPY_No);
-        findPropertyStmt->BindText (2, expectedClassName, Statement::MAKE_COPY_No);
-        findPropertyStmt->BindText (3, expectedPropertyName, Statement::MAKE_COPY_No);
+        findPropertyStmt->BindText (1, expectedSchemaName, Statement::MakeCopy::No);
+        findPropertyStmt->BindText (2, expectedClassName, Statement::MakeCopy::No);
+        findPropertyStmt->BindText (3, expectedPropertyName, Statement::MakeCopy::No);
         EXPECT_EQ (BE_SQLITE_ROW, findPropertyStmt->Step ()) << "ECProperty " << expectedPropertyName << " in ECClass " << expectedClassName << " of ECSchema " << expectedSchemaName << " is expected to be found in ec_Property table.";;
         }
     }

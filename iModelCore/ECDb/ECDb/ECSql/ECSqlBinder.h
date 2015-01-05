@@ -53,7 +53,7 @@ protected:
     static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
     IECSqlBinder* GetOnBindEventHandler () { return m_onBindEventHandler; }
 
-    static Statement::BindMakeCopy ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy);
+    static Statement::MakeCopy ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy);
 
 public:
     virtual ~ECSqlBinder () {}

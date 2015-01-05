@@ -133,23 +133,23 @@ void PerformanceBisDesignTestFixture::RetrieveValues (BeSQLite::Statement& stmt,
         const DbValueType type = columnTypeMap.find (i)->second;
         switch (type)
             {
-                case DbValueType::BE_SQLITE_NULL:
+                case DbValueType::NullVal:
                     break;
 
                 default:
-                case DbValueType::BE_SQLITE_INTEGER:
+                case DbValueType::IntegerVal:
                     stmt.GetValueInt (i);
                     break;
 
-                case DbValueType::BE_SQLITE_FLOAT:
+                case DbValueType::FloatVal:
                     stmt.GetValueDouble (i);
                     break;
 
-                case DbValueType::BE_SQLITE_TEXT:
+                case DbValueType::TextVal:
                     stmt.GetValueText (i);
                     break;
 
-                case DbValueType::BE_SQLITE_BLOB:
+                case DbValueType::BlobVal:
                     {
                     stmt.GetColumnBytes (i); //blob size
                     stmt.GetValueBlob (i); //actual blob
@@ -206,14 +206,14 @@ uint64_t ecInstanceId
                     {
                     Utf8String str;
                     str.Sprintf ("Sample string %lld", ecInstanceId);
-                    stat = stmt.BindText (parameterIndex, str.c_str (), Statement::MAKE_COPY_Yes);
+                    stat = stmt.BindText (parameterIndex, str.c_str (), Statement::MakeCopy::Yes);
                     break;
                     }
 
                 case ECN::PRIMITIVETYPE_Binary:
                     {
                     void * blob = (void *) (&ecInstanceId);
-                    stat = stmt.BindBlob (parameterIndex, blob, sizeof (ecInstanceId), Statement::MAKE_COPY_Yes);
+                    stat = stmt.BindBlob (parameterIndex, blob, sizeof (ecInstanceId), Statement::MakeCopy::Yes);
                     break;
                     }
 

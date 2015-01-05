@@ -251,7 +251,7 @@ DbResult ECDbSchemaReader::FindECSchemaIdInDb (ECSchemaId& ecSchemaId, Utf8CP sc
     ecSchemaId = 0;
     CachedStatementPtr stmt;
     DbResult r = m_db.GetCachedStatement(stmt, "SELECT ECSchemaId FROM ec_Schema WHERE Name=?");  BeAssert(BE_SQLITE_OK == r);
-    r = stmt->BindText(1, schemaName, Statement::MAKE_COPY_No); BeAssert(BE_SQLITE_OK == r);
+    r = stmt->BindText(1, schemaName, Statement::MakeCopy::No); BeAssert(BE_SQLITE_OK == r);
     r = stmt->Step();
     if (r == BE_SQLITE_ROW)
         ecSchemaId = stmt->GetValueInt64(0);
@@ -748,8 +748,8 @@ ECClassP ECDbSchemaReader::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP classNa
     {
     BeSQLite::CachedStatementPtr stmt;
     m_db.GetCachedStatement(stmt, "SELECT ECClassId FROM ec_Class JOIN ec_Schema WHERE ec_Class.ECSchemaId = ec_Schema.ECSchemaId AND (ec_Schema.Name = ?1 OR ec_Schema.NamespacePrefix = ?1) AND ec_Class.Name = ?2");
-    stmt->BindText (1, schemaNameOrPrefix, Statement::MAKE_COPY_No);
-    stmt->BindText (2, className, Statement::MAKE_COPY_No);
+    stmt->BindText (1, schemaNameOrPrefix, Statement::MakeCopy::No);
+    stmt->BindText (2, className, Statement::MakeCopy::No);
     DbResult r = stmt->Step();
     if (BE_SQLITE_ROW != r)
         return nullptr;

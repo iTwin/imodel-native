@@ -31,7 +31,7 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
     Utf8String currentNSPrefix = Utf8String(ns.c_str());
     Statement stmt;
     stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NameSpacePrefix = ?");
-    stmt.BindText(1, currentNSPrefix, Statement::MAKE_COPY_No);
+    stmt.BindText(1, currentNSPrefix, Statement::MakeCopy::No);
     if (stmt.Step() == BE_SQLITE_ROW)
         {       
         LOG.warningv (L"Importing ECSchema '%ls' has NamespacePrefix '%ls' which already exist in ECDb for ECSchema '%ls. System will now attempt to generate a unique prefix for importing ECSchema.", ecSchema.GetName().c_str(), ns.c_str(), WString (stmt.GetValueText(0), BentleyCharEncoding::Utf8).c_str ());
@@ -42,7 +42,7 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
             stmt.Reset ();
             stmt.ClearBindings ();
             newPrefix.Sprintf ("%s%d", currentNSPrefix.c_str(), prefixIndex++);
-            stmt.BindText(1, newPrefix, Statement::MAKE_COPY_No);
+            stmt.BindText(1, newPrefix, Statement::MakeCopy::No);
             } while(stmt.Step() == BE_SQLITE_ROW);
         if (currentNSPrefix.Equals(newPrefix))
             {
@@ -713,7 +713,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes
                             Statement stmt;
                             stmt.Prepare (m_ecdb, "UPDATE ec_ClassMap SET MapToDbTable =?  WHERE ECClassId = ?");
                             if (!tableName->GetValueRight ().IsNull ())
-                                stmt.BindText (1, tableName->GetValueRight ().GetUtf8CP (), Statement::BindMakeCopy::MAKE_COPY_Yes);
+                                stmt.BindText (1, tableName->GetValueRight ().GetUtf8CP (), Statement::MakeCopy::Yes);
 
                             stmt.BindInt64 (2, sourceContainerId);
                             if ((r = stmt.Step ()) != BE_SQLITE_DONE)
@@ -728,7 +728,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes
                             Statement stmt;
                             stmt.Prepare (m_ecdb, "UPDATE ec_ClassMap SET PrimaryKeyColumnName =?  WHERE ECClassId = ?");
                             if (!ecInstanceIdColumn->GetValueRight ().IsNull ())
-                                stmt.BindText (1, ecInstanceIdColumn->GetValueRight ().GetUtf8CP (), Statement::BindMakeCopy::MAKE_COPY_Yes);
+                                stmt.BindText (1, ecInstanceIdColumn->GetValueRight ().GetUtf8CP (), Statement::MakeCopy::Yes);
                             
                             stmt.BindInt64 (2, sourceContainerId);
                             if ((r = stmt.Step ()) != BE_SQLITE_DONE)

@@ -322,7 +322,7 @@ DbResult ECDbProfileUpgrader_1003::MapTransformationValueMapClass (ECDbR ecdb)
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stmt.BindText (1, tableName, Statement::BindMakeCopy::MAKE_COPY_No);
+    stmt.BindText (1, tableName, Statement::MakeCopy::No);
     stmt.BindInt64 (2, tvmECClass->GetId ());
     stat = stmt.Step ();
     if (BE_SQLITE_DONE != stat)
@@ -642,7 +642,7 @@ DbResult ECDbProfileUpgrader::RetrieveIndexDdlListForTable (vector<Utf8String>& 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stmt->BindText (1, tableName, Statement::MAKE_COPY_No);
+    stmt->BindText (1, tableName, Statement::MakeCopy::No);
 
     while (stmt->Step () == BE_SQLITE_ROW)
         {
@@ -679,7 +679,7 @@ bool ECDbProfileUpgrader::IsView (ECDbCR ecdb, Utf8CP tableOrViewName)
     CachedStatementPtr stmt = nullptr;
     ecdb.GetCachedStatement (stmt, "SELECT NULL FROM sqlite_master WHERE name=? AND type='view' LIMIT 1");
 
-    stmt->BindText (1, tableOrViewName, Statement::MAKE_COPY_No);
+    stmt->BindText (1, tableOrViewName, Statement::MakeCopy::No);
     return stmt->Step () == BE_SQLITE_ROW;
     }
 

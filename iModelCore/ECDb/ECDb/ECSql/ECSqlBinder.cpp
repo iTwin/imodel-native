@@ -113,16 +113,16 @@ NoopECSqlBinder& ECSqlBinder::GetNoopBinder (ECSqlStatus status)
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 //static
-Statement::BindMakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy)
+Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy (IECSqlBinder::MakeCopy makeCopy)
     {
     switch (makeCopy)
         {
             case IECSqlBinder::MakeCopy::No:
-                return Statement::MAKE_COPY_No;
+                return Statement::MakeCopy::No;
 
             case IECSqlBinder::MakeCopy::Yes:
             default:
-                return Statement::MAKE_COPY_Yes;
+                return Statement::MakeCopy::Yes;
         }
     }
 

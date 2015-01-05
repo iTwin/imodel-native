@@ -810,7 +810,7 @@ BentleyStatus ViewGenerator::CreateSystemView (NativeSqlBuilder& viewSql, System
 
         for (auto& pair : tableMap)
             {
-            stmt.BindText (1, pair.first->GetName (), Statement::BindMakeCopy::MAKE_COPY_No);
+            stmt.BindText (1, pair.first->GetName (), Statement::MakeCopy::No);
             if (stmt.Step () != BE_SQLITE_ROW)
                 {
                 BeAssert (false);

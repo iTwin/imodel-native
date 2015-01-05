@@ -67,7 +67,7 @@ int DbLogHelper::GetTestId(Utf8String testName)
     if (BE_SQLITE_OK != result)
         return -1;
 
-    //sqlStatement.BindText(1, testName.c_str(), Statement::MAKE_COPY_No);
+    //sqlStatement.BindText(1, testName.c_str(), Statement::MakeCopy::No);
     int id = -1;
     result = sqlStatement.Step();
     if (BE_SQLITE_ROW == result)
@@ -80,7 +80,7 @@ int DbLogHelper::GetTestId(Utf8String testName)
         if (BE_SQLITE_OK != result)
             return -1;
 
-        insertStatement.BindText(1, testName, Statement::MAKE_COPY_No);
+        insertStatement.BindText(1, testName, Statement::MakeCopy::No);
         insertStatement.Step();
         m_db.SaveChanges();
 
@@ -112,7 +112,7 @@ void DbLogHelper::LogResults(bmap<Utf8String, double> results)
             continue;
 
         sqlStatement.BindInt(1, id);
-        sqlStatement.BindText(2, dateTime.c_str(), Statement::MAKE_COPY_No);
+        sqlStatement.BindText(2, dateTime.c_str(), Statement::MakeCopy::No);
         sqlStatement.BindDouble(3, pair.second);
         sqlStatement.Step();
         sqlStatement.Reset();
