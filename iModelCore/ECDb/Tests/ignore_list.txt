@@ -13,6 +13,8 @@ InstanceCRUDTests.* # test data is not available yet, run by testing after buid.
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests
 
+
+ECDbSchemas.IntegrityCheck
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
