@@ -13,24 +13,8 @@ InstanceCRUDTests.* # test data is not available yet, run by testing after buid.
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests
 
-# TFS143263 to address this
-ECDbInstances.RelationshipStrength
-
-ECDbSchemas.IntegrityCheck
-
-# TFS 139237 to address this
-ECDbSchema.Replace_TableWithNullView_And_ViewsWithTablesTest
-
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-ECDbProfile.ECInstanceECSqlSelectAdapterAgainstLegacyFilesWithoutCGColumns
-ECDbProfile.ECInstanceInserterUpdaterDeleterAgainstLegacyFilesWithoutCGColumns
-ECDbProfile.ECSqlDeleteAgainstLegacyFilesWithoutCGColumns
-ECDbProfile.ECSqlInsertAgainstLegacyFilesWithoutCGColumns
-ECDbProfile.ECSqlSelectAgainstLegacyFilesWithoutCGColumns
-ECDbProfile.ECSqlUpdateAgainstLegacyFilesWithoutCGColumns
-ECDbProfile.UpgradeReadonlyFileTest
-ECDbProfile.UpgradeReadwriteFileTest
-ECDbProfile.VerifyNoAutoUpgradeForLegacyFilesWithoutCGColumns
+
 ECSqlQueryAdapter.VerifyECSqlQueries
