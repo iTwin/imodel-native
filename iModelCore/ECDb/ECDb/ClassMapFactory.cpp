@@ -95,10 +95,10 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     //This is hack solution. For SharedTables can have unrelated classes and FinishTableDefinition only add classed when there is more then one classes in a table.
     //TODO: come up with a better solution. 
     if (classMap->GetMapStrategy () == MapStrategy::SharedTableForThisClass &&
-        classMap->GetTable ().GetClassIdColumn () == nullptr)
+        classMap->GetTable ().FindColumnCP(ECDB_COL_ECClassId) == nullptr)
         {
-        if (ecdbMap.GetECDbR ().ColumnExists (classMap->GetTable ().GetName (), ECDB_COL_ECClassId))
-            classMap->GetTable ().GenerateClassIdColumn ();
+        if (ecdbMap.GetECDbR ().ColumnExists (classMap->GetTable ().GetName ().c_str(), ECDB_COL_ECClassId))
+            classMap->GetTable ().FindColumnCP (ECDB_COL_ECClassId);
         }
 
     return classMap;

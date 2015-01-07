@@ -440,7 +440,7 @@ bool PropertyHintReader::TryReadIsUnique (bool& isUnique, ECN::IECInstanceCR hin
 //@bsimethod                                               Krischan.Eberle   02 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool PropertyHintReader::TryReadCollate (Collate& collate, ECN::IECInstanceCR hint)
+bool PropertyHintReader::TryReadCollate (ECDbSqlColumn::Constraint::Collate& collate, ECN::IECInstanceCR hint)
     {
     BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbPropertyHint));
 
@@ -451,11 +451,11 @@ bool PropertyHintReader::TryReadCollate (Collate& collate, ECN::IECInstanceCR hi
         found = true;
         WString collateHintStr (v.GetString ());
         if (collateHintStr.EqualsI (BSCAP_Collate_Binary))
-            collate = Collate::Binary;
+            collate = ECDbSqlColumn::Constraint::Collate::Binary;
         else if (collateHintStr.EqualsI (BSCAP_Collate_NoCase))
-            collate = Collate::NoCase;
+            collate = ECDbSqlColumn::Constraint::Collate::NoCase;
         else if (collateHintStr.EqualsI (BSCAP_Collate_RTrim))
-            collate = Collate::RTrim;
+            collate = ECDbSqlColumn::Constraint::Collate::RTrim;
         else
             {
             LOG.warningv (L"Unrecognized value '%ls' for 'Collate' property in " BSCAC_ECDbPropertyHint L". The value is ignored.",

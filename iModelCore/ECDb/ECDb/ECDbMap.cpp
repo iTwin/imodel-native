@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -11,17 +11,12 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DbTablePtr ECDbMap::s_nullTable (ECDbMap::CreateNullTable ());
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap (ECDbR ecdb) 
-    : m_ecdb (ecdb), m_classMapLoadAccessCounter (0)
+: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -383,168 +378,88 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbTablePtr ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable, bool allowReplacingEmptyTableWithView) const
+ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable, bool allowReplacingEmptyTableWithView) 
     {
     BeCriticalSectionHolder lock (m_criticalSection);
-    auto it = m_tableCache.find(tableName);
-    if (m_tableCache.end () != it)
+    auto table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
+    auto ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
+    if (table)
         {
-        auto existingTable = it->second.get ();
 
         //if virtuality and empty table handling mismatches, change the table to the stronger
         //option so that both needs are met. (does some logging)
-        existingTable->TryAssign (isVirtual, allowReplacingEmptyTableWithView);
-
-        if (existingTable->IsMappedToExistingTable () != mapToExistingTable)
+        //existingTable->TryAssign (isVirtual, allowReplacingEmptyTableWithView);        
+        if (table->GetOwnerType () != ownerType)
             {
             std::function<Utf8CP (bool)> toStr = [] (bool val) {return val ? "true" : "false"; };
             LOG.warningv ("Multiple classes are mapped to the table %s although the classes require mismatching table metadata: "
                 "Metadata IsMappedToExistingTable: Expected=%s - Actual=%s. Actual value is ignored.",
                 tableName,
-                toStr (mapToExistingTable), toStr (existingTable->IsMappedToExistingTable ()));
+                toStr (mapToExistingTable), toStr (table->GetOwnerType () != OwnerType::ECDb));
             BeAssert (false && "ECDb uses a table for two classes although the classes require mismatching table metadata.");
             }
 
-        return existingTable;
+        return table;
         }
 
-    DbTablePtr table = DbTable::Create (tableName, mapToSecondaryTable, isVirtual, primaryKeyColumnName, mapToExistingTable, allowReplacingEmptyTableWithView);
-    m_tableCache[table->GetName ()] = table;
-
-    return table;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle     06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DbTablePtr ECDbMap::CreateNullTable ()
-    {
-    return DbTable::Create ("", false, true, nullptr, true, false);
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        09/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbMap::ReplaceViewsWithEmptyTables () const
-    {
-    BeCriticalSectionHolder aGurad (m_criticalSection);
-    DbResult stat = BE_SQLITE_DONE;
-    StopWatch totalTimer ("", true);
-    LoadAllMetadata (); //Ensure all class map are loaded.
-    auto it = m_tableCache.begin ();
-    for (; it != m_tableCache.end (); ++it)
+    if (ownerType == OwnerType::ECDb)
         {
-        m_ecdb.GetStatementCache ().Empty ();
-        DbTablePtr const& table = it->second;
+        table = GetSQLManagerR ().GetDbSchemaR ().CreateTable (tableName, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted);
+        if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
+            primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
-        if (table->IsVirtual () || table->IsMappedToExistingTable() || table->IsNullTable())
-            continue;
-
-        auto type = DbMetaDataHelper::GetObjectType (GetECDbR(), table->GetName ());
-        if (type == DbMetaDataHelper::ObjectType::View || type == DbMetaDataHelper::ObjectType::None)
+        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Long, ECdbSystemColumnECId, PersistenceType::Persisted);
+        if (table->GetPersistenceType () == PersistenceType::Persisted)
             {
-            if (type == DbMetaDataHelper::ObjectType::View)
-                {
-                auto dropViewSQL = SqlPrintfString ("DROP VIEW IF EXISTS [%s]", table->GetName ());
-                auto stat = GetECDbR ().ExecuteSql (dropViewSQL.GetUtf8CP ());
-                if (stat != BE_SQLITE_OK)
-                    {
-                    LOG.errorv ("ReplaceViewsWithEmptyTables: Failed to execute '%s'", dropViewSQL.GetUtf8CP ());
-                    return stat;
-                    }
-                }
+            column->GetConstraintR ().SetIsNotNull (true);
+            table->GetPrimaryKeyConstraint ()->Add (primaryKeyColumnName);
+            }
 
-            stat = table->CreateTableInDb (GetECDbR ());
-            if (stat != BE_SQLITE_OK)
+        if (mapToSecondaryTable)
+            {            
+            column = table->CreateColumn (ECDB_COL_OwnerECInstanceId, ECDbSqlColumn::Type::Long, ECdbSystemColumnOwnerECId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECPropertyId, ECDbSqlColumn::Type::Long, ECdbSystemColumnECPropertyId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECdbSystemColumnECArraryIndex, PersistenceType::Persisted);
+            if (table->GetPersistenceType () == PersistenceType::Persisted)
                 {
-                LOG.errorv ("ReplaceViewsWithEmptyTables: Failed to create table [%s]", table->GetName ());
-                return stat;
+                auto index = table->CreateIndex ((table->GetName() + "_StructArrayIndex").c_str());
+                index->SetIsUnique (true);
+                index->Add (ECDB_COL_OwnerECInstanceId);
+                index->Add (ECDB_COL_ECPropertyId);
+                index->Add (ECDB_COL_ECArrayIndex);
+                index->Add (primaryKeyColumnName);
                 }
             }
         }
-
-    const NativeLogging::SEVERITY debugSeverity = NativeLogging::LOG_DEBUG;
-    if (LOG.isSeverityEnabled (debugSeverity))
+    else
         {
-        LOG.messagev (debugSeverity, "ReplaceViewsWithEmptyTables: Dropping views and recreating tables took %.2f secs.", totalTimer.GetCurrentSeconds ());
-        }
-    return stat;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbMap::ReplaceEmptyTablesWithEmptyViews () const
-    {
-    BeCriticalSectionHolder aGurad (m_criticalSection);
-    StopWatch totalTimer ("", true);
-    LoadAllMetadata (); //Ensure all class map are loaded.
-    auto it = m_tableCache.begin();
-    bvector<DbTablePtr> candidatesToReplace;
-    for (; it != m_tableCache.end (); ++it)
-        {
-         DbTablePtr const& table = it->second;
-         if (table->IsAllowedToReplaceEmptyTableWithEmptyView() && 
-             !table->IsMappedToExistingTable() && !table->IsVirtual() &&
-             //pass false, so that non-existing tables are not treated as empty tables
-             table->IsEmpty (m_ecdb, false))
-             {
-             candidatesToReplace.push_back (table);
-             }
-        }
+        BeAssert (mapToSecondaryTable == false);
+        if (mapToSecondaryTable)
+            return nullptr;
 
-    const NativeLogging::SEVERITY debugSeverity = NativeLogging::LOG_DEBUG;
-    if (LOG.isSeverityEnabled (debugSeverity))
-        {
-        LOG.messagev (debugSeverity, "ReplaceEmptyTablesWithEmptyViews: Finding out which tables are empty took %.2f secs.", totalTimer.GetCurrentSeconds ());
-        }
-
-    //clear statement cache as otherwise the cached statements would get re-prepared as we will now perform DDL statements
-    m_ecdb.GetStatementCache ().Empty ();
-
-    StopWatch partialTimer ("", true);
-    DbResult stat = BE_SQLITE_OK;
-    //Drop all empty tables
-    for (DbTablePtr table : candidatesToReplace)
-        {
-        Utf8CP const tableName = table->GetName ();
-        stat = m_ecdb.DropTable (tableName);
-        if (stat != BE_SQLITE_OK)
+        table = GetSQLManagerR ().GetDbSchemaR ().CreateTableUsingExistingTableDefinition (GetECDbR (), tableName);
+        if (!Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             {
-            LOG.errorv ("Replacing empty tables with empty views: Dropping empty table %s failed. Error code: DbResult::%d", 
-                    tableName, stat);
-            return stat;
+            auto editMode = table->GetEditHandle ().CanEdit ();
+            if (!editMode)
+                table->GetEditHandleR ().BeginEdit ();
+
+            auto systemColumn = table->FindColumnP (primaryKeyColumnName);
+            if (systemColumn == nullptr)
+                {
+                BeAssert (false && "Failed to find user provided primary key column");
+                return nullptr;
+                }
+
+            systemColumn->SetUserFlags (ECdbSystemColumnECId);
+            if (!editMode)
+                table->GetEditHandleR ().EndEdit ();
             }
         }
 
-    partialTimer.Stop ();
-    if (LOG.isSeverityEnabled (debugSeverity))
-        {
-        LOG.messagev (debugSeverity, "ReplaceEmptyTablesWithEmptyViews: Dropping empty tables took %.2f secs.", partialTimer.GetElapsedSeconds ());
-        }
-
-    //create views for empty tables
-    partialTimer.Start ();
-    for (DbTablePtr table : candidatesToReplace)
-        {
-        stat = table->CreateEmptyView (m_ecdb);
-        if (stat != BE_SQLITE_OK)
-            {
-            return stat;
-            }
-        }
-
-    partialTimer.Stop ();
-    if (LOG.isSeverityEnabled (debugSeverity))
-        {
-        LOG.messagev (debugSeverity, "ReplaceEmptyTablesWithEmptyViews: Creating empty views took %.2f secs.", partialTimer.GetElapsedSeconds ());
-        }
-
-    totalTimer.Stop();
-    LOG.infov ("Replaced %d tables with empty views in %.2f seconds.", candidatesToReplace.size (), totalTimer.GetElapsedSeconds());
-    return stat;
+    return table;   
     }
+
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
@@ -606,13 +521,13 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CreateTableStatus ECDbMap::FinishTableDefinition (DbTableR table) const
+CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
     {
     BeCriticalSectionHolder aGurad (m_criticalSection);
     ClustersByTable::const_iterator cit = m_clustersByTable.find (&table);
     if (m_clustersByTable.end() == cit)
         {
-        LOG.errorv ("CreateTable: No mapped table found for table '%s'", table.GetName());
+        LOG.errorv ("CreateTable: No mapped table found for table '%s'", table.GetName().c_str());
         return CREATE_ECTABLE_MissingMappedTable;
         }
     MappedTableR mappedTable = *cit->second;
@@ -695,6 +610,7 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
     
     int nCreated = 0;
     int nUpdated = 0;
+    int nSkipped = 0;
     ClustersByTable::iterator it = m_clustersByTable.begin();
 
     auto& schemaManager = GetECDbR ().GetSchemaManager ();
@@ -703,7 +619,7 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
     for (; it != m_clustersByTable.end(); ++it)
         {
         MappedTablePtr & mappedTable = it->second;
-        DbTableP table = it->first;
+        ECDbSqlTable* table = it->first;
 
         // <<-----------------
         // Load all the classes mapped to this table. This is done to ensure that the table definition is complete.
@@ -732,30 +648,41 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
                 return CREATE_ECTABLE_Error;
             }
 
-        if (IsMappedToExistingTable(*table) || table == &GetNullTable ())
+        if (table->GetPersistenceType () == PersistenceType::Virtual || table->GetOwnerType () == OwnerType::ExistingTable)           
             continue; 
         
-        
-        if (GetECDbR().TableExists(table->GetName()))
+        if (GetECDbR().TableExists(table->GetName().c_str()))
             {
-            if (table->HasPendingModifications (GetECDbR ()))
+            //if (table->HasPendingModifications (GetECDbR ()))
+            //    {
+            //    auto r = table->SyncWithDb (GetECDbR ());
+            //    if (r != BE_SQLITE_OK)
+            //        return CREATE_ECTABLE_Error;
+
+            //    nUpdated++;
+            //    }
+            //*****************************************
+            //Schema Upgrate is not supported - affan
+            if (GetSQLManager ().IsTableChanged (*table))
                 {
-                auto r = table->SyncWithDb (GetECDbR ());
-                if (r != BE_SQLITE_OK)
+                if (table->GetPersistenceManagerR ().Syncronize (GetECDbR ()) != BentleyStatus::SUCCESS)
                     return CREATE_ECTABLE_Error;
-
-                nUpdated++;
                 }
-            continue;
+            //*****************************************
+            nSkipped++;
             }
-        if (table->CreateTableInDb (GetECDbR ()) != BE_SQLITE_OK)
-            return CREATE_ECTABLE_Error;
+        else
+            {
+            if (table->GetPersistenceManagerR ().Create (GetECDbR (), /*CreateIndexes = */ true) != BentleyStatus::SUCCESS)
+                return CREATE_ECTABLE_Error;
 
-        nCreated++;
+            nCreated++;
+            }
         }
 
+    GetSQLManagerR ().Save ();
     timer.Stop();
-    LOG.infov("Created %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nUpdated, timer.GetElapsedSeconds());
+    LOG.infov("Created %d tables, Skipped %d and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
 
     return CREATE_ECTABLE_Success;
     }
@@ -763,9 +690,9 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      2/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbMap::IsMappedToExistingTable (DbTableR table) const
+bool ECDbMap::IsMappedToExistingTable (ECDbSqlTable& table) const
     {
-    if (table.IsMappedToExistingTable ())
+    if (table.GetOwnerType() != OwnerType::ECDb)
         return true;
 
     auto itor = m_clustersByTable.find (&table);
@@ -821,23 +748,6 @@ bool ECDbMap::FinishTableDefinition () const
     return true;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-DbTableCR ECDbMap::GetNullTable ()
-    {
-    return *s_nullTable;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                      06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ECDbMap::IsNullTable (DbTableCR table)
-    {
-    return Utf8String::IsNullOrEmpty (table.GetName ());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
@@ -878,10 +788,10 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
 *         UINT_MAX if the end is AnyClass. 
 * @bsimethod                                 Ramanujam.Raman                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECDbMap::GetTablesFromRelationshipEnd (bset<DbTableP>* tables, ECRelationshipConstraintCR relationshipEnd) const
+size_t ECDbMap::GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECRelationshipConstraintCR relationshipEnd) const
     {
-    bset<DbTableP> tmpTables;
-    bset<DbTableP>* outTables = (tables == nullptr) ? &tmpTables : tables;
+    bset<ECDbSqlTable*> tmpTables;
+    bset<ECDbSqlTable*>* outTables = (tables == nullptr) ? &tmpTables : tables;
     
     auto classes = GetClassesFromRelationshipEnd (relationshipEnd);
     for (ECClassCP ecClass : classes)
@@ -896,7 +806,7 @@ size_t ECDbMap::GetTablesFromRelationshipEnd (bset<DbTableP>* tables, ECRelation
         if (classMap->GetMapStrategy() == MapStrategy::DoNotMap)
             continue;
         BeAssert (!classMap->IsUnmapped());
-        DbTableR  table = classMap->GetTable();
+        ECDbSqlTable&  table = classMap->GetTable();
         outTables->insert(&table);
         }
     return outTables->size();

@@ -113,7 +113,7 @@ private:
     virtual ECN::ECClassCR _GetClass () const = 0;
     virtual ECN::ECClassId _GetParentMapClassId () const = 0;
     virtual PropertyMapCollection const& _GetPropertyMaps () const = 0;
-    virtual DbTableR _GetTable () const = 0;
+    virtual ECDbSqlTable& _GetTable () const = 0;
     virtual MapStrategy _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const = 0;
@@ -133,10 +133,10 @@ public:
     //! Returns the class maps of the classes derived from this class map's class.
     //! @eturn Derived classes class maps
     std::vector<IClassMap const*> GetDerivedClassMaps () const;
-    DbTableR GetTable () const;
+    ECDbSqlTable& GetTable () const;
 
     //! Returns the tables to which this class map - and all derived classes' class maps if
-    void GetTables (bset<DbTableCP>& tables, bool includeDerivedClasses) const;
+    void GetTables (bset<ECDbSqlTable const*>& tables, bool includeDerivedClasses) const;
 
     //! Checks whether this class map contains a property map of type PropertyMapToTable.
     //! @return true, if the class map contains a PropertyMapToTable map. false otherwise.
@@ -192,7 +192,7 @@ protected:
 private:
     ECDbMapCR                   m_ecDbMap;
     PropertyMapCollection       m_propertyMaps;
-    DbTableP                    m_table;
+    ECDbSqlTable*               m_table;
     MapStrategy                 m_mapStrategy;
     bool                        m_isDirty;
     bvector<ClassIndexInfoPtr> m_indexes;
@@ -224,9 +224,9 @@ protected:
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
 
     MapStatus AddPropertyMaps (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
-    void SetTable (DbTableP newTable) { m_table = newTable; }
+    void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
     virtual PropertyMapCollection const& _GetPropertyMaps () const;
-    virtual DbTableR _GetTable () const override { return *m_table; }
+    virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     virtual ECN::ECClassCR _GetClass () const override { return m_ecClass; }
     virtual MapStrategy _GetMapStrategy () const override { return m_mapStrategy; }
@@ -248,8 +248,8 @@ public:
 
     //! Used when finding/creating DbColumns that are mapped to ECProperties of the ECClass
     //! If there is a name conflict, it may call the PropertyMap's SetColumnName method to resolve it
-    DbColumnPtr FindOrCreateColumnForProperty(PropertyMapR propertyMap, Utf8CP requestedColumnName, ECN::PrimitiveType primitiveType, 
-                                               bool nullable, bool unique, Collate collate);
+    ECDbSqlColumn* FindOrCreateColumnForProperty(PropertyMapR propertyMap, Utf8CP requestedColumnName, ECN::PrimitiveType primitiveType, 
+        bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix);
 
 
     PropertyMapCP GetECInstanceIdPropertyMap () const;
@@ -272,7 +272,7 @@ public:
 struct MappedTable : public RefCountedBase
 {
 private:
-    DbTableR                    m_table;
+    ECDbSqlTable&                    m_table;
     bool                        m_generatedClassId;
     bvector<ClassMapCP>          m_classMaps;
     ECDbMapR                    m_ecDbMap;
@@ -284,7 +284,7 @@ private:
 public:
     static MappedTablePtr Create (ECDbMapR ecDbMap, ClassMapCR classMap);
 
-    DbTableR    GetTable() const {return m_table;}
+    ECDbSqlTable&    GetTable() const {return m_table;}
     bool        HasSingleClass() const {return m_classMaps.size() == 1;}
     const bvector<ClassMapCP>&      GetClassMaps() const { return m_classMaps;}
     //! FinishTableDefinition should be called once all ECClasses have been added to this cluster.

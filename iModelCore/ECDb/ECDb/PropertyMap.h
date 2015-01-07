@@ -2,13 +2,13 @@
 |
 |     $Source: ECDb/PropertyMap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "ClassMap.h"
-#include "DbColumn.h"
+#include "ColumnInfo.h"
 
 #include "ECDbSystemSchemaHelper.h"
 #include "ECSql/NativeSqlBuilder.h"
@@ -92,7 +92,7 @@ protected:
     virtual bool _MapsToColumn (Utf8CP columnName) const;
 
     //! @see PropertyMap::GetColumns
-    virtual void _GetColumns(DbColumnList& columns) const;
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! @see PropertyMap::GetColumnBaseName
     virtual Utf8CP _GetColumnBaseName() const;
@@ -103,7 +103,7 @@ protected:
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap);
 
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, DbTableCR table) const;
+    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const;
 
     virtual ECN::ECPropertyId _GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const;
 
@@ -154,10 +154,10 @@ public:
     bool MapsToColumn (Utf8CP columnName) const;
 
     //! Gets the columns (if any) mapped to this property
-    void GetColumns(DbColumnList& columns) const;
+    void GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! Gets the first column if any
-    DbColumnCP GetFirstColumn() const;
+    ECDbSqlColumn const* GetFirstColumn() const;
 
     //! For properties that map to columns, the name of the column... or 'base' name in case of a multi-column DPoint2d, 
     //! e.g. "origin", when the actual columns are origin.X and origin.Y
@@ -177,7 +177,7 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const;
 
-    NativeSqlBuilder::List ToNativeSql (ECDbR ecdb, DbTableCR table) const;
+    NativeSqlBuilder::List ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const;
 
     //! Saves the base column name, if it differs from the property name
     BeSQLite::DbResult Save(ECDbR ecdb) const;
@@ -249,7 +249,7 @@ private:
     ECN::PrimitiveECPropertyCP m_primitiveProperty;
 
     virtual bool _IsVirtual () const override;
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, DbTableCR table) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
     DbResult BindECValueToParameter (Statement& statement, ECN::ECValueCR v, Binding const& binding) const;
 
@@ -258,7 +258,7 @@ protected:
     ColumnInfo      m_columnInfo;
 
     //! The in-memory representation of a column definition in the database
-    DbColumnPtr     m_column;
+    ECDbSqlColumn*     m_column;
 
     //! basic constructor
     PropertyMapToColumn (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
@@ -272,7 +272,7 @@ protected:
     virtual bool _MapsToColumn (Utf8CP columnName) const override;
 
     //! @see PropertyMap::GetColumns
-    virtual void _GetColumns(DbColumnList& columns) const;
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! @see PropertyMap::GetColumnBaseName
     virtual Utf8CP _GetColumnBaseName() const override;
@@ -306,7 +306,7 @@ struct PropertyMapToInLineStruct : PropertyMap
 friend struct PropertyMap;
 private:
 
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, DbTableCR table) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
     //! For debugging and logging
     virtual WString _ToString() const override;
@@ -316,7 +316,7 @@ protected:
 
     BentleyStatus Initialize(ECDbMapCR map);
 
-    virtual void _GetColumns(DbColumnList& columns) const override;
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
 
 public:
@@ -346,7 +346,7 @@ protected:
     PropertyMapToTable (ECN::ECPropertyCR ecProperty, ECN::ECClassCR elementType, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
-    virtual void _GetColumns(DbColumnList& columns) const override;
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual ECN::ECPropertyId _GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const override;
 
 public:
@@ -369,7 +369,7 @@ private:
     //! basic constructor
     PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
     
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, DbTableCR table) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
     //! Bind an ECProperty value from the ecInstance to the statement
     //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
@@ -401,9 +401,9 @@ private:
     ColumnInfo      m_columnInfo;
 
     //! The in-memory representation of the database column definitions
-    DbColumnPtr     m_xColumn;
-    DbColumnPtr     m_yColumn;
-    DbColumnPtr     m_zColumn;
+    ECDbSqlColumn*     m_xColumn;
+    ECDbSqlColumn*     m_yColumn;
+    ECDbSqlColumn*     m_zColumn;
 
     //! basic constructor
     PropertyMapPoint (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
@@ -415,7 +415,7 @@ private:
     bool _MapsToColumn (Utf8CP columnName) const override;
 
     //! @see PropertyMap::GetColumns
-    void _GetColumns(DbColumnList& columns) const;
+    void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! @see PropertyMap::GetColumnBaseName
     Utf8CP _GetColumnBaseName() const override;

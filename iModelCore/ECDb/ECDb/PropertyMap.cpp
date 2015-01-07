@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMap.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -269,7 +269,7 @@ NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlTy
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::ToNativeSql (ECDbR ecdb, DbTableCR table) const
+NativeSqlBuilder::List PropertyMap::ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const
     {
     return _ToNativeSql (ecdb, table);
     }
@@ -279,16 +279,16 @@ NativeSqlBuilder::List PropertyMap::ToNativeSql (ECDbR ecdb, DbTableCR table) co
 //---------------------------------------------------------------------------------------
 NativeSqlBuilder::List PropertyMap::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const
     {
-    DbColumnList columns;
+    std::vector<ECDbSqlColumn const*> columns;
     GetColumns (columns);
 
     NativeSqlBuilder::List nativeSqlSnippets;
     for (auto column : columns)
         {
-        BeAssert (!Utf8String::IsNullOrEmpty (column->GetName ()));
+        BeAssert (!column->GetName ().empty());
 
         NativeSqlBuilder sqlSnippet;
-        sqlSnippet.Append (classIdentifier, column->GetName ());
+        sqlSnippet.Append (classIdentifier, column->GetName ().c_str());
         nativeSqlSnippets.push_back (std::move (sqlSnippet));
         }
 
@@ -298,7 +298,7 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql (Utf8CP classIdentifier, ECSqlT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::_ToNativeSql (ECDbR ecdb, DbTableCR table) const
+NativeSqlBuilder::List PropertyMap::_ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const
     {
     //default impl is same as standard overload
     return _ToNativeSql (nullptr, ECSqlType::Select);
@@ -350,14 +350,14 @@ MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void PropertyMap::_GetColumns (DbColumnList& columns) const
+void PropertyMap::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void PropertyMap::GetColumns (DbColumnList& columns) const
+void PropertyMap::GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
     _GetColumns (columns);
     }
@@ -365,9 +365,9 @@ void PropertyMap::GetColumns (DbColumnList& columns) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      08/2013
 //---------------------------------------------------------------------------------------
-DbColumnCP PropertyMap::GetFirstColumn() const
+ECDbSqlColumn const* PropertyMap::GetFirstColumn() const
     {
-    DbColumnList columns;
+    std::vector<ECDbSqlColumn const*> columns;
     GetColumns(columns);
     if (columns.empty())
         return nullptr;
@@ -653,7 +653,7 @@ PropertyMapCP PropertyMapToInLineStruct::GetPropertyMap (WCharCP propertyName) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-void PropertyMapToInLineStruct::_GetColumns(DbColumnList& columns) const 
+void PropertyMapToInLineStruct::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const 
     {
     for (auto childPropMap : m_children)
         {
@@ -664,7 +664,7 @@ void PropertyMapToInLineStruct::_GetColumns(DbColumnList& columns) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   11/2014
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapToInLineStruct::_ToNativeSql (ECDbR ecdb, DbTableCR table) const
+NativeSqlBuilder::List PropertyMapToInLineStruct::_ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const
     {
     NativeSqlBuilder::List nativeSqlList;
     for (auto childPropMap : m_children)
@@ -822,7 +822,7 @@ ECN::ECPropertyId PropertyMapToTable::_GetECPropertyIdForPersistence (ECClassId 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapToTable::_GetColumns(DbColumnList& columns) const
+void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
     {
     }
 
@@ -860,7 +860,7 @@ PropertyMapToColumn::PropertyMapToColumn (ECPropertyCR ecProperty, WCharCP prope
 //---------------------------------------------------------------------------------------
 bool PropertyMapToColumn::_IsVirtual () const
     {
-    return m_column != nullptr && m_column->IsVirtual ();
+    return m_column != nullptr && m_column->GetPersistenceType() == PersistenceType::Virtual;
     }
 
 //---------------------------------------------------------------------------------------
@@ -872,8 +872,8 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap)
     PrimitiveType primitiveType = m_columnInfo.GetColumnType();
     bool          nullable      = m_columnInfo.GetNullable();
     bool          unique        = m_columnInfo.GetUnique();
-    Collate       collate       = m_columnInfo.GetCollate();
-    m_column = classMap.FindOrCreateColumnForProperty(*this, columnName, primitiveType, nullable, unique, collate);
+    ECDbSqlColumn::Constraint::Collate       collate       = m_columnInfo.GetCollate();
+    m_column = classMap.FindOrCreateColumnForProperty(*this, columnName, primitiveType, nullable, unique, collate, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
     return MapStatus::Success;
     }
@@ -883,15 +883,15 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap)
 //---------------------------------------------------------------------------------------
 bool PropertyMapToColumn::_MapsToColumn (Utf8CP columnName) const
     {
-    return (0 == BeStringUtilities::Stricmp (columnName, m_column->GetName ()));
+    return m_column->GetName ().EqualsI(columnName);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-void PropertyMapToColumn::_GetColumns (DbColumnList& columns) const
+void PropertyMapToColumn::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
-    columns.push_back(m_column.get());
+    columns.push_back(m_column);
     }
 
 //---------------------------------------------------------------------------------------
@@ -918,9 +918,9 @@ void PropertyMapToColumn::_SetColumnBaseName (Utf8CP columnName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   11/2014
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapToColumn::_ToNativeSql (ECDbR ecdb, DbTableCR table) const
+NativeSqlBuilder::List PropertyMapToColumn::_ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const
     {
-    if (m_primitiveProperty->GetType () == PRIMITIVETYPE_IGeometry && !ecdb.ColumnExists (table.GetName (), m_column->GetName ()))
+    if (m_primitiveProperty->GetType () == PRIMITIVETYPE_IGeometry && !ecdb.ColumnExists (table.GetName ().c_str(), m_column->GetName ().c_str()))
         return NativeSqlBuilder::List {NativeSqlBuilder ("NULL")};
 
     return PropertyMap::_ToNativeSql (ecdb, table);
@@ -945,7 +945,7 @@ void PropertyMapToColumn::_AddBindings( Bindings& bindings, uint32_t propertyInd
     if (ECOBJECTS_STATUS_Success != status)
         { BeAssert(false); }
 
-    Binding binding(enabler, *this, propertyIndex, 0, sqlIndex, m_column.get());
+    Binding binding(enabler, *this, propertyIndex, 0, sqlIndex, m_column);
     bindings.push_back(binding);
     sqlIndex++;
     }
@@ -1125,17 +1125,17 @@ void PropertyMapPoint::_AddBindings (Bindings& bindings, uint32_t propertyIndexU
         BeAssert (false);
         }
 
-    Binding xbinding (enabler, *this, propertyIndex, 1, sqlIndex, m_xColumn.get ());
+    Binding xbinding (enabler, *this, propertyIndex, 1, sqlIndex, m_xColumn);
     bindings.push_back (xbinding);
     sqlIndex++;
 
-    Binding ybinding (enabler, *this, propertyIndex, 2, sqlIndex, m_yColumn.get ());
+    Binding ybinding (enabler, *this, propertyIndex, 2, sqlIndex, m_yColumn);
     bindings.push_back (ybinding);
     sqlIndex++;
 
     if (m_is3d)
         {
-        Binding zbinding (enabler, *this, propertyIndex, 3, sqlIndex, m_zColumn.get ());
+        Binding zbinding (enabler, *this, propertyIndex, 3, sqlIndex, m_zColumn);
         bindings.push_back (zbinding);
         sqlIndex++;
         }
@@ -1151,23 +1151,21 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
     Utf8CP        columnName    = m_columnInfo.GetName();
     bool          nullable      = m_columnInfo.GetNullable();
     bool          unique        = m_columnInfo.GetUnique();
-    Collate       collate       = m_columnInfo.GetCollate();
+    ECDbSqlColumn::Constraint::Collate       collate       = m_columnInfo.GetCollate();
 
     Utf8String xColumnName(columnName);
     xColumnName.append(".X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(*this, xColumnName.c_str(), primitiveType, nullable, unique, collate);
+    m_xColumn = classMap.FindOrCreateColumnForProperty(*this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
 
     Utf8String yColumnName(columnName);
     yColumnName.append(".Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty(*this, yColumnName.c_str(), primitiveType, nullable, unique, collate);
-
+    m_yColumn = classMap.FindOrCreateColumnForProperty (*this, yColumnName.c_str (), primitiveType, nullable, unique, collate, "Y");
     if (!m_is3d)
         return MapStatus::Success;
 
     Utf8String zColumnName(columnName);
     zColumnName.append(".Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty(*this, zColumnName.c_str(), primitiveType, nullable, unique, collate);
-    
+    m_zColumn = classMap.FindOrCreateColumnForProperty (*this, zColumnName.c_str (), primitiveType, nullable, unique, collate, "Z");
     return MapStatus::Success;
     }
 
@@ -1176,20 +1174,20 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PropertyMapPoint::_MapsToColumn( Utf8CP columnName ) const 
     {
-    return (0 == BeStringUtilities::Stricmp (columnName, m_xColumn->GetName ()) ||
-        0 == BeStringUtilities::Stricmp (columnName, m_yColumn->GetName ()) ||
-        m_is3d && 0 == BeStringUtilities::Stricmp (columnName, m_zColumn->GetName ()));
+    return (0 == BeStringUtilities::Stricmp (columnName, m_xColumn->GetName ().c_str()) ||
+        0 == BeStringUtilities::Stricmp (columnName, m_yColumn->GetName ().c_str ()) ||
+        m_is3d && 0 == BeStringUtilities::Stricmp (columnName, m_zColumn->GetName ().c_str ()));
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapPoint::_GetColumns(DbColumnList& columns) const
+void PropertyMapPoint::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
     {
-    columns.push_back(m_xColumn.get());
-    columns.push_back(m_yColumn.get());
+    columns.push_back(m_xColumn);
+    columns.push_back(m_yColumn);
     if (m_is3d) 
-        columns.push_back(m_zColumn.get());
+        columns.push_back(m_zColumn);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1303,9 +1301,9 @@ PropertyMapArrayOfPrimitives::PropertyMapArrayOfPrimitives (ECPropertyCR ecPrope
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   11/2014
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapArrayOfPrimitives::_ToNativeSql (ECDbR ecdb, DbTableCR table) const
+NativeSqlBuilder::List PropertyMapArrayOfPrimitives::_ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const
     {
-    if (GetProperty ().GetAsArrayProperty ()->GetPrimitiveElementType () == PRIMITIVETYPE_IGeometry && !ecdb.ColumnExists (table.GetName (), m_column->GetName ()))
+    if (GetProperty ().GetAsArrayProperty ()->GetPrimitiveElementType () == PRIMITIVETYPE_IGeometry && !ecdb.ColumnExists (table.GetName ().c_str(), m_column->GetName ().c_str()))
         return NativeSqlBuilder::List {NativeSqlBuilder ("NULL")};
 
     return PropertyMap::_ToNativeSql (ecdb, table);

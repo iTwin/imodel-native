@@ -44,7 +44,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
     //in a no-op in SQLite. Continue preparation as clients must continue to be able to call the bind
     //API, even if it is a no-op. If we stopped preparation, clients would see index out of range errors when 
     //calling the bind API.
-    if (classMap.GetTable ().IsVirtual ())
+    if (classMap.GetTable ().GetPersistenceType() == PersistenceType::Virtual)
         ctx.SetNativeStatementIsNoop (true);
 
     auto& nativeSqlBuilder = ctx.GetSqlBuilderR ();

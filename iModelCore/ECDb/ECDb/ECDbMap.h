@@ -9,25 +9,24 @@
 #include "ECDbInternalTypes.h"
 #include "ClassMap.h"
 #include "SchemaImportContext.h"
-
+#include "ECDbSql.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Casey.Mullen      11/2011
 +===============+===============+===============+===============+===============+======*/
-struct ECDbMap
+struct ECDbMap :NonCopyableClass
 {
 typedef bmap<ECN::ECClassId, ClassMapPtr>       ClassMapDictionary;
-typedef bmap<DbTableP, MappedTablePtr>          ClustersByTable;
+typedef bmap<ECDbSqlTable*, MappedTablePtr>          ClustersByTable;
 
 private:
-    static DbTablePtr           s_nullTable;
     mutable BeCriticalSection   m_criticalSection;
     ECDbR                       m_ecdb;
-
+    ECDbSQLManager              m_ecdbSqlManager;
     ClassMapDictionary          m_classMapDictionary;
 
-    mutable bmap<Utf8CP, DbTablePtr, CompareIUtf8>  m_tableCache; //table names must be case insenstive
+    mutable bmap<Utf8CP, ECDbSqlTable*, CompareIUtf8>  m_tableCache; //table names must be case insenstive
 
     ClustersByTable             m_clustersByTable;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
@@ -41,17 +40,21 @@ private:
     MapStatus                   AddClassMap (ClassMapPtr& classMap);
     void                        RemoveClassMap (IClassMap const& classMap);
     CreateTableStatus           FinishTableDefinition (ECN::ECClassCR ecClass) const;
-    CreateTableStatus           FinishTableDefinition (DbTableR table) const;
+    CreateTableStatus           FinishTableDefinition (ECDbSqlTable& table) const;
     bool                        FinishTableDefinition () const;
     DbResult                    Save ();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     CreateTableStatus           CreateOrUpdateRequiredTables ();
     void                        LoadAllMetadata () const;
-    static DbTablePtr           CreateNullTable ();
 
 public:                        
                                 explicit ECDbMap (ECDbR ecdb);
                                 ~ECDbMap ();
+
+    ECDbSQLManager const&        GetSQLManager () const { return m_ecdbSqlManager; }
+    ECDbSQLManager&              GetSQLManagerR () { return m_ecdbSqlManager; }
+
+
     ECN::ECClassCR              GetClassForPrimitiveArrayPersistence (ECN::PrimitiveType primitiveType) const;
     bool                        ContainsMappingsForSchema (ECN::ECSchemaCR ecSchema);
     ECDbR                       GetECDbR () const { return m_ecdb; }
@@ -76,23 +79,18 @@ public:
 
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP (ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-    bool                        IsMappedToExistingTable (DbTableR table) const;
+    bool                        IsMappedToExistingTable (ECDbSqlTable& table) const;
 
-    DbTablePtr                  FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable, bool allowReplacingEmptyTableWithView) const;
+    ECDbSqlTable*                  FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable, bool allowReplacingEmptyTableWithView) ;
     MappedTableP                GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
-    DbResult                    ReplaceEmptyTablesWithEmptyViews () const;
-    DbResult                    ReplaceViewsWithEmptyTables () const;
     //! The values returned by GetPrimitiveTypeName are intended only for logging and debugging purposes
     static WCharCP              GetPrimitiveTypeName (ECN::PrimitiveType primitiveType);
 
     //!Loads the class maps if they were not loaded yet
     void                        GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR relationshipEnd) const;
-    size_t                      GetTablesFromRelationshipEnd (bset<DbTableP>* tables, ECN::ECRelationshipConstraintCR relationshipEnd) const;
+    size_t                      GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECN::ECRelationshipConstraintCR relationshipEnd) const;
     void                        ClearCache();
-
-    static DbTableCR            GetNullTable ();
-    static bool                 IsNullTable (DbTableCR table);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

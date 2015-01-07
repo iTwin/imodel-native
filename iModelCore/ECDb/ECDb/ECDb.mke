@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDb.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -45,8 +45,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeRepositoryBasedIdSequence.h \
-                $(baseDir)DbTable.h \
-                $(baseDir)DbColumn.h \
+                $(baseDir)ColumnInfo.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)ClassMapFactory.h \
@@ -130,7 +129,8 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/EmbeddedECSqlStatement.h \
                 $(baseDir)ECSql/ECSqlEventManager.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
-                $(baseDir)ECSql/JsonReaderImpl.h 
+                $(baseDir)ECSql/JsonReaderImpl.h \
+                $(baseDir)ECDbSql.h
 
 #----------------------------------------------------------------------
 # Create output directories
@@ -189,10 +189,8 @@ $(o)RelationshipClassMap$(oext):							$(baseDir)RelationshipClassMap.cpp       
 $(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)DbTable$(oext):											$(baseDir)DbTable.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
  
-$(o)DbColumn$(oext):										$(baseDir)DbColumn.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ColumnInfo$(oext):										$(baseDir)ColumnInfo.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SqlGenerator$(oext):									$(baseDir)SqlGenerator.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -378,6 +376,7 @@ $(o)ECSqlStepTask$(oext):	                            $(baseDir)ECSql/ECSqlStepT
 
 $(o)EmbeddedECSqlStatement$(oext):	                    $(baseDir)ECSql/EmbeddedECSqlStatement.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECDbSql$(oext):	                                    $(baseDir)ECDbSql.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -461,7 +460,9 @@ DLM_OBJECT_PCH              = $(o)ECDbPch$(oext)
 LINKER_LIBRARIES            = $(ContextDeliveryDir)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
-                              $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)\
+			      $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(stlibext) \
+                              $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 
 

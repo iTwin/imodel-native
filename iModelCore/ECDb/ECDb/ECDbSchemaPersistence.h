@@ -154,10 +154,10 @@ public:
     static  BeSQLite::DbResult SetECPropertyMapColumnName               (ECPropertyId propertyId, Utf8CP mapColumnName, BeSQLite::Db& db);
     static  MapStrategy        GetClassMapStrategy                      (bool* hasMapEntry,ECN::ECClassCR ecClass, BeSQLite::Db& db);
     static                bool IsECSchemaMapped                         (bool* schemaNotFound, ECN::ECSchemaCR ecSchema, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetClassesMappedToTable                  (std::vector<ECClassId>& classIds, DbTableCR table, BeSQLite::Db& db, bool includeRelationshipEndTables = false);
+    static  BeSQLite::DbResult GetClassesMappedToTable                  (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db, bool includeRelationshipEndTables = false);
     static                bool IsCustomAttributeDefined                 (BeSQLite::Db& db, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
     static  BeSQLite::DbResult DeleteECProperty                         (ECPropertyId propertyId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetRelationshipEndsMappedToTable         (std::vector<ECClassId>& classIds, DbTableCR table, BeSQLite::Db& db);
+    static  BeSQLite::DbResult GetRelationshipEndsMappedToTable         (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db);
     static  BeSQLite::DbResult UpdatePropertyPath                       (ECDb& db);
     static   ECN::ECPropertyId GetECPropertyAlias                       (ECClassId ecClassId, Utf8CP accessString, BeSQLite::Db& db);
 

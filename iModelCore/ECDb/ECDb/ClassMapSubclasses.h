@@ -43,7 +43,7 @@ private:
 
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual PropertyMapCollection const& _GetPropertyMaps () const override { return m_embeddedClassViewPropMaps; }
-        virtual DbTableR _GetTable () const override { return m_secondaryTableClassMap.GetTable (); }
+        virtual ECDbSqlTable& _GetTable () const override { return m_secondaryTableClassMap.GetTable (); }
         virtual NativeSqlConverter const& _GetNativeSqlConverter () const override { return m_secondaryTableClassMap.GetNativeSqlConverter (); }
         virtual ECN::ECClassCR _GetClass () const override { return m_secondaryTableClassMap.GetClass (); }
         virtual MapStrategy _GetMapStrategy () const override { return m_secondaryTableClassMap.GetMapStrategy (); }

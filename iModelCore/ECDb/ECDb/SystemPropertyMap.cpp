@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSystem::PropertyMapSystem (ECPropertyCR ecProperty, DbColumnPtr& column, ECSqlSystemProperty kind)
+PropertyMapSystem::PropertyMapSystem (ECPropertyCR ecProperty, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind)
 : PropertyMap (ecProperty, ecProperty.GetName ().c_str (), nullptr), m_kind (kind), m_column (column)
     {
     }
@@ -20,10 +20,10 @@ PropertyMapSystem::PropertyMapSystem (ECPropertyCR ecProperty, DbColumnPtr& colu
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-DbColumnCR PropertyMapSystem::GetColumn () const
+ECDbSqlColumn const& PropertyMapSystem::GetColumn () const
     {
-    BeAssert (m_column != nullptr);
-    return *m_column;
+    BeAssert (m_column.expired() == false);
+    return *m_column.lock().get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ DbColumnCR PropertyMapSystem::GetColumn () const
 //---------------------------------------------------------------------------------------
 bool PropertyMapSystem::_IsVirtual () const
     {
-    return m_column != nullptr && m_column->IsVirtual ();
+    return !m_column.expired () && m_column.lock()->GetPersistenceType () == PersistenceType::Virtual;
     }
 
 //----------------------------------------------------------------------------------
@@ -64,17 +64,17 @@ MapStatus PropertyMapSystem::_FindOrCreateColumnsInTable (ClassMap& classMap)
 //+---------------+---------------+---------------+---------------+---------------+-
 bool PropertyMapSystem::_MapsToColumn (Utf8CP columnName) const
     {
-    return (m_column != nullptr) && (0 == BeStringUtilities::Stricmp (columnName, m_column->GetName ()));
+    return (!m_column.expired()) && (0 == BeStringUtilities::Stricmp (columnName, m_column.lock()->GetName ().c_str()));
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-void PropertyMapSystem::_GetColumns (DbColumnList& columns) const
+void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
-    BeAssert (m_column != nullptr);
-    if (m_column != nullptr)
-        columns.push_back (m_column.get ());
+    BeAssert (!m_column.expired ());
+    if (!m_column.expired())
+        columns.push_back (m_column.lock().get());
     }
 
 //----------------------------------------------------------------------------------
@@ -82,13 +82,12 @@ void PropertyMapSystem::_GetColumns (DbColumnList& columns) const
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8CP PropertyMapSystem::_GetColumnBaseName () const
     {
-    BeAssert (m_column != nullptr);
+    BeAssert (!m_column.expired ());
     Utf8String propertyName (m_ecProperty.GetName ());
-    Utf8CP columnName = m_column->GetName ();
-    if (propertyName.EqualsI (columnName))
+    if (propertyName.EqualsI (m_column.lock()->GetName ()))
         return nullptr;
     else
-        return columnName;
+        return m_column.lock()->GetName ().c_str();
     }
 
 //----------------------------------------------------------------------------------
@@ -109,8 +108,8 @@ WCharCP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = L"ECInstanceId";
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, DbColumnPtr& column)
-: PropertyMapSystem (ecInstanceIdProperty, column, ECSqlSystemProperty::ECInstanceId)
+PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn*& column)
+: PropertyMapSystem (ecInstanceIdProperty, column->GetWeakPtr(), ECSqlSystemProperty::ECInstanceId)
     {}
 
 //----------------------------------------------------------------------------------
@@ -123,19 +122,16 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         //log and assert done in child method
         return nullptr;
 
-    auto const& systemKeyColumns = classMap.GetTable ().GetSystemKeys ();
-    if (systemKeyColumns.empty ())
+    std::vector<ECDbSqlColumn const*> systemColumns;
+    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECdbSystemColumnECId) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
         }
 
-    auto systemColumn = systemKeyColumns[0];
-    if (systemColumn == nullptr)
-        {
-        BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
+    auto systemColumn = const_cast<ECDbSqlColumn*>(systemColumns.front ());
+    if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName().c_str()) != BentleyStatus::SUCCESS)
         return nullptr;
-        }
 
     return new PropertyMapECInstanceId (*property, systemColumn);
     }
@@ -153,7 +149,7 @@ bool PropertyMapECInstanceId::_IsECInstanceIdPropertyMap () const
 //+---------------+---------------+---------------+---------------+---------------+-
 WString PropertyMapECInstanceId::_ToString () const
     {
-    return WPrintfString (L"PropertyMapECInstanceId: Column name=%ls", WString (GetColumn ().GetName (), BentleyCharEncoding::Utf8).c_str ());
+    return WPrintfString (L"PropertyMapECInstanceId: Column name=%ls", WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str ());
     }
 
 
@@ -162,8 +158,8 @@ WString PropertyMapECInstanceId::_ToString () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSecondaryTableKey::PropertyMapSecondaryTableKey (ECPropertyCR ecProperty, DbColumnPtr& column, ECSqlSystemProperty kind)
- : PropertyMapSystem (ecProperty, column, kind)
+PropertyMapSecondaryTableKey::PropertyMapSecondaryTableKey (ECPropertyCR ecProperty, ECDbSqlColumn*& column, ECSqlSystemProperty kind)
+ : PropertyMapSystem (ecProperty, column->GetWeakPtr(), kind)
  {}
 
 //----------------------------------------------------------------------------------
@@ -188,39 +184,43 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         //log and assert done in child method
         return nullptr;
 
-    auto const& columns = classMap.GetTable ().GetSystemKeys();
-
-    DbColumnPtr systemColumn = nullptr;
-    for (auto& column : columns)
+    std::vector<ECDbSqlColumn const*> systemColumns;  
+    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECdbSystemColumns) == BentleyStatus::ERROR)
         {
-        Utf8CP columnName = column->GetName ();
+        BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
+        return nullptr;
+        }
+
+    ECDbSqlColumn* systemColumn = nullptr;
+    for (auto& column : systemColumns)
+        {
         bool found = false;
         switch (kind)
             {
                 case ECSqlSystemProperty::ECInstanceId:
                     {
-                    if (0 == BeStringUtilities::Stricmp (columnName, ECDB_COL_ECInstanceId))
+                    if (column->GetUserFlags () == ECdbSystemColumnECId)
                         found = true;
                        
                     break;
                     }
                 case ECSqlSystemProperty::OwnerECInstanceId:
                     {
-                    if (0 == BeStringUtilities::Stricmp (columnName, ECDB_COL_OwnerECInstanceId))
+                    if (column->GetUserFlags () == ECdbSystemColumnOwnerECId)
                         found = true;
 
                     break;
                     }
                 case ECSqlSystemProperty::ECPropertyId:
                     {
-                    if (0 == BeStringUtilities::Stricmp (columnName, ECDB_COL_ECPropertyId))
+                    if (column->GetUserFlags () == ECdbSystemColumnECPropertyId)
                         found = true;
 
                     break;
                     }
                 case ECSqlSystemProperty::ECArrayIndex:
                     {
-                    if (0 == BeStringUtilities::Stricmp (columnName, ECDB_COL_ECArrayIndex))
+                    if (column->GetUserFlags () == ECdbSystemColumnECArraryIndex)
                         found = true;
 
                     break;
@@ -231,7 +231,7 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
 
         if (found)
             {
-            systemColumn = column;
+            systemColumn = const_cast<ECDbSqlColumn*>(column);
             break;
             }
         }
@@ -242,6 +242,9 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
+    if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName ().c_str ()) != BentleyStatus::SUCCESS)
+        return nullptr;
+
     return new PropertyMapSecondaryTableKey (*property, systemColumn, kind);
     }
 
@@ -250,7 +253,7 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
 //+---------------+---------------+---------------+---------------+---------------+-
 WString PropertyMapSecondaryTableKey::_ToString () const
  {
- return WPrintfString (L"PropertyMapSecondaryTableKey: Column name=%ls", WString (GetColumn ().GetName (), BentleyCharEncoding::Utf8).c_str ());
+ return WPrintfString (L"PropertyMapSecondaryTableKey: Column name=%ls", WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str ());
  }
 
 
@@ -262,11 +265,11 @@ WString PropertyMapSecondaryTableKey::_ToString () const
 PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint
 (
 ECN::ECPropertyCR constraintProperty,
-DbColumnPtr& column,
+ECDbSqlColumn*& column,
 ECSqlSystemProperty kind,
 Utf8CP viewColumnAlias
 )
-: PropertyMapSystem (constraintProperty, column, kind), m_viewColumnAlias (viewColumnAlias)
+: PropertyMapSystem (constraintProperty, column->GetWeakPtr(), kind), m_viewColumnAlias (viewColumnAlias)
     { 
     }
 
@@ -275,7 +278,7 @@ Utf8CP viewColumnAlias
 //---------------------------------------------------------------------------------------
 void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (NativeSqlBuilder& viewSql) const
     {
-    viewSql.Append (GetColumn ().GetName ());
+    viewSql.Append (GetColumn ().GetName ().c_str());
     if (HasViewColumnAlias ())
         viewSql.AppendSpace ().Append (GetViewColumnAlias ());
     }
@@ -289,7 +292,7 @@ void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (Nat
 PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraintECInstanceId
 (
 ECPropertyCR constraintProperty,
-DbColumnPtr& column,
+ECDbSqlColumn*& column,
 ECSqlSystemProperty kind,
 Utf8CP viewColumnAlias
 )
@@ -301,11 +304,14 @@ Utf8CP viewColumnAlias
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, DbColumnPtr& column, Utf8CP viewColumnAlias)
+PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn*& column, IClassMap const& classMap, Utf8CP viewColumnAlias)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
     PRECONDITION (prop != nullptr, nullptr);
+
+    if (column->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), prop->GetName ().c_str ()) != BentleyStatus::SUCCESS)
+        return nullptr;
 
     return new PropertyMapRelationshipConstraintECInstanceId (*prop, column, kind, viewColumnAlias);
     }
@@ -318,7 +324,7 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeS
     NativeSqlBuilder nativeSqlSnippet;
     //view column alias is only relevant for SELECT as in the native SQL the FROM table is a view
     //whose columns differ from the actual DbColumn name for end table mappings
-    auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ();
+    auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ().c_str();
     nativeSqlSnippet.Append (classIdentifier, columnExp);
 
     NativeSqlBuilder::List nativeSqlSnippets;
@@ -332,7 +338,7 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeS
 WString PropertyMapRelationshipConstraintECInstanceId::_ToString () const
     {
     return WPrintfString (L"PropertyMapRelationshipConstraintECInstanceId: Column name=%ls View column alias=%ls",
-        WString (GetColumn ().GetName (), BentleyCharEncoding::Utf8).c_str (),
+        WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str (),
         WString (GetViewColumnAlias (), BentleyCharEncoding::Utf8).c_str ());
     }
 
@@ -344,20 +350,27 @@ WString PropertyMapRelationshipConstraintECInstanceId::_ToString () const
 PropertyMapRelationshipConstraintClassId::PropertyMapRelationshipConstraintClassId
 (
 ECN::ECPropertyCR constraintProperty,
-DbColumnPtr& column,
+ECDbSqlColumn*& column,
 ECSqlSystemProperty kind,
 ECClassId defaultConstraintECClassId,
 Utf8CP viewColumnAlias,
-DbTableP table
+ECDbSqlTable* table
 )
 : PropertyMapRelationshipConstraint (constraintProperty, column, kind, viewColumnAlias),
 m_defaultConstraintClassId (defaultConstraintECClassId)
     {
     if (table != nullptr)
         {
-        table->AddAfterSetClassIdHook ([this] (DbColumnPtr& newClassIdCol)
+        table->AddColumnEventHandler ([this, table] (ECDbSqlTable::ColumnEvent evt, ECDbSqlColumn& column)
             {
-            ReplaceColumn (newClassIdCol);
+            if (evt == ECDbSqlTable::ColumnEvent::Created && column.GetUserFlags() == ECdbSystemColumnECClassId)
+                {
+                if (!GetColumnWeakPtr ().expired ())
+                    table->DeleteColumn (GetColumnWeakPtr ().lock()->GetName ().c_str ());
+
+                column.GetDependentPropertiesR ().Add (m_defaultConstraintClassId, GetPropertyAccessString ());
+                ReplaceColumn (column.GetWeakPtr());
+                }
             });
         }
     }
@@ -369,15 +382,19 @@ PropertyMapPtr PropertyMapRelationshipConstraintClassId::Create
 (
 ECRelationshipEnd constraintEnd,
 ECDbSchemaManagerCR schemaManager,
-DbColumnPtr& column,
+ECDbSqlColumn*& column,
 ECClassId defaultSourceECClassId,
+IClassMap const& classMap,
 Utf8CP viewColumnAlias,
-DbTableP table
+ECDbSqlTable* table
 )
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
     PRECONDITION (prop != nullptr, nullptr);
+
+    if (column->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), prop->GetName ().c_str ()) != BentleyStatus::SUCCESS)
+        return nullptr;
 
     return new PropertyMapRelationshipConstraintClassId (*prop, column, kind, defaultSourceECClassId, viewColumnAlias, table);
     }
@@ -392,7 +409,7 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
         {
         //view column alias is only relevant for SELECT as in the native SQL the FROM table is a view
         //whose columns differ from the actual DbColumn name for end table mappings
-        auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ();
+        auto columnExp = ecsqlType == ECSqlType::Select && HasViewColumnAlias () ? GetViewColumnAlias () : GetColumn ().GetName ().c_str();
         nativeSqlSnippet.Append (classIdentifier, columnExp);
         }
     else
@@ -400,7 +417,7 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
         if (IsVirtual ())
             nativeSqlSnippet.Append (m_defaultConstraintClassId);
         else
-            nativeSqlSnippet.Append (classIdentifier, GetColumn ().GetName ());
+            nativeSqlSnippet.Append (classIdentifier, GetColumn ().GetName ().c_str());
         }
 
     NativeSqlBuilder::List nativeSqlSnippets;
@@ -414,7 +431,7 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
 WString PropertyMapRelationshipConstraintClassId::_ToString () const
     {
     return WPrintfString (L"PropertyMapRelationshipConstraintClassId: Column name=%ls View column alias=%ls Default constraint ECClassId=%lld",
-        WString (GetColumn ().GetName (), BentleyCharEncoding::Utf8).c_str (),
+        WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str (),
         WString (GetViewColumnAlias (), BentleyCharEncoding::Utf8).c_str (),
         m_defaultConstraintClassId);
     }

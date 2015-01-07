@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/DbColumn.cpp $
+|     $Source: ECDb/ColumnInfo.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, IECInstanceCP hint) 
-: m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collate (Collate::Default), m_virtual (false), m_priority (0)
+: m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collate (ECDbSqlColumn::Constraint::Collate::Default), m_virtual (false), m_priority (0)
     {
     // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
@@ -33,7 +33,7 @@ ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColumnInfo::ColumnInfo (Utf8CP columnName, PrimitiveType primitiveType, bool nullable, bool unique, Collate collate)
+ColumnInfo::ColumnInfo (Utf8CP columnName, PrimitiveType primitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate)
 : m_columnName (columnName), m_columnType (primitiveType), m_nullable (nullable), m_unique (unique), m_collate (collate), m_virtual (false), m_priority (0)
     {
     }
@@ -58,7 +58,7 @@ void ColumnInfo::InitializeFromHint(IECInstanceCP hint, ECPropertyCR ecProperty)
     if (PropertyHintReader::TryReadIsUnique (isUnique, *hint))
         m_unique = isUnique;
 
-    Collate collate;
+    ECDbSqlColumn::Constraint::Collate collate;
     if (PropertyHintReader::TryReadCollate (collate, *hint))
         m_collate = collate;
 
@@ -69,7 +69,7 @@ void ColumnInfo::InitializeFromHint(IECInstanceCP hint, ECPropertyCR ecProperty)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ColumnInfo::LoadMappingInformationFromDb (ColumnInfoR columnInfo, ECPropertyCR ecProperty, BeSQLite::Db& db)
+BeSQLite::DbResult ColumnInfo::LoadMappingInformationFromDb (ColumnInfo& columnInfo, ECPropertyCR ecProperty, BeSQLite::Db& db)
     {
     Utf8String mapColumnName;
     DbResult r;
@@ -132,49 +132,6 @@ void ColumnInfo::SetColumnName (Utf8CP columnName)
     m_columnName = columnName;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Casey.Mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbColumn::DbColumn(Utf8CP columnName, PrimitiveType primitiveType, bool nullable, bool unique, Collate collate) 
-    : ColumnInfo(columnName, primitiveType, nullable, unique, collate) 
-    {
-    }
 
-DbColumnPtr DbColumn::Create(Utf8CP columnName, PrimitiveType primitiveType, bool nullable, bool unique, Collate collate) 
-    {
-    return new DbColumn(columnName, primitiveType, nullable, unique, collate);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbColumnPtr DbColumn::CreatePrimaryKey()
-    {
-    return new DbColumn(ECDB_COL_ECInstanceId, PRIMITIVETYPE_DbKey, false, true, Collate::Default); // specify a value generator on the column?
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbColumnPtr DbColumn::CreatePrimaryKey(Utf8CP column)
-    {
-    return new DbColumn(column, PRIMITIVETYPE_DbKey, false, true, Collate::Default); // specify a value generator on the column?
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbColumnPtr DbColumn::CreateClassId()
-    {
-    return new DbColumn(ECDB_COL_ECClassId, PRIMITIVETYPE_DbKey, false, false, Collate::Default);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DbColumn::IsCompatibleWith (PrimitiveType columnType) const
-    {
-    return (GetColumnType () == columnType);
-    }
-
+//
 END_BENTLEY_SQLITE_EC_NAMESPACE

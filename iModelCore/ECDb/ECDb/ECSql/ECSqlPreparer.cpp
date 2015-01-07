@@ -410,20 +410,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp (NativeSqlBuilder::List& nativ
         BeAssert (!exp->IsPolymorphic () && "ECSQL INSERT does not support polymorphism. This should have been caught by the parsing code already.");
         NativeSqlBuilder nativeSqlSnippet;
         //SQLite does not support table aliases in insert 
-        nativeSqlSnippet.AppendEscaped (classMap.GetTable ().GetName ());
+        nativeSqlSnippet.AppendEscaped (classMap.GetTable ().GetName ().c_str());
         nativeSqlSnippets.push_back (move (nativeSqlSnippet));
         return ECSqlStatus::Success;
         }
 
     //now handle update and deletes.
-    bset<DbTableCP> tables;
+    bset<ECDbSqlTable const*> tables;
     classMap.GetTables (tables, exp->IsPolymorphic ());
 
     for (auto table : tables)
         {
         NativeSqlBuilder nativeSqlSnippet;
         //SQLite does not support table aliases in both update and deletes 
-        nativeSqlSnippet.AppendEscaped (table->GetName ());
+        nativeSqlSnippet.AppendEscaped (table->GetName ().c_str());
         nativeSqlSnippets.push_back (move (nativeSqlSnippet));
         }
 
@@ -685,14 +685,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
     auto classNameExp = static_cast<ClassNameExp const*> (classRefExp);
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
-    auto classIdColumn = classMap.GetTable ().GetClassIdColumn ();
+    auto classIdColumn = classMap.GetTable ().FindColumnCP ("ECClassId");
 
     NativeSqlBuilder nativeSqlSnippet;
 
     if (classIdColumn != nullptr)
         {
         auto classRefId = classRefExp->GetId ().c_str ();
-        auto classIdColumnName = classIdColumn->GetName ();
+        auto classIdColumnName = classIdColumn->GetName ().c_str();
         nativeSqlSnippet.Append (classRefId, classIdColumnName);
         }
     else

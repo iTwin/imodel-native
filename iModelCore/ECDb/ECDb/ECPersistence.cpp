@@ -92,7 +92,7 @@ void ECPersistence::LogLastSqliteError (BeSQLiteDbR db)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Binding::Binding (ECEnablerCR enabler, PropertyMapCR propertyMap, uint32_t propertyIndex, uint16_t componentMask, int sqlIndex, DbColumnCP column)
+Binding::Binding (ECEnablerCR enabler, PropertyMapCR propertyMap, uint32_t propertyIndex, uint16_t componentMask, int sqlIndex, ECDbSqlColumn const* column)
     : m_enabler (enabler), m_propertyMap (propertyMap), m_propertyIndex (propertyIndex), m_componentMask (componentMask),
     m_sqlIndex (sqlIndex), m_column (column)
     {}

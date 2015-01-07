@@ -63,7 +63,7 @@ protected:
 
     RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
 
-    DbColumnPtr CreateConstraintColumn (Utf8CP columnName, bool addToTable = false);
+    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, bool addToTable = false);
     std::unique_ptr<ClassDbView> CreateClassDbView ();
 
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
@@ -118,17 +118,17 @@ private:
     RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
     virtual Type _GetClassMapType () const override { return Type::RelationshipEndTable; };
 
-    bool GetRelationshipColumnName (Utf8StringR columnName, DbTableCR table, Utf8CP prefix, bool mappingInProgress) const;
+    bool GetRelationshipColumnName (Utf8StringR columnName, ECDbSqlTable const& table, Utf8CP prefix, bool mappingInProgress) const;
 
     void AddIndices (ClassMapInfoCR mapInfo);
     void AddIndexToRelationshipEnd (bool isUniqueIndex);
-    bool GetOtherEndKeyColumnName (Utf8StringR columnName, DbTableCR table, bool mappingInProgress) const;
-    bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, DbTableCR table, bool mappingInProgress) const;
+    bool GetOtherEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
+    bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
 
-    MapStatus CreateConstraintColumns (DbColumnPtr& otherEndECInstanceIdColumn, DbColumnPtr& otherEndECClassIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable);
-    MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, DbColumnPtr const& otherEndECInstanceIdColumn, DbColumnPtr const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
+    MapStatus CreateConstraintColumns (ECDbSqlColumn*& otherEndECInstanceIdColumn, ECDbSqlColumn*& otherEndECClassIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable);
+    MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
 
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
@@ -144,7 +144,7 @@ public:
     PropertyMapCP GetOtherEndECInstanceIdPropMap () const;
     PropertyMapCP GetOtherEndECClassIdPropMap () const;
 
-    bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, DbTableCR table) const
+    bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table) const
         {
         return GetOtherEndECClassIdColumnName (columnName, table, false);
         }
@@ -177,16 +177,16 @@ private:
 
     void                AddIndices (ClassMapInfoCR mapInfo);
     void                AddIndicesToRelationshipEnds (RelationshipIndexSpec spec, bool addUniqueIndex);
-    DbIndexPtr          CreateIndex (RelationshipIndexSpec spec, bool uniqueIndex);
-    static void         AddColumnsToIndex (DbIndexR index, DbColumnCP col1, DbColumnCP col2, DbColumnCP col3, DbColumnCP col4);
+    ECDbSqlIndex*       CreateIndex (RelationshipIndexSpec spec, bool uniqueIndex);
+    static void         AddColumnsToIndex (ECDbSqlIndex& index, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
 
-    bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTableCR table) const;
+    bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
 
 public:
     ~RelationshipClassLinkTableMap () {}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
 
-    bool                GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTableCR table) const;
+    bool                GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

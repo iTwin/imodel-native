@@ -18,8 +18,7 @@
     <ClCompile Include="ClassMapFactory.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
     <ClCompile Include="ClassMapSubclasses.cpp" />
-    <ClCompile Include="DbColumn.cpp" />
-    <ClCompile Include="DbTable.cpp" />
+    <ClCompile Include="ColumnInfo.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
@@ -30,6 +29,7 @@
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
     <ClCompile Include="ECDbSchemaPersistence.cpp" />
+    <ClCompile Include="ECDbSql.cpp" />
     <ClCompile Include="ECDbMap.cpp" />
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
@@ -157,8 +157,7 @@
     <ClInclude Include="ClassMapFactory.h" />
     <ClInclude Include="ClassMapInfo.h" />
     <ClInclude Include="ClassMapSubclasses.h" />
-    <ClInclude Include="DbColumn.h" />
-    <ClInclude Include="DbTable.h" />
+    <ClInclude Include="ColumnInfo.h" />
     <ClInclude Include="ECDbClassDependencyAnalyzer.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -169,6 +168,7 @@
     <ClInclude Include="ECDbSchemaPersistence.h" />
     <ClInclude Include="ECDbSchemaReader.h" />
     <ClInclude Include="ECDbSchemaWriter.h" />
+    <ClInclude Include="ECDbSql.h" />
     <ClInclude Include="ECDbSystemSchemaHelper.h" />
     <ClInclude Include="ECDbUtility.h" />
     <ClInclude Include="ECInstanceSerializer.h" />

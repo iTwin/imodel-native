@@ -63,7 +63,7 @@ protected:
     ~InstanceDeleter();
 
     virtual MapStatus _Initialize();
-    void InitializeStructArrayDeleters (IClassMap const& classMap, DbTableCR table);
+    void InitializeStructArrayDeleters (IClassMap const& classMap, ECDbSqlTable const& table);
 
     virtual BentleyStatus _Delete (int& numDeleted, const ECInstanceIdSet& ecInstanceIds, ECDbDeleteHandlerP deleteHandler);
     virtual void _ClearCache();

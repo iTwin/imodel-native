@@ -15,10 +15,8 @@
 ECDB_TYPEDEFS_PTR (InstanceDeleter);
 ECDB_TYPEDEFS(ClassMapInfo);
 ECDB_TYPEDEFS(RelationshipClassMapInfo);
-ECDB_TYPEDEFS(ColumnInfo);
 ECDB_TYPEDEFS_PTR (ClassMap);
 ECDB_TYPEDEFS_PTR (PropertyMap);
-ECDB_TYPEDEFS_PTR (DbColumn);
 ECDB_TYPEDEFS(PropertyMapToColumn);
 ECDB_TYPEDEFS_PTR(PropertyMapToInLineStruct);
 ECDB_TYPEDEFS_PTR(PropertyMapToTable);
@@ -29,14 +27,8 @@ ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(RelevantRelationship);
-ECDB_TYPEDEFS_PTR(DbTable);
 ECDB_TYPEDEFS_PTR(InstanceUpdater);
-ECDB_TYPEDEFS_PTR(DbConstraint);
-ECDB_TYPEDEFS_PTR(DbTableConstraint);
-ECDB_TYPEDEFS_PTR(DbPrimaryKeyTableConstraint);
-ECDB_TYPEDEFS_PTR(DbUniqueTableConstraint);
 ECDB_TYPEDEFS_PTR(DbForignKeyConstraint);
-ECDB_TYPEDEFS_PTR(DbIndex);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
 
@@ -348,5 +340,15 @@ struct CompareIWChar
     {
     bool operator()(WCharCP s1, WCharCP s2) const { return (BeStringUtilities::Wcsicmp(s1, s2) < 0);}
     };
+
+#define ECdbDataColumn  0x0U
+#define ECdbSystemColumnECId  0x1U
+#define ECdbSystemColumnECClassId  0x2U
+#define ECdbSystemColumnOwnerECId  0x4U
+#define ECdbSystemColumnECPropertyId  0x8U
+#define ECdbSystemColumnECArraryIndex  0x10U
+
+#define ECdbSystemColumns  (ECdbSystemColumnECId | ECdbSystemColumnECClassId | ECdbSystemColumnOwnerECId | ECdbSystemColumnECPropertyId | ECdbSystemColumnECArraryIndex)
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

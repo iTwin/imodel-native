@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistence.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1757,7 +1757,7 @@ MapStrategy ECDbSchemaPersistence::GetClassMapStrategy (bool* hasMapEntry, ECN::
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>& classIds, DbTableCR table, BeSQLite::Db& db, bool includeRelationshipEndTables)
+DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db, bool includeRelationshipEndTables)
     {
     BeSQLite::Statement stmt;
     auto stat = stmt.Prepare(db, "SELECT ec_ClassMap.ECClassId, MapStrategy FROM ec_ClassMap  JOIN ec_Class ON ec_ClassMap.ECClassId = ec_Class.ECClassId WHERE MapToDbTable = ? AND ec_Class.IsRelationship = 0");
@@ -1790,7 +1790,7 @@ DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>&
 * This work for end table mapping. If a relationship has a class on any end that is mapped
 * to the provided table only then the ECClassId of the relationship is retuned.
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetRelationshipEndsMappedToTable (std::vector<ECClassId>& classIds, DbTableCR table, BeSQLite::Db& db)
+DbResult ECDbSchemaPersistence::GetRelationshipEndsMappedToTable (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db)
     {
     BeSQLite::Statement stmt;
     //The following SQL determine the relationship that is mapped using EndTable Mapping, if one of the end table matchs the 

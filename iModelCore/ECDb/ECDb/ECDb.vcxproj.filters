@@ -76,6 +76,9 @@
     <Filter Include="ECSchemas">
       <UniqueIdentifier>{48af7464-6331-4c7d-9e22-c4bb3bead7ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECDbSql">
+      <UniqueIdentifier>{d0a32c70-095d-497a-a307-b9322efb9bca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECDbPch.h">
@@ -188,12 +191,6 @@
     </ClInclude>
     <ClInclude Include="MapGenerator.h">
       <Filter>Unused</Filter>
-    </ClInclude>
-    <ClInclude Include="DbColumn.h">
-      <Filter>ECDbMap\Db</Filter>
-    </ClInclude>
-    <ClInclude Include="DbTable.h">
-      <Filter>ECDbMap\Db</Filter>
     </ClInclude>
     <ClInclude Include="ClassMap.h">
       <Filter>ECDbMap\Map</Filter>
@@ -419,10 +416,16 @@
     <ClInclude Include="ECDbImpl.h">
       <Filter>ECDb</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbSql.h">
+      <Filter>ECDbSql</Filter>
+    </ClInclude>
     <ClInclude Include="ECPersistence.h">
       <Filter>ECPersistence</Filter>
     </ClInclude>
     <ClInclude Include="BeRepositoryBasedIdSequence.h" />
+    <ClInclude Include="ColumnInfo.h">
+      <Filter>ECDbMap\Db</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -532,12 +535,6 @@
     </ClCompile>
     <ClCompile Include="MapGenerator.cpp">
       <Filter>Unused</Filter>
-    </ClCompile>
-    <ClCompile Include="DbColumn.cpp">
-      <Filter>ECDbMap\Db</Filter>
-    </ClCompile>
-    <ClCompile Include="DbTable.cpp">
-      <Filter>ECDbMap\Db</Filter>
     </ClCompile>
     <ClCompile Include="ClassMap.cpp">
       <Filter>ECDbMap\Map</Filter>
@@ -807,6 +804,12 @@
     </ClCompile>
     <ClCompile Include="ECDbImpl.cpp">
       <Filter>ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbSql.cpp">
+      <Filter>ECDbSql</Filter>
+    </ClCompile>
+    <ClCompile Include="ColumnInfo.cpp">
+      <Filter>ECDbMap\Db</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

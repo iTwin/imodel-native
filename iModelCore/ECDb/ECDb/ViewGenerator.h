@@ -42,10 +42,10 @@ private:
             }
         };
 
-    typedef bmap<DbTableCP, ViewMember> ViewMemberByTable; 
+    typedef bmap<ECDbSqlTable const*, ViewMember> ViewMemberByTable; 
     static BentleyStatus ComputeViewMembers (ViewMemberByTable& viewMembers, ECDbMapCR map, ECN::ECClassCR ecClass, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables, bool ensureDerivedClassesAreLoaded);
     static BentleyStatus GetRootClasses (std::vector<IClassMap const*>& rootClasses, ECDbR db);
-    static BentleyStatus GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR map, DbTableCR table, const std::vector<IClassMap const*>& childClassMap, IClassMap const& baseClassMap, bool isPolymorphic,  ECSqlPrepareContext const& prepareContext);
+    static BentleyStatus GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR map, ECDbSqlTable const& table, const std::vector<IClassMap const*>& childClassMap, IClassMap const& baseClassMap, bool isPolymorphic,  ECSqlPrepareContext const& prepareContext);
     //! Relationship polymorphic query
     static BentleyStatus CreateViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR map, IClassMap const& relationMap, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables);
     static BentleyStatus CreateViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR map, IClassMap const& relationMap, IClassMap const& baseClassMap);
@@ -58,7 +58,7 @@ private:
     static BentleyStatus GetAllChildRelationships (std::vector<RelationshipClassMapCP>& relationshipMaps, ECDbMapCR map, IClassMap const& baseRelationMap);
 
     //! Append view prop map list separated by comma.
-    static BentleyStatus AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR ecdb, DbTableCR table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView = false);
+    static BentleyStatus AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR ecdb, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView = false);
 
     static BentleyStatus AppendSystemPropMaps (NativeSqlBuilder& viewQuery, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap);
     static BentleyStatus AppendSystemPropMapsToNullView (NativeSqlBuilder& viewQuery, RelationshipClassMapCR relationMap, bool endWithComma);
@@ -68,7 +68,7 @@ private:
     static BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass (std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, IClassMap const& baseClassMap, IClassMap const& childClassMap, bool skipSystemProperties, bool embededStatement);
 
     static void LoadDerivedClassMaps (std::map<ECN::ECClassId, IClassMap const *>& viewClasses, ECDbMapCR map, IClassMap const* classMap);
-    static void CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<DbTableCP, std::vector<IClassMap const*>> &tableMap, std::set<DbTableCP> &tableToIncludeEntirly, bool forStructArray);
+    static void CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<ECDbSqlTable const*, std::vector<IClassMap const*>> &tableMap, std::set<ECDbSqlTable const*> &tableToIncludeEntirly, bool forStructArray);
 
 public:
 

@@ -392,7 +392,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbTestProject& testProject
 
         {
         auto& ecdb = testProject.GetECDb ();
-        Savepoint savepoint (ecdb, "Inserting test instances", true);
+        Savepoint savepoint (ecdb, "Inserting test instances");
         pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
         if (!pECInstanceId.IsValid ())
             {

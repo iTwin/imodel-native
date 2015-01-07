@@ -80,7 +80,7 @@ public:
     static bool TryReadColumnName (Utf8String& columnName, ECN::IECInstanceCR hint);
     static bool TryReadIsNullable (bool& isNullable, ECN::IECInstanceCR hint);
     static bool TryReadIsUnique (bool& isUnique, ECN::IECInstanceCR hint);
-    static bool TryReadCollate (Collate& collate, ECN::IECInstanceCR hint);
+    static bool TryReadCollate (ECDbSqlColumn::Constraint::Collate& collate, ECN::IECInstanceCR hint);
     };
 
 //======================================================================================

@@ -112,9 +112,9 @@ struct RelationshipConstraintInfo
         Utf8String m_ecClassIdColumn;
         Utf8String m_ecInstanceIdColumn;
         bool       m_enforceIntegrityCheck;
-        DbForignKeyConstraint::ActionType m_onDeleteAction;
-        DbForignKeyConstraint::ActionType m_onUpdateAction;
-        DbForignKeyConstraint::MatchType  m_matchType;
+        ECDbSqlForiegnKeyConstraint::ActionType m_onDeleteAction;
+        ECDbSqlForiegnKeyConstraint::ActionType m_onUpdateAction;
+        ECDbSqlForiegnKeyConstraint::MatchType  m_matchType;
         bool       m_generateDefaultIndex;
         bool       m_isEmpty;
 
@@ -122,15 +122,15 @@ struct RelationshipConstraintInfo
 
     public:
         RelationshipConstraintInfo ()
-            : m_enforceIntegrityCheck (false), m_onDeleteAction (DbForignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (DbForignKeyConstraint::ActionType::NotSpecified), m_isEmpty (true), m_generateDefaultIndex (true), m_matchType (DbForignKeyConstraint::MatchType::NotSpecified)
+            : m_enforceIntegrityCheck (false), m_onDeleteAction (ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForiegnKeyConstraint::ActionType::NotSpecified), m_isEmpty (true), m_generateDefaultIndex (true), m_matchType (ECDbSqlForiegnKeyConstraint::MatchType::NotSpecified)
             {}
 
         Utf8StringCR GetECClassIdColumn () const { return m_ecClassIdColumn; }
         Utf8StringCR GetECInstanceIdColumn () const { return m_ecInstanceIdColumn; }
         bool DoEnforceIntegrityCheck () const { return m_enforceIntegrityCheck; }
-        DbForignKeyConstraint::ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
-        DbForignKeyConstraint::ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
-        DbForignKeyConstraint::MatchType  GetMatchType () const { return m_matchType; }
+        ECDbSqlForiegnKeyConstraint::ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
+        ECDbSqlForiegnKeyConstraint::ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
+        ECDbSqlForiegnKeyConstraint::MatchType  GetMatchType () const { return m_matchType; }
         bool IsEmpty () const { return m_isEmpty; }
         bool GenerateDefaultIndex () const { return m_generateDefaultIndex; }
 

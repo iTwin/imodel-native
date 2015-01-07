@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPch.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
@@ -16,8 +16,7 @@
 #include "ECDbLogger.h"
 #include "ECSchemaComparers.h"
 #include "ECDbImpl.h"
-#include "DbColumn.h"
-#include "DbTable.h"
+#include "ColumnInfo.h"
 #include "PropertyMap.h"
 #include "SystemPropertyMap.h"
 #include "ECDbMap.h"
@@ -73,4 +72,6 @@
 #include "ECSql/ECSqlDeletePreparer.h"
 #include "ECSql/ECInstanceAdapterHelper.h"
 #include "ECSql/ECSqlPrepareContext.h"
+#include "ECDbSql.h"
+
 

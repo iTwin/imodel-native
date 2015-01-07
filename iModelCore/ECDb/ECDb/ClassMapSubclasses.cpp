@@ -138,8 +138,8 @@ MapStatus UnmappedClassMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClas
 
     if (parentClassMap != nullptr)
         m_parentMapClassId = parentClassMap->GetParentMapClassId ();
-
-    SetTable (const_cast<DbTableP> (&ECDbMap::GetNullTable ()));
+    auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
+    SetTable (const_cast<ECDbSqlTable*> (nullTable));
 
     return MapStatus::Success;
     }

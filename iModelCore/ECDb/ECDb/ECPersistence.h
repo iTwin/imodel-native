@@ -119,7 +119,7 @@ struct Binding
     PropertyMapCR       m_propertyMap;
 
     //! The actual column that is bound
-    DbColumnCP          m_column;
+    ECDbSqlColumn const*          m_column;
 
     //! Used to indicate which 'components' of a property are applicable
     uint16_t              m_componentMask;
@@ -128,7 +128,7 @@ struct Binding
     ECN::ECEnablerCR    m_enabler;
 
     //! primary constructor
-    Binding (ECN::ECEnablerCR enabler, PropertyMapCR propertyMap, uint32_t propertyIndex, uint16_t componentMask, int sqlIndex, DbColumnCP column);
+    Binding (ECN::ECEnablerCR enabler, PropertyMapCR propertyMap, uint32_t propertyIndex, uint16_t componentMask, int sqlIndex, ECDbSqlColumn const* column);
 
     //! Copy constructor for bvector
     Binding (Binding const& other);

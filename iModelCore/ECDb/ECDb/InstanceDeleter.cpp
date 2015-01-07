@@ -68,8 +68,8 @@ MapStatus InstanceDeleter::_Initialize()
     PRECONDITION (classMap != nullptr, MapStatus::Error);
     PRECONDITION (!classMap->IsUnmapped(), MapStatus::Error);
 
-    DbTableCR table = classMap->GetTable();
-    if (!m_ecDbMap.GetECDbR().TableExists (table.GetName()))
+    ECDbSqlTable const& table = classMap->GetTable();
+    if (!m_ecDbMap.GetECDbR().TableExists (table.GetName().c_str()))
         return MapStatus::Error;
         
     if (!IsTopLevelDeleter ())
@@ -90,10 +90,10 @@ MapStatus InstanceDeleter::_Initialize()
 void InstanceDeleter::GetDeleteSql (Utf8StringR deleteSql)
     {
     IClassMap const* classMap = m_ecDbMap.GetClassMap (m_ecClass);
-    DbTableCR table = classMap->GetTable();
+    ECDbSqlTable const& table = classMap->GetTable();
 
     SqlDelete deleteBuilder;
-    deleteBuilder.SetTable (table.GetName());
+    deleteBuilder.SetTable (table.GetName ().c_str ());
 
     if (IsTopLevelDeleter())
         {
@@ -128,9 +128,9 @@ void InstanceDeleter::GetDeleteSql (Utf8StringR deleteSql)
             BeAssert (false && "ECInstanceId prop map is expected to map to a single column.");
         }
 
-    auto classIdColumn = table.GetClassIdColumn(); 
+    auto classIdColumn = table.FindColumnCP("ECClassId"); 
     if (nullptr != classIdColumn)
-        deleteBuilder.AddWhere (classIdColumn->GetName(), Utf8PrintfString (" = %lld", classMap->GetClass().GetId()).c_str());
+        deleteBuilder.AddWhere (classIdColumn->GetName().c_str(), Utf8PrintfString (" = %lld", classMap->GetClass().GetId()).c_str());
 
     bool status = deleteBuilder.GetSql (deleteSql);
     BeAssert (status);
@@ -178,7 +178,7 @@ DbResult InstanceDeleter::GetDeleteStatement (CachedStatementPtr& deleteStatemen
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                 Ramanujam.Raman     02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceDeleter::InitializeStructArrayDeleters (IClassMap const& classMap, DbTableCR table)
+void InstanceDeleter::InitializeStructArrayDeleters (IClassMap const& classMap, ECDbSqlTable const& table)
     {
     classMap.GetPropertyMaps ().Traverse ([this, &classMap] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
@@ -395,11 +395,11 @@ void InstanceDeleter::GetSelectSql (Utf8StringR selectSql, Utf8CP whereCriteria)
     {
     BeAssert (IsTopLevelDeleter());
     IClassMap const* classMap = m_ecDbMap.GetClassMap (m_ecClass);
-    DbTableCR table = classMap->GetTable();
+    ECDbSqlTable const& table = classMap->GetTable();
 
     SqlSelect selectBuilder;
 
-    selectBuilder.AddFrom (table.GetName());
+    selectBuilder.AddFrom (table.GetName ().c_str ());
     selectBuilder.AddSelect (ECDB_COL_ECInstanceId);
     if (m_ecClass.GetIsStruct())
         {
@@ -407,9 +407,9 @@ void InstanceDeleter::GetSelectSql (Utf8StringR selectSql, Utf8CP whereCriteria)
         selectBuilder.AddWhere (ECDB_COL_ECArrayIndex, "is null");
         }
 
-    auto classIdColumn = table.GetClassIdColumn(); 
+    auto classIdColumn = table.FindColumnCP("ECClassId"); 
     if (nullptr != classIdColumn)
-        selectBuilder.AddWhere (classIdColumn->GetName(), Utf8PrintfString (" = %lld", classMap->GetClass ().GetId()).c_str());
+        selectBuilder.AddWhere (classIdColumn->GetName ().c_str (), Utf8PrintfString (" = %lld", classMap->GetClass ().GetId ()).c_str ());
 
     if (!Utf8String::IsNullOrEmpty (whereCriteria))
         selectBuilder.AddWhere (whereCriteria);
@@ -579,7 +579,7 @@ MapStatus RelationshipInstanceDeleter::_Initialize()
         return MapStatus::Error;
 
     // Setup deleting struct array property entries (these are rows in secondary property tables that are to be deleted)
-    DbTableCR endTable = relationshipClassMap->GetTable ();
+    ECDbSqlTable const& endTable = relationshipClassMap->GetTable ();
     InitializeStructArrayDeleters (*relationshipClassMap, endTable);
     return MapStatus::Success;
     }
@@ -591,23 +591,23 @@ void RelationshipInstanceDeleter::GetUpdateSql (Utf8StringR updateSql)
     {
     RelationshipClassEndTableMapCP relationshipClassMap = static_cast<RelationshipClassEndTableMapCP> (m_ecDbMap.GetClassMap (m_ecClass));
     BeAssert (!relationshipClassMap->IsUnmapped());
-    DbTableCR endTable = relationshipClassMap->GetTable ();
+    ECDbSqlTable const& endTable = relationshipClassMap->GetTable ();
 
     SqlUpdate updateBuilder;
 
     // UPDATE Table
-    updateBuilder.SetTable (endTable.GetName());
+    updateBuilder.SetTable (endTable.GetName ().c_str ());
 
     // RK_Column = NULL
     auto rkColumn = relationshipClassMap->GetOtherEndECInstanceIdPropMap ()->GetFirstColumn ();
     BeAssert (rkColumn != nullptr);
-    updateBuilder.AddUpdateColumn (rkColumn->GetName(), "NULL");
+    updateBuilder.AddUpdateColumn (rkColumn->GetName ().c_str (), "NULL");
 
     // RC_Column = NULL
     auto rcColumn = relationshipClassMap->GetOtherEndECClassIdPropMap ()->GetFirstColumn();
     BeAssert (rcColumn != nullptr);
-    if (!rcColumn->IsVirtual())
-        updateBuilder.AddUpdateColumn (rcColumn->GetName(), "NULL");
+    if (rcColumn->GetPersistenceType() == PersistenceType::Persisted)
+        updateBuilder.AddUpdateColumn (rcColumn->GetName ().c_str (), "NULL");
 
     // Set non-struct-array properties to NULL
     Bindings parameterBindings;
@@ -620,13 +620,13 @@ void RelationshipInstanceDeleter::GetUpdateSql (Utf8StringR updateSql)
         {
         if (!binding.m_column)
             continue;
-        updateBuilder.AddUpdateColumn (binding.m_column->GetName(), "NULL");
+        updateBuilder.AddUpdateColumn (binding.m_column->GetName().c_str(), "NULL");
         nextParameterIndex++;
         }
 
     auto thisEndKeyColumn = relationshipClassMap->GetThisEndECInstanceIdPropMap ()->GetFirstColumn ();
     BeAssert (thisEndKeyColumn != nullptr);
-    updateBuilder.AddWhere (thisEndKeyColumn->GetName (), " = ?");
+    updateBuilder.AddWhere (thisEndKeyColumn->GetName ().c_str (), " = ?");
 
     bool status = updateBuilder.GetSql (updateSql);
     BeAssert (status);

@@ -104,7 +104,6 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbR ecdb)
     {
-    auto map = ecdb.GetImplR().GetECDbMap();
     auto defMetaDataInst = generatedProperty.GetCustomAttribute (L"DefinitionMetaData");
     if (defMetaDataInst == nullptr)
         {

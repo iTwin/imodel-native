@@ -235,7 +235,7 @@ ECPersistencePtr ECDb::Impl::GetECPersistence (ECN::ECClassCR ecClass) const
     auto classMap = GetECDbMap ().GetClassMap (ecClass, true);
 
     // Error checks
-    if (classMap == nullptr || classMap->IsUnmapped () || classMap->GetTable ().IsVirtual ())
+    if (classMap == nullptr || classMap->IsUnmapped () || classMap->GetTable ().GetPersistenceType() == PersistenceType::Virtual)
         return nullptr;
 
     if (ecClass.GetIsStruct () && !ecClass.GetIsDomainClass ())
