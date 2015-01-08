@@ -28,14 +28,14 @@ public:
     //! Constructs an ECInstanceId from a 64 bit value.
     //! @param[in] id Numeric value of the ECInstanceId, that must be composed of the RepositoryId and the local id.
     //! (see overload ECInstanceId::ECInstanceId(BeRepositoryId,UInt32) )
-    explicit ECInstanceId (Int64 id)
+    explicit ECInstanceId (int64_t id)
         : BeRepositoryBasedId (id)
         {}
     
     //! Constructs an ECInstanceId from a RepositoryId value and an id.
     //! @param[in] repositoryId RepositoryId
     //! @param[in] id Id locally unique for the given @p repositoryId
-    ECInstanceId (BeRepositoryId repositoryId, UInt32 id)
+    ECInstanceId (BeRepositoryId repositoryId, uint32_t id)
         : BeRepositoryBasedId (repositoryId, id)
         {}
     };
@@ -118,7 +118,7 @@ private:
 public:
     //! Required number of characters to represent an ECInstanceId as string.
     //! @see ECInstanceIdHelper::ToString
-    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<UInt64>::digits + 1; //+1 for the trailing 0 character
+    static const size_t ECINSTANCEID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
 
     //! Converts the specified ECInstanceId to its string representation.
     //! 

@@ -211,7 +211,7 @@ public:
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt64 (int parameterIndex, Int64 value);
+    ECDB_EXPORT ECSqlStatus BindInt64 (int parameterIndex, int64_t value);
 
     //! Binds a Point2D value to the parameter
     //! @param[in] parameterIndex Parameter index
@@ -256,7 +256,7 @@ public:
     //! is not an array, a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Array parameter binder
-    ECDB_EXPORT IECSqlArrayBinder& BindArray (int parameterIndex, UInt32 initialArrayCapacity);
+    ECDB_EXPORT IECSqlArrayBinder& BindArray (int parameterIndex, uint32_t initialArrayCapacity);
     
     //! Gets a binder to bind a value to the parameter at the specified index.
     //! @param[in] parameterIndex Parameter index
@@ -401,7 +401,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT Int64 GetValueInt64 (int columnIndex) const;
+    ECDB_EXPORT int64_t GetValueInt64 (int columnIndex) const;
 
     //! Gets the Point2D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDb.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -126,6 +126,16 @@ void ECDb::_OnDbClose ()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                01/2015
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::_OnDbChangedByOtherConnection ()
+    {
+    T_Super::_OnDbChangedByOtherConnection ();
+    BeAssert (m_ecDbStore.IsValid ());
+    m_ecDbStore->OnDbChangedByOtherConnection ();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
@@ -136,7 +146,8 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
         return stat;
         }
    
-    return ECDbProfileManager::UpgradeECProfile (*this, params);
+    BeAssert (GetDefaultTransaction () != nullptr);
+    return ECDbProfileManager::UpgradeECProfile (*this, params, *GetDefaultTransaction ());
     }
 
 //--------------------------------------------------------------------------------------

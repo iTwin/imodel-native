@@ -380,9 +380,9 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
     EXPECT_EQ (1, rowCount) << L"be_local after a repository id change should only contain one row (the repo id).";
 
     //check value of repo id through API. As we opened file from scratch the old id cannot be in the cache anymore.
-    Int64 actualRepoId;
+    int64_t actualRepoId;
     db.QueryRepositoryLocalValue (actualRepoId, repoIdIndex);
-    EXPECT_EQ (expectedRepoId.GetValue (), (Int32) actualRepoId) << L"QueryRepositoryLocalValue did not return the right value for repository id after repository id had been changed.";
+    EXPECT_EQ (expectedRepoId.GetValue (), (int32_t) actualRepoId) << L"QueryRepositoryLocalValue did not return the right value for repository id after repository id had been changed.";
     }
 
 
@@ -451,7 +451,7 @@ void RunDeleteCascadingTest (int primaryRowCount, int secondaryRowCountPerPrimar
         Utf8CP ternarySql = ternarySqlList[i].c_str ();
         LOG.tracev ("Executing %s [Secondary: %s Ternary: %s]", primarySql, secondarySql, ternarySql);
             {
-            Savepoint savepoint (dbWithTrigger, "", true);
+            Savepoint savepoint (dbWithTrigger, "");
             Statement stmt;
             ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (dbWithTrigger, primarySql)) << "Preparation of " << primarySql << " failed: " << dbWithTrigger.GetLastError ();
             StopWatch timer (true);
@@ -468,7 +468,7 @@ void RunDeleteCascadingTest (int primaryRowCount, int secondaryRowCountPerPrimar
             }
 
             {
-            Savepoint savepoint (dbWithoutTrigger, "", true);
+            Savepoint savepoint (dbWithoutTrigger, "");
 
             //execute ternary statement first
             Statement ternaryStmt;

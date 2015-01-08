@@ -137,7 +137,7 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindBinary (const void* value, int binar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PointToColumnsECSqlBinder::_BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to Point2D / Point3D parameter.");
     }
@@ -169,9 +169,9 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindInt (int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PointToColumnsECSqlBinder::_BindInt64 (Int64 value)
+ECSqlStatus PointToColumnsECSqlBinder::_BindInt64 (int64_t value)
     {
-    return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind Int64 value to Point2D / Point3D parameter.");
+    return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind int64_t value to Point2D / Point3D parameter.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ IECSqlStructBinder& PointToColumnsECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PointToColumnsECSqlBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& PointToColumnsECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
     const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array to Point2D / Point3D parameter.");
     return GetNoopBinder (stat).BindArray (initialCapacity);

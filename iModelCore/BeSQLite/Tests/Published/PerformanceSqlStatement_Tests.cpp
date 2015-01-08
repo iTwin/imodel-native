@@ -42,7 +42,7 @@ void InsertRows (Db& db, Utf8CP tableName, int rowCount)
         {
         stmt.Reset ();
         stmt.ClearBindings ();
-        stmt.BindInt64 (1, static_cast<Int64> (i));
+        stmt.BindInt64 (1, static_cast<int64_t> (i));
         stmt.BindText (2, "blabla", Statement::MAKE_COPY_Yes);
         stmt.BindDouble (3, i * 3.1415);
         stmt.BindInt (4, i * 123);
@@ -181,7 +181,7 @@ DbResult expectedResult
         }
 
     timer.Stop ();
-    const Int64 totalExecutionCount = repetitionsPerTable * testTableNames.size ();
+    const int64_t totalExecutionCount = repetitionsPerTable * testTableNames.size ();
     sql.Sprintf (sqlTemplate, "Foo");
     LOG.infov ("Preparing '%hs' %lld times took %.4f secs.", sql.c_str (), totalExecutionCount, timer.GetElapsedSeconds ());
     }
@@ -594,7 +594,7 @@ Utf8String& logMessageHeader
     bvector<Utf8String> tablesToCheck;
     CreateListOfTablesToCheckForExistence (tablesToCheck, existingTables, checkForExistingTables);
 
-    Int64 executionCount = 0LL;
+    int64_t executionCount = 0LL;
 
     StopWatch timer ("", true);
     Statement stmt;
@@ -646,7 +646,7 @@ Utf8String& logMessageHeader
 
     const int expectedRowCount = checkForExistingTables ? 1 : 0;
 
-    Int64 executionCount = 0LL;
+    int64_t executionCount = 0LL;
 
     StopWatch timer ("", true);
     Statement stmt;
@@ -694,7 +694,7 @@ Utf8String& logMessageHeader
 
     Utf8String sql;
 
-    Int64 executionCount = 0LL;
+    int64_t executionCount = 0LL;
 
     StopWatch timer ("", true);
     for (int i = 0; i < repetitions; i++)

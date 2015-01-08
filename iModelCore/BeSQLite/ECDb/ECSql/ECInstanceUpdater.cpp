@@ -76,7 +76,7 @@ private:
     bool m_isValid;
 
     void Initialize(bvector<ECPropertyCP>& propertiesToBind);
-    void Initialize(bvector<UInt32>& propertiesToBind);
+    void Initialize(bvector<uint32_t>& propertiesToBind);
 
     virtual BentleyStatus _Update (IECInstanceCR instance) const override;
     virtual bool _IsValid () const override { return m_isValid; }
@@ -84,7 +84,7 @@ private:
 public:
     ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass);
     ClassUpdaterImpl (ECDbR ecdb, IECInstanceCR instance);
-    ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass, bvector<UInt32>& propertiesToBind);
+    ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
 
     ~ClassUpdaterImpl ()
         {}
@@ -151,7 +151,7 @@ ECInstanceUpdater::ECInstanceUpdater
 (
 ECDbR ecdb,
 ECN::ECClassCR ecClass,
-bvector<UInt32>& propertiesToBind
+bvector<uint32_t>& propertiesToBind
 )
     {
     //if (propertiesToBind.size() < 1) // WIP_ECSQL: Assert? throw exception?
@@ -279,7 +279,7 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, IECInstanceCR instance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbR ecdb, ECClassCR ecClass, bvector<UInt32>& propertiesToBind)
+ClassUpdaterImpl::ClassUpdaterImpl(ECDbR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
     : Impl (ecClass), m_ecdb(ecdb), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(propertiesToBind);
@@ -288,7 +288,7 @@ ClassUpdaterImpl::ClassUpdaterImpl(ECDbR ecdb, ECClassCR ecClass, bvector<UInt32
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassUpdaterImpl::Initialize(bvector<UInt32>& propertiesToBind)
+void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     {
     //register internal event handler
     auto stat = m_statement.RegisterEventHandler (m_internalEventHandler);
@@ -309,7 +309,7 @@ void ClassUpdaterImpl::Initialize(bvector<UInt32>& propertiesToBind)
 
     int parameterIndex = 1;
     ECEnablerP enabler = GetECClass().GetDefaultStandaloneEnabler ();
-    for (UInt32 propertyIndex : propertiesToBind)
+    for (uint32_t propertyIndex : propertiesToBind)
         {
         ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
         if (ecProperty->GetIsStruct())

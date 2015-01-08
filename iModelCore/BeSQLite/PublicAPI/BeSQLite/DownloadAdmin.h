@@ -54,24 +54,24 @@ enum DownloadStatus
 struct ChunkBuffer
 {
 private:
-    byte*   m_data;
-    UInt32  m_nBytes;
-    UInt32  m_chunkNo;
+    Byte*   m_data;
+    uint32_t m_nBytes;
+    uint32_t m_chunkNo;
 
 public:
     void* operator new(size_t size) {return bentleyAllocator_allocateRefCounted (size);}
     void operator delete(void* rawMemory, size_t size) {bentleyAllocator_deleteRefCounted (rawMemory, size);}
 
-    ChunkBuffer (UInt32 chunkNo, UInt32 nBytes)
+    ChunkBuffer (uint32_t chunkNo, uint32_t nBytes)
         {
         m_nBytes=nBytes;
-        m_data=(byte*) bentleyAllocator_malloc(nBytes);
+        m_data=(Byte*) bentleyAllocator_malloc(nBytes);
         m_chunkNo=chunkNo;
         }
     ~ChunkBuffer() {bentleyAllocator_free ((void*)m_data, m_nBytes);}
-    byte* GetData() const {return m_data;}
-    UInt32 GetChunkNo() const {return m_chunkNo;}
-    UInt32 GetNBytes() const {return m_nBytes;}
+    Byte* GetData() const {return m_data;}
+    uint32_t GetChunkNo() const {return m_chunkNo;}
+    uint32_t GetNBytes() const {return m_nBytes;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -83,22 +83,22 @@ public:
 struct FileStats
 {
 private:
-    UInt64  m_fileSize;
-    UInt64  m_signature;
-    UInt32  m_chunkSize;
+    uint64_t m_fileSize;
+    uint64_t m_signature;
+    uint32_t m_chunkSize;
 
 public:
-    UInt64 GetFileSize() const {return m_fileSize;}
-    UInt32 GetChunkSize() const {return m_chunkSize;}
-    UInt32 GetNChunks() const {BeAssert(m_chunkSize!=0 && m_fileSize!=0); return (UInt32) ((m_fileSize-1)/m_chunkSize) + 1;}
-    UInt32 GetSizeForChunkNo (UInt32 chunkNo) 
+    uint64_t GetFileSize() const {return m_fileSize;}
+    uint32_t GetChunkSize() const {return m_chunkSize;}
+    uint32_t GetNChunks() const {BeAssert(m_chunkSize!=0 && m_fileSize!=0); return (uint32_t) ((m_fileSize-1)/m_chunkSize) + 1;}
+    uint32_t GetSizeForChunkNo (uint32_t chunkNo) 
         {
         BeAssert(chunkNo<GetNChunks()); 
-        UInt32 retval = (chunkNo == (GetNChunks()-1)) ? (m_fileSize%m_chunkSize) : m_chunkSize;
+        uint32_t retval = (chunkNo == (GetNChunks()-1)) ? (m_fileSize%m_chunkSize) : m_chunkSize;
         return retval ? retval : m_chunkSize;  //  retval is 0 when the file is an exact multiple of the chunk size.
         }
     bool Matches (FileStats const& other) const {return 0==memcmp(this, &other, sizeof(*this));}
-    FileStats(UInt64 fileSize, UInt32 chunkSize, UInt64 sig=0) {m_fileSize = fileSize; m_signature = sig; m_chunkSize=chunkSize;}
+    FileStats(uint64_t fileSize, uint32_t chunkSize, uint64_t sig=0) {m_fileSize = fileSize; m_signature = sig; m_chunkSize=chunkSize;}
 };
 
 //=======================================================================================
@@ -121,9 +121,9 @@ struct IReceiver
 //=======================================================================================
 struct DownloadConfig
 {
-    UInt32 m_saveInterval;
-    UInt32 m_backgroundDelay;
-    UInt32 m_timeout;
+    uint32_t m_saveInterval;
+    uint32_t m_backgroundDelay;
+    uint32_t m_timeout;
 
     //! Construct a DownloadConfig with the default values
     DownloadConfig() {m_saveInterval=5000; m_backgroundDelay=1000; m_timeout=20000;}
@@ -148,7 +148,7 @@ struct DownloadConfig
     //! @param timeout
     //! The amount of time, in milliseconds, to wait before deciding that a chunk request has timed out. When a Connection times out,
     //! the application is forced to terminate, since it cannot read from its local database file.
-    DownloadConfig(UInt32 saveInterval, UInt32 backgroundDelay, UInt32 timeout) :
+    DownloadConfig(uint32_t saveInterval, uint32_t backgroundDelay, uint32_t timeout) :
         m_saveInterval(saveInterval), m_backgroundDelay(backgroundDelay), m_timeout(timeout) {}
 };
 
@@ -168,7 +168,7 @@ public:
     //! Implementers should call  IReceiver::_OnChunkReceived within this method to return the data for the chunk when
     //! it is available.
     //! @param chunkNo The required chunk to download.
-    virtual void _RequestChunk(UInt32 chunkNo) = 0;
+    virtual void _RequestChunk(uint32_t chunkNo) = 0;
 
     //! Called when the IReceiver thread exits. After this call it is illegal to access the m_receiver member of this
     //! structure.
@@ -222,7 +222,7 @@ struct IDownloadAdmin
     //! @param prefetchBytes The number of bytes at the beginning of the file to be downloaded now (minimum is 4K)
     //! @return SUCCESS if the connection was successful and the local file was created with at least prefetchBytes valid bytes in it.
     //! Error indication otherwise.
-    BE_SQLITE_EXPORT Download::DownloadStatus CreateLocalDownloadFile (Utf8String localFileName, Utf8String serverUri, Utf8String serverFileSpec, UInt32 prefetchBytes);
+    BE_SQLITE_EXPORT Download::DownloadStatus CreateLocalDownloadFile (Utf8String localFileName, Utf8String serverUri, Utf8String serverFileSpec, uint32_t prefetchBytes);
 
     //! Establish a new Connection to the server.
     //! @param serverUri The URI originally supplied to CreateLocalDownloadFile that specifies the remote file.
@@ -236,7 +236,7 @@ struct IDownloadAdmin
     //! @param conn The Connection object that supplied the chunk.
     //! @param nChunksValid The number of chunks that are now valid in the localFile. The Connection object knows the total number of chunks
     //! in the remote file, so percentage complete can be determined.
-    virtual void _OnDownloadProgress(Utf8CP localFile, Download::Connection& conn, UInt32 nChunksValid) {}
+    virtual void _OnDownloadProgress(Utf8CP localFile, Download::Connection& conn, uint32_t nChunksValid) {}
 
     //! Called after the entire file has been successfully downloaded.
     //! @param conn The Connection that supplied the download.

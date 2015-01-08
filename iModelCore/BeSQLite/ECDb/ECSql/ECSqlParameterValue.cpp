@@ -98,7 +98,7 @@ IECSqlStructBinder& ECSqlParameterValue::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& ECSqlParameterValue::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& ECSqlParameterValue::_BindArray (uint32_t initialCapacity)
     {
     auto stat = m_statusContext.SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array value to non-array parameter.");
     return NoopECSqlBinderFactory::GetBinder (stat).BindArray (initialCapacity);
@@ -195,7 +195,7 @@ ECSqlStatus ECSqlParameterValue::BindTo (ECSqlStatusContext& statusContext, ECSq
                     //Use Julian Days to avoid to unnecessary computation of DateTime from JD
                     //and back from DateTime to JD again
                     DateTime::Info metadata;
-                    UInt64 jdHns = from.GetDateTimeJulianDays (metadata);
+                    uint64_t jdHns = from.GetDateTimeJulianDays (metadata);
                     return to.BindDateTime (jdHns, &metadata);
                     }
 
@@ -306,7 +306,7 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindBinary (const void* value, int bi
     if (!CanBindValue (PRIMITIVETYPE_Binary))
         return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Blob values can only be bound to Blob parameter values.");
 
-    auto ecstat = m_value.SetBinary ((const byte*) value, (size_t) binarySize, makeCopy == MakeCopy::Yes);
+    auto ecstat = m_value.SetBinary ((const Byte*) value, (size_t) binarySize, makeCopy == MakeCopy::Yes);
     const auto stat = ToECSqlStatus (ecstat);
     if (stat != ECSqlStatus::Success)
         return GetStatusContext ().SetError (stat, "BindBinary");
@@ -318,12 +318,12 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindBinary (const void* value, int bi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveECSqlParameterValue::_BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     if (!CanBindValue (PRIMITIVETYPE_DateTime))
         return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Date time values can only be bound to date time parameter values.");
 
-    const Int64 ceTicks = DateTime::JulianDayToCommonEraTicks (julianDayTicksHns);
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks (julianDayTicksHns);
     const auto ecstat = metadata != nullptr ? m_value.SetDateTimeTicks (ceTicks, *metadata) : m_value.SetDateTimeTicks (ceTicks);
     const auto stat = ToECSqlStatus (ecstat);
     if (stat != ECSqlStatus::Success)
@@ -358,7 +358,7 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindGeometryBlob (const void* value, 
     if (!CanBindValue (PRIMITIVETYPE_IGeometry))
         return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. IGeometry values can only be bound to IGeometry parameter values.");
 
-    auto ecstat = m_value.SetIGeometry (static_cast<byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
+    auto ecstat = m_value.SetIGeometry (static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
     const auto stat = ToECSqlStatus (ecstat);
     if (stat != ECSqlStatus::Success)
         return GetStatusContext ().SetError (stat, "BindGeometry");
@@ -385,10 +385,10 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindInt (int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlParameterValue::_BindInt64 (Int64 value)
+ECSqlStatus PrimitiveECSqlParameterValue::_BindInt64 (int64_t value)
     {
     if (!CanBindValue (PRIMITIVETYPE_Long))
-        return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Int64 values can only be bound to Int64 parameter values.");
+        return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. int64_t values can only be bound to int64_t parameter values.");
 
     auto ecstat = m_value.SetLong (value);
     const auto stat = ToECSqlStatus (ecstat);
@@ -499,10 +499,10 @@ bool PrimitiveECSqlParameterValue::_GetBoolean () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-UInt64 PrimitiveECSqlParameterValue::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t PrimitiveECSqlParameterValue::_GetDateTimeJulianDays (DateTime::Info& metadata) const
     {
     bool hasMetdata = false;
-    const Int64 ceTicks = m_value.GetDateTimeTicks (hasMetdata, metadata);
+    const int64_t ceTicks = m_value.GetDateTimeTicks (hasMetdata, metadata);
     return DateTime::CommonEraTicksToJulianDay (ceTicks);
     }
 
@@ -526,7 +526,7 @@ int PrimitiveECSqlParameterValue::_GetInt () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-Int64 PrimitiveECSqlParameterValue::_GetInt64 () const
+int64_t PrimitiveECSqlParameterValue::_GetInt64 () const
     {
     return m_value.GetLong ();
     }
@@ -799,7 +799,7 @@ ECSqlStatus ArrayECSqlParameterValue::_BindNull ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& ArrayECSqlParameterValue::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& ArrayECSqlParameterValue::_BindArray (uint32_t initialCapacity)
     {
     ResetStatus ();
     DoClear ();
@@ -813,7 +813,7 @@ IECSqlArrayBinder& ArrayECSqlParameterValue::_BindArray (UInt32 initialCapacity)
 IECSqlBinder& ArrayECSqlParameterValue::_AddArrayElement ()
     {
     auto const& typeInfo = GetTypeInfo ();
-    const auto stat = ArrayConstraintValidator::Validate (GetStatusContext (), typeInfo, (UInt32) m_arrayElementValues.Size () + 1);
+    const auto stat = ArrayConstraintValidator::Validate (GetStatusContext (), typeInfo, (uint32_t) m_arrayElementValues.Size () + 1);
     if (stat != ECSqlStatus::Success)
         return NoopECSqlBinderFactory::GetBinder (stat).AddArrayElement ();
     

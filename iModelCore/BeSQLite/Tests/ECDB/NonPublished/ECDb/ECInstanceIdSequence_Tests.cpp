@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/NonPublished/ECDb/ECInstanceIdSequence_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -56,7 +56,7 @@ ECSchemaP* schema = nullptr
     if (schema != nullptr)
         {
         WString name;
-        UInt32 minor, major;
+        uint32_t minor, major;
         ECSchema::ParseSchemaFullName (name, minor, major, schemaFullName);
         Utf8String schemaName(name);
         testDb.GetEC ().GetSchemaManager().GetECSchema (*schema, schemaName.c_str());
@@ -177,8 +177,8 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
 
     Utf8String dbPath;
     //max in this test means max per repository id.
-    Int64 maxId = 0LL;
-    Int64 twoBelowMaxId = 0LL;
+    int64_t maxId = 0LL;
+    int64_t twoBelowMaxId = 0LL;
     size_t sequenceIndex = 0;
         {
         dbPath = CreateTestDb ("StartupCompany.ecdb", schemaFullName, 1);
@@ -191,7 +191,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
         ASSERT_EQ (BE_SQLITE_OK, db.RegisterRepositoryLocalValue (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
         //artificially set sequence close to maximum
         BeRepositoryId repoId = db.GetRepositoryId ();
-        maxId = BeRepositoryBasedId (repoId, std::numeric_limits<UInt32>::max ()).GetValue ();
+        maxId = BeRepositoryBasedId (repoId, std::numeric_limits<uint32_t>::max ()).GetValue ();
 
         twoBelowMaxId = maxId - 2LL;
         stat = db.SaveRepositoryLocalValue (sequenceIndex, twoBelowMaxId);
@@ -206,7 +206,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     ECClassP testClass = schema->GetClassP (L"AAA");
     ASSERT_TRUE (testClass != nullptr) << L"Test class not found";
 
-    Int64 lastId = -1LL;
+    int64_t lastId = -1LL;
     DbResult stat = ecdb.QueryRepositoryLocalValue (lastId, sequenceIndex);
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Retrieving ECInstanceIdSequence state from be_Local failed.";
     ASSERT_EQ (twoBelowMaxId, lastId) << L"Retrieved ECInstanceIdSequence state doesn't match what the state that was stored";
@@ -234,10 +234,10 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
     {
     WCharCP const schemaFullName = L"StartupCompany.02.00";
 
-    const Int32 int32Max = std::numeric_limits<Int32>::max ();
-    const UInt32 uint32Max = std::numeric_limits<UInt32>::max ();
+    const int32_t int32Max = std::numeric_limits<int32_t>::max ();
+    const uint32_t uint32Max = std::numeric_limits<uint32_t>::max ();
     const BeRepositoryId expectedRepoId (int32Max);
-    const Int64 oneBelowMaxIdValue = BeRepositoryBasedId (expectedRepoId, uint32Max - 1).GetValue ();
+    const int64_t oneBelowMaxIdValue = BeRepositoryBasedId (expectedRepoId, uint32Max - 1).GetValue ();
     Utf8String dbPath;
     size_t sequenceIndex = 0;
         //create the test db and set the sequence to short before total excess
@@ -260,7 +260,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
     EXPECT_TRUE (testClass != nullptr) << L"Test class not found";
 
     //now insert an instance and it should get the last available ECInstanceId
-    const Int64 maxId = BeRepositoryBasedId (expectedRepoId, uint32Max).GetValue ();
+    const int64_t maxId = BeRepositoryBasedId (expectedRepoId, uint32Max).GetValue ();
     ECInstanceKey id;
     InsertInstance (id, db, *testClass);
     EXPECT_EQ (maxId, id.GetECInstanceId ().GetValue ()) << L"Inserted instance is expected to have maximally possible ECInstanceId.";
@@ -285,7 +285,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
     ASSERT_TRUE (ecdb.TryGetRepositoryLocalValueIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
 
     BeRepositoryId repoId = ecdb.GetRepositoryId ();
-    Int64 lastId = -1LL;
+    int64_t lastId = -1LL;
     DbResult stat = ecdb.QueryRepositoryLocalValue (lastId, sequenceIndex);
     EXPECT_EQ (BE_SQLITE_OK, stat) << L"Querying last id of ECInstanceIdSequence from be_Local failed";
 
@@ -445,7 +445,7 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     DbResult stat = ecdb.ChangeRepositoryId (expectedRepoId);
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Changing the repository id failed unexpectedly.";
 
-    Int64 sequenceLastValue = -1LL;
+    int64_t sequenceLastValue = -1LL;
     stat = ecdb.QueryRepositoryLocalValue (sequenceLastValue, sequenceIndex);
     EXPECT_EQ (BE_SQLITE_OK, stat) << L"Failed to retrieve last ECInstanceIdSequence value from be_local";
 
@@ -481,29 +481,4 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     EXPECT_EQ (1, rowCount) << L"Query to retrieve instance inserted before repo id change didn't return the expected row.";
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  12/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECInstanceIdSequenceTests, ClearCache)
-    {
-    ECDb ecdb;
-    CreateAndReopenTestDb (ecdb, "ecinstanceidclearcachetest.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite);
-
-    ASSERT_EQ (SUCCESS, ecdb.GetEC ().ClearCache (ECDbStore::CacheType::Sequences)) << "Id sequences cache not used, so ClearCache should work";
-
-    ECSqlStatement stmt;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO stco.AAA (ECInstanceId) VALUES (NULL)"));
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-    stmt.Finalize ();
-
-    ASSERT_EQ (ERROR, ecdb.GetEC ().ClearCache (ECDbStore::CacheType::Sequences)) << "After insert, id sequences cache is dirty, so ClearCache should fail";
-    ecdb.AbandonChanges ();
-    ASSERT_EQ (SUCCESS, ecdb.GetEC ().ClearCache (ECDbStore::CacheType::Sequences)) << "After rolling back transaction, id sequences cache should be empty, so ClearCache should work";
-
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO stco.AAA (ECInstanceId) VALUES (NULL)"));
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-    ASSERT_EQ (ERROR, ecdb.GetEC ().ClearCache (ECDbStore::CacheType::Sequences)) << "After insert, id sequences cache is dirty, so ClearCache should fail";
-    ecdb.SaveChanges ();
-    ASSERT_EQ (SUCCESS, ecdb.GetEC ().ClearCache (ECDbStore::CacheType::Sequences)) << "After committing transaction, id sequences cache should be empty, so ClearCache should work";
-    }
 END_ECDBUNITTESTS_NAMESPACE

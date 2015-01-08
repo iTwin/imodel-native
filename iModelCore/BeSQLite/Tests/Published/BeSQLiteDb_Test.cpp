@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -88,20 +88,6 @@ TEST_F(BeSQLiteDbTests, CreateNewDb)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Creating a Db twice
-* @bsimethod                                    Majd.Uddin                   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BeSQLiteDbTests, CreateDbTwice)
-    {
-    //This is failing and needs investigation
-    //BeSQLite::BeSQLiteLib::Initialize();
-    //SetupDb (L"dup.db");
-    
-    //Create it again and it should return an error now
-    //m_result = m_db.CreateNewDb (getDbFilePath(L"new.db"));
-    //ASSERT_EQ (BE_SQLITE_ERROR_FileExists, m_result) << "Db created again which should not have been";
-    }
-/*---------------------------------------------------------------------------------**//**
 * Opening an existing Db
 * @bsimethod                                    Majd.Uddin                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -117,6 +103,141 @@ TEST_F(BeSQLiteDbTests, OpenDb)
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_TRUE (m_db.IsDbOpen());
     }
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+struct TestOtherConnectionDb : Db
+    {
+    int m_changeCount;
+    TestOtherConnectionDb() {m_changeCount=0;}
+    virtual void _OnDbChangedByOtherConnection() override {++m_changeCount; Db::_OnDbChangedByOtherConnection();}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Test to ensure that PRAGMA data_version changes when another connection changes a database
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeSQLiteDbTests, TwoConnections)
+    {
+    SetupDb (L"one.db");
+    EXPECT_TRUE (m_db.IsDbOpen());
+    m_db.CloseDb();
+
+    TestOtherConnectionDb db1, db2;
+    DbResult result = db1.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_No));
+
+    EXPECT_EQ (BE_SQLITE_OK, result);
+    EXPECT_TRUE (db1.IsDbOpen());
+    
+    result = db2.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_No));
+    EXPECT_EQ (BE_SQLITE_OK, result);
+    EXPECT_TRUE (db2.IsDbOpen());
+
+    { // make a change to the database from the first connection
+    Savepoint t1 (db1, "tx1");
+    // the first transaction should not call _OnDbChangedByOtherConnection
+    EXPECT_EQ (0, db1.m_changeCount);
+    db1.CreateTable("TEST", "Col1 INTEGER");
+    }
+
+    { // make a change to the database from the second connection
+    Savepoint t2 (db2, "tx2");
+    // the first transaction on the second connection should not call _OnDbChangedByOtherConnection
+    EXPECT_EQ (0, db2.m_changeCount);
+    db2.ExecuteSql("INSERT INTO TEST(Col1) VALUES(3)");
+    }
+
+    { // start another transaction on the first connection. This should notice that the second connection changed the db.
+    Savepoint t3 (db1, "tx1");
+    EXPECT_EQ (1, db1.m_changeCount);
+    db1.ExecuteSql("INSERT INTO TEST(Col1) VALUES(4)");
+    }
+
+    { // additional changes from the same connnection should not trigger additional calls to _OnDbChangedByOtherConnection
+    Savepoint t3 (db1, "tx1");
+    EXPECT_EQ (1, db1.m_changeCount);
+    db1.ExecuteSql("INSERT INTO TEST(Col1) VALUES(5)");
+    }
+
+    }
+
+struct TestBusyRetry : BusyRetry
+    {
+    int m_maxCount;
+    mutable int m_onBusyCalls;
+
+    TestBusyRetry () : m_maxCount(2), m_onBusyCalls(0) {}
+    void Reset () {m_onBusyCalls = 0;}
+
+    virtual int _OnBusy (int count) const
+        {
+        m_onBusyCalls++;
+        if (count >= m_maxCount)
+            return 0;
+
+        return 1;
+        }
+    };
+
+
+TEST_F(BeSQLiteDbTests, Concurrency_UsingSavepoints)
+    {
+    SetupDb (L"one.db");
+    m_db.CloseDb();
+    BeFileName dbname = getDbFilePath(L"one.db");
+
+    // TEST 2 CONNECTIONS
+    TestBusyRetry retry1;
+    TestBusyRetry retry2;
+    retry1.AddRef ();
+    retry2.AddRef ();
+
+    Db::OpenParams openParams1 (Db::OPEN_ReadWrite, DefaultTxn_No, &retry1);
+    Db::OpenParams openParams2 (Db::OPEN_ReadWrite, DefaultTxn_No, &retry2);
+
+    Db db1, db2;
+    DbResult result = db1.OpenBeSQLiteDb (dbname, openParams1);
+    EXPECT_EQ (BE_SQLITE_OK, result);
+    result = db2.OpenBeSQLiteDb (dbname, openParams2);
+    EXPECT_EQ (BE_SQLITE_OK, result);
+
+    {
+    Savepoint sp1 (db1, "DB1", false);
+    Savepoint sp2 (db2, "DB2", false, BeSQLiteTxnMode::Immediate);
+
+    result = sp1.Begin();
+    EXPECT_EQ (BE_SQLITE_OK, result);
+    result = sp2.Begin();
+    EXPECT_EQ (BE_SQLITE_OK, result); 
+
+    result = db2.SavePropertyString (PropertySpec ("Foo", "DB2"), "Test2");
+    EXPECT_EQ (BE_SQLITE_OK, result);
+
+    result = sp2.Commit();
+    EXPECT_EQ (BE_SQLITE_BUSY, result);
+    EXPECT_EQ (3, retry2.m_onBusyCalls);
+
+    result = sp1.Commit();
+    EXPECT_EQ (BE_SQLITE_OK, result);
+
+    result = sp2.Commit();
+    EXPECT_EQ (BE_SQLITE_OK, result);
+    }
+
+    {
+    retry2.Reset ();
+    Savepoint sp1 (db1, "DB1", false, BeSQLiteTxnMode::Immediate);
+    Savepoint sp2 (db2, "DB2", false, BeSQLiteTxnMode::Immediate);
+
+    result = sp1.Begin();
+    EXPECT_EQ (BE_SQLITE_OK, result);
+    result = sp2.Begin ();
+    EXPECT_EQ (BE_SQLITE_BUSY, result); 
+    EXPECT_EQ (3, retry2.m_onBusyCalls);
+    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Setting ProjectGuid
@@ -225,7 +346,7 @@ TEST_F (BeSQLiteDbTests, BlobTest)
     Utf8CP testTableName = "testtable";
     ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable (testTableName, "val BLOB")) << "Creating test table '" << testTableName << "' failed.";
 
-    const Int64 expectedValue = 123456789LL;
+    const int64_t expectedValue = 123456789LL;
     Statement insertStmt;
     ASSERT_EQ (BE_SQLITE_OK, insertStmt.Prepare (m_db, "INSERT INTO testtable (val) VALUES (?)"));
 
@@ -237,17 +358,17 @@ TEST_F (BeSQLiteDbTests, BlobTest)
     ASSERT_EQ (BE_SQLITE_ROW, selectStmt.Step ());
 
     void const* actualBlob = selectStmt.GetValueBlob (0);
-    Int64 actualValue = -1LL;
+    int64_t actualValue = -1LL;
     memcpy (&actualValue, actualBlob, sizeof (actualValue));
     ASSERT_EQ (expectedValue, actualValue);
 
     int actualBlobSize = selectStmt.GetColumnBytes (0);
-    ASSERT_EQ ((int) sizeof(Int64), actualBlobSize);
+    ASSERT_EQ ((int) sizeof(int64_t), actualBlobSize);
 
     //now read Int64 directly
     selectStmt.Reset ();
     ASSERT_EQ (BE_SQLITE_ROW, selectStmt.Step ());
-    ASSERT_EQ (0LL, selectStmt.GetValueInt64 (0)) << "is expected to not convert the blob implicitly to the expected Int64";
+    ASSERT_EQ (0LL, selectStmt.GetValueInt64 (0)) << "is expected to not convert the blob implicitly to the expected int64_t";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +424,7 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
     {
     SetupDb (L"Props3.db");
 
-    byte values[] = {1,2,3,4,5,6};
+    Byte values[] = {1,2,3,4,5,6};
     PropertySpec spec1 ("TestSpec", "CachedProp", PropertySpec::TXN_MODE_Cached);
     m_result = m_db.SaveProperty (spec1, values, sizeof(values), 400, 10); 
     EXPECT_TRUE (m_db.HasProperty (spec1, 400, 10));
@@ -320,12 +441,12 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
     Utf8String origStr = "String value";
     m_result = m_db.SavePropertyString (spec1, origStr, 400, 10);
 
-    byte buffer[10];
+    Byte buffer[10];
     m_result = m_db.QueryProperty (buffer, sizeof(values), spec1, 400, 10);
     EXPECT_EQ (BE_SQLITE_ROW, m_result);
     EXPECT_TRUE(0==memcmp(values, buffer, sizeof(values)));
 
-    byte values2[] = {10,20};
+    Byte values2[] = {10,20};
     m_result = m_db.SaveProperty (spec1, values2, sizeof(values2), 400, 10); 
 
     m_db.SaveChanges();
@@ -383,7 +504,7 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
     m_result = m_db.SaveRepositoryLocalValue (rlvIndex, val);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveRepositoryLocalValue failed";
 
-    Int64 actualVal = -1LL;
+    int64_t actualVal = -1LL;
     m_result = m_db.QueryRepositoryLocalValue (actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);
@@ -438,7 +559,7 @@ Db& db,
 size_t repositoryLocalKeyIndex
 )
     {
-    Int64 newValue = 0LL;
+    int64_t newValue = 0LL;
     /*auto stat = */db.IncrementRepositoryLocalValue (newValue, repositoryLocalKeyIndex);
     //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementRepositoryLocalValueInt64 failed.";
     }
@@ -491,7 +612,7 @@ Utf8CP repositoryLocalKey
 
         size_t repositoryLocalKeyIndex = 0;
         ASSERT_EQ (BE_SQLITE_OK, db.RegisterRepositoryLocalValue (repositoryLocalKeyIndex, repositoryLocalKey));
-        const Int64 zero = 0LL;
+        const int64_t zero = 0LL;
         stat = db.SaveRepositoryLocalValue (repositoryLocalKeyIndex, zero);
         ASSERT_EQ (BE_SQLITE_OK, stat) << L"Saving initial value of repository local value failed";
         ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges ()) << L"Committing repository local values failed.";
@@ -507,7 +628,7 @@ Utf8CP repositoryLocalKey
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
     {
-    const Int64 iterationCount = 10000000LL;
+    const int64_t iterationCount = 10000000LL;
 
     Utf8CP const mockSequenceKey = "mocksequence";
     Db testDb;
@@ -517,7 +638,7 @@ TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
     ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
     //printf ("Attach to profiler and press any key...\r\n"); getchar ();
     StopWatch stopwatch (true);
-    for (Int64 i = 0LL; i < iterationCount; i++)
+    for (int64_t i = 0LL; i < iterationCount; i++)
         {
         IncrementRepositoryLocalValue (testDb, mockSequenceKeyIndex);
         }
@@ -537,20 +658,20 @@ TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
     private:
         bool m_isunset;
         bool m_isdirty;
-        Int64 m_value;
+        int64_t m_value;
 
     public:
         CacheValue ()
             : m_value (0LL)
             {}
 
-        Int64 Increment ()
+        int64_t Increment ()
             {
             m_value++;
             return m_value;
             }
 
-        Int64 GetValue () const { return m_value; }
+        int64_t GetValue () const { return m_value; }
         };
 
     std::vector<std::unique_ptr<CacheValue>> sequenceVector;
@@ -567,7 +688,7 @@ TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
         }
 
     stopwatch.Start ();
-    for (Int64 i = 0LL; i < iterationCount; i++)
+    for (int64_t i = 0LL; i < iterationCount; i++)
         {
         sequenceVector[2]->Increment ();
         }
@@ -577,7 +698,7 @@ TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
         stopwatch.GetElapsedSeconds () * 1000.0);
 
     stopwatch.Start ();
-    for (Int64 i = 0LL; i < iterationCount; i++)
+    for (int64_t i = 0LL; i < iterationCount; i++)
         {
         auto it = sequenceMap.find (keyVector[2].c_str ());
         if (it != sequenceMap.end ())
@@ -618,9 +739,9 @@ TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryCa
         EXPECT_EQ (BE_SQLITE_ROW, queryStmt.Step ()) << L"Executing query SQL didn't return the expected row";
         const void* blob = queryStmt.GetValueBlob (0);
         int blobSize = queryStmt.GetColumnBytes (0);
-        Int64 lastValue = -1LL;
-        memcpy ((byte*) &lastValue, blob, blobSize);
-        EXPECT_EQ (static_cast<Int64> (i), lastValue) << L"Retrieved repository local value is wrong.";
+        int64_t lastValue = -1LL;
+        memcpy ((Byte*) &lastValue, blob, blobSize);
+        EXPECT_EQ (static_cast<int64_t> (i), lastValue) << L"Retrieved repository local value is wrong.";
 
         lastValue++;
 
@@ -718,7 +839,7 @@ TEST(PerformanceBeSQLiteDbTests, SaveRepositoryLocalValueWithSavepointPerIterati
         {
         Savepoint savepoint (testDb, "", true);
         
-        Int64 val = i * 1000LL;
+        int64_t val = i * 1000LL;
         DbResult stat = testDb.SaveRepositoryLocalValue (mockSequenceKeyIndex, val);
         ASSERT_EQ (BE_SQLITE_OK, stat) << "SaveRepositoryLocalValue failed";
         savepoint.Commit ();
@@ -790,7 +911,7 @@ TEST(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerIte
         for (int i = 0; i < iterationCount; i++)
             {
             Savepoint savepoint (dgndb, "insertblob", true);
-            const Int64 val = i * 1000LL;
+            const int64_t val = i * 1000LL;
             stmt.BindBlob (1, &val, sizeof (val), Statement::MAKE_COPY_No);
             stat = stmt.Step ();
             ASSERT_EQ (BE_SQLITE_DONE, stat) << "Executing insert statement failed";

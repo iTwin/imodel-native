@@ -175,7 +175,7 @@ ECPropertyCR ecProperty
     ecValue.Clear();
 
     PrimitiveType type = ecProperty.GetAsPrimitiveProperty ()->GetType ();
-    srand ((UInt32)BeTimeUtilities::QueryMillisecondsCounter ());
+    srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
     int randomNumber = rand ();
     switch (type)
         {
@@ -195,8 +195,8 @@ ECPropertyCR ecProperty
 
         case PRIMITIVETYPE_Long: 
             {
-            const Int32 intMax = std::numeric_limits<Int32>::max ();
-            const Int64 longValue = static_cast<Int64> (intMax) + randomNumber;
+            const int32_t intMax = std::numeric_limits<int32_t>::max ();
+            const int64_t longValue = static_cast<int64_t> (intMax) + randomNumber;
             ecValue.SetLong(longValue); 
             }
             break;

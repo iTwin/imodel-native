@@ -148,7 +148,7 @@ public:
     //! @remarks Any relationships on the instance are also deleted. If these relationships have 
     //! embedding strength, child instances are also deleted. If these relationships have holding 
     //! strength, child instances are deleted only if the children don't have any parents left. 
-    DeleteStatus    Delete (Int32* nDeleted, const ECInstanceIdSet& ecInstanceIdSet, ECDbDeleteHandlerP deleteHandler = nullptr);
+    DeleteStatus    Delete (int32_t* nDeleted, const ECInstanceIdSet& ecInstanceIdSet, ECDbDeleteHandlerP deleteHandler = nullptr);
     };
 
 typedef RefCountedPtr<ECPersistence> ECPersistencePtr;

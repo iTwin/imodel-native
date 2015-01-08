@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -57,13 +57,13 @@ struct CachedPropertyKey
     {
     Utf8String  m_namespace;
     Utf8String  m_name;
-    UInt64      m_id;
-    UInt64      m_subId;
+    uint64_t    m_id;
+    uint64_t    m_subId;
 
-    void Init (Utf8CP nameSpace, Utf8CP name, UInt64 id, UInt64 subId)  {m_id = id;m_subId = subId;m_namespace.assign(nameSpace);m_name.assign(name);}
+    void Init (Utf8CP nameSpace, Utf8CP name, uint64_t id, uint64_t subId)  {m_id = id;m_subId = subId;m_namespace.assign(nameSpace);m_name.assign(name);}
     CachedPropertyKey(){}
-    CachedPropertyKey(Utf8CP nameSpace, Utf8CP name, UInt64 id, UInt64 subId) {Init(nameSpace, name, id, subId);}
-    CachedPropertyKey(PropertySpecCR spec, UInt64 id, UInt64 subId) {Init(spec.GetNamespace(), spec.GetName(), id, subId);}
+    CachedPropertyKey(Utf8CP nameSpace, Utf8CP name, uint64_t id, uint64_t subId) {Init(nameSpace, name, id, subId);}
+    CachedPropertyKey(PropertySpecCR spec, uint64_t id, uint64_t subId) {Init(spec.GetNamespace(), spec.GetName(), id, subId);}
     bool operator< (CachedPropertyKey const& other) const
         {
         int val = m_namespace.CompareTo(other.m_namespace);
@@ -85,10 +85,10 @@ struct CachedPropertyValue
     bool          m_dirty;
     bool          m_compressed;
     Utf8String    m_strVal;
-    bvector<byte> m_value;
+    bvector<Byte> m_value;
 
     CachedPropertyValue() {m_dirty=m_compressed=false;}
-    void ChangeValue(Utf8CP strVal, UInt32 valSize, byte const* value, bool dirty, bool compressed)
+    void ChangeValue(Utf8CP strVal, uint32_t valSize, Byte const* value, bool dirty, bool compressed)
         {
         m_dirty = dirty;
         m_compressed = compressed;
@@ -97,7 +97,7 @@ struct CachedPropertyValue
         if (value)
             m_value.assign (value, value+valSize);
         }
-    UInt32 GetSize() const {return (UInt32) m_value.size();}
+    uint32_t GetSize() const {return (uint32_t) m_value.size();}
     };
 
 //=======================================================================================
@@ -105,8 +105,8 @@ struct CachedPropertyValue
 //=======================================================================================
 struct CachedProperyMap : bmap<CachedPropertyKey, CachedPropertyValue>
     {
-    bool Delete(PropertySpecCR spec, UInt64 id, UInt64 subId) {return 0 != erase(CachedPropertyKey(spec, id, subId));}
-    CachedPropertyValue* Find(PropertySpecCR spec, UInt64 id, UInt64 subId)
+    bool Delete(PropertySpecCR spec, uint64_t id, uint64_t subId) {return 0 != erase(CachedPropertyKey(spec, id, subId));}
+    CachedPropertyValue* Find(PropertySpecCR spec, uint64_t id, uint64_t subId)
         {
         iterator it = find (CachedPropertyKey(spec, id, subId));
         return (end() == it) ? NULL : &it->second;
@@ -123,7 +123,7 @@ private:
     Utf8CP m_name;
     bool m_isUnset;
     bool m_dirty;
-    Int64 m_value;
+    int64_t m_value;
 
 public:
     explicit CachedRlValue(Utf8CP name)
@@ -135,20 +135,20 @@ public:
 
     Utf8CP GetName () const { return m_name; }
 
-    Int64 GetValue () const
+    int64_t GetValue () const
         {
         BeAssert (!m_isUnset);
         return m_value;
         }
 
-    void ChangeValue (Int64 value, bool initializing = false)
+    void ChangeValue (int64_t value, bool initializing = false)
         {
         m_isUnset = false;
         m_dirty = !initializing;
         m_value = value;
         }
 
-    Int64 Increment ()
+    int64_t Increment ()
         {
         BeAssert (!m_isUnset);
         m_dirty = true;
@@ -323,7 +323,7 @@ DbResult    Statement::Step() { return m_stmt ? (DbResult) sqlite3_step(m_stmt) 
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
 DbResult    Statement::ClearBindings() { return m_stmt ? (DbResult)sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
 DbResult    Statement::BindInt (int col, int val)           { return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
-DbResult    Statement::BindInt64 (int col, Int64 val)       { return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
+DbResult    Statement::BindInt64 (int col, int64_t val)       { return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
 DbResult    Statement::BindDouble (int col, double val)     { return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
 DbResult    Statement::BindText (int col, Utf8CP val, BindMakeCopy makeCopy, int nBytes) { return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindZeroBlob (int col, int size) { return (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);}
@@ -331,7 +331,7 @@ DbResult    Statement::BindBlob (int col, void const* val, int size, BindMakeCop
 DbResult    Statement::BindGuid (int col, BeGuidCR guid) { return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);}
 DbResult    Statement::BindLuid (int col, BeLuid luid) { return (DbResult)sqlite3_bind_int64(m_stmt, col, luid.GetValue());}
 DbResult    Statement::BindNull (int col) { return (DbResult)sqlite3_bind_null(m_stmt, col);}
-DbResult    Statement::BindVirtualSet (int col, VirtualSet const& intSet) {return BindInt64(col, (Int64) &intSet);}
+DbResult    Statement::BindVirtualSet (int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbValueType Statement::GetColumnType(int col)    {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 int         Statement::GetColumnCount ()         {return sqlite3_column_count (m_stmt);}
 int         Statement::GetColumnBytes (int col)  {return sqlite3_column_bytes (m_stmt, col);}
@@ -340,7 +340,7 @@ Utf8CP      Statement::GetColumnName (int col)   {return sqlite3_column_name (m_
 void const* Statement::GetValueBlob (int col)    {return sqlite3_column_blob (m_stmt, col);}
 Utf8CP      Statement::GetValueText (int col)    {return (Utf8CP) sqlite3_column_text(m_stmt, col);}
 int         Statement::GetValueInt (int col)     {return sqlite3_column_int (m_stmt, col);}
-Int64       Statement::GetValueInt64 (int col)   {return sqlite3_column_int64 (m_stmt, col);}
+int64_t     Statement::GetValueInt64 (int col)   {return sqlite3_column_int64 (m_stmt, col);}
 double      Statement::GetValueDouble (int col)  {return sqlite3_column_double(m_stmt, col);}
 void        Statement::GetValueGuid (int col, BeGuidR guid) {memcpy (&guid, GetValueBlob(col), sizeof(guid));}
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
@@ -352,19 +352,19 @@ int         DbValue::GetValueBytes() const            {return sqlite3_value_byte
 void const* DbValue::GetValueBlob() const             {return sqlite3_value_blob(m_val);}
 Utf8CP      DbValue::GetValueText() const             {return (Utf8CP) sqlite3_value_text(m_val);}
 int         DbValue::GetValueInt() const              {return sqlite3_value_int(m_val);}
-Int64       DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
+int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
-BeLuid      DbValue::GetValueLuid() const             {return BeLuid ((UInt64) GetValueInt64());}
+BeLuid      DbValue::GetValueLuid() const             {return BeLuid ((uint64_t) GetValueInt64());}
 void        DbValue::GetValueGuid(BeGuidR guid) const {memcpy (&guid, GetValueBlob(), sizeof(guid));}
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
 BeDbGuid Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
-Int32    Db::GetCurrentSavepointDepth() const {return (Int32) m_dbFile->m_txns.size();}
+int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8CP   Db::GetLastError (DbResult* lastResult) const { return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened"; }
 BeRepositoryId Db::GetRepositoryId() const {return m_dbFile->m_repositoryId;}
 
-Int64    Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
+int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 void     ZipFromBlob::Finish() {m_blobIO.Close();}
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
@@ -418,7 +418,7 @@ DbResult Statement::Prepare (DbFile const& dbFile, Utf8CP sql)
     DbResult rc = DoPrepare (dbFile.m_sqlDb, sql);
     if (rc != BE_SQLITE_OK)
         {
-        Utf8CP lastError = dbFile.GetLastError (nullptr); // keep on separate line for debuggging
+        Utf8CP lastError = dbFile.GetLastError (nullptr); // keep on separate line for debugging
         LOG.errorv("Error \"%s\" preparing SQL: %s", lastError, sql);
         BeAssert (false);
         }
@@ -491,10 +491,13 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbFile::DbFile (SqlDbP sqlDb, BusyRetry* retry) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(new RlvCache()), m_defaultTxn (*this, "default"), m_statements (10), m_rtreeMatch ("rTreeAccept", 1)
+DbFile::DbFile (SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(new RlvCache()), 
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_rtreeMatch("rTreeAccept", 1)
     {
     m_inCommit = false;
     m_allowImplicitTxns = m_settingsTableCreated = m_settingsDirty = false;
+    m_dataVersion = 0;
+
     memset (&m_flags,       0, sizeof(m_flags));
     memset (&m_dummyBool,   0, sizeof(m_dummyBool));
     memset (&m_dummyInt32,  0, sizeof(m_dummyInt32));
@@ -507,7 +510,6 @@ DbFile::DbFile (SqlDbP sqlDb, BusyRetry* retry) : m_sqlDb(sqlDb), m_cachedProps(
         sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
         }
 
-
     if (BE_SQLITE_OK != m_rlvCache->RegisterRlv (m_repositoryIdRlvIndex, BE_REPOSITORYID_NAME))
         {
         BeAssert (false && "Could not register RepositoryLocalValue for 'be_repositoryId'.");
@@ -517,12 +519,12 @@ DbFile::DbFile (SqlDbP sqlDb, BusyRetry* retry) : m_sqlDb(sqlDb), m_cachedProps(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8CP getStartTxnSql(StartDefaultTransaction mode)
+static Utf8CP getStartTxnSql(BeSQLiteTxnMode mode)
     {
     switch (mode)
         {
-        case DefaultTxn_Immediate: return "BEGIN IMMEDIATE";
-        case DefaultTxn_Exclusive: return "BEGIN EXCLUSIVE";
+        case BeSQLiteTxnMode::Immediate: return "BEGIN IMMEDIATE";
+        case BeSQLiteTxnMode::Exclusive: return "BEGIN EXCLUSIVE";
         }
     return  "BEGIN";
     }
@@ -558,7 +560,7 @@ int DbFile::OnCommit()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::StartSavepoint (Savepoint& txn)
+DbResult DbFile::StartSavepoint (Savepoint& txn, BeSQLiteTxnMode txnMode)
     {
     if (txn.IsActive())
         return BE_SQLITE_ERROR;
@@ -574,17 +576,32 @@ DbResult DbFile::StartSavepoint (Savepoint& txn)
     BeAssert(old == NULL || old == this);
 
     DbResult rc = (DbResult) sqlite3_exec (m_sqlDb,
-               (0 == m_txns.size()) ? getStartTxnSql(m_defaultTxnMode) : SqlPrintfString("SAVEPOINT \"%s\"",txn.GetName()).GetUtf8CP(), NULL, NULL, NULL);
-
-    if (BE_SQLITE_OK == rc)
+               (0 == m_txns.size ()) ? getStartTxnSql (txnMode) : SqlPrintfString ("SAVEPOINT \"%s\"", txn.GetName ()).GetUtf8CP (), NULL, NULL, NULL);
+    
+    if (BE_SQLITE_OK != rc)
         {
-        m_txns.push_back(&txn);
-        txn.m_depth = (Int32) m_txns.size() - 1;
-        }
-    else
         txn.m_depth = -1;
+        return rc;
+        }
 
-    return  rc;
+    if (txn.m_db && 0 == m_txns.size())
+        {
+        Statement stmt;
+        stmt.TryPrepare (*txn.m_db, "PRAGMA data_version");
+        rc = stmt.Step();
+        BeAssert (BE_SQLITE_ROW == rc);
+
+        UInt64 newDataVersion = stmt.GetValueInt64(0);
+        if (0 != m_dataVersion && newDataVersion != m_dataVersion) // don't call this on the first Savepoint
+            txn.m_db->_OnDbChangedByOtherConnection();
+
+        m_dataVersion = newDataVersion;
+        }
+
+    m_txns.push_back(&txn);
+    txn.m_depth = (int32_t) m_txns.size() - 1;
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -609,7 +626,7 @@ DbResult DbFile::StopSavepoint (Savepoint& txn, bool isCommit)
     m_inCommit = true;
 
     // we can't commit or rollback if any active changetrack has changes.
-    for (auto tracker : m_trackers)
+    for (auto const& tracker : m_trackers)
         {
         if (tracker.second->HasChanges())
             return  BE_SQLITE_ERROR_ChangeTrackError;
@@ -657,9 +674,11 @@ Db::~Db() {DoCloseDb();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn) : m_dbFile(db.m_dbFile.get()), m_name(name)
+Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode txnMode) : m_dbFile(db.m_dbFile.get()), m_name(name), m_txnMode(txnMode)
     {
+    m_db = &db;
     m_depth = -1;
+
     if (beginTxn)
         Begin();
     }
@@ -667,7 +686,7 @@ Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn) : m_dbFile(db.m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Savepoint::_Begin()  {return m_dbFile ? m_dbFile->StartSavepoint(*this) : BE_SQLITE_ERROR;}
+DbResult Savepoint::_Begin()  {return m_dbFile ? m_dbFile->StartSavepoint(*this, m_txnMode) : BE_SQLITE_ERROR;}
 DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, false) : BE_SQLITE_ERROR;}
 DbResult Savepoint::_Commit() {return m_dbFile ? m_dbFile->StopSavepoint(*this, true) : BE_SQLITE_ERROR;}
 DbResult Savepoint::Begin()  {return _Begin();}
@@ -677,9 +696,20 @@ DbResult Savepoint::Cancel() {return _Cancel();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Savepoint* Db::GetSavepoint (Int32 depth) const
+Savepoint* Db::GetSavepoint (int32_t depth) const
     {
     return (depth<0 || depth>=GetCurrentSavepointDepth()) ? NULL : m_dbFile->m_txns[depth];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+Savepoint* Db::GetDefaultTransaction () const
+    {
+    if (m_dbFile != nullptr)
+        return &m_dbFile->m_defaultTxn;
+    else
+        return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -743,7 +773,7 @@ CachedProperyMap& DbFile::GetCachedPropMap() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedPropertyValue& DbFile::GetCachedProperty (PropertySpecCR spec, UInt64 id, UInt64 subId) const
+CachedPropertyValue& DbFile::GetCachedProperty (PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     return GetCachedPropMap()[CachedPropertyKey(spec.GetNamespace(), spec.GetName(), id, subId)];
     }
@@ -751,7 +781,7 @@ CachedPropertyValue& DbFile::GetCachedProperty (PropertySpecCR spec, UInt64 id, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedPropertyValue* DbFile::FindCachedProperty(PropertySpecCR spec, UInt64 id, UInt64 subId) const
+CachedPropertyValue* DbFile::FindCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     return GetCachedPropMap().Find(spec, id, subId);
     }
@@ -759,7 +789,7 @@ CachedPropertyValue* DbFile::FindCachedProperty(PropertySpecCR spec, UInt64 id, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::DeleteCachedProperty(PropertySpecCR spec, UInt64 id, UInt64 subId)
+void DbFile::DeleteCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId)
     {
     if (NULL != m_cachedProps)
         GetCachedPropMap().erase(CachedPropertyKey(spec.GetNamespace(), spec.GetName(), id, subId));
@@ -787,7 +817,7 @@ void DbFile::SaveCachedProperties(bool isCommit)
         if (val.m_dirty)
             {
             PropertySpec spec (key.m_name.c_str(), key.m_namespace.c_str(), PropertySpec::TXN_MODE_Normal, val.m_compressed ? PropertySpec::COMPRESS_PROPERTY_Yes : PropertySpec::COMPRESS_PROPERTY_No);
-            SaveProperty (spec, val.m_strVal.length()>0 ? val.m_strVal.c_str() : NULL, val.m_value.size()>0 ? val.m_value.data() : NULL, (UInt32) val.m_value.size(),
+            SaveProperty (spec, val.m_strVal.length()>0 ? val.m_strVal.c_str() : NULL, val.m_value.size()>0 ? val.m_value.data() : NULL, (uint32_t) val.m_value.size(),
                           key.m_id, key.m_subId);
             val.m_dirty=false;
             }
@@ -832,7 +862,7 @@ void DbFile::SaveCachedRlvs(bool isCommit) const
 
             stmt->BindText (1, rlv.GetName (), Statement::MAKE_COPY_No);
 
-            Int64 int64Val = rlv.GetValue ();
+            int64_t int64Val = rlv.GetValue ();
             stmt->BindBlob (2, &int64Val, (int) sizeof (int64Val), Statement::MAKE_COPY_No);
             DbResult rc = stmt->Step ();
             if (BE_SQLITE_DONE != rc)
@@ -847,7 +877,7 @@ void DbFile::SaveCachedRlvs(bool isCommit) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void const* value, UInt32 size, UInt64 id, UInt64 subId)
+DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void const* value, uint32_t size, uint64_t id, uint64_t subId)
     {
     if (NULL == value && NULL == stringData && !spec.SaveIfNull())
         {
@@ -857,7 +887,7 @@ DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void cons
 
     if (spec.IsCached())
         {
-        GetCachedProperty(spec, id, subId).ChangeValue(stringData, size, (byte*)value, true, spec.IsCompress());
+        GetCachedProperty(spec, id, subId).ChangeValue(stringData, size, (Byte*)value, true, spec.IsCompress());
         return  BE_SQLITE_OK;
         }
 
@@ -886,7 +916,7 @@ DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void cons
     stmt->BindText(8, stringData, Statement::MAKE_COPY_No);
 
     bool doCompress = spec.IsCompress();
-    bvector<byte> compressed; // use bvector just so destructor will free make sure this is outside if!
+    bvector<Byte> compressed; // use bvector just so destructor will free make sure this is outside if!
     if (NULL != value)
         {
         if (size <= 100) // too small to be worth trying
@@ -894,7 +924,7 @@ DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void cons
 
         if (doCompress)
             {
-            ULong compressedSize= (UInt32) (size*1.01) + 12;
+            unsigned long compressedSize= (uint32_t) (size*1.01) + 12;
             compressed.reserve (compressedSize);
             if (Z_OK != compress2 (compressed.data(), &compressedSize, (ByteCP) value, size, DefaultCompressionLevel) || (compressedSize >= size))
                 doCompress = false;
@@ -924,7 +954,7 @@ bool DbFile::UseSettingsTable(PropertySpecCR spec) const {return m_settingsDirty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::QueryPropertySize (UInt32& size, PropertySpecCR spec, UInt64 id, UInt64 subId) const
+DbResult DbFile::QueryPropertySize (uint32_t& size, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     if (spec.IsCached())
         {
@@ -967,7 +997,7 @@ DbResult DbFile::QueryPropertySize (UInt32& size, PropertySpecCR spec, UInt64 id
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, UInt32 size, PropertySpecCR spec, UInt64 id, UInt64 subId) const
+DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, uint32_t size, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     BeAssert (spec.IsCached());
     CachedPropertyValue* cachedProp = FindCachedProperty(spec, id, subId);
@@ -993,10 +1023,10 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, UInt32 s
         if (strVal)
             cachedProp->m_strVal = strVal;
 
-        UInt32 compressedBytes = stmt->GetValueInt(0);
-        UInt32 blobsize = stmt->GetColumnBytes(1);
+        uint32_t compressedBytes = stmt->GetValueInt(0);
+        uint32_t blobsize = stmt->GetColumnBytes(1);
 
-        UInt32 bytes = (0==compressedBytes) ? blobsize : compressedBytes;
+        uint32_t bytes = (0==compressedBytes) ? blobsize : compressedBytes;
 
         cachedProp->m_value.resize(bytes);
 
@@ -1004,8 +1034,8 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, UInt32 s
 
         if (compressedBytes > 0)
             {
-            ULong actuallyRead = size;
-            uncompress ((byte*)cachedProp->m_value.data(), &actuallyRead, (ByteCP) blobdata, blobsize);
+            unsigned long actuallyRead = size;
+            uncompress ((Byte*)cachedProp->m_value.data(), &actuallyRead, (ByteCP) blobdata, blobsize);
             if (actuallyRead != size)
                 return BE_SQLITE_MISMATCH;
             }
@@ -1014,7 +1044,7 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, UInt32 s
             if (blobsize < size)
                 return BE_SQLITE_MISMATCH;
 
-            memcpy ((byte*)cachedProp->m_value.data(), blobdata, bytes);
+            memcpy ((Byte*)cachedProp->m_value.data(), blobdata, bytes);
             }
         }
 
@@ -1033,7 +1063,7 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, UInt32 s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::QueryProperty (void* value, UInt32 size, PropertySpecCR spec, UInt64 id, UInt64 subId) const
+DbResult DbFile::QueryProperty (void* value, uint32_t size, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     if (spec.IsCached())
         return QueryCachedProperty(NULL, &value, size, spec, id, subId);
@@ -1053,10 +1083,10 @@ DbResult DbFile::QueryProperty (void* value, UInt32 size, PropertySpecCR spec, U
     if (rc != BE_SQLITE_ROW)
         return useSettingsTable ? QueryProperty(value, size, PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id) : BE_SQLITE_ERROR;
 
-    UInt32 compressedBytes = stmt->GetValueInt(0);
-    UInt32 blobsize = stmt->GetColumnBytes(1);
+    uint32_t compressedBytes = stmt->GetValueInt(0);
+    uint32_t blobsize = stmt->GetColumnBytes(1);
 
-    UInt32 bytes = (0==compressedBytes) ? blobsize : compressedBytes;
+    uint32_t bytes = (0==compressedBytes) ? blobsize : compressedBytes;
     if (size>bytes)
         size=bytes;
 
@@ -1064,8 +1094,8 @@ DbResult DbFile::QueryProperty (void* value, UInt32 size, PropertySpecCR spec, U
 
     if (compressedBytes > 0)
         {
-        ULong actuallyRead = size;
-        uncompress ((byte*)value, &actuallyRead, (ByteCP) blobdata, blobsize);
+        unsigned long actuallyRead = size;
+        uncompress ((Byte*)value, &actuallyRead, (ByteCP) blobdata, blobsize);
         if (actuallyRead != size)
             return BE_SQLITE_MISMATCH;
         }
@@ -1083,7 +1113,7 @@ DbResult DbFile::QueryProperty (void* value, UInt32 size, PropertySpecCR spec, U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::QueryProperty (Utf8StringR value, PropertySpecCR spec, UInt64 id, UInt64 subId) const
+DbResult DbFile::QueryProperty (Utf8StringR value, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     if (spec.IsCached())
         return QueryCachedProperty(&value, NULL, 0, spec, id, subId);
@@ -1113,7 +1143,7 @@ DbResult DbFile::QueryProperty (Utf8StringR value, PropertySpecCR spec, UInt64 i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DbFile::HasProperty (PropertySpecCR spec, UInt64 id, UInt64 subId) const
+bool DbFile::HasProperty (PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     if (spec.IsCached())
         return BE_SQLITE_ROW==QueryCachedProperty (NULL, NULL, 0, spec, id, subId);
@@ -1139,7 +1169,7 @@ bool DbFile::HasProperty (PropertySpecCR spec, UInt64 id, UInt64 subId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::DeleteProperty (PropertySpecCR spec, UInt64 id, UInt64 subId)
+DbResult DbFile::DeleteProperty (PropertySpecCR spec, uint64_t id, uint64_t subId)
     {
     if (spec.IsCached())
         DeleteCachedProperty (spec, id, subId);
@@ -1163,7 +1193,7 @@ DbResult DbFile::DeleteProperty (PropertySpecCR spec, UInt64 id, UInt64 subId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::DeleteProperties (PropertySpecCR spec, UInt64* id)
+DbResult DbFile::DeleteProperties (PropertySpecCR spec, uint64_t* id)
     {
     bool useSettingsTable = UseSettingsTable(spec);
     Utf8String sql (SqlPrintfString("DELETE FROM %s" BEDB_TABLE_Property " WHERE Namespace=? AND Name=? ", getTempPrefix(useSettingsTable)));
@@ -1229,7 +1259,7 @@ DbResult Db::SaveBeDbGuid()
 
     DbResult rc = SaveProperty (Properties::DbGuid(), (void*) &m_dbFile->m_dbGuid, sizeof(m_dbFile->m_dbGuid));
     if (BE_SQLITE_OK != rc)
-        { 
+        {
         LOG.warningv ("Could not save GUID. Error: %s - %s", InterpretDbResult (rc), GetLastError ());
         BeAssert (false);
         }
@@ -1323,7 +1353,7 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
         if (result != BE_SQLITE_ROW)
             return  result;
 
-        Int64 currMax = stmt.GetValueInt64(0);
+        int64_t currMax = stmt.GetValueInt64(0);
 
         BeRepositoryBasedId firstId (m_dbFile->m_repositoryId, 1);
         value = ((currMax < firstId.GetValue()) ? firstId : BeRepositoryBasedId (currMax+1));
@@ -1410,9 +1440,8 @@ DbResult Db::CreateNewDb (Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& pa
         return  rc;
 
     sqlite3_extended_result_codes (sqlDb, 1); // turn on extended error codes
-    m_dbFile = new DbFile(sqlDb, params.m_busyRetry);
+    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
 
-    m_dbFile->m_defaultTxnMode = params.m_startDefaultTxn;
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
 
@@ -1531,7 +1560,7 @@ bool Db::TryGetRepositoryLocalValueIndex (size_t& rlvIndex, Utf8CP rlvName) cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::SaveRepositoryLocalValue (size_t rlvIndex, Int64 value)
+DbResult Db::SaveRepositoryLocalValue (size_t rlvIndex, int64_t value)
     {
     auto& rlvCache = m_dbFile->GetRlvCache ();
     if (rlvIndex >= rlvCache.Size ())
@@ -1544,7 +1573,7 @@ DbResult Db::SaveRepositoryLocalValue (size_t rlvIndex, Int64 value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::QueryRepositoryLocalValue (Int64& value, size_t rlvIndex) const
+DbResult Db::QueryRepositoryLocalValue (int64_t& value, size_t rlvIndex) const
     {
     auto& rlvCache = m_dbFile->GetRlvCache ();
     if (rlvIndex >= rlvCache.Size ())
@@ -1561,13 +1590,13 @@ DbResult Db::QueryRepositoryLocalValue (Int64& value, size_t rlvIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::IncrementRepositoryLocalValue (Int64& newValue, size_t rlvIndex) const
+DbResult Db::IncrementRepositoryLocalValue (int64_t& newValue, size_t rlvIndex) const
     {
     CachedRlValue* cachedRlv = nullptr;
     if (!TryQueryRepositoryLocalValue (cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
-    BeAssert (cachedRlv->GetValue () < BeRepositoryBasedId (GetRepositoryId (), std::numeric_limits<UInt32>::max ()).GetValue () && "Maximum BeRepositoryBasedId reached.");
+    BeAssert (cachedRlv->GetValue () < BeRepositoryBasedId (GetRepositoryId (), std::numeric_limits<uint32_t>::max ()).GetValue () && "Maximum BeRepositoryBasedId reached.");
     newValue = cachedRlv->Increment ();
     return BE_SQLITE_OK;
     }
@@ -1594,9 +1623,9 @@ bool Db::TryQueryRepositoryLocalValue (CachedRlValue*& value, size_t rlvIndex) c
 
         BeAssert (!stmt.IsColumnNull (0));
         void const* blob = stmt.GetValueBlob (0);
-        Int64 val = -1LL;
+        int64_t val = -1LL;
         memcpy (&val, blob, sizeof(val));
-        BeAssert (stmt.GetColumnBytes (0) <= (int) sizeof (Int64));
+        BeAssert (stmt.GetColumnBytes (0) <= (int) sizeof (int64_t));
         cachedRlv.ChangeValue (val, true);
         }
 
@@ -1612,22 +1641,6 @@ DbResult Db::DeleteRepositoryLocalValues ()
     {
     m_dbFile->ClearRlvCache ();
     return TruncateTable (BEDB_TABLE_Local);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   12/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Db::TryClearRepositoryLocalValueCache (size_t rlvIndex) const
-    {
-    CachedRlValue* cachedRlv = nullptr;
-    if (!TryQueryRepositoryLocalValue (cachedRlv, rlvIndex))
-        return true; //cached value doesn't exist yet -> cache is already cleared.
-
-    if (cachedRlv->IsDirty ())
-        return false; // cache is modified and not persisted -> cannot clear cache
-
-    cachedRlv->Reset ();
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1914,7 +1927,7 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
             return  BE_SQLITE_ERROR;
         }
 
-    UInt32 bytesRead;
+    uint32_t bytesRead;
     Utf8Char ident[16] = "";
     tester.Read (ident, &bytesRead, sizeof(ident));
     tester.Close ();
@@ -1961,12 +1974,11 @@ DbResult Db::DoOpenDb (Utf8CP dbName, OpenParams const& params)
     if (BE_SQLITE_OK != rc)
         return  rc;
 
-    m_dbFile = new DbFile(sqlDb, params.m_busyRetry);
+    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode) params.m_startDefaultTxn);
     m_dbFile->m_flags.m_readonly = (params.m_openMode & OPEN_Readonly)==OPEN_Readonly;
     sqlite3_extended_result_codes (sqlDb, 1); // turn on extended error codes
-    m_dbFile->m_defaultTxnMode = params.m_startDefaultTxn;
 
-    if (m_dbFile->m_defaultTxnMode == DefaultTxn_Exclusive)
+    if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive)
         {
         rc = TryExecuteSql ("PRAGMA locking_mode=\"EXCLUSIVE\"");
         BeAssert (rc == BE_SQLITE_OK);
@@ -2105,6 +2117,12 @@ DbResult Db::_OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
 DbResult Db::_OnDbOpened() {return QueryDbIds();}
 DbResult Db::_OnDbShared(Db& from) {return QueryDbIds();}
 
+void Db::_OnDbChangedByOtherConnection()
+    {
+    m_dbFile->DeleteCachedPropertyMap();
+    m_dbFile->ClearRlvCache();
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2212,12 +2230,12 @@ DbResult Db::QueryDbIds()
     if (BE_SQLITE_ROW != rc)
         return  BE_SQLITE_ERROR_NoPropertyTable;
 
-    Int64 repoId;
+    int64_t repoId;
     rc = QueryRepositoryLocalValue (repoId, m_dbFile->m_repositoryIdRlvIndex);
     if (BE_SQLITE_OK != rc)
         return BE_SQLITE_ERROR_NoPropertyTable;
 
-    m_dbFile->m_repositoryId = BeRepositoryId ((Int32) repoId);
+    m_dbFile->m_repositoryId = BeRepositoryId ((int32_t) repoId);
     return BE_SQLITE_OK;
     }
 
@@ -2231,7 +2249,7 @@ void DbFunction::Context::SetResultError_toobig(){sqlite3_result_error_toobig((s
 void DbFunction::Context::SetResultError_nomem(){sqlite3_result_error_nomem((sqlite3_context*) this);}
 void DbFunction::Context::SetResultError_code(int val){sqlite3_result_error_code((sqlite3_context*) this, val);}
 void DbFunction::Context::SetResultInt(int val){sqlite3_result_int((sqlite3_context*) this, val);}
-void DbFunction::Context::SetResultInt64(Int64 val){sqlite3_result_int64((sqlite3_context*) this, val);}
+void DbFunction::Context::SetResultInt64(int64_t val){sqlite3_result_int64((sqlite3_context*) this, val);}
 void DbFunction::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*) this);}
 void DbFunction::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
 void DbFunction::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
@@ -2416,7 +2434,7 @@ Changes::Change Changes::begin() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Changes::~Changes () {Finalize();}
 DbResult Changes::Change::GetOperation (Utf8CP* tableName, int* nCols, DbOpcode* opcode, int* indirect)const {return (DbResult) sqlite3changeset_op(m_iter, tableName, nCols, (int*) opcode, indirect);}
-DbResult Changes::Change::GetPrimaryKeyColumns (byte** cols, int* nCols) const {return (DbResult) sqlite3changeset_pk(m_iter, cols, nCols);}
+DbResult Changes::Change::GetPrimaryKeyColumns (Byte** cols, int* nCols) const {return (DbResult) sqlite3changeset_pk(m_iter, cols, nCols);}
 DbValue  Changes::Change::GetOldValue (int colNum) const
     {
     SqlValueP val=0;
@@ -2499,7 +2517,7 @@ void DbValue::Dump() const
     switch (GetValueType())
         {
         case BE_SQLITE_INTEGER:
-            printf ("%lld", GetValueInt64());
+            printf ("%" PRId64, GetValueInt64());
             break;
 
         case BE_SQLITE_FLOAT:
@@ -2543,7 +2561,7 @@ void Changes::Change::DumpColumns (int startCol, int endCol, Changes::Change::Va
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Changes::Change::FormatPrimarykeyColumns() const
     {
-    byte* pcols;
+    Byte* pcols;
     int npcols;
     GetPrimaryKeyColumns (&pcols, &npcols);
 
@@ -2574,12 +2592,12 @@ void Changes::Change::Dump (Db const& db) const
     printf ("\n\tTable: %s indirect=%d primarykeycols=(%s) op=", tableName, indirect, FormatPrimarykeyColumns().c_str());
 
     bvector<Utf8String> columnNames;
-    db.GetColumns (columnNames, tableName); 
+    db.GetColumns (columnNames, tableName);
 
     switch (opcode)
         {
         case BE_SQLITEOP_DELETE:
-            printf ("DELETE\n\t\t"); 
+            printf ("DELETE\n\t\t");
             DumpColumns (0, nCols-1, Changes::Change::VALUE_Old, columnNames);
             break;
         case BE_SQLITEOP_INSERT:
@@ -2827,7 +2845,7 @@ HighPriorityRequired::~HighPriorityRequired () { HighPriorityOperationSequencer:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult BlobIO::Open (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, UInt64 row, bool writable, Utf8CP dbName)
+DbResult BlobIO::Open (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName)
     {
     return (DbResult) sqlite3_blob_open(db.GetSqlDb(), dbName ? dbName : "main", tableName, columnName, row, writable, &m_blob);
     }
@@ -2842,7 +2860,7 @@ DbResult BlobIO::Close ()
     return blob ? (DbResult) sqlite3_blob_close(blob) : BE_SQLITE_OK;
     }
 
-DbResult BlobIO::ReOpen (UInt64 row) {return (DbResult) sqlite3_blob_reopen(m_blob, row);}
+DbResult BlobIO::ReOpen (uint64_t row) {return (DbResult) sqlite3_blob_reopen(m_blob, row);}
 DbResult BlobIO::Read (void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_read(m_blob, data, numBytes, offset);}
 DbResult BlobIO::Write (const void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_write(m_blob, data, numBytes, offset);}
 int BlobIO::GetNumBytes() const {return sqlite3_blob_bytes (m_blob);}
@@ -2850,7 +2868,7 @@ int BlobIO::GetNumBytes() const {return sqlite3_blob_bytes (m_blob);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipFromBlob::ZipFromBlob (Int32 blobBufferSize, Int32 zipBufferSize)
+ZipFromBlob::ZipFromBlob (int32_t blobBufferSize, int32_t zipBufferSize)
     {
     m_stream.zalloc = (alloc_func) NULL;
     m_stream.zfree  = (free_func) NULL;
@@ -2859,8 +2877,8 @@ ZipFromBlob::ZipFromBlob (Int32 blobBufferSize, Int32 zipBufferSize)
 
     m_blobBufferSize = blobBufferSize;
     m_unzippedBufferSize = zipBufferSize;
-    m_blobData = (byte*) malloc (blobBufferSize);
-    m_unzippedData = (byte*) malloc (zipBufferSize);
+    m_blobData = (Byte*) malloc (blobBufferSize);
+    m_unzippedData = (Byte*) malloc (zipBufferSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2882,7 +2900,7 @@ ZipErrors ZipFromBlob::ReadFromBlob()
     if (0 == m_blobBytesLeft)
         return  ZIP_ERROR_BLOB_READ_ERROR;
 
-    Int32 sizeToRead = (Int32) ((m_blobBytesLeft > m_blobBufferSize) ? m_blobBufferSize : m_blobBytesLeft);
+    int32_t sizeToRead = (int32_t) ((m_blobBytesLeft > m_blobBufferSize) ? m_blobBufferSize : m_blobBytesLeft);
 
     if (BE_SQLITE_OK != m_blobIO.Read(m_blobData, sizeToRead, m_blobOffset))
         {
@@ -2901,7 +2919,7 @@ ZipErrors ZipFromBlob::ReadFromBlob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors ZipFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, Int64 rowId)
+ZipErrors ZipFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
     m_blobOffset = 0;
     m_unzippedAvail = 0;
@@ -2930,10 +2948,10 @@ ZipErrors ZipFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors ZipFromBlob::ZipRead (byte* data, UInt32 bufSize, UInt32& bytesActuallyRead)
+ZipErrors ZipFromBlob::ZipRead (Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead)
     {
     // point output pointer to their buffer
-    m_stream.next_out  = (byte*) data;
+    m_stream.next_out  = (Byte*) data;
     m_stream.avail_out = bufSize;
     bytesActuallyRead = 0;
 
@@ -2980,7 +2998,7 @@ ZipErrors ZipFromBlob::ZipRead (byte* data, UInt32 bufSize, UInt32& bytesActuall
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors ZipFromBlob::Read (byte* data, UInt32 bufSize, UInt32& bytesActuallyRead)
+ZipErrors ZipFromBlob::Read (Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead)
     {
     bytesActuallyRead = bufSize;
     while (m_unzippedAvail < bufSize)
@@ -3018,8 +3036,8 @@ SnappyFromBlob::SnappyFromBlob ()
 
     enum {blobBufferSize = 34*1024, uncompressedSize=SNAPPY_UNCOMPRESSED_BUFFER_SIZE};
     m_blobBufferSize = blobBufferSize;
-    m_blobData = (byte*) malloc (blobBufferSize);
-    m_uncompressed = (byte*) malloc (uncompressedSize);
+    m_blobData = (Byte*) malloc (blobBufferSize);
+    m_uncompressed = (Byte*) malloc (uncompressedSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3042,7 +3060,7 @@ ZipErrors SnappyFromBlob::ReadNextChunk()
     if (0 == m_blobBytesLeft)
         return  ZIP_ERROR_BLOB_READ_ERROR;
 
-    UInt16 chunkSize;
+    uint16_t chunkSize;
     if (BE_SQLITE_OK != m_blobIO.Read(&chunkSize, 2, m_blobOffset))
         {
         m_blobBytesLeft = 0;
@@ -3075,14 +3093,14 @@ ZipErrors SnappyFromBlob::ReadNextChunk()
     BeAssert (bstat);
 
     m_uncompressCurr = m_uncompressed;
-    m_uncompressAvail = (UInt16) uncompressSize;
+    m_uncompressAvail = (uint16_t) uncompressSize;
     return  ZIP_SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors SnappyFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, Int64 rowId)
+ZipErrors SnappyFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
     m_blobOffset = 0;
     m_uncompressAvail = 0;
@@ -3110,7 +3128,7 @@ ZipErrors SnappyFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors SnappyFromBlob::_Read (byte* data, UInt32 bufSize, UInt32& bytesActuallyRead)
+ZipErrors SnappyFromBlob::_Read (Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead)
     {
     // point output pointer to their buffer
     bytesActuallyRead = 0;
@@ -3126,7 +3144,7 @@ ZipErrors SnappyFromBlob::_Read (byte* data, UInt32 bufSize, UInt32& bytesActual
                 return ZIP_ERROR_COMPRESSION_ERROR;
             }
 
-        UInt32 readSize = (bufSize > m_uncompressAvail) ? m_uncompressAvail : bufSize;
+        uint32_t readSize = (bufSize > m_uncompressAvail) ? m_uncompressAvail : bufSize;
 
         memcpy (data, m_uncompressCurr, readSize);
         data += readSize;
@@ -3142,7 +3160,7 @@ ZipErrors SnappyFromBlob::_Read (byte* data, UInt32 bufSize, UInt32& bytesActual
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2012
 //--------------+------------------------------------------------------------------------
-UInt32 SnappyFromMemory::GetUncompressedBufferSize()
+uint32_t SnappyFromMemory::GetUncompressedBufferSize()
     {
     return SNAPPY_UNCOMPRESSED_BUFFER_SIZE;
     }
@@ -3150,11 +3168,11 @@ UInt32 SnappyFromMemory::GetUncompressedBufferSize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnappyFromMemory::SnappyFromMemory (void*uncompressedBuffer, UInt32 uncompressedBufferSize)
+SnappyFromMemory::SnappyFromMemory (void*uncompressedBuffer, uint32_t uncompressedBufferSize)
     {
     BeAssert (SNAPPY_UNCOMPRESSED_BUFFER_SIZE == uncompressedBufferSize);
 
-    m_uncompressed = (byte*)uncompressedBuffer;
+    m_uncompressed = (Byte*)uncompressedBuffer;
     m_uncompressAvail = 0;
     m_uncompressSize = uncompressedBufferSize;
 
@@ -3166,11 +3184,11 @@ SnappyFromMemory::SnappyFromMemory (void*uncompressedBuffer, UInt32 uncompressed
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnappyFromMemory::Init (void*blobBuffer, UInt32 blobBufferSize)
+void SnappyFromMemory::Init (void*blobBuffer, uint32_t blobBufferSize)
     {
     m_uncompressAvail = 0;
 
-    m_blobData = (byte*) blobBuffer;
+    m_blobData = (Byte*) blobBuffer;
     m_blobOffset = 0;
     m_blobBytesLeft = blobBufferSize;
     }
@@ -3178,7 +3196,7 @@ void SnappyFromMemory::Init (void*blobBuffer, UInt32 blobBufferSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors SnappyFromMemory::TransferFromBlob (void* data, UInt32 numBytes, int offset)
+ZipErrors SnappyFromMemory::TransferFromBlob (void* data, uint32_t numBytes, int offset)
     {
     //  Verify that it does not go beyond the end of the buffer
     memcpy(data, m_blobData + offset, numBytes);
@@ -3195,7 +3213,7 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
     if (0 == m_blobBytesLeft)
         return  ZIP_ERROR_BLOB_READ_ERROR;
 
-    UInt16 chunkSize;
+    uint16_t chunkSize;
     if (ZIP_SUCCESS != TransferFromBlob(&chunkSize, 2, m_blobOffset))
         {
         m_blobBytesLeft = 0;
@@ -3209,7 +3227,7 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
     m_blobBytesLeft -= 2;
     chunkSize -= 2;
 
-    byte*   currentData = m_blobData + m_blobOffset;
+    Byte*   currentData = m_blobData + m_blobOffset;
 
     m_blobOffset     += chunkSize;
     m_blobBytesLeft  -= chunkSize;
@@ -3223,14 +3241,14 @@ ZipErrors SnappyFromMemory::ReadNextChunk()
     BeAssert (bstat);
 
     m_uncompressCurr = m_uncompressed;
-    m_uncompressAvail = (UInt16) uncompressSize;
+    m_uncompressAvail = (uint16_t) uncompressSize;
     return  ZIP_SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors SnappyFromMemory::_Read (byte* data, UInt32 bufSize, UInt32& bytesActuallyRead)
+ZipErrors SnappyFromMemory::_Read (Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead)
     {
     // point output pointer to their buffer
     bytesActuallyRead = 0;
@@ -3246,7 +3264,7 @@ ZipErrors SnappyFromMemory::_Read (byte* data, UInt32 bufSize, UInt32& bytesActu
                 return ZIP_ERROR_COMPRESSION_ERROR;
             }
 
-        UInt32 readSize = (bufSize > m_uncompressAvail) ? m_uncompressAvail : bufSize;
+        uint32_t readSize = (bufSize > m_uncompressAvail) ? m_uncompressAvail : bufSize;
 
         memcpy (data, m_uncompressCurr, readSize);
         data += readSize;
@@ -3262,7 +3280,7 @@ ZipErrors SnappyFromMemory::_Read (byte* data, UInt32 bufSize, UInt32& bytesActu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ZipToBlob::UseChunk (UInt32 chunkNumber)
+void ZipToBlob::UseChunk (uint32_t chunkNumber)
     {
     if (m_chunks.size() <= chunkNumber)
         m_chunks.push_back(new ZippedChunk(m_chunkSize));
@@ -3311,10 +3329,10 @@ ZipToBlob::~ZipToBlob ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ZipToBlob::GetCompressedSize()
+uint32_t ZipToBlob::GetCompressedSize()
     {
-    UInt32 total = 0;
-    for (UInt32 i=0; i<=m_currChunk; ++i)
+    uint32_t total = 0;
+    for (uint32_t i=0; i<=m_currChunk; ++i)
         total += m_chunks[i]->m_bytesUsed;
     return  total;
     }
@@ -3342,9 +3360,9 @@ void ZipToBlob::ResetCompressionLevel(int level)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors ZipToBlob::Write (ByteCP data, UInt32 size)
+ZipErrors ZipToBlob::Write (ByteCP data, uint32_t size)
     {
-    m_stream.next_in  = (byte*) data;
+    m_stream.next_in  = (Byte*) data;
     m_stream.avail_in = size;
     m_unzippedSize += size;
 
@@ -3403,7 +3421,7 @@ ZipErrors ZipToBlob::Finish()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ZipToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP column, Int64 rowId)
+BentleyStatus ZipToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
     BlobIO blobIO;
     StatusInt status = blobIO.Open (db, tableName, column, rowId, true);
@@ -3414,7 +3432,7 @@ BentleyStatus ZipToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP col
         }
 
     int offset = 0;
-    for (UInt32 i=0; i<= m_currChunk; ++i)
+    for (uint32_t i=0; i<= m_currChunk; ++i)
         {
         status = blobIO.Write(m_chunks[i]->m_data, m_chunks[i]->m_bytesUsed, offset);
         if (BE_SQLITE_OK != status)
@@ -3434,7 +3452,7 @@ BentleyStatus ZipToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP col
 SnappyToBlob::SnappyToBlob ()
     {
     enum {bufsize = 32*1024};
-    m_rawBuf = (byte*) malloc (bufsize);
+    m_rawBuf = (Byte*) malloc (bufsize);
     m_rawSize = bufsize;
     Init();
     }
@@ -3464,12 +3482,12 @@ SnappyToBlob::~SnappyToBlob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnappyToBlob::Write (ByteCP data, UInt32 inSize)
+void SnappyToBlob::Write (ByteCP data, uint32_t inSize)
     {
     m_unsnappedSize += inSize;
     while (inSize>0)
         {
-        UInt32 thisSize = (inSize>m_rawAvail) ? m_rawAvail : inSize;
+        uint32_t thisSize = (inSize>m_rawAvail) ? m_rawAvail : inSize;
         memcpy (m_rawBuf+m_rawCurr, data, thisSize);
 
         inSize -= thisSize;
@@ -3486,12 +3504,12 @@ void SnappyToBlob::Write (ByteCP data, UInt32 inSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 SnappyToBlob::GetCompressedSize()
+uint32_t SnappyToBlob::GetCompressedSize()
     {
     Finish();
-    UInt32 total = 0;
+    uint32_t total = 0;
 
-    for (UInt32 i=0; i<m_currChunk; ++i)
+    for (uint32_t i=0; i<m_currChunk; ++i)
         total += m_chunks[i]->GetChunkSize();
 
     return  total;
@@ -3506,12 +3524,12 @@ void SnappyToBlob::Finish()
         return;
 
     if (m_chunks.size() <= m_currChunk)
-        m_chunks.push_back(new SnappyChunk((UInt32) snappy::MaxCompressedLength(m_rawSize)));
+        m_chunks.push_back(new SnappyChunk((uint32_t) snappy::MaxCompressedLength(m_rawSize)));
 
     unsigned int compressedBytes;
     snappy::RawCompress ((char const*) m_rawBuf, m_rawCurr, (char*) &m_chunks[m_currChunk]->m_data[1], &compressedBytes);
     BeAssert ((compressedBytes+2) < 64*1024);
-    m_chunks[m_currChunk]->m_data[0] = (UInt16) compressedBytes + 2; // add 2 because compressed data starts 2 bytes into buffer
+    m_chunks[m_currChunk]->m_data[0] = (uint16_t) compressedBytes + 2; // add 2 because compressed data starts 2 bytes into buffer
 
     ++m_currChunk;
     m_rawCurr = 0;
@@ -3521,7 +3539,7 @@ void SnappyToBlob::Finish()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SnappyToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP column, Int64 rowId)
+BentleyStatus SnappyToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
     Finish();
 
@@ -3534,7 +3552,7 @@ BentleyStatus SnappyToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP 
         }
 
     int offset = 0;
-    for (UInt32 i=0; i< m_currChunk; ++i)
+    for (uint32_t i=0; i< m_currChunk; ++i)
         {
         status = blobIO.Write(m_chunks[i]->m_data, m_chunks[i]->GetChunkSize(), offset);
         if (BE_SQLITE_OK != status)
@@ -3576,7 +3594,7 @@ CachedStatement::~CachedStatement () {sqlite3_free((void*)m_sql);}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 CachedStatement::Release()
+uint32_t CachedStatement::Release()
     {
     if (0 == --m_refCount)
         {
@@ -3739,7 +3757,7 @@ DbTableIterator& DbTableIterator::operator=(DbTableIterator const& rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbTableIterator::DbTableIterator(BeSQLiteDbCR db, Utf8CP whereClause) : m_db((BeSQLiteDbP)&db), m_params(NULL) 
+DbTableIterator::DbTableIterator(BeSQLiteDbCR db, Utf8CP whereClause) : m_db((BeSQLiteDbP)&db), m_params(NULL)
     {
     if (NULL == whereClause)
         return;
@@ -3780,11 +3798,11 @@ struct PropertyBlobInStream : ILzmaInputStream
 private:
     Db&                 m_db;
     BeRepositoryBasedId m_id;
-    byte*               m_buffer;
-    UInt32              m_bufferSize;
-    UInt32              m_nBytesInBuffer;
-    UInt32              m_bufferOffset;
-    UInt32              m_nextChunk;
+    Byte*               m_buffer;
+    uint32_t            m_bufferSize;
+    uint32_t            m_nBytesInBuffer;
+    uint32_t            m_bufferOffset;
+    uint32_t            m_nextChunk;
 
 public:
     PropertyBlobInStream(Db&db, BeRepositoryBasedId id) : m_db(db), m_id(id), m_buffer(NULL), m_bufferSize(0), m_nBytesInBuffer(0), m_bufferOffset(0), m_nextChunk(0) {}
@@ -3792,7 +3810,7 @@ public:
 
     //  The LZMA2 multithreading ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
-    ZipErrors _Read (void* data, UInt32 size, UInt32& actuallyRead) override
+    ZipErrors _Read (void* data, uint32_t size, uint32_t& actuallyRead) override
         {
         for (actuallyRead = 0; actuallyRead < size; )
             {
@@ -3806,7 +3824,7 @@ public:
                 if (m_nBytesInBuffer > m_bufferSize)
                     {
                     m_bufferSize = m_nBytesInBuffer;
-                    m_buffer = (byte*)realloc(m_buffer, m_bufferSize);
+                    m_buffer = (Byte*)realloc(m_buffer, m_bufferSize);
                     }
 
                 rc = m_db.QueryProperty (m_buffer, m_nBytesInBuffer, Properties::EmbeddedFileBlob(), m_id.GetValue(), m_nextChunk++);
@@ -3814,8 +3832,8 @@ public:
                     return ZIP_ERROR_BAD_DATA;
                 }
 
-            UInt32  bytesToTransfer = std::min(m_nBytesInBuffer - m_bufferOffset, size - actuallyRead);
-            memcpy ((byte*)data + actuallyRead, m_buffer + m_bufferOffset, bytesToTransfer);
+            uint32_t bytesToTransfer = std::min(m_nBytesInBuffer - m_bufferOffset, size - actuallyRead);
+            memcpy ((Byte*)data + actuallyRead, m_buffer + m_bufferOffset, bytesToTransfer);
             actuallyRead += bytesToTransfer;
             m_bufferOffset += bytesToTransfer;
             }
@@ -3824,7 +3842,7 @@ public:
         }
 
     //  This is not needed since PropertyBlobInStream is only used for decompressing.  It is the LZMA compression code that needs it.
-    UInt64 _GetSize() override {BeAssert (false && "PropertyBlobInStream::_GetSize not implemented");  return 0;}
+    uint64_t _GetSize() override {BeAssert (false && "PropertyBlobInStream::_GetSize not implemented");  return 0;}
 };
 
 //=======================================================================================
@@ -3835,10 +3853,10 @@ struct  PropertyBlobOutStream : ILzmaOutputStream
 private:
     Db&                 m_db;
     BeRepositoryBasedId m_id;
-    bvector<byte>       m_buffer;
-    UInt32              m_chunkSize;
-    UInt32              m_bufferOffset;
-    UInt32              m_nextChunk;
+    bvector<Byte>       m_buffer;
+    uint32_t            m_chunkSize;
+    uint32_t            m_bufferOffset;
+    uint32_t            m_nextChunk;
     bool                m_alwaysFlush;
 
 public:
@@ -3852,7 +3870,7 @@ public:
         return rc;
         }
 
-    PropertyBlobOutStream(Db&db, BeRepositoryBasedId id, UInt64 chunkSize) : m_db(db), m_id(id), m_chunkSize(static_cast <UInt32> (chunkSize)), m_bufferOffset(0), m_nextChunk(0), m_alwaysFlush(false)
+    PropertyBlobOutStream(Db&db, BeRepositoryBasedId id, uint64_t chunkSize) : m_db(db), m_id(id), m_chunkSize(static_cast <uint32_t> (chunkSize)), m_bufferOffset(0), m_nextChunk(0), m_alwaysFlush(false)
         {
         m_buffer.resize(m_chunkSize);
         }
@@ -3862,10 +3880,10 @@ public:
     //  That makes it possible to read and expand any given block, randomly accessing the blocks.
     void _SetAlwaysFlush(bool flushOnEveryWrite) override
         {
-        m_alwaysFlush = flushOnEveryWrite; 
+        m_alwaysFlush = flushOnEveryWrite;
         Flush();
         }
-    
+
     ~PropertyBlobOutStream()
         {
         //  We should always flush and check that status, so m_bufferOffset should be 0.
@@ -3873,12 +3891,12 @@ public:
         Flush();
         }
 
-    ZipErrors _Write (void const* data, UInt32 size, UInt32& bytesWritten) override
+    ZipErrors _Write (void const* data, uint32_t size, uint32_t& bytesWritten) override
         {
         bytesWritten = 0;
         while (bytesWritten < size)
             {
-            UInt32  bytesToTransfer = size;  //  Assume chunk size applies to input.
+            uint32_t bytesToTransfer = size;  //  Assume chunk size applies to input.
             if (!m_alwaysFlush)
                 //  Chunk size applies to output.
                 bytesToTransfer = std::min(m_chunkSize - m_bufferOffset, size - bytesWritten);
@@ -3892,7 +3910,7 @@ public:
                 {
                 if (BE_SQLITE_OK != Flush())
                     return ZIP_ERROR_WRITE_ERROR;
-                }               
+                }
             else if (m_bufferOffset == m_chunkSize)
                 {
                 if (BE_SQLITE_OK != Flush())
@@ -3906,17 +3924,17 @@ public:
 
 #define EMBEDDED_LZMA_MARKER   "EmLzma"
 //=======================================================================================
-// The first EmbeddedFileBlob for an embedded file starts with this structure.  If 
+// The first EmbeddedFileBlob for an embedded file starts with this structure.  If
 // m_compressionType is NO_COMPRESSION then the image is not compressed.
 // @bsiclass                                                    John.Gooding    03/2013
 //=======================================================================================
 struct   EmbeddedLzmaHeader
 {
 private:
-    UInt16  m_sizeOfHeader;
+    uint16_t m_sizeOfHeader;
     char    m_idString [10];
-    UInt16  m_formatVersionNumber;
-    UInt16  m_compressionType;
+    uint16_t m_formatVersionNumber;
+    uint16_t m_compressionType;
 
 public:
     static const int formatVersionNumber = 0x10;
@@ -3931,7 +3949,7 @@ public:
         CharCP idString = EMBEDDED_LZMA_MARKER;
         BeAssert ((strlen (idString)+ 1) <= sizeof(m_idString));
         memset (this, 0, sizeof (*this));
-        m_sizeOfHeader = (UInt16)sizeof (EmbeddedLzmaHeader);
+        m_sizeOfHeader = (uint16_t)sizeof (EmbeddedLzmaHeader);
         strcpy (m_idString, idString);
         m_compressionType = compressionType;
         m_formatVersionNumber = formatVersionNumber;
@@ -3979,11 +3997,11 @@ static void removeFileBlobs (Db& db, BeRepositoryBasedId id)
 //  boundaries as the LZMA library.
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-static UInt32 getDictionarySize (UInt32 dictionarySize)
+static uint32_t getDictionarySize (uint32_t dictionarySize)
     {
     for (unsigned i = 0; i < 40; i++)
         {
-        UInt32 computed = (2 | (i & 1)) << (i / 2 + 11);
+        uint32_t computed = (2 | (i & 1)) << (i / 2 + 11);
         if (dictionarySize <= computed)
             return computed;
         }
@@ -3994,7 +4012,7 @@ static UInt32 getDictionarySize (UInt32 dictionarySize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-static DbResult compressAndEmbedFileImage (Db& db, UInt32& chunkSize, BeRepositoryBasedId id, void const* data, UInt32 const size, bool supportRandomAccess)
+static DbResult compressAndEmbedFileImage (Db& db, uint32_t& chunkSize, BeRepositoryBasedId id, void const* data, uint32_t const size, bool supportRandomAccess)
     {
     if (supportRandomAccess)
         chunkSize = getDictionarySize (chunkSize);
@@ -4002,12 +4020,12 @@ static DbResult compressAndEmbedFileImage (Db& db, UInt32& chunkSize, BeReposito
     BeFileLzmaInFromMemory inStream (data, size);
     PropertyBlobOutStream outStream (db, id, chunkSize);
 
-    UInt32 dictionarySize = std::min (size, chunkSize);
+    uint32_t dictionarySize = std::min (size, chunkSize);
 
     LzmaEncoder encoder (dictionarySize);
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
-    UInt32 bytesWritten;
+    uint32_t bytesWritten;
     outStream._Write (&header, sizeof (header), bytesWritten);
     if (bytesWritten != sizeof (header))
         return BE_SQLITE_IOERR;
@@ -4023,7 +4041,7 @@ static DbResult compressAndEmbedFileImage (Db& db, UInt32& chunkSize, BeReposito
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult compressAndEmbedFile (Db& db, UInt64& filesize, UInt32& chunkSize, BeRepositoryBasedId id, Utf8CP filespec, bool supportRandomAccess)
+static DbResult compressAndEmbedFile (Db& db, uint64_t& filesize, uint32_t& chunkSize, BeRepositoryBasedId id, Utf8CP filespec, bool supportRandomAccess)
     {
     if (supportRandomAccess)
         chunkSize = getDictionarySize (chunkSize);
@@ -4039,7 +4057,7 @@ static DbResult compressAndEmbedFile (Db& db, UInt64& filesize, UInt32& chunkSiz
 
     filesize = inStream._GetSize ();
 
-    UInt32 dictionarySize = static_cast <UInt32> (std::min (filesize, (UInt64) chunkSize));
+    uint32_t dictionarySize = static_cast <uint32_t> (std::min (filesize, (uint64_t) chunkSize));
 
     LzmaEncoder encoder (dictionarySize);
     if (supportRandomAccess)
@@ -4047,7 +4065,7 @@ static DbResult compressAndEmbedFile (Db& db, UInt64& filesize, UInt32& chunkSiz
         encoder.SetBlockSize (dictionarySize);
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
-    UInt32 bytesWritten;
+    uint32_t bytesWritten;
     outStream._Write (&header, sizeof (header), bytesWritten);
     if (bytesWritten != sizeof (header))
         return BE_SQLITE_IOERR;
@@ -4063,17 +4081,17 @@ static DbResult compressAndEmbedFile (Db& db, UInt64& filesize, UInt32& chunkSiz
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-static DbResult embedFileImageWithoutCompressing (Db& db, void const*data, UInt64 size, UInt32 chunkSize, BeRepositoryBasedId id)
+static DbResult embedFileImageWithoutCompressing (Db& db, void const*data, uint64_t size, uint32_t chunkSize, BeRepositoryBasedId id)
     {
-    Int32 nChunks=0;
+    int32_t nChunks=0;
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::NO_COMPRESSION);
     DbResult rc = db.SaveProperty (Properties::EmbeddedFileBlob(), &header, sizeof(header), id.GetValue(), nChunks++);
     if (rc != BE_SQLITE_OK)
         return  rc;
 
-    for (Int64 nLeft=(Int64)size; nLeft>0; nLeft-=chunkSize)
+    for (int64_t nLeft=(int64_t)size; nLeft>0; nLeft-=chunkSize)
         {
-        UInt32 thisSize = (UInt32) std::min ((Int64) chunkSize, nLeft);
+        uint32_t thisSize = (uint32_t) std::min ((int64_t) chunkSize, nLeft);
 
         //  This relies on EmbeddedFileBlob returning PropertySpec::COMPRESS_PROPERTY_No to prevent trying
         //  to compress the blobs
@@ -4090,7 +4108,7 @@ static DbResult embedFileImageWithoutCompressing (Db& db, void const*data, UInt6
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-static DbResult embedFileWithoutCompressing (Db& db, UInt64&filesize, UInt32 chunkSize, BeRepositoryBasedId id, Utf8CP filespec)
+static DbResult embedFileWithoutCompressing (Db& db, uint64_t&filesize, uint32_t chunkSize, BeRepositoryBasedId id, Utf8CP filespec)
     {
     WString filespecW (filespec, true);
     BeFileName filename (filespecW.c_str ());
@@ -4099,19 +4117,19 @@ static DbResult embedFileWithoutCompressing (Db& db, UInt64&filesize, UInt32 chu
     if (inputFile.Open(filename, BeFileAccess::Read) != BeFileStatus::Success)
         return BE_SQLITE_ERROR_FileNotFound;
 
-    Int32 nChunks=0;
+    int32_t nChunks=0;
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::NO_COMPRESSION);
-    DbResult rc = db.SaveProperty (Properties::EmbeddedFileBlob(), &header, (UInt32)sizeof(header), id.GetValue(), nChunks++);
+    DbResult rc = db.SaveProperty (Properties::EmbeddedFileBlob(), &header, (uint32_t)sizeof(header), id.GetValue(), nChunks++);
     if (rc != BE_SQLITE_OK)
         return  rc;
 
     filename.GetFileSize(filesize);
-    bvector<byte>    buffer;
+    bvector<Byte>    buffer;
     buffer.resize(chunkSize);
 
     while(true)
         {
-        UInt32 bytesRead;
+        uint32_t bytesRead;
         inputFile.Read(&buffer[0], &bytesRead, chunkSize);
         if (0 == bytesRead)
             break;
@@ -4127,7 +4145,7 @@ static DbResult embedFileWithoutCompressing (Db& db, UInt64&filesize, UInt32 chu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult addEmbedFile (Db& db, Utf8CP name, Utf8CP type, Utf8CP description, BeRepositoryBasedId id, UInt64 fileSize, DateTime const* lastModified, UInt32 chunkSize)
+static DbResult addEmbedFile (Db& db, Utf8CP name, Utf8CP type, Utf8CP description, BeRepositoryBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
     {
     const bool hasLastModifiedColumn = DbEmbeddedFileTable::HasLastModifiedColumn (db);
 
@@ -4175,7 +4193,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::GetNextEmbedFileId () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing (DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, UInt32 chunkSize)
+BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing (DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize)
     {
     BeAssert (m_db.IsTransactionActive ());
 
@@ -4191,7 +4209,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing (DbResult* sta
 
     BeRepositoryBasedId newId = GetNextEmbedFileId ();
 
-    UInt64 fileSize;
+    uint64_t fileSize;
     DbResult rc = embedFileWithoutCompressing (m_db, fileSize, chunkSize, newId, filespec);
     if (BE_SQLITE_OK == rc)
         rc = addEmbedFile (m_db, name, type, description, newId, fileSize, lastModified, chunkSize);
@@ -4208,7 +4226,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing (DbResult* sta
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   10/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BeRepositoryBasedId DbEmbeddedFileTable::Import (DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, UInt32 chunkSize, bool supportRandomAccess)
+BeRepositoryBasedId DbEmbeddedFileTable::Import (DbResult* stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
     {
     BeAssert (m_db.IsTransactionActive ());
 
@@ -4224,7 +4242,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::Import (DbResult* stat, Utf8CP name, Ut
 
     BeRepositoryBasedId newId = GetNextEmbedFileId ();
 
-    UInt64 fileSize;
+    uint64_t fileSize;
     DbResult rc = compressAndEmbedFile (m_db, fileSize, chunkSize, newId, filespec, supportRandomAccess);
     if (BE_SQLITE_OK == rc)
         rc = addEmbedFile (m_db, name, type, description, newId, fileSize, lastModified, chunkSize);
@@ -4249,7 +4267,7 @@ DbResult DbEmbeddedFileTable::AddEntry (Utf8CP name, Utf8CP type, Utf8CP descrip
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult updateEmbedFile (Db& db, BeRepositoryBasedId id, UInt64 fileSize, DateTime const* lastModified, UInt32 chunkSize)
+static DbResult updateEmbedFile (Db& db, BeRepositoryBasedId id, uint64_t fileSize, DateTime const* lastModified, uint32_t chunkSize)
     {
     const bool updateLastModified = DbEmbeddedFileTable::HasLastModifiedColumn (db) && lastModified != nullptr && lastModified->IsValid ();
 
@@ -4281,7 +4299,7 @@ static DbResult updateEmbedFile (Db& db, BeRepositoryBasedId id, UInt64 fileSize
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbEmbeddedFileTable::Replace (Utf8CP name, Utf8CP filespec, UInt32 chunkSize, DateTime const* lastModified)
+DbResult DbEmbeddedFileTable::Replace (Utf8CP name, Utf8CP filespec, uint32_t chunkSize, DateTime const* lastModified)
     {
     BeAssert (m_db.IsTransactionActive());
     BeRepositoryBasedId id = QueryFile (name);
@@ -4292,23 +4310,23 @@ DbResult DbEmbeddedFileTable::Replace (Utf8CP name, Utf8CP filespec, UInt32 chun
     {
     PropertyBlobInStream    inStream(m_db, id);
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
-    UInt32 actuallyRead;
+    uint32_t actuallyRead;
     inStream._Read(&header, sizeof(header), actuallyRead);
     if (actuallyRead != sizeof(header) || !header.IsValid())
         return BE_SQLITE_MISMATCH;
     isLzma2 = header.IsLzma2();
     }
 
-    removeFileBlobs (m_db, id); 
+    removeFileBlobs (m_db, id);
 
     if (isLzma2)
         {
-        UInt64 fileSize;
+        uint64_t fileSize;
         DbResult rc = compressAndEmbedFile (m_db, fileSize, chunkSize, id, filespec, false);
         return (BE_SQLITE_OK != rc) ? rc : updateEmbedFile (m_db, id, fileSize, lastModified, chunkSize);
         }
 
-    UInt64 fileSize;
+    uint64_t fileSize;
     DbResult rc = embedFileWithoutCompressing(m_db, fileSize, chunkSize, id, filespec);
     return (BE_SQLITE_OK != rc) ? rc : updateEmbedFile (m_db, id, fileSize, lastModified, chunkSize);
     }
@@ -4316,7 +4334,7 @@ DbResult DbEmbeddedFileTable::Replace (Utf8CP name, Utf8CP filespec, UInt32 chun
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbEmbeddedFileTable::Save (void const* data, UInt64 size, Utf8CP name, bool compress, UInt32 chunkSize)
+DbResult DbEmbeddedFileTable::Save (void const* data, uint64_t size, Utf8CP name, bool compress, uint32_t chunkSize)
     {
     BeAssert (m_db.IsTransactionActive());
     BeRepositoryBasedId id = QueryFile (name);
@@ -4327,7 +4345,7 @@ DbResult DbEmbeddedFileTable::Save (void const* data, UInt64 size, Utf8CP name, 
 
     if (compress)
         {
-        compressAndEmbedFileImage(m_db, chunkSize, id, data, (UInt32)size, true);
+        compressAndEmbedFileImage(m_db, chunkSize, id, data, (uint32_t)size, true);
         return updateEmbedFile (m_db, id, size, nullptr, chunkSize);
         }
 
@@ -4342,8 +4360,8 @@ DbResult DbEmbeddedFileTable::Save (void const* data, UInt64 size, Utf8CP name, 
 DbResult DbEmbeddedFileTable::Export (Utf8CP filespec, Utf8CP name, ICompressProgressTracker* progress)
     {
     BeAssert (m_db.IsTransactionActive());
-    UInt64 actualSize;
-    UInt32 chunkSize;
+    uint64_t actualSize;
+    uint32_t chunkSize;
     BeRepositoryBasedId id = QueryFile (name, &actualSize, &chunkSize);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
@@ -4352,7 +4370,7 @@ DbResult DbEmbeddedFileTable::Export (Utf8CP filespec, Utf8CP name, ICompressPro
     BeFileLzmaOutStream     outStream;
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
-    UInt32 actuallyRead;
+    uint32_t actuallyRead;
     inStream._Read(&header, sizeof(header), actuallyRead);
     if (actuallyRead != sizeof(header) || !header.IsValid())
         return BE_SQLITE_MISMATCH;
@@ -4371,16 +4389,16 @@ DbResult DbEmbeddedFileTable::Export (Utf8CP filespec, Utf8CP name, ICompressPro
         return  ZIP_SUCCESS == result ? BE_SQLITE_OK : BE_SQLITE_IOERR_READ;
         }
 
-    bvector<byte>   buffer;
+    bvector<Byte>   buffer;
     buffer.resize(20000);
-    UInt64  totalRead = 0;
+    uint64_t totalRead = 0;
     while(true)
         {
-        inStream._Read(&buffer[0], (UInt32)buffer.size(), actuallyRead);
+        inStream._Read(&buffer[0], (uint32_t)buffer.size(), actuallyRead);
         if (0 == actuallyRead)
             break;
         totalRead += actuallyRead;
-        UInt32 bytesWritten = 0;
+        uint32_t bytesWritten = 0;
         outStream._Write(&buffer[0], actuallyRead, bytesWritten);
         if (bytesWritten != actuallyRead)
             return BE_SQLITE_IOERR_WRITE;
@@ -4396,11 +4414,11 @@ DbResult DbEmbeddedFileTable::Export (Utf8CP filespec, Utf8CP name, ICompressPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbEmbeddedFileTable::Read (bvector<byte>& callerBuffer, Utf8CP name)
+DbResult DbEmbeddedFileTable::Read (bvector<Byte>& callerBuffer, Utf8CP name)
     {
     BeAssert (m_db.IsTransactionActive());
-    UInt64 actualSize;
-    UInt32 chunkSize;
+    uint64_t actualSize;
+    uint32_t chunkSize;
     BeRepositoryBasedId id = QueryFile (name, &actualSize, &chunkSize);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
@@ -4411,7 +4429,7 @@ DbResult DbEmbeddedFileTable::Read (bvector<byte>& callerBuffer, Utf8CP name)
     outStream.Reserve((size_t)actualSize);
 
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::LZMA2);
-    UInt32 actuallyRead;
+    uint32_t actuallyRead;
     inStream._Read(&header, sizeof(header), actuallyRead);
     if (actuallyRead != sizeof(header) || !header.IsValid())
         return BE_SQLITE_MISMATCH;
@@ -4420,7 +4438,7 @@ DbResult DbEmbeddedFileTable::Read (bvector<byte>& callerBuffer, Utf8CP name)
         {
         LzmaDecoder decoder;
         ZipErrors result = decoder.Uncompress(outStream, inStream, true, nullptr);
-        
+
         BeAssert(callerBuffer.size() == actualSize);
 
         return  ZIP_SUCCESS == result ? BE_SQLITE_OK : BE_SQLITE_IOERR_READ;
@@ -4429,11 +4447,11 @@ DbResult DbEmbeddedFileTable::Read (bvector<byte>& callerBuffer, Utf8CP name)
     char    tempBuffer[2000];
     while(true)
         {
-        inStream._Read(tempBuffer, (UInt32)sizeof(tempBuffer), actuallyRead);
+        inStream._Read(tempBuffer, (uint32_t)sizeof(tempBuffer), actuallyRead);
         if (0 == actuallyRead)
             break;
 
-        UInt32 bytesWritten = 0;
+        uint32_t bytesWritten = 0;
         outStream._Write(&tempBuffer[0], actuallyRead, bytesWritten);
         if (bytesWritten != actuallyRead)
             return BE_SQLITE_IOERR_WRITE;
@@ -4452,7 +4470,7 @@ DbResult DbEmbeddedFileTable::Read (bvector<byte>& callerBuffer, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeRepositoryBasedId DbEmbeddedFileTable::QueryFile (Utf8CP name, UInt64* size, UInt32* chunkSize, Utf8StringP descr, Utf8StringP typestr, DateTime* lastModified)
+BeRepositoryBasedId DbEmbeddedFileTable::QueryFile (Utf8CP name, uint64_t* size, uint32_t* chunkSize, Utf8StringP descr, Utf8StringP typestr, DateTime* lastModified)
     {
     // embedded file table is created on demand, so may not exist yet
     if (!m_db.TableExists(BEDB_TABLE_EmbeddedFile))
@@ -4503,7 +4521,7 @@ DbResult DbEmbeddedFileTable::Remove (Utf8CP name)
         return  BE_SQLITE_ERROR;
 
     // this isn't really necessary for files created after we added the trigger, but do it for older dbs before we had the trigger.
-    removeFileBlobs (m_db, id); 
+    removeFileBlobs (m_db, id);
 
     Statement stmt;
     stmt.Prepare (m_db, "DELETE FROM " BEDB_TABLE_EmbeddedFile " WHERE Id=?");
@@ -4521,7 +4539,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
     if (m_db.TableExists (BEDB_TABLE_EmbeddedFile))
         return BE_SQLITE_OK;
 
-    auto rc = m_db.ExecuteSql ("CREATE TABLE " BEDB_TABLE_EmbeddedFile 
+    auto rc = m_db.ExecuteSql ("CREATE TABLE " BEDB_TABLE_EmbeddedFile
         " (Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE UNIQUE,"
         "Descr CHAR, Type CHAR, Size INT, Chunk INT, LastModified TIMESTAMP)");
 
@@ -4529,7 +4547,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
         return rc;
 
     return m_db.ExecuteSql ("CREATE TRIGGER delete_embeddedFiles AFTER DELETE ON " BEDB_TABLE_EmbeddedFile
-            " BEGIN DELETE FROM " BEDB_TABLE_Property 
+            " BEGIN DELETE FROM " BEDB_TABLE_Property
             " WHERE Namespace=\"" BEDB_PROPSPEC_NAMESPACE "\" AND NAME=\"" BEDB_PROPSPEC_EMBEDBLOB_NAME "\" AND Id=OLD.Id; END");
     }
 
@@ -4540,7 +4558,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
 bool DbEmbeddedFileTable::HasLastModifiedColumn (BeSQLiteDbR db)
     {
     const SchemaVersion firstVersionWithLastModifiedColumn (3, 1, 0, 1);
-    
+
     SchemaVersion actualVersion (0,0,0,0);
     if (BE_SQLITE_OK != BeSQLiteProfileManager::ReadProfileVersion (actualVersion, db))
         {
@@ -4561,7 +4579,7 @@ DbEmbeddedFileTable::Iterator::Entry DbEmbeddedFileTable::Iterator::begin() cons
         if (!m_db->TableExists(BEDB_TABLE_EmbeddedFile))
             return Entry (nullptr, false);
 
-        Utf8String sqlString = MakeSqlString (DbEmbeddedFileTable::HasLastModifiedColumn (*m_db) ? 
+        Utf8String sqlString = MakeSqlString (DbEmbeddedFileTable::HasLastModifiedColumn (*m_db) ?
                                               "SELECT Name,Descr,Type,Id,Size,Chunk,LastModified FROM " BEDB_TABLE_EmbeddedFile :
                                               "SELECT Name,Descr,Type,Id,Size,Chunk, NULL AS LastModified FROM " BEDB_TABLE_EmbeddedFile);
 
@@ -4580,9 +4598,9 @@ DbEmbeddedFileTable::Iterator::Entry DbEmbeddedFileTable::Iterator::begin() cons
 Utf8CP DbEmbeddedFileTable::Iterator::Entry::GetNameUtf8() const {return m_sql->GetValueText(0);}
 Utf8CP DbEmbeddedFileTable::Iterator::Entry::GetDescriptionUtf8() const {return m_sql->GetValueText(1);}
 Utf8CP DbEmbeddedFileTable::Iterator::Entry::GetTypeUtf8() const {return m_sql->GetValueText(2);}
-UInt64 DbEmbeddedFileTable::Iterator::Entry::GetFileSize() const {return m_sql->GetValueInt64(4);}
-UInt32 DbEmbeddedFileTable::Iterator::Entry::GetChunkSize() const {return m_sql->GetValueInt(5);}
-DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified () const 
+uint64_t DbEmbeddedFileTable::Iterator::Entry::GetFileSize() const {return m_sql->GetValueInt64(4);}
+uint32_t DbEmbeddedFileTable::Iterator::Entry::GetChunkSize() const {return m_sql->GetValueInt(5);}
+DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified () const
     {
     if (m_sql->IsColumnNull (6))
         return DateTime ();
@@ -4658,7 +4676,7 @@ RTreeMatch::RTreeMatch(BeSQLiteDbR db) : m_db(db){db.m_dbFile->InitRTreeMatch();
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult RTreeMatch::StepRTree(Statement& stmt) 
+DbResult RTreeMatch::StepRTree(Statement& stmt)
     {
     m_db.m_dbFile->SetRTreeMatch(this);
     DbResult rc = stmt.Step();
@@ -4745,7 +4763,7 @@ static void isInVirtualSet (sqlite3_context* ctx, int nArgs, sqlite3_value** arg
         return;
         }
 
-    // the first argument must be the set to test against. 
+    // the first argument must be the set to test against.
     VirtualSet const* vSet = (VirtualSet const*) sqlite3_value_int64(args[0]);
     if (NULL==vSet)
         {
@@ -4764,29 +4782,29 @@ static void isInVirtualSet (sqlite3_context* ctx, int nArgs, sqlite3_value** arg
 static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** args)
     {
     // Largely a copy of icuCaseFunc16 in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-    
+
     BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (NULL == languageSupport)
         { BeAssert(false); return; }
-    
+
     if (1 != numArgs)
         { BeAssert(false); return; }
-    
+
     Utf16CP source = (Utf16CP)sqlite3_value_text16(args[0]);
     if (NULL == source)
         { BeAssert(false); return; }
 
     int sourceSize = (size_t)sqlite3_value_bytes16(args[0]);
-    int resultSize = (2 * sourceSize) * sizeof(UInt16);
+    int resultSize = (2 * sourceSize) * sizeof(uint16_t);
 
     Utf16P result = (Utf16P)sqlite3_malloc((int)resultSize);
     if (NULL == result)
         { BeAssert(false); return; }
 
     if (0 != sqlite3_user_data(context))
-        languageSupport->_Upper(source, sourceSize / sizeof(UInt16), result, resultSize / sizeof(UInt16));
+        languageSupport->_Upper(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
     else
-        languageSupport->_Lower(source, sourceSize / sizeof(UInt16), result, resultSize / sizeof(UInt16));
+        languageSupport->_Lower(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
 
     sqlite3_result_text16(context, result, -1, sqlite3_free);
     }
@@ -4804,7 +4822,7 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
                 (c) = (((c)& 0x1f) << 6) | ((s)[(i)++] & 0x3f); \
             } else if ((c)<0xf0) { \
                 /* no need for (c&0xf) because the upper bits are truncated after <<12 in the cast to (UChar) */ \
-                (c) = (UChar)(((c) << 12) | (((s)[i] & 0x3f) << 6) | ((s)[(i)+1] & 0x3f)); \
+                (c) = (unsigned char)(((c) << 12) | (((s)[i] & 0x3f) << 6) | ((s)[(i)+1] & 0x3f)); \
                 (i) += 2; \
             } else { \
                 (c) = (((c)& 7) << 18) | (((s)[i] & 0x3f) << 12) | (((s)[(i)+1] & 0x3f) << 6) | ((s)[(i)+2] & 0x3f); \
@@ -4835,13 +4853,13 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 // @see likeCallback
 // @bsimethod                                                   Jeff.Marker     02/2014
 //---------------------------------------------------------------------------------------
-static int likeCompare(unsigned char const* patternString, unsigned char const* matchString, UInt32 escapeChar, BeSQLiteLib::ILanguageSupport* languageSupport)
+static int likeCompare(unsigned char const* patternString, unsigned char const* matchString, uint32_t escapeChar, BeSQLiteLib::ILanguageSupport* languageSupport)
     {
     // Largely a copy of icuLikeCompare in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
     // See also patternCompare in sqlite3/src/func.c... though that also supports globs and can use other nice internal utility functions that we can't, so copying is limited.
 
-    static const UInt32 MATCH_ONE = (UInt32)'_';
-    static const UInt32 MATCH_ALL = (UInt32)'%';
+    static const uint32_t MATCH_ONE = (uint32_t)'_';
+    static const uint32_t MATCH_ALL = (uint32_t)'%';
 
     int iPattern = 0; // Current byte index in patternString
     int iMatch = 0; // Current byte index in matchString
@@ -4850,7 +4868,7 @@ static int likeCompare(unsigned char const* patternString, unsigned char const* 
     while (0 != patternString[iPattern])
         {
         // Read (and consume) the next character from the input pattern.
-        UInt32 currPatternChar;
+        uint32_t currPatternChar;
         U8_NEXT_UNSAFE(patternString, iPattern, currPatternChar);
         BeAssert(0 != currPatternChar);
 
@@ -4859,7 +4877,7 @@ static int likeCompare(unsigned char const* patternString, unsigned char const* 
         //  2. currPatternChar is an unescaped match-one character "_"
         //  3. currPatternChar is an unescaped escape character
         //  4. currPatternChar is to be handled as an ordinary character
-        
+
         if (!wasPreviousCharEscape && (MATCH_ALL == currPatternChar))
             {
             // Case 1.
@@ -4872,10 +4890,10 @@ static int likeCompare(unsigned char const* patternString, unsigned char const* 
                     {
                     if (0 == matchString[iMatch])
                         return 0;
-                    
+
                     U8_FWD_1_UNSAFE(matchString, iMatch);
                     }
-                
+
                 ++iPattern;
                 }
 
@@ -4886,10 +4904,10 @@ static int likeCompare(unsigned char const* patternString, unsigned char const* 
                 {
                 if (likeCompare(&patternString[iPattern], &matchString[iMatch], escapeChar, languageSupport))
                     return 1;
-                
+
                 U8_FWD_1_UNSAFE(matchString, iMatch);
                 }
-            
+
             return 0;
             }
         else if (!wasPreviousCharEscape && (MATCH_ONE == currPatternChar))
@@ -4897,7 +4915,7 @@ static int likeCompare(unsigned char const* patternString, unsigned char const* 
             // Case 2.
             if (0 == matchString[iMatch])
                 return 0;
-            
+
             U8_FWD_1_UNSAFE(matchString, iMatch);
             }
         else if (!wasPreviousCharEscape && (currPatternChar == escapeChar))
@@ -4907,15 +4925,15 @@ static int likeCompare(unsigned char const* patternString, unsigned char const* 
             }
         else{
             // Case 4.
-            UInt32 currMatchChar;
+            uint32_t currMatchChar;
             U8_NEXT_UNSAFE(matchString, iMatch, currMatchChar);
-            
+
             currMatchChar = languageSupport->_FoldCase(currMatchChar);
             currPatternChar = languageSupport->_FoldCase(currPatternChar);
-            
+
             if (currMatchChar != currPatternChar)
                 return 0;
-            
+
             wasPreviousCharEscape = false;
             }
         }
@@ -4938,30 +4956,30 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 
     if ((numArgs < 2) || (numArgs > 3))
         { BeAssert(false); return; }
-    
+
     auto patternString = sqlite3_value_text(args[0]);
     auto matchString = sqlite3_value_text(args[1]);
-    
+
     if ((NULL == patternString) || (NULL == matchString))
         return;
-    
+
     // Limit the length of the LIKE or GLOB pattern to avoid problems of deep recursion and N*N behavior in likeCompare.
     auto maxPatternLen = sqlite3_limit(sqlite3_context_db_handle(context), SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1);
     if (sqlite3_value_bytes(args[0]) > maxPatternLen)
         { BeAssert(false); return; }
 
-    UInt32 escapeChar = 0;
+    uint32_t escapeChar = 0;
     if (3 == numArgs)
         {
         // The escape character string must consist of a single UTF-8 character. Otherwise, return an error.
         auto escapeCharStr = sqlite3_value_text(args[2]);
         if (NULL == escapeCharStr)
             { BeAssert(false); return; }
-        
+
         auto escapeCharNumBytes = sqlite3_value_bytes(args[2]);
         int iNextChar = 0;
         U8_NEXT_UNSAFE(escapeCharStr, iNextChar, escapeChar);
-        
+
         if (iNextChar != escapeCharNumBytes)
             { BeAssert(false); return; }
         }
@@ -4981,7 +4999,7 @@ static int collateCallback(void* userData, int lhsSize, void const* lhs, int rhs
     if (NULL == languageSupport)
         { BeAssert(false); return 0; }
 
-    return languageSupport->_Collate((Utf16CP)lhs, lhsSize / sizeof(UInt16), (Utf16CP)rhs, rhsSize / sizeof(UInt16), userData);
+    return languageSupport->_Collate((Utf16CP)lhs, lhsSize / sizeof(uint16_t), (Utf16CP)rhs, rhsSize / sizeof(uint16_t), userData);
     }
 
 //---------------------------------------------------------------------------------------
@@ -4999,7 +5017,7 @@ static void initLanguageSupportOnDb(sqlite3* db)
 
     // The ICU sample from the sqlite folks overrides scalar functions for both SQLITE_UTF8 and SQLITE_UTF16, but only provides SQLITE_UTF8 versions for operators and collations...
     // I'm not sure why, but following their example until proven otherwise.
-    
+
     rc = sqlite3_create_function_v2(db, "lower", 1, SQLITE_UTF8, (void*)0, caseCallback, NULL, NULL, NULL);
     BeAssert(BE_SQLITE_OK == rc);
 
@@ -5032,7 +5050,7 @@ static void initLanguageSupportOnDb(sqlite3* db)
 extern "C" int sqlite3_closure_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi);
 
 /*---------------------------------------------------------------------------------**//**
-* this function is called for every new database connection. 
+* this function is called for every new database connection.
 * @bsimethod                                    Keith.Bentley                   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_routines const* pApi)
@@ -5048,7 +5066,7 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
 
     // Register language-aware callbacks if necessary.
     initLanguageSupportOnDb(db);
-    
+
     return BE_SQLITE_OK;
     }
 
@@ -5111,18 +5129,18 @@ public:
     SeqInStreamImpl (ILzmaInputStream& in) : m_stream(in) { Read = readFor7z; }
     ILzmaInputStream& GetStream () { return m_stream; }
     SRes ReadData (void *buf, size_t *size) { return Read (this, buf, size); }
-    UInt64 GetSize () { return m_stream._GetSize(); }
+    uint64_t GetSize () { return m_stream._GetSize(); }
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-BeFileLzmaInFromMemory::BeFileLzmaInFromMemory(void const*data, UInt32 size) : m_mutex(BeDbMutex::FastMutex), m_data(data), m_size(size), m_offset(0) {}
+BeFileLzmaInFromMemory::BeFileLzmaInFromMemory(void const*data, uint32_t size) : m_mutex(BeDbMutex::FastMutex), m_data(data), m_size(size), m_offset(0) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-ZipErrors BeFileLzmaInFromMemory::_Read (void* data, UInt32 size, UInt32& actuallyRead)
+ZipErrors BeFileLzmaInFromMemory::_Read (void* data, uint32_t size, uint32_t& actuallyRead)
     {
     BeDbMutexHolder   __holder(m_mutex);
 
@@ -5158,7 +5176,7 @@ StatusInt BeFileLzmaInStream::OpenInputFile(BeFileNameCR fileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-ZipErrors BeFileLzmaInStream::_Read (void* data, UInt32 size, UInt32& actuallyRead)
+ZipErrors BeFileLzmaInStream::_Read (void* data, uint32_t size, uint32_t& actuallyRead)
     {
     return (BeFileStatus::Success != m_file.Read(data, &actuallyRead, size)) ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;
     }
@@ -5185,13 +5203,13 @@ public:
 struct          MemoryLzmaOutStream : ILzmaOutputStream
 {
 private:
-    bvector<byte>& m_out;
+    bvector<Byte>& m_out;
 
 public:
     //  UInt32 GetOffset() { return m_offset; }
-    MemoryLzmaOutStream (bvector<byte>& out) : m_out (out) { m_out.resize(0); }
+    MemoryLzmaOutStream (bvector<Byte>& out) : m_out (out) { m_out.resize(0); }
 
-    ZipErrors _Write (void const* data, UInt32 writeSize, UInt32&bytesWritten) override
+    ZipErrors _Write (void const* data, uint32_t writeSize, uint32_t&bytesWritten) override
         {
         size_t oldSize = m_out.size();
         m_out.resize (oldSize + writeSize);
@@ -5209,44 +5227,44 @@ public:
 struct          MemoryLzmaInStream : ILzmaInputStream
 {
 private:
-    UInt32      m_offset;
-    UInt32      m_limit;
+    uint32_t    m_offset;
+    uint32_t    m_limit;
     void const* m_data;
 
-    UInt32      m_headerOffset;
-    UInt32      m_headerLimit;
+    uint32_t    m_headerOffset;
+    uint32_t    m_headerLimit;
     void const* m_headerData;
 
 public:
-    UInt32 GetOffset() { return m_offset; }
-    MemoryLzmaInStream(void const*data, UInt32 size) : m_offset (0), m_limit (size), m_data (data), m_headerData(nullptr), m_headerOffset(0), m_headerLimit(0) {}
-    void SetHeaderData(void*headerData, UInt32 headerSize) { m_headerData = headerData; m_headerLimit = headerSize; }
+    uint32_t GetOffset() { return m_offset; }
+    MemoryLzmaInStream(void const*data, uint32_t size) : m_offset (0), m_limit (size), m_data (data), m_headerData(nullptr), m_headerOffset(0), m_headerLimit(0) {}
+    void SetHeaderData(void*headerData, uint32_t headerSize) { m_headerData = headerData; m_headerLimit = headerSize; }
     //  The LZMA2 multithreading ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
-    virtual ZipErrors _Read(void* data, UInt32 size, UInt32& actuallyRead) override
+    virtual ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override
         {
-        UInt32 readFromHeader = 0;
+        uint32_t readFromHeader = 0;
         if (m_headerData)
             {
             readFromHeader = std::min(m_headerLimit-m_headerOffset, size);
-            memcpy (data, (byte*)m_headerData + m_headerOffset, readFromHeader);
+            memcpy (data, (Byte*)m_headerData + m_headerOffset, readFromHeader);
             if ((m_headerOffset += readFromHeader) >=  m_headerLimit)
                 m_headerData = nullptr; //  don't use it again
             BeAssert(size >= readFromHeader);
             size -= readFromHeader;
-            data = (byte*)data + readFromHeader;
+            data = (Byte*)data + readFromHeader;
             }
 
         actuallyRead = size;
         if (size > (m_limit - m_offset))
             actuallyRead = m_limit - m_offset;
-        memcpy (data, (byte*)m_data + m_offset, actuallyRead);
+        memcpy (data, (Byte*)m_data + m_offset, actuallyRead);
         m_offset += actuallyRead;
         actuallyRead += readFromHeader;
         return ZIP_SUCCESS;
         }
 
-    virtual UInt64 _GetSize() override { return m_limit + m_headerLimit; }
+    virtual uint64_t _GetSize() override { return m_limit + m_headerLimit; }
 };
 
 //---------------------------------------------------------------------------------------
@@ -5274,7 +5292,7 @@ void BeFileLzmaOutStream::_SetAlwaysFlush(bool flushOnEveryWrite) {}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-ZipErrors BeFileLzmaOutStream::_Write (void const* data, UInt32 size, UInt32& bytesWritten)
+ZipErrors BeFileLzmaOutStream::_Write (void const* data, uint32_t size, uint32_t& bytesWritten)
     {
     //  The LZMA2 multithreaded ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
@@ -5287,7 +5305,7 @@ ZipErrors BeFileLzmaOutStream::_Write (void const* data, UInt32 size, UInt32& by
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-ZipErrors LzmaOutToBvectorStream::_Write (void const* data, UInt32 size, UInt32& bytesWritten)
+ZipErrors LzmaOutToBvectorStream::_Write (void const* data, uint32_t size, uint32_t& bytesWritten)
     {
     //  The LZMA2 multi-threading support ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
@@ -5330,8 +5348,8 @@ static SRes readFor7z(void *p, void *buf, size_t *size)
     {
     SeqInStreamImpl* pImpl = static_cast <SeqInStreamImpl*>(p);
 
-    UInt32 bytesRead;
-    pImpl->GetStream()._Read(buf, (UInt32)*size, bytesRead);
+    uint32_t bytesRead;
+    pImpl->GetStream()._Read(buf, (uint32_t)*size, bytesRead);
     *size = bytesRead;
 
     return SZ_OK;
@@ -5343,8 +5361,8 @@ static SRes readFor7z(void *p, void *buf, size_t *size)
 static size_t writeFor7z (void *p, const void *buf, size_t size)
     {
     SeqOutStreamImpl* pImpl = static_cast<SeqOutStreamImpl*>(p);
-    UInt32  bytesWritten;
-    pImpl->GetStream()._Write(buf, (UInt32)size, bytesWritten);
+    uint32_t bytesWritten;
+    pImpl->GetStream()._Write(buf, (uint32_t)size, bytesWritten);
 
     return bytesWritten;
     }
@@ -5358,7 +5376,7 @@ static SRes progressFor7z (void *p, UInt64 inSize, UInt64 outSize)
 
     BeAssert (impl->m_tracker);  //  SetICompressProgress does not use a ICompressProgressImpl with m_tracker == NULL;
 
-    if (impl->m_tracker->_Progress (inSize, (Int64)outSize) != ZIP_SUCCESS)
+    if (impl->m_tracker->_Progress (inSize, (int64_t)outSize) != ZIP_SUCCESS)
         return SZ_ERROR_PROGRESS;
 
     return SZ_OK;
@@ -5411,11 +5429,11 @@ static ZipErrors translate7ZipError (SRes code)
 struct          LzmaDgnDbHeader
 {
 private:
-    UInt16          m_sizeOfHeader;
+    uint16_t        m_sizeOfHeader;
     char            m_idString [10];
-    UInt16          m_formatVersionNumber;
-    UInt16          m_compressionType;
-    UInt64          m_sourceSize;
+    uint16_t        m_formatVersionNumber;
+    uint16_t        m_compressionType;
+    uint64_t        m_sourceSize;
 
 public:
     static const int formatVersionNumber = 0x10;
@@ -5424,11 +5442,11 @@ public:
         LZMA2   = 2
         };
 
-    LzmaDgnDbHeader (CharCP idString, CompressionType compressionType, UInt64 sourceSize)
+    LzmaDgnDbHeader (CharCP idString, CompressionType compressionType, uint64_t sourceSize)
         {
         BeAssert ((strlen (idString)+ 1) <= sizeof(m_idString));
         memset (this, 0, sizeof (*this));
-        m_sizeOfHeader = (UInt16)sizeof (LzmaDgnDbHeader);
+        m_sizeOfHeader = (uint16_t)sizeof (LzmaDgnDbHeader);
         strcpy (m_idString, idString);
         m_compressionType = compressionType;
         m_formatVersionNumber = formatVersionNumber;
@@ -5487,14 +5505,14 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   John.Gooding    01/2013
     //---------------------------------------------------------------------------------------
-    ZipErrors DoDecode(CLzmaDec& decodeState, UInt64 unpackSize)
+    ZipErrors DoDecode(CLzmaDec& decodeState, uint64_t unpackSize)
         {
-        int thereIsSize = (unpackSize != (UInt64)(Int64)-1);
-        byte inBuf[DECODE_INPUT_BUFFER_SIZE];
-        byte outBuf[DECODE_OUTPUT_BUFFER_SIZE];
+        int thereIsSize = (unpackSize != (uint64_t)(int64_t)-1);
+        Byte inBuf[DECODE_INPUT_BUFFER_SIZE];
+        Byte outBuf[DECODE_OUTPUT_BUFFER_SIZE];
 
         size_t inPos = 0, inSize = 0, outPos = 0;
-        UInt64  totalRead = 0, totalWritten = 0;
+        uint64_t totalRead = 0, totalWritten = 0;
         LzmaDec_Init(&decodeState);
         for (;;)
             {
@@ -5551,12 +5569,12 @@ public:
     //---------------------------------------------------------------------------------------
     ZipErrors DoDecode2(CLzma2Dec& decodeState)
         {
-        byte inBuf[DECODE_INPUT_BUFFER_SIZE];
-        ScopedArray<byte> scopedOutputBuf(DECODE_OUTPUT_BUFFER_SIZE);
-        byte* outBuf = scopedOutputBuf.GetData();
+        Byte inBuf[DECODE_INPUT_BUFFER_SIZE];
+        ScopedArray<Byte> scopedOutputBuf(DECODE_OUTPUT_BUFFER_SIZE);
+        Byte* outBuf = scopedOutputBuf.GetData();
 
-        UInt64  totalRead = 0;
-        UInt64  totalWritten = 0;
+        uint64_t totalRead = 0;
+        uint64_t totalWritten = 0;
 
         size_t inPos = 0, inSize = 0, outPos = 0;
         Lzma2Dec_Init(&decodeState);
@@ -5613,7 +5631,7 @@ public:
         Lzma2Dec_Construct(&decodeState);
 
         //  1 byte describing the properties and 8 bytes of uncompressed size
-        byte header;
+        Byte header;
 
         size_t  readSize = sizeof (header);
         if (m_inStream.ReadData(&header, &readSize) != BSISUCCESS)
@@ -5649,16 +5667,16 @@ public:
         if (SZ_OK != res)
             return translate7ZipError(res);
 
-        byte header[LZMA_PROPS_SIZE + 8];
+        Byte header[LZMA_PROPS_SIZE + 8];
         size_t headerSize = LZMA_PROPS_SIZE;
 
         res = LzmaEnc_WriteProperties(enc, header, &headerSize);
         if (SZ_OK != res)
             return translate7ZipError(res);
 
-        UInt64 sourceSize = m_inStream.GetSize();
+        uint64_t sourceSize = m_inStream.GetSize();
         for (unsigned i = 0; i < 8; i++)
-            header[headerSize++] = (byte)(sourceSize >> (8 * i));
+            header[headerSize++] = (Byte)(sourceSize >> (8 * i));
 
         if (m_outStream.WriteData (header, headerSize) != headerSize)
             return ZIP_ERROR_WRITE_ERROR;
@@ -5686,7 +5704,7 @@ public:
         if (SZ_OK != res)
             return ZIP_ERROR_UNKNOWN;
 
-        byte header;
+        Byte header;
         size_t headerSize = sizeof (header);
         header = Lzma2Enc_WriteProperties(enc);
 
@@ -5736,7 +5754,7 @@ ZipErrors LzmaDecoder::UncompressDgnDb (BeFileNameCR targetFile, BeFileNameCR so
     //  Advance past header
     LzmaDgnDbHeader     lzmaDgndbHeader;
 
-    UInt32 readSize = sizeof (lzmaDgndbHeader);
+    uint32_t readSize = sizeof (lzmaDgndbHeader);
     inStream._Read(&lzmaDgndbHeader, readSize, readSize);
     if (readSize != sizeof (lzmaDgndbHeader) || !lzmaDgndbHeader.IsValid ())
         return ZIP_ERROR_BAD_DATA;
@@ -5748,7 +5766,7 @@ ZipErrors LzmaDecoder::UncompressDgnDb (BeFileNameCR targetFile, BeFileNameCR so
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::UncompressDgnDbBlob (bvector<byte>&out, UInt32 expectedSize, void const*inputBuffer, UInt32 inputSize, byte*header, UInt32 headerSize)
+ZipErrors LzmaDecoder::UncompressDgnDbBlob (bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize)
     {
     //  Set up the input stream
     MemoryLzmaInStream  inStream(inputBuffer, inputSize);
@@ -5772,7 +5790,7 @@ ZipErrors LzmaDecoder::UncompressDgnDbBlob (bvector<byte>&out, UInt32 expectedSi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
-ZipErrors LzmaDecoder::Uncompress (bvector<byte>&out, void const*inputBuffer, UInt32 inputSize)
+ZipErrors LzmaDecoder::Uncompress (bvector<Byte>&out, void const*inputBuffer, uint32_t inputSize)
     {
     MemoryLzmaInStream  inStream(inputBuffer, inputSize);
     MemoryLzmaOutStream outStream(out);
@@ -5796,9 +5814,9 @@ ZipErrors LzmaDecoder::Uncompress (ILzmaOutputStream& out, ILzmaInputStream& in,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-LzmaEncoder::LzmaEncoder (UInt32 dictionarySize) : m_enc2Props (NULL)
+LzmaEncoder::LzmaEncoder (uint32_t dictionarySize) : m_enc2Props (NULL)
     {
-    UInt32 level = 7;
+    uint32_t level = 7;
     dictionarySize = getDictionarySize(dictionarySize);
 
     m_enc2Props = new CLzma2EncProps ();
@@ -5812,7 +5830,7 @@ LzmaEncoder::LzmaEncoder (UInt32 dictionarySize) : m_enc2Props (NULL)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
-void LzmaEncoder::SetBlockSize(UInt32 blockSize)
+void LzmaEncoder::SetBlockSize(uint32_t blockSize)
     {
     m_enc2Props->blockSize = blockSize < m_enc2Props->lzmaProps.dictSize ? m_enc2Props->lzmaProps.dictSize : blockSize;
     }
@@ -5858,7 +5876,7 @@ ZipErrors LzmaEncoder::CompressDgnDb (BeFileNameCR targetFile, BeFileNameCR sour
     sevenZ.SetICompressProgress (progressImpl);
 
     LzmaDgnDbHeader     lzmaDgndbHeader (DGNDB_LZMA_MARKER, LzmaDgnDbHeader::LZMA2, inStream._GetSize());
-    UInt32 bytesWritten;
+    uint32_t bytesWritten;
     if (outStream._Write (&lzmaDgndbHeader, sizeof (lzmaDgndbHeader), bytesWritten) != ZIP_SUCCESS)
         return ZIP_ERROR_WRITE_ERROR;
 
@@ -5881,7 +5899,7 @@ ZipErrors LzmaEncoder::Compress (ILzmaOutputStream& outStream, ILzmaInputStream&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-ZipErrors LzmaEncoder::Compress(bvector<byte>& out, void const *input, UInt32 sizeInput, ICompressProgressTracker* tracker, bool supportRandomAccess)
+ZipErrors LzmaEncoder::Compress(bvector<Byte>& out, void const *input, uint32_t sizeInput, ICompressProgressTracker* tracker, bool supportRandomAccess)
     {
     MemoryLzmaInStream  inStream(input, sizeInput);
     MemoryLzmaOutStream outStream(out);

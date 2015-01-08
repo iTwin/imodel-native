@@ -104,25 +104,25 @@ WCharCP arrayPropertyName,
 DateTime::Info const& targetMetadata
 )
     {
-    const UInt32 arraySize = 3;
+    const uint32_t arraySize = 3;
 
     DateTime datetimeArray[arraySize];
     testInstance->AddArrayElements (arrayPropertyName, arraySize);
 
-    for (UInt32 i = 0; i < arraySize; i++)
+    for (uint32_t i = 0; i < arraySize; i++)
         {
         DateTime datetime;
         if (targetMetadata.GetComponent () == DateTime::Component::Date)
             {
-            datetime = DateTime (static_cast <Int16> (2000 + i), static_cast <UInt8> (1 + i), static_cast <UInt8> (10 + i));
+            datetime = DateTime (static_cast <int16_t> (2000 + i), static_cast <uint8_t> (1 + i), static_cast <uint8_t> (10 + i));
             }
         else
             {
-            datetime = DateTime (targetMetadata.GetKind (), static_cast <Int16> (2000 + i),
-                                                            static_cast <UInt8> (1 + i),
-                                                            static_cast <UInt8> (10 + i),
-                                                            static_cast <UInt8> (12 + i),
-                                                            static_cast <UInt8> (30 + i));
+            datetime = DateTime (targetMetadata.GetKind (), static_cast <int16_t> (2000 + i),
+                                                            static_cast <uint8_t> (1 + i),
+                                                            static_cast <uint8_t> (10 + i),
+                                                            static_cast <uint8_t> (12 + i),
+                                                            static_cast <uint8_t> (30 + i));
             }
 
         expectedDateTimeArrayElements.push_back (datetime);
@@ -148,10 +148,10 @@ ECClassCP testClass
     ECClassCP structType = arrayProp->GetStructElementType ();
     ASSERT_TRUE (structType != nullptr);
 
-    const UInt32 arraySize = 3;
+    const uint32_t arraySize = 3;
 
     testInstance->AddArrayElements (structArrayPropName, arraySize);
-    for (UInt32 i = 0; i < arraySize; i++)
+    for (uint32_t i = 0; i < arraySize; i++)
         {
         IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler ()->CreateInstance ();
         ECValue v;
@@ -323,7 +323,7 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
     int actualArraySize = arrayValue.GetArrayLength ();
 
     EXPECT_EQ (expectedArraySize, actualArraySize) << "Unexpected size of returned DateTime array";
-    UInt32 expectedIndex = 0;
+    uint32_t expectedIndex = 0;
     for (IECSqlValue const* arrayElementValue : arrayValue)
         {
         DateTimeCR expected = expectedArrayDateTimeElements[expectedIndex];

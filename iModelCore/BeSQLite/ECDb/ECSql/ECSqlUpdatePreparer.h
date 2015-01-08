@@ -25,6 +25,8 @@ private:
     static ECSqlStatus PrepareAssignmentListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp);
 
     static ECSqlStatus PrepareStepTask (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+    static ECSqlStatus StructArrayPrepareStepTask(const AssignmentExp* assignementExp, const IClassMap &classMap, PropertyMapCR propNameExp, ECSqlBinder* binder, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
+    static ECSqlStatus StructPrepareStepTask(const AssignmentExp* assignementExp, const IClassMap &classMap, PropertyMapCR propNameExp, ECSqlBinder* binder, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
 
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);

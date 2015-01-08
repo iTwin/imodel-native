@@ -39,10 +39,10 @@ struct DbECSchemaEntry
 public:
     ECSchemaId       m_ecSchemaId;
     Utf8String       m_schemaName;
-    UInt32           m_versionMajor;
-    UInt32           m_versionMinor;
-    UInt32           m_nClassesInSchema; //This is read from Db
-    UInt32           m_nClassesLoaded;   //Every time a class is loaded from db for this schema it is incremented
+    uint32_t         m_versionMajor;
+    uint32_t         m_versionMinor;
+    uint32_t         m_nClassesInSchema; //This is read from Db
+    uint32_t         m_nClassesLoaded;   //Every time a class is loaded from db for this schema it is incremented
     ECN::ECSchemaPtr  m_resolvedECSchema;    //Contain ECSchema which might be not complete
     bool             IsFullyLoaded() {return m_nClassesInSchema == m_nClassesLoaded;} 
     };
@@ -136,11 +136,11 @@ public:
 
     static  BeSQLite::DbResult InitializeSystemTables                   (BeSQLite::Db& db);
     static                bool RequiredSystemTablesExist                (BeSQLite::Db& db); 
-    static  BeSQLite::DbResult ResolveECClassId                         (Utf8StringR schemaName, UInt32& versionMajor,UInt32& versionMinor, Utf8StringR className, ECClassId ecClassId, BeSQLite::Db& db);
+    static  BeSQLite::DbResult ResolveECClassId                         (Utf8StringR schemaName, uint32_t& versionMajor,uint32_t& versionMinor, Utf8StringR className, ECClassId ecClassId, BeSQLite::Db& db);
     static  BeSQLite::DbResult ResolveECClassId                         (DbECClassEntryR key, ECClassId ecClassId, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetDerivedECClasses                      (ECClassIdListR classIds, ECClassId baseClassId, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetBaseECClasses                         (ECClassIdListR baseClassIds, ECClassId ecClassId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult ResolveECSchemaId                        (Utf8StringR schemaName, UInt32& versionMajor,UInt32& versionMinor, ECSchemaId ecSchemaId, BeSQLite::Db& db);
+    static  BeSQLite::DbResult ResolveECSchemaId                        (Utf8StringR schemaName, uint32_t& versionMajor,uint32_t& versionMinor, ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult ResolveECSchemaId                        (DbECSchemaEntryR key, ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetPrimaryECSchemas                      (ECSchemaKeyListR schemaKeys, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteECClass                            (ECClassId ecClassId, BeSQLite::Db& db);
@@ -169,7 +169,7 @@ public:
 struct DbBuffer
 {
 private:
-    byte*   m_data;
+    Byte*   m_data;
     size_t  m_length;
     bool    m_ownsBuffer;
 protected:
@@ -180,9 +180,9 @@ public:
     DbBuffer();
     DbBuffer(size_t length);
     virtual ~DbBuffer();
-    byte*    GetData()   const  {return m_data;} 
+    Byte*    GetData()   const  {return m_data;} 
     size_t   GetLength() const {return m_length;}
-    bool     SetData (byte* data, size_t length, bool createCopy =false);
+    bool     SetData (Byte* data, size_t length, bool createCopy =false);
     void     Dettach();
     void     Resize(size_t length);
 };
@@ -195,15 +195,15 @@ struct DbInfoBase
 public:
     union 
         {
-        UInt32 ColsInsert;
-        UInt32 ColsWhere;
+        uint32_t ColsInsert;
+        uint32_t ColsWhere;
         };
     union
         {
-        UInt32 ColsUpdate;
-        UInt32 ColsSelect;
+        uint32_t ColsUpdate;
+        uint32_t ColsSelect;
         };
-    UInt32 ColsNull;
+    uint32_t ColsNull;
     DbInfoBase() : ColsNull(0), ColsInsert(0), ColsUpdate(0) {}
     };
 
@@ -227,8 +227,8 @@ public:
     Utf8String          m_displayLabel;
     Utf8String          m_description;
     Utf8String          m_namespacePrefix;
-    Int32               m_versionMajor;
-    Int32               m_versionMinor;
+    int32_t             m_versionMajor;
+    int32_t             m_versionMinor;
     PersistedSchemaType m_schemaType;
     };
 
@@ -304,7 +304,7 @@ public:
         };
     ECClassId m_ecClassId;
     ECClassId m_baseECClassId;
-    Int32     m_ecIndex;
+    int32_t   m_ecIndex;
     };
 
 /*---------------------------------------------------------------------------------------
@@ -343,9 +343,9 @@ public:
     Utf8String    m_typeGeometry;
     Utf8String    m_typeCustom;
     ECClassId     m_typeECStruct;
-    UInt32         m_minOccurs;
-    UInt32         m_maxOccurs;
-    Int32         m_ecIndex;
+    uint32_t       m_minOccurs;
+    uint32_t       m_maxOccurs;
+    int32_t       m_ecIndex;
 
     bool          m_isReadOnly;
     };
@@ -388,8 +388,8 @@ public:
     
     ECClassId         m_ecClassId;
     ECRelationshipEnd m_ecRelationshipEnd;
-    UInt32            m_cardinalityLowerLimit;
-    UInt32            m_cardinalityUpperLimit;
+    uint32_t          m_cardinalityLowerLimit;
+    uint32_t          m_cardinalityUpperLimit;
     Utf8String        m_roleLabel;
     bool              m_isPolymorphic;
     };
@@ -461,7 +461,7 @@ public:
     ECContainerType   m_containerType;
     ECContainerId     m_overridenByContainerId;
     ECClassId         m_ecClassId;
-    Int32             m_index;
+    int32_t           m_index;
     ECInstanceId      m_ecInstanceId;
 
     BentleyStatus     SerializeCaInstance (IECInstanceR caInstance);

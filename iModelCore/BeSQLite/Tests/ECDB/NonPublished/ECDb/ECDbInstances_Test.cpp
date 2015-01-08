@@ -41,10 +41,10 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
 
     ecInstanceId = ECInstanceId (123LL);
     WChar smallIdBuffer[10];
-    ASSERT_FALSE (ECInstanceIdHelper::ToString (smallIdBuffer, (size_t) 10, ecInstanceId)) << "Expected to fail if buffer is to small to take max UInt64 as string";
+    ASSERT_FALSE (ECInstanceIdHelper::ToString (smallIdBuffer, (size_t) 10, ecInstanceId)) << "Expected to fail if buffer is to small to take max uint64_t as string";
 
-    WChar stillTooSmallIdBuffer[std::numeric_limits<UInt64>::digits10];
-    ASSERT_FALSE (ECInstanceIdHelper::ToString (stillTooSmallIdBuffer, std::numeric_limits<UInt64>::digits10, ecInstanceId)) << "Expected to fail if buffer is to small to take max UInt64 as string. Trailing 0 must be considered in the buffer size.";
+    WChar stillTooSmallIdBuffer[std::numeric_limits<uint64_t>::digits10];
+    ASSERT_FALSE (ECInstanceIdHelper::ToString (stillTooSmallIdBuffer, std::numeric_limits<uint64_t>::digits10, ecInstanceId)) << "Expected to fail if buffer is to small to take max uint64_t as string. Trailing 0 must be considered in the buffer size.";
 
     WCharCP instanceId = L"123456789";
     ECInstanceId expectedECInstanceId (123456789LL);
@@ -155,7 +155,7 @@ void PopulatePrimitiveValueWithCustomDataSet (ECValueR value, PrimitiveType prim
         case PRIMITIVETYPE_Boolean : value.SetBoolean(false); break;
         case PRIMITIVETYPE_Binary  : 
             {
-            byte blob[]= {0x0a, 0x0a, 0x0c, 0x0c, 0x0e, 0x0e, 0x3a, 0xaa, 0xff, 0xb };
+            Byte blob[]= {0x0a, 0x0a, 0x0c, 0x0c, 0x0e, 0x0e, 0x3a, 0xaa, 0xff, 0xb };
             value.SetBinary(blob, 10);
             break;
             }
@@ -691,7 +691,7 @@ TEST(ECDbInstances, UpdateECInstances)
                     {
                     Utf8CP v = ecStatement.GetValueText (i);
                     int size = 0;
-                    const byte* b = (const byte *) ecStatement.GetValueBinary(i, &size);
+                    const Byte* b = (const Byte *) ecStatement.GetValueBinary(i, &size);
                     Utf8String valueAsString = v ? v : "";
                     LOG.tracev("'%s'='%s',  size=%d, b=0x%lx", Utf8String (propertyAccessString.c_str()).c_str (), valueAsString.c_str(), size, b);
                     }

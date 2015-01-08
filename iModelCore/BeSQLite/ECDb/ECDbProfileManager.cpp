@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -72,12 +72,12 @@ ECDbR ecdb
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbProfileManager::UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams)
+DbResult ECDbProfileManager::UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams, Savepoint& defaultTransaction)
     {
     StopWatch timer ("", true);
 
     SchemaVersion actualProfileVersion (0, 0, 0, 0);
-    auto stat = ReadProfileVersion (actualProfileVersion, ecdb);
+    auto stat = ReadProfileVersion (actualProfileVersion, ecdb, defaultTransaction);
     if (stat != BE_SQLITE_OK)
         //File is no ECDb file, i.e. doesn't have the ECDb profile
         return stat;
@@ -98,10 +98,13 @@ DbResult ECDbProfileManager::UpgradeECProfile (ECDbR ecdb, Db::OpenParams const&
 
     BeAssert (!ecdb.IsReadonly ());
 
+    
     //Creating the context performs some preparational steps in the SQLite database required for table modifications (e.g. foreign key
     //enforcement is disabled). When the context goes out of scope its destructor automatically performs the clean-up so that the ECDb file is
     //in the same state as before the upgrade.
-    ProfileUpgradeContext context (ecdb); //also commits the current transaction right now
+    ProfileUpgradeContext context (ecdb, defaultTransaction); //also commits the transaction (if active) right now
+    if (context.GetBeginTransError () == BE_SQLITE_BUSY)
+        return BE_SQLITE_BUSY;
 
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
@@ -200,29 +203,37 @@ DbResult ECDbProfileManager::AssignProfileVersion (ECDbR ecdb)
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 //static
- DbResult ECDbProfileManager::ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb)
+ DbResult ECDbProfileManager::ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction)
     {
+    //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
+    //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
+    //except that in that case, it is not active).
+    const bool isDefaultTransactionActive = defaultTransaction.IsActive ();
+    if (!isDefaultTransactionActive)
+        defaultTransaction.Begin ();
+
     Utf8String currentVersionString;
-    auto stat = ecdb.QueryProperty (currentVersionString, PROFILEVERSION_PROPSPEC);
-    if (stat == BE_SQLITE_ROW)
+    DbResult stat = BE_SQLITE_OK;
+    if (BE_SQLITE_ROW == ecdb.QueryProperty (currentVersionString, PROFILEVERSION_PROPSPEC))
         {
         profileVersion.FromJson (currentVersionString.c_str ());
-        return BE_SQLITE_OK;
         }
-    
     // version entry does not exist. This either means it is ECDb profile 1.0 (because we did not store
     // a version entry for profile 1.0 or it isn't an ECDb file at all. In order to tell these we need
     // to check for a typical table of the ECDb profile:
-    if (ecdb.TableExists ("ec_Schema"))
+    else if (ecdb.TableExists ("ec_Schema"))
         {
         profileVersion = SchemaVersion (1, 0, 0, 0);
-        return BE_SQLITE_OK;
         }
     else
-        {
         //File is no ECDb file
-        return BE_SQLITE_ERROR_InvalidProfileVersion;
-        }
+        stat = BE_SQLITE_ERROR_InvalidProfileVersion;
+
+    //make sure to end default transaction again, if it wasn't active before this call
+    if (!isDefaultTransactionActive)
+        defaultTransaction.Commit ();
+
+    return stat;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -668,8 +679,8 @@ Db& db
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECDbProfileManager::ProfileUpgradeContext::ProfileUpgradeContext (ECDbR ecdb)
-    : m_ecdb (ecdb), m_rollbackOnDestruction (true)
+ECDbProfileManager::ProfileUpgradeContext::ProfileUpgradeContext (ECDbR ecdb, Savepoint& defaultTransaction)
+    : m_ecdb (ecdb), m_defaultTransaction (defaultTransaction), m_isDefaultTransOpenMode (defaultTransaction.IsActive ()), m_rollbackOnDestruction (true)
     {
     DisableForeignKeyEnforcement ();
     }
@@ -685,11 +696,10 @@ ECDbProfileManager::ProfileUpgradeContext::~ProfileUpgradeContext ()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECDbProfileManager::ProfileUpgradeContext::DisableForeignKeyEnforcement () const
+void ECDbProfileManager::ProfileUpgradeContext::DisableForeignKeyEnforcement ()
     {
-    auto outerTransaction = m_ecdb.GetSavepoint (0);
-    BeAssert (outerTransaction != nullptr);
-    outerTransaction->Commit ();
+    if (m_isDefaultTransOpenMode)
+        m_defaultTransaction.Commit ();
 
     //Need to use TryExecuteSql which calls SQLite directly without any checks (Calling ExecuteSql would
     //check that a transaction is active which we explicity must not have for setting this pragma)
@@ -700,7 +710,10 @@ void ECDbProfileManager::ProfileUpgradeContext::DisableForeignKeyEnforcement () 
         BeAssert (false);
         }
 
-    outerTransaction->Begin ();
+    if (!m_isDefaultTransOpenMode)
+        m_defaultTransaction.SetTxnMode (BeSQLiteTxnMode::Immediate);
+
+    m_beginTransError = m_defaultTransaction.Begin ();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -708,13 +721,10 @@ void ECDbProfileManager::ProfileUpgradeContext::DisableForeignKeyEnforcement () 
 //+---------------+---------------+---------------+---------------+---------------+--------
 void ECDbProfileManager::ProfileUpgradeContext::EnableForeignKeyEnforcement () const
     {
-    auto outerTransaction = m_ecdb.GetSavepoint (0);
-    BeAssert (outerTransaction != nullptr);
-
     if (m_rollbackOnDestruction)
-        outerTransaction->Cancel ();
+        m_defaultTransaction.Cancel ();
     else
-        outerTransaction->Commit ();
+        m_defaultTransaction.Commit ();
 
     //Need to use TryExecuteSql which calls SQLite directly without any checks (Calling ExecuteSql would
     //check that a transaction is active which we explicity must not have for setting this pragma)
@@ -725,7 +735,8 @@ void ECDbProfileManager::ProfileUpgradeContext::EnableForeignKeyEnforcement () c
         BeAssert (false);
         }
 
-    outerTransaction->Begin ();
+    if (m_isDefaultTransOpenMode)
+        m_defaultTransaction.Begin ();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

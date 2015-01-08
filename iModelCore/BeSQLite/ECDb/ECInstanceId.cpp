@@ -27,7 +27,7 @@ bool ECInstanceIdHelper::ToString (WCharP stringBuffer, size_t stringBufferLengt
     if (stringBufferLength < ECINSTANCEID_STRINGBUFFER_LENGTH)
         return false;
 
-    BeStringUtilities::FormatUInt64 (stringBuffer, (UInt64) ecInstanceId.GetValue ());
+    BeStringUtilities::FormatUInt64 (stringBuffer, (uint64_t) ecInstanceId.GetValue ());
     return true;
     }
 
@@ -40,7 +40,7 @@ bool ECInstanceIdHelper::FromString (ECInstanceId& ecInstanceId, WCharCP ecInsta
     if (WString::IsNullOrEmpty (ecInstanceIdString))
         return false;
 
-    UInt64 value;
+    uint64_t value;
     const auto stat = BeStringUtilities::ParseUInt64 (value, ecInstanceIdString);
     if (SUCCESS == stat)
         {

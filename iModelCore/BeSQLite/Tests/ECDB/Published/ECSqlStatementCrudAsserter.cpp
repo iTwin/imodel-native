@@ -569,7 +569,7 @@ Utf8String ECSqlSelectStatementCrudAsserter::DataTypeToString (ECTypeDescriptor 
                 return "Int";
 
             case PRIMITIVETYPE_Long:
-                return "Int64";
+                return "int64_t";
 
             case PRIMITIVETYPE_Point2D:
                 return "Point2D";

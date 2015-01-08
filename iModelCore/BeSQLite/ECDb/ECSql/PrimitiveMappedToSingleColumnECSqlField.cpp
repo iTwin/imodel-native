@@ -83,7 +83,7 @@ bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-UInt64 PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays (DateTime::Info& metadata) const
     {
     if (!CanGetValue (PRIMITIVETYPE_DateTime))
         return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDays (metadata);
@@ -118,7 +118,7 @@ int PrimitiveMappedToSingleColumnECSqlField::_GetInt () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Int64 PrimitiveMappedToSingleColumnECSqlField::_GetInt64 () const
+int64_t PrimitiveMappedToSingleColumnECSqlField::_GetInt64 () const
     {
     if (!CanGetValue (PRIMITIVETYPE_Long))
         return NoopECSqlValue::GetSingleton ().GetInt64 ();

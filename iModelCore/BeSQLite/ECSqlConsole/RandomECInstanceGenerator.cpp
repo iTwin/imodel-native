@@ -140,7 +140,7 @@ BentleyStatus DefaultPropertyValueGenerator::_NextBinary   (ECValueR value)
         strValue.Sprintf("B%04d",m_currentInt32);
         finalValue += strValue;
         }
-    auto bytes = (byte*)finalValue.c_str();
+    auto bytes = (Byte*)finalValue.c_str();
     return value.SetBinary(bytes, m_binaryLength, true);                 
     }
 
@@ -191,7 +191,7 @@ DefaultPropertyValueGenerator::DefaultPropertyValueGenerator(ECN::ECPropertyCP t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedInt32(Int32 seed, Int32 increment)
+void DefaultPropertyValueGenerator::SetSeedInt32(int32_t seed, int32_t increment)
     {
     m_seedInt32 = seed;
     m_incrementInt32 = increment;
@@ -200,7 +200,7 @@ void DefaultPropertyValueGenerator::SetSeedInt32(Int32 seed, Int32 increment)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedLong(Int64 seed, Int64 increment)
+void DefaultPropertyValueGenerator::SetSeedLong(int64_t seed, int64_t increment)
     {
     m_seedLong = seed;
     m_incrementLong = increment;
@@ -252,7 +252,7 @@ void DefaultPropertyValueGenerator::SetStringPrefix(WStringCR prefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedDateTime(DateTime seed, UInt64 julianHectoSecondsIncrement)
+void DefaultPropertyValueGenerator::SetSeedDateTime(DateTime seed, uint64_t julianHectoSecondsIncrement)
     {
     m_seedDateTime = seed;
     m_incrementDateTimeJulian = julianHectoSecondsIncrement;
@@ -282,7 +282,7 @@ void DefaultPropertyValueGenerator::_Reset()
 
 RandomPropertyValueGenerator::RandomPropertyValueGenerator()
     {
-    srand ((UInt32)BeTimeUtilities::QueryMillisecondsCounter ());
+    srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
     m_binaryLength = 18;
     }
 
@@ -296,7 +296,7 @@ BentleyStatus RandomPropertyValueGenerator::_NextBinary(ECN::ECValueR value)
         strValue.Sprintf("B%04d",randomNumber);
         finalValue += strValue;
         }
-    auto bytes = (byte*)finalValue.c_str();
+    auto bytes = (Byte*)finalValue.c_str();
     return value.SetBinary(bytes, m_binaryLength, true);                 
     }
 
@@ -329,8 +329,8 @@ BentleyStatus RandomPropertyValueGenerator::_NextInteger(ECN::ECValueR value)
 
 BentleyStatus RandomPropertyValueGenerator::_NextLong(ECN::ECValueR value)
     {
-    const Int32 intMax = std::numeric_limits<Int32>::max ();
-    const Int64 longValue = static_cast<Int64> (intMax) + rand();
+    const int32_t intMax = std::numeric_limits<int32_t>::max ();
+    const int64_t longValue = static_cast<int64_t> (intMax) + rand();
     return value.SetLong(longValue); 
     }
 
@@ -364,7 +364,7 @@ BentleyStatus RandomPropertyValueGenerator::_NextString(ECN::ECValueR value)
 
 void RandomPropertyValueGenerator::_Reset()
     {
-    srand ((UInt32)BeTimeUtilities::QueryMillisecondsCounter ());
+    srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
@@ -392,7 +392,7 @@ void RandomECInstanceGenerator::ClassValueGenerator::Init (ECClassCR ecClass, Pr
     BeAssert(factory != nullptr);
     m_generators.clear();
     auto enabler = ecClass.GetDefaultStandaloneEnabler();
-    bvector<UInt32> indices;
+    bvector<uint32_t> indices;
     enabler->GetPropertyIndices(indices, 0);
     for (auto property : ecClass.GetProperties(true))
         {
@@ -810,7 +810,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
             if(arrayProperty->GetKind() == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
                 continue;
 
-            auto maxArrayEntries = (UInt32)GetNextRandom(GetParameters().GetNumberOfArrayElementsToGenerate());
+            auto maxArrayEntries = (uint32_t)GetNextRandom(GetParameters().GetNumberOfArrayElementsToGenerate());
 
             if( (arrayProperty->GetMaxOccurs() - arrayProperty->GetMinOccurs()) < maxArrayEntries)
                 continue;
@@ -819,7 +819,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
 
-                for ( UInt32 i=0 ; i < maxArrayEntries; i++ )
+                for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
                     {
                     auto structInstance = arrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
                     PRECONDITION(structInstance.IsValid(), BentleyStatus::ERROR);
@@ -838,7 +838,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
                 }
             else if (arrayProperty->GetKind() == ARRAYKIND_Primitive )
                 {
-                for ( UInt32 i=0 ; i < maxArrayEntries; i++ )
+                for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
                     {
                     SetPrimitiveValue (value, arrayProperty->GetPrimitiveElementType(), gen->GetGenerator(ecProperty));
                     auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);

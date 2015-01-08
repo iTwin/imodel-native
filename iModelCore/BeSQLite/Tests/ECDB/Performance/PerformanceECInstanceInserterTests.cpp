@@ -262,7 +262,7 @@ struct ECSqlTestInserter : TestInserter<ECSqlTestInserter>
 {
 private:
     std::map<ECN::ECClassCP, std::unique_ptr<ECSqlStatement>> m_cache;
-    bmap <UInt32, int> m_propertyIdToParameterMapping;
+    bmap <uint32_t, int> m_propertyIdToParameterMapping;
 
     bool Insert(ECSqlStatement& stmt, IECInstanceR testInstance) const
     {
@@ -305,8 +305,8 @@ private:
             {
                 bool hasMetadata = false;
                 DateTime::Info metadata;
-                const Int64 ceTicks = v.GetDateTimeTicks(hasMetadata, metadata);
-                const UInt64 jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
+                const int64_t ceTicks = v.GetDateTimeTicks(hasMetadata, metadata);
+                const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
 
                 DateTime::Info const* actualMetadata = hasMetadata ? &metadata : nullptr;
                 ecsqlStat = Backdoor::ECDb::ECSqlStatement::BindDateTime(stmt, parameterIndex, jdHns, actualMetadata);
@@ -404,7 +404,7 @@ public:
                 propName.append(Utf8String(prop->GetName())).append("]");
                 ecsql.AddValue(propName.c_str(), "?");
 
-                UInt32 propIndex;
+                uint32_t propIndex;
                 auto stat = enabler->GetPropertyIndex(propIndex, prop->GetName().c_str());
                 if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
                     return false;

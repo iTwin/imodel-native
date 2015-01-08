@@ -224,7 +224,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         if (!v.IsNull ())
             ASSERT_EQ (v.GetInteger (), colVal.GetInt ());
 
-        ASSERT_EQ ((Int64) testInstance.GetClass ().GetId (), stmt.GetValueInt64 (1));
+        ASSERT_EQ ((int64_t) testInstance.GetClass ().GetId (), stmt.GetValueInt64 (1));
         ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ()) << "Only one instance for given instance id is expected to be returned";
         };
 

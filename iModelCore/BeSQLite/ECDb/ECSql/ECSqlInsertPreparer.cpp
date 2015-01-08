@@ -351,7 +351,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             {
             auto const& ecinstanceIdValueSnippet = ecinstanceIdValueSnippets[0];
             Utf8CP ecinstanceidStr = ecinstanceIdValueSnippet.ToString ();
-            UInt64 ecinstanceid = 0ULL;
+            uint64_t ecinstanceid = 0ULL;
             if (BeStringUtilities::ParseUInt64 (ecinstanceid, ecinstanceidStr) != SUCCESS)
                 return ctx.SetError (ECSqlStatus::InvalidECSql, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
 

@@ -49,7 +49,7 @@ private:
     virtual ECSqlStatus _BindNull () override;
     virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
     virtual IECSqlStructBinder& _BindStruct () override;
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
 
     void Initialize ();
 public:

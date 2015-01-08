@@ -53,7 +53,7 @@ struct ECInstanceFinder
         friend ECInstanceFinder;
         private:
             int m_relatedDirections;
-            UInt8 m_relationshipDepth;
+            uint8_t m_relationshipDepth;
             ECN::ECClassCP m_ecClass;
 
         public:
@@ -70,7 +70,7 @@ struct ECInstanceFinder
             ECDB_EXPORT FindOptions 
                         (
                         int relatedDirectionFlags = RelatedDirection_None, 
-                        UInt8 relationshipDepth = 0,
+                        uint8_t relationshipDepth = 0,
                         ECN::ECClassCP ecClass = nullptr
                         );
         };
@@ -132,7 +132,7 @@ private:
         ECInstanceKeyMultiMap& instanceKeyMap, 
         const ECInstanceKeyMultiMap& seedInstanceKeyMap, 
         ECInstanceFinder::FindOptions findOptions,
-        UInt8& currentDepth
+        uint8_t& currentDepth
         );
     static void DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instanceKeyMultiMap, ECDbR ecDb);
 

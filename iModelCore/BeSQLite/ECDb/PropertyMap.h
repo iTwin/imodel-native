@@ -116,7 +116,7 @@ protected:
     //********* DEPRECATED. Will be removed once ECPersistence is removed ******************
     //! The default implementation adds a "dummy" placeholder binding with m_sqlIndex = BINDING_NotBound (-1). It is needed to handle cases where the requested property
     //! is not handled (at the time of writing IGeometry properties were not handled) or arrays of structs (which are handled differently, at the time of writing)
-    virtual void _AddBindings (BindingsR bindings, UInt32 propertyIndex, int& sqlIndex, ECN::ECEnablerCR enabler) const;
+    virtual void _AddBindings (BindingsR bindings, uint32_t propertyIndex, int& sqlIndex, ECN::ECEnablerCR enabler) const;
 
     //! Bind an ECProperty value from the ecInstance to the statement
     //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
@@ -132,7 +132,7 @@ public:
     PropertyMapArrayOfPrimitivesCP GetAsPropertyMapArrayOfPrimitives () const {return _GetAsPropertyMapArrayOfPrimitives();}
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
-    static UInt32 GetPropertyIndex (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class
+    static uint32_t GetPropertyIndex (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class
     
     PropertyMapCollection const& GetChildren () const { return m_children; }
 
@@ -199,7 +199,7 @@ public:
     //**************************************************************************
 
     //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    void AddBindings (BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const;
+    void AddBindings (BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const;
 
     //! An abstract factory method that constructs a subtype of PropertyMap, based on the ecProperty, hints, and mapping rules
     static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
@@ -277,7 +277,7 @@ protected:
     virtual void _SetColumnBaseName(Utf8CP columnName) override;
 
     //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    virtual void _AddBindings (BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
+    virtual void _AddBindings (BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
 
    //! Bind an ECProperty value from the ecInstance to the statement
     //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
@@ -420,7 +420,7 @@ private:
     void _SetColumnBaseName(Utf8CP columnName) override;
 
     //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    void _AddBindings (BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
+    void _AddBindings (BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
 
     //! Bind an ECProperty value from the ecInstance to the statement
     //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings

@@ -154,15 +154,15 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
     if (classHint.GetValue (v, BSCAP_Indexes) != ECOBJECTS_STATUS_Success || v.IsNull ())
         return false;
 
-    UInt32 indexesPropIdx;
+    uint32_t indexesPropIdx;
     if (classHint.GetEnablerR ().GetPropertyIndex (indexesPropIdx, BSCAP_Indexes) != ECOBJECTS_STATUS_Success)
         {
         LOG.errorv ("Failed to get property index for 'ECDbClassHint.Indexes'.");
         return false;
         }
 
-    UInt32 indexCount = v.GetArrayInfo ().GetCount ();
-    for (UInt32 i = 0; i < indexCount; i++)
+    uint32_t indexCount = v.GetArrayInfo ().GetCount ();
+    for (uint32_t i = 0; i < indexCount; i++)
         {
         bool errorEncountered = false;
         ClassIndexInfoPtr info = ClassIndexInfo::Create ();
@@ -187,7 +187,7 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
         //mandatory. Reject Index if it doesn't have any property
         if (ecDbIndex->GetValue (v, BSCAP_Properties) == ECOBJECTS_STATUS_Success && !v.IsNull ())
             {
-            UInt32 propertiesPropIdx;
+            uint32_t propertiesPropIdx;
             if (ecDbIndex->GetEnablerR ().GetPropertyIndex (propertiesPropIdx, BSCAP_Properties) != ECOBJECTS_STATUS_Success)
                 {
                 //error
@@ -195,7 +195,7 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
                 return false; //Do not enumerate anymore
                 }
 
-            UInt32 propertyCount = v.GetArrayInfo ().GetCount ();
+            uint32_t propertyCount = v.GetArrayInfo ().GetCount ();
             if (propertyCount == 0)
                 {
                 LOG.errorv (L"Rejecting user specified index[%d] specified in ECDbClassHint on class %ls because it has no properties.", i, ecClass.GetFullName ());
@@ -203,7 +203,7 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
                 }
 
             //process properties specified in index
-            for (UInt32 j = 0; j < propertyCount && !errorEncountered; j++)
+            for (uint32_t j = 0; j < propertyCount && !errorEncountered; j++)
                 {
                 if (ecDbIndex->GetValue (v, propertiesPropIdx, j) == ECOBJECTS_STATUS_Success)
                     {

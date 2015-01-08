@@ -32,7 +32,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init (ECSqlStatusCont
     {
     Reset (statusContext);
 
-    byte* arrayBlob = (byte*)GetSqliteStatement ().GetValueBlob (m_sqliteColumnIndex);
+    Byte* arrayBlob = (Byte*)GetSqliteStatement ().GetValueBlob (m_sqliteColumnIndex);
     int arrayBlobSize = GetSqliteStatement ().GetColumnBytes (m_sqliteColumnIndex);
 
     m_arrayValueECInstance = nullptr;
@@ -139,7 +139,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::_MoveNext (bool onInitializin
 
     auto ecInstance = GetArrayValueECInstance ();
     BeAssert (ecInstance != nullptr);
-    m_arrayElement.SetValue (*ecInstance, (UInt32) m_currentArrayIndex, m_datetimeMetadata);
+    m_arrayElement.SetValue (*ecInstance, (uint32_t) m_currentArrayIndex, m_datetimeMetadata);
     }
 
 //---------------------------------------------------------------------------------------
@@ -219,7 +219,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Init (ECSq
 BentleyStatus PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::SetValue 
 (
 IECInstanceCR instance, 
-UInt32 arrayIndex, 
+uint32_t arrayIndex, 
 DateTime::Info const& dateTimeMetadata
 )
     {
@@ -284,13 +284,13 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBoolea
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-UInt64 PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDays (DateTime::Info& metadata) const
     {
     if (!CanRead(PRIMITIVETYPE_DateTime))
         return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDays(metadata);
 
     bool hasMetadata = false;
-    const Int64 ceTicks = m_value.GetDateTimeTicks (hasMetadata, metadata);
+    const int64_t ceTicks = m_value.GetDateTimeTicks (hasMetadata, metadata);
     return DateTime::CommonEraTicksToJulianDay (ceTicks);
     }
 
@@ -320,7 +320,7 @@ int PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt () 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-Int64 PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt64 () const
+int64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt64 () const
     {
     if (!CanRead(PRIMITIVETYPE_Long))
         return NoopECSqlValue::GetSingleton ().GetInt64();

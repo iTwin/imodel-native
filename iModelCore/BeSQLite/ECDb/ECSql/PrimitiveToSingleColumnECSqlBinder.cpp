@@ -88,7 +88,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary (const void* value, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     const auto stat = CanBind (PRIMITIVETYPE_DateTime);
     if (stat != ECSqlStatus::Success)
@@ -189,7 +189,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt (int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64 (Int64 value)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64 (int64_t value)
     {
     const auto stat = CanBind (PRIMITIVETYPE_Long);
     if (stat != ECSqlStatus::Success)
@@ -291,7 +291,7 @@ IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
     const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array to primitive parameter.");
     return GetNoopBinder (stat).BindArray (initialCapacity);

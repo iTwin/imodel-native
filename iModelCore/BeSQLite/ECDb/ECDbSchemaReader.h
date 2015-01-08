@@ -39,7 +39,7 @@ private:
     BeSQLite::DbResult         ReadECClass                             (ECClassP& ecClass, ECClassId ecClassId);
     BeSQLite::DbResult         ReadECSchema                            (DbECSchemaEntryP& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesExist);
 
-    BeSQLite::DbResult         ReadECSchema                            (ECSchemaP& ecSchemaOut, Utf8CP schemaName, UInt32 versionMajor, UInt32 versinMinor, bool partial);
+    BeSQLite::DbResult         ReadECSchema                            (ECSchemaP& ecSchemaOut, Utf8CP schemaName, uint32_t versionMajor, uint32_t versinMinor, bool partial);
                                ECDbSchemaReader                        (Db& db);
     DbECSchemaEntryP           FindDbECSchemaEntry                     (ECSchemaId ecSchemaId);
     DbECClassEntryP            FindDbECClassEntry                      (ECClassId ecClassid);

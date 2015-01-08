@@ -51,7 +51,7 @@ protected:
     static Utf8CP const GLOBALID_COLUMN_NAME;
 
 private:
-    mutable UInt64 m_ecInstanceIdSequence;
+    mutable uint64_t m_ecInstanceIdSequence;
     bmap<ECN::ECPropertyCP, int> m_parameterMapping;
 
     virtual void _RunInsertTest(BeSQLiteDbR db, Context const& context) const = 0;
@@ -80,8 +80,8 @@ protected:
 
     void RunTest (Utf8CP dbFileName, Context& context);
 
-    UInt64 GetNextECInstanceId () const;
-    void BindToParameter (BeSQLite::Statement&, ECN::ECClassCR testClass, ECN::ECPropertyCR property, UInt64 ecInstanceId) const;
+    uint64_t GetNextECInstanceId () const;
+    void BindToParameter (BeSQLite::Statement&, ECN::ECClassCR testClass, ECN::ECPropertyCR property, uint64_t ecInstanceId) const;
 
     static void IterateResultSet (BeSQLite::Statement& stmt, std::vector<std::pair<int, int>> const& columnRanges);
     static void IterateResultSet (BeSQLite::Statement& stmt);

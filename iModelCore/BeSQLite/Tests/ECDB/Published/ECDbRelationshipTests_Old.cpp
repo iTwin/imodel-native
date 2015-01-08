@@ -27,7 +27,7 @@ BeSQLiteDbR db,
 Utf8CP tableName,
 ECInstanceId whereECInstanceId,
 Utf8CP expectedIdColumnName,
-Int64 expectedId
+int64_t expectedId
 );
 
 /*---------------------------------------------------------------------------------**//**

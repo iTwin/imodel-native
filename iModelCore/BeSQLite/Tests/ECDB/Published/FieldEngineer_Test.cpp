@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <Bentley/Bentley.r.h>
 #include "ECDbPublishedTests.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 

@@ -179,7 +179,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateBaseClassEntry (ECClassId ecClassId, 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, Int32 index)
+BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index)
     {
     DbECPropertyInfo info;
     info.ColsInsert =
@@ -534,8 +534,8 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportCustomAttributes (IECCustomAttributeC
             customAttributeClassId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, *customAttributeClass);
         BeAssert(customAttributeClassId != 0);
 
-        Int64 primaryContainerId;
-        Int64 consolidatedContainerId;
+        int64_t primaryContainerId;
+        int64_t consolidatedContainerId;
         switch (containerType)
             {
             case ECONTAINERTYPE_Schema:
@@ -1556,7 +1556,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId e
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::ImportECProperty (ECN::ECPropertyCR ecProperty, ECClassId ecClassId, Int32 index)
+BeSQLite::DbResult ECDbSchemaWriter::ImportECProperty (ECN::ECPropertyCR ecProperty, ECClassId ecClassId, int32_t index)
     {
     DbResult r;
     

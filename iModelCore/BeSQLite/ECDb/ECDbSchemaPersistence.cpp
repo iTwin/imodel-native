@@ -640,8 +640,8 @@ DbResult ECDbSchemaPersistence::InsertECPropertyInfo (BeSQLite::Db& db, DbECProp
 
     if (info.m_isArray)
         {
-        if (info.ColsInsert & DbECPropertyInfo::COL_MinOccurs) stmt->BindInt (13, (Int32) info.m_minOccurs);
-        if (info.ColsInsert & DbECPropertyInfo::COL_MaxOccurs) stmt->BindInt (14, (Int32) info.m_maxOccurs);
+        if (info.ColsInsert & DbECPropertyInfo::COL_MinOccurs) stmt->BindInt (13, (int32_t) info.m_minOccurs);
+        if (info.ColsInsert & DbECPropertyInfo::COL_MaxOccurs) stmt->BindInt (14, (int32_t) info.m_maxOccurs);
         }
 
     return stmt->Step ();
@@ -726,9 +726,9 @@ DbResult ECDbSchemaPersistence::Step(DbECPropertyInfoR info , BeSQLite::Statemen
         if (info.ColsSelect & DbECPropertyInfo::COL_IsReadOnly)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_IsReadOnly;      nCol++; } else info.m_isReadOnly = stmt.GetValueInt (nCol++) == 1;
         if (info.ColsSelect & DbECPropertyInfo::COL_MinOccurs)
-            if (stmt.IsColumnNull (nCol)) { info.ColsNull |= DbECPropertyInfo::COL_MinOccurs;      nCol++; } else info.m_minOccurs = (UInt32)stmt.GetValueInt (nCol++);
+            if (stmt.IsColumnNull (nCol)) { info.ColsNull |= DbECPropertyInfo::COL_MinOccurs;      nCol++; } else info.m_minOccurs = (uint32_t)stmt.GetValueInt (nCol++);
         if (info.ColsSelect & DbECPropertyInfo::COL_MaxOccurs)
-            if (stmt.IsColumnNull (nCol)) { info.ColsNull |= DbECPropertyInfo::COL_MaxOccurs;      nCol++; } else info.m_maxOccurs = (UInt32)stmt.GetValueInt (nCol++);
+            if (stmt.IsColumnNull (nCol)) { info.ColsNull |= DbECPropertyInfo::COL_MaxOccurs;      nCol++; } else info.m_maxOccurs = (uint32_t)stmt.GetValueInt (nCol++);
 
         }
     return r;
@@ -805,9 +805,9 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
     if (info.ColsUpdate & DbECPropertyInfo::COL_IsReadOnly)
         if (info.ColsNull & DbECPropertyInfo::COL_IsReadOnly) nCol++; else stmt->BindInt (nCol++, info.m_isReadOnly ? 1 : 0);
     if (info.ColsUpdate & DbECPropertyInfo::COL_MinOccurs)
-        if (info.ColsNull & DbECPropertyInfo::COL_MinOccurs) nCol++; else stmt->BindInt (nCol++, (Int32) info.m_minOccurs);
+        if (info.ColsNull & DbECPropertyInfo::COL_MinOccurs) nCol++; else stmt->BindInt (nCol++, (int32_t) info.m_minOccurs);
     if (info.ColsUpdate & DbECPropertyInfo::COL_MaxOccurs)
-        if (info.ColsNull & DbECPropertyInfo::COL_MaxOccurs) nCol++; else stmt->BindInt (nCol++, (Int32) info.m_maxOccurs);
+        if (info.ColsNull & DbECPropertyInfo::COL_MaxOccurs) nCol++; else stmt->BindInt (nCol++, (int32_t) info.m_maxOccurs);
 
     if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECPropertyInfo::COL_ECPropertyId) stmt->BindInt64 (nCol++, info.m_ecPropertyId);
@@ -1337,7 +1337,7 @@ bool ECDbSchemaPersistence::ContainsECSchemaReference (BeSQLite::Db& db, ECSchem
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::ResolveECClassId (Utf8StringR schemaName, UInt32& versionMajor, UInt32& versionMinor, Utf8StringR className, ECClassId ecClassId, BeSQLite::Db& db)
+DbResult ECDbSchemaPersistence::ResolveECClassId (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringR className, ECClassId ecClassId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
     auto stat = db.GetCachedStatement (stmt, "SELECT s.Name, s.VersionMajor, s.VersionMinor, c.Name  FROM ec_Class c INNER JOIN ec_Schema s ON s.ECSchemaId = c.ECSchemaId WHERE ECClassId = ?");
@@ -1351,8 +1351,8 @@ DbResult ECDbSchemaPersistence::ResolveECClassId (Utf8StringR schemaName, UInt32
         return stat;
 
     schemaName = stmt->GetValueText (0);
-    versionMajor = (UInt32) stmt->GetValueInt (1);
-    versionMinor = (UInt32) stmt->GetValueInt (2);
+    versionMajor = (uint32_t) stmt->GetValueInt (1);
+    versionMinor = (uint32_t) stmt->GetValueInt (2);
     className = stmt->GetValueText (3);
     return stat;
     }
@@ -1398,9 +1398,9 @@ DbResult ECDbSchemaPersistence::ResolveECSchemaId (DbECSchemaEntryR key, ECSchem
 
     key.m_ecSchemaId = stmt->GetValueInt64 (0);
     key.m_schemaName = stmt->GetValueText (1);
-    key.m_versionMajor = (UInt32) stmt->GetValueInt (2);
-    key.m_versionMinor = (UInt32) stmt->GetValueInt (3);
-    key.m_nClassesInSchema = (UInt32) stmt->GetValueInt (4);
+    key.m_versionMajor = (uint32_t) stmt->GetValueInt (2);
+    key.m_versionMinor = (uint32_t) stmt->GetValueInt (3);
+    key.m_nClassesInSchema = (uint32_t) stmt->GetValueInt (4);
     key.m_nClassesLoaded = 0;
     key.m_resolvedECSchema = nullptr;
     return stat;
@@ -1423,9 +1423,9 @@ DbResult ECDbSchemaPersistence::GetPrimaryECSchemas (ECSchemaKeyListR schemaKeys
         DbECSchemaEntry key;
         key.m_ecSchemaId = stmt->GetValueInt64 (0);
         key.m_schemaName = stmt->GetValueText (1);
-        key.m_versionMajor = (UInt32) stmt->GetValueInt (2);
-        key.m_versionMinor = (UInt32) stmt->GetValueInt (3);
-        key.m_nClassesInSchema = (UInt32) stmt->GetValueInt (4);
+        key.m_versionMajor = (uint32_t) stmt->GetValueInt (2);
+        key.m_versionMinor = (uint32_t) stmt->GetValueInt (3);
+        key.m_nClassesInSchema = (uint32_t) stmt->GetValueInt (4);
         key.m_nClassesLoaded = 0;
         key.m_resolvedECSchema = nullptr;
         schemaKeys.push_back (key);
@@ -1437,7 +1437,7 @@ DbResult ECDbSchemaPersistence::GetPrimaryECSchemas (ECSchemaKeyListR schemaKeys
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::ResolveECSchemaId (Utf8StringR schemaName, UInt32& versionMajor, UInt32& versionMinor, ECSchemaId ecSchemaId, BeSQLite::Db& db)
+DbResult ECDbSchemaPersistence::ResolveECSchemaId (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, ECSchemaId ecSchemaId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
     auto stat = db.GetCachedStatement (stmt, "SELECT Name, VersionMajor, VersionMinor FROM ec_Schema WHERE ECSchemaId = ?");
@@ -1450,8 +1450,8 @@ DbResult ECDbSchemaPersistence::ResolveECSchemaId (Utf8StringR schemaName, UInt3
         return stat;
 
     schemaName = stmt->GetValueText (0);
-    versionMajor = (UInt32) stmt->GetValueInt (1);
-    versionMinor = (UInt32) stmt->GetValueInt (2);
+    versionMajor = (uint32_t) stmt->GetValueInt (1);
+    versionMinor = (uint32_t) stmt->GetValueInt (2);
     return stat;
     }
 
@@ -1472,8 +1472,8 @@ DbResult ECDbSchemaPersistence::GetECSchemaKeys (DbECSchemaKeysR keys, BeSQLite:
             DbECSchemaKey (
             stmt->GetValueInt64 (0),
             stmt->GetValueText (1),
-            (UInt32) stmt->GetValueInt (2),
-            (UInt32) stmt->GetValueInt (3),
+            (uint32_t) stmt->GetValueInt (2),
+            (uint32_t) stmt->GetValueInt (3),
             stmt->IsColumnNull (4) ? (Utf8CP)nullptr : stmt->GetValueText (4)));
         }
     return stat;
@@ -1986,7 +1986,7 @@ DbBuffer::DbBuffer (size_t length)
 bool DbBuffer::Allocate (size_t length)
     {
     Reset ();
-    m_data = (byte*) malloc (length);
+    m_data = (Byte*) malloc (length);
     if (m_data != nullptr)
         {
         m_length = length;
@@ -1999,7 +1999,7 @@ bool DbBuffer::Allocate (size_t length)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  DbBuffer::SetData (byte* data, size_t length, bool createCopy)
+bool  DbBuffer::SetData (Byte* data, size_t length, bool createCopy)
     {
     Reset ();
     if (createCopy == true)
@@ -2025,7 +2025,7 @@ void DbBuffer::Resize (size_t length)
     if (m_data != nullptr)
         {
         size_t minLength = length > m_length ? m_length : length;
-        byte* data = (byte*) malloc (length);
+        Byte* data = (Byte*) malloc (length);
         memcpy (data, m_data, minLength);
         Reset ();
         m_data = data;

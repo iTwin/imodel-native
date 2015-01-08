@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,12 +15,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 DbECSchemaKey::GetVersionMajor () const { return m_versionMajor;}
+uint32_t DbECSchemaKey::GetVersionMajor () const { return m_versionMajor;}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 DbECSchemaKey::GetVersionMinor () const { return m_versionMinor;}
+uint32_t DbECSchemaKey::GetVersionMinor () const { return m_versionMinor;}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
@@ -55,7 +55,7 @@ DbECSchemaKey::~DbECSchemaKey ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbECSchemaKey::DbECSchemaKey (ECSchemaId ecSchemaId, Utf8CP name, UInt32 versionMajor, UInt32 versionMinor, Utf8CP displayLabel)
+DbECSchemaKey::DbECSchemaKey (ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel)
     :m_ecSchemaId (ecSchemaId), m_schemaName (name), m_versionMajor (versionMajor), m_versionMinor (versionMinor)
     {
     if (displayLabel)
@@ -243,7 +243,7 @@ IImportIssueListener const* userProvidedIssueListener
 
     //Clear cache in case we have diffs
     if (!diffs.empty ())
-        m_ecdb.GetEC ().ClearCache (ECDbStore::CacheType::Schema);
+        m_ecdb.GetEC ().ClearCache ();
 
     return SUCCESS;
     }

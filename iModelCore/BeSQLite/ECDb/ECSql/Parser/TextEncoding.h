@@ -44,7 +44,7 @@
     RTL_TEXTENCODING_UCS2 (aka RTL_TEXTENCODING_UNICODE), and
     RTL_TEXTENCODING_DONTKNOW to indicate an unknown or missing encoding.
     */
-typedef Int16 rtl_TextEncoding;
+typedef int16_t rtl_TextEncoding;
 
 #define RTL_TEXTENC_CAST( val ) ((rtl_TextEncoding) val)
 

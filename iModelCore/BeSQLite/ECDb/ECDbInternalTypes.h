@@ -161,7 +161,7 @@ enum class SqlSetQuantifier
     All,
     };
 
-typedef Int64 ECContainerId;
+typedef int64_t ECContainerId;
 
 enum CreateTableStatus
     {

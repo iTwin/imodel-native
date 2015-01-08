@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECDbStore.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,14 +49,6 @@ struct ECDbStore : RefCountedBase
 {
 // The class is ref counted as it can be shared among different ECDb instances
 
-public:
-    enum class CacheType
-    {
-    Schema = 1,
-    Sequences = 2,
-    All = Schema | Sequences
-    };
-
 //__PUBLISH_SECTION_END__
 
 private:
@@ -96,6 +88,7 @@ public:
 
     DbResult OnDbOpened ();
     DbResult OnDbCreated ();
+    void OnDbChangedByOtherConnection () const;
     //! Called when the repository id of the underlying @ref ECDbFile "ECDb file" has changed.
     //! @param[in] newRepositoryId New repository id
     //! @return BE_SQLITE_OK on success, error code otherwise
@@ -121,12 +114,8 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater () const;
 
-    //! Clears the ECDb cache or portions of it
-    //! @param[in] type Type of cache to be cleared
-    //! @return If @type is or includes ECDbSchemaManager::CacheType::Sequences the method
-    //! returns ERROR if one of the sequences has been modified in the current transaction and the transaction
-    //! hasn't ended yet. SUCCESS otherwise.
-    ECDB_EXPORT BentleyStatus ClearCache (CacheType type = CacheType::All) const;
+    //! Clears the ECDb cache
+    ECDB_EXPORT void ClearCache () const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
     //! @deprecated Use ECInstanceInserter, ECInstanceUpdater, ECInstanceDeleter instead.

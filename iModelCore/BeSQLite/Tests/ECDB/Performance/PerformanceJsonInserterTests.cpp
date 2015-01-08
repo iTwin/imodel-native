@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath)
     {
-    const byte utf8BOM[] = {0xef, 0xbb, 0xbf};
+    const Byte utf8BOM[] = {0xef, 0xbb, 0xbf};
 
     Utf8String fileContent;
 
@@ -24,20 +24,20 @@ void ReadJsonInputFromFile (Json::Value& jsonInput, BeFileName& jsonFilePath)
     auto fileStatus = file.Open (jsonFilePath, BeFileAccess::Read);
     ASSERT_TRUE(BeFileStatus::Success ==fileStatus);
 
-    UInt64 rawSize;
+    uint64_t rawSize;
     fileStatus = file.GetSize (rawSize);
     ASSERT_TRUE (BeFileStatus::Success == fileStatus && rawSize <= UINT32_MAX);
 
-    UInt32 sizeToRead = (UInt32) rawSize;
+    uint32_t sizeToRead = (uint32_t) rawSize;
 
-    UInt32 sizeRead;
-    ScopedArray<byte> scopedBuffer (sizeToRead);
-    byte* buffer = scopedBuffer.GetData();
+    uint32_t sizeRead;
+    ScopedArray<Byte> scopedBuffer (sizeToRead);
+    Byte* buffer = scopedBuffer.GetData();
     fileStatus = file.Read (buffer, &sizeRead, sizeToRead);
     ASSERT_TRUE (BeFileStatus::Success == fileStatus && sizeRead == sizeToRead);
     ASSERT_TRUE (buffer[0] == utf8BOM[0] && buffer[1] == utf8BOM[1] && buffer[2] == utf8BOM[2]) << "Json file is expected to be encoded in UTF-8";
 
-    for (UInt32 ii = 3; ii < sizeRead; ii++)
+    for (uint32_t ii = 3; ii < sizeRead; ii++)
         {
         if (buffer[ii] == '\n' || buffer[ii] == '\r')
             continue;

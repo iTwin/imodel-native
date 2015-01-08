@@ -1073,9 +1073,9 @@ ECObjectsStatus MapGenerator::CreateSupplementalSchema (ECSchemaPtr& supplementa
     IECInstancePtr supplementalSchemaMetaData = supplementalSchemaMetaDataClass->GetDefaultStandaloneEnabler()->CreateInstance();
     //set custom attribute values
     r = supplementalSchemaMetaData->SetValue(L"PrimarySchemaName",         ECValue (primarySchema.GetName().c_str()));
-    r = supplementalSchemaMetaData->SetValue(L"PrimarySchemaMajorVersion", ECValue ((Int32)primarySchema.GetVersionMajor()));
-    r = supplementalSchemaMetaData->SetValue(L"PrimarySchemaMinorVersion", ECValue ((Int32)primarySchema.GetVersionMinor()));
-    r = supplementalSchemaMetaData->SetValue(L"Precedence",                ECValue ((Int32)99));
+    r = supplementalSchemaMetaData->SetValue(L"PrimarySchemaMajorVersion", ECValue ((int32_t)primarySchema.GetVersionMajor()));
+    r = supplementalSchemaMetaData->SetValue(L"PrimarySchemaMinorVersion", ECValue ((int32_t)primarySchema.GetVersionMinor()));
+    r = supplementalSchemaMetaData->SetValue(L"Precedence",                ECValue ((int32_t)99));
     r = supplementalSchemaMetaData->SetValue(L"Purpose",                   ECValue (purpose.c_str()));
     r = supplementalSchemaMetaData->SetValue(L"IsUserSpecific",            ECValue (false));
     //set custom attribute

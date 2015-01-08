@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbStore.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -103,6 +103,14 @@ DbResult ECDbStore::OnRepositoryIdChanged (BeRepositoryId newRepositoryId)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                 Krischan.Eberle                01/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbStore::OnDbChangedByOtherConnection () const
+    {
+    ClearCache ();
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbStore::Close ()
@@ -113,35 +121,15 @@ void ECDbStore::Close ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                  06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbStore::ClearCache (ECDbStore::CacheType type) const
+void ECDbStore::ClearCache () const
     {
-    const int typeInt = (int) type;
-    int candidateTypeInt = (int) CacheType::Schema;
-    if ((typeInt & candidateTypeInt) == candidateTypeInt)
-        {
-        if (m_ecDbSchemaManager != nullptr)
-            m_ecDbSchemaManager->ClearCache ();
+    if (m_ecDbSchemaManager != nullptr)
+        m_ecDbSchemaManager->ClearCache ();
 
-        if (m_ecDbMap != nullptr)
-            m_ecDbMap->ClearCache ();
+    if (m_ecDbMap != nullptr)
+        m_ecDbMap->ClearCache ();
 
-        m_ecPersistenceCache.clear ();
-        }
-
-    candidateTypeInt = (int) CacheType::Sequences;
-    BentleyStatus stat = BentleyStatus::SUCCESS;
-    if ((typeInt & candidateTypeInt) == candidateTypeInt)
-        {
-        bvector<BeRepositoryBasedIdSequenceCP> sequences;
-        GetIdSequences (sequences);
-        for (auto sequence : sequences)
-            {
-            if (!sequence->TryClearCache ())
-                stat = BentleyStatus::ERROR;
-            }
-        }
-
-    return stat;
+    m_ecPersistenceCache.clear ();
     }
 
 //---------------------------------------------------------------------------------------

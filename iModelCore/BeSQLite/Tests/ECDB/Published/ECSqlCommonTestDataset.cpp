@@ -268,7 +268,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipEndTableMappingTests (
 
     {
     auto& ecdb = testProject.GetECDb ();
-    Savepoint savepoint (ecdb, "Inserting test instances", true);
+    Savepoint savepoint (ecdb, "Inserting test instances");
     psaECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
     pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
 
@@ -335,7 +335,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipLinkTableMappingTests 
     ECInstanceId psaHasPsaECInstanceId;
     {
     auto& ecdb = testProject.GetECDb ();
-    Savepoint savepoint (ecdb, "Inserting test instances", true);
+    Savepoint savepoint (ecdb, "Inserting test instances");
     psaECInstanceId1 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (100, 'Test instance for relationship tests')");
     psaECInstanceId2 = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSA (I, S) VALUES (200, 'Second test instance for relationship tests')");
 
@@ -402,7 +402,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     ECInstanceId ecInstanceId;
     {
     auto& ecdb = testProject.GetECDb ();
-    Savepoint savepoint (ecdb, "Inserting test instances", true);
+    Savepoint savepoint (ecdb, "Inserting test instances");
     ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (100, 200, False, 3.14)");
     if (!ecInstanceId.IsValid ())
         {
@@ -475,7 +475,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAnyClassConstraint
     ECInstanceId anyClassHasPECInstanceId;
     {
     auto& ecdb = testProject.GetECDb ();
-    Savepoint savepoint (ecdb, "Inserting test instances", true);
+    Savepoint savepoint (ecdb, "Inserting test instances");
     pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'test instance')");
 
     Utf8String ecsql;

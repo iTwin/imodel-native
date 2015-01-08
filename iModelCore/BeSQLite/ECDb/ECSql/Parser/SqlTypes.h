@@ -97,10 +97,10 @@ typedef  int sal_Int32;
 typedef  bool sal_Bool;
 typedef  Utf8Char sal_Char;
 typedef  WChar sal_Unicode;
-typedef  UInt32 sal_uInt32;
+typedef  uint32_t sal_uInt32;
 
-typedef Int16 sal_Int16;
-typedef  UInt16  sal_uInt16;
+typedef int16_t sal_Int16;
+typedef  uint16_t sal_uInt16;
 const sal_Bool sal_True = true;
 const sal_Bool sal_False = false;
 #define SAL_MAX_ENUM 0x7fffffff
@@ -261,7 +261,7 @@ struct Utf8StringHelper
         return Utf8String (str);
         }
 
-    static Utf8String createString (const char* str, size_t len, Int16 encoding)
+    static Utf8String createString (const char* str, size_t len, int16_t encoding)
         {
         BeAssert (encoding != RTL_TEXTENCODING_UTF8);
         BeAssert (strlen (str) != len);

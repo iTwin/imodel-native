@@ -598,7 +598,7 @@ bool JsonECSqlSelectAdapter::FormattedJsonFromECValue (JsonValueR jsonValue, ECV
 bool JsonECSqlSelectAdapter::JsonFromBinary (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
     {
     int size;
-    const byte* data = (const byte *)ecsqlValue.GetBinary (&size);
+    const Byte* data = (const Byte *)ecsqlValue.GetBinary (&size);
     ECValue ecValue;
     ecValue.SetBinary (data, (size_t) size, false);
     return FormattedJsonFromECValue  (jsonValue, ecValue, ecProperty, isArrayMember);
@@ -687,7 +687,7 @@ bool JsonECSqlSelectAdapter::JsonFromInt (JsonValueR jsonValue, IECSqlValue cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonECSqlSelectAdapter::JsonFromInt64 (JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
     {
-    Int64 value = ecsqlValue.GetInt64 ();
+    int64_t value = ecsqlValue.GetInt64 ();
     if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
         {
         jsonValue = BeJsonUtilities::StringValueFromInt64 (value); // Javascript has issues with holding Int64 values!!!
@@ -965,7 +965,7 @@ bool JsonECSqlSelectAdapter::JsonFromInstanceId (JsonValueR jsonValue, IECSqlVal
     {
     ECInstanceId ecInstanceId = ecsqlValue.GetId<ECInstanceId> ();
     //TODO: If ECInstanceId is invalid, shouldn't something else than 0 be returned?
-    const Int64 ecInstanceIdVal = ecInstanceId.IsValid () ? ecInstanceId.GetValue () : 0LL;
+    const int64_t ecInstanceIdVal = ecInstanceId.IsValid () ? ecInstanceId.GetValue () : 0LL;
     jsonValue = BeJsonUtilities::StringValueFromInt64 (ecInstanceIdVal); // Javascript has issues with holding Int64 values!!!
     return true;
     }

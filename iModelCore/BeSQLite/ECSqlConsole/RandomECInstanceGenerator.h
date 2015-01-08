@@ -31,11 +31,11 @@ struct DefaultPropertyValueGenerator : IPropertyValueGenerator
     {
 
 private:
-    Int32       m_seedInt32, m_currentInt32, m_incrementInt32;
-    Int64       m_seedLong , m_currentLong, m_incrementLong;
+    int32_t     m_seedInt32, m_currentInt32, m_incrementInt32;
+    int64_t     m_seedLong , m_currentLong, m_incrementLong;
     double      m_seedDouble, m_currentDouble, m_incrementDouble;
     DateTime    m_seedDateTime; 
-    UInt64      m_currentDateTimeJulian, m_incrementDateTimeJulian;
+    uint64_t    m_currentDateTimeJulian, m_incrementDateTimeJulian;
     DPoint2d    m_seedPoint2d , m_currentPoint2d, m_incrementPoint2d;
     DPoint3d    m_seedPoint3d , m_currentPoint3d, m_incrementPoint3d;
     WString     m_stringPrefix;
@@ -59,14 +59,14 @@ protected:
 public:
 
     DefaultPropertyValueGenerator(ECN::ECPropertyCP templateProperty);
-    void SetSeedInt32(Int32 seed, Int32 increment);
-    void SetSeedLong(Int64 seed, Int64 increment);
+    void SetSeedInt32(int32_t seed, int32_t increment);
+    void SetSeedLong(int64_t seed, int64_t increment);
     void SetSeedDouble(double seed, double increment);
     void SetSeedPoint2D(DPoint2dCR seed, DPoint2d increment);
     void SetSeedPoint3D(DPoint3dCR seed, DPoint3d increment);
     void SetBinaryLength(size_t length);
     void SetStringPrefix(WStringCR prefix);
-    void SetSeedDateTime(DateTime seed, UInt64 julianHectoSecondsIncrement);
+    void SetSeedDateTime(DateTime seed, uint64_t julianHectoSecondsIncrement);
     void SetSeedBoolean(bool seed);
     ECN::ECPropertyCP GetProperty() const { return m_property;}
     };

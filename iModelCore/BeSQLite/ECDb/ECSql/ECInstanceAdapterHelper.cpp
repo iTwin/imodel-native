@@ -27,7 +27,7 @@ std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo
         }
 
     //propIndex only needed for prims and arrays
-    UInt32 propIndex = 0;
+    uint32_t propIndex = 0;
     auto ecStat = enabler.GetPropertyIndex (propIndex, propertyAccessString);
     if (ecStat != ECOBJECTS_STATUS_Success)
         return nullptr;
@@ -117,7 +117,7 @@ ECValueBindingInfo::SystemPropertyKind ECSqlSystemPropertyBindingInfo::GetKind (
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create (UInt32 propertyIndex, int ecsqlParameterIndex)
+std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create (uint32_t propertyIndex, int ecsqlParameterIndex)
     {
     return std::unique_ptr<PrimitiveECValueBindingInfo> (new PrimitiveECValueBindingInfo (propertyIndex, ecsqlParameterIndex));
     }
@@ -125,7 +125,7 @@ std::unique_ptr<PrimitiveECValueBindingInfo> PrimitiveECValueBindingInfo::Create
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-PrimitiveECValueBindingInfo::PrimitiveECValueBindingInfo (UInt32 propertyIndex, int ecsqlParameterIndex) 
+PrimitiveECValueBindingInfo::PrimitiveECValueBindingInfo (uint32_t propertyIndex, int ecsqlParameterIndex) 
 : ECValueBindingInfo (Type::Primitive, ecsqlParameterIndex), m_propertyIndex (propertyIndex)
     {
     }
@@ -133,7 +133,7 @@ PrimitiveECValueBindingInfo::PrimitiveECValueBindingInfo (UInt32 propertyIndex, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-UInt32 PrimitiveECValueBindingInfo::GetPropertyIndex () const
+uint32_t PrimitiveECValueBindingInfo::GetPropertyIndex () const
     {
     return m_propertyIndex;
     }
@@ -198,7 +198,7 @@ std::map<ECN::ECPropertyId, std::unique_ptr<ECValueBindingInfo>> const& StructEC
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create (ECN::ECPropertyCR prop, UInt32 arrayPropIndex, int ecsqlParameterIndex)
+std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create (ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex)
     {
     return std::unique_ptr<ArrayECValueBindingInfo> (new ArrayECValueBindingInfo (prop, arrayPropIndex, ecsqlParameterIndex));
     }
@@ -206,7 +206,7 @@ std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create (ECN::E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ArrayECValueBindingInfo::ArrayECValueBindingInfo (ECN::ECPropertyCR prop, UInt32 arrayPropIndex, int ecsqlParameterIndex) 
+ArrayECValueBindingInfo::ArrayECValueBindingInfo (ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex) 
 : ECValueBindingInfo (Type::Array, ecsqlParameterIndex), m_arrayPropIndex (arrayPropIndex)
     {
     auto arrayProp = prop.GetAsArrayProperty ();
@@ -223,7 +223,7 @@ ArrayECValueBindingInfo::ArrayECValueBindingInfo (ECN::ECPropertyCR prop, UInt32
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-UInt32 ArrayECValueBindingInfo::GetArrayPropertyIndex () const
+uint32_t ArrayECValueBindingInfo::GetArrayPropertyIndex () const
     {
     return m_arrayPropIndex;
     }
@@ -380,8 +380,8 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue (IECSqlBinder& binder,
                 {
                 bool hasMetadata = false;
                 DateTime::Info metadata;
-                const Int64 ceTicks = value.GetDateTimeTicks (hasMetadata, metadata);
-                const UInt64 jdHns = DateTime::CommonEraTicksToJulianDay (ceTicks);
+                const int64_t ceTicks = value.GetDateTimeTicks (hasMetadata, metadata);
+                const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay (ceTicks);
 
                 DateTime::Info const* actualMetadata = hasMetadata ? &metadata : nullptr;
                 stat = binder.BindDateTime (jdHns, actualMetadata);
@@ -475,7 +475,7 @@ BentleyStatus ECInstanceAdapterHelper::BindStructValue (IECSqlBinder& binder, EC
 BentleyStatus ECInstanceAdapterHelper::BindArrayValue (IECSqlBinder& binder, ECInstanceInfo const& instanceInfo, ArrayECValueBindingInfo const& valueBindingInfo)
     {
     IECInstanceCR instance = instanceInfo.GetInstance ();
-    const UInt32 arrayPropIndex = valueBindingInfo.GetArrayPropertyIndex ();
+    const uint32_t arrayPropIndex = valueBindingInfo.GetArrayPropertyIndex ();
     ECValue arrayValue;
     //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
@@ -486,10 +486,10 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue (IECSqlBinder& binder, ECI
 
     BeAssert (arrayValue.IsArray ());
     const ArrayInfo arrayInfo = arrayValue.GetArrayInfo ();
-    const UInt32 arrayLength = arrayInfo.GetCount ();
+    const uint32_t arrayLength = arrayInfo.GetCount ();
     IECSqlArrayBinder& arrayBinder = binder.BindArray (arrayLength);
 
-    for (UInt32 i = 0; i < arrayLength; i++)
+    for (uint32_t i = 0; i < arrayLength; i++)
         {
         ECValue elementValue;
         //avoid to copy strings/blobs from ECInstance into ECValue and from there into ECSqlStatement. As lifetime of ECInstance

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECInstanceFinder::FindOptions::FindOptions
 (
 int relatedDirections /* = RelatedDirection_None */,
-UInt8 relationshipDepth /* = 0 */,
+uint8_t relationshipDepth /* = 0 */,
 ECClassCP ecClass /* = nullptr */
 ) : m_relatedDirections (relatedDirections), m_relationshipDepth (relationshipDepth), m_ecClass (ecClass)
     {
@@ -252,14 +252,14 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
     if (anyClass != nullptr)
         {
         int anyClassIdx = stmt->GetParameterIndex ("@anyClassId");
-        stmt->BindInt64 (anyClassIdx, (Int64) anyClass->GetId());
+        stmt->BindInt64 (anyClassIdx, (int64_t) anyClass->GetId());
         }
 
     ECClassP thisEndClass = nullptr;
     ecDbSchemaManager.GetECClass (thisEndClass, thisEndClassId);
     BeAssert (thisEndClass != nullptr);
     int endClassIdx = stmt->GetParameterIndex ("@endClassId");
-    stmt->BindInt64 (endClassIdx, (Int64) thisEndClass->GetId());
+    stmt->BindInt64 (endClassIdx, (int64_t) thisEndClass->GetId());
 
     while (BE_SQLITE_ROW == (result = stmt->Step()))
         {
@@ -457,7 +457,7 @@ BentleyStatus ECInstanceFinder::FindInstancesRecursive
 ECInstanceKeyMultiMap& instanceKeyMap, 
 const ECInstanceKeyMultiMap& seedInstanceKeyMap, 
 FindOptions findOptions,
-UInt8& currentDepth
+uint8_t& currentDepth
 )
     {
     if (seedInstanceKeyMap.size() == 0)
@@ -518,7 +518,7 @@ BentleyStatus ECInstanceFinder::FindInstances
     FindOptions findOptions
     )
     {
-    UInt8 currentDepth = 0;
+    uint8_t currentDepth = 0;
     instanceKeyMap.clear();
     return FindInstancesRecursive (instanceKeyMap, seedInstanceKeyMap, findOptions, currentDepth);
     }

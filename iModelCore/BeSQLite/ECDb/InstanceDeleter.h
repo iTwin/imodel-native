@@ -20,7 +20,7 @@ struct InstanceDeleter : RefCountedBase
     typedef bvector<InstanceDeleterPtr> PropertyDeleters;
 private:
     ECN::ECPropertyCP               m_ecProperty;
-    Int64                           m_ecPropertyId;
+    int64_t                         m_ecPropertyId;
     PropertyDeleters                m_propertyDeleters;
     BeSQLite::CachedStatementPtr    m_deleteStatement;
     bool                            m_deleteDependentInstances;

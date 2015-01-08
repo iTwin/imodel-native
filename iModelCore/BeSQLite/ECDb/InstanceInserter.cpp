@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Binding::Binding (ECEnablerCR enabler, PropertyMapCR propertyMap, UInt32 propertyIndex, UInt16 componentMask, int sqlIndex, DbColumnCP column)
+Binding::Binding (ECEnablerCR enabler, PropertyMapCR propertyMap, uint32_t propertyIndex, uint16_t componentMask, int sqlIndex, DbColumnCP column)
 : m_enabler (enabler), m_propertyMap (propertyMap), m_propertyIndex (propertyIndex), m_componentMask (componentMask),
 m_sqlIndex (sqlIndex), m_column (column)
     {
@@ -388,7 +388,7 @@ InsertStatus InstanceInserter::DoInsertionsInSecondaryTables (ECInstanceId* ecIn
         ECPropertyCR ecProperty = inserter->GetECProperty();
         WStringCR ecPropertyAccessString = inserter->GetECPropertyAccessString();
         ECValue value;
-        UInt32 propIndex;
+        uint32_t propIndex;
         //WIP_ECDB: make these bindings... where the call to "bind" does the secondary insertion... still must wait until the main insertion has happened... do these in a second pass. That will also help in case where caller has skipped the insert/update of that property!
         ecStatus = ecInstance.GetEnabler().GetPropertyIndex (propIndex, ecPropertyAccessString.c_str());
         if (ecStatus == ECOBJECTS_STATUS_PropertyNotFound)
@@ -423,7 +423,7 @@ InsertStatus InstanceInserter::DoInsertionsInSecondaryTables (ECInstanceId* ecIn
             }
         else if (ecProperty.GetIsArray())
             {
-            UInt32 count = value.GetArrayInfo().GetCount();
+            uint32_t count = value.GetArrayInfo().GetCount();
 
             ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
             if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
@@ -433,7 +433,7 @@ InsertStatus InstanceInserter::DoInsertionsInSecondaryTables (ECInstanceId* ecIn
                 ECClassCR ecPrimitiveClass = m_ecDbMap.GetClassForPrimitiveArrayPersistence (primitiveType);
                 IECInstancePtr inst = ecPrimitiveClass.GetDefaultStandaloneEnabler()->CreateInstance();
 
-                for (UInt32 i = 0; i < count; i++)   
+                for (uint32_t i = 0; i < count; i++)   
                     {
                     ecStatus = ecInstance.GetValue (value, propIndex, i);
                     if (ecStatus != ECOBJECTS_STATUS_Success)
@@ -474,7 +474,7 @@ InsertStatus InstanceInserter::DoInsertionsInSecondaryTables (ECInstanceId* ecIn
                 }
             else if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
-                for (UInt32 i = 0; i < count ; i++)   
+                for (uint32_t i = 0; i < count ; i++)   
                     {
                     ecStatus = ecInstance.GetValue (value, propIndex, i);
                     if (ecStatus != ECOBJECTS_STATUS_Success)
@@ -622,7 +622,7 @@ InsertStatus InstancePropertyToTableInserter::_Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult InstancePropertyToTableInserter::_Bind (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex)
+DbResult InstancePropertyToTableInserter::_Bind (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex)
     {
     m_statement.ClearBindings();
     BindPrimaryKeysForProperty (ecInstanceId, ecInstance, arrayIndex);
@@ -633,7 +633,7 @@ DbResult InstancePropertyToTableInserter::_Bind (ECInstanceId* ecInstanceId, ECN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult InstancePropertyToTableInserter::BindPrimaryKeysForProperty (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex)
+DbResult InstancePropertyToTableInserter::BindPrimaryKeysForProperty (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex)
     {    
     ECInstanceId generatedECId;
     DbResult stat = m_ecInstanceIdSequence.GetNextValue (generatedECId);
@@ -667,7 +667,7 @@ DbResult InstancePropertyToTableInserter::BindPrimaryKeysForProperty (ECInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-InsertStatus InstancePropertyToTableInserter::_Insert (ECInstanceId* ecInstanceLuid, ECN::IECInstanceR ecInstance, UInt32 arrayIndex)
+InsertStatus InstancePropertyToTableInserter::_Insert (ECInstanceId* ecInstanceLuid, ECN::IECInstanceR ecInstance, uint32_t arrayIndex)
     {
     InsertStatus status = INSERT_Success;
     if (!m_statement.IsPrepared())
@@ -715,7 +715,7 @@ InstanceInserterCP parentInserter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-InsertStatus InstancePropertyToTableInserter::Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex)
+InsertStatus InstancePropertyToTableInserter::Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex)
     {
     return _Insert (ecInstanceId, ecInstance, arrayIndex);
     }

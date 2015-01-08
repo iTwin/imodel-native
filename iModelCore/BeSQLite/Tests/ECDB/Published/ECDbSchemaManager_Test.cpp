@@ -787,7 +787,7 @@ TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
     ECClassP ecclassCourseTitle = SchoolSupplSchema->GetClassP(L"CourseTitle");
     ASSERT_TRUE(ecclassCourseTitle != NULL);
     ECCustomAttributeInstanceIterable iterator1 = ecclassCourseTitle->GetCustomAttributes(true);
-    UInt32 i = 0;
+    uint32_t i = 0;
     for (IECInstancePtr instance : iterator1)
     {
         i++;
@@ -833,7 +833,7 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
     ASSERT_TRUE(ecclassCourseTitle != NULL);
     //get custom attributes from base class (false)
     ECCustomAttributeInstanceIterable iterator2 = ecclassCourseTitle->GetCustomAttributes(false);
-    UInt32 i = 0;
+    uint32_t i = 0;
     for (IECInstancePtr instance : iterator2)
     {
         i++;

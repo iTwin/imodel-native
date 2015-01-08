@@ -149,7 +149,7 @@ ECSqlStatus ECSqlStatement::BindInt (int parameterIndex, int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::BindInt64 (int parameterIndex, Int64 value)
+ECSqlStatus ECSqlStatement::BindInt64 (int parameterIndex, int64_t value)
     {
     return GetBinder (parameterIndex).BindInt64 (value);
     }
@@ -197,7 +197,7 @@ IECSqlStructBinder& ECSqlStatement::BindStruct (int parameterIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& ECSqlStatement::BindArray (int parameterIndex, UInt32 initialCapacity)
+IECSqlArrayBinder& ECSqlStatement::BindArray (int parameterIndex, uint32_t initialCapacity)
     {
     return GetBinder (parameterIndex).BindArray (initialCapacity);
     }
@@ -325,7 +325,7 @@ int ECSqlStatement::GetValueInt (int columnIndex) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Int64 ECSqlStatement::GetValueInt64 (int columnIndex) const
+int64_t ECSqlStatement::GetValueInt64 (int columnIndex) const
     {
     //Reports errors (not prepared yet, index out of bounds) and uses no-op field in case of error
     return GetValue (columnIndex).GetInt64 ();

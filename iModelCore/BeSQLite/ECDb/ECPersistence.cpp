@@ -80,7 +80,7 @@ InstanceDeleterP ECPersistence::GetInstanceDeleter()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan        04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DeleteStatus ECPersistence::Delete (Int32* nDeleted, const ECInstanceIdSet& ecInstanceIdSet, ECDbDeleteHandlerP deleteHandler /*= nullptr*/)
+DeleteStatus ECPersistence::Delete (int32_t* nDeleted, const ECInstanceIdSet& ecInstanceIdSet, ECDbDeleteHandlerP deleteHandler /*= nullptr*/)
     {
     InstanceDeleterP instanceDeleter = GetInstanceDeleter();
     if (nullptr == instanceDeleter)

@@ -17,8 +17,8 @@ struct ECDbUtility
 {
 public:
     static void         DuplicateProperties (IECInstanceR target, ECValuesCollectionCR source);
-    static UInt32       GetPropertyIndex (ECClassCR ecClass, ECPropertyCR ecProperty);
-    static ECPropertyP  GetPropertyFromIndex (ECClassCR ecClass, UInt32 propertyIndex);
+    static uint32_t     GetPropertyIndex (ECClassCR ecClass, ECPropertyCR ecProperty);
+    static ECPropertyP  GetPropertyFromIndex (ECClassCR ecClass, uint32_t propertyIndex);
     static bool         IsECValueEmpty (ECValueCR value);
 };
 

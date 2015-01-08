@@ -392,7 +392,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::MiscTests (ECDbTestProject& testProject
 
         {
         auto& ecdb = testProject.GetECDb ();
-        Savepoint savepoint (ecdb, "Inserting test instances", true);
+        Savepoint savepoint (ecdb, "Inserting test instances");
         pECInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (100, 'Test instance for relationship tests')");
         if (!pECInstanceId.IsValid ())
             {
@@ -649,7 +649,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::ParameterAdvancedTests ()
         {
         Utf8CP ecsql = "INSERT INTO ecsql.P (I, Bi) VALUES (123, ?)";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 1);
-        byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
+        Byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (blob, 10)));
         }
 
@@ -704,7 +704,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::ParameterAdvancedTests ()
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (true)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (123)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("hello")));
-        byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
+        Byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (blob, 10)));
         }
 

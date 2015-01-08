@@ -160,7 +160,7 @@ void ECDbTestProject::Initialize ()
         BeTest::GetHost().GetOutputRoot (temporaryDir);
 
         ECDb::Initialize (temporaryDir, &applicationSchemaDir);
-        srand ((UInt32)BeTimeUtilities::QueryMillisecondsCounter ());
+        srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
         s_isInitialized = true;
         }
     }   
@@ -376,7 +376,7 @@ void ECDbTestProject::PopulateECInstance (ECN::IECInstancePtr ecInstance, Popula
             if(arrayProperty->GetKind() == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
                 continue;
 
-            UInt32 arrayCount = MAX_ARRAY_TEST_ENTRIES;
+            uint32_t arrayCount = MAX_ARRAY_TEST_ENTRIES;
             if (arrayCount < arrayProperty->GetMinOccurs ())
                 arrayCount = arrayProperty->GetMinOccurs ();
             else if (arrayCount > arrayProperty->GetMaxOccurs ())
@@ -385,7 +385,7 @@ void ECDbTestProject::PopulateECInstance (ECN::IECInstancePtr ecInstance, Popula
             ecInstance->AddArrayElements (ecProperty->GetName ().c_str (), arrayCount);
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
-                for (UInt32 i = 0; i < arrayCount; i++)
+                for (uint32_t i = 0; i < arrayCount; i++)
                     {
                     PopulateStructValue (value, *arrayProperty->GetStructElementType(), populatePrimitiveValueCallback);
                     ecInstance->SetValue (ecProperty->GetName().c_str (), value, i);
@@ -393,7 +393,7 @@ void ECDbTestProject::PopulateECInstance (ECN::IECInstancePtr ecInstance, Popula
                 }
             else if (arrayProperty->GetKind() == ARRAYKIND_Primitive )
                 {
-                for (UInt32 i = 0; i < arrayCount; i++)
+                for (uint32_t i = 0; i < arrayCount; i++)
                     {
                     populatePrimitiveValueCallback (value, arrayProperty->GetPrimitiveElementType(), ecProperty);
                     ecInstance->SetValue (ecProperty->GetName().c_str (), value, i);
@@ -545,7 +545,7 @@ PrimitiveType type,
 ECPropertyCP ecProperty
 )
     {
-    srand ((UInt32)BeTimeUtilities::QueryMillisecondsCounter ());
+    srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
     int randomNumber = rand ();
     switch (type)
         {
@@ -565,8 +565,8 @@ ECPropertyCP ecProperty
 
         case PRIMITIVETYPE_Long: 
             {
-            const Int32 intMax = std::numeric_limits<Int32>::max ();
-            const Int64 longValue = static_cast<Int64> (intMax) + randomNumber;
+            const int32_t intMax = std::numeric_limits<int32_t>::max ();
+            const int64_t longValue = static_cast<int64_t> (intMax) + randomNumber;
             value.SetLong(longValue); 
             }
             break;
@@ -590,7 +590,7 @@ ECPropertyCP ecProperty
                     break;
                     }
 
-                UInt64 jd = 0ULL;
+                uint64_t jd = 0ULL;
                 DateTime::GetCurrentTimeUtc ().ToJulianDay (jd);
                 
                 DateTime::FromJulianDay (dt, jd, info); 
@@ -630,7 +630,7 @@ ECPropertyCP ecProperty
 
         case PRIMITIVETYPE_Binary  : 
             {
-            byte blob[]= {0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00};
+            Byte blob[]= {0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00};
             value.SetBinary(blob, 10);
             break;
             }
@@ -695,7 +695,7 @@ void ECDbTestProject::PopulatePrimitiveValue (ECValueR value, PrimitiveType prim
 
         case PRIMITIVETYPE_Binary  : 
             {
-            byte blob[]= {0x0c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 65, 66, 67, 68, 0x0c};
+            Byte blob[]= {0x0c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 65, 66, 67, 68, 0x0c};
             value.SetBinary(blob, 11, true);
             break;
             }
@@ -747,8 +747,8 @@ void ECDbTestProject::PopulatePrimitiveValueWithRandomValues (ECValueR ecValue, 
 
         case PRIMITIVETYPE_Long: 
             {
-            const Int32 intMax = std::numeric_limits<Int32>::max ();
-            const Int64 longValue = static_cast<Int64> (intMax) + randomNumber;
+            const int32_t intMax = std::numeric_limits<int32_t>::max ();
+            const int64_t longValue = static_cast<int64_t> (intMax) + randomNumber;
             ecValue.SetLong(longValue); 
             }
             break;
@@ -1044,8 +1044,8 @@ bool CompareProperties (IECInstanceCR actual, ECValuesCollectionCR expected)
         if (actualType == PRIMITIVETYPE_DateTime)
             {
             //Storing dates in DgnDb only allows accuracy of approx millisecs right now.
-            Int64 expectedECTicks = expectedValue.GetDateTimeTicks ();
-            Int64 actualECTicks = actualValue.GetDateTimeTicks ();
+            int64_t expectedECTicks = expectedValue.GetDateTimeTicks ();
+            int64_t actualECTicks = actualValue.GetDateTimeTicks ();
             if (ECDbTestUtility::CompareECDateTimes (expectedECTicks, actualECTicks))
                 {
                 continue;
@@ -1179,9 +1179,9 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue (const Json::Value& jsonVa
             if (jsonValueType != Json::realValue)
                 return false;
 
-            const Int64 referenceECTicks = referenceValue.GetDateTimeTicks();
+            const int64_t referenceECTicks = referenceValue.GetDateTimeTicks();
             const double jsonJd = jsonValue.asDouble();
-            const Int64  jsonECTicks = JulianDayToCommonEraTicks (jsonJd);
+            const int64_t jsonECTicks = JulianDayToCommonEraTicks (jsonJd);
             return CompareECDateTimes (referenceECTicks, jsonECTicks);
             }
 
@@ -1209,8 +1209,8 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue (const Json::Value& jsonVa
             {
             if (jsonValueType != Json::intValue)
                 return false;
-            Int64 referenceNativeValue = referenceValue.GetLong();
-            Int64 jsonNativeValue = jsonValue.asInt64();
+            int64_t referenceNativeValue = referenceValue.GetLong();
+            int64_t jsonNativeValue = jsonValue.asInt64();
             if (referenceNativeValue != jsonNativeValue)
                 return false;
             break;
@@ -1375,12 +1375,12 @@ double actualJd
     WString assertMessageHeader;
     assertMessageHeader.Sprintf (L"EC date time assertion failed for '%ls': ", expectedDateTime.ToString ().c_str ());
 
-    const Int64 expectedCETicks = expectedECValue.GetDateTimeTicks ();
+    const int64_t expectedCETicks = expectedECValue.GetDateTimeTicks ();
     double expectedJd;
     BentleyStatus stat = expectedECValue.GetDateTime ().ToJulianDay (expectedJd);
     EXPECT_EQ (SUCCESS, stat) << assertMessageHeader.c_str () << L"Julian Day for expected ECValue could not be computed.";
 
-    const Int64 actualCETicks = JulianDayToCommonEraTicks (actualJd);
+    const int64_t actualCETicks = JulianDayToCommonEraTicks (actualJd);
 
     AssertECDateTime (expectedCETicks, actualCETicks, assertMessageHeader.c_str ());
 
@@ -1393,7 +1393,7 @@ double actualJd
     dbStat = sqliteStatement.Step ();
     EXPECT_EQ (BE_SQLITE_ROW, dbStat) << assertMessageHeader.c_str () << L"SQL statement '" << sql.c_str () << L"' could not be executed";;
     const double sqliteJd = sqliteStatement.GetValueDouble (0);
-    const Int64 sqliteCETicks = JulianDayToCommonEraTicks (sqliteJd);
+    const int64_t sqliteCETicks = JulianDayToCommonEraTicks (sqliteJd);
     LOG.infov (L"Expected JD: %lf - SQLite JD: %lf", expectedJd, sqliteJd);
     assertMessageHeader.Sprintf (L"Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for '%ls'. ", expectedDateTime.ToString ().c_str ());
     AssertECDateTime (expectedCETicks, sqliteCETicks, assertMessageHeader.c_str ());
@@ -1405,8 +1405,8 @@ double actualJd
 //static
 void ECDbTestUtility::AssertECDateTime 
 (
-Int64 expectedCETicks,
-Int64 actualCETicks,
+int64_t expectedCETicks,
+int64_t actualCETicks,
 WCharCP assertMessageHeader
 )
     {
@@ -1422,11 +1422,11 @@ WCharCP assertMessageHeader
 //static
 bool ECDbTestUtility::CompareECDateTimes 
 (
-Int64 expectedECTicks, 
-Int64 actualECTicks
+int64_t expectedECTicks, 
+int64_t actualECTicks
 )
     {
-    Int64 diff = expectedECTicks - actualECTicks;
+    int64_t diff = expectedECTicks - actualECTicks;
     //get absolute diff
     if (diff < 0)
         {
@@ -1571,7 +1571,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECDbTestUtility::ReadCellValueAsInt64 (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause)
+int64_t ECDbTestUtility::ReadCellValueAsInt64 (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause)
     {
     Utf8String str;
     str.Sprintf ("SELECT %s FROM %s %s", columnName, tableName, whereClause);
@@ -1600,9 +1600,9 @@ void ECDbTestUtility::DebugDumpJson (const Json::Value& jsonValue)
 // @bsimethod                                   Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Int64 ECDbTestUtility::JulianDayToCommonEraTicks (double jd)
+int64_t ECDbTestUtility::JulianDayToCommonEraTicks (double jd)
     {
-    UInt64 jdHns = DateTime::RationalDayToHns (jd);
+    uint64_t jdHns = DateTime::RationalDayToHns (jd);
     return DateTime::JulianDayToCommonEraTicks (jdHns);
     }
 

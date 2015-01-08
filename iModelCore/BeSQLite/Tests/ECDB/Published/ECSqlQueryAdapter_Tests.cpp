@@ -87,8 +87,8 @@ Utf8String PrimitiveToString(IECSqlValue const& ecsqlValue, ECN::PrimitiveType t
              int blobSize = -1;
                 int byteCount=0;
                 ecsqlValue.GetBinary (&blobSize);
-                byte storedBlob[]= {0x0c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 65, 66, 67, 68, 0x0c};
-                const byte* data = (const byte *)ecsqlValue.GetBinary (&blobSize);
+                Byte storedBlob[]= {0x0c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 65, 66, 67, 68, 0x0c};
+                const Byte* data = (const Byte *)ecsqlValue.GetBinary (&blobSize);
                 //WString fileName=dir.GetFileNameAndExtension(dir.GetName()); 
                // if (fileName.Equals(L"ecsqlcrudtests.ecdb"))                                 //Binary Comparison is working for ecsqlcrudtest.ecdb only 
                // {
@@ -178,8 +178,8 @@ Utf8String PrimitiveToString(IECSqlValue const& ecsqlValue)
                 int blobSize = -1;
                 int byteCount=0;
                 ecsqlValue.GetBinary (&blobSize);
-                byte storedBlob[]= {0x0c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 65, 66, 67, 68, 0x0c};
-                const byte* data = (const byte *)ecsqlValue.GetBinary (&blobSize);
+                Byte storedBlob[]= {0x0c, 0x0b, 0x0c, 0x0b, 0x0c, 0x0b, 65, 66, 67, 68, 0x0c};
+                const Byte* data = (const Byte *)ecsqlValue.GetBinary (&blobSize);
                // WString fileName=dir.GetFileNameAndExtension(dir.GetName());
                 //if (fileName.Equals(L"ecsqlcrudtests.ecdb"))
               //  {

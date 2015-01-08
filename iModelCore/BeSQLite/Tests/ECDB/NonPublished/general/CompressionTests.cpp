@@ -20,7 +20,7 @@
 //=======================================================================================
 struct          LzmaProgressTracker : BeSQLite::ICompressProgressTracker
 {
-    StatusInt _Progress (UInt64 inSize, Int64 outSize) override { return BSIERROR; }
+    StatusInt _Progress (uint64_t inSize, int64_t outSize) override { return BSIERROR; }
 };
 
 //---------------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ static void runCompressFileTest()
     result = decoder.UncompressDgnDb(nameUncompressedFile, nameCompressedFile, nullptr);
     EXPECT_EQ(BeSQLite::ZIP_SUCCESS, result);
 
-    UInt64 sizeOriginal, sizeUncompressed;
+    uint64_t sizeOriginal, sizeUncompressed;
     BeFileName::GetFileSize(sizeOriginal, nameOriginalFile.GetName());
     BeFileName::GetFileSize(sizeUncompressed, nameUncompressedFile.GetName());
     EXPECT_TRUE(sizeUncompressed == sizeOriginal);
@@ -74,20 +74,20 @@ static void runCompressFileTest()
     BeFile  decompFile;
     status = decompFile.Open(nameUncompressedFile.GetName(), BeFileAccess::Read);
 
-    UInt32 bytesRead;
+    uint32_t bytesRead;
 
-    bvector<byte> origBuffer;
+    bvector<Byte> origBuffer;
     origBuffer.resize(static_cast <size_t> (sizeOriginal));
-    byte*origData = &origBuffer[0];
+    Byte*origData = &origBuffer[0];
 
-    bvector<byte> decompBuffer;
+    bvector<Byte> decompBuffer;
     decompBuffer.resize(static_cast <size_t> (sizeOriginal));
-    byte*decompData = &decompBuffer[0];
+    Byte*decompData = &decompBuffer[0];
 
-    origFile.Read(origData, &bytesRead, (UInt32)sizeOriginal);
+    origFile.Read(origData, &bytesRead, (uint32_t)sizeOriginal);
     EXPECT_TRUE(bytesRead == sizeOriginal);
 
-    decompFile.Read(decompData, &bytesRead, (UInt32)sizeOriginal);
+    decompFile.Read(decompData, &bytesRead, (uint32_t)sizeOriginal);
     EXPECT_EQ(bytesRead, sizeOriginal);
 
     EXPECT_TRUE(!memcmp(origData, decompData, static_cast <size_t> (sizeOriginal)));
@@ -103,11 +103,11 @@ TEST(CompressionTests, LzmaFile)
 
 struct Compresser
     {
-    UInt32      m_calls;
-    UInt32      m_totalCompressTime;
-    UInt32      m_totalUncompressTime;
-    UInt64      m_totalInputSize;
-    UInt64      m_totalCompressedSize;
+    uint32_t    m_calls;
+    uint32_t    m_totalCompressTime;
+    uint32_t    m_totalUncompressTime;
+    uint64_t    m_totalInputSize;
+    uint64_t    m_totalCompressedSize;
 
     void __PrintResults (CharCP header)
         {
@@ -116,7 +116,7 @@ struct Compresser
                 header, m_totalCompressTime, m_totalUncompressTime, compressRatio, m_calls);
         }
 
-    void UpdateResults (UInt32 compressTime, UInt32 decompressTime, UInt64 inputSize, UInt64 compressedSize)
+    void UpdateResults (uint32_t compressTime, uint32_t decompressTime, uint64_t inputSize, uint64_t compressedSize)
         {
         m_calls += 1;
         m_totalCompressTime += compressTime;
@@ -131,14 +131,14 @@ struct Compresser
         m_totalInputSize  = m_totalCompressedSize = 0; 
         }
     Compresser () { Reset(); }
-    virtual void CompressAndUncompress(bvector<byte>&out, byte*input, size_t lenInput) = 0;
+    virtual void CompressAndUncompress(bvector<Byte>&out, Byte*input, size_t lenInput) = 0;
     virtual void PrintResults() = 0;
     };
 
 struct LzmaCompresser : Compresser
     {
 private:
-    UInt32      m_level;
+    uint32_t    m_level;
 public:
     LzmaCompresser () : m_level(13) {  }
     void PrintResults ()
@@ -148,39 +148,39 @@ public:
         __PrintResults(buffer);
         }
 
-    void SetProperties (UInt32 level)
+    void SetProperties (uint32_t level)
         {
         m_level = level;
         }
 
-    virtual void CompressAndUncompress(bvector<byte>&out, byte*input, size_t lenInput)
+    virtual void CompressAndUncompress(bvector<Byte>&out, Byte*input, size_t lenInput)
         {
-        bvector<byte>   compressed;
+        bvector<Byte>   compressed;
         compressed.resize(lenInput/3); //  avoid too many resizes
 
-        UInt64 beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
         BeSQLite::LzmaEncoder     encoder(1 << (m_level+10));
-        encoder.Compress(compressed, input, (UInt32)lenInput, nullptr, true);
+        encoder.Compress(compressed, input, (uint32_t)lenInput, nullptr, true);
 
-        UInt64 afterCompress = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t afterCompress = BeTimeUtilities::QueryMillisecondsCounter();
         BeSQLite::LzmaDecoder  decoder;
 
-        decoder.Uncompress(out, &compressed[0], (UInt32)compressed.size());
+        decoder.Uncompress(out, &compressed[0], (uint32_t)compressed.size());
 
-        UInt64 afterUncompress = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t afterUncompress = BeTimeUtilities::QueryMillisecondsCounter();
 
         EXPECT_TRUE(out.size() == lenInput);
         EXPECT_TRUE(!memcmp(&out[0], input, lenInput));
 
-        UpdateResults((UInt32)(afterCompress - beforeCompress), (UInt32)(afterUncompress - afterCompress), lenInput, compressed.size());
+        UpdateResults((uint32_t)(afterCompress - beforeCompress), (uint32_t)(afterUncompress - afterCompress), lenInput, compressed.size());
         }
 
-    void Compress(bvector<byte>&compressed, byte*input, size_t lenInput)
+    void Compress(bvector<Byte>&compressed, Byte*input, size_t lenInput)
         {
         compressed.resize(lenInput/3); //  avoid too many resizes
 
         BeSQLite::LzmaEncoder     encoder(1 << (m_level+10));
-        encoder.Compress(compressed, input, (UInt32)lenInput, nullptr, true);
+        encoder.Compress(compressed, input, (uint32_t)lenInput, nullptr, true);
         }
     };
 
@@ -199,28 +199,28 @@ public:
 
     ZipCompresser () : m_level (-1) {}
     void SetProperties (int level ) { m_level = level; }
-    virtual void CompressAndUncompress(bvector<byte>&out, byte*input, size_t lenInput)
+    virtual void CompressAndUncompress(bvector<Byte>&out, Byte*input, size_t lenInput)
         {
         uLong  compressedLen = compressBound((uLong)lenInput);
 
-        bvector<byte>   compressed;
+        bvector<Byte>   compressed;
         compressed.resize(compressedLen);
         out.resize(lenInput);
 
-        UInt64 beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t beforeCompress = BeTimeUtilities::QueryMillisecondsCounter();
         compress2(&compressed[0], &compressedLen, input, (uLong)lenInput, m_level);
 
-        UInt64 afterCompress = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t afterCompress = BeTimeUtilities::QueryMillisecondsCounter();
 
         uLong  uncompLen = (uLong)lenInput;
         uncompress(&out[0], &uncompLen, &compressed[0], compressedLen);
 
-        UInt64 afterUncompress = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t afterUncompress = BeTimeUtilities::QueryMillisecondsCounter();
 
         EXPECT_TRUE(out.size() == lenInput);
         EXPECT_TRUE(!memcmp(&out[0], input, lenInput));
 
-        UpdateResults((UInt32)(afterCompress - beforeCompress), (UInt32)(afterUncompress - afterCompress), lenInput, compressedLen);
+        UpdateResults((uint32_t)(afterCompress - beforeCompress), (uint32_t)(afterUncompress - afterCompress), lenInput, compressedLen);
         }
 
     };
@@ -230,19 +230,19 @@ public:
 //---------------------------------------------------------------------------------------
 static void doCompressBufferTests(Compresser&compresser, BeFileName&fileName)
     {
-    UInt32 inputSize = 100000;
-    ScopedArray<byte>  scoped(inputSize);
-    byte* inputBuffer = scoped.GetData();
+    uint32_t inputSize = 100000;
+    ScopedArray<Byte>  scoped(inputSize);
+    Byte* inputBuffer = scoped.GetData();
 
     BeFile file;
     file.Open(fileName.GetName(), BeFileAccess::Read);
-    bvector<byte> result;
+    bvector<Byte> result;
 
     compresser.Reset();
     unsigned  compressIterations = 3;
     for (unsigned i = 0; i < compressIterations; ++i)
         {
-        UInt32  bytesRead;
+        uint32_t bytesRead;
         file.Read(inputBuffer, &bytesRead, inputSize);
         if (bytesRead < inputSize)
             break;
@@ -263,7 +263,7 @@ TEST(CompressionTests, LzmaBuffer)
     fileName.AppendToPath(L"DgnDb");
     fileName.AppendToPath(L"SubStation_NoFence.i.idgndb");
 
-    UInt32 steps[] = { 5, 10, 0};
+    uint32_t steps[] = { 5, 10, 0};
     LzmaCompresser lzmaCompresser;
 
     for (unsigned i = 0; steps[i] != 0; ++i)
@@ -284,7 +284,7 @@ TEST(CompressionTests, ZipBuffer)
     fileName.AppendToPath(L"DgnDb");
     fileName.AppendToPath(L"SiteLayout.i.idgndb");
 
-    UInt32 levels[] = { 5, 9, 0 };
+    uint32_t levels[] = { 5, 9, 0 };
     ZipCompresser zipCompresser;
 
     for (unsigned i = 0; levels[i] != 0; ++i)
@@ -298,26 +298,26 @@ TEST(CompressionTests, ZipBuffer)
 struct CompressTestResults
     {
 private:
-    UInt64      m_beforeDecompress;
-    UInt64      m_afterDecompress;
-    UInt64      m_resultSize;
+    uint64_t    m_beforeDecompress;
+    uint64_t    m_afterDecompress;
+    uint64_t    m_resultSize;
 public:
     void BeforeDecompress () { m_beforeDecompress = BeTimeUtilities::QueryMillisecondsCounter(); }
     void AfterDecompress () { m_afterDecompress = BeTimeUtilities::QueryMillisecondsCounter(); }
-    void SetResultSize (UInt64 resultSize) { m_resultSize = resultSize; }
-    UInt32 GetResultSize () { return (UInt32)m_resultSize; }
-    UInt32 GetDecompressTime () { return (UInt32)(m_afterDecompress-m_beforeDecompress); }
+    void SetResultSize (uint64_t resultSize) { m_resultSize = resultSize; }
+    uint32_t GetResultSize () { return (uint32_t)m_resultSize; }
+    uint32_t GetDecompressTime () { return (uint32_t)(m_afterDecompress-m_beforeDecompress); }
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-static void runDirectComparison(WCharCP fileName, UInt32 dictionarySize, UInt32 inputLen)
+static void runDirectComparison(WCharCP fileName, uint32_t dictionarySize, uint32_t inputLen)
     {
     bvector<CompressTestResults>  lzmaResults;
     bvector<CompressTestResults>  zipResults;
 
-    UInt64 fileSize;
+    uint64_t fileSize;
 
     BeFileName::GetFileSize(fileSize, fileName);
     if (fileSize < inputLen)
@@ -330,30 +330,30 @@ static void runDirectComparison(WCharCP fileName, UInt32 dictionarySize, UInt32 
     BeSQLite::LzmaEncoder encoder (false, dictionarySize);
     BeSQLite::LzmaDecoder decoder;
 
-    ScopedArray<byte>  scoped(inputLen);
-    byte* inputBuffer = scoped.GetData();
+    ScopedArray<Byte>  scoped(inputLen);
+    Byte* inputBuffer = scoped.GetData();
 
-    UInt32 nDecompIters = 8;
-    bvector<byte> uncompressed;
+    uint32_t nDecompIters = 8;
+    bvector<Byte> uncompressed;
     uncompressed.resize(inputLen);
 
     unsigned int limitReadIterations = 3000;
     //  Process all using LZMA
     for (unsigned i = 0; i < limitReadIterations; i++)
         {
-        UInt32  bytesRead;
+        uint32_t bytesRead;
         file.Read(inputBuffer, &bytesRead, inputLen);
         if (bytesRead < inputLen)
             break;
 
-        bvector<byte> compressed;
+        bvector<Byte> compressed;
         encoder.Compress(compressed, inputBuffer, inputLen, nullptr);
         CompressTestResults  current;
         current.SetResultSize(compressed.size());
         current.BeforeDecompress();
         for (unsigned decompIters = 0; decompIters < nDecompIters; decompIters++)
             {
-            decoder.UncompressToBuffer(&uncompressed[0], inputLen, &compressed[0], (UInt32)compressed.size());
+            decoder.UncompressToBuffer(&uncompressed[0], inputLen, &compressed[0], (uint32_t)compressed.size());
             if (0 == decompIters)
                 {
                 EXPECT_TRUE (!memcmp(&uncompressed[0], inputBuffer, inputLen));
@@ -366,13 +366,13 @@ static void runDirectComparison(WCharCP fileName, UInt32 dictionarySize, UInt32 
     printf ("finished LZMA tests\n");
     file.SetPointer(0, BeFileSeekOrigin::Begin);
     const uLong  compressedBufferLen = compressBound((uLong)inputLen);
-    bvector<byte> compressed;
+    bvector<Byte> compressed;
     compressed.resize(compressedBufferLen);
 
     //  Process all using zip
     for (unsigned i = 0; i < limitReadIterations; i++)
         {
-        UInt32  bytesRead;
+        uint32_t bytesRead;
         file.Read(inputBuffer, &bytesRead, inputLen);
         if (bytesRead < inputLen)
             break;
@@ -398,12 +398,12 @@ static void runDirectComparison(WCharCP fileName, UInt32 dictionarySize, UInt32 
 
     BeAssert (zipResults.size() == lzmaResults.size());
 
-    UInt32 zipSmaller = 0;
-    UInt32 lzmaFaster = 0;
-    UInt32 lzmaTotalTime = 0;
-    UInt32 zipTotalTime = 0;
-    UInt64 lzmaTotalResultSize = 0;
-    UInt64 zipTotalResultSize = 0;
+    uint32_t zipSmaller = 0;
+    uint32_t lzmaFaster = 0;
+    uint32_t lzmaTotalTime = 0;
+    uint32_t zipTotalTime = 0;
+    uint64_t lzmaTotalResultSize = 0;
+    uint64_t zipTotalResultSize = 0;
     for (unsigned i = 0; i < zipResults.size(); i++)
         {
         CompressTestResults& zipResult = zipResults[i];
@@ -419,11 +419,11 @@ static void runDirectComparison(WCharCP fileName, UInt32 dictionarySize, UInt32 
         lzmaTotalTime += lzmaResult.GetDecompressTime();
         }
 
-    printf ("process %d results, zipSmaller %d times, lzmaFaster %d times\n", (UInt32)zipResults.size(), zipSmaller, lzmaFaster);
-    double lzmaAvgTime = (double)lzmaTotalTime/(UInt32)zipResults.size();
-    double zipAvgTime = (double)zipTotalTime/(UInt32)zipResults.size();
-    UInt32 lzmaAvgSize = lzmaTotalResultSize/(UInt32)zipResults.size();
-    UInt32 zipAvgSize = zipTotalResultSize/(UInt32)zipResults.size();
+    printf ("process %d results, zipSmaller %d times, lzmaFaster %d times\n", (uint32_t)zipResults.size(), zipSmaller, lzmaFaster);
+    double lzmaAvgTime = (double)lzmaTotalTime/(uint32_t)zipResults.size();
+    double zipAvgTime = (double)zipTotalTime/(uint32_t)zipResults.size();
+    uint32_t lzmaAvgSize = lzmaTotalResultSize/(uint32_t)zipResults.size();
+    uint32_t zipAvgSize = zipTotalResultSize/(uint32_t)zipResults.size();
     //  Note that the buffer is uncompressed nDecompIters times between the calls to BeforeDecompress and AfterDecompress.
     printf ("lzma avg uncompress time = %f, avg compressed size = %d\n", lzmaAvgTime/nDecompIters, lzmaAvgSize);
     printf ("zip avg uncompress time = %f, avg compressed size = %d\n", zipAvgTime/nDecompIters, zipAvgSize);
@@ -434,8 +434,8 @@ static void runDirectComparison(WCharCP fileName, UInt32 dictionarySize, UInt32 
 //---------------------------------------------------------------------------------------
 TEST(CompressionTests, DirectComparisonSmallInput)
     {
-    UInt32 sizes [] = { 32 * 1024, 1 << 17, 2 * 1024 * 1024, 0 };
-    UInt32 inputLen = 100000;
+    uint32_t sizes [] = { 32 * 1024, 1 << 17, 2 * 1024 * 1024, 0 };
+    uint32_t inputLen = 100000;
 
     for (unsigned i = 0; sizes[i] > 0; i++)
         {
@@ -459,8 +459,8 @@ TEST(CompressionTests, DirectComparisonSmallInput)
 //---------------------------------------------------------------------------------------
 TEST(CompressionTests, DirectComparisonBigInput)
     {
-    UInt32 sizes [] = { 2 * 1024 * 1024, 0 };
-    UInt32 inputLen = 2 * 1024 * 1024;
+    uint32_t sizes [] = { 2 * 1024 * 1024, 0 };
+    uint32_t inputLen = 2 * 1024 * 1024;
 
     for (unsigned i = 0; sizes[i] > 0; i++)
         {
@@ -506,7 +506,7 @@ TEST(CompressionTests, CreateZipFile)
     status = (StatusInt) file.Open (fileToZip, BeFileAccess::Read);
     EXPECT_EQ (status, 0);
 
-    bvector<byte> fileBytes;
+    bvector<Byte> fileBytes;
     status = (StatusInt)file.ReadEntireFile (fileBytes);
     EXPECT_EQ (status, 0);
 

@@ -56,16 +56,12 @@ typedef unsigned char Byte;
 typedef short Int16;
 typedef unsigned short UInt16;
 
-#if !defined (BENTLEY_NAMESPACE_NAME)
-    //  It is messy forcing the definition of UInt32 to match
-    //  the definition from Bentley.r.h.
-    #ifdef _LZMA_UINT32_IS_ULONG
-    typedef long Int32;
-    typedef unsigned long UInt32;
-    #else
-    typedef int Int32;
-    typedef unsigned int UInt32;
-    #endif
+#ifdef _LZMA_UINT32_IS_ULONG
+typedef long Int32;
+typedef unsigned long UInt32;
+#else
+typedef int Int32;
+typedef unsigned int UInt32;
 #endif
 
 #ifdef _SZ_NO_INT_64

@@ -474,7 +474,7 @@ LINKER_LIBRARIES            = $(ContextDeliveryDir)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)\
-                              $(ContextSubpartsLibs)BentleyGeomSerialization$(stlibext)
+                              $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 
 
 # We support shared or static linking.

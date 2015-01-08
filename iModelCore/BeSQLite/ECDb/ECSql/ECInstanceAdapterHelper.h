@@ -104,15 +104,15 @@ public:
 struct PrimitiveECValueBindingInfo : ECValueBindingInfo
     {
 private:
-    UInt32 m_propertyIndex;
+    uint32_t m_propertyIndex;
 
-    PrimitiveECValueBindingInfo (UInt32 propertyIndex, int ecsqlParameterIndex);
+    PrimitiveECValueBindingInfo (uint32_t propertyIndex, int ecsqlParameterIndex);
 
 public:
-    static std::unique_ptr<PrimitiveECValueBindingInfo> Create (UInt32 propertyIndex, int ecsqlParameterIndex);
+    static std::unique_ptr<PrimitiveECValueBindingInfo> Create (uint32_t propertyIndex, int ecsqlParameterIndex);
     ~PrimitiveECValueBindingInfo () {}
 
-    UInt32 GetPropertyIndex () const;
+    uint32_t GetPropertyIndex () const;
     };
 
 //======================================================================================
@@ -142,16 +142,16 @@ public:
 struct ArrayECValueBindingInfo : ECValueBindingInfo
     {
 private:
-    UInt32 m_arrayPropIndex;
+    uint32_t m_arrayPropIndex;
     std::unique_ptr<StructECValueBindingInfo> m_structArrayElementBindingInfo;
 
-    ArrayECValueBindingInfo (ECN::ECPropertyCR prop, UInt32 arrayPropIndex, int ecsqlParameterIndex);
+    ArrayECValueBindingInfo (ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex);
 
 public:
-    static std::unique_ptr<ArrayECValueBindingInfo> Create (ECN::ECPropertyCR prop, UInt32 arrayPropIndex, int ecsqlParameterIndex);
+    static std::unique_ptr<ArrayECValueBindingInfo> Create (ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex);
 
     ~ArrayECValueBindingInfo () {}
-    UInt32 GetArrayPropertyIndex () const;
+    uint32_t GetArrayPropertyIndex () const;
     
     //! Indicates whether this is a binding for a struct array or not.
     bool IsStructArray () const;

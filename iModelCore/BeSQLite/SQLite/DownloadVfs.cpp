@@ -61,20 +61,20 @@ struct ValidChunkArray
     {
 private:
     FileStats  m_stats;
-    UInt32     m_nValid;
-    UInt32     m_nChunks;
+    uint32_t   m_nValid;
+    uint32_t   m_nChunks;
     Utf8String m_serverUrl;
     Utf8String m_serverFileSpec;
     Utf8String m_localFileName;
     Utf8String m_vcaFileName;
-    byte*      m_validChunks;
+    Byte*      m_validChunks;
     mutable BeDbMutex  m_mutex;
 
-    byte MaskForChunk(UInt32 chunkNo) const {return 1<<(chunkNo%8);}
-    byte ByteForChunk(UInt32 chunkNo) const {return m_validChunks[chunkNo/8];}
-    byte* ByteForChunkP(UInt32 chunkNo) {return m_validChunks + (chunkNo/8);}
-    UInt32 GetNumBytes() const {return ((m_nChunks-1)/8) + 1;}
-    byte* GetData() {return m_validChunks;}
+    Byte MaskForChunk(uint32_t chunkNo) const {return 1<<(chunkNo%8);}
+    Byte ByteForChunk(uint32_t chunkNo) const {return m_validChunks[chunkNo/8];}
+    Byte* ByteForChunkP(uint32_t chunkNo) {return m_validChunks + (chunkNo/8);}
+    uint32_t GetNumBytes() const {return ((m_nChunks-1)/8) + 1;}
+    Byte* GetData() {return m_validChunks;}
 
 public:
     ValidChunkArray();
@@ -82,14 +82,14 @@ public:
 
     void SetupFileName(Utf8String baseName){m_localFileName=baseName; m_vcaFileName=baseName+"-dl";}
     void SetServerUrl(Utf8String serverUrl, Utf8String filespec){m_serverUrl = serverUrl; m_serverFileSpec = filespec; }
-    bool CheckChunk(UInt32 chunkNo) const {return 0 != (ByteForChunk(chunkNo) & MaskForChunk(chunkNo));}
-    bool IsChunkValid(UInt32 chunkNo) const;
-    bool SetChunkValid(UInt32 chunkNo);
-    UInt32 GetNValid() const {return m_nValid;}
-    UInt32 GetChunkSize() const {return m_stats.GetChunkSize();}
-    UInt32 GetNChunks() const {return m_nChunks;}
-    UInt32 GetNextNeededChunk(UInt32 start) const;
-    UInt32 CountChunksValid() const;
+    bool CheckChunk(uint32_t chunkNo) const {return 0 != (ByteForChunk(chunkNo) & MaskForChunk(chunkNo));}
+    bool IsChunkValid(uint32_t chunkNo) const;
+    bool SetChunkValid(uint32_t chunkNo);
+    uint32_t GetNValid() const {return m_nValid;}
+    uint32_t GetChunkSize() const {return m_stats.GetChunkSize();}
+    uint32_t GetNChunks() const {return m_nChunks;}
+    uint32_t GetNextNeededChunk(uint32_t start) const;
+    uint32_t CountChunksValid() const;
     Utf8StringCR GetServerUrl() const {return m_serverUrl;}
     Utf8StringCR GetServerFileSpec() const {return m_serverFileSpec;}
     Utf8StringCR GetVcaFileName() const {return m_vcaFileName;}
@@ -111,14 +111,14 @@ struct ChunkRequestQueue
     friend struct DownloadFile;
 protected:
     bool                m_aborted;
-    std::deque<UInt32>  m_chunksToFetch;
+    std::deque<uint32_t>  m_chunksToFetch;
     BeConditionVariable m_chunkNeeded;
     Connection&         m_connection;
 
     bool req_WaitForChunkRequest();
-    void QueueChunkRequest(UInt32 chunkNo);      //  May be called in main thread due to direct request or receiver thread due to preemptive request.
+    void QueueChunkRequest(uint32_t chunkNo);      //  May be called in main thread due to direct request or receiver thread due to preemptive request.
     bool IsAborted() const {return m_aborted;}
-    UInt32 req_GetNextRequestedChunk();
+    uint32_t req_GetNextRequestedChunk();
     void Abort();
 
 public:
@@ -169,13 +169,13 @@ private:
     bool                m_done;
     ValidChunkArray*    m_chunkArray;
     BeFile              m_dbFile;
-    UInt32              m_waitingChunk;
-    UInt32              m_lastRequestedChunkNo;
+    uint32_t            m_waitingChunk;
+    uint32_t            m_lastRequestedChunkNo;
     DownloadConfig      m_config;
-    UInt32              m_receivedChunks;       // number of chunks received since last VCA save
-    UInt32              m_totalReceivedChunks;  // number of chunks received this session
-    UInt64              m_lastSaveTime;
-    UInt64              m_lastChunkRequest;
+    uint32_t            m_receivedChunks;       // number of chunks received since last VCA save
+    uint32_t            m_totalReceivedChunks;  // number of chunks received this session
+    uint64_t            m_lastSaveTime;
+    uint64_t            m_lastChunkRequest;
     BeConditionVariable m_chunkWait;
     ChunkRequestQueue*  m_requestQueue;
     ChunkReceiveQueue*  m_receiveQueue;
@@ -183,7 +183,7 @@ private:
 
     Connection* StartConnection (IDownloadAdmin& admin, Utf8String serverUrl, Utf8String filespec, DownloadStatus& dlStat);
     DownloadStatus ReconnectToServer(IDownloadAdmin& admin);
-    void RequestChunk(UInt32 chunkNo, bool directRequest);      //  called in SQLite thread for direct requests, RecvThread for preemptive.
+    void RequestChunk(uint32_t chunkNo, bool directRequest);      //  called in SQLite thread for direct requests, RecvThread for preemptive.
     void wt_WaitForChunk();                                     //  called in SQLite thread for direct requests
     void recv_OnChunkAvailable (ChunkBuffer const&);
     void AbortQueues();
@@ -192,23 +192,23 @@ private:
     DownloadStatus SaveVCA();
     void CheckSaveVCA();
     void OnDownloadComplete();
-    bool wt_ReadyChunk (UInt32 chunkNo);
+    bool wt_ReadyChunk (uint32_t chunkNo);
 
 public:
     DownloadFile(IDownloadAdmin& admin);
     ~DownloadFile();
 
     DownloadStatus Restart(Utf8String dbFileName, IDownloadAdmin& admin);
-    UInt32 GetChunkSize() const {return m_chunkArray->GetChunkSize();}
-    UInt64 GetFileSize() const {return m_chunkArray->GetChunkSize() * m_chunkArray->GetNChunks();}
-    bool IsChunkValid(UInt32 chunkNo) const {return m_done || m_chunkArray->IsChunkValid(chunkNo);}
+    uint32_t GetChunkSize() const {return m_chunkArray->GetChunkSize();}
+    uint64_t GetFileSize() const {return m_chunkArray->GetChunkSize() * m_chunkArray->GetNChunks();}
+    bool IsChunkValid(uint32_t chunkNo) const {return m_done || m_chunkArray->IsChunkValid(chunkNo);}
     Utf8String GetServerUrl() const {return m_chunkArray->GetServerUrl();}
-    bool wt_ReadyBytes(Int64 offset, Int32 numBytes);
+    bool wt_ReadyBytes(int64_t offset, int32_t numBytes);
 
-    UInt32 GetSaveInterval() const {return m_config.m_saveInterval;}
-    UInt32 GetPreemptiveDelay() const {return m_config.m_backgroundDelay;}
-    UInt32 GetDownloadTimeout() const {return m_config.m_timeout;}
-    DownloadStatus CreateDownloadFile (Utf8String localFileName, Utf8String serverUrl, Utf8String serverFileSpec, IDownloadAdmin& admin, UInt32 prefetchBytes);
+    uint32_t GetSaveInterval() const {return m_config.m_saveInterval;}
+    uint32_t GetPreemptiveDelay() const {return m_config.m_backgroundDelay;}
+    uint32_t GetDownloadTimeout() const {return m_config.m_timeout;}
+    DownloadStatus CreateDownloadFile (Utf8String localFileName, Utf8String serverUrl, Utf8String serverFileSpec, IDownloadAdmin& admin, uint32_t prefetchBytes);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,7 +229,7 @@ void ValidChunkArray::Initialize(FileStats const& stats, Utf8String baseName, Ut
     {
     m_stats = stats;
     m_nChunks = m_stats.GetNChunks();
-    m_validChunks = (byte*) calloc(GetNumBytes(), 1);
+    m_validChunks = (Byte*) calloc(GetNumBytes(), 1);
     m_nValid = 0;
     SetupFileName(baseName);
     SetServerUrl(serverUrl, serverFileSpec);
@@ -238,18 +238,18 @@ void ValidChunkArray::Initialize(FileStats const& stats, Utf8String baseName, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool writeFile(BeFile& file, void const* data, UInt32 size)
+static bool writeFile(BeFile& file, void const* data, uint32_t size)
     {
-    UInt32 written;
+    uint32_t written;
     return BeFileStatus::Success==file.Write (&written, data, size) && (written==size);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool readFile(BeFile& file, void* data, UInt32 size)
+static bool readFile(BeFile& file, void* data, uint32_t size)
     {
-    UInt32 bytesRead;
+    uint32_t bytesRead;
     return BeFileStatus::Success==file.Read(data, &bytesRead, size) && (bytesRead==size);
     }
 
@@ -276,8 +276,8 @@ bool ValidChunkArray::Save(DownloadStatus& dlStat)
     if (BeFileStatus::Success != stat)
         return  false;
 
-    UInt32 serverUrlSize = (UInt32) m_serverUrl.size()+1;
-    UInt32 serverFileSpecSize = (UInt32) m_serverFileSpec.size()+1;
+    uint32_t serverUrlSize = (uint32_t) m_serverUrl.size()+1;
+    uint32_t serverFileSpecSize = (uint32_t) m_serverFileSpec.size()+1;
     bool successfulSave =
            writeFile(vpaFile, &m_stats, sizeof(m_stats)) &&
            writeFile(vpaFile, &serverUrlSize, sizeof(serverUrlSize)) &&
@@ -294,10 +294,10 @@ bool ValidChunkArray::Save(DownloadStatus& dlStat)
 * Count the number of bits on in the ValidChunkArray.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ValidChunkArray::CountChunksValid() const
+uint32_t ValidChunkArray::CountChunksValid() const
     {
-    UInt32 nValid=0;
-    for (UInt32 i=0; i<m_nChunks; ++i)
+    uint32_t nValid=0;
+    for (uint32_t i=0; i<m_nChunks; ++i)
         {
         if (IsChunkValid(i))
             ++nValid;
@@ -332,7 +332,7 @@ bool ValidChunkArray::Load(DownloadStatus& dlStat)
 
     dlStat = DOWNLOAD_VcaReadError;
 
-    UInt32 serverUrlSize;
+    uint32_t serverUrlSize;
     if (!readFile(vpaFile, &m_stats,        sizeof(m_stats)) ||
         !readFile(vpaFile, &serverUrlSize,  sizeof(serverUrlSize)) ||
         m_stats.GetNChunks() == 0)
@@ -342,7 +342,7 @@ bool ValidChunkArray::Load(DownloadStatus& dlStat)
     if (!readFile(vpaFile, serverUrl.GetData(), serverUrlSize))
         return false;
 
-    UInt32 serverFileSpecSize;
+    uint32_t serverFileSpecSize;
     if (!readFile(vpaFile, &serverFileSpecSize,  sizeof(serverFileSpecSize)))
         return  false;
 
@@ -353,7 +353,7 @@ bool ValidChunkArray::Load(DownloadStatus& dlStat)
     SetServerUrl (serverUrl.GetData(), serverFileSpec.GetData());
 
     m_nChunks = m_stats.GetNChunks();
-    m_validChunks = (byte*) malloc(GetNumBytes());
+    m_validChunks = (Byte*) malloc(GetNumBytes());
     if (!readFile(vpaFile, m_validChunks, GetNumBytes()))
         return false;
 
@@ -365,7 +365,7 @@ bool ValidChunkArray::Load(DownloadStatus& dlStat)
 * Determine whether a chunk is valid in the VCA. The VCA mutex is acquired by this method before the check.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ValidChunkArray::IsChunkValid(UInt32 chunkNo) const
+bool ValidChunkArray::IsChunkValid(uint32_t chunkNo) const
     {
     BeDbMutexHolder _v(m_mutex);
     return  CheckChunk(chunkNo);
@@ -375,7 +375,7 @@ bool ValidChunkArray::IsChunkValid(UInt32 chunkNo) const
 * Marks a chunk as valid in the VCA. The VCA mutex is acquired by this method before the bit is set.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ValidChunkArray::SetChunkValid(UInt32 chunkNo)
+bool ValidChunkArray::SetChunkValid(uint32_t chunkNo)
     {
     BeDbMutexHolder _v(m_mutex);
 
@@ -389,13 +389,13 @@ bool ValidChunkArray::SetChunkValid(UInt32 chunkNo)
 * Starting at a given chunk, find the next higher chunk that is not currently valid, wrapping around to the beginning if necessary.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ValidChunkArray::GetNextNeededChunk(UInt32 start) const
+uint32_t ValidChunkArray::GetNextNeededChunk(uint32_t start) const
     {
     BeDbMutexHolder _v(m_mutex);
     if (m_nValid == m_nChunks)
         return  INVALID_CHUNK;
 
-    for (UInt32 chunk=start+1; chunk!=start; ++chunk)
+    for (uint32_t chunk=start+1; chunk!=start; ++chunk)
         {
         if (chunk >= m_nChunks)
             chunk=0;
@@ -520,13 +520,13 @@ void ChunkRequestQueue::Abort()
 * Get the next requested chunk from the requested chunk queue.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ChunkRequestQueue::req_GetNextRequestedChunk()
+uint32_t ChunkRequestQueue::req_GetNextRequestedChunk()
     {
     BeCriticalSectionHolder _v (m_chunkNeeded.GetCriticalSection());
     if (m_chunksToFetch.empty())
         return  INVALID_CHUNK;
 
-    UInt32 val = m_chunksToFetch.front();
+    uint32_t val = m_chunksToFetch.front();
     m_chunksToFetch.pop_front();
     return  val;
     }
@@ -559,7 +559,7 @@ void ChunkRequestQueue::req_RequestedChunkLoop()
     {
     while (req_WaitForChunkRequest())
         {
-        UInt32 nextChunk = req_GetNextRequestedChunk();
+        uint32_t nextChunk = req_GetNextRequestedChunk();
         DBG_LOG (3,"Next chunk %d\n", (unsigned int) nextChunk);
 
         if (INVALID_CHUNK != nextChunk)
@@ -604,7 +604,7 @@ ChunkRequestQueue::ChunkRequestQueue(Connection& conn) : m_connection(conn)
 * This method is called to ask the server to download a specific chunk and return - does not wait for response.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChunkRequestQueue::QueueChunkRequest(UInt32 chunkNo)
+void ChunkRequestQueue::QueueChunkRequest(uint32_t chunkNo)
     {
     BeAssert (g_dlVfsThreadId.InMainThread() || g_dlVfsThreadId.InReceiverThread());
     if (INVALID_CHUNK== chunkNo)
@@ -752,7 +752,7 @@ DownloadStatus DownloadFile::Restart(Utf8String dbFileName, IDownloadAdmin& admi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DownloadStatus DownloadFile::CreateDownloadFile (Utf8String localFileName, Utf8String serverUrl, Utf8String serverFileSpec, IDownloadAdmin& admin, UInt32 prefetchBytes)
+DownloadStatus DownloadFile::CreateDownloadFile (Utf8String localFileName, Utf8String serverUrl, Utf8String serverFileSpec, IDownloadAdmin& admin, uint32_t prefetchBytes)
     {
     BeFileStatus stat = m_dbFile.Create (localFileName, true);
     if (BeFileStatus::Success != stat)
@@ -817,7 +817,7 @@ void DownloadFile::CheckPreemptiveRequest()
     if (BeTimeUtilities::QueryMillisecondsCounter()-m_lastChunkRequest < GetPreemptiveDelay())
         return;
 
-    UInt32 preemptiveChunk = m_chunkArray->GetNextNeededChunk(m_lastRequestedChunkNo);
+    uint32_t preemptiveChunk = m_chunkArray->GetNextNeededChunk(m_lastRequestedChunkNo);
     if (INVALID_CHUNK == preemptiveChunk) // we're done
         return;
 
@@ -906,18 +906,18 @@ void DownloadFile::recv_OnChunkAvailable (ChunkBuffer const& chunk)
 
     BeCriticalSectionHolder _v (m_chunkWait.GetCriticalSection());
 
-    UInt32 chunkNo = chunk.GetChunkNo();
+    uint32_t chunkNo = chunk.GetChunkNo();
     if (m_chunkArray->CheckChunk(chunkNo))
         {
         DBG_LOG (2,"re-received chunk %d\n", (int)chunkNo);
         return;
         }
 
-    byte const* data = chunk.GetData();
-    UInt32 chunkSize = GetChunkSize();
+    Byte const* data = chunk.GetData();
+    uint32_t chunkSize = GetChunkSize();
 
     // seek to the start of the chunk we've received
-    UInt64 startPos = chunkNo*chunkSize;
+    uint64_t startPos = chunkNo*chunkSize;
     BeFileStatus stat = m_dbFile.SetPointer(startPos, BeFileSeekOrigin::Begin);
     if (BeFileStatus::Success != stat)
         {
@@ -935,7 +935,7 @@ void DownloadFile::recv_OnChunkAvailable (ChunkBuffer const& chunk)
         }
 
     // now write the data to the local db file.
-    UInt32 written, requested = chunk.GetNBytes();
+    uint32_t written, requested = chunk.GetNBytes();
     stat = m_dbFile.Write (&written, data, requested);
     if (BeFileStatus::Success != stat || written != requested)
         {
@@ -996,7 +996,7 @@ void DownloadFile::wt_WaitForChunk ()
 * is true m_waitingChunk hold the chunk number of the requested chunk.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DownloadFile::RequestChunk(UInt32 chunkNo, bool directRequest)
+void DownloadFile::RequestChunk(uint32_t chunkNo, bool directRequest)
     {
     BeAssert (g_dlVfsThreadId.InMainThread() || g_dlVfsThreadId.InReceiverThread());
     BeCriticalSectionHolder _v (m_chunkWait.GetCriticalSection());
@@ -1024,7 +1024,7 @@ void DownloadFile::RequestChunk(UInt32 chunkNo, bool directRequest)
 * request and wait for a specific chunk to become available.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DownloadFile::wt_ReadyChunk (UInt32 chunkNo)
+bool DownloadFile::wt_ReadyChunk (uint32_t chunkNo)
     {
     BeAssert (chunkNo < m_chunkArray->GetNChunks());
 
@@ -1052,21 +1052,21 @@ bool DownloadFile::wt_ReadyChunk (UInt32 chunkNo)
 * This method can return false, if the server times out and the database cannot be read.
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DownloadFile::wt_ReadyBytes(Int64 offset, Int32 numBytes)
+bool DownloadFile::wt_ReadyBytes(int64_t offset, int32_t numBytes)
     {
     if (m_done) // all chunks already valid. NOTE: m_chunkArray can be NULL!
         return  true;
 
-    Int32 chunkSize = m_chunkArray->GetChunkSize();
+    int32_t chunkSize = m_chunkArray->GetChunkSize();
     do
         {
         BeAssert (!m_done); // we're in this loop a second time, yet we think we're done???
 
-        UInt32 chunkNo = (UInt32) (offset / chunkSize);
+        uint32_t chunkNo = (uint32_t) (offset / chunkSize);
         if (!wt_ReadyChunk(chunkNo))
             return false; // download failed.
 
-        Int32 bytesThisChunk = chunkSize - (offset%chunkSize);
+        int32_t bytesThisChunk = chunkSize - (offset%chunkSize);
         BeAssert (bytesThisChunk>0);
         numBytes -= bytesThisChunk;
         offset   += bytesThisChunk;
@@ -1096,7 +1096,7 @@ struct DownloadVfsFile : sqlite3_file
 * Note: "real file" == "default sqlite vfs file"
 * @bsimethod                                    Keith.Bentley                   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static sqlite3_file* toRealFile(sqlite3_file* in) {return (sqlite3_file*)((byte*)in+sizeof(DownloadVfsFile));}
+static sqlite3_file* toRealFile(sqlite3_file* in) {return (sqlite3_file*)((Byte*)in+sizeof(DownloadVfsFile));}
 
 /*---------------------------------------------------------------------------------**//**
 * SQLite has been asked to close this file. We delete its DownloadFile object, which will kill any in-process downloading
@@ -1361,7 +1361,7 @@ Utf8CP IDownloadAdmin::GetVfs()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DownloadStatus IDownloadAdmin::CreateLocalDownloadFile (Utf8String localFileName, Utf8String serverUrl, Utf8String serverFileSpec, UInt32 prefetchBytes)
+DownloadStatus IDownloadAdmin::CreateLocalDownloadFile (Utf8String localFileName, Utf8String serverUrl, Utf8String serverFileSpec, uint32_t prefetchBytes)
     {
     // NOTE: DownloadFile is not in public api.
     DownloadFile tmp (*this);

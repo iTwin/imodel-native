@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <BeSQLite/ECDb/IECSqlValue.h>
-#include <GeomSerialization/GeomSerializationAPI.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 #include "IECSqlPrimitiveValue.h"
 #include "ECSqlStatementNoopImpls.h"
 
@@ -52,7 +52,7 @@ bool IECSqlValue::GetBoolean () const
 DateTime IECSqlValue::GetDateTime () const
     {
     DateTime::Info metadata;
-    const UInt64 jdHns = GetDateTimeJulianDays (metadata);
+    const uint64_t jdHns = GetDateTimeJulianDays (metadata);
 
     DateTime dt;
     if (SUCCESS != DateTime::FromJulianDay (dt, jdHns, metadata))
@@ -67,7 +67,7 @@ DateTime IECSqlValue::GetDateTime () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-UInt64 IECSqlValue::GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t IECSqlValue::GetDateTimeJulianDays (DateTime::Info& metadata) const
     {
     return _GetPrimitive ()._GetDateTimeJulianDays (metadata);
     }
@@ -92,7 +92,7 @@ int IECSqlValue::GetInt () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-Int64 IECSqlValue::GetInt64 () const
+int64_t IECSqlValue::GetInt64 () const
     {
     return _GetPrimitive ()._GetInt64 ();
     }
@@ -127,13 +127,13 @@ DPoint3d IECSqlValue::GetPoint3D () const
 IGeometryPtr IECSqlValue::GetGeometry () const
     {
     int blobSize = -1;
-    auto blob = static_cast<byte const*> (GetGeometryBlob (&blobSize));
+    auto blob = static_cast<Byte const*> (GetGeometryBlob (&blobSize));
     if (blob == nullptr)
         return nullptr;
 
     BeAssert (blobSize > 0);
     const size_t blobSizeU = (size_t) blobSize;
-    bvector<byte> byteVec;
+    bvector<Byte> byteVec;
     byteVec.reserve (blobSizeU);
     byteVec.assign (blob, blob + blobSizeU);
     return BentleyGeometryFlatBuffer::BytesToGeometry (byteVec);

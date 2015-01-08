@@ -97,7 +97,7 @@ Exp::FinalizeParseStatus BinaryExp::_FinalizeParsing (ECSqlParseContext& ctx, Fi
             {
             if (!lhsTypeInfo.IsExactNumeric () || !rhsTypeInfo.IsExactNumeric ())
                 {
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting value expression of type Int or Int64 as operand to bitwise operation. '%s'", ToECSql().c_str()); 
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Expecting value expression of type Int or int64_t as operand to bitwise operation. '%s'", ToECSql().c_str()); 
                 return FinalizeParseStatus::Error;
                 }
 
@@ -328,10 +328,10 @@ Utf8StringCR ConstantValueExp::GetValue () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-Int64 ConstantValueExp::GetValueAsInt64 () const
+int64_t ConstantValueExp::GetValueAsInt64 () const
     {
-    Int64 v = 0;
-    sscanf(m_value.c_str(), "%lld", &v);
+    int64_t v = 0;
+    sscanf(m_value.c_str(), "%" PRId64, &v);
     return v;
     }
 

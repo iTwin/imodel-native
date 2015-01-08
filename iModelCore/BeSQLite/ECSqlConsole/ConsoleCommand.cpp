@@ -1149,7 +1149,7 @@ void ECSchemaDiffCommand::_Run (ECSqlConsoleSession& session, vector<Utf8String>
             return;
             }
 
-        file.Write(nullptr, outData.c_str(), static_cast<UInt32>(outData.size()));
+        file.Write(nullptr, outData.c_str(), static_cast<uint32_t>(outData.size()));
         file.Close();
         Console::WriteLine ("Written diff to '%s'.", out.GetNameUtf8());
         }

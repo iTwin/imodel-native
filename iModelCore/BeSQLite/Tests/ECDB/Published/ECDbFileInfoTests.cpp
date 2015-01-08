@@ -301,16 +301,16 @@ TEST(ECDbFileInfo, ReadAddNewEntrySaveEmbeddedFile)
     WString NewFileNameW(NewFileName, BentleyCharEncoding::Utf8);
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(NewFileName, "i.idgndb"));
 
-    UInt64 size = 0;
+    uint64_t size = 0;
     ASSERT_EQ(embeddedFileId, embeddedFileTable.QueryFile(testFileName, &size));
     ASSERT_TRUE(size>0);
 
-    bvector<byte> buffer;
+    bvector<Byte> buffer;
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer, testFileName));
     ASSERT_TRUE(size == buffer.size());
     //Save the data with compression and than read again to verify that the data is unchanged.
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, NewFileName));
-    bvector<byte> buffer2;
+    bvector<Byte> buffer2;
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer2, NewFileName));
     ASSERT_TRUE(buffer.size() == buffer2.size());
     ASSERT_EQ(0, memcmp(&buffer[0], &buffer2[0], buffer.size()));

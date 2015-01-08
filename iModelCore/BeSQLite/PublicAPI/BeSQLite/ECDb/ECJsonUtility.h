@@ -52,7 +52,7 @@ public:
     //! Return an Int64 value from a RapidJsonValueCR that may be a number or a string.
     //! @param[in] value the source RapidJsonValueCR
     //! @param[in] defaultOnError the Int64 value to return if it is not possible to convert the source value to Int64.
-    ECDB_EXPORT static Int64 Int64FromValue (RapidJsonValueCR value, Int64 defaultOnError=0);
+    ECDB_EXPORT static int64_t Int64FromValue (RapidJsonValueCR value, int64_t defaultOnError=0);
 
     ECDB_EXPORT static StatusInt ECInstanceFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue);
 };

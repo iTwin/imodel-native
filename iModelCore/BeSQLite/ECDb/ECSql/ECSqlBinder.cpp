@@ -261,10 +261,10 @@ void ECSqlParameterMap::OnClearBindings ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus ArrayConstraintValidator::Validate (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, UInt32 actualArrayLength)
+ECSqlStatus ArrayConstraintValidator::Validate (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& expected, uint32_t actualArrayLength)
     {
-    const UInt32 expectedMinOccurs = expected.GetArrayMinOccurs ();
-    const UInt32 expectedMaxOccurs = expected.GetArrayMaxOccurs ();
+    const uint32_t expectedMinOccurs = expected.GetArrayMinOccurs ();
+    const uint32_t expectedMaxOccurs = expected.GetArrayMaxOccurs ();
     if (actualArrayLength < expectedMinOccurs)
         {
         LOG.warningv ("Array to be bound to the array parameter must at least have %d element(s) as defined in the respective ECProperty.", expectedMinOccurs);

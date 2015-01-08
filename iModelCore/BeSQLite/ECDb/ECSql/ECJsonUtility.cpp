@@ -45,7 +45,7 @@ StatusInt ECJsonCppUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, con
             status = ecValue.SetInteger (jsonValue.asInt());
             break;
         case PRIMITIVETYPE_Long:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::stringValue  && "Int64 values need to be serialized as strings to allow use in Javascript"))
+            if (!EXPECTED_CONDITION (jsonValueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
                 return ERROR;
             status = ecValue.SetLong (BeJsonUtilities::Int64FromValue (jsonValue));
             break;
@@ -96,7 +96,7 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
         return ERROR;
 
     StatusInt r_status = SUCCESS;
-    UInt32 length = jsonValue.size();
+    uint32_t length = jsonValue.size();
     if (length == 0)
         return SUCCESS;
 
@@ -225,7 +225,7 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 ECRapidJsonUtility::Int64FromValue (RapidJsonValueCR value, Int64 defaultOnError)
+int64_t ECRapidJsonUtility::Int64FromValue (RapidJsonValueCR value, int64_t defaultOnError)
     {
     if (value.IsNull())
         return defaultOnError;
@@ -236,8 +236,8 @@ Int64 ECRapidJsonUtility::Int64FromValue (RapidJsonValueCR value, Int64 defaultO
     // strings are used in JavaScript because of UInt64 issues
     if (value.IsString())
         {
-        Int64 returnValueInt64 = defaultOnError;
-        sscanf (value.GetString(), "%lld", &returnValueInt64);
+        int64_t returnValueInt64 = defaultOnError;
+        sscanf (value.GetString(), "%" PRId64, &returnValueInt64);
         return returnValueInt64;
         }
 

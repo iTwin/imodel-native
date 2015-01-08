@@ -32,7 +32,7 @@ private:
         return *this;
         }
 
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity)
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity)
         {
         return *this;
         }
@@ -52,7 +52,7 @@ private:
         {
         return m_errorStatus;
         }
-    virtual ECSqlStatus _BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata) override
+    virtual ECSqlStatus _BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata) override
         {
         return m_errorStatus;
         }
@@ -72,7 +72,7 @@ private:
         return m_errorStatus;
         }
 
-    virtual ECSqlStatus _BindInt64 (Int64 value) override
+    virtual ECSqlStatus _BindInt64 (int64_t value) override
         {
         return m_errorStatus;
         }
@@ -197,7 +197,7 @@ private:
         {
         return false;
         }
-    virtual UInt64 _GetDateTimeJulianDays (DateTime::Info& metadata) const override
+    virtual uint64_t _GetDateTimeJulianDays (DateTime::Info& metadata) const override
         {
         return 0ULL;
         }
@@ -212,7 +212,7 @@ private:
         return 0;
         }
 
-    virtual Int64 _GetInt64 () const override
+    virtual int64_t _GetInt64 () const override
         {
         return 0LL;
         }

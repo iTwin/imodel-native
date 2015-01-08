@@ -26,24 +26,24 @@ private:
     struct ArrayElementBinder : IECSqlBinder, IECSqlPrimitiveBinder
         {
     private:
-        UInt32 m_arrayElementIndex;
-        UInt32 m_arrayPropertyIndex;
+        uint32_t m_arrayElementIndex;
+        uint32_t m_arrayPropertyIndex;
         IECInstanceP m_instance;
         ECSqlTypeInfo const& m_arrayTypeInfo;
         ECSqlStatusContext& m_statusContext;
 
         virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
         virtual IECSqlStructBinder& _BindStruct () override;
-        virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+        virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
         virtual ECSqlStatus _BindNull () override;
 
         virtual ECSqlStatus _BindBoolean (bool value) override;
         virtual ECSqlStatus _BindBinary (const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
-        virtual ECSqlStatus _BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata) override;
+        virtual ECSqlStatus _BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata) override;
         virtual ECSqlStatus _BindDouble (double value) override;
         virtual ECSqlStatus _BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
         virtual ECSqlStatus _BindInt (int value) override;
-        virtual ECSqlStatus _BindInt64 (Int64 value) override;
+        virtual ECSqlStatus _BindInt64 (int64_t value) override;
         virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
         virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
         virtual ECSqlStatus _BindText (Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
@@ -53,19 +53,19 @@ private:
         ECSqlStatus SetValue (ECValueCR value);
 
     public:
-        ArrayElementBinder (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& arrayTypeInfo, UInt32 arrayPropertyIndex);
+        ArrayElementBinder (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& arrayTypeInfo, uint32_t arrayPropertyIndex);
         ~ArrayElementBinder () {}
-        void Initialize (UInt32 arrayElementIndex, IECInstanceR instance);
+        void Initialize (uint32_t arrayElementIndex, IECInstanceR instance);
         };
 
 private:
-    const UInt32 ARRAY_PROPERTY_INDEX = 1;
+    const uint32_t ARRAY_PROPERTY_INDEX = 1;
 
     mutable StandaloneECInstancePtr m_instance;
     mutable ArrayElementBinder m_arrayElementBinder;
     mutable int m_currentArrayIndex;
     ECClassCP m_arrayStorageClass;
-    UInt32 m_initialCapacity;
+    uint32_t m_initialCapacity;
     int m_sqliteIndex;
 
     virtual void _SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
@@ -76,9 +76,9 @@ private:
     virtual ECSqlStatus _BindNull () override;
     virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
     virtual IECSqlStructBinder& _BindStruct () override;
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
 
-    UInt32 GetCurrentArrayLength () const { return (UInt32) (m_currentArrayIndex + 1); }
+    uint32_t GetCurrentArrayLength () const { return (uint32_t) (m_currentArrayIndex + 1); }
     StandaloneECInstanceP GetInstance (bool create) const;
 
 public:

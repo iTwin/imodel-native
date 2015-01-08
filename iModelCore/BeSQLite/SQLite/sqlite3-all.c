@@ -1,6 +1,6 @@
 /******************************************************************************
 ** This file is an amalgamation of many separate C source files from SQLite
-** version 3.8.5.  By combining all the individual C code files into this 
+** version 3.8.7.  By combining all the individual C code files into this 
 ** single large file, the entire code can be compiled as a single translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
@@ -66,6 +66,10 @@
 
 #if !defined(NDEBUG)
     #define SQLITE_DEBUG 1
+#endif
+
+#if defined (ANDROID)
+    #define HAVE_STRCHRNUL 0
 #endif
 
 //#define SQLITE_ENABLE_SQLLOG 1

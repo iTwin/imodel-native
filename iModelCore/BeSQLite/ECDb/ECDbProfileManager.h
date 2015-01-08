@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,17 +56,23 @@ private:
         {
     private:
         ECDbR m_ecdb;
-        bool m_rollbackOnDestruction;
+        Savepoint& m_defaultTransaction;
+        bool m_isDefaultTransOpenMode;
 
-        void DisableForeignKeyEnforcement () const;
+        bool m_rollbackOnDestruction;
+        DbResult m_beginTransError;
+
+        void DisableForeignKeyEnforcement ();
         void EnableForeignKeyEnforcement () const;
     public:
-        explicit ProfileUpgradeContext (ECDbR ecdb);
+        ProfileUpgradeContext (ECDbR ecdb, Savepoint& defaultTransaction);
         ~ProfileUpgradeContext ();
 
         //! Be default the upgrade transaction is rolled back when the context is destroyed.
         //! Be calling this method, the transaction is committed when the context is destroyed.
         void SetCommitAfterUpgrade () {m_rollbackOnDestruction = false;}
+
+        DbResult GetBeginTransError () const {return m_beginTransError;}
         };
 
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
@@ -82,7 +88,7 @@ private:
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb);
+    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction);
     static DbResult AssignProfileVersion (ECDbR ecdb);
 
     //! Version of the ECDb Profile expected by the ECDb API.
@@ -110,8 +116,9 @@ public:
     //! error, the outermost transaction is rolled back. 
     //! @param[in] ecdb ECDb file handle to upgrade
     //! @param[in] openParams Open params passed by the client
+    //! @param[in] defaultTransaction BeSQLite's default transaction
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams);
+    static DbResult UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams, Savepoint& defaultTransaction);
 
     static DbResult ResetIdSequences (ECDbR ecdb, bvector<BeRepositoryBasedIdSequenceCP> const& idSequences,  BeRepositoryId repositoryId);
     };

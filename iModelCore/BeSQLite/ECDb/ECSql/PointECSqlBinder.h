@@ -27,16 +27,16 @@ private:
 
     virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
     virtual IECSqlStructBinder& _BindStruct () override;
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
 
     virtual ECSqlStatus _BindNull () override;
     virtual ECSqlStatus _BindBoolean (bool value) override;
     virtual ECSqlStatus _BindBinary (const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
-    virtual ECSqlStatus _BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata) override;
+    virtual ECSqlStatus _BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata) override;
     virtual ECSqlStatus _BindDouble (double value) override;
     virtual ECSqlStatus _BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
     virtual ECSqlStatus _BindInt (int value) override;
-    virtual ECSqlStatus _BindInt64 (Int64 value) override;
+    virtual ECSqlStatus _BindInt64 (int64_t value) override;
     virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
     virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
     virtual ECSqlStatus _BindText (Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;

@@ -104,7 +104,7 @@ void PopulatePrimitiveValueWithCustomDataSet2 (ECValueR value, PrimitiveType pri
         case PRIMITIVETYPE_Boolean : value.SetBoolean(false); break;
         case PRIMITIVETYPE_Binary  : 
             {
-            byte blob[]= {0x1a, 0x0a, 0x0c, 0x0c, 0x0e, 0x0e, 0x3a, 0xaa, 0xff, 0xb };
+            Byte blob[]= {0x1a, 0x0a, 0x0c, 0x0c, 0x0e, 0x0e, 0x3a, 0xaa, 0xff, 0xb };
             value.SetBinary(blob, 10);
             break;
             }
@@ -136,7 +136,7 @@ ECSchemaReadContextPtr LocateECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile, EC
     if (schemaFullName.substr (extPos).CompareToI (ecSchemaExt) == 0)
         {
         WString schemaName;
-        UInt32 schemaMajor, schemaMinor;
+        uint32_t schemaMajor, schemaMinor;
         if (ECSchema::ParseSchemaFullName (schemaName, schemaMajor, schemaMinor, schemaFullName.substr (0, extPos)) == ECOBJECTS_STATUS_Success)
             {
             ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext ();
@@ -1939,7 +1939,7 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     ECClassP aaa2 = startupCompanySchema->GetClassP (L"AAA");
 
     ECCustomAttributeInstanceIterable allCustomAttributes2 = aaa2->GetCustomAttributes (false);
-    UInt32 allCustomAttributesCount2 = 0;
+    uint32_t allCustomAttributesCount2 = 0;
     for (IECInstancePtr attribute : allCustomAttributes2)
         {
         allCustomAttributesCount2++;
@@ -2300,7 +2300,7 @@ TEST(ECDbSchemas, ClassDiff)
     ASSERT_EQ(status , MERGESTATUS_Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     ECClassP classPtr=mergedSchema->GetClassP(L"Employee");
-    UInt32 classCount=mergedSchema->GetClassCount();
+    uint32_t classCount=mergedSchema->GetClassCount();
     EXPECT_EQ(classCount,8);
     bool bclassDisplayLabel=classPtr->GetIsDisplayLabelDefined();
     WString className=classPtr->GetName();

@@ -30,10 +30,10 @@ private:
 
     virtual void const* _GetBinary (int* binarySize) const override;
     virtual bool _GetBoolean () const override;
-    virtual UInt64 _GetDateTimeJulianDays (DateTime::Info& metadata) const override;
+    virtual uint64_t _GetDateTimeJulianDays (DateTime::Info& metadata) const override;
     virtual double _GetDouble () const override;
     virtual int _GetInt () const override;
-    virtual Int64 _GetInt64 () const override;
+    virtual int64_t _GetInt64 () const override;
     virtual Utf8CP _GetText () const override;
     virtual DPoint2d _GetPoint2D () const override;
     virtual DPoint3d _GetPoint3D () const override;

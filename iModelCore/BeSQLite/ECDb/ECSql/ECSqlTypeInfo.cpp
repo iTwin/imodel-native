@@ -31,7 +31,7 @@ ECSqlTypeInfo::ECSqlTypeInfo (ECN::PrimitiveType primitiveType, DateTimeInfo con
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::PrimitiveType primitiveType, UInt32 minOccurs, UInt32 maxOccurs, DateTimeInfo const* dateTimeInfo /*= nullptr*/)
+ECSqlTypeInfo::ECSqlTypeInfo (ECN::PrimitiveType primitiveType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo /*= nullptr*/)
 : m_structType (nullptr), m_propertyMap (nullptr)
     {
     Populate (true, &primitiveType, nullptr, minOccurs, maxOccurs, dateTimeInfo);
@@ -49,7 +49,7 @@ ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType, UInt32 minOccurs, UInt32 maxOccurs)
+ECSqlTypeInfo::ECSqlTypeInfo (ECN::ECClassCR structType, uint32_t minOccurs, uint32_t maxOccurs)
 : m_structType (nullptr), m_propertyMap (nullptr)
     {
     Populate (true, nullptr, &structType, minOccurs, maxOccurs, nullptr);
@@ -133,7 +133,7 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlTypeInfo::Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, UInt32 minOccurs, UInt32 maxOccurs, DateTimeInfo const* dateTimeInfo)
+void ECSqlTypeInfo::Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo)
     {
     if (primitiveType != nullptr)
         {
@@ -371,8 +371,8 @@ void ECSqlTypeInfo::DetermineTypeInfo (ECPropertyCR ecProperty)
     ECClassCP structType = nullptr;
     const auto isArray = ecProperty.GetIsArray ();
 
-    UInt32 minOccurs = 0;
-    UInt32 maxOccurs = 0;
+    uint32_t minOccurs = 0;
+    uint32_t maxOccurs = 0;
     if (isArray)
         {
         auto arrayProperty = ecProperty.GetAsArrayProperty();

@@ -64,7 +64,7 @@ IECSqlStructBinder& StructArrayToSecondaryTableECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& StructArrayToSecondaryTableECSqlBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& StructArrayToSecondaryTableECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
     return m_value->BindArray (initialCapacity);
     }

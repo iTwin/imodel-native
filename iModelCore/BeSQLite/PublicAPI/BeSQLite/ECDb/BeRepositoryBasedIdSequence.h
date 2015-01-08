@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/BeRepositoryBasedIdSequence.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -25,7 +25,7 @@ private:
     Db& m_db;
     Utf8String const m_repositoryLocalValueName;
     mutable size_t m_repositoryLocalValueIndex;
-    DbResult GetNextInt64Value (Int64& nextValue) const;
+    DbResult GetNextInt64Value (int64_t& nextValue) const;
 
 public:
     BeRepositoryBasedIdSequence (Db& db, Utf8CP repositoryLocalValueName);
@@ -38,7 +38,7 @@ public:
     template <typename TBeRepositoryBasedId>
     DbResult GetNextValue (TBeRepositoryBasedId& nextValue) const
         {
-        Int64 nextValueInt = -1LL;
+        int64_t nextValueInt = -1LL;
         DbResult stat = GetNextInt64Value (nextValueInt);
         if (stat != BE_SQLITE_OK)
             return stat;
@@ -46,8 +46,6 @@ public:
         nextValue = TBeRepositoryBasedId (nextValueInt);
         return BE_SQLITE_OK;
         }
-
-    bool TryClearCache () const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

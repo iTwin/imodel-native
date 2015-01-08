@@ -420,7 +420,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::ParameterAdvancedTests (int rowCountPer
     {
     Utf8CP ecsql = "UPDATE ONLY ecsql.P SET I = 123, Bi = ?";
     auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, rowCountPerClass, true);
-    byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
+    Byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (blob, 10)));
     }
 
@@ -475,7 +475,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::ParameterAdvancedTests (int rowCountPer
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (true)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (123)));
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("hello")));
-    byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
+    Byte blob[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x1a, 0xaa, 0xfa, 0x00 };
     testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (blob, 10)));
     }
 
@@ -728,7 +728,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (E
 
         {
         auto& ecdb = testProject.GetECDb ();
-        Savepoint savepoint (ecdb, "Inserting test instances", true);
+        Savepoint savepoint (ecdb, "Inserting test instances");
         const auto ecInstanceId = ECSqlStatementCrudTestDatasetHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (100, 200)");
         if (!ecInstanceId.IsValid ())
             {

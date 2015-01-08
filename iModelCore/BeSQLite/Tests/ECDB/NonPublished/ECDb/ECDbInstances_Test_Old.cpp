@@ -448,7 +448,7 @@ TEST(ECDbInstances_Old, UpdateECInstances)
                     {
                     Utf8CP v = ecStatement.GetValueText (i);
                     int size = 0;
-                    const byte* b = (const byte *) ecStatement.GetValueBinary(i, &size);
+                    const Byte* b = (const Byte *) ecStatement.GetValueBinary(i, &size);
                     Utf8String valueAsString = v ? v : "";
                     LOG.tracev("'%s'='%s',  size=%d, b=0x%lx", Utf8String (propertyAccessString.c_str()).c_str (), valueAsString.c_str(), size, b);
                     }

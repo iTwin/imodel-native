@@ -42,7 +42,7 @@ private:
     virtual ECSqlStatus _BindNull () = 0;
     virtual IECSqlPrimitiveBinder& _BindPrimitive () = 0;
     virtual IECSqlStructBinder& _BindStruct () = 0;
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) = 0;
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) = 0;
 
 public:
     ECDB_EXPORT virtual ~IECSqlBinder () {}
@@ -75,7 +75,7 @@ public:
     //! @param[in] julianDayTicksHns DateTime value as Julian Day ticks in hecto-nanoseconds
     //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata);
+    ECDB_EXPORT ECSqlStatus BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata);
 
 //__PUBLISH_SECTION_START__
 
@@ -108,7 +108,7 @@ public:
     //! Binds a 64-bit integer value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt64 (Int64 value);
+    ECDB_EXPORT ECSqlStatus BindInt64 (int64_t value);
 
     //! Binds a Point2D value to the parameter
     //! @param[in] value Value to bind
@@ -147,7 +147,7 @@ public:
     //! returns the appropriate error-code.
     //! @param[in] initialCapacity Initial capacity of the array to bind. 
     //! @return Array parameter binder
-    ECDB_EXPORT IECSqlArrayBinder& BindArray (UInt32 initialCapacity);
+    ECDB_EXPORT IECSqlArrayBinder& BindArray (uint32_t initialCapacity);
     };
 
 //=======================================================================================

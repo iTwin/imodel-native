@@ -25,7 +25,7 @@ namespace Backdoor
 
         namespace ECSqlStatement
             {
-            BeSQLite::EC::ECSqlStatus BindDateTime (BeSQLite::EC::ECSqlStatement& stmt, int parameterIndex, UInt64 julianDayTicksHns, DateTime::Info const* metadata);
+            BeSQLite::EC::ECSqlStatus BindDateTime (BeSQLite::EC::ECSqlStatement& stmt, int parameterIndex, uint64_t julianDayTicksHns, DateTime::Info const* metadata);
             }
         }
 

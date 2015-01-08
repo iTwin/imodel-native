@@ -103,7 +103,7 @@ IECSqlStructBinder& StructToColumnsECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
     const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array to ECStruct parameter.");
     return GetNoopBinder (stat).BindArray (initialCapacity);

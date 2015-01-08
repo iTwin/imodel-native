@@ -2,7 +2,7 @@
 |
 |     $Source: SQLite/IntVirtualTable.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
@@ -29,8 +29,8 @@ struct IntVtCursor : sqlite3_vtab_cursor
     IntVirtualTable::Iterator*  m_iter;
 
     void Clear();
-    UInt64 GetValue() const {return m_iter->_GetValue();}
-    UInt64 GetRowId() const {return m_iter->_GetRowId();}
+    uint64_t GetValue() const {return m_iter->_GetValue();}
+    uint64_t GetRowId() const {return m_iter->_GetRowId();}
 };
 
 /*---------------------------------------------------------------------------------**//**

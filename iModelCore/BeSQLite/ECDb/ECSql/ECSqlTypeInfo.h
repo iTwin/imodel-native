@@ -32,22 +32,22 @@ private:
     ECN::PrimitiveType m_primitiveType;
     ECN::DateTimeInfo m_dateTimeInfo;
     ECN::ECClassCP m_structType;
-    UInt32 m_minOccurs;
-    UInt32 m_maxOccurs;
+    uint32_t m_minOccurs;
+    uint32_t m_maxOccurs;
     PropertyMapCP m_propertyMap;
 
     void DetermineTypeInfo (ECN::ECPropertyCR ecProperty);
 
-    void Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, UInt32 minOccurs, UInt32 maxOccurs, DateTimeInfo const* dateTimeInfo);
+    void Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo);
 
     bool DateTimeInfoMatches (DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const;
 
 public:
     explicit ECSqlTypeInfo (Kind kind = Kind::Unset);
     explicit ECSqlTypeInfo (ECN::PrimitiveType primitiveType, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
-    ECSqlTypeInfo (ECN::PrimitiveType primitiveType, UInt32 minOccurs, UInt32 maxOccurs, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
+    ECSqlTypeInfo (ECN::PrimitiveType primitiveType, uint32_t minOccurs, uint32_t maxOccurs, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
     explicit ECSqlTypeInfo (ECN::ECClassCR structType);
-    ECSqlTypeInfo (ECN::ECClassCR structType, UInt32 minOccurs, UInt32 maxOccurs);
+    ECSqlTypeInfo (ECN::ECClassCR structType, uint32_t minOccurs, uint32_t maxOccurs);
     explicit ECSqlTypeInfo (PropertyMapCR propertyMap);
     explicit ECSqlTypeInfo (ECN::ECPropertyCR ecProperty);
 
@@ -93,8 +93,8 @@ public:
     ECN::DateTimeInfo const& GetDateTimeInfo () const { return m_dateTimeInfo; }
     ECN::ECClassCR GetStructType () const {return *m_structType;}
     ECN::ArrayKind GetArrayKind () const;
-    UInt32 GetArrayMinOccurs () const { return m_minOccurs; }
-    UInt32 GetArrayMaxOccurs () const { return m_maxOccurs; }
+    uint32_t GetArrayMinOccurs () const { return m_minOccurs; }
+    uint32_t GetArrayMaxOccurs () const { return m_maxOccurs; }
 
     PropertyMapCP GetPropertyMap () const { return m_propertyMap; }
     };

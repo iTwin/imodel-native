@@ -105,7 +105,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindBinary (const void* value, int binar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus SystemPropertyECSqlBinder::_BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind DateTime value to %s parameter.", SystemPropertyToString ());
     }
@@ -156,7 +156,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt (int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindInt64 (Int64 value)
+ECSqlStatus SystemPropertyECSqlBinder::_BindInt64 (int64_t value)
     {
     auto stat = FailIfConstraintClassIdViolation (static_cast<ECClassId> (value));
     if (stat != ECSqlStatus::Success)
@@ -263,7 +263,7 @@ IECSqlStructBinder& SystemPropertyECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& SystemPropertyECSqlBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& SystemPropertyECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
     const auto stat = GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array to %s parameter.", SystemPropertyToString ());
     return GetNoopBinder (stat).BindArray (initialCapacity);

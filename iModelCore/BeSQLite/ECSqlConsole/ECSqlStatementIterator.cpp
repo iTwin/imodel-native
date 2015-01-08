@@ -170,7 +170,7 @@ ECSqlStatus ECSqlStatementIterator::IteratePrimitve (IECSqlIteratorCallback& cal
             case ECN::PRIMITIVETYPE_Binary: 
                 {
                 int size;
-                auto bytes = (const byte*)ecsqlValue.GetBinary (&size);
+                auto bytes = (const Byte*)ecsqlValue.GetBinary (&size);
                 value.SetBinary(bytes, static_cast<size_t>(size), false); 
                 break;
                 }

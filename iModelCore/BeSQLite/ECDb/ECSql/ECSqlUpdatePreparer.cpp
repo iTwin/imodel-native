@@ -114,85 +114,67 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare (ECSqlPrepareContext& ctx, UpdateStatem
 //static
 ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
-    auto const& classMap = exp.GetClassNameExp ()->GetInfo ().GetMap ();
-    //Create child insert step task 
-    auto& ecsqlParameterMap = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetParameterMapR ();
-    //ecsqlParameterMap.TryGetBinder ()
-    auto noneSelectPreparedStmt = ctx.GetECSqlStatementR ().GetPreparedStatementP <ECSqlNonSelectPreparedStatement> ();
-    
-    BeAssert (noneSelectPreparedStmt != nullptr && "Expecting ECSqlNoneSelectPreparedStatement");
-
-
+    auto& ecsqlParameterMap = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParameterMapR();
+    auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    auto noneSelectPreparedStmt = ctx.GetECSqlStatementR().GetPreparedStatementP <ECSqlNonSelectPreparedStatement>();
+    BeAssert(noneSelectPreparedStmt != nullptr && "Expecting ECSqlNoneSelectPreparedStatement");
     int ecsqlParameterIndex = 1;
-
-    for (auto childExp : exp.GetAssignmentListExp ()->GetChildren ())
+    ECSqlBinder* binder = nullptr;
+    for (auto childExp : exp.GetAssignmentListExp()->GetChildren())
         {
         auto assignementExp = static_cast<AssignmentExp const*> (childExp);
-        auto propNameExp = assignementExp->GetPropertyNameExp ();
-        
-        auto& typeInfo = propNameExp->GetTypeInfo ();
-        if (typeInfo.GetKind () == ECSqlTypeInfo::Kind::StructArray)
+        auto propNameExp = assignementExp->GetPropertyNameExp();
+        auto& typeInfo = propNameExp->GetTypeInfo();
+        if (ecsqlParameterMap.TryGetBinder(binder, ecsqlParameterIndex) != ECSqlStatus::Success)
             {
-            auto stepTaskType = ECSqlExpPreparer::IsNullExp (*assignementExp->GetValueExp ()) 
-                                    ? StepTaskType::Delete : StepTaskType::Update;
+            continue;
+            }
 
-            std::unique_ptr<ECSqlStepTask> stepTask;
-
-            auto status = ECSqlStepTaskFactory::CreatePropertyStepTask(stepTask, stepTaskType, ctx, classMap.GetECDbMap().GetECDbR(), classMap, propNameExp->GetPropertyMap().GetPropertyAccessString());
-            if (status != ECSqlStepTaskCreateStatus::NothingToDo)
+        ECSqlStatus stat;
+        if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Struct)
+            {
+            stat = StructPrepareStepTask(assignementExp, classMap, propNameExp->GetPropertyMap(), binder, noneSelectPreparedStmt, ctx, exp);
+            if (stat != ECSqlStatus::Success)
                 {
-                if (status != ECSqlStepTaskCreateStatus::Success)
-                    return ctx.SetError (ECSqlStatus::InvalidECSql, "Failed to create insert step tasks for struct array properties");
+                BeAssert(false && "PrepareStepTask Failed for Struct");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "PrepareStepTask Failed for Struct ");
                 }
 
-            if (stepTaskType == StepTaskType::Update)
+            }
+
+        else if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::StructArray)
+            {
+            stat = StructArrayPrepareStepTask(assignementExp, classMap, propNameExp->GetPropertyMap(), binder, noneSelectPreparedStmt, ctx, exp);
+            if (stat != ECSqlStatus::Success)
                 {
-                ECSqlBinder* binder = nullptr;
-                if (ecsqlParameterMap.TryGetBinder (binder, ecsqlParameterIndex) != ECSqlStatus::Success)
-                    {
-                    BeAssert (false && "Failed to get parameter binder");
-                    return ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to get parameter binder");
-                    }
-
-                auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (binder);
-                if (structArrayBinder == nullptr)
-                    {
-                    BeAssert (false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                    return ctx.SetError (ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                    }
-
-                auto& parameterValue = structArrayBinder->GetParameterValue ();
-                auto structArrayStepTask = static_cast<ParametericStepTask*>(stepTask.get ());
-                structArrayStepTask->SetParameterSource (parameterValue);
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
                 }
 
-            BeAssert (stepTask != nullptr && "Failed to create step task for struct array");
-            noneSelectPreparedStmt->GetStepTasks ().Add (move (stepTask));
             }
 
         ecsqlParameterIndex++;
         }
 
-
-    auto selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery (ctx, *exp.GetClassNameExp (), exp.GetOptWhereClauseExp ());       
-    auto selectorStmt = noneSelectPreparedStmt->GetStepTasks ().GetSelector (true);
-    selectorStmt->Initialize (ctx, ctx.GetParentArrayProperty (), nullptr);       
-    auto stat = selectorStmt->Prepare (classMap.GetECDbMap ().GetECDbR (), selectorQuery.c_str ());
+    auto selectorQuery = ECSqlPrepareContext::CreateECInstanceIdSelectionQuery(ctx, *exp.GetClassNameExp(), exp.GetOptWhereClauseExp());
+    auto selectorStmt = noneSelectPreparedStmt->GetStepTasks().GetSelector(true);
+    selectorStmt->Initialize(ctx, ctx.GetParentArrayProperty(), nullptr);
+    auto stat = selectorStmt->Prepare(classMap.GetECDbMap().GetECDbR(), selectorQuery.c_str());
     if (stat != ECSqlStatus::Success)
         {
-        BeAssert (false && "Fail to prepared statement for ECInstanceIdSelect. Possiable case of struct array containing struct array");
+        BeAssert(false && "Fail to prepared statement for ECInstanceIdSelect. Possiable case of struct array containing struct array");
         return stat;
         }
-        
-    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (exp, exp.GetOptWhereClauseExp ());
-    auto nParamterToBind = static_cast<int>(ecsqlParameterMap.Count ()) - parameterIndex;
+
+    int parameterIndex = ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause(exp, exp.GetOptWhereClauseExp());
+    auto nParamterToBind = static_cast<int>(ecsqlParameterMap.Count()) - parameterIndex;
     for (auto j = 1; j <= nParamterToBind; j++)
-        {        
-        auto& sink = selectorStmt->GetBinder (j);
+        {
+        auto& sink = selectorStmt->GetBinder(j);
         ECSqlBinder* source = nullptr;
-        auto status = ecsqlParameterMap.TryGetBinder (source, j + parameterIndex);
+        auto status = ecsqlParameterMap.TryGetBinder(source, j + parameterIndex);
         if (status == ECSqlStatus::Success)
-            source->SetOnBindEventHandler (sink);
+            source->SetOnBindEventHandler(sink);
         else
             return status;
         }
@@ -200,6 +182,68 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareStepTask (ECSqlPrepareContext& ctx, Upda
     return ECSqlStatus::Success;
     }
 
+
+ECSqlStatus ECSqlUpdatePreparer::StructArrayPrepareStepTask(const AssignmentExp* assignementExp, const IClassMap &classMap, PropertyMapCR propNameExp, ECSqlBinder* binder, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
+    {
+    auto stepTaskType = ECSqlExpPreparer::IsNullExp(*assignementExp->GetValueExp())
+        ? StepTaskType::Delete : StepTaskType::Update;
+
+    std::unique_ptr<ECSqlStepTask> stepTask;
+
+    auto status = ECSqlStepTaskFactory::CreatePropertyStepTask(stepTask, stepTaskType, ctx, classMap.GetECDbMap().GetECDbR(), classMap, propNameExp.GetPropertyAccessString());
+    if (status != ECSqlStepTaskCreateStatus::NothingToDo)
+        {
+        if (status != ECSqlStepTaskCreateStatus::Success)
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Failed to create insert step tasks for struct array properties");
+        }
+
+    if (stepTaskType == StepTaskType::Update)
+        {
+        auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (binder);
+        if (structArrayBinder == nullptr)
+            {
+            BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+            return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+            }
+
+        auto& parameterValue = structArrayBinder->GetParameterValue();
+        auto structArrayStepTask = static_cast<ParametericStepTask*>(stepTask.get());
+        structArrayStepTask->SetParameterSource(parameterValue);
+        }
+
+    BeAssert(stepTask != nullptr && "Failed to create step task for struct array");
+    noneSelectPreparedStmt->GetStepTasks().Add(move(stepTask));
+   
+    return ECSqlStatus::Success;
+
+    }
+
+ECSqlStatus ECSqlUpdatePreparer::StructPrepareStepTask(const AssignmentExp* assignementExp, const IClassMap &classMap, PropertyMapCR propertyMap, ECSqlBinder* binder, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
+    {
+    for (auto childPropertyMap : propertyMap.GetChildren())
+        {
+        auto& propertyBinder = static_cast<ECSqlBinder&>(binder->BindStruct().GetMember(childPropertyMap->GetProperty().GetName().c_str()));
+        if (childPropertyMap->GetProperty().GetIsStruct())
+            {
+            if ((StructPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp)) != ECSqlStatus::Success)
+                {
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                }
+            }
+
+        else if (childPropertyMap->GetAsPropertyMapToTable() != nullptr)
+            {
+            if (StructArrayPrepareStepTask(assignementExp, classMap, *childPropertyMap, &propertyBinder, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
+                {
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                }
+            }
+        }
+
+    return ECSqlStatus::Success;
+        }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------

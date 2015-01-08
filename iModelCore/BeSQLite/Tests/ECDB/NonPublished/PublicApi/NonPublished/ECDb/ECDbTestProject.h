@@ -125,7 +125,7 @@ private:
     static bool     CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString);
     static bool     CompareJsonWithECStructValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
 
-    static Int64    JulianDayToCommonEraTicks (double jd);
+    static int64_t  JulianDayToCommonEraTicks (double jd);
 public:
     static DbResult CreateECDb (ECDbR ecdb, BeFileNameP ecdbFullPath, WCharCP ecdbFileName);
     static ECN::ECSchemaPtr ReadECSchemaFromDisk (WCharCP ecSchemaFileName, WCharCP ecSchemaSearchPath = nullptr);
@@ -137,14 +137,14 @@ public:
     static void     WriteECSchemaToDisk (ECN::ECSchemaCR ecSchema, WCharCP filenameNoVerExt = nullptr);
     static bool     CompareECInstances (ECN::IECInstanceCR a, ECN::IECInstanceCR b);
     static void     DumpECSchemaUsageStatistics (ECN::ECSchemaCR schema, BeSQLite::EC::ECDbR ecdb, bool dumpEmptyClasses);
-    static Int64    ReadCellValueAsInt64 (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
+    static int64_t  ReadCellValueAsInt64 (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
     static bool     CompareJsonWithECInstance (const Json::Value& json, ECN::IECInstanceCR referenceInstance);
     static void     DebugDumpJson (const Json::Value& jsonValue);
     static bool     IsECValueNull (ECN::ECValueCR value);
     
-    static bool     CompareECDateTimes (Int64 expectedECTicks, Int64 actualECTicks);
+    static bool     CompareECDateTimes (int64_t expectedECTicks, int64_t actualECTicks);
     static void     AssertECDateTime (ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
-    static void     AssertECDateTime (Int64 expectedCETicks, Int64 actualCETicks, WCharCP assertMessageHeader);
+    static void     AssertECDateTime (int64_t expectedCETicks, int64_t actualCETicks, WCharCP assertMessageHeader);
 
     static BentleyStatus SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId const& instanceId);
 };

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <BeSQLite/ECDb/IECSqlBinder.h>
-#include <GeomSerialization/GeomSerializationAPI.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 #include "IECSqlPrimitiveBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -42,7 +42,7 @@ ECSqlStatus IECSqlBinder::BindBoolean (bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindDateTime (DateTimeCR value)
     {
-    UInt64 jdHns = 0ULL;
+    uint64_t jdHns = 0ULL;
     if (SUCCESS != value.ToJulianDay (jdHns))
         {
         BeAssert (false && "ECSqlStatement::BindDateTime> Could not convert DateTime into Julian Day.");
@@ -55,7 +55,7 @@ ECSqlStatus IECSqlBinder::BindDateTime (DateTimeCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus IECSqlBinder::BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     return _BindPrimitive ()._BindDateTime (julianDayTicksHns, metadata);
     }
@@ -112,7 +112,7 @@ ECSqlStatus IECSqlBinder::BindInt (int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindInt64 (Int64 value)
+ECSqlStatus IECSqlBinder::BindInt64 (int64_t value)
     {
     return _BindPrimitive ()._BindInt64 (value);
     }
@@ -160,7 +160,7 @@ IECSqlStructBinder& IECSqlBinder::BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& IECSqlBinder::BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& IECSqlBinder::BindArray (uint32_t initialCapacity)
     {
     return _BindArray (initialCapacity);
     }

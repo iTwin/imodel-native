@@ -167,7 +167,7 @@ void PerformanceBisDesignTestFixture::BindToParameter
 BeSQLite::Statement& stmt,
 ECN::ECClassCR testClass,
 ECN::ECPropertyCR property,
-UInt64 ecInstanceId
+uint64_t ecInstanceId
 ) const
     {
     const auto parameterMappingIt = m_parameterMapping.find (&property);
@@ -229,9 +229,9 @@ UInt64 ecInstanceId
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-UInt64 PerformanceBisDesignTestFixture::GetNextECInstanceId () const
+uint64_t PerformanceBisDesignTestFixture::GetNextECInstanceId () const
     {
-    UInt64 id = m_ecInstanceIdSequence;
+    uint64_t id = m_ecInstanceIdSequence;
     m_ecInstanceIdSequence++;
     return id;
     }
@@ -548,7 +548,7 @@ void Performance_BisDesign_TablePerClassScenario_TestFixture::_RunInsertTest (Be
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Preparation failed for " << insertSql.c_str ();
         for (int i = 0; i < instancesPerClassCount; i++)
             {
-            UInt64 ecinstanceId = GetNextECInstanceId ();
+            uint64_t ecinstanceId = GetNextECInstanceId ();
             int parameterIndex = 1;
             for (auto prop : propertyCollection)
                 {
@@ -745,7 +745,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_RunInsertTest (BeSQ
         
         for (int i = 0; i < instancesPerClassCount; i++)
             {
-            UInt64 ecInstanceId = GetNextECInstanceId ();
+            uint64_t ecInstanceId = GetNextECInstanceId ();
             for (auto prop : testClass->GetProperties (true))
                 {
                 BindToParameter (stmt, *testClass, *prop, ecInstanceId);
@@ -1025,7 +1025,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunI
 
         for (int i = 0; i < instancesPerClassCount; i++)
             {
-            UInt64 ecInstanceId = GetNextECInstanceId ();
+            uint64_t ecInstanceId = GetNextECInstanceId ();
             for (auto prop : basePropertyCollection)
                 {
                 BindToParameter (masterStmt, *testClass, *prop, ecInstanceId);

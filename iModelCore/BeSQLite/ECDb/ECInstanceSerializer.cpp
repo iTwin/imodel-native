@@ -12,50 +12,50 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceSerializer::Write (const byte value)
+void ECInstanceSerializer::Write (const Byte value)
     {
-    memcpy (m_ptr, &value, sizeof(byte));
-    MoveForward (sizeof(byte));          
+    memcpy (m_ptr, &value, sizeof(Byte));
+    MoveForward (sizeof(Byte));          
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-byte ECInstanceSerializer::ReadByte ()
+Byte ECInstanceSerializer::ReadByte ()
     {
-    byte value;
-    memcpy (&value, m_ptr, sizeof(byte));
-    MoveForward (sizeof(byte));          
+    Byte value;
+    memcpy (&value, m_ptr, sizeof(Byte));
+    MoveForward (sizeof(Byte));          
     return value;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceSerializer::Write (const UInt32 value)
+void ECInstanceSerializer::Write (const uint32_t value)
     {
-    memcpy (m_ptr, &value, sizeof(UInt32));
-    MoveForward (sizeof(UInt32));          
+    memcpy (m_ptr, &value, sizeof(uint32_t));
+    MoveForward (sizeof(uint32_t));          
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECInstanceSerializer::ReadUInt32 ()
+uint32_t ECInstanceSerializer::ReadUInt32 ()
     {
-    UInt32 value;
-    memcpy (&value, m_ptr, sizeof(UInt32));
-    MoveForward (sizeof(UInt32));          
+    uint32_t value;
+    memcpy (&value, m_ptr, sizeof(uint32_t));
+    MoveForward (sizeof(uint32_t));          
     return value;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceSerializer::Write (const Int64 value)
+void ECInstanceSerializer::Write (const int64_t value)
     {
-    memcpy (m_ptr, &value, sizeof(Int64));
-    MoveForward (sizeof(Int64));          
+    memcpy (m_ptr, &value, sizeof(int64_t));
+    MoveForward (sizeof(int64_t));          
     }
 
 /*---------------------------------------------------------------------------------------
@@ -81,18 +81,18 @@ StructValueIdentifier ECInstanceSerializer::ReadStructValueIdentifier ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/      
-Int64 ECInstanceSerializer::ReadInt64 ()
+int64_t ECInstanceSerializer::ReadInt64 ()
     {
-    Int64 value;
-    memcpy (&value, m_ptr, sizeof(Int64));
-    MoveForward (sizeof(Int64));          
+    int64_t value;
+    memcpy (&value, m_ptr, sizeof(int64_t));
+    MoveForward (sizeof(int64_t));          
     return value;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceSerializer::Write (byte const* value, UInt32 length)
+void ECInstanceSerializer::Write (Byte const* value, uint32_t length)
     {
     memcpy (m_ptr, value, length);
     MoveForward (length);          
@@ -101,7 +101,7 @@ void ECInstanceSerializer::Write (byte const* value, UInt32 length)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceSerializer::ReadBytes (byte*& value, UInt32 length)
+void ECInstanceSerializer::ReadBytes (Byte*& value, uint32_t length)
     {
     memcpy (value, m_ptr, length);
     MoveForward (length);          
@@ -118,7 +118,7 @@ void ECInstanceSerializer::MoveForward(int nBytes)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECInstanceSerializer::GetECClass(Int64 ecClassId)
+ECClassP ECInstanceSerializer::GetECClass(int64_t ecClassId)
     {
     return m_ecClassResolver->GetECClass (ecClassId);
     }
@@ -129,21 +129,21 @@ ECClassP ECInstanceSerializer::GetECClass(Int64 ecClassId)
 IECInstancePtr ECInstanceSerializer::ReadECInstance(ECClassCR ecClass)
     {
     IECInstancePtr newInstance;
-    UInt32         bytesUsed;
-    byte           binFlag       = ReadByte();
+    uint32_t       bytesUsed;
+    Byte binFlag       = ReadByte();
     StandaloneECEnablerP enabler = ecClass.GetDefaultStandaloneEnabler();
 
     BeAssert(enabler != nullptr);            
 
     if (binFlag & ECInstanceSerializer::FLAG_HasSupportingInstances)
         {
-        UInt32 supportingInstanceCount = ReadUInt32 ();
+        uint32_t supportingInstanceCount = ReadUInt32 ();
         bytesUsed= ReadUInt32 ();
         newInstance = enabler->CreateInstance(bytesUsed);
         BeAssert (!newInstance.IsNull());
         MemoryECInstanceBase* mbInstance = newInstance->GetAsMemoryECInstanceP();
         BeAssert (mbInstance != nullptr);
-        byte* instanceBytes  = const_cast<byte*>(mbInstance->GetData());
+        Byte* instanceBytes  = const_cast<Byte*>(mbInstance->GetData());
         ReadBytes (instanceBytes, bytesUsed);
 
         while (supportingInstanceCount-- > 0)
@@ -151,12 +151,12 @@ IECInstancePtr ECInstanceSerializer::ReadECInstance(ECClassCR ecClass)
         }
     else
         {
-        bytesUsed= m_bufferSize - sizeof(byte);
+        bytesUsed= m_bufferSize - sizeof(Byte);
         newInstance = enabler->CreateInstance(bytesUsed);
         BeAssert (!newInstance.IsNull());
         MemoryECInstanceBase* mbInstance = newInstance->GetAsMemoryECInstanceP();
         BeAssert (mbInstance != nullptr);
-        byte* instanceBytes  = const_cast<byte*>(mbInstance->GetData());
+        Byte* instanceBytes  = const_cast<Byte*>(mbInstance->GetData());
         ReadBytes (instanceBytes, bytesUsed);
         }
     return newInstance;
@@ -166,10 +166,10 @@ IECInstancePtr ECInstanceSerializer::ReadECInstance(ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECInstanceSerializer::ReadSupportingECInstance(MemoryECInstanceBaseR parentECInstance)
     {
-    UInt32                supportingInstanceCount = ReadUInt32();
-    Int64                 classId                 = ReadInt64 ();
+    uint32_t              supportingInstanceCount = ReadUInt32();
+    int64_t               classId                 = ReadInt64 ();
     StructValueIdentifier structValueId           = ReadStructValueIdentifier ();
-    UInt32                bytesUsed            = ReadUInt32 (); 
+    uint32_t              bytesUsed            = ReadUInt32 (); 
     ECClassP              ecClass                 = GetECClass (classId);
     BeAssert(ecClass != nullptr);
 
@@ -182,7 +182,7 @@ void ECInstanceSerializer::ReadSupportingECInstance(MemoryECInstanceBaseR parent
     MemoryECInstanceBase* mbInstance = newInstance->GetAsMemoryECInstanceP();
     BeAssert (mbInstance != nullptr);
 
-    byte* instanceBytes  = const_cast<byte*>(mbInstance->GetData());
+    Byte* instanceBytes  = const_cast<Byte*>(mbInstance->GetData());
     ReadBytes (instanceBytes, bytesUsed);
 
     parentECInstance.SetStructArrayInstance(*mbInstance, structValueId);
@@ -196,11 +196,11 @@ void ECInstanceSerializer::ReadSupportingECInstance(MemoryECInstanceBaseR parent
 void ECInstanceSerializer::WriteECInstance (MemoryECInstanceBaseCR instance)
     {
     StructValueIdentifier structValueId;
-    UInt32                bytesUsed                  = instance.GetBytesUsed(); 
-    UInt32                i                             = 0;
+    uint32_t              bytesUsed                  = instance.GetBytesUsed(); 
+    uint32_t              i                             = 0;
     IECInstancePtr        supportingInstance            = instance.GetStructArrayInstanceByIndex (i, structValueId);
     bool                  hasSuppportingInstances       = !supportingInstance.IsNull();
-    byte                  binFlag                       = ECInstanceSerializer::FLAG_None; 
+    Byte binFlag                       = ECInstanceSerializer::FLAG_None; 
     if (hasSuppportingInstances)
         binFlag |= ECInstanceSerializer::FLAG_HasSupportingInstances;
 
@@ -208,7 +208,7 @@ void ECInstanceSerializer::WriteECInstance (MemoryECInstanceBaseCR instance)
 
     if (true == hasSuppportingInstances)
         {
-        byte*  supportingInstanceCountOffset = m_ptr;
+        Byte*  supportingInstanceCountOffset = m_ptr;
         Write (i);
         Write(bytesUsed);
         Write(instance.GetData(), bytesUsed);
@@ -230,12 +230,12 @@ void ECInstanceSerializer::WriteECInstance (MemoryECInstanceBaseCR instance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECInstanceSerializer::WriteSupportingECInstance (MemoryECInstanceBaseCR structValue, StructValueIdentifier structValueId)
     {
-    UInt32    bytesUsed= structValue.GetBytesUsed(); 
-    UInt32    i           = 0;
+    uint32_t  bytesUsed= structValue.GetBytesUsed(); 
+    uint32_t  i           = 0;
     ECClassCR type        = structValue.GetAsIECInstance()->GetClass();
-    Int64     classId     = type.GetId();
+    int64_t   classId     = type.GetId();
  
-    byte* supportingInstanceCountOffset = m_ptr;
+    Byte* supportingInstanceCountOffset = m_ptr;
     Write (i);
     Write (classId);
     Write (structValueId);
@@ -256,16 +256,16 @@ void ECInstanceSerializer::WriteSupportingECInstance (MemoryECInstanceBaseCR str
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECInstanceSerializer::GetECInstanceSize (MemoryECInstanceBaseCR instance)
+uint32_t ECInstanceSerializer::GetECInstanceSize (MemoryECInstanceBaseCR instance)
     {
     StructValueIdentifier structValueId;
-    UInt32                i                     = 0;
+    uint32_t              i                     = 0;
     IECInstancePtr        supportingInstance    = instance.GetStructArrayInstanceByIndex (i, structValueId);
-    UInt32                size                  = sizeof(byte);
+    uint32_t              size                  = sizeof(Byte);
     bool                  hasSupportingInstance = !supportingInstance.IsNull ();
     if (hasSupportingInstance)
         {
-        size += sizeof(UInt32) * 2;
+        size += sizeof(uint32_t) * 2;
         do        
             {                
             const MemoryECInstanceBase* mbInstance = supportingInstance->GetAsMemoryECInstance ();
@@ -279,11 +279,11 @@ UInt32 ECInstanceSerializer::GetECInstanceSize (MemoryECInstanceBaseCR instance)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECInstanceSerializer::GetSupportingECInstanceSize (MemoryECInstanceBaseCR instance)
+uint32_t ECInstanceSerializer::GetSupportingECInstanceSize (MemoryECInstanceBaseCR instance)
     {
     StructValueIdentifier structValueId;
-    UInt32                size               = (sizeof (StructValueIdentifier) + sizeof(UInt32)*2 + sizeof (UInt64)); 
-    UInt32                i                  = 0;
+    uint32_t              size               = (sizeof (StructValueIdentifier) + sizeof(uint32_t)*2 + sizeof (uint64_t)); 
+    uint32_t              i                  = 0;
     IECInstancePtr        supportingInstance = instance.GetStructArrayInstanceByIndex (i, structValueId);
 
     while (!supportingInstance.IsNull())
@@ -304,11 +304,11 @@ bool ECInstanceSerializer::Serialize (DbBuffer& buffer, IECInstancePtr& instance
         return false;
     MemoryECInstanceBase* mbInstance = instance->GetAsMemoryECInstanceP ();
     BeAssert (nullptr != mbInstance);
-    UInt32 m_bufferSize = GetECInstanceSize (*mbInstance);
+    uint32_t m_bufferSize = GetECInstanceSize (*mbInstance);
     buffer.Resize((size_t)m_bufferSize);
     m_ptr = buffer.GetData();
     WriteECInstance (*mbInstance);
-    UInt32 bytesUsed = (UInt32)(m_ptr - buffer.GetData ());
+    uint32_t bytesUsed = (uint32_t)(m_ptr - buffer.GetData ());
     if (bytesUsed != m_bufferSize)
         BeAssert (false && "BytesNeededToStoreInstance != BytesActullyUseToWriteTheInstance");
     //BeAssert (bytesUsed != m_bufferSize);  
@@ -324,10 +324,10 @@ IECInstancePtr ECInstanceSerializer::Deserialize (DbBuffer& buffer, ECClassCR ec
     {
     m_ecClassResolver = &resolver;
     m_ptr = buffer.GetData();
-    m_bufferSize = (UInt32)buffer.GetLength();
+    m_bufferSize = (uint32_t)buffer.GetLength();
     IECInstancePtr instance = ReadECInstance (ecClass);
-    UInt32 bytesUsed = (UInt32)(m_ptr - buffer.GetData ());
-    if (bytesUsed != (UInt32)m_bufferSize)
+    uint32_t bytesUsed = (uint32_t)(m_ptr - buffer.GetData ());
+    if (bytesUsed != (uint32_t)m_bufferSize)
         BeAssert (false && "BytesUseToCreateInstance != TotalBytesInBuffer");
     m_ptr = nullptr;
     m_ecClassResolver = nullptr;

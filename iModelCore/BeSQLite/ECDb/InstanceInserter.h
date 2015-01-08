@@ -31,7 +31,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct Binding
     {
     //! For looking up the bound/selected property in an IECInstance
-    UInt32              m_propertyIndex;
+    uint32_t            m_propertyIndex;
 
     //! Either a parameter index or column index, depending on whether the binding is used for parameters or selected columns
     //! May be BINDING_NotBound for unmapped columns
@@ -44,13 +44,13 @@ struct Binding
     DbColumnCP          m_column;
 
     //! Used to indicate which 'components' of a property are applicable
-    UInt16              m_componentMask;
+    uint16_t            m_componentMask;
 
     //! The enabler for which the m_propertyIndex is valid. Otherwise use propertyAccessString
     ECN::ECEnablerCR    m_enabler;
 
     //! primary constructor
-    Binding (ECN::ECEnablerCR enabler, PropertyMapCR propertyMap, UInt32 propertyIndex, UInt16 componentMask, int sqlIndex, DbColumnCP column);
+    Binding (ECN::ECEnablerCR enabler, PropertyMapCR propertyMap, uint32_t propertyIndex, uint16_t componentMask, int sqlIndex, DbColumnCP column);
 
     //! Copy constructor for bvector
     Binding (BindingCR other);
@@ -157,18 +157,18 @@ private:
 
     // Bind
     virtual BeSQLite::DbResult  _Bind (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, bool useSuppliedECInstanceId) {BeAssert (false); return BE_SQLITE_ERROR;}
-            BeSQLite::DbResult  _Bind (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex);
-   BeSQLite::DbResult           BindPrimaryKeysForProperty (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex);
+            BeSQLite::DbResult  _Bind (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex);
+   BeSQLite::DbResult           BindPrimaryKeysForProperty (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex);
 
     // Insert
     virtual InsertStatus        _Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, bool useSuppliedECInstanceId) {BeAssert (false); return INSERT_Error;}
-    InsertStatus                _Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex);
+    InsertStatus                _Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex);
 
 protected:
     virtual                     ~InstancePropertyToTableInserter () {}
     ECN::ECPropertyCR           GetECProperty() const {return m_ecProperty;}
     WStringCR                   GetECPropertyAccessString() {return m_ecPropertyAccessString;}                     
-    InsertStatus                Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, UInt32 arrayIndex);
+    InsertStatus                Insert (ECInstanceId* ecInstanceId, ECN::IECInstanceR ecInstance, uint32_t arrayIndex);
     
     static InstancePropertyToTableInserterPtr Create 
         (

@@ -136,7 +136,7 @@ void ECSqlTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement co
                 }
             case Json::arrayValue:
                 {
-                IECSqlArrayBinder& arrayBinder = binder.BindArray ((UInt32) jsonValue.size ());
+                IECSqlArrayBinder& arrayBinder = binder.BindArray ((uint32_t) jsonValue.size ());
                 ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
                 for (JsonValueCR arrayElement : jsonValue)
                     {

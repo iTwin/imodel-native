@@ -33,18 +33,18 @@ struct EXPORT_VTABLE_ATTRIBUTE DbECSchemaKey
         ECN::ECSchemaId  m_ecSchemaId;
         Utf8String  m_schemaName;
         Utf8String  m_displayLabel;
-        UInt32      m_versionMajor;
-        UInt32      m_versionMinor;
+        uint32_t    m_versionMajor;
+        uint32_t    m_versionMinor;
     public:
-        ECDB_EXPORT         UInt32              GetVersionMajor     () const;
-        ECDB_EXPORT         UInt32              GetVersionMinor     () const;
+        ECDB_EXPORT         uint32_t            GetVersionMajor     () const;
+        ECDB_EXPORT         uint32_t            GetVersionMinor     () const;
         ECDB_EXPORT         Utf8CP              GetName             () const;
         ECDB_EXPORT         Utf8String          GetFullName         () const;
         ECDB_EXPORT         Utf8CP              GetDisplayLabel     () const;
                             ECN::ECSchemaId     GetECSchemaId       () const ;
                             bool                HasECSchemaId       () const { return m_ecSchemaId != 0; };
                             void                SetECSchemaId       (ECN::ECSchemaId ecSchemaId) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = ecSchemaId; };
-        ECDB_EXPORT                             DbECSchemaKey       (ECN::ECSchemaId ecSchemaId, Utf8CP name, UInt32 versionMajor, UInt32 versionMinor, Utf8CP displayLabel=nullptr);
+        ECDB_EXPORT                             DbECSchemaKey       (ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel=nullptr);
         ECDB_EXPORT                             DbECSchemaKey       (); // WIP_FNV: stop exporting these
         ECDB_EXPORT virtual                     ~DbECSchemaKey      ();
         ECDB_EXPORT static  ECN::ECObjectsStatus ParseSchemaFullName (DbECSchemaKey& key, Utf8CP schemaFullName);

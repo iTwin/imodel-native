@@ -43,7 +43,7 @@ IECSqlBinder& PrimitiveArrayToColumnECSqlBinder::_AddArrayElement ()
 
     ResetStatus ();
     m_currentArrayIndex++;
-    UInt32 currentArrayIndex = (UInt32) m_currentArrayIndex;
+    uint32_t currentArrayIndex = (uint32_t) m_currentArrayIndex;
 
     auto arrayInstance = GetInstance (true);
     if (currentArrayIndex >= m_initialCapacity)
@@ -83,7 +83,7 @@ IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::_BindStruct ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::_BindArray (uint32_t initialCapacity)
     {
     _OnClearBindings ();
     m_initialCapacity = initialCapacity;
@@ -139,7 +139,7 @@ StandaloneECInstanceP PrimitiveArrayToColumnECSqlBinder::GetInstance (bool creat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::ArrayElementBinder (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& arrayTypeInfo, UInt32 arrayPropertyIndex)
+PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::ArrayElementBinder (ECSqlStatusContext& statusContext, ECSqlTypeInfo const& arrayTypeInfo, uint32_t arrayPropertyIndex)
 : IECSqlBinder (), IECSqlPrimitiveBinder (), m_statusContext (statusContext), m_arrayTypeInfo (arrayTypeInfo), m_instance (nullptr), m_arrayPropertyIndex (arrayPropertyIndex)
     {
     }
@@ -147,7 +147,7 @@ PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::ArrayElementBinder (ECSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-void PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::Initialize (UInt32 arrayElementIndex, IECInstanceR instance)
+void PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::Initialize (uint32_t arrayElementIndex, IECInstanceR instance)
     {
     m_arrayElementIndex = arrayElementIndex;
     m_instance = &instance;
@@ -184,7 +184,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindBinary (
         return status;
 
     ECValue v;
-    v.SetBinary (static_cast<byte const*>(value), binarySize, makeCopy == IECSqlBinder::MakeCopy::Yes);
+    v.SetBinary (static_cast<Byte const*>(value), binarySize, makeCopy == IECSqlBinder::MakeCopy::Yes);
     return SetValue (v);
     }
 
@@ -201,14 +201,14 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindGeometry
     //primitive arrays are stored as ECInstances of the internal ECClass type ArrayOfBinary. Therefore use SetBinary
     //instead of SetIGeometry.
     ECValue v;
-    v.SetBinary (static_cast<byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
+    v.SetBinary (static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
     return SetValue (v);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     auto status = VerifyType (PrimitiveType::PRIMITIVETYPE_DateTime);
     if (ECSqlStatus::Success != status)
@@ -220,7 +220,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime
     if (!m_arrayTypeInfo.DateTimeInfoMatches (metadata))
         return m_statusContext.SetError (ECSqlStatus::UserError, "Metadata of DateTime value to bind doesn't match the metadata on the corresponding ECProperty.");
 
-    const Int64 ceTicks = DateTime::JulianDayToCommonEraTicks (julianDayTicksHns);
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks (julianDayTicksHns);
     ECValue v;
     if (metadata == nullptr)
         v.SetDateTimeTicks (ceTicks);
@@ -257,7 +257,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt (int
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt64 (Int64 value)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindInt64 (int64_t value)
     {
     auto status = VerifyType (PrimitiveType::PRIMITIVETYPE_Long);
     if (ECSqlStatus::Success != status)
@@ -362,7 +362,7 @@ IECSqlStructBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_Bind
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindArray (UInt32 initialCapacity)
+IECSqlArrayBinder& PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindArray (uint32_t initialCapacity)
     {
     const auto stat = m_statusContext.SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind array value to array element.");
     return GetNoopBinder (stat).BindArray (initialCapacity);

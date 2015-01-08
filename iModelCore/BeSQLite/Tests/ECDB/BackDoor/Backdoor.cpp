@@ -20,7 +20,7 @@ void* ECDbBackdoor::ECDb::GetSqliteDb (BeSQLite::EC::ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  08/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BeSQLite::EC::ECSqlStatus ECDbBackdoor::ECDb::ECSqlStatement::BindDateTime (BeSQLite::EC::ECSqlStatement& stmt, int parameterIndex, UInt64 julianDayTicksHns, DateTime::Info const* metadata)
+BeSQLite::EC::ECSqlStatus ECDbBackdoor::ECDb::ECSqlStatement::BindDateTime (BeSQLite::EC::ECSqlStatement& stmt, int parameterIndex, uint64_t julianDayTicksHns, DateTime::Info const* metadata)
     {
     return stmt.GetBinder (parameterIndex).BindDateTime (julianDayTicksHns, metadata);
     }

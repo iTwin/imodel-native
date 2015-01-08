@@ -355,7 +355,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayInsert)
     statement.BindInt64 (1, 1000);
     //add three array elements
     const int count = 3;
-    auto& arrayBinder = statement.BindArray (2, (UInt32) count);
+    auto& arrayBinder = statement.BindArray (2, (uint32_t) count);
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "BindArray failed: " << statement.GetLastStatusMessage ();
     for (int i = 0; i < count; i++)
         {        
@@ -395,7 +395,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
     statement.BindInt (3, 123);
     statement.BindInt64 (1, 1000);
     //add three array elements
-    const UInt32 arraySize = 3;
+    const uint32_t arraySize = 3;
     auto& arrayBinder = statement.BindArray (2, arraySize);
     ASSERT_EQ ((int)ECSqlStatus::Success, (int)statement.GetLastStatus ()) << "BindArray failed: " << statement.GetLastStatusMessage ();
     for (int i = 0; i < arraySize; i++)
@@ -1568,7 +1568,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsert)
 
     //add three array elements
     const int count = 3;
-    auto& arrayBinder = saStructBinder.GetMember(L"PStruct_Array").BindArray((UInt32)count);
+    auto& arrayBinder = saStructBinder.GetMember(L"PStruct_Array").BindArray((uint32_t)count);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
@@ -1629,7 +1629,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructArrayInsertWithParametersLongAndAr
 
    //add three array elements
     const int count = 3;
-    auto& arrayBinder = statement.BindArray(1, (UInt32)count);
+    auto& arrayBinder = statement.BindArray(1, (uint32_t)count);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
@@ -1754,7 +1754,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsertWit
 
     //add three array elements
     const int count = 3;
-    auto& arrayBinder = statement.BindArray(1,(UInt32)count);
+    auto& arrayBinder = statement.BindArray(1,(uint32_t)count);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
@@ -1860,7 +1860,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
 
     //add three array elements
     int count = 3;
-    auto& arrayBinder = insertStatement.BindArray(1, (UInt32)count);
+    auto& arrayBinder = insertStatement.BindArray(1, (uint32_t)count);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)insertStatement.GetLastStatus()) << "BindArray failed: " << insertStatement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
@@ -1896,7 +1896,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
     prepareStatus = updateStatement.Prepare(ecdb, ecsql);
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     count = 3;
-    auto& updateArrayBinder = updateStatement.BindArray(1, (UInt32)count);
+    auto& updateArrayBinder = updateStatement.BindArray(1, (uint32_t)count);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)updateStatement.GetLastStatus()) << "BindArray failed: " << updateStatement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {

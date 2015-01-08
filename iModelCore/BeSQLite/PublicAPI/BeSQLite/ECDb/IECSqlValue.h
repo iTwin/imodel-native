@@ -78,7 +78,7 @@ public:
     //! Gets the value as DateTime Julian Day ticks in hecto-nanoseconds.
     //! @param[out] metadata DateTime metadata.
     //! @return Julian Day ticks in hecto-nanoseconds
-    ECDB_EXPORT UInt64 GetDateTimeJulianDays (DateTime::Info& metadata) const;
+    ECDB_EXPORT uint64_t GetDateTimeJulianDays (DateTime::Info& metadata) const;
 //__PUBLISH_SECTION_START__
 
     //! Gets the value as a double
@@ -103,7 +103,7 @@ public:
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
-    ECDB_EXPORT Int64 GetInt64 () const;
+    ECDB_EXPORT int64_t GetInt64 () const;
 
     //! Gets the value as UTF-8 encoded string
     //! @return UTF-8 encoded string value

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/BeRepositoryBasedIdSequence.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -64,12 +64,12 @@ DbResult BeRepositoryBasedIdSequence::Reset (BeRepositoryId repositoryId) const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (Int64& nextValue) const
+DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (int64_t& nextValue) const
     {
     if (m_db.IsReadonly ())
         return BE_SQLITE_READONLY;
 
-    Int64 deserializedLastValue = -1LL;
+    int64_t deserializedLastValue = -1LL;
     DbResult stat = m_db.IncrementRepositoryLocalValue (deserializedLastValue, m_repositoryLocalValueIndex);
     if (stat != BE_SQLITE_OK)
         {
@@ -82,15 +82,4 @@ DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (Int64& nextValue) const
     return BE_SQLITE_OK;
     }
 
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                12/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-bool BeRepositoryBasedIdSequence::TryClearCache () const
-    {
-    //only need to clear cache if the DB is open. If it is closed, the cache has already been cleared.
-    if (m_db.IsDbOpen ())
-        return m_db.TryClearRepositoryLocalValueCache (m_repositoryLocalValueIndex);
-
-    return true;
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

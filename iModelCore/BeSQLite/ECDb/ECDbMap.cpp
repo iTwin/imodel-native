@@ -587,7 +587,7 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
         case PRIMITIVETYPE_Boolean : return L"Boolean";
         case PRIMITIVETYPE_Point2D : return L"Point2D";
         case PRIMITIVETYPE_Point3D : return L"Point3D";
-        case PRIMITIVETYPE_DbKey   : return L"<db key (Int64)>";
+        case PRIMITIVETYPE_DbKey   : return L"<db key (int64_t)>";
         default:                     return L"<unknown>";
         }
     }

@@ -182,9 +182,9 @@ ECPropertyCR PropertyMap::GetProperty() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMap::_AddBindings( BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const 
+void PropertyMap::_AddBindings( BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const 
     {
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = enabler.GetPropertyIndex(propertyIndex, GetPropertyAccessString());
     if (ECOBJECTS_STATUS_Success != status)
         { BeAssert(false); }
@@ -212,7 +212,7 @@ WString PropertyMap::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMap::AddBindings( BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const
+void PropertyMap::AddBindings( BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const
     {
     _AddBindings(bindings, propertyIndexUnused, sqlIndex, enabler);
     }
@@ -937,9 +937,9 @@ WString PropertyMapToColumn::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapToColumn::_AddBindings( BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const 
+void PropertyMapToColumn::_AddBindings( BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const 
     {
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = enabler.GetPropertyIndex(propertyIndex, GetPropertyAccessString());
     if (ECOBJECTS_STATUS_Success != status)
         { BeAssert(false); }
@@ -1004,8 +1004,8 @@ DbResult PropertyMapToColumn::BindECValueToParameter (Statement& statement, ECVa
             {
             bool hasMetadata = false;
             DateTime::Info metadata;
-            const Int64 ceTicks = v.GetDateTimeTicks (hasMetadata, metadata);
-            UInt64 jdHns = DateTime::CommonEraTicksToJulianDay (ceTicks);
+            const int64_t ceTicks = v.GetDateTimeTicks (hasMetadata, metadata);
+            uint64_t jdHns = DateTime::CommonEraTicksToJulianDay (ceTicks);
             const double jd = DateTime::HnsToRationalDay (jdHns);
 
             return BindDateTime (jd, hasMetadata, metadata, binding, statement);
@@ -1013,7 +1013,7 @@ DbResult PropertyMapToColumn::BindECValueToParameter (Statement& statement, ECVa
         case PRIMITIVETYPE_Binary:
             {
             size_t size;
-            const byte * blob = v.GetBinary (size);
+            const Byte * blob = v.GetBinary (size);
             return statement.BindBlob (parameterIndex, blob, (int)size, Statement::MAKE_COPY_No);
             }
 
@@ -1115,9 +1115,9 @@ WString PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapPoint::_AddBindings (BindingsR bindings, UInt32 propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler) const
+void PropertyMapPoint::_AddBindings (BindingsR bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler) const
     {
-    UInt32 propertyIndex;
+    uint32_t propertyIndex;
     ECObjectsStatus status = enabler.GetPropertyIndex (propertyIndex, GetPropertyAccessString ());
     if (ECOBJECTS_STATUS_Success != status)
         {
@@ -1230,7 +1230,7 @@ void PropertyMapPoint::_SetColumnBaseName (Utf8CP columnName)
 DbResult PropertyMapPoint::_Bind (int& iBinding, BindingsCR parameterBindings, BeSQLiteStatementR statement, IECInstanceR ecInstance) const
     {
     BeAssert (static_cast<size_t> (iBinding) < parameterBindings.size ());
-    UInt32 propertyIndex = parameterBindings[iBinding].m_propertyIndex;
+    uint32_t propertyIndex = parameterBindings[iBinding].m_propertyIndex;
 
     ECValue v;
     ECObjectsStatus s = ecInstance.GetValue(v, propertyIndex);
@@ -1357,7 +1357,7 @@ DbResult PropertyMapArrayOfPrimitives::_Bind (int& iBinding, BindingsCR paramete
         sizeOfPrimitive = 32; // impossible to estimate, but this will help avoid some re-allocs
     else
         sizeOfPrimitive = ECValue::GetFixedPrimitiveValueSize (primitiveType);
-    UInt32 anticipatedSize = nElements * sizeOfPrimitive + 6 * sizeof(UInt32); // flags, null flags, secondary offset, offset to end, plus a little extra
+    uint32_t anticipatedSize = nElements * sizeOfPrimitive + 6 * sizeof(uint32_t); // flags, null flags, secondary offset, offset to end, plus a little extra
 
     StandaloneECInstancePtr persistedInstance = m_primitiveArrayEnabler->CreateInstance(anticipatedSize); // WIP_ECDB: Could be cached/shared or created more directly, with guaranteed correct size.
     BeAssert (persistedInstance.IsValid());
@@ -1373,12 +1373,12 @@ DbResult PropertyMapArrayOfPrimitives::_Bind (int& iBinding, BindingsCR paramete
         if (ECOBJECTS_STATUS_Success != instance.GetValue(elementValue, binding.m_propertyIndex, i))
             return BE_SQLITE_ERROR;
 
-        ECObjectsStatus s = persistedInstance->SetValue((UInt32)1, elementValue, i);
+        ECObjectsStatus s = persistedInstance->SetValue((uint32_t)1, elementValue, i);
         if (ECOBJECTS_STATUS_Success != s && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != s)
             return BE_SQLITE_ERROR;
         }
 
-    byte* data = const_cast<byte*>(persistedInstance->GetData());
+    Byte* data = const_cast<Byte*>(persistedInstance->GetData());
     int bytesUsed = persistedInstance->GetBytesUsed();
     BeAssert(ECDBuffer::IsCompatibleVersion(nullptr, data, true) && "Should have a header that claims we can write it" );
 

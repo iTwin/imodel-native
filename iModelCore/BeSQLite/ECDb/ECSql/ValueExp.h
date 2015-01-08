@@ -147,7 +147,7 @@ public:
     static std::unique_ptr<ConstantValueExp> Create (ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo type);
 
     Utf8StringCR GetValue () const;
-    Int64 GetValueAsInt64() const;
+    int64_t GetValueAsInt64() const;
     bool GetValueAsBoolean() const;
 
     virtual Utf8String ToECSql() const override;

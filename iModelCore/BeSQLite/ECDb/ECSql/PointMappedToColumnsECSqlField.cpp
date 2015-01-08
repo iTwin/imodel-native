@@ -119,7 +119,7 @@ bool PointMappedToColumnsECSqlField::_GetBoolean () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-UInt64 PointMappedToColumnsECSqlField::_GetDateTimeJulianDays (DateTime::Info& metadata) const
+uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDays (DateTime::Info& metadata) const
     {
     SetError (ECSqlStatus::UserError, "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetDateTime cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
@@ -149,7 +149,7 @@ int PointMappedToColumnsECSqlField::_GetInt () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Int64 PointMappedToColumnsECSqlField::_GetInt64 () const
+int64_t PointMappedToColumnsECSqlField::_GetInt64 () const
     {
     SetError (ECSqlStatus::UserError, "GetInt64 cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     BeAssert (false && "GetInt64 cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");

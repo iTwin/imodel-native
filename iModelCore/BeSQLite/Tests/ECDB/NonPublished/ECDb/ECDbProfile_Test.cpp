@@ -76,7 +76,7 @@ TEST(ECDbProfile, CreationTest)
         size_t sequenceIndex = 0;
         ASSERT_TRUE (ecdb.TryGetRepositoryLocalValueIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
 
-        Int64 lastECInstanceId = -1LL;
+        int64_t lastECInstanceId = -1LL;
         EXPECT_EQ (BE_SQLITE_OK, ecdb.QueryRepositoryLocalValue (lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
 
         AssertIsProfileUpToDate (ecdb);

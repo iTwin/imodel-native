@@ -49,8 +49,8 @@ private:
     BentleyStatus SetInstanceData (ECN::IECInstanceR instance, bool usesClassIdFilter) const;
     BentleyStatus SetStructArrayElement (ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
     BentleyStatus SetPrimitiveValue (ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
-    ECN::IECInstancePtr FindRelationshipEndpoint (Int64 endpointInstanceId, Int64 endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
-    ECN::IECInstancePtr FindRelationshipEndpoint (Int64 endpointInstanceId, ECN::ECClassCP endpointClass) const;
+    ECN::IECInstancePtr FindRelationshipEndpoint (int64_t endpointInstanceId, int64_t endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
+    ECN::IECInstancePtr FindRelationshipEndpoint (int64_t endpointInstanceId, ECN::ECClassCP endpointClass) const;
 
     //__PUBLISH_SECTION_START__
 public:
@@ -169,7 +169,7 @@ public:
     //! @param[in] ecClass ECClass if ECInstances this updater can update
     //! @param[in] propertiesToBind A list of property indices that should be used to create the column bindings.  Properties are assumed to all come from the same class.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater (ECDbR ecdb, ECN::ECClassCR ecClass, bvector<UInt32>& propertiesToBind);
+    ECDB_EXPORT ECInstanceUpdater (ECDbR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
 
     ECDB_EXPORT ~ECInstanceUpdater ();
 

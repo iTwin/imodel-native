@@ -17,10 +17,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECInstanceSerializer
     {
 private:
-    byte*                 m_ptr;
+    Byte*                 m_ptr;
     IECClassResolver*     m_ecClassResolver;
-    UInt32                m_bufferSize;
-    enum BinFlags ENUM_UNDERLYING_TYPE(byte)
+    uint32_t              m_bufferSize;
+    enum BinFlags ENUM_UNDERLYING_TYPE(Byte)
         {
         FLAG_None                   = 0x0,
         FLAG_HasSupportingInstances = 0x1,
@@ -29,24 +29,24 @@ private:
         FLAG_Reserved3              = 0x8,
         };
 private:
-    void                  Write                       (const byte   value);
-    void                  Write                       (const UInt32 value);
-    void                  Write                       (const Int64  value);
+    void                  Write                       (const Byte value);
+    void                  Write                       (const uint32_t value);
+    void                  Write                       (const int64_t value);
     void                  Write                       (const StructValueIdentifier value);
-    void                  Write                       (byte const* value, UInt32 length);
+    void                  Write                       (Byte const* value, uint32_t length);
     StructValueIdentifier ReadStructValueIdentifier   ();
-    Int64                 ReadInt64                   ();
-    byte                  ReadByte                    ();
-    UInt32                ReadUInt32                  ();
-    void                  ReadBytes                   (byte*& value, UInt32 length);
+    int64_t               ReadInt64                   ();
+    Byte ReadByte                    ();
+    uint32_t              ReadUInt32                  ();
+    void                  ReadBytes                   (Byte*& value, uint32_t length);
     void                  MoveForward                 (int nBytes);
-    ECClassP              GetECClass                  (Int64 ecClassId);
+    ECClassP              GetECClass                  (int64_t ecClassId);
     IECInstancePtr        ReadECInstance              (ECClassCR ecClass);
     void                  ReadSupportingECInstance    (MemoryECInstanceBaseR parentECInstance);
     void                  WriteECInstance             (MemoryECInstanceBaseCR instance);
     void                  WriteSupportingECInstance   (MemoryECInstanceBaseCR structValue, StructValueIdentifier structValueId);
-    UInt32                GetECInstanceSize           (MemoryECInstanceBaseCR instance);
-    UInt32                GetSupportingECInstanceSize (MemoryECInstanceBaseCR instance);
+    uint32_t              GetECInstanceSize           (MemoryECInstanceBaseCR instance);
+    uint32_t              GetSupportingECInstanceSize (MemoryECInstanceBaseCR instance);
 public:
                           ECInstanceSerializer        ();
     bool                  Serialize                   (DbBufferR buffer, IECInstancePtr& instance);

@@ -369,7 +369,7 @@ IECSqlValue const& value
         case ECN::PRIMITIVETYPE_Binary :
             {
             int size = 0;
-            const byte* b = (const byte *)value.GetBinary (&size);
+            const Byte* b = (const Byte *)value.GetBinary (&size);
             val.SetBinary(b, size, false);
             break;
             }
@@ -388,8 +388,8 @@ IECSqlValue const& value
         case ECN::PRIMITIVETYPE_DateTime :
             {
             DateTime::Info metadata;
-            const UInt64 jdHns = value.GetDateTimeJulianDays (metadata);
-            const Int64 ceTicks = DateTime::JulianDayToCommonEraTicks (jdHns);
+            const uint64_t jdHns = value.GetDateTimeJulianDays (metadata);
+            const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks (jdHns);
             val.SetDateTimeTicks(ceTicks, metadata);
             break;
             }
@@ -397,7 +397,7 @@ IECSqlValue const& value
             {
             int bgfbSize = -1;
             void const* bgfb = value.GetGeometryBlob (&bgfbSize);
-            val.SetIGeometry (static_cast<byte const*> (bgfb), (size_t) bgfbSize, false);
+            val.SetIGeometry (static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
             break;
             }
         }
@@ -435,8 +435,8 @@ IECSqlValue const& value
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr ECInstanceECSqlSelectAdapter::FindRelationshipEndpoint
 (
-Int64 endpointInstanceId,
-Int64 endpointClassId,
+int64_t endpointInstanceId,
+int64_t endpointClassId,
 ECN::StandaloneECRelationshipInstance* relationshipInstance,
 bool isSource
 ) const

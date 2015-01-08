@@ -18,12 +18,12 @@
 #define BENTLEY_TRANSLATABLE_STRINGS_START(STRUCT_NAME,NAMESPACE_NAME)\
     struct STRUCT_NAME\
         {\
-        enum Number : Int32;\
+        enum Number : int32_t;\
         static Utf8CP     GetNameSpace() {return #NAMESPACE_NAME;}\
         static Utf8String GetString  (Number id) {return BeSQLite::L10N::GetString (GetNameSpace(), id);}\
         static WString    GetStringW (Number id) {return WString (GetString(id).c_str(), BentleyCharEncoding::Utf8);}\
         \
-        enum Number : Int32
+        enum Number : int32_t
 
 // Indicates the end of a translatable string enum
 #define BENTLEY_TRANSLATABLE_STRINGS_END };
@@ -34,14 +34,14 @@
 // The CHeaderToXLiff.py program recognizes this macro and knows how to extract messages from the enumerands
 // that follow it.
 #define BENTLEY_TRANSLATABLE_STRINGS2_START(ENUM_NAME,STRUCT_NAME,NAMESPACE_NAME)\
-    enum ENUM_NAME : Int32;\
+    enum ENUM_NAME : int32_t;\
     struct STRUCT_NAME\
         {\
         static Utf8CP     GetNameSpace() {return #NAMESPACE_NAME;}\
         static Utf8String GetString  (ENUM_NAME id) {return BeSQLite::L10N::GetString (GetNameSpace(), id);}\
         static WString    GetStringW (ENUM_NAME id) {return WString (GetString(id).c_str(), BentleyCharEncoding::Utf8);}\
         };\
-    enum ENUM_NAME : Int32
+    enum ENUM_NAME : int32_t
 
 #define BENTLEY_TRANSLATABLE_STRINGS2_END
 

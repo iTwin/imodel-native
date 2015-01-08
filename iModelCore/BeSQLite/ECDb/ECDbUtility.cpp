@@ -28,12 +28,12 @@ void ECDbUtility::DuplicateProperties (IECInstanceR target, ECValuesCollectionCR
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt32 ECDbUtility::GetPropertyIndex (ECClassCR ecClass, ECPropertyCR ecProperty)
+uint32_t ECDbUtility::GetPropertyIndex (ECClassCR ecClass, ECPropertyCR ecProperty)
     {
     WCharCP propertyName = ecProperty.GetName().c_str();
         
     //needswork: we want to be able to get the propertyIndex... but it can vary per-project
-    UInt32 propertyIndex = 0;
+    uint32_t propertyIndex = 0;
     ecClass.GetDefaultStandaloneEnabler()->GetPropertyIndex (propertyIndex, propertyName);
 
     //GetClassMap().GetECDbMap().GetDgnProject();GetPropertyIndex()  // Project.GetEnabler(ecClass).GetPropertyIndex.
@@ -43,7 +43,7 @@ UInt32 ECDbUtility::GetPropertyIndex (ECClassCR ecClass, ECPropertyCR ecProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECDbUtility::GetPropertyFromIndex (ECClassCR ecClass, UInt32 propertyIndex)
+ECPropertyP ECDbUtility::GetPropertyFromIndex (ECClassCR ecClass, uint32_t propertyIndex)
     {
     // TODO: Check if this convoluted call is indeed the best way to get the property!! Can the instance not have the default standalone enabler??
     WCharCP propertyName;

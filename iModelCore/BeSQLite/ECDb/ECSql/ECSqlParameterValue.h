@@ -47,7 +47,7 @@ private:
 
     virtual IECSqlPrimitiveBinder& _BindPrimitive () override;
     virtual IECSqlStructBinder& _BindStruct () override;
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
 
     virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
 
@@ -89,11 +89,11 @@ private:
 
     virtual ECSqlStatus _BindBoolean (bool value) override;
     virtual ECSqlStatus _BindBinary (const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
-    virtual ECSqlStatus _BindDateTime (UInt64 julianDayTicksHns, DateTime::Info const* metadata) override;
+    virtual ECSqlStatus _BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata) override;
     virtual ECSqlStatus _BindDouble (double value) override;
     virtual ECSqlStatus _BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
     virtual ECSqlStatus _BindInt (int value) override;
-    virtual ECSqlStatus _BindInt64 (Int64 value) override;
+    virtual ECSqlStatus _BindInt64 (int64_t value) override;
     virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
     virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
     virtual ECSqlStatus _BindText (Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
@@ -105,10 +105,10 @@ private:
 
     virtual void const* _GetBinary (int* binarySize) const override;
     virtual bool _GetBoolean () const override;
-    virtual UInt64 _GetDateTimeJulianDays (DateTime::Info& metadata) const override;
+    virtual uint64_t _GetDateTimeJulianDays (DateTime::Info& metadata) const override;
     virtual double _GetDouble () const override;
     virtual int _GetInt () const override;
-    virtual Int64 _GetInt64 () const override;
+    virtual int64_t _GetInt64 () const override;
     virtual Utf8CP _GetText () const override;
     virtual DPoint2d _GetPoint2D () const override;
     virtual DPoint3d _GetPoint3D () const override;
@@ -224,7 +224,7 @@ private:
     mutable Collection::const_iterator m_iterator;
 
     virtual ECSqlStatus _BindNull () override;
-    virtual IECSqlArrayBinder& _BindArray (UInt32 initialCapacity) override;
+    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) override;
     virtual IECSqlBinder& _AddArrayElement () override;
 
     virtual bool _IsNull () const override;

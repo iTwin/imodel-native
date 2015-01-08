@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,6 +40,7 @@ protected:
     ECDB_EXPORT virtual DbResult _OnDbCreated (CreateParams const& params) override;
     ECDB_EXPORT virtual DbResult _OnRepositoryIdChanged (BeRepositoryId newRepositoryId) override;
     ECDB_EXPORT virtual void _OnDbClose () override;
+    ECDB_EXPORT virtual void _OnDbChangedByOtherConnection () override;
     ECDB_EXPORT virtual DbResult _VerifySchemaVersion (Db::OpenParams const& params) override;
 #endif
 
