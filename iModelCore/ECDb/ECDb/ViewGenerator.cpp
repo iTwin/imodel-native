@@ -427,7 +427,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassEndTableMap (Nati
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (NativeSqlBuilder& viewSql, RelationshipClassMapCR relationMap, IClassMap const& baseClassMap)
     {
-    AppendSystemPropMapsToNullView (viewSql, relationMap, true /*endWithComma*/);
+    AppendSystemPropMapsToNullView (viewSql, relationMap, false /*endWithComma*/);
 
     //! Only link table mapped relationship properties are persisted
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
@@ -440,7 +440,6 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (Nat
 
     //Append columns to query [col1],[col2], ...
     AppendViewPropMapsToQuery (viewSql, relationMap.GetECDbMap ().GetECDbR (), relationMap.GetTable (), viewPropMaps, true);
-    viewSql.Append (" LIMIT 0");
     return SUCCESS;
     }
 
@@ -566,7 +565,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
         BeAssert(false && "Failed to get persistence table for the relationship");
         return BentleyStatus::ERROR;
         }
-
+    viewSql.AppendParenLeft();
+    viewSql.Append("Select * From ");
     viewSql.AppendParenLeft ();
     auto objectType = DbMetaDataHelper::GetObjectType (db, table.GetName ().c_str ());
     if (objectType == DbMetaDataHelper::ObjectType::None || objectType == DbMetaDataHelper::ObjectType::Index)
@@ -608,7 +608,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                 viewSql.Append (" UNION ").Append (unionQuery);
             }
         }
-
+    viewSql.AppendParenRight();
+    viewSql.Append("Where ECClassId not NULL");
     viewSql.AppendParenRight ();
     return status;
     }
