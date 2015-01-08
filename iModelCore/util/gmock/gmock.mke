@@ -1,0 +1,71 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: gmock.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(_MakeFilePath)GMockPolicy.mki
+%include mdl.mki
+
+name = gmock
+o = $(OutputRootDir)build/gmock/build/
+always: 
+    ~mkdir $(o)
+
+GMockDirectory          = $(_MakeFilePath)
+GMockPublicApiDirectory = $(GMockDirectory)include/
+
+#--------------------------------------------------------------------------------------
+# Create the Context directory and vars needed to create sym-links
+#--------------------------------------------------------------------------------------
+# Tell dlmlink.mki where to point symbolic links
+ContextDeliveryDir  = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+always:
+    ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
+
+#--------------------------------------------------------------------------------------
+# Compile
+#--------------------------------------------------------------------------------------
+GMockDependencies = $(GMockPublicApiDirectory)gmock/gmock.h                                     \
+                    $(GMockPublicApiDirectory)gmock/gmock-actions.h                             \
+                    $(GMockPublicApiDirectory)gmock/gmock-cardinalities.h                       \
+                    $(GMockPublicApiDirectory)gmock/gmock-generated-actions.h                   \
+                    $(GMockPublicApiDirectory)gmock/gmock-generated-function-mockers.h          \
+                    $(GMockPublicApiDirectory)gmock/gmock-generated-matchers.h                  \
+                    $(GMockPublicApiDirectory)gmock/gmock-generated-nice-strict.h               \
+                    $(GMockPublicApiDirectory)gmock/gmock-matchers.h                            \
+                    $(GMockPublicApiDirectory)gmock/gmock-more-actions.h                        \
+                    $(GMockPublicApiDirectory)gmock/gmock-more-matchers.h                       \
+                    $(GMockPublicApiDirectory)gmock/gmock-spec-builders.h                       \
+                    $(GMockPublicApiDirectory)gmock/internal/gmock-generated-internal-utils.h   \
+                    $(GMockPublicApiDirectory)gmock/internal/gmock-internal-utils.h             \
+                    $(GMockPublicApiDirectory)gmock/internal/gmock-port.h
+
+%include MultiCppCompileRule.mki
+
+$(o)gmock$(oext)                : $(GMockDirectory)src/gmock.cc $(GMockDependencies) ${MultiCompileDepends}
+
+$(o)gmock_main$(oext)           : $(GMockDirectory)src/gmock_main.cc $(GMockDependencies) ${MultiCompileDepends}
+
+$(o)gmock-cardinalities$(oext)  : $(GMockDirectory)src/gmock-cardinalities.cc $(GMockDependencies) ${MultiCompileDepends}
+
+$(o)gmock-internal-utils$(oext) : $(GMockDirectory)src/gmock-internal-utils.cc  $(GMockDependencies) ${MultiCompileDepends}
+
+$(o)gmock-matchers$(oext)       : $(GMockDirectory)src/gmock-matchers.cc $(GMockDependencies) ${MultiCompileDepends}
+
+$(o)gmock-spec-builders$(oext)  : $(GMockDirectory)src/gmock-spec-builders.cc $(GMockDependencies) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+# Create the lib
+#--------------------------------------------------------------------------------------
+LIB_DEST                = $(o)
+LIB_NAME                = $(name)
+LIB_OBJS                = $(MultiCompileObjectList)
+LIB_TMP_DIR             = $(o)
+LIB_CREATE_CONTEXT_LINK = 1
+
+%include creatlib.mki

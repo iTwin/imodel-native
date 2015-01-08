@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="google_gmock_lib" BentleyBuildMakeFile="gmock.mke">
+        <SubPart PartName="google_gmock"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)gmock$(stlibext)</Libs>
+        </Bindings>
+    </Part>
+    
+    <Part Name="google_gmock" BentleyBuildMakeFile="gmock.prewire.mke">
+        <Bindings>
+            <VendorAPI Domain="gmock"/>
+        </Bindings>
+    </Part>
+
+</BuildContext>
+

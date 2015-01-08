@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: gmock.prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(InternalSystemPolicy)
+
+%include mdl.mki
+always:
+    @CreateSymLinks.py "$(BuildContext)VendorAPI/gmock=$(_MakeFilePath)include/gmock"
