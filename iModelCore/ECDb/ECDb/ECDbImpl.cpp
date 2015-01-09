@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -81,7 +81,7 @@ void ECDb::Impl::Close ()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2014
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbOpened ()
+DbResult ECDb::Impl::OnDbOpened () const
     {
     for (auto sequence : GetSequences ())
         {
@@ -96,7 +96,7 @@ DbResult ECDb::Impl::OnDbOpened ()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbCreated (ECDbR ecdb)
+DbResult ECDb::Impl::OnDbCreated (ECDbR ecdb) const
     {
     auto stat = OnDbOpened ();
     if (stat != BE_SQLITE_OK)
@@ -130,44 +130,35 @@ BeRepositoryId newRepositoryId
 
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                01/2015
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::OnDbChangedByOtherConnection () const
+    {
+    ClearCache ();
+    }
+
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params)
+DbResult ECDb::Impl::VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params, Savepoint& defaultTransaction) const
     {
-    return ECDbProfileManager::UpgradeECProfile (ecdb, params);
+    return ECDbProfileManager::UpgradeECProfile (ecdb, params, defaultTransaction);
     }
 
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::ClearCache (ECDbCacheType type) const
+void ECDb::Impl::ClearCache () const
     {
-    const int typeInt = (int) type;
-    int candidateTypeInt = (int) ECDbCacheType::Schema;
-    if ((typeInt & candidateTypeInt) == candidateTypeInt)
-        {
-        if (m_ecdbMap != nullptr)
-            m_ecdbMap->ClearCache ();
+    if (m_ecdbMap != nullptr)
+        m_ecdbMap->ClearCache ();
 
-        if (m_schemaManager != nullptr)
-            m_schemaManager->ClearCache ();
+    if (m_schemaManager != nullptr)
+        m_schemaManager->ClearCache ();
 
-        m_ecPersistenceCache.clear ();
-        }
-
-    candidateTypeInt = (int) ECDbCacheType::Sequences;
-    BentleyStatus stat = SUCCESS;
-    if ((typeInt & candidateTypeInt) == candidateTypeInt)
-        {
-        for (auto sequence : GetSequences ())
-            {
-            if (!sequence->TryClearCache ())
-                stat = ERROR;
-            }
-        }
-
-    return stat;
+    m_ecPersistenceCache.clear ();
     }
 
 //--------------------------------------------------------------------------------------

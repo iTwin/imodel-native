@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDb.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -98,6 +98,15 @@ void ECDb::_OnDbClose ()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                01/2015
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::_OnDbChangedByOtherConnection ()
+    {
+    Db::_OnDbChangedByOtherConnection ();
+    m_pimpl->OnDbChangedByOtherConnection ();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
@@ -106,7 +115,8 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->VerifySchemaVersion (*this, params);
+    BeAssert (GetDefaultTransaction () != nullptr);
+    return m_pimpl->VerifySchemaVersion (*this, params, *GetDefaultTransaction ());
     }
 
 //--------------------------------------------------------------------------------------
@@ -136,9 +146,9 @@ ECN::IECClassLocaterR ECDb::GetClassLocater () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ClearCache (ECDbCacheType type) const
+void ECDb::ClearCache () const
     {
-    return m_pimpl->ClearCache (type);
+    m_pimpl->ClearCache ();
     }
 
 //--------------------------------------------------------------------------------------
