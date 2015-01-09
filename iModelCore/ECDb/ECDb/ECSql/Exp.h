@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -299,7 +299,7 @@ public:
         for(auto& propertyName : propertyNames)
             resolvedPropertyPath.Push(propertyName);
 
-        auto targetClass = ecdb.GetSchemaManager().GetECClass(schemaName.c_str (), className.c_str ());
+        auto targetClass = ecdb.GetSchemaManager().GetECClass(schemaName.c_str (), className.c_str (), ECDbSchemaManager::ResolveSchema::AutoDetect);
         if (!targetClass)
             {
             BeAssert(false && "Failed to find ECClass");
