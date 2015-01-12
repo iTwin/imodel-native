@@ -55,7 +55,7 @@ private:
     DbResult OnDbCreated (ECDbR ecdb) const;
     DbResult OnRepositoryIdChanged (ECDbR ecdb, BeRepositoryId newRepositoryId);
     void OnDbChangedByOtherConnection () const;
-    DbResult VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params, Savepoint& defaultTransaction) const;
+    DbResult VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params) const;
 
     //other private methods
     std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;

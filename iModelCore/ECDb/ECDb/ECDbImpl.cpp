@@ -141,9 +141,9 @@ void ECDb::Impl::OnDbChangedByOtherConnection () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params, Savepoint& defaultTransaction) const
+DbResult ECDb::Impl::VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params) const
     {
-    return ECDbProfileManager::UpgradeECProfile (ecdb, params, defaultTransaction);
+    return ECDbProfileManager::UpgradeECProfile (ecdb, params);
     }
 
 

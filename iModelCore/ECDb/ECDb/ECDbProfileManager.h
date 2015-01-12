@@ -45,35 +45,6 @@ private:
         static DbResult Create (ECDbR ecdb);
         };
 
-    //=======================================================================================
-    //! Whenever a profile upgrade is performed a context is created which prepares SQLite
-    //! for the performing table and column alterations.
-    //! E.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
-    //! constraints when altering tables.
-    // @bsiclass                                                 Krischan.Eberle      07/2013
-    //+===============+===============+===============+===============+===============+======
-    struct ProfileUpgradeContext : NonCopyableClass
-        {
-    private:
-        ECDbR m_ecdb;
-        Savepoint& m_defaultTransaction;
-        bool m_isDefaultTransOpenMode;
-
-        bool m_rollbackOnDestruction;
-        DbResult m_beginTransError;
-
-        void DisableForeignKeyEnforcement ();
-        void EnableForeignKeyEnforcement () const;
-    public:
-        ProfileUpgradeContext (ECDbR ecdb, Savepoint& defaultTransaction);
-        ~ProfileUpgradeContext ();
-
-        //! Be default the upgrade transaction is rolled back when the context is destroyed.
-        //! Be calling this method, the transaction is committed when the context is destroyed.
-        void SetCommitAfterUpgrade () {m_rollbackOnDestruction = false;}
-
-        DbResult GetBeginTransError () const {return m_beginTransError;}
-        };
 
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
     static Utf8CP const PROFILENAME;
@@ -116,9 +87,8 @@ public:
     //! error, the outermost transaction is rolled back. 
     //! @param[in] ecdb ECDb file handle to upgrade
     //! @param[in] openParams Open params passed by the client
-    //! @param[in] defaultTransaction BeSQLite's default transaction
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams, Savepoint& defaultTransaction);
+    static DbResult UpgradeECProfile (ECDbR ecdb, Db::OpenParams const& openParams);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

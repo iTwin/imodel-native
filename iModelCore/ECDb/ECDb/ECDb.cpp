@@ -115,8 +115,7 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    BeAssert (GetDefaultTransaction () != nullptr);
-    return m_pimpl->VerifySchemaVersion (*this, params, *GetDefaultTransaction ());
+    return m_pimpl->VerifySchemaVersion (*this, params);
     }
 
 //--------------------------------------------------------------------------------------
