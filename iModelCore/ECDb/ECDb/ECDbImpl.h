@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,17 +44,18 @@ private:
     static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
     void Close ();
-    BentleyStatus ClearCache (ECDbCacheType type = ECDbCacheType::All) const;
+    void ClearCache () const;
 
     ECDbSchemaManager const& GetSchemaManager () const;
     ECN::IECSchemaLocaterR GetSchemaLocater () const;
     ECN::IECClassLocaterR GetClassLocater () const;
 
 
-    DbResult OnDbOpened ();
-    DbResult OnDbCreated (ECDbR ecdb);
-    DbResult VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params);
+    DbResult OnDbOpened () const;
+    DbResult OnDbCreated (ECDbR ecdb) const;
     DbResult OnRepositoryIdChanged (ECDbR ecdb, BeRepositoryId newRepositoryId);
+    void OnDbChangedByOtherConnection () const;
+    DbResult VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params) const;
 
     //other private methods
     std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;

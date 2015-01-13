@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,29 +45,6 @@ private:
         static DbResult Create (ECDbR ecdb);
         };
 
-    //=======================================================================================
-    //! Whenever a profile upgrade is performed a context is created which prepares SQLite
-    //! for the performing table and column alterations.
-    //! E.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
-    //! constraints when altering tables.
-    // @bsiclass                                                 Krischan.Eberle      07/2013
-    //+===============+===============+===============+===============+===============+======
-    struct ProfileUpgradeContext : NonCopyableClass
-        {
-    private:
-        ECDbR m_ecdb;
-        bool m_rollbackOnDestruction;
-
-        void DisableForeignKeyEnforcement () const;
-        void EnableForeignKeyEnforcement () const;
-    public:
-        explicit ProfileUpgradeContext (ECDbR ecdb);
-        ~ProfileUpgradeContext ();
-
-        //! Be default the upgrade transaction is rolled back when the context is destroyed.
-        //! Be calling this method, the transaction is committed when the context is destroyed.
-        void SetCommitAfterUpgrade () {m_rollbackOnDestruction = false;}
-        };
 
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
     static Utf8CP const PROFILENAME;
@@ -82,7 +59,7 @@ private:
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb);
+    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction);
     static DbResult AssignProfileVersion (ECDbR ecdb);
 
     //! Version of the ECDb Profile expected by the ECDb API.

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/BeRepositoryBasedIdSequence.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -82,15 +82,4 @@ DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (int64_t& nextValue) con
     return BE_SQLITE_OK;
     }
 
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                12/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-bool BeRepositoryBasedIdSequence::TryClearCache () const
-    {
-    //only need to clear cache if the DB is open. If it is closed, the cache has already been cleared.
-    if (m_db.IsDbOpen ())
-        return m_db.TryClearRepositoryLocalValueCache (m_repositoryLocalValueIndex);
-
-    return true;
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,20 +12,6 @@
 #include <BeSQLite/ECDb/ECInstanceId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-
-//=======================================================================================
-//! Type of cache to be cleared when calling ECDb::ClearCache.
-//! @ingroup ECDbGroup
-// @bsiclass                                                Krischan.Eberle      12/2014
-//+===============+===============+===============+===============+===============+======
-enum class ECDbCacheType
-    {
-    Schema = 1, //!< Schema manager cache (e.g. ECSchemas returned from ECDbSchemaManager and the loaded ECDb mapping
-    Sequences = 2, //!< Id sequences cache
-    All = Schema | Sequences //!< All types of cache
-    };
-
 
 struct ECDbSchemaManager;
 
@@ -54,6 +40,7 @@ protected:
     ECDB_EXPORT virtual DbResult _OnDbCreated (CreateParams const& params) override;
     ECDB_EXPORT virtual DbResult _OnRepositoryIdChanged (BeRepositoryId newRepositoryId) override;
     ECDB_EXPORT virtual void _OnDbClose () override;
+    ECDB_EXPORT virtual void _OnDbChangedByOtherConnection () override;
     ECDB_EXPORT virtual DbResult _VerifySchemaVersion (Db::OpenParams const& params) override;
 #endif
 
@@ -92,12 +79,8 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater () const;
 
-    //! Clears the ECDb cache or portions of it
-    //! @param[in] type Type of cache to be cleared
-    //! @return If @type is or includes ECDbCacheType::Sequences the method
-    //!         returns ERROR if one of the sequences has been modified in the current transaction and the transaction
-    //!         hasn't ended yet. SUCCESS otherwise.
-    ECDB_EXPORT BentleyStatus ClearCache (ECDbCacheType type = ECDbCacheType::All) const;
+    //! Clears the ECDb cache
+    ECDB_EXPORT void ClearCache () const;
 
     //__PUBLISH_SECTION_END__
     Impl& GetImplR () const;

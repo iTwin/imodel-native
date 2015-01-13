@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/BeRepositoryBasedIdSequence.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -46,8 +46,6 @@ public:
         nextValue = TBeRepositoryBasedId (nextValueInt);
         return BE_SQLITE_OK;
         }
-
-    bool TryClearCache () const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

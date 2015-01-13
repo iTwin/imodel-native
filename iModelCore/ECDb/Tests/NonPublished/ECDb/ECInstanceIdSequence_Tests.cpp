@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/NonPublished/ECDb/ECInstanceIdSequence_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -481,29 +481,4 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     EXPECT_EQ (1, rowCount) << L"Query to retrieve instance inserted before repo id change didn't return the expected row.";
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                  12/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECInstanceIdSequenceTests, ClearCache)
-    {
-    ECDb ecdb;
-    CreateAndReopenTestDb (ecdb, "ecinstanceidclearcachetest.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite);
-
-    ASSERT_EQ (SUCCESS, ecdb.ClearCache (ECDbCacheType::Sequences)) << "Id sequences cache not used, so ClearCache should work";
-
-    ECSqlStatement stmt;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO stco.AAA (ECInstanceId) VALUES (NULL)"));
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-    stmt.Finalize ();
-
-    ASSERT_EQ (ERROR, ecdb.ClearCache (ECDbCacheType::Sequences)) << "After insert, id sequences cache is dirty, so ClearCache should fail";
-    ecdb.AbandonChanges ();
-    ASSERT_EQ (SUCCESS, ecdb.ClearCache (ECDbCacheType::Sequences)) << "After rolling back transaction, id sequences cache should be empty, so ClearCache should work";
-
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO stco.AAA (ECInstanceId) VALUES (NULL)"));
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-    ASSERT_EQ (ERROR, ecdb.ClearCache (ECDbCacheType::Sequences)) << "After insert, id sequences cache is dirty, so ClearCache should fail";
-    ecdb.SaveChanges ();
-    ASSERT_EQ (SUCCESS, ecdb.ClearCache (ECDbCacheType::Sequences)) << "After committing transaction, id sequences cache should be empty, so ClearCache should work";
-    }
 END_ECDBUNITTESTS_NAMESPACE

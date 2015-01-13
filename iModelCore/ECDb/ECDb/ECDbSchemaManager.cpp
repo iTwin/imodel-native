@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -242,7 +242,7 @@ IImportIssueListener const* userProvidedIssueListener
 
     //Clear cache in case we have diffs
     if (!diffs.empty ())
-        m_ecdb.ClearCache (ECDbCacheType::Schema);
+        m_ecdb.ClearCache ();
 
     return SUCCESS;
     }
