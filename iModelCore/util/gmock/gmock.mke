@@ -8,7 +8,7 @@
 PolicyFile = $(_MakeFilePath)GMockPolicy.mki
 %include mdl.mki
 
-name = gmock
+appName = gmock
 o = $(OutputRootDir)build/gmock/build/
 always: 
     ~mkdir $(o)
@@ -21,7 +21,8 @@ GMockPublicApiDirectory = $(GMockDirectory)include/
 #--------------------------------------------------------------------------------------
 # Tell dlmlink.mki where to point symbolic links
 ContextDeliveryDir  = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+CCompPDBName = $(appName)
+LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
 always:
     ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
 
@@ -63,7 +64,7 @@ $(o)gmock-spec-builders$(oext)  : $(GMockDirectory)src/gmock-spec-builders.cc $(
 # Create the lib
 #--------------------------------------------------------------------------------------
 LIB_DEST                = $(o)
-LIB_NAME                = $(name)
+LIB_NAME                = $(appName)
 LIB_OBJS                = $(MultiCompileObjectList)
 LIB_TMP_DIR             = $(o)
 LIB_CREATE_CONTEXT_LINK = 1
