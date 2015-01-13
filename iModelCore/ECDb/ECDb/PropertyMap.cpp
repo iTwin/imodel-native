@@ -868,12 +868,12 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap)
     {
-    Utf8CP        columnName    = m_columnInfo.GetName();
-    PrimitiveType primitiveType = m_columnInfo.GetColumnType();
-    bool          nullable      = m_columnInfo.GetNullable();
-    bool          unique        = m_columnInfo.GetUnique();
-    ECDbSqlColumn::Constraint::Collate       collate       = m_columnInfo.GetCollate();
-    m_column = classMap.FindOrCreateColumnForProperty(*this, columnName, primitiveType, nullable, unique, collate, nullptr);
+    Utf8CP        columnName = m_columnInfo.GetName ();
+    PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
+    bool          nullable = m_columnInfo.GetNullable ();
+    bool          unique = m_columnInfo.GetUnique ();
+    ECDbSqlColumn::Constraint::Collate collate = m_columnInfo.GetCollate ();
+    m_column = classMap.FindOrCreateColumnForProperty (classMap, *this, columnName, primitiveType, nullable, unique, collate, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
     return MapStatus::Success;
     }
@@ -1155,17 +1155,17 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
 
     Utf8String xColumnName(columnName);
     xColumnName.append(".X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(*this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
+    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, *this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
 
     Utf8String yColumnName(columnName);
     yColumnName.append(".Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty (*this, yColumnName.c_str (), primitiveType, nullable, unique, collate, "Y");
+    m_yColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, yColumnName.c_str (), primitiveType, nullable, unique, collate, "Y");
     if (!m_is3d)
         return MapStatus::Success;
 
     Utf8String zColumnName(columnName);
     zColumnName.append(".Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty (*this, zColumnName.c_str (), primitiveType, nullable, unique, collate, "Z");
+    m_zColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, zColumnName.c_str (), primitiveType, nullable, unique, collate, "Z");
     return MapStatus::Success;
     }
 

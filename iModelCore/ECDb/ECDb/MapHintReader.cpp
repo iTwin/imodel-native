@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapHintReader.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -141,6 +141,23 @@ bool ClassHintReader::TryReadReplaceEmptyTableWithEmptyView (bool& replaceEmptyT
     return false;
     }
 
+//---------------------------------------------------------------------------------
+//@bsimethod                                                    affan.khan      01 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ClassHintReader::TryReadUseSharedColumnStrategy (bool& useSharedColumnStrategy, IECInstanceCR classHint)
+    {
+    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
+
+    ECValue v;
+    if (classHint.GetValue (v, BSCAP_UseSharedColumnStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
+        {
+        useSharedColumnStrategy = v.GetBoolean ();
+        return true;
+        }
+
+    return false;
+    }
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -164,6 +164,103 @@ public:
     static bool IsAnyClass (ECN::ECClassCR ecClass);
     };
 
+struct ClassMap;
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct  ColumnFactory : NonCopyableClass
+    {
+    enum class SortBy
+        {
+        None,
+        LeastUsedColumn,
+        MostUsedColumn,
+        LeftToRightColumnOrderInTable
+        };
+    struct Specification
+        {
+        enum class Strategy
+            {
+            Create,
+            CreateOrReuse,
+            CreateOrReuseSharedColumn, //! If no column avaliable will use NameBasedOnLetterFollowedByIntegerSequence to generate new name
+            };
+        enum class GenerateColumnNameOptions
+            {
+            NameBasedOnClassAndPropertyName,
+            NameBasedOnPropertyNameAndPropertyId,
+            NameBasedOnLetterFollowedByIntegerSequence, //! always default when CreateOrReuseSharedColumn is used
+            NeverGenerate
+            };
+
+        private:
+            PropertyMapR m_propertyMap;
+            ECDbSqlColumn::Type m_columnType;
+            ECDbSqlColumn::Constraint::Collate m_collate;
+            GenerateColumnNameOptions m_generateColumnNameOptions;
+            PersistenceType m_persistenceType;
+            Utf8String m_accessString;
+            Utf8String m_requestedColumnName;
+            Strategy m_strategy;
+            uint32_t m_columnUserData;
+            bool m_isNotNull;
+            bool m_isUnique;
+
+        public:
+            Specification (
+                PropertyMapR propertyMap,
+                Strategy stratgy = Strategy::CreateOrReuseSharedColumn,
+                GenerateColumnNameOptions generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence,
+                Utf8CP columnName = nullptr,
+                ECDbSqlColumn::Type columnType = ECDbSqlColumn::Type::Any,
+                uint32_t columnUserData = ECdbDataColumn,
+                PersistenceType persistenceType = PersistenceType::Persisted,
+                Utf8CP accessStringPrefix = nullptr,
+                bool isNotNull = false,
+                bool isUnique = false,
+                ECDbSqlColumn::Constraint::Collate collate = ECDbSqlColumn::Constraint::Collate::Default);
+
+            PropertyMapCR GetPropertyMap () const { return m_propertyMap; }
+            Utf8StringCR GetColumnName () const { return m_requestedColumnName; }
+            Utf8StringCR GetAccessString () const { return m_accessString; }
+            ECDbSqlColumn::Type GetColumnType () const { return m_columnType; }
+            bool IsNotNull () const { return m_isNotNull; }
+            bool IsUnique () const { return m_isUnique; }
+            GenerateColumnNameOptions GetGenerateColumnNameOptions () const { return m_generateColumnNameOptions; }
+            Strategy GetStrategy () const { return m_strategy; }
+            uint32_t GetColumnUserDate () const { return m_columnUserData; }
+            PersistenceType GetColumnPersistenceType () const { return m_persistenceType; }
+            ECDbSqlColumn::Constraint::Collate GetCollate () const { return m_collate; }
+        };
+
+    private:
+        ClassMapCR m_classMap;
+        std::set<Utf8String, CompareIUtf8> columnsInUseSet;
+
+        static void  SortByLeastUsedColumnFirst (std::vector<ECDbSqlColumn const*>& columns);
+        static void  SortByMostUsedColumnFirst (std::vector<ECDbSqlColumn const*>& columns);
+        static void  SortByColumnOrderInTable (std::vector<ECDbSqlColumn const*>& columns);
+
+        BentleyStatus ResolveColumnName (Utf8StringR resolvedColumName, Specification const& specifications, ECDbSqlTable& targetTable) const;
+        ECDbSqlColumn* ApplyCreateStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECDbSqlColumn* ApplyCreateOrReuseStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECN::ECClassId GetPersistenceClassId (Specification const& specifications) const;
+        bool FindReusableSharedDataColumns (std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collate collate = ECDbSqlColumn::Constraint::Collate::Default, SortBy sortby = SortBy::None) const;
+        bool IsColumnInUse (Utf8CP columnFullName) const;
+        bool IsColumnInUse (Utf8CP tableName, Utf8CP columnName) const;
+        bool IsColumnInUse (ECDbSqlColumn const& column) const;
+
+    public:
+        ColumnFactory (ClassMapCR classMap);
+        ~ColumnFactory (){}
+        ECDbSqlTable & GetTable ();
+        void RegisterColumnInUse (ECDbSqlColumn const& column);
+        void Reset ();
+        void Update ();
+        ECDbSqlColumn* Configure (Specification const& specifications, ECDbSqlTable& targetTable);
+        ECDbSqlColumn* Configure (Specification const& specifications);
+    };
 //=======================================================================================
 //!Maps an ECClass to a DbTable
 // @bsiclass                                                     Casey.Mullen      11/2011
@@ -196,12 +293,13 @@ private:
     MapStrategy                 m_mapStrategy;
     bool                        m_isDirty;
     bvector<ClassIndexInfoPtr> m_indexes;
+    bool                        m_useSharedColumnStrategy;
 protected:
     ECN::ECClassCR              m_ecClass;
     ECN::ECClassId              m_parentMapClassId;
     mutable std::unique_ptr<NativeSqlConverter> m_nativeSqlConverter;
     std::unique_ptr<ClassDbView> m_dbView;
-
+    ColumnFactory               m_columnFactory;
 private:
     PropertyMapCP GetPropertyMapForColumnName (Utf8CP columnName) const;
     MapStatus ProcessIndices (ClassMapInfoCR classMapInfo);
@@ -239,7 +337,6 @@ protected:
     PropertyMapCollection& GetPropertyMapsR ();
     
     ECDbSchemaManagerCR GetSchemaManager () const;
-
 public:
     static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
     //! Builds the list of PropertyMaps for this ClassMap
@@ -248,8 +345,16 @@ public:
 
     //! Used when finding/creating DbColumns that are mapped to ECProperties of the ECClass
     //! If there is a name conflict, it may call the PropertyMap's SetColumnName method to resolve it
-    ECDbSqlColumn* FindOrCreateColumnForProperty(PropertyMapR propertyMap, Utf8CP requestedColumnName, ECN::PrimitiveType primitiveType, 
-        bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix);
+    ECDbSqlColumn* FindOrCreateColumnForProperty
+        (
+        ClassMapCR classMap,
+        PropertyMapR propertyMap, 
+        Utf8CP requestedColumnName, 
+        ECN::PrimitiveType primitiveType, 
+        bool nullable, 
+        bool unique, 
+        ECDbSqlColumn::Constraint::Collate collate, 
+        Utf8CP accessStringPrefix);
 
 
     PropertyMapCP GetECInstanceIdPropertyMap () const;
@@ -259,7 +364,8 @@ public:
 
     DbResult Save (bool includeFullGraph);
     void CreateIndices ();
-
+    ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
+    ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
     //! @deprecated: Remove once ECPersistence is being removed
     //! Adds parameter bindings to the supplied vector
     BentleyStatus GenerateParameterBindings (Bindings& parameterBindings, int firstParameterIndex) const;
@@ -295,5 +401,6 @@ public:
     StatusInt   AddClassMap (ClassMapCR classMap);
     bool        IsFinished() const { return m_generatedClassId;}
     };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

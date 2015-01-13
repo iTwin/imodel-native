@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapInfo.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -104,7 +104,7 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy)
 : m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_mapToExistingTable (false),
-m_mapStrategy (mapStrategy), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)),m_replaceEmptyTableWithEmptyView(true)
+m_mapStrategy (mapStrategy), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)), m_replaceEmptyTableWithEmptyView (true), m_useSharedColumnStrategy (false)
     {
     if (Utf8String::IsNullOrEmpty (tableName))
         InitializeFromSchema ();
@@ -247,7 +247,7 @@ void ClassMapInfo::InitializeFromClassHint ()
 
     ClassHintReader::TryReadMapToExistingTable (m_mapToExistingTable, *classHint);
     ClassHintReader::TryReadReplaceEmptyTableWithEmptyView (m_replaceEmptyTableWithEmptyView, *classHint);
-
+    ClassHintReader::TryReadUseSharedColumnStrategy (m_useSharedColumnStrategy, *classHint);
     ClassHintReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
     }
 /*---------------------------------------------------------------------------------**//**

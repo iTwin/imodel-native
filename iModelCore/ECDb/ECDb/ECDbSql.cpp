@@ -1648,6 +1648,19 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::Remove (size_t index)
 BentleyStatus ECDbSqlForiegnKeyConstraint::WriteTo (BeXmlNodeR xmlNode) const
     {
     auto ecdbConstraintXml = xmlNode.AddEmptyElement (ECDBSQL_FORIEGNKEY);
+    if (GetMatchType () != MatchType::NotSpecified)
+        {
+        ecdbConstraintXml->AddAttributeUInt32Value ("MatchType", static_cast<uint32_t>(GetMatchType ()));
+        }
+    if (GetOnDeleteAction () != ActionType::NotSpecified)
+        {
+        ecdbConstraintXml->AddAttributeUInt32Value ("OnDelete", static_cast<uint32_t>(GetOnDeleteAction ()));
+        }
+    if (GetOnDeleteAction () != ActionType::NotSpecified)
+        {
+        ecdbConstraintXml->AddAttributeUInt32Value ("OnUpdate", static_cast<uint32_t>(GetOnDeleteAction ()));
+        }
+
     auto sourceColumnXml = ecdbConstraintXml->AddEmptyElement (ECDBSQL_SOURCE);
     for (auto column : m_sourceColumns)
         {
@@ -1672,9 +1685,27 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable,
     {
     if (!xmlNode.IsIName (ECDBSQL_FORIEGNKEY))
         return BentleyStatus::ERROR;
+    uint32_t flag;
+    MatchType matchType = MatchType::NotSpecified;
+    ActionType onDelete = ActionType::NotSpecified;
+    ActionType onUpdate = ActionType::NotSpecified;
+
+    if (xmlNode.GetAttributeUInt32Value (flag, "MatchType") == BeXmlStatus::BEXML_Success)
+        {
+        matchType = static_cast<MatchType>(flag);
+        }
+    if (xmlNode.GetAttributeUInt32Value (flag, "OnDelete") == BeXmlStatus::BEXML_Success)
+        {
+        onDelete = static_cast<ActionType>(flag);
+        }
+    if (xmlNode.GetAttributeUInt32Value (flag, "OnUpdate") == BeXmlStatus::BEXML_Success)
+        {
+        onUpdate = static_cast<ActionType>(flag);
+        }
 
     Utf8String columName, targetTable;
     std::vector<Utf8String> sourceColumns, targetColumns;
+
 
     for (auto child = xmlNode.GetFirstChild (); child != nullptr; child = child->GetNextSibling ())
         {
@@ -1697,6 +1728,9 @@ BentleyStatus ECDbSqlForiegnKeyConstraint::ReadFrom (ECDbSqlTable& ecdbSqlTable,
             }
         auto table = ecdbSqlTable.GetDbDef ().FindTable (targetTable.c_str ());
         auto constraint = ecdbSqlTable.CreateForiegnKeyConstraint (*table);
+        constraint->SetMatchType (matchType);
+        constraint->SetOnDeleteAction (onDelete);
+        constraint->SetOnUpdateAction (onUpdate);
         for (auto sItor = sourceColumns.begin (), tItor = targetColumns.begin (); sItor != sourceColumns.end () && tItor != targetColumns.end (); ++sItor, ++tItor)
             {
             if (constraint->Add (sItor->c_str (), tItor->c_str ()) != BentleyStatus::SUCCESS)
@@ -2349,6 +2383,24 @@ BentleyStatus ECDbSqlColumn::SetUserFlags (uint32_t userFlags)
 uint32_t ECDbSqlColumn::GetUserFlags () const
     {
     return m_userFlags;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+
+const Utf8String ECDbSqlColumn::GetFullName () const { return BuildFullName (GetTable ().GetName ().c_str (), GetName ().c_str ()); }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//--------------------------------------------------------------------------------------
+//static 
+const Utf8String ECDbSqlColumn::BuildFullName (Utf8CP table, Utf8CP column)
+    {
+    Utf8String str;
+    str.append ("[").append (table).append ("].[").append (column).append ("]");
+    return str;
     }
 
 //---------------------------------------------------------------------------------------

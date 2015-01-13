@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbInternalTypes.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -286,7 +286,7 @@ enum ECContainerType
 #define BSCAV_TargetToSource            L"TargetToSource"
 #define BSCAP_MapToExistingTable        L"MapToExistingTable"
 #define BSCAP_ReplaceEmptyTableWithEmptyView        L"ReplaceEmptyTableWithEmptyView"
-
+#define BSCAP_UseSharedColumnStrategy L"UseSharedColumnStrategy"
 #define BSCAC_ECDbPropertyHint          L"ECDbPropertyHint"
 #define BSCAP_ColumnName                L"ColumnName"
 #define BSCAP_Blob                      L"Blob"

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapInfo.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,7 @@ private:
     bool m_mapToExistingTable;
     bool m_replaceEmptyTableWithEmptyView;
     bool m_isMapToVirtualTable;
-
+    bool m_useSharedColumnStrategy;
 protected:
     MapStrategy m_mapStrategy;
     ECDbMapCR m_ecDbMap;
@@ -91,7 +91,7 @@ public:
     void SetParentClassMap (IClassMap const* parentClassMap) { m_parentClassMap = parentClassMap; }
     bool IsAllowedToReplaceEmptyTableWithEmptyView() const { return m_replaceEmptyTableWithEmptyView; }
     bool IsMappedToExistingTable() const { return m_mapToExistingTable; }
-    
+    bool UseSharedColumnStrategy () const { return m_useSharedColumnStrategy; }
     bvector<StandardKeySpecificationPtr>const& GetStandardKeys() const {return m_standardKeys;}
 
     //! Virtual tables are not persisted   

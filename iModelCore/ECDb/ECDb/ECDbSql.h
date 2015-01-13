@@ -516,7 +516,9 @@ struct ECDbSqlColumn
         uint32_t GetUserFlags () const;
         DependentPropertyCollection const& GetDependentProperties () const{ return m_references; }
         DependentPropertyCollection & GetDependentPropertiesR (){ return m_references; }
+        const Utf8String GetFullName () const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
+        static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
     };
 
 //======================================================================================
@@ -718,7 +720,11 @@ struct ECDbSqlTable :  Identity
         PersistenceManager const& GetPersistenceManager () const { return m_persistenceManager; }
         PersistenceManager& GetPersistenceManagerR () { return m_persistenceManager; }
         bool IsValid () const { return m_columns.size () > 0; }
-      
+        size_t IndexOf (ECDbSqlColumn const& column) const
+            {
+            BeAssert (&(column.GetTable ()) == this);
+            return std::distance (m_orderedColumns.begin (), std::find (m_orderedColumns.begin (), m_orderedColumns.end (), &column));
+            }
     };
 
 
@@ -907,6 +913,73 @@ struct ECDbSQLManager
         bool IsTableChanged (ECDbSqlTable const& table) const;
     };
 
+//struct ECDbSchemaSet
+//    {
+//    std::map<ECN::ECSchemaId,std::unique_ptr<ECDbSchema>> m_schemas;
+//    std::map<ECN::ECClassId, std::unique_ptr<ECDbClass>> m_classes;
+//    std::map<ECN::ECPropertyId, std::unique_ptr<ECDbClass>> m_properties;
+//
+//    };
+//struct ECDbSchema
+//    {
+//    ECN::ECSchemaId m_ecSchemaId;
+//    };
+
+//struct ECDbClassRef;
+//struct ECDbPropertyRef
+//    {
+//    private:
+//        ECDbClassRef& m_ecdbClass;
+//        Utf8CP m_accessString;
+//        ECN::ECPropertyId m_ecPropertyId;
+//    public:
+//        ECDbPropertyRef (ECDbSqlDb& dbDef, ECDbClassRef& ecdbClass, ECN::ECPropertyId propertyId, Utf8CP accessString)
+//            :m_ecdbClass (ecdbClass), m_ecPropertyId (propertyId)
+//            {
+//            m_accessString = dbDef.GetStringPoolR ().Set (accessString);
+//            }
+//        ECDbPropertyRef (ECDbSqlDb& dbDef, ECDbClassRef& ecdbClass, ECN::ECPropertyId propertyId, WCharCP accessString)
+//            :m_ecdbClass (ecdbClass), m_ecPropertyId (propertyId)
+//            {
+//            m_accessString = dbDef.GetStringPoolR ().Set (Utf8String(accessString).c_str());
+//            }
+//        ~ECDbPropertyRef ()
+//            {
+//            }
+//        ECDbClassRef const& GetClassRef () const { return m_ecdbClass; }
+//        ECN::ECPropertyId GetId () const { return m_ecPropertyId; }
+//        Utf8CP GetAccessString () const { return m_accessString; }
+//    };
+////
+//struct ECDbClass
+//    {
+//    private:
+//        ECN::ECClassId m_ecClassId;
+//        std::vector<ECDbPropertyRef const*> m_properties;
+//    public:
+//        ECDbClass ()
+//            {
+//            }
+//        const std::vector<ECDbPropertyRef const*>& GetProperties () const { return m_properties; }
+//        ECN::ECClassId GetId () const { return m_ecClassId; }
+//
+//        static std::unique_ptr<ECDbClass> From (ECDbSqlDb& dbDef, ECN::ECClassCR ecClass)
+//            {
+//            auto ecdbClass = std::unique_ptr<ECDbClass> (new ECDbClass ());
+//            //auto i = ecClass.GetDefaultStandaloneEnabler ()->GetFirstPropertyIndex (0);
+//            //ecClass.GetDefaultStandaloneEnabler ()->GetNextPropertyIndex (0, i);
+//
+//            //for (auto property : ecClass.GetProperties ())
+//            //    {
+//            //    ecdbClass->m_properties.push_back (ECDbPropertyRef(dbDef, *ecdbClass, property->GetId(), ))
+//            //    }
+//
+//            return ecdbClass;
+//            }
+//        static ECDbPropertyRef From (ECN::StructECPropertyCR structProperty)
+//            {
+//            }
+//    };
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
@@ -914,6 +987,7 @@ struct ECDbSqlHelper
     {
     static ECDbSqlColumn::Type PrimitiveTypeToColumnType (ECN::PrimitiveType type);
     static bool IsCompatiable (ECDbSqlColumn::Type target, ECDbSqlColumn::Type source);
+    //static std::vector<
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
