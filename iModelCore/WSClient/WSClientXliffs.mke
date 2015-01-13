@@ -13,3 +13,7 @@ ContextDeliveryDir  = $(OutputRootDir)BuildContexts/WSClient/Delivery/
 SQLANG_CHeader  = $(_MakeFilePath)WebServices/WSError.xliff.h
 SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/WSError_en.xliff
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
+
+SQLANG_CHeader  = $(_MakeFilePath)WebServices/Connect/Connect.xliff.h
+SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/Connect_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki

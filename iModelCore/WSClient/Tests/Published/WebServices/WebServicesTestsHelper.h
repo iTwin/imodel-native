@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+#include <Bentley/BeTest.h>
 #include <WebServices/WSError.h>
 #include <WebServices/WSRepositoryClient.h>
 #include <WebServices/ObjectId.h>
