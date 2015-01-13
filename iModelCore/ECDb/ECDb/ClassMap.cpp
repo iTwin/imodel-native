@@ -801,8 +801,8 @@ void ClassMap::CreateIndices ()
 //------------------------------------------------------------------------------------------
 ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix)
     {
-    ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
-    ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnPropertyNameAndPropertyId;
+    ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::Create;
+    ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType (columnType);
 
     if (classMap.m_useSharedColumnStrategy)
@@ -1329,7 +1329,31 @@ bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn con
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, ColumnFactory::Specification const& specifications, ECDbSqlTable& targetTable) const
+const Utf8String ColumnFactory::Encode (Utf8StringCR acessString) const
+    {
+    Utf8String o;
+    for (auto c : acessString)
+        {
+        if (c == '.')
+            {
+            o.append ("_");
+            }
+        else if (islower (c))
+            {
+            o.append ("c");
+            }
+        else
+            {
+            o.append(SqlPrintfString ("_%02x_", c));
+            }
+        }
+
+    return o;
+    }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, ColumnFactory::Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId) const
     {
     auto existingColumn = specifications.GetColumnName ().empty () ? nullptr : targetTable.FindColumnP (specifications.GetColumnName ().c_str ());
     if (existingColumn != nullptr)
@@ -1342,6 +1366,12 @@ BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, C
             case Specification::GenerateColumnNameOptions::NameBasedOnPropertyNameAndPropertyId:
 
                 resolvedColumName.Sprintf ("%s_%lld", specifications.GetColumnName ().c_str (), specifications.GetPropertyMap ().GetProperty ().GetId ());
+                break;
+            case Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString:
+                {
+                auto const& prefix = Encode(specifications.GetAccessString ());
+                resolvedColumName.Sprintf ("C%lld_%s", propertyLocalToClassId, prefix.c_str());
+                }
                 break;
             case Specification::GenerateColumnNameOptions::NameBasedOnClassAndPropertyName:
                 resolvedColumName = Utf8String (specifications.GetPropertyMap ().GetProperty ().GetClass ().GetName ().c_str ());
@@ -1364,7 +1394,7 @@ BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, C
 ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
     Utf8String resolvedColumnName;
-    if (ResolveColumnName (resolvedColumnName, specifications, targetTable) == BentleyStatus::ERROR)
+    if (ResolveColumnName (resolvedColumnName, specifications, targetTable, propertyLocalToClassId) == BentleyStatus::ERROR)
         {
         return nullptr;
         }
