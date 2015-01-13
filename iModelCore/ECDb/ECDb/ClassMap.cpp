@@ -486,7 +486,7 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* p
     auto stat = AddPropertyMaps (mapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
-
+    
     stat = ProcessIndices (mapInfo);
     if (stat != MapStatus::Success)
         return stat;
@@ -801,7 +801,7 @@ void ClassMap::CreateIndices ()
 //------------------------------------------------------------------------------------------
 ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix)
     {
-    ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::Create;
+    ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType (columnType);
 
@@ -1353,10 +1353,17 @@ const Utf8String ColumnFactory::Encode (Utf8StringCR acessString) const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, ColumnFactory::Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId) const
+BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, ColumnFactory::Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId, int retryCount) const
     {
+    if (retryCount > 0)
+        {
+        BeAssert (!resolvedColumName.empty ());
+        resolvedColumName += SqlPrintfString ("%d", retryCount);
+        return BentleyStatus::SUCCESS;
+        }
+
     auto existingColumn = specifications.GetColumnName ().empty () ? nullptr : targetTable.FindColumnP (specifications.GetColumnName ().c_str ());
-    if (existingColumn != nullptr)
+    if (existingColumn != nullptr && IsColumnInUse (*existingColumn))
         {
         switch (specifications.GetGenerateColumnNameOptions ())
             {
@@ -1393,10 +1400,23 @@ BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, C
 //------------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
-    Utf8String resolvedColumnName;
-    if (ResolveColumnName (resolvedColumnName, specifications, targetTable, propertyLocalToClassId) == BentleyStatus::ERROR)
+    Utf8String resolvedColumnName, tmp;
+    int retryCount = 0;
+    if (ResolveColumnName (tmp, specifications, targetTable, propertyLocalToClassId, retryCount) == BentleyStatus::ERROR)
         {
         return nullptr;
+        }
+
+    resolvedColumnName = tmp;
+    while (targetTable.FindColumnP (resolvedColumnName.c_str ()) != nullptr)
+        {
+        retryCount++;
+        resolvedColumnName = tmp;
+        if (ResolveColumnName (resolvedColumnName, specifications, targetTable, propertyLocalToClassId, retryCount) == BentleyStatus::ERROR)
+            {
+            return nullptr;
+            }
+
         }
 
     auto canEdit = targetTable.GetEditHandle ().CanEdit ();
@@ -1427,7 +1447,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification 
 ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
     auto existingColumn = specifications.GetColumnName ().empty () ? nullptr : targetTable.FindColumnP (specifications.GetColumnName ().c_str ());
-    if (existingColumn != nullptr)
+    if (existingColumn != nullptr && !IsColumnInUse (*existingColumn))
         {
         if (ECDbSqlHelper::IsCompatiable (existingColumn->GetType (), specifications.GetColumnType ()))
             {
