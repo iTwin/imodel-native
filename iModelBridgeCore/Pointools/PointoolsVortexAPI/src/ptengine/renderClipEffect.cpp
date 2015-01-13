@@ -59,7 +59,7 @@ bool RenderClipEffectGL::isEnabled( const RenderSettings *settings ) const
 }
 /*****************************************************************************/
 void	RenderClipEffectGL::startShaderFrame( const RenderContext *context, ShaderObj *shader  )
-{
+{	
 	int numClipPlanes = ClipManager::instance().getNumClippingPlanes();	
 #ifdef _DEBUG		
 	// only allow 6 planes for now, this is all that is supported in the shader
@@ -67,13 +67,13 @@ void	RenderClipEffectGL::startShaderFrame( const RenderContext *context, ShaderO
 #endif	
 
 	GLfloat* planes = new GLfloat[numClipPlanes*4];
-	GLint* planesEnabled = new GLint[numClipPlanes];
+	GLint* planeEnabled = new GLint[numClipPlanes];
 	memset(planes, 0, sizeof(GLfloat)*numClipPlanes*4);
 	double a,b,c,d;		
 
 	for (int i = 0; i < numClipPlanes; i++)
 	{		
-		if (planesEnabled[i] = ClipManager::instance().isClippingPlaneEnabled(i))		
+		if (planeEnabled[i] = ClipManager::instance().isClippingPlaneEnabled(i))		
 		{
 			if (ClipManager::instance().getClippingPlaneParameters(i, a, b, c, d) == PTV_SUCCESS)
 			{
@@ -87,10 +87,10 @@ void	RenderClipEffectGL::startShaderFrame( const RenderContext *context, ShaderO
 		
 	ptgl::Shader *shaderGL = reinterpret_cast<ptgl::Shader *>(shader);
 	shaderGL->setUniform4fv("pCP", numClipPlanes, planes);	
-	shaderGL->setUniform1iv("pCPe", numClipPlanes, planesEnabled);	
+	shaderGL->setUniform1iv("pCPe", numClipPlanes, planeEnabled);	
 	shaderGL->setUniform1i("CSt", ClipManager::instance().getClipStyle());	
 	
-	delete [] planesEnabled;
+	delete [] planeEnabled;
 	delete [] planes;	
 }
 /*****************************************************************************/

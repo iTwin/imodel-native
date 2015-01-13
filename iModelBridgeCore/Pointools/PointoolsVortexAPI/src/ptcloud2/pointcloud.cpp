@@ -238,7 +238,7 @@ void PointCloud::_computeBounds()
 	{
 		/* if there is a user transform, force recompute */ 
 		bool hasXform = userTransformationMatrix() == mmatrix4d::identity() ? false : true;
-		if (hasXform) 
+		//if (hasXform) - this causes issues when a transform is reset
 			for (int i=0; i<_voxels.size(); i++) _voxels[i]->flag( ExtentsDirty, true );
 
 		_root->computeExtents();

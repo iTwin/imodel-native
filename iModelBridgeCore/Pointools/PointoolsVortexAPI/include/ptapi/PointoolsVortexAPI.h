@@ -268,8 +268,8 @@ PThandle	PTAPI	ptCreateSceneInstance( PThandle scene );
 /* transformation */ 
 PTres		PTAPI	ptSetCloudTransform( PThandle cloud, const PTdouble *transform4x4, bool row_order );
 PTres		PTAPI	ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, bool row_order );
-PTres		PTAPI	ptGetCloudTransform( PThandle cloud, PTdouble *transform4x3, bool row_order );
-PTres		PTAPI	ptGetSceneTransform( PThandle scene, PTdouble *transform4x3, bool row_order );
+PTres		PTAPI	ptGetCloudTransform( PThandle cloud, PTdouble *transform4x4, bool row_order );
+PTres		PTAPI	ptGetSceneTransform( PThandle scene, PTdouble *transform4x4, bool row_order );
 
 /* persistence of viewport setup */ 
 PTuint	PTAPI ptGetPerViewportDataSize();

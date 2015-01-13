@@ -26,7 +26,7 @@ void FileTool::command( int cmdId )
 		if (ptNumScenes())
 			viewRedraw();
 
-		VortexExampleApp::instance()->updateBoundingBox();
+		VortexExampleApp::instance()->notifySceneUpdate();
 
 		break;
 
@@ -34,7 +34,7 @@ void FileTool::command( int cmdId )
 		ptRemoveAll();
 		viewRedraw();
 
-		VortexExampleApp::instance()->updateBoundingBox();
+		VortexExampleApp::instance()->notifySceneUpdate();
 
 		break;
 	}

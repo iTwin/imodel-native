@@ -138,6 +138,7 @@ struct ShaderSetup
 		settings->pointSize( pointSize );
 		settings->dynamicAdaptivePntSize( adaptivePntSize );
 		settings->enableUserChannelRender( channelRender );
+		settings->clippingEnabled( clipping );
 
 		/*
 		if (blending)

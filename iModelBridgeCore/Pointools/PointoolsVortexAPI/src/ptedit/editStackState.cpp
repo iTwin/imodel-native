@@ -24,11 +24,160 @@ Voxel * LeafID::voxelFromID( LeafID lid )
 		return pcloud->voxels()[ lid.leafIndex ];
 	return 0;
 }
-//
-//
-//
+//-----------------------------------------------------------------------------
+// New structures to enable transforming clouds / changing visibility within the 
+// editing stack. This is difficult without adding a lot of state data if 
+// no order dependency is to be maintained - ie. for undo  redo etc 
+// instead we add an index into the state information and save staus in a separate
+// structure which must also be persisted
+// Note positions are always stored in world space to avoid CS shift issues
+//-----------------------------------------------------------------------------
+/*
+		const vector3d	&translation()	const				{ return m_translation; }
+		const vector3d	&eulers()		const				{ return m_eulers; }
+		const vector3d	&scale()		const				{ return m_scale; }
+		const vector3d  &origin()		const				{ return m_origin; }
+*/
+struct TransformReader : public PointsVisitor
+{
+	TransformReader(pt::datatree::Branch *b)
+	{
+		write_branch = b;
+		scene_count = 0;
+		cloud_count = 0;
+	}
+	bool scene(pcloud::Scene *sc)			
+	{ 
+		char buff[64];
+		sprintf(buff, "sc%lld", (long long)sc->objectGuid().getPart1());
+		scene_branch = write_branch->addBranch(buff);
+
+		scene_branch->addNode( "visible", sc->displayInfo().visible() );
+
+		cloud_count = 0;
+		return true; 
+	}
+	bool cloud(pcloud::PointCloud *cloud)	
+	{ 
+		if (scene_branch)
+		{
+			char buff[64];
+			sprintf(buff, "cloud_%i", cloud_count++);
+			
+			pt::datatree::Branch *cloud_branch = scene_branch->addBranch(buff);
+
+			mmatrix4d m(cloud->transform().matrix());
+			cloud_branch->addNode( "visible", cloud->displayInfo().visible() );
+			cloud_branch->addBlob( "transform", sizeof(mmatrix4d), &m, true );
+		}
+		return false; 
+	}
+
+	int						scene_count;
+	int						cloud_count;
+	pt::datatree::Branch	*write_branch;
+	pt::datatree::Branch	*scene_branch;
+};
+// write the transformations back to the scene / clouds
+struct TransformWriter : public PointsVisitor
+{
+	TransformWriter(const pt::datatree::Branch *b)
+	{
+		read_branch = b;
+		scene_count = 0;
+		cloud_count = 0;
+	}
+	bool scene(pcloud::Scene *sc)			
+	{ 
+		char buff[64];
+		sprintf(buff, "sc%lld", sc->objectGuid().getPart1());
+		scene_branch = read_branch->getBranch(buff);
+
+		if (scene_branch)
+		{
+			bool vis;
+			
+			if (scene_branch->getNode( "visible", vis ))	
+			{
+				if (vis)	sc->displayInfo().show();
+				else		sc->displayInfo().hide();
+			}
+		}
+		cloud_count = 0;
+		return true; 
+	}
+	bool cloud(pcloud::PointCloud *cloud)	
+	{ 
+		if (scene_branch)
+		{
+			bool vis = true;
+			bool changed = false;
+			char buff[64];
+			mmatrix4d m;
+
+			sprintf(buff, "cloud_%i", cloud_count++);
+			
+			pt::datatree::Branch *cloud_branch = scene_branch->getBranch(buff);
+
+			if (cloud_branch->getNode( "visible", vis ))
+			{
+				if (vis)	cloud->displayInfo().show();
+				else		cloud->displayInfo().hide();
+			}
+			
+			pt::datatree::Blob *b = cloud_branch->getBlob("transform");
+
+			if (b && b->_size == sizeof(mmatrix4d))
+			{
+				memcpy(&m, b->_data, sizeof(m));
+
+				cloud->transform().useMatrix(m);
+				changed = true;	// could optimise
+			}
+			if (changed)
+			{
+				cloud->projectBounds().dirtyBounds();
+				cloud->computeBounds();
+
+				const_cast<pcloud::Scene*>(cloud->scene())->computeBounds();
+			}
+		}
+		return false; 
+	}
+
+	int						scene_count;
+	int						cloud_count;
+	const pt::datatree::Branch	*read_branch;
+	const pt::datatree::Branch	*scene_branch;
+};
+struct PointCloudStateHandler 
+{
+	PointCloudStateHandler()
+	{
+		// register self
+		static StateHandler s;	// just aggregates delegates..hmm might be issues in multi-thread stack use (not supported)
+
+		s.read = pt::MakeDelegate( this, &PointCloudStateHandler::readState );
+		s.write = pt::MakeDelegate( this, &PointCloudStateHandler::writeState );
+		OperationStack::addStateHandler( &s );
+	}
+	void writeState(pt::datatree::Branch *b) const
+	{
+		// read the state of all point clouds and write to branch
+		TransformReader tr(b);
+		thePointsScene().visitPointClouds( &tr );
+	}
+	void readState(const pt::datatree::Branch *b)
+	{
+		// find the node
+		TransformWriter tw(b);
+		thePointsScene().visitPointClouds( &tw );
+	}
+};
+static PointCloudStateHandler s_pointCloudStateHandler;
 //-----------------------------------------------------------------------------
 // Create Cloud State Visitor : creates the per cloud state structures
+// THIS IS UNUSED AND ITS INTENT IS UNCLEAR
 //-----------------------------------------------------------------------------
 template <class Map>
 struct CreateCloudStateVisitor : public PointsVisitor
@@ -41,7 +190,7 @@ struct CreateCloudStateVisitor : public PointsVisitor
 	{ 
 		m_data.insert( 
 			Map::value_type(
-				cloud->guid(), 
+				cloud->objectGuid(), 
 				new CloudEditState( cloud, (ubyte)m_flags ))		// insert the per cloud state object
 				);
 		return true;

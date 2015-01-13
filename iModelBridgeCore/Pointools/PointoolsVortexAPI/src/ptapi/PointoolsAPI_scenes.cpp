@@ -126,8 +126,12 @@ PTres  PTAPI ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, 
 			cloud->transform().useMatrix( m );
 			cloud->localBounds().dirtyBounds();
 			cloud->projectBounds().dirtyBounds();
+			cloud->computeBounds();
 		}
 	}
+	sc->localBounds().dirtyBounds();
+	sc->projectBounds().dirtyBounds();
+	sc->computeBounds();
 
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION ); 
 	return setLastErrorCode( PTV_SUCCESS ); 
@@ -156,8 +160,11 @@ PTres		PTAPI	ptGetSceneTransform( PThandle scene, PTdouble *transform4x4, bool r
 	{
 		return setLastErrorCode( PTV_INVALID_HANDLE );
 	}
+	// return the sub-clouds transform
+	// this is not correct, but it is the best we can do
+	// until the transform system is updated from Bentely Pointools
 
-	mmatrix4d mat = sc->registration().matrix();
+	mmatrix4d mat = sc->cloud(0)->transform().matrix();
 	if (!row_order) mat.transpose();
 
 	memcpy(transform4x4, mat.data(), sizeof(double)*16);
@@ -498,6 +505,7 @@ PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTflo
 	setLastErrorCode( PTV_INVALID_HANDLE );
 	return 0;	
 }
+
 //-------------------------------------------------------------------------------
 // ptSceneBounds
 //-------------------------------------------------------------------------------

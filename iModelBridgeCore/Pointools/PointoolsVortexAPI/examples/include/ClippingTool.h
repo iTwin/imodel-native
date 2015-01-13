@@ -57,6 +57,7 @@ private:
 	double	getConst(const char* def, const char* constLetter);
 	void	updateListFromPlanes(bool enablePlanes, int keepSelected = -1);
 	void	enableClipping(bool enable);
+	void	updateToggleClippingButtonText();
 
 	Mouse				m_mouse;
 	std::vector<int>	m_polygon;

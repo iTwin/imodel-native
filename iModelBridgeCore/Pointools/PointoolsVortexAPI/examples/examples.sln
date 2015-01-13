@@ -75,6 +75,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Clash", "clash\clashTest.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Clipping", "clipping\clipping.vcproj", "{4294A962-E1E3-4FBC-B106-7FA98AAAA283}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SubObjects", "subobjects\subobjects.vcproj", "{56B753B9-61B4-42C5-86E0-087F2CE7D66E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -183,6 +185,14 @@ Global
 		{4294A962-E1E3-4FBC-B106-7FA98AAAA283}.Release|Win32.Build.0 = Release|Win32
 		{4294A962-E1E3-4FBC-B106-7FA98AAAA283}.Release|x64.ActiveCfg = Release|x64
 		{4294A962-E1E3-4FBC-B106-7FA98AAAA283}.Release|x64.Build.0 = Release|x64
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Debug|Win32.Build.0 = Debug|Win32
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Debug|x64.ActiveCfg = Debug|x64
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Debug|x64.Build.0 = Debug|x64
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Release|Win32.ActiveCfg = Release|Win32
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Release|Win32.Build.0 = Release|Win32
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Release|x64.ActiveCfg = Release|x64
+		{56B753B9-61B4-42C5-86E0-087F2CE7D66E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

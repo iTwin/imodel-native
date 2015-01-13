@@ -84,6 +84,7 @@ void ClippingTool::command( int cmdId )
 
 		case CmdToggleClipping:
 			enableClipping(!m_clippingOn);			
+			updateToggleClippingButtonText();
 			viewRedraw();
 			break;
 	}
@@ -250,10 +251,11 @@ void ClippingTool::buildUserInterface(GLUI_Node *parent)
 	spacer->set_w( PANEL_WIDTH*0.5 - 12 );
 
 	m_fitPlanesButton = new GLUI_Button( clipTools, "Fit Planes to Bounds", CmdFitPlanesToBB, &Tool::dispatchCmd );			
-	m_toggleClipping = new GLUI_Button( clipTools, "Toggle Clipping", CmdToggleClipping, &Tool::dispatchCmd );			
+	m_toggleClipping = new GLUI_Button( clipTools, "Switch Clipping Off", CmdToggleClipping, &Tool::dispatchCmd );			
 	m_clipStyleButton = new GLUI_Button( clipTools, "Toggle Clip Style", CmdToggleClipStyle, &Tool::dispatchCmd );		
 	spacer = new GLUI_StaticText( clipTools, "" );
 	spacer->set_w( PANEL_WIDTH/2 );
+	updateToggleClippingButtonText();
 	
 	m_planeDefList = new GLUI_List( clipTools, false, CmdSelectPlaneDef, &Tool::dispatchCmd );	
 	m_planeDefList->set_w(PANEL_WIDTH);
@@ -485,4 +487,12 @@ void ClippingTool::enableClipping(bool enable)
 		ptEnableClipping();
 	else
 		ptDisableClipping();
+}
+
+void ClippingTool::updateToggleClippingButtonText()
+{
+	if (m_toggleClipping)
+	{
+		m_toggleClipping->set_name((m_clippingOn) ? "Switch Clipping Off" : "Switch Clipping On");
+	}
 }

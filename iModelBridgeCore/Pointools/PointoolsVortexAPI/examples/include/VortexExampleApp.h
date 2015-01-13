@@ -186,6 +186,7 @@ public:
 	virtual bool onMouseButtonUp( int button, int x, int y )			{ return false; }
 	virtual bool onMouseMove( int x, int y )							{ return false; }
 	virtual bool onMouseDrag( int x, int y, int startX, int startY )	{ return false; }
+	virtual void onSceneUpdate( void )									{};
 	virtual void onIdle()												{};
 
 	virtual void drawPostDisplay()		{}
@@ -245,6 +246,8 @@ public:
 	void					dirty() { m_dirty = true; }
 
 	void					updateBoundingBox();
+
+	void					notifySceneUpdate( void );
 
 protected:
 	

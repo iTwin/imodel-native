@@ -929,3 +929,14 @@ VortexExampleApp::VortexExampleApp( std::string &appTitle )
 	m_bbUpper[1] = 0;
 	m_bbUpper[2] = 0;
 }
+//-----------------------------------------------------------------------------
+void	VortexExampleApp::notifySceneUpdate( void )
+//-----------------------------------------------------------------------------
+{
+	updateBoundingBox();
+
+	for (Tools::iterator i = m_tools.begin(); i!=m_tools.end(); i++)
+	{
+		(*i)->onSceneUpdate();
+	}
+}

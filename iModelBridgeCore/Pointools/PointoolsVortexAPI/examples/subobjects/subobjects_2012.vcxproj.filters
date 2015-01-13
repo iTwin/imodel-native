@@ -6,30 +6,30 @@
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Source Files\app">
-      <UniqueIdentifier>{a08a5812-1acd-4e2e-ba0f-3df64f0eb8bb}</UniqueIdentifier>
+      <UniqueIdentifier>{bde4ba84-554c-4f97-8808-d44e1d482e5d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\tools">
-      <UniqueIdentifier>{3409bc65-f0b3-4dfe-81b8-d02595acfa0f}</UniqueIdentifier>
+      <UniqueIdentifier>{ab8588f2-fa3f-4636-8678-8a2400cde80e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\renderers">
-      <UniqueIdentifier>{668e3d9a-78ca-4c81-a032-c3c138d16528}</UniqueIdentifier>
+      <UniqueIdentifier>{aa8a85ae-d70a-4c99-b56d-16924074cb6b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resources">
-      <UniqueIdentifier>{2e67b77e-c2c5-4b4a-afa6-7ed42b4ef03e}</UniqueIdentifier>
+      <UniqueIdentifier>{8ffc5de9-4dfd-487c-ba76-7706203e362c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EditingExampleApp.cpp">
+    <ClCompile Include="..\src\CloudVisibilityTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\EditTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ExtentsQueryTest.cpp">
+    <ClCompile Include="SubObjectsExampleApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\PointoolsVortexAPI_import.cpp">
@@ -56,6 +56,12 @@
     <ClCompile Include="..\src\ShaderTool.cpp">
       <Filter>Source Files\tools</Filter>
     </ClCompile>
+    <ClCompile Include="..\snapping\SnapTest.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObjectsTool.cpp">
+      <Filter>Source Files\tools</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\ClassificationRender.cpp">
       <Filter>Source Files\renderers</Filter>
     </ClCompile>
@@ -68,14 +74,11 @@
     <ClCompile Include="..\src\VortexRender.cpp">
       <Filter>Source Files\renderers</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\CloudVisibilityTool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\TransformTool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\CloudVisibilityTool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\EditTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>

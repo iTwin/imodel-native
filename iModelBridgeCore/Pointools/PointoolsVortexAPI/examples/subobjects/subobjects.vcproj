@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="Tuning"
-	ProjectGUID="{27F94F28-1D8D-427A-AF3E-CD9E717CA3EF}"
+	Name="SubObjects"
+	ProjectGUID="{56B753B9-61B4-42C5-86E0-087F2CE7D66E}"
 	RootNamespace="example"
 	Keyword="Win32Proj"
 	>
@@ -44,11 +44,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include"
-				PreprocessorDefinitions="PT_DEBUG;WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE; _CRT_SECURE_NO_WARNINGS; _CRT_NON_CONFORMING_SWPRINTFS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				FloatingPointExceptions="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -65,13 +64,94 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glui32d.lib shlwapi.lib"
-				OutputFile="..\bin\x86\tuning_d.exe"
+				AdditionalDependencies="glui32d.lib shlwapi.lib "
+				OutputFile="..\bin\x86\subobjects_d.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\lib"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
+				CLRThreadAttribute="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\include"
+				PreprocessorDefinitions="WIN32;WIN64;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="glui64d.lib glut64.lib shlwapi.lib"
+				OutputFile="..\bin\x64\editing_d.exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="..\lib"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -126,7 +206,6 @@
 				AdditionalIncludeDirectories="..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS"
 				RuntimeLibrary="2"
-				FloatingPointExceptions="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -143,8 +222,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glui32.lib shlwapi.lib"
-				OutputFile="..\bin\x86\tuning.exe"
+				AdditionalDependencies="glui32.lib shlwapi.lib "
+				OutputFile="..\bin\x86\subobjects.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\lib"
 				GenerateDebugInformation="true"
@@ -152,86 +231,6 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\include"
-				PreprocessorDefinitions="WIN32;WIN64;_DEBUG;_CONSOLE; _CRT_SECURE_NO_WARNINGS; _CRT_NON_CONFORMING_SWPRINTFS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="glui64d.lib glut64.lib shlwapi.lib"
-				OutputFile="..\bin\x64\tuning_d.exe"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\lib"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -284,6 +283,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="0"
 				AdditionalIncludeDirectories="..\include"
 				PreprocessorDefinitions="WIN32;WIN64;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NON_CONFORMING_SWPRINTFS"
 				RuntimeLibrary="2"
@@ -303,8 +303,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glui64.lib glut64.lib shlwapi.lib "
-				OutputFile="..\bin\x64\tuning.exe"
+				AdditionalDependencies="glui64.lib shlwapi.lib glut64.lib"
+				OutputFile="..\bin\x64\editing.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\lib"
 				GenerateDebugInformation="true"
@@ -348,15 +348,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\src\ExtentsQueryTest.cpp"
+				RelativePath="..\src\CloudVisibilityTool.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\TuningExampleApp.cpp"
+				RelativePath="..\src\EditTool.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\src\TuningTool.cpp"
+				RelativePath=".\SubObjectsExampleApp.cpp"
 				>
 			</File>
 			<Filter
@@ -391,19 +391,19 @@
 					>
 				</File>
 				<File
-					RelativePath="..\src\LoadMetricsTool.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\src\MetaTagTool.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\src\NavigationTool.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\src\ShaderTool.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\snapping\SnapTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\SubObjectsTool.cpp"
 					>
 				</File>
 			</Filter>
@@ -416,10 +416,6 @@
 				</File>
 				<File
 					RelativePath="..\src\QueryBuffer.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\src\QueryPerCloudRender.cpp"
 					>
 				</File>
 				<File
@@ -438,7 +434,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\include\LoadMetricsTool.h"
+				RelativePath="..\include\CloudVisibilityTool.h"
+				>
+			</File>
+			<File
+				RelativePath="..\include\EditTool.h"
 				>
 			</File>
 			<File
@@ -447,9 +447,7 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			Name="Resources"
 			>
 			<File
 				RelativePath="..\res\general.rc"

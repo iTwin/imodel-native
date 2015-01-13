@@ -76,6 +76,8 @@ void ClipManager::enableClipping()
 	// set the current isolation filter that will be used to clip editing operations
 	m_currentIsolationFilter.intersect = pt::MakeDelegate(&s_filterClip, &ptedit::IsolationFilterClip::intersect);
 	m_currentIsolationFilter.inside = pt::MakeDelegate(&s_filterClip, &ptedit::IsolationFilterClip::inside);
+
+	ptEnable(PT_CLIPPING);
 }
 
 void ClipManager::disableClipping()
@@ -85,6 +87,8 @@ void ClipManager::disableClipping()
 	// switch off the isolation filter
 	m_currentIsolationFilter.intersect = pt::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::intersect);
 	m_currentIsolationFilter.inside = pt::MakeDelegate(&s_filterNone, &ptedit::IsolationFilterNone::inside);
+
+	ptDisable(PT_CLIPPING);
 }
 
 PTres ClipManager::setClipStyle( PTuint style )
@@ -103,6 +107,22 @@ uint ClipManager::getNumClippingPlanes()
 {
 	// if other types of clip objects that are not clip planes are added in the future this will need updating
 	return m_clipPlanes.size();
+}
+
+uint ClipManager::getNumEnabledClippingPlanes()
+{
+	uint numEnabled = 0;
+
+	for (ClipPlanes::iterator it = m_clipPlanes.begin(); it != m_clipPlanes.end(); it++)
+	{		
+		if (ClipPlane* obj = (*it))
+		{
+			if (obj->enabled())
+				numEnabled++;
+		}
+	}
+
+	return numEnabled;
 }
 
 bool ClipManager::isClippingPlaneEnabled( PTuint id )

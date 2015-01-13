@@ -28,11 +28,13 @@ public:
 	void	enableClipping();
 	void	disableClipping();
 	bool	clippingEnabled() { return m_enabled; }
+	bool	clippingEnabledAndClippingPlanesEnabled() { return clippingEnabled() && getNumEnabledClippingPlanes(); }
 		
 	// current clip styles are PT_CLIP_OUSTIDE (the default) and PT_CLIP_INSIDE
 	PTres	setClipStyle( PTuint style );
 	PTuint	getClipStyle() { return m_clipStyle; }
 	uint	getNumClippingPlanes();	
+	uint	getNumEnabledClippingPlanes();
 	bool	isClippingPlaneEnabled( PTuint plane );
 	PTres	enableClippingPlane( PTuint plane );
 	PTres	disableClippingPlane( PTuint plane );

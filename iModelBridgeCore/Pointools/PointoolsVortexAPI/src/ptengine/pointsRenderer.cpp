@@ -97,7 +97,7 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 
 	ptgl::State::clear();
 
-	filterVoxelList( false );
+	filterVoxelList( false, scene );
 	
 	if (g_showDebugInfo) renderDiagnostics();					// debug output	
 
@@ -117,7 +117,7 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 * @return void
 */
 /*****************************************************************************/
-void PointsRenderer::filterVoxelList( bool dismissRendered )
+void PointsRenderer::filterVoxelList( bool dismissRendered, const pcloud::Scene *scene )
 {
 	PointsScene::VoxIterator i = m_voxlist.begin();
 	PointsScene::VoxIterator vend = m_voxlist.end();
@@ -131,6 +131,7 @@ void PointsRenderer::filterVoxelList( bool dismissRendered )
 		pcloud::Voxel *vox = *i;
 		
 		if ( (dismissRendered && vox->flag(pcloud::Rendered))		// this voxel has been processed already so dismiss
+			|| (scene && vox->pointCloud()->scene() != scene)		// scene is specified
 			||	vox->flag(pcloud::WholeClipped)						// clip box
 			|| !vox->flag(pcloud::Visible)							// in frustum
 			|| !vox->pointCloud()->displayInfo().visible()			

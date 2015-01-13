@@ -50,31 +50,29 @@ This example demonstrates the layer based editing capabilities of Vortex
 #include "..\include\NavigationTool.h"	// camera navigation
 #include "..\include\FileTool.h"		// file open/close
 #include "..\include\ShaderTool.h"		// shading options
-#include "..\include\EditTool.h"		// editing features
-#include "..\include\TransformTool.h"		// move stuff about
-#include "..\include\VortexRender.h"	// Vortex OpenGL rendering
-#include "..\include\ClientServerTest.h"
+#include "..\snapping\snaptest.h"		// editing features
+#include "SubObjectsTool.h"
 #include "..\include\CloudVisibilityTool.h"
 
 // Main Entry Point
 int main(int argc, char* argv[])
 {
-	VortexExampleApp example( std::string("Editing Example") );
+	VortexExampleApp example( std::string("SubObjects Example") );
 
-	if (example.initializeApplication(argc, argv, false))
+	if (example.initializeApplication(argc, argv, true))
 	{
+		SubObjectsTool * subobj = new SubObjectsTool;
+
 		example.addTool(new FileTool);
-		example.addTool(new TransformTool);			// must be last so it receives events last
-		example.addTool(new EditTool(false));			// see code in EditingTool.cpp for implementation of editing features
+		example.addTool(subobj);			// see code in EditingTool.cpp for implementation of editing features
+		example.addTool(new SnapTest);		
 		example.addTool(new ShaderTool);
-		example.addTool(new CloudVisibilityTool);		// for switching the visibility of whole points clouds on and off
 		example.addTool(new CameraNavigation);			// must be last so it receives events last
-		example.addTool(new ClientServerTest);
 
 		example.getView().showLayerBounds = true;		// shows the bounding box of the layer - no bb caching so minor performance hit
 
 		if (!example.getRenderer())
-			example.setRenderer( new VortexRender );	// default Vortex OpenGL render if no Tool has set renderer
+			example.setRenderer( subobj );	// sub object renderer
 
 		example.runApplication();	
 	}

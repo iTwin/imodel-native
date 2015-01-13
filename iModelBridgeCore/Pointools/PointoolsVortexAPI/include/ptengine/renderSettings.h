@@ -121,6 +121,9 @@ namespace pointsengine
 		static	 const ubyte	*selectionColour();
 		static	void			selectionColour(const ubyte *col3bytes);
 
+		bool			clippingEnabled() const					{ return m_clippingEnabled; }
+		void			clippingEnabled(bool val)				{ m_clippingEnabled= val; }
+
 		const			RenderSettings		&operator=(const RenderSettings &settings);
 		
 		void			enableUserChannelRender(bool enable)	{ m_userChannelRender=enable; }
@@ -166,5 +169,7 @@ namespace pointsengine
 		bool			m_userChannelRender;
 
 		static ubyte	m_selectionColour[4];
+
+		bool			m_clippingEnabled;
 	};
 }

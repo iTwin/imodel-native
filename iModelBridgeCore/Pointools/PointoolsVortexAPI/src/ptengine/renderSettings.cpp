@@ -39,7 +39,10 @@ void RenderSettings::setToDefault()
 
 	m_userChannelRender = false;
 
+	m_clippingEnabled = false;
+
 	m_fps = 22;
+	
 }
 
 void RenderSettings::selectionColour( const ubyte *col3bytes )

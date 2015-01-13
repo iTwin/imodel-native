@@ -402,6 +402,10 @@
 					RelativePath="..\src\ShaderTool.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\src\TransformTool.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="renderers"
@@ -441,6 +445,10 @@
 				RelativePath=".\stdafx.h"
 				>
 			</File>
+			<File
+				RelativePath="..\include\TransformTool.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resources"
@@ -448,6 +456,22 @@
 			<File
 				RelativePath="..\res\general.rc"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

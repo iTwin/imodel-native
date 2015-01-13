@@ -45,7 +45,7 @@ public:
 	const PointsBufferI			*activeBuffer() const;
 
 private:
-	void						filterVoxelList( bool dismissRendered );
+	void						filterVoxelList( bool dismissRendered, const pcloud::Scene *scene=0 );
 	void						renderDiagnostics();;
 	int							fillAndRenderPointsBuffers( RenderContext *context, bool dynamic );
 

@@ -36,13 +36,14 @@ namespace ptedit
 		{
 			DeselectPointsVisitor v;
 			TraverseScene::withVisitor(&v);
-			return true;
+
+			return true;						
 		}
 	};
 
 	struct FilterOpSelectAll : public EditNodeDef
 	{
-		FilterOpSelectAll() : EditNodeDef("SelectAll"){}
+		FilterOpSelectAll() : EditNodeDef("SelectAll") {}
 
 		DECLARE_EDIT_NODE("SelectAll", "Select All", 7, EditNodeMultithread );
 		
@@ -50,6 +51,7 @@ namespace ptedit
 		{
 			SelectPointsVisitor v;
 			TraverseScene::withVisitor(&v);
+
 			return true;
 		}
 	};

@@ -270,7 +270,7 @@ typedef PTres	(__stdcall *PTUNLOADSCENE)( PThandle scene );
 typedef PTres	(__stdcall *PTRELOADSCENE)( PThandle scene );
 
 typedef PTvoid	(__stdcall *PTREMOVEALL)(void);
-typedef PTres	(__stdcall *PTREMOVESCENE)(PTint);
+typedef PTres	(__stdcall *PTREMOVESCENE)(PThandle);
 
 typedef PTvoid	(__stdcall *PTNORMALISECOORDINATESYSTEM)(void);
 typedef PTvoid	(__stdcall *PTPROJECTTOWORLDCOORDS)( PTdouble* );
