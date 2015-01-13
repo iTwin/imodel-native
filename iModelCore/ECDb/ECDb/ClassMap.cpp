@@ -1332,7 +1332,7 @@ bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn con
 const Utf8String ColumnFactory::Encode (Utf8StringCR acessString) const
     {
     Utf8String o;
-    for (auto c : acessString)
+    for (Utf8Char c : acessString)
         {
         if (c == '.')
             {
@@ -1340,7 +1340,7 @@ const Utf8String ColumnFactory::Encode (Utf8StringCR acessString) const
             }
         else if (islower (c))
             {
-            o.append ("c");
+            o+= c;
             }
         else
             {
@@ -1399,6 +1399,10 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification 
         return nullptr;
         }
 
+    auto canEdit = targetTable.GetEditHandle ().CanEdit ();
+    if (!canEdit)
+        targetTable.GetEditHandleR ().BeginEdit ();
+
     auto newColumn = targetTable.CreateColumn (resolvedColumnName.c_str (), specifications.GetColumnType (), specifications.GetColumnUserDate (), specifications.GetColumnPersistenceType ());
     if (newColumn == nullptr)
         {
@@ -1410,6 +1414,10 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification 
     newColumn->GetConstraintR ().SetIsUnique (specifications.IsUnique ());
     newColumn->GetConstraintR ().SetCollate (specifications.GetCollate ());
     newColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
+
+    if (!canEdit)
+        targetTable.GetEditHandleR ().EndEdit ();
+
     return newColumn;
     }
 
@@ -1438,7 +1446,14 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& s
                     }
                 }
 
+            auto canEdit = existingColumn->GetTableR ().GetEditHandle ().CanEdit ();
+            if (!canEdit)
+                existingColumn->GetTableR ().GetEditHandleR ().BeginEdit ();
+
             existingColumn->GetDependentPropertiesR ().Add (propertyLocalToClassId, specifications.GetAccessString ().c_str ());
+            if (!canEdit)
+                existingColumn->GetTableR ().GetEditHandleR ().EndEdit ();
+
             return existingColumn;
             }
         }
