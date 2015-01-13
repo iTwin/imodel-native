@@ -1,0 +1,143 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: WebServices/WebServices.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)WSClient/WebServices/WebServicesPolicy.mki
+%include mdl.mki
+
+WebServicesSourceDirectory     = $(_MakeFilePath)
+WebServicesPublicApiDirectory  = $(_MakeFilePath)../PublicAPI/WebServices/
+BuildContextLibsDirectory      = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/WSClient/WebServices/
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+WebServicesHeaders       = $(WebServicesPublicApiDirectory)ChunkedUploadRequest.h              \
+                           $(WebServicesPublicApiDirectory)ObjectId.h                          \
+                           $(WebServicesPublicApiDirectory)WSClient.h                          \
+                           $(WebServicesPublicApiDirectory)WSError.h                           \
+                           $(WebServicesPublicApiDirectory)WSInfo.h                            \
+                           $(WebServicesPublicApiDirectory)WSQuery.h                           \
+                           $(WebServicesPublicApiDirectory)WSRepository.h                      \
+                           $(WebServicesPublicApiDirectory)WSRepositoryClient.h                \
+                           $(WebServicesPublicApiDirectory)Response/WSCreateObjectResponse.h   \
+                           $(WebServicesPublicApiDirectory)Response/WSFileResponse.h           \
+                           $(WebServicesPublicApiDirectory)Response/WSObjectsReader.h          \
+                           $(WebServicesPublicApiDirectory)Response/WSObjectsReaderV1.h        \
+                           $(WebServicesPublicApiDirectory)Response/WSObjectsReaderV2.h        \
+                           $(WebServicesPublicApiDirectory)Response/WSObjectsResponse.h        \
+                           $(WebServicesSourceDirectory)ClientConfiguration.h                  \
+                           $(WebServicesSourceDirectory)ClientConnection.h                     \
+                           $(WebServicesSourceDirectory)ServerInfoProvider.h                   \
+                           $(WebServicesSourceDirectory)Utils.h                                \
+                           $(WebServicesSourceDirectory)WebServicesInternal.h                     \
+                           $(WebServicesSourceDirectory)WSError.xliff.h                        \
+                           $(WebServicesSourceDirectory)WebApi/WebApi.h                        \
+                           $(WebServicesSourceDirectory)WebApi/WebApiV1.h                      \
+                           $(WebServicesSourceDirectory)WebApi/WebApiV2.h                      \
+                           $(WebServicesSourceDirectory)WebApi/WebApiV1BentleyConnect.h
+
+#----------------------------------------------------------------------
+#   Make sure that WebServicesInternal.pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(WebServicesSourceDirectory)WebServicesInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(WebServicesHeaders)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+# Keep this even if GCC_NO_PRE_COMPILED_HEADER is defined. When GCC_NO_PRE_COMPILED_HEADER
+# is defined this step alters the command line to make the line including <MobileDgnInternal.h>
+# work properly.
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)ObjectId$(oext)                         : $(WebServicesSourceDirectory)ObjectId.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)ClientConfiguration$(oext)              : $(WebServicesSourceDirectory)ClientConfiguration.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)ClientConnection$(oext)                 : $(WebServicesSourceDirectory)ClientConnection.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSClient$(oext)                         : $(WebServicesSourceDirectory)WSClient.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSRepositoryClient$(oext)               : $(WebServicesSourceDirectory)WSRepositoryClient.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSError$(oext)                          : $(WebServicesSourceDirectory)WSError.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSInfo$(oext)                           : $(WebServicesSourceDirectory)WSInfo.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSQuery$(oext)                          : $(WebServicesSourceDirectory)WSQuery.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSRepository$(oext)                     : $(WebServicesSourceDirectory)WSRepository.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)ChunkedUploadRequest$(oext)             : $(WebServicesSourceDirectory)ChunkedUploadRequest.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)ServerInfoProvider$(oext)               : $(WebServicesSourceDirectory)ServerInfoProvider.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)Utils$(oext)                            : $(WebServicesSourceDirectory)Utils.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSFileResponse$(oext)                   : $(WebServicesSourceDirectory)Response/WSFileResponse.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSCreateObjectResponse$(oext)           : $(WebServicesSourceDirectory)Response/WSCreateObjectResponse.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSObjectsResponse$(oext)                : $(WebServicesSourceDirectory)Response/WSObjectsResponse.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSObjectsReader$(oext)                  : $(WebServicesSourceDirectory)Response/WSObjectsReader.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSObjectsReaderV1$(oext)                : $(WebServicesSourceDirectory)Response/WSObjectsReaderV1.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WSObjectsReaderV2$(oext)                : $(WebServicesSourceDirectory)Response/WSObjectsReaderV2.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WebApi$(oext)                           : $(WebServicesSourceDirectory)WebApi/WebApi.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WebApiV1$(oext)                         : $(WebServicesSourceDirectory)WebApi/WebApiV1.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WebApiV1BentleyConnect$(oext)           : $(WebServicesSourceDirectory)WebApi/WebApiV1BentleyConnect.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+$(o)WebApiV2$(oext)                         : $(WebServicesSourceDirectory)WebApi/WebApiV2.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = WebServices
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)WebServicesInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_NOMSBUILTINS            = 1
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+LINKER_LIBRARIES            = $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext) \
+                              $(BuildContextLibsDirectory)$(libprefix)BentleyAllocator$(stlibext) \
+                              $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext) \
+                              $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext) \
+                              $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext) \
+                              $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(stlibext)
+                                  
+%include $(sharedMki)LinkLibrary.mki

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="WSClient.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="WebServices"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <SubPart PartName="PublicAPI"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServices" BentleyBuildMakeFile="WebServices/WebServices.mke">
+        <SubPart PartName="MobileDgnLibrary" PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="WSClientXliffs" />
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServices$(libext)</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServices$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WSClientXliffs" BentleyBuildMakeFile="WSClientXliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/WSError_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="WSClientUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient">
+        <!-- Get the tested API -->
+        <SubPart    PartName="WebServices" />
+        <!-- Needed for published unit tests -->
+        <SubPart    PartName="PublishedAPI" />
+    </Part>
+
+</BuildContext>
+
