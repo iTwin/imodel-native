@@ -21,6 +21,7 @@ always:
 #--------------------------------------------------------------------------------------
 WebServicesHeaders       = $(WebServicesPublicApiDirectory)ChunkedUploadRequest.h              \
                            $(WebServicesPublicApiDirectory)ObjectId.h                          \
+                           $(WebServicesPublicApiDirectory)UrlProvider.h                       \
                            $(WebServicesPublicApiDirectory)WSClient.h                          \
                            $(WebServicesPublicApiDirectory)WSError.h                           \
                            $(WebServicesPublicApiDirectory)WSInfo.h                            \
@@ -37,7 +38,7 @@ WebServicesHeaders       = $(WebServicesPublicApiDirectory)ChunkedUploadRequest.
                            $(WebServicesSourceDirectory)ClientConnection.h                     \
                            $(WebServicesSourceDirectory)ServerInfoProvider.h                   \
                            $(WebServicesSourceDirectory)Utils.h                                \
-                           $(WebServicesSourceDirectory)WebServicesInternal.h                     \
+                           $(WebServicesSourceDirectory)WebServicesInternal.h                  \
                            $(WebServicesSourceDirectory)WSError.xliff.h                        \
                            $(WebServicesSourceDirectory)WebApi/WebApi.h                        \
                            $(WebServicesSourceDirectory)WebApi/WebApiV1.h                      \
@@ -95,6 +96,8 @@ $(o)ServerInfoProvider$(oext)               : $(WebServicesSourceDirectory)Serve
 
 $(o)Utils$(oext)                            : $(WebServicesSourceDirectory)Utils.cpp $(WebServicesHeaders) ${MultiCompileDepends}
 
+$(o)UrlProvider$(oext)                      : $(WebServicesSourceDirectory)UrlProvider.cpp $(WebServicesHeaders) ${MultiCompileDepends}
+
 $(o)WSFileResponse$(oext)                   : $(WebServicesSourceDirectory)Response/WSFileResponse.cpp $(WebServicesHeaders) ${MultiCompileDepends}
 
 $(o)WSCreateObjectResponse$(oext)           : $(WebServicesSourceDirectory)Response/WSCreateObjectResponse.cpp $(WebServicesHeaders) ${MultiCompileDepends}
@@ -115,6 +118,8 @@ $(o)WebApiV1BentleyConnect$(oext)           : $(WebServicesSourceDirectory)WebAp
 
 $(o)WebApiV2$(oext)                         : $(WebServicesSourceDirectory)WebApi/WebApiV2.cpp $(WebServicesHeaders) ${MultiCompileDepends}
 
+%include Connect/Connect.mki
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -133,11 +138,14 @@ DLM_NO_DEF                  = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
-LINKER_LIBRARIES            = $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext) \
-                              $(BuildContextLibsDirectory)$(libprefix)BentleyAllocator$(stlibext) \
-                              $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext) \
-                              $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext) \
-                              $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext) \
+LINKER_LIBRARIES            = $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)  \
+                              $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)   \
+                              $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)      \
+                              $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)  \
                               $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(stlibext)
+
+%if $(TARGET_PLATFORM) != "WinRT"
+    LINKER_LIBRARIES        + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+%endif
                                   
 %include $(sharedMki)LinkLibrary.mki

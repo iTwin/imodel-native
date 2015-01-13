@@ -48,7 +48,7 @@ void MobileUtilsTest::SetUp ()
 
     BeSQLiteLib::Initialize (m_pathProvider.GetTemporaryDirectory ());
     L10N::SqlangFiles sqlangFiles (BeFileName (m_pathProvider.GetAssetsRootDirectory ()).AppendToPath (L"sqlang\\BeGTest_en-US.sqlang.db3"));
-    MobileDgnL10N::ReInitialize (MobileDgnL10N::GetDefaultFrameworkSqlangFiles (), sqlangFiles);
+    MobileDgnL10N::ReInitialize (sqlangFiles, sqlangFiles);
     }
 
 void MobileUtilsTest::TearDown ()
