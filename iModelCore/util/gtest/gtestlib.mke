@@ -2,7 +2,7 @@
 #
 #     $Source: gtestlib.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
@@ -44,6 +44,7 @@ PublicApiIncludes =
 # Create the Context directory and vars needed to create sym-links
 #--------------------------------------------------------------------------------------
 LIB_CREATE_CONTEXT_LINK = 1
+LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
 
 %if !defined (BuildContext)
     %error define BuildContext before calling gtestlib.mke
@@ -52,7 +53,7 @@ LIB_CREATE_CONTEXT_LINK = 1
 
 # Tell dlmlink.mki where to point symbolic links
 ContextDeliveryDir  = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+CCompPDBName = $(name)
 
 always:
     ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
