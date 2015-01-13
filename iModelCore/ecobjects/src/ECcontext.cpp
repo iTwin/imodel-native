@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -72,7 +72,8 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
 ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     :
     m_standaloneEnablerLocater(enablerLocater),
-    m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch)
+    m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
+    m_remapper (nullptr)
     {
     m_knownSchemas = ECSchemaCache::Create();
     m_locaters.push_back(m_knownSchemas.get());
@@ -91,6 +92,15 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         m_searchPathLocatersCount++;
         m_ownedLocators.push_back(locator);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchemaReadContext::ResolveClassName (WStringR className, ECSchemaCR schema) const
+    {
+    if (nullptr != m_remapper)
+        m_remapper->ResolveClassName (className, schema);
     }
 
 /*---------------------------------------------------------------------------------**//**

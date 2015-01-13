@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,16 +35,18 @@ friend struct SearchPathSchemaFileLocater;
             }
         };
 private:
-    IStandaloneEnablerLocaterP                              m_standaloneEnablerLocater;
-    ECSchemaCachePtr                                        m_knownSchemas;
-    bvector<bool>                                           m_knownSchemaDirtyStack;
+
+    IStandaloneEnablerLocaterP              m_standaloneEnablerLocater;
+    ECSchemaCachePtr                        m_knownSchemas;
+    bvector<bool>                           m_knownSchemaDirtyStack;
     bvector<IECSchemaLocaterP>                              m_locaters;
     int                                                     m_userAddedLocatersCount;
     int                                                     m_searchPathLocatersCount;
     typedef bset<WString, WStringComparer>                  SearchPathList;
-    SearchPathList                                          m_searchPaths;
-    bvector<SearchPathSchemaFileLocaterPtr>                 m_ownedLocators;
-    bool                            m_acceptLegacyImperfectLatestCompatibleMatch;
+    SearchPathList                          m_searchPaths;
+    bvector<SearchPathSchemaFileLocaterPtr> m_ownedLocators;
+    IECSchemaRemapperCP                     m_remapper;
+    bool                                    m_acceptLegacyImperfectLatestCompatibleMatch;
 
     bool                        GetStandardPaths (bvector<WString>& standardPaths);
 
@@ -64,6 +66,9 @@ public:
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
 
+    IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }
+    void                SetRemapper (IECSchemaRemapperCP remapper)  { m_remapper = remapper; }
+    void                ResolveClassName (WStringR serializedClassName, ECSchemaCR schema) const;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
