@@ -511,7 +511,12 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
 
     //FROM & WHERE
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetTable ().GetName ().c_str ());
-    viewSql.Append (" WHERE ").Append (relationMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select)).Append (" IS NOT NULL");
+    viewSql.Append (" WHERE (").Append (relationMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select)).Append (" IS NOT NULL");
+    if (!relationMap.GetOtherEndECClassIdPropMap ()->IsVirtual ())
+        {
+        viewSql.Append (" AND ").Append (relationMap.GetOtherEndECClassIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select)).Append (" IS NOT NULL");
+        }
+    viewSql.Append (")");
     return SUCCESS;
     }
 
