@@ -1569,9 +1569,9 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications, EC
 
     Utf8String className = Utf8String (m_classMap.GetClass ().GetName ().c_str ());
     if (outColumn)
-        printf ("Property - > '%s:%s' mapped to '%s'\r\n", className.c_str(), specifications.GetAccessString ().c_str (), outColumn->GetName ().c_str ());
+        LOG.tracev ("Property -> '%s:%s' mapped to '%s'", className.c_str(), specifications.GetAccessString ().c_str (), outColumn->GetName ().c_str ());
     else
-        printf ("Property - > '%s:%s' mapped to 'NULL'\r\n", className.c_str (), specifications.GetAccessString ().c_str ());
+        LOG.tracev ("Property -> '%s:%s' mapped to 'NULL'", className.c_str (), specifications.GetAccessString ().c_str ());
 
     RegisterColumnInUse (*outColumn);
     return outColumn;
@@ -1589,4 +1589,5 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 ECDbSqlTable & ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
