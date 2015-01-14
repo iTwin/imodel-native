@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -978,7 +978,7 @@ protected:
     //! @return   Status code
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context);
 
-    SchemaReadStatus                    _ReadBaseClassFromXml( BeXmlNodeP childNode );
+    SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
 
     virtual SchemaWriteStatus           _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode) const;
