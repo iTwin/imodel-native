@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceInserter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -117,6 +117,8 @@ void ECInstanceInserter::Impl::Initialize ()
 
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties (true))
         {
+        if (ecProperty->GetIsReadOnly())
+            continue;
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 

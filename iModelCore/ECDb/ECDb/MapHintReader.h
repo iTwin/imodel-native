@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapHintReader.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ public:
     static bool TryReadECInstanceIdColumnName (Utf8String& ecInstanceIdColumnName, ECN::IECInstanceCR classHint);
     static bool TryReadMapToExistingTable (bool& mapToExistingTable, ECN::IECInstanceCR classHint);
     static bool TryReadReplaceEmptyTableWithEmptyView (bool& replaceEmptyTableWithEmptyView, ECN::IECInstanceCR classHint);
-
+    static ECN::IECInstancePtr ReadClassHasTimeStamp(ECN::ECClassCR ecClass);
     static bool TryReadIndices (bvector<ClassIndexInfoPtr>& indices, ECN::IECInstanceCR classHint, ECN::ECClassCR ecClass);
     };
 

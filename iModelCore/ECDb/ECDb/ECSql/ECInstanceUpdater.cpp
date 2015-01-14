@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceUpdater.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -252,9 +252,12 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass)
 : Impl (ecClass), m_ecdb (ecdb), m_needsCalculatedPropertyEvaluation (false)
     {
     bvector<ECPropertyCP> propertiesToBind;
-    for (ECPropertyCP ecProperty : GetECClass ().GetProperties (true))
+    for (ECPropertyCP ecProperty : GetECClass().GetProperties(true))
+        {
+        if (ecProperty->GetIsReadOnly())
+            continue;
         propertiesToBind.push_back(ecProperty);
-
+        }
     Initialize(propertiesToBind);
     }
 

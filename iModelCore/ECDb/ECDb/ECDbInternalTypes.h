@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbInternalTypes.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -247,6 +247,7 @@ enum ECContainerType
 //    P = ECProperty
 //    V = ECPropertyValue
 #define BSCAC_ECDbClassHint             L"ECDbClassHint"
+#define BSCAC_ECDbClassHasTimeStamp     L"ClassHasTimeStamp"
 #define BSCAC_ECDbSchemaHint            L"ECDbSchemaHint"
 #define BSCAP_TablePrefix               L"TablePrefix"
 #define BSCAP_MapStrategy               L"MapStrategy"

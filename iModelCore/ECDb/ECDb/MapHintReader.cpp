@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapHintReader.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -61,6 +61,17 @@ IECInstancePtr ClassHintReader::ReadHint (ECClassCR ecClass)
     return HintReaderHelper::ReadHint (ecClass, BSCAC_ECDbClassHint);
     }
 
+//*******************************************************************************************
+// ClassMapHintReader
+//*******************************************************************************************
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+IECInstancePtr ClassHintReader::ReadClassHasTimeStamp(ECClassCR ecClass)
+    {
+    return HintReaderHelper::ReadHint(ecClass, BSCAC_ECDbClassHasTimeStamp);
+    }
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------

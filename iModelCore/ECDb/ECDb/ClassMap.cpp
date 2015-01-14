@@ -423,7 +423,7 @@ MapStatus ClassMap::Initialize (ClassMapInfoCR mapInfo)
     auto stat = _InitializePart1 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
-
+    
     stat = _InitializePart2 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
@@ -485,7 +485,27 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* p
     auto stat = AddPropertyMaps (mapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
-
+    if (mapInfo.GetClassHasTimeStamp() != NULL)
+        {
+        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasTimeStamp()->GetName().c_str());
+        if (propertyMap != NULL)
+            {
+            auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
+            BeAssert(column != nullptr && "TimeStamp column cannot be null");
+            if (column)
+                {
+                //! TODO: Handle this case for shared column strategy;
+                BeAssert(column->GetType() == ECDbSqlColumn::Type::DateTime);
+                column->GetConstraintR().SetDefaultExpression("julianday('now')");
+                Utf8String whenCondtion;
+                whenCondtion.Sprintf("old.%s = new.%s", column->GetName().c_str(), column->GetName().c_str());
+                Utf8String body;
+                Utf8CP instanceID = GetPropertyMap(L"ECInstanceId")->GetFirstColumn()->GetName().c_str();
+                body.Sprintf("BEGIN UPDATE %s SET %s = julianday('now') WHERE %s = new.%s; END", column->GetTableR().GetName().c_str(), column->GetName().c_str(), instanceID, instanceID);
+                column->GetTableR().CreateTrigger("ClassMapHasTimeStampTrigger", column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create);
+                }
+            }
+        }
     stat = ProcessIndices (mapInfo);
     if (stat != MapStatus::Success)
         return stat;
