@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECSqlStatement_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
@@ -427,6 +427,156 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayDelete)
     auto stepStatus = statement.Step ();
     ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, ECSqlStatement_BindECInstanceId)
+    {
+    const auto perClassRowCount = 0;
+    // Create and populate a sample project
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+
+    ECInstanceKey pKey;
+    ECInstanceKey psaKey;
+
+        {
+        ECSqlStatement statement;
+        auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES(NULL)");
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (pKey));
+        
+        statement.Finalize ();
+        stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES(NULL)");
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (psaKey));
+        ecdb.SaveChanges ();
+        }
+
+
+        {
+        ECSqlStatement statement;
+        auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (1, psaKey.GetECInstanceId ()));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (2, pKey.GetECInstanceId ()));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+
+        ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
+        ecdb.AbandonChanges ();
+        }
+
+        {
+        ECSqlStatement statement;
+        auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (1, (int) psaKey.GetECInstanceId ().GetValue ()));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (2, (int) pKey.GetECInstanceId ().GetValue ()));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+
+        ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
+        ecdb.AbandonChanges ();
+        }
+
+        {
+        ECSqlStatement statement;
+        auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (1, psaKey.GetECInstanceId ().GetValue ()));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (2, pKey.GetECInstanceId ().GetValue ()));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+
+        ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
+        ecdb.AbandonChanges ();
+        }
+
+        {
+        ECSqlStatement statement;
+        auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+
+        WChar idStrW[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+        ECInstanceIdHelper::ToString (idStrW, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, psaKey.GetECInstanceId ());
+        Utf8String psaIdStr (idStrW);
+        ECInstanceIdHelper::ToString (idStrW, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, pKey.GetECInstanceId ());
+        Utf8String pIdStr (idStrW);
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (1, psaIdStr.c_str (), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (2, pIdStr.c_str (), IECSqlBinder::MakeCopy::No));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+
+        ASSERT_EQ (pKey.GetECInstanceId ().GetValue (), key.GetECInstanceId ().GetValue ());
+        ecdb.AbandonChanges ();
+        }
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, ECSqlStatement_BindSourceAndTargetECInstanceId)
+    {
+    const auto perClassRowCount = 0;
+    // Create and populate a sample project
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+
+    ECSqlStatement statement;
+    auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
+
+        {
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (1, ECInstanceId (111LL)));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindId (2, ECInstanceId (222LL)));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        }
+
+        {
+        statement.Reset ();
+        statement.ClearBindings ();
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (1, 1111));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt (2, 2222));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        }
+
+
+        {
+        statement.Reset ();
+        statement.ClearBindings ();
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (1, 11111LL));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindInt64 (2, 22222LL));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        }
+
+        {
+        statement.Reset ();
+        statement.ClearBindings ();
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (1, "111111", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (2, "222222", IECSqlBinder::MakeCopy::No));
+
+        ECInstanceKey key;
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step (key));
+        }
+
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
