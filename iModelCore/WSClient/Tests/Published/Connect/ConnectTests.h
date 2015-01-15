@@ -1,0 +1,19 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/Published/Connect/ConnectTests.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#pragma once
+
+#include "../MobileUtilsTests.h"
+#include "ConnectTestsHelper.h"
+
+class ConnectTests : public BaseMockHttpHandlerTest
+    {
+    public:
+        virtual void SetUp () override;
+        virtual void TearDown () override;
+    };
