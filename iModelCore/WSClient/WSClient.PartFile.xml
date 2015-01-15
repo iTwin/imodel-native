@@ -15,14 +15,18 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServices" BentleyBuildMakeFile="WebServices/WebServices.mke">
+    <Part Name="WebServices">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="WSClientXliffs" />
+        <SubPart PartName="WebServices-Library" />
+        <SubPart PartName="WebServices-Bindings" />
+        <SubPart PartName="WebServices-Bindings-Android" />
+    </Part>
+
+    <Part Name="WebServices-Library" BentleyBuildMakeFile="WebServices/WebServices.mke">
         <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
-        <SubPart PartName="PublicAPI" />
-        <SubPart PartName="WSClientXliffs" />
-        <SubPart PartName="WebServices-Bindings" />
-        <SubPart PartName="WebServices-Bindings-Android" />
     </Part>
 
     <Part Name="WebServices-Bindings" ExcludePlatforms="Android*">
