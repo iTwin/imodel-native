@@ -187,6 +187,7 @@ TEST_F (WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_Previ
     EXPECT_TRUE (info.IsSuccess ());
     }
 
+#ifdef USE_GTEST
 TEST_F (WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedWithReceivedInfo)
     {
     auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
@@ -206,6 +207,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotified
 
     client->SendGetInfoRequest ()->Wait ();
     }
+#endif
 
 TEST_F (WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerNotLeakedAndNotNotified)
     {
@@ -238,6 +240,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerN
     EXPECT_EQ (1, listenerCallCount);
     }
 
+#ifdef USE_GTEST
 TEST_F (WSClientTests, RegisterServerInfoListener_InfoNotReceivedDueToNetworkError_ListenerNotNotified)
     {
     auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
@@ -284,6 +287,7 @@ TEST_F (WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNot
 
     client->SendGetInfoRequest ()->Wait ();
     }
+#endif
 
 TEST_F (WSClientTests, SendGetRepositoriesRequest_WebApiV1Format_ParsesDefaultFields)
     {

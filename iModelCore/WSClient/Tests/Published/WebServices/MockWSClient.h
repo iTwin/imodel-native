@@ -6,11 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#ifdef USE_GTEST
-#include <gmock/gmock.h>
-#endif
-
 #include <WebServices/WSClient.h>
 
 using namespace ::testing;

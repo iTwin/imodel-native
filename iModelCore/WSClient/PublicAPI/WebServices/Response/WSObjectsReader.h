@@ -26,7 +26,7 @@ typedef struct WSObjectsReader& WSObjectsReaderR;
 /*--------------------------------------------------------------------------------------+
 *  @bsiclass                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSObjectsReader : public std::enable_shared_from_this<WSObjectsReader>
+struct EXPORT_VTABLE_ATTRIBUTE WSObjectsReader : public std::enable_shared_from_this<WSObjectsReader>
     {
     public:
         struct Instance;
@@ -57,7 +57,7 @@ struct WSObjectsReader : public std::enable_shared_from_this<WSObjectsReader>
 /*--------------------------------------------------------------------------------------+
 *  @bsiclass                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSObjectsReader::Instances
+struct EXPORT_VTABLE_ATTRIBUTE WSObjectsReader::Instances
     {
     private:
         std::shared_ptr<const WSObjectsReader> m_reader;
