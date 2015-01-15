@@ -139,11 +139,17 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-#--------------------------------------------------------------------------------------
-#   Link library (always build as a shared library for Android)
-#--------------------------------------------------------------------------------------
+# MobileDgn library name
+%if $(TARGET_PLATFORM)=="WinRT"
+    _mobiledgnLibraryName = Bentley$(BENTLEY_API_NAME).MobileDgn.Win8$(stlibext)
+%elif $(TARGET_PLATFORM)=="Android"
+    _mobiledgnLibraryName = $(libprefix)MobileDgn$(shlibext)
+%else
+    _mobiledgnLibraryName = $(libprefix)MobileDgn$(stlibext)
+%endif
+
 %if $(TARGET_PLATFORM)=="Android"
-    LINKER_LIBRARIES    = $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(shlibext)
+    LINKER_LIBRARIES    = $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
     %include dlmlink.mki
 
 %else
@@ -151,7 +157,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
                           $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)   \
                           $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)      \
                           $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)  \
-                          $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(stlibext)
+                          $(BuildContextLibsDirectory)$(_mobiledgnLibraryName)
 
     %if $(TARGET_PLATFORM) != "WinRT"
         LINKER_LIBRARIES        + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)

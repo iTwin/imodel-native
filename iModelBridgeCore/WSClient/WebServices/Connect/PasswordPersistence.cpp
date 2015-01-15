@@ -61,7 +61,7 @@ IBuffer^ Encrypt (
     const unsigned char* iv,
     Utf8CP &password,
     Platform::String^ &strAlgName,
-    UInt32 keyLength,
+    uint32_t keyLength,
     BinaryStringEncoding encoding,
     IBuffer^ &ivWinRT,
     CryptographicKey^ &keyWinRT)
@@ -236,7 +236,7 @@ void PasswordPersistence::SavePassword (Utf8CP identifier, Utf8CP password)
 
     // Initialize encryption
     Platform::String^ strAlgName = SymmetricAlgorithmNames::AesCbcPkcs7;
-    UInt32 keyLength = 32;                                      // Length of the key in bytes
+    uint32_t keyLength = 32;                                      // Length of the key in bytes
     BinaryStringEncoding encoding = BinaryStringEncoding::Utf8; // Binary encoding value
     IBuffer^ ivWinRT;                                           // Initialization vector
     CryptographicKey^ keyWinRT;                                 // Symmetric key
