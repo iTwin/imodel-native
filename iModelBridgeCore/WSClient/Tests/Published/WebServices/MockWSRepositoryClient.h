@@ -5,13 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
-
-#ifdef USE_GTEST
-#include <gmock/gmock.h>
-#endif
-
 #include <WebServices/WSRepositoryClient.h>
 #include "MockWSClient.h"
 

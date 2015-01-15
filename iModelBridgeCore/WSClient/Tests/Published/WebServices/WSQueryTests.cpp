@@ -5,13 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "WSQueryTests.h"
-
-#ifdef USE_GTEST
-#include <gmock/gmock.h>
-#endif
-
 #include <WebServices/WSQuery.h>
 #include "WebServicesTestsHelper.h"
 
@@ -22,29 +16,35 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 TEST_F (WSQueryTests, Ctor_SchemaAndClassesPassed_SetsSchemaAndClasses)
     {
     WSQuery query ("TestSchema", set<Utf8String> {"A", "B"});
-    EXPECT_THAT (query.GetSchemaName ().c_str (), StrEq ("TestSchema"));
+    EXPECT_STREQ (query.GetSchemaName ().c_str (), "TestSchema");
+#ifdef USE_GTEST
     EXPECT_THAT (query.GetClasses (), ContainerEq (set<Utf8String>{"A", "B"}));
+#endif
     }
 
 TEST_F (WSQueryTests, Ctor_SchemaAndClass_SetsSchemaAndClass)
     {
     WSQuery query ("TestSchema", "TestClass");
-    EXPECT_THAT (query.GetSchemaName ().c_str (), StrEq ("TestSchema"));
+    EXPECT_STREQ (query.GetSchemaName ().c_str (), "TestSchema");
+#ifdef USE_GTEST
     EXPECT_THAT (query.GetClasses (), ContainerEq (set<Utf8String>{"TestClass"}));
+#endif
     }
 
 TEST_F (WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndFilter)
     {
     WSQuery query (ObjectId ("TestSchema", "TestClass", "TestId"));
-    EXPECT_THAT (query.GetSchemaName ().c_str (), StrEq ("TestSchema"));
+    EXPECT_STREQ (query.GetSchemaName ().c_str (), "TestSchema");
+#ifdef USE_GTEST
     EXPECT_THAT (query.GetClasses (), ContainerEq (set<Utf8String>{"TestClass"}));
-    EXPECT_THAT (query.GetFilter ().c_str (), StrEq ("$id+in+['TestId']"));
+#endif
+    EXPECT_STREQ (query.GetFilter ().c_str (), "$id+in+['TestId']");
     }
 
 TEST_F (WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndEscapesRemoteId)
     {
     WSQuery query (ObjectId ("Foo", "Boo", "'"));
-    EXPECT_THAT (query.GetFilter ().c_str (), StrEq ("$id+in+['%27%27']"));
+    EXPECT_STREQ (query.GetFilter ().c_str (), "$id+in+['%27%27']");
     }
 
 TEST_F (WSQueryTests, ToString_NoOptionsSet_ReturnsEmpty)
@@ -135,7 +135,7 @@ TEST_F (WSQueryTests, GetAlias_CalledMoreThanAlphabetLengthTimes_ReturnsAliasesP
 
     for (int i = 0; i < 25; i++)
         {
-        query.GetAlias (std::to_string (i).c_str ());
+        query.GetAlias (Utf8PrintfString ("%d", i).c_str ());
         }
     EXPECT_STREQ ("@Z", query.GetAlias ("Phrase0").c_str ());
 
@@ -149,7 +149,7 @@ TEST_F (WSQueryTests, GetAlias_CalledMoreThanTwiceAlphabetLengthTimes_ReturnsAli
 
     for (int i = 0; i < 51; i++)
         {
-        query.GetAlias (std::to_string (i).c_str ());
+        query.GetAlias (Utf8PrintfString ("%d", i).c_str ());
         }
     EXPECT_STREQ ("@Z1", query.GetAlias ("Phrase0").c_str ());
 
@@ -171,6 +171,7 @@ TEST_F (WSQueryTests, GetAliasMap_NoAliasesCreated_Empty)
     EXPECT_TRUE (query.GetAliasMapping ().empty ());
     }
 
+#ifdef USE_GTEST
 TEST_F (WSQueryTests, GetAliasMap_AliasesCreated_ContainsAliases)
     {
     WSQuery query ("Foo", "Boo");
@@ -178,6 +179,7 @@ TEST_F (WSQueryTests, GetAliasMap_AliasesCreated_ContainsAliases)
     Utf8String aliasB = query.GetAlias ("PhraseB");
     EXPECT_THAT (query.GetAliasMapping (), ContainerEq (std::map<Utf8String, Utf8String> { {"PhraseA", aliasA}, {"PhraseB", aliasB}}));
     }
+#endif
 
 TEST_F (WSQueryTests, ToString_AliasesGenerated_FormatsAliasesToQuery)
     {

@@ -138,14 +138,25 @@ DLM_NO_DEF                  = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
-LINKER_LIBRARIES            = $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)  \
-                              $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)   \
-                              $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)      \
-                              $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)  \
-                              $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(stlibext)
 
-%if $(TARGET_PLATFORM) != "WinRT"
-    LINKER_LIBRARIES        + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+#--------------------------------------------------------------------------------------
+#   Link library (always build as a shared library for Android)
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)=="Android"
+    LINKER_LIBRARIES    = $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(shlibext)
+    %include dlmlink.mki
+
+%else
+    LINKER_LIBRARIES    = $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)  \
+                          $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)   \
+                          $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)      \
+                          $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)  \
+                          $(BuildContextLibsDirectory)$(libprefix)MobileDgn$(stlibext)
+
+    %if $(TARGET_PLATFORM) != "WinRT"
+        LINKER_LIBRARIES        + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)
+    %endif
+
+    %include $(sharedMki)LinkLibrary.mki
+
 %endif
-                                  
-%include $(sharedMki)LinkLibrary.mki

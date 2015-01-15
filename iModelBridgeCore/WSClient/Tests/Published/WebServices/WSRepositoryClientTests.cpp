@@ -11,10 +11,6 @@
 #include <fstream>
 #include <iostream>
 
-#ifdef USE_GTEST
-#include <gmock/gmock.h>
-#endif
-
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/WSRepositoryClient.h>
 
@@ -700,6 +696,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponse
     EXPECT_EQ (responseObject, response.GetValue ().GetObject ());
     }
 
+#ifdef USE_GTEST
 TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_AddsFileNameToContentDisposition)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
@@ -735,6 +732,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Ad
 
     client->SendCreateObjectRequest (StubWSObjectCreationJson (), filePath)->Wait ();
     }
+#endif
 
 TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostRequest)
     {
