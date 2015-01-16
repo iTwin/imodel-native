@@ -736,8 +736,12 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Syncronize (ECDbR ecdb)
             }
 
         //Create a fast hash set of in-memory column list;
+        std::vector<ECDbSqlColumn const*>  persistedColumns;
+        GetTable ().GetFilteredColumnList (persistedColumns, PersistenceType::Persisted);
+
         std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8> modifiedColumnSet;
-        for (auto column : GetTable ().GetColumns ())
+
+        for (auto column : persistedColumns)
             {
             modifiedColumnSet[column->GetName ().c_str ()] = column;
             }
