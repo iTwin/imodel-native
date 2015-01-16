@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1338,6 +1338,15 @@ SchemaReadStatus ECSchema::ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, E
 
         if (referencedSchema.IsValid())
             {
+            //We can encounter some time same schema referenced twice with different namespacePrefix.
+            //We will not treat it as error.
+            SchemaKeyCR refSchemaKey = referencedSchema->GetSchemaKey ();
+            auto const& references = GetReferencedSchemas ();
+            if (references.end () != references.find (refSchemaKey))
+                {
+                continue;
+                }
+
             ECObjectsStatus status = AddReferencedSchema (*referencedSchema, prefix, schemaContext);
             if (ECOBJECTS_STATUS_Success != status)
                 return ECOBJECTS_STATUS_SchemaHasReferenceCycle == status ? SCHEMA_READ_STATUS_HasReferenceCycle : static_cast<SchemaReadStatus> (status);
