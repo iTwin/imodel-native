@@ -460,8 +460,8 @@ DLM_OBJECT_PCH              = $(o)ECDbPch$(oext)
 LINKER_LIBRARIES            = $(ContextDeliveryDir)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
-			      $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
-                              $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(stlibext) \
+                              $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
                               $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 
