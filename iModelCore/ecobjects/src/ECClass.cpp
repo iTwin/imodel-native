@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1164,7 +1164,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
-            SchemaReadStatus status = _ReadBaseClassFromXml(childNode);
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context);
             if (SCHEMA_READ_STATUS_Success != status)
                 return status;
             }
@@ -1190,7 +1190,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
     return SCHEMA_READ_STATUS_Success;
     }
 
-SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
+SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context)
     {
     WString qualifiedClassName;
     childNode->GetContent (qualifiedClassName);
@@ -1214,6 +1214,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml ( BeXmlNodeP childNode )
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
+    context.ResolveClassName (className, *resolvedSchema);
     ECClassCP baseClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == baseClass)
         {
