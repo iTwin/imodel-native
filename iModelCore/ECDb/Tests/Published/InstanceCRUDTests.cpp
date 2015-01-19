@@ -814,7 +814,7 @@ TEST_F(InstanceCRUDTests, SingleClass)
         WString schemaToFind = dbName.GetFileNameAndExtension();
 
         //Type name of Schema and class here to run only for this.
-        if (schemaToFind.Equals(L"SimpleCompany.01.00.ecschema.xml") && classToFind.Equals(L"Employee"))
+        if (schemaToFind.Equals(L"Bentley_Geospatial_Geometry.01.00.ecschema.xml") && classToFind.Equals(L"ECTopoEdge"))
         {
             setupSteps(param);
             //Get the class and insert instances

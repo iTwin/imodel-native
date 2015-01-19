@@ -21,6 +21,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBSQL_NAMESPACE "ECDb"
 #define ECDBSQL_SCHEMA_ID "ECDbPersistence"
 
+
+enum class TriggerType
+    {
+    Create,
+    Update,
+    Delete
+    };
 enum class PersistenceType
     {
     Persisted, //! Persisted in DB
@@ -637,6 +644,7 @@ struct ECDbSqlForiegnKeyConstraint : ECDbSqlConstraint
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
+struct ECDbSqlTrigger;
 struct ECDbSqlTable :  Identity
     {
     enum class ColumnEvent
@@ -671,6 +679,7 @@ struct ECDbSqlTable :  Identity
         ECDbSqlDb& m_dbDef;
         NameGenerator m_nameGeneratorForColumn;
         std::map<Utf8CP, std::shared_ptr<ECDbSqlColumn>, CompareIUtf8> m_columns;
+        std::map<Utf8CP, std::unique_ptr<ECDbSqlTrigger>, CompareIUtf8> m_trigers;
         std::vector<ECDbSqlColumn const*> m_orderedColumns;
         std::vector<std::unique_ptr<ECDbSqlConstraint>> m_constraints;
         EditHandle m_editInfo;
@@ -696,6 +705,8 @@ struct ECDbSqlTable :  Identity
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, uint32_t userFlag = 0, PersistenceType persistenceType = PersistenceType::Persisted);
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, uint32_t userFlag = 0, PersistenceType persistenceType = PersistenceType::Persisted);
 
+        BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType);
+        std::vector<const ECDbSqlTrigger*> GetTriggers()const;
         ECDbSqlColumn const* FindColumnCP (Utf8CP name) const;
         ECDbSqlColumn* FindColumnP (Utf8CP name) const;
         std::vector<ECDbSqlColumn const*> const& GetColumns () const;
@@ -727,7 +738,32 @@ struct ECDbSqlTable :  Identity
             }
     };
 
+//======================================================================================
+// @bsiclass                                        muhammad.zaighum        01/2015
+//======================================================================================
 
+struct ECDbSqlTrigger : NonCopyableClass
+    {
+    public:
+        
+        friend BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType);
+    private:
+        Utf8String m_triggerName;
+        ECDbSqlTable& m_table;
+        Utf8String m_condition;
+        Utf8String m_body;
+        TriggerType m_triggerType;
+        ECDbSqlTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType) : m_triggerName(triggerName), m_table(table), m_condition(condition), m_body(body), m_triggerType(ecsqlType)
+            {}
+        ECDbSqlTrigger(ECDbSqlTable& table) ;
+    public:
+        Utf8String GetName()const { return m_triggerName; }
+        Utf8String GetCondition()const { return m_condition; }
+        ECDbSqlTable& GetTable()const { return m_table; }
+        Utf8String GetBody()const { return m_body; }
+        TriggerType GetType()const{ return m_triggerType; }
+
+    };
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         10/2014
 //======================================================================================
@@ -749,6 +785,8 @@ struct DDLGenerator
     public:
         static Utf8String GetCreateIndexDDL (ECDbSqlIndex const& index, CreateOption createOption);
         static Utf8String GetCreateTableDDL (ECDbSqlTable const& table, CreateOption createOption);
+        static Utf8String GetCreateTriggerDDL(ECDbSqlTrigger const& trigger);
+
         static Utf8String GetDropTableDDL (ECDbSqlTable const& table)
             {
             return "DROP TABLE [" + table.GetName () + "]";

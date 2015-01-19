@@ -44,6 +44,7 @@ public:
     static bool TryReadMapToExistingTable (bool& mapToExistingTable, ECN::IECInstanceCR classHint);
     static bool TryReadReplaceEmptyTableWithEmptyView (bool& replaceEmptyTableWithEmptyView, ECN::IECInstanceCR classHint);
     static bool TryReadUseSharedColumnStrategy (bool& useSharedColumnStrategy, ECN::IECInstanceCR classHint);
+    static ECN::IECInstancePtr ReadClassHasTimeStamp(ECN::ECClassCR ecClass);
     static bool TryReadIndices (bvector<ClassIndexInfoPtr>& indices, ECN::IECInstanceCR classHint, ECN::ECClassCR ecClass);
     };
 

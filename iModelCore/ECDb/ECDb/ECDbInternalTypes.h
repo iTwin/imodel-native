@@ -247,6 +247,7 @@ enum ECContainerType
 //    P = ECProperty
 //    V = ECPropertyValue
 #define BSCAC_ECDbClassHint             L"ECDbClassHint"
+#define BSCAC_ECDbClassHasTimeStamp     L"ClassHasTimeStamp"
 #define BSCAC_ECDbSchemaHint            L"ECDbSchemaHint"
 #define BSCAP_TablePrefix               L"TablePrefix"
 #define BSCAP_MapStrategy               L"MapStrategy"
