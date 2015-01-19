@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -325,8 +325,9 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
             {
             gotValue = true;
             bool allowTypeConversions = (0 == (m_evaluationOptions & EVALOPT_SuppressTypeConversions));
+            bool enforceGlobalRepresentation = (0 != (m_evaluationOptions & EVALOPT_EnforceGlobalRepresentation));
             bool convertUnits = !allowTypeConversions && (0 != (m_evaluationOptions & EVALOPT_EnforceUnits));
-            if (allowTypeConversions || convertUnits)
+            if (allowTypeConversions || enforceGlobalRepresentation || convertUnits)
                 {
                 IECTypeAdapter* typeAdapter = nullptr;
                 if (ecprop->GetIsPrimitive())
@@ -336,7 +337,10 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
 
                 if (nullptr != typeAdapter)
                     {
-                    if (allowTypeConversions && typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertFromExpressionType (exprValue, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                    IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*ecprop, instance, accessString);
+                    context->SetEvaluationOptions (m_evaluationOptions);
+
+                    if ((allowTypeConversions || enforceGlobalRepresentation) && typeAdapter->RequiresExpressionTypeConversion (m_evaluationOptions) && !typeAdapter->ConvertFromExpressionType (exprValue, *context))
                         {
                         gotValue = false;
                         }
@@ -346,7 +350,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
                         UnitSpec units;
 
                         // We only care about units if the ECProperty is unitized...otherwise ignore units of expression result
-                        if (typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*ecprop, instance, accessString)))
+                        if (typeAdapter->GetUnits (units, *context))
                             {
                             if (units.IsUnspecified())
                                 gotValue = true;    // not unitized

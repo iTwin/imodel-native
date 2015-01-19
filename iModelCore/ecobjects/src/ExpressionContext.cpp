@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -434,17 +434,19 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             ecval.SetDouble (*component);
             }
 
-        if (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits())
+        if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation () || globalContext.EnforcesUnits ())
             {
             IECTypeAdapter* typeAdapter = primProp->GetTypeAdapter();
             if (nullptr != typeAdapter)
                 {
-                if (globalContext.AllowsTypeConversion())
+                IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str ());
+                context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
+                if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
                     {
-                    if (typeAdapter->RequiresExpressionTypeConversion() && !typeAdapter->ConvertToExpressionType (ecval, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
+                    if (typeAdapter->RequiresExpressionTypeConversion (globalContext.GetEvaluationOptions ()) && !typeAdapter->ConvertToExpressionType (ecval, *context))
                         return ExprStatus_UnknownError;
                     }
-                else if (typeAdapter->SupportsUnits() && !typeAdapter->GetUnits (units, *IECTypeAdapterContext::Create (*primProp, instance, accessString.c_str())))
+                else if (typeAdapter->SupportsUnits () && !typeAdapter->GetUnits (units, *context))
                     return ExprStatus_UnknownError;
                 }
             }
@@ -502,20 +504,22 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             arrayVal.SetDouble (*component);
             }
 
-        if (isPrimitive && (globalContext.AllowsTypeConversion() || globalContext.EnforcesUnits()))
+        if (isPrimitive && (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation () || globalContext.EnforcesUnits ()))
             {
             IECTypeAdapter* adapter = arrayProp->GetMemberTypeAdapter();
             if (nullptr != adapter)
                 {
-                if (globalContext.AllowsTypeConversion())
+                IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str ());
+                context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
+                if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
                     {
-                    if (adapter->RequiresExpressionTypeConversion() && !adapter->ConvertToExpressionType (arrayVal, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
+                    if (adapter->RequiresExpressionTypeConversion (globalContext.GetEvaluationOptions ()) && !adapter->ConvertToExpressionType (arrayVal, *context))
                         {
                         evalResult.Clear();
                         return ExprStatus_UnknownError;
                         }
                     }
-                else if (adapter->SupportsUnits() && !adapter->GetUnits (units, *IECTypeAdapterContext::Create (*arrayProp, instance, accessString.c_str())))
+                else if (adapter->SupportsUnits () && !adapter->GetUnits (units, *context))
                     {
                     evalResult.Clear();
                     return ExprStatus_UnknownError;
@@ -1174,6 +1178,14 @@ void ExpressionContext::SetEvaluationOptions (EvaluationOptions opts)
 bool ExpressionContext::EnforcesUnits() const
     {
     return 0 != (GetEvaluationOptions() & EVALOPT_EnforceUnits);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Eligijus.Mauragas 01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionContext::EnforceGlobalRepresentation () const
+    {
+    return 0 != (GetEvaluationOptions () & EVALOPT_EnforceGlobalRepresentation);
     }
 
 /*---------------------------------------------------------------------------------**//**

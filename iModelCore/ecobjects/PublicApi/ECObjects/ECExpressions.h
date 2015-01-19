@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -195,41 +195,6 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
-/*---------------------------------------------------------------------------------**//**
-* Options to be used when evaluating an ECExpression.
-* The options are specified on an ExpressionContext. Inner contexts inherit the options
-* associated with their outer context.
-* @bsistruct                                                    Paul.Connelly   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-enum EvaluationOptions
-    {
-    //! Legacy behavior. IECTypeAdapter::_ConvertTo/FromExpressionType() will be invoked for each property value used in the ECExpression.
-    //! This can have undesirable results:
-    //!  -Converts linear units to dimensionsed meters
-    //!  -Converts boolean and StandardValues values to localized strings
-    //!  -etc.
-    //! This option is not appropriate for expressions intended to be persisted.
-    EVALOPT_Legacy                          = 0,
-
-    //! IECTypeAdapter::_ConvertTo/FromExpressionType() will not be invoked for property values used in the ECExpression.
-    //!  -Property values will retain their storage units
-    //!  -StandardValues values will retain their internal integer values
-    //!  -Boolean property values will be represented as non-localized true/false
-    //! This option is recommended when units are important, or if the results of the ECExpression will not be displayed to the user directly, or
-    //! if the expression will be persisted.
-    EVALOPT_SuppressTypeConversions         = 1 << 0,
-
-    //! Arithmetic, comparison, and assignment operations will check the units of their operands and:
-    //!  -Convert values to compatible units if possible, or
-    //!  -Produce an error if units are not compatible
-    //! If units are not specified for a numeric value within the ECExpression, an attempt will be made to infer the units from the other operand.
-    //! Currently, units are enforced as follows:
-    //!  -Addition, subtraction, and comparison: Units must be compatible (have same base unit).
-    //!  -Multiplication and division: Only one operand may have units; the other is a scalar.
-    //! This option implies type conversions will be suppressed.
-    EVALOPT_EnforceUnits                    = (1 << 1) | EVALOPT_SuppressTypeConversions,
-    };
-
 /*=================================================================================**//**
 * The context in which an expression is evaluated.
 * @ingroup ECObjectsGroup
@@ -277,6 +242,13 @@ public:
     //! By default, units associated with property values and numeric expressions are ignored.
     //! If this ExpressionContext has an outer context, it inherits the value of the outermost context.
     ECOBJECTS_EXPORT bool               EnforcesUnits() const;
+
+    //! By default, property values obtained from IECInstances are subject to type conversion without taking in to
+    //! account global representation.The ConvertToExpressionType () method of the IECTypeAdapter associated with
+    //! the ECProperty will be called to perform conversion.
+    //! If this ExpressionContext has an outer context, it inherits the value of the outermost context.
+    //! For more details please look at EvaluationOptions EVALOPT_EnforceGlobalRepresentation.
+    ECOBJECTS_EXPORT bool               EnforceGlobalRepresentation () const;
 
     //! Get the options used when evaluating ECExpressions using this context.
     //! If this ExpressionContext has an outer context, it uses the options of the outermost context.

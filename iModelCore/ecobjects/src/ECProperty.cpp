@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -958,7 +958,7 @@ IECInstancePtr IECTypeAdapter::PopulateDefaultFormatterProperties (IECInstanceCR
 bool IECTypeAdapter::ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const { return _ConvertFromString (v, str, context); }
 bool IECTypeAdapter::ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const        { return _ConvertToExpressionType (v, context); }
 bool IECTypeAdapter::ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const      { return _ConvertFromExpressionType (v, context); }
-bool IECTypeAdapter::RequiresExpressionTypeConversion() const                                           { return _RequiresExpressionTypeConversion(); }
+bool IECTypeAdapter::RequiresExpressionTypeConversion (EvaluationOptions evalOptions) const             { return _RequiresExpressionTypeConversion (evalOptions); }
 bool IECTypeAdapter::GetDisplayType (PrimitiveType& type) const                                         { return _GetDisplayType (type); }
 bool IECTypeAdapter::ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const { return _ConvertToString (str, v, context, opts); }
 bool IECTypeAdapter::ConvertToDisplayType (ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP opts) const           { return _ConvertToDisplayType (v, context, opts); }
@@ -969,11 +969,15 @@ bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyCP            IECTypeAdapterContext::GetProperty() const          { return _GetProperty(); }
-uint32_t                IECTypeAdapterContext::GetComponentIndex() const    { return _GetComponentIndex(); }
-WCharCP                 IECTypeAdapterContext::GetAccessString() const      { return _GetAccessString(); }
-bool                    IECTypeAdapterContext::Is3d() const                 { return _Is3d(); }
-IECInstanceInterfaceCR  IECTypeAdapterContext::GetInstanceInterface() const { return _GetInstanceInterface(); }
+ECPropertyCP            IECTypeAdapterContext::GetProperty() const                                      { return _GetProperty(); }
+uint32_t                IECTypeAdapterContext::GetComponentIndex() const                                { return _GetComponentIndex(); }
+WCharCP                 IECTypeAdapterContext::GetAccessString() const                                  { return _GetAccessString(); }
+bool                    IECTypeAdapterContext::Is3d() const                                             { return _Is3d(); }
+IECInstanceInterfaceCR  IECTypeAdapterContext::GetInstanceInterface() const                             { return _GetInstanceInterface(); }
+EvaluationOptions       IECTypeAdapterContext::GetEvaluationOptions () const                            { return _GetEvaluationOptions (); };
+EvaluationOptions       IECTypeAdapterContext::_GetEvaluationOptions () const                           { return m_evalOptions; };
+void                    IECTypeAdapterContext::SetEvaluationOptions (EvaluationOptions evalOptions)     { return _SetEvaluationOptions (evalOptions); };
+void                    IECTypeAdapterContext::_SetEvaluationOptions (EvaluationOptions evalOptions)    { m_evalOptions = evalOptions; };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
