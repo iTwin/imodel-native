@@ -20501,6 +20501,9 @@
                       <Member>
                         <KeyName>EPSG:3110</KeyName>
                       </Member>
+                      <Member>
+                          <KeyName>AGD66/ACT</KeyName>
+                      </Member>
                     </Members>
                   </Group>
                   <Group>
