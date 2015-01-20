@@ -562,6 +562,8 @@ int DbFile::OnCommit()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::StartSavepoint (Savepoint& txn, BeSQLiteTxnMode txnMode)
     {
+    BeAssert (nullptr != m_sqlDb);
+
     if (txn.IsActive())
         return BE_SQLITE_ERROR;
 
@@ -576,7 +578,7 @@ DbResult DbFile::StartSavepoint (Savepoint& txn, BeSQLiteTxnMode txnMode)
     BeAssert(old == NULL || old == this);
 
     DbResult rc = (DbResult) sqlite3_exec (m_sqlDb,
-               (0 == m_txns.size ()) ? getStartTxnSql (txnMode) : SqlPrintfString ("SAVEPOINT \"%s\"", txn.GetName ()).GetUtf8CP (), NULL, NULL, NULL);
+               (0 == m_txns.size()) ? getStartTxnSql(txnMode) : SqlPrintfString("SAVEPOINT \"%s\"", txn.GetName()).GetUtf8CP(), NULL, NULL, NULL);
     
     if (BE_SQLITE_OK != rc)
         {
@@ -686,10 +688,10 @@ Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Savepoint::_Begin()  {return m_dbFile ? m_dbFile->StartSavepoint(*this, m_txnMode) : BE_SQLITE_ERROR;}
+DbResult Savepoint::_Begin(BeSQLiteTxnMode mode)  {return m_dbFile ? m_dbFile->StartSavepoint(*this, mode) : BE_SQLITE_ERROR;}
 DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, false) : BE_SQLITE_ERROR;}
 DbResult Savepoint::_Commit() {return m_dbFile ? m_dbFile->StopSavepoint(*this, true) : BE_SQLITE_ERROR;}
-DbResult Savepoint::Begin()  {return _Begin();}
+DbResult Savepoint::Begin(BeSQLiteTxnMode mode)  {return _Begin(mode);}
 DbResult Savepoint::Commit() {return _Commit();}
 DbResult Savepoint::Cancel() {return _Cancel();}
 
@@ -699,17 +701,6 @@ DbResult Savepoint::Cancel() {return _Cancel();}
 Savepoint* Db::GetSavepoint (int32_t depth) const
     {
     return (depth<0 || depth>=GetCurrentSavepointDepth()) ? NULL : m_dbFile->m_txns[depth];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Krischan.Eberle                  01/15
-//+---------------+---------------+---------------+---------------+---------------+------
-Savepoint* Db::GetDefaultTransaction () const
-    {
-    if (m_dbFile != nullptr)
-        return &m_dbFile->m_defaultTxn;
-    else
-        return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2035,10 +2026,7 @@ DbResult Db::OpenBeSQLiteDb (Utf8CP dbName, OpenParams const& params)
         return rc;
         }
 
-    if (! params.m_skipSchemaCheck && BE_SQLITE_OK != (rc = _VerifySchemaVersion(params)))
-        return rc;
-
-    return BE_SQLITE_OK;
+    return params.m_skipSchemaCheck ? BE_SQLITE_OK  : _VerifySchemaVersion(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

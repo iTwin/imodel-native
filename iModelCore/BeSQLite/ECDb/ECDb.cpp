@@ -142,12 +142,9 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
     {
     auto stat = T_Super::_VerifySchemaVersion (params);
     if (stat != BE_SQLITE_OK)
-        {
         return stat;
-        }
    
-    BeAssert (GetDefaultTransaction () != nullptr);
-    return ECDbProfileManager::UpgradeECProfile (*this, params, *GetDefaultTransaction ());
+    return ECDbProfileManager::UpgradeECProfile(*this, params);
     }
 
 //--------------------------------------------------------------------------------------

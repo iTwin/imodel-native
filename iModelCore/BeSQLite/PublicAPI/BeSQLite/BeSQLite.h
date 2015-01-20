@@ -1794,7 +1794,7 @@ protected:
     Utf8String  m_name;
 
     virtual void _OnDeactivate(bool isCommit) {m_depth=-1;}
-    BE_SQLITE_EXPORT virtual DbResult _Begin();
+    BE_SQLITE_EXPORT virtual DbResult _Begin(BeSQLiteTxnMode);
     BE_SQLITE_EXPORT virtual DbResult _Commit();
     BE_SQLITE_EXPORT virtual DbResult _Cancel();
 
@@ -1806,6 +1806,7 @@ public:
     //! @param[in] db the database for this Savepoint.
     //! @param[in] name the name of this Savepoint. Does not have to be unique, but must not be NULL.
     //! @param[in] beginTxn if true Begin() is called in constructor. To see if Begin was successful, check IsActive.
+    //! @param[in] txnMode the default transaction mode for this Savepoint
     BE_SQLITE_EXPORT Savepoint(Db& db, Utf8CP name, bool beginTxn=true, BeSQLiteTxnMode txnMode=BeSQLiteTxnMode::Deferred);
 
     //! dtor for Savepoint. If the Savepoint is still active, it is committed.
@@ -1820,18 +1821,19 @@ public:
     //! Get the name of this Savepoint.
     Utf8CP GetName() const {return m_name.c_str();}
 
-    //! Get the transaction mode for this SavePoint
+    //! Get the default transaction mode for this SavePoint
     BeSQLiteTxnMode GetTxnMode() const {return m_txnMode;}
 
-//__PUBLISH_SECTION_END__
-    //! Sets the transaction mode for this Savepoint. 
-    //! @note this can only be called if the Savepoint is not active.
-    void SetTxnMode (BeSQLiteTxnMode mode) {BeAssert (!IsActive ());  m_txnMode = mode;}
-//__PUBLISH_SECTION_START__
+    //! Sets the default transaction mode for this Savepoint. 
+    void SetTxnMode (BeSQLiteTxnMode mode) {m_txnMode = mode;}
 
-    //! Begin a transaction against the database. Fails if this Savepoint is already active. See SQLite "SAVEPOINT" documentation
-    //! for other conditions.
-    BE_SQLITE_EXPORT DbResult Begin();
+    //! Begin a transaction against the database. Fails if this Savepoint is already active. 
+    //! See SQLite "BEGIN" and "SAVEPOINT" documentation for other conditions.
+    //! @param[in] mode The transaction mode for this transaction
+    BE_SQLITE_EXPORT DbResult Begin(BeSQLiteTxnMode mode);
+
+    //! Begin a transaction against the database with the default transaction mode
+    DbResult Begin() {return Begin(m_txnMode);}
 
     //! Commit this Savepoint, if active. Executes the SQLite "RELEASE" command. If this is the outermost transaction, this will save changes
     //! to the disk.
@@ -2291,8 +2293,6 @@ protected:
     DbResult SaveBeDbGuid();
     DbResult SaveRepositoryId();
 
-    // Only needed by ECDb subclass
-    BE_SQLITE_EXPORT Savepoint* GetDefaultTransaction () const;
 
 private:
     void DoCloseDb();
@@ -2573,7 +2573,6 @@ public:
 
     //! @}
 
-
     //! @name RepositoryLocalValue
     //! @{
     //! It is used for information specific to this copy of the Db. The table BEDB_Table_Local in which
@@ -2698,6 +2697,7 @@ public:
     BE_SQLITE_EXPORT DbResult DropChangeTracker (Utf8CP name);
     BE_SQLITE_EXPORT ChangeTracker* FindChangeTracker (Utf8CP name);
     BE_SQLITE_EXPORT DbResult ShareDbFileFrom (Db& other);
+    Savepoint* GetDefaultTransaction() const {return (m_dbFile.get() != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
 
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
     //!

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SystemPropertyECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -149,6 +149,10 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt (int value)
             return SetError (sqliteStat, "ECSqlStatement::BindInt");
         }
 
+    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler ();
+    if (onBindEventHandler != nullptr)
+        onBindEventHandler (ECInstanceId (value));
+
     m_bindValueIsNull = false;
     return ResetStatus ();
     }
@@ -176,6 +180,10 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64 (int64_t value)
             return SetError (sqliteStat, "ECSqlStatement::BindInt64");
         }
 
+    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler ();
+    if (onBindEventHandler != nullptr)
+        onBindEventHandler (ECInstanceId (value));
+
     m_bindValueIsNull = false;
     return ResetStatus ();
     }
@@ -202,6 +210,16 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText (Utf8CP value, IECSqlBinder::Ma
         const auto sqliteStat = GetSqliteStatementR ().BindText (m_sqliteIndex, value, ToBeSQliteBindMakeCopy (makeCopy), byteCount);
         if (sqliteStat != BE_SQLITE_OK)
             return SetError (sqliteStat, "ECSqlStatement::BindText");
+        }
+
+    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler ();
+    if (onBindEventHandler != nullptr)
+        {
+        ECInstanceId id;
+        if (!ECInstanceIdHelper::FromString (id, WString (value, BentleyCharEncoding::Utf8).c_str ()))
+            return GetStatusContext ().SetError (ECSqlStatus::UserError, "Binding string value to %s parameter failed. Value cannot be converted to an ECInstanceId.", SystemPropertyToString ());
+
+        onBindEventHandler (id);
         }
 
     m_bindValueIsNull = false;
