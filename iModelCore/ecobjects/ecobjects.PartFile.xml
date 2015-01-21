@@ -16,6 +16,7 @@
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
+        <SubPart PartName="GeomlibsSerialization" PartFile="GeomLibs" Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>

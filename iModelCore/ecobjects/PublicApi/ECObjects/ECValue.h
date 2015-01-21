@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECValue.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -512,10 +512,15 @@ public:
     //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
     ECOBJECTS_EXPORT BentleyStatus  SetBinary (const Byte * data, size_t size, bool holdADuplicate = false);
 
-    //! Returns the IGeometry as binary data, and sets the size of the data, if this ECValue holds an IGeometry
-    ECOBJECTS_EXPORT const Byte *   GetIGeometry (size_t& size) const;
-    //! Sets the value of this ECValue to the given IGeometry, as binary byte data.
+    //! Returns the IGeometry, if this ECValue holds a geometry value
+    ECOBJECTS_EXPORT IGeometryPtr   GetIGeometry () const;
+
+    /*__PUBLISH_SECTION_END__*/
+    //! Sets the value of this ECValue to the given IGeometry, using a serialized byte array
     ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const Byte * data, size_t size, bool holdADuplicate = false);
+    /*__PUBLISH_SECTION_START__*/
+
+    ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (IGeometryCR geometry);
 
     //! Gets the struct instance of this ECValue, if the ECValue holds a struct
     ECOBJECTS_EXPORT IECInstancePtr GetStruct() const;

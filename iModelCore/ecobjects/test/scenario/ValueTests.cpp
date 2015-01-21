@@ -2,7 +2,7 @@
 |
 |     $Source: test/scenario/ValueTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -25,28 +25,6 @@ struct ValueTests : ECTestFixture
         EXPECT_EQ (dateTime1.GetMillisecond(), dateTime2.GetMillisecond());
         EXPECT_EQ (dateTime1.GetHectoNanosecond(), dateTime2.GetHectoNanosecond());
         }
-    };
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-//SetIGeometry uses SetBinary which throws exception for this type
-TEST_F(ValueTests, DISABLED_IGeometrySetGet)
-    {
-    const Byte binary[] = {0x00, 0x01, 0x02, 0x03};
-    ECValue value;
-    EXPECT_EQ (value.SetIGeometry(binary, sizeof(binary)), ECOBJECTS_STATUS_Success);
-    
-    EXPECT_TRUE (value.IsIGeometry());
-    EXPECT_FALSE (value.IsBinary());
-    
-    size_t sizeOut;
-    const Byte *binaryOut = value.GetIGeometry(sizeOut);
-    EXPECT_TRUE (binaryOut != NULL);
-    EXPECT_EQ (sizeOut, 4);
-    
-    for (size_t i=0; i<sizeOut; i++)
-        EXPECT_EQ (binaryOut[i], binary[i]);
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -91,18 +69,6 @@ TEST_F(ValueTests, ECValueToString)
     EXPECT_STREQ (value.ToString().c_str(), L"1.2,-3.3999999999999999,5.5999999999999996");
     };
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Raimondas.Rimkus 02/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ValueTests, DISABLED_IGeometryToString)
-    {
-    Byte binary[] = {0x00, 0x01, 0x02, 0x03};
-    ECValue value;
-    
-    EXPECT_EQ (value.SetIGeometry(binary, sizeof(binary)), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (value.ToString().c_str(), L"AEgADw==");  //this is probably BASE64 encoded
-    };
- 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
