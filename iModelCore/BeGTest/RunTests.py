@@ -2,7 +2,7 @@
 #
 #  $Source: RunTests.py $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 import os, sys
@@ -505,7 +505,7 @@ class DgnPlatformTestRunner:
         self.m_outputDir = ""
         self.m_codewatch = ""
         self.m_logFile = ""
-        self.m_arch = os.getenv ("TARGET_PROCESSOR_ARCHITECTURE")
+        self.m_arch = os.getenv ("DEFAULT_TARGET_PROCESSOR_ARCHITECTURE")
         
         self.ParseArgs (args)
         self.VerifyArgs () 
@@ -657,7 +657,7 @@ class DgnPlatformTestRunner:
         error = False
 
         if not self.m_arch:
-            PrintError ("Could not resolve architecture from environment or command line. Set via -a/--architecture or TARGET_PROCESSOR_ARCHITECTURE.")
+            PrintError ("Could not resolve architecture from environment or command line. Set via -a/--architecture or DEFAULT_TARGET_PROCESSOR_ARCHITECTURE.")
             error = True 
 
         if self.m_isMakingCoverageReport:
@@ -733,7 +733,7 @@ class DgnPlatformTestRunner:
         Log (" --coverage                                                  : runs executable through codewatch and generates reports")
         Log (" --doxygen_xml_dir                                           : doxygen xml output path")
         Log ("")
-        Log (" -a|--architecture                                           : Optional (defaults to TARGET_PROCESSOR_ARCHITECTURE from the environment). If provided as an argument, possible values are: 'x86', 'x64'.")
+        Log (" -a|--architecture                                           : Optional (defaults to DEFAULT_TARGET_PROCESSOR_ARCHITECTURE from the environment). If provided as an argument, possible values are: 'x86', 'x64'.")
         Log ("")
         Log ("------------")
 
