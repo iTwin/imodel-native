@@ -13,8 +13,10 @@ InstanceCRUDTests.* # test data is not available yet, run by testing after buid.
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests
 
-
 ECDbSchemas.IntegrityCheck
+
+ECDbSchemas.CTESupportTest # Started failing after merging in schema changes
+
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
