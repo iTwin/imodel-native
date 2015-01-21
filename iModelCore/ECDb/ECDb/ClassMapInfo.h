@@ -46,7 +46,7 @@ private:
     bool m_replaceEmptyTableWithEmptyView;
     bool m_isMapToVirtualTable;
     bool m_useSharedColumnStrategy;
-    ECN::ECPropertyP m_classHasTimeStamp;
+    ECN::ECPropertyP m_ClassHasCurrentTimeStamp;
 protected:
     MapStrategy m_mapStrategy;
     ECDbMapCR m_ecDbMap;
@@ -55,7 +55,7 @@ protected:
 private:
     void InitializeFromSchema ();
     void InitializeFromClassHint ();
-    void InitializeFromClassHasTimeStamp ();
+    void InitializeFromClassHasCurrentTimeStamp ();
 
     bool ValidateBaseClasses () const;
     MapStatus EvaluateInheritedMapStrategy ();
@@ -76,7 +76,7 @@ protected:
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
 
 public:
-    ECN::ECPropertyP GetClassHasTimeStamp() const { return m_classHasTimeStamp; }
+    ECN::ECPropertyP GetClassHasCurrentTimeStamp() const { return m_ClassHasCurrentTimeStamp; }
     static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy);
 
     //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ECDbClassHint ECCustomAttribute and

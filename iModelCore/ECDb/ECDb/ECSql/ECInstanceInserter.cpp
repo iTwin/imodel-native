@@ -117,8 +117,6 @@ void ECInstanceInserter::Impl::Initialize ()
 
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties (true))
         {
-        if (ecProperty->GetIsReadOnly())
-            continue;
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 

@@ -486,9 +486,9 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* p
     auto stat = AddPropertyMaps (mapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
-    if (mapInfo.GetClassHasTimeStamp() != NULL)
+    if (mapInfo.GetClassHasCurrentTimeStamp() != NULL)
         {
-        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasTimeStamp()->GetName().c_str());
+        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStamp()->GetName().c_str());
         if (propertyMap != NULL)
             {
             auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
@@ -503,7 +503,9 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* p
                 Utf8String body;
                 Utf8CP instanceID = GetPropertyMap(L"ECInstanceId")->GetFirstColumn()->GetName().c_str();
                 body.Sprintf("BEGIN UPDATE %s SET %s = julianday('now') WHERE %s = new.%s; END", column->GetTableR().GetName().c_str(), column->GetName().c_str(), instanceID, instanceID);
-                column->GetTableR().CreateTrigger("ClassMapHasTimeStampTrigger", column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create);
+                Utf8String triggerName;
+                triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName());
+                column->GetTableR().CreateTrigger(triggerName.c_str(), column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create);
                 }
             }
         }

@@ -576,7 +576,7 @@ TEST (ECDbSchemas, CTESupportTest)
         rowCount++;
         } while (BE_SQLITE_ROW == stmt.Step ());
 
-    ASSERT_EQ (1, rowCount);
+    ASSERT_EQ (2, rowCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2883,97 +2883,99 @@ TEST(ECDbSchemas, Verify_TFS_14829_B)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-   TEST (ECDbSchemas, IntegrityCheck)
+TEST(ECDbSchemas, IntegrityCheck)
     {
     // Save a test project
     ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create ("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
+    ECDbR db = saveTestProject.Create("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
     Statement stmt;
     std::map<Utf8String, Utf8String> expected;
     expected["ic_TargetBase"] = "CREATE TABLE[ic_TargetBase] ([ECId] INTEGER not null, [ECClassId] INTEGER not null, [I] INTEGER, [S] CHAR, [SourceECId] INTEGER, [SourceEClassId] INTEGER, PRIMARY KEY (ECId), FOREIGN KEY ([SourceECId]) REFERENCES ic_SourceBase ([ECId]) MATCH FULL ON DELETE CASCADE ON UPDATE NO ACTION)";
     expected["IDX_ic_TargetBase_ECClassId"] = "CREATE INDEX IDX_ic_TargetBase_ECClassId ON ic_TargetBase ([ECClassId])";
 
-    stmt.Prepare (db, "select name, sql from sqlite_master Where tbl_name = 'ic_TargetBase'");
+    stmt.Prepare(db, "select name, sql from sqlite_master Where tbl_name = 'ic_TargetBase'");
     int nRows = 0;
-    while (stmt.Step () == BE_SQLITE_ROW)
+    while (stmt.Step() == BE_SQLITE_ROW)
         {
         nRows = nRows + 1;
-        Utf8String name = stmt.GetValueText (0);
-        Utf8String sql = stmt.GetValueText (1);
-        auto itor = expected.find (name);
-        if (itor == expected.end ())
+        Utf8String name = stmt.GetValueText(0);
+        Utf8String sql = stmt.GetValueText(1);
+        auto itor = expected.find(name);
+        if (itor == expected.end())
             {
-            ASSERT_FALSE (false) << "Failed to find expected value [name=" << name << "]";
+            ASSERT_FALSE(false) << "Failed to find expected value [name=" << name << "]";
             }
         if (itor->second != sql)
             {
-            ASSERT_FALSE (false) << "SQL def for  [name=" << name << "] has changed \r\n Expected :" << itor->second.c_str () << "\r\n Actual : " << sql.c_str ();
+            ASSERT_FALSE(false) << "SQL def for  [name=" << name << "] has changed \r\n Expected :" << itor->second.c_str() << "\r\n Actual : " << sql.c_str();
             }
         }
 
-    ASSERT_EQ (nRows, expected.size ()) << "Number of SQL definitions are not same";
+    ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";
     }
-   TEST(ECDbSchemas, checkClassHasTimeStamp)
-       {
-       const WCharCP schema =
-           L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-           L"<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-           L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.10\" prefix=\"besc\" />"
-           L"<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
-           L"<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
-           L"<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
-           L"<ECCustomAttributes>"
-           L"<ClassHasTimeStamp xmlns=\"Bentley_Standard_CustomAttributes.01.10\">"
-           L"<property>DateTimeProperty</property>"
-           L"</ClassHasTimeStamp>"
-           L"</ECCustomAttributes>"
-           L"</ECClass>"
-           L"</ECSchema>";
-       ECDbTestProject saveTestProject;
-       ECDbR db = saveTestProject.Create("checkClassHasTimeStamp.ecdb");
-       ECSchemaPtr simpleSchema;
-       auto readContext = ECSchemaReadContext::CreateContext();
-       ECSchema::ReadFromXmlString(simpleSchema, schema, *readContext);
-       ASSERT_TRUE(simpleSchema != nullptr);
-       auto importStatus = db.GetSchemaManager().ImportECSchemas(readContext->GetCache());
-       ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
-       auto ecClass = simpleSchema->GetClassP(L"SimpleClass");
-       auto inst1 = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+TEST(ECDbSchemas, checkClassHasCurrentTimeStamp)
+    {
+    const WCharCP schema =
+        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        L"<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.10\" prefix=\"besc\" />"
+        L"<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
+        L"<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
+        L"<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
+        L"<ECCustomAttributes>"
+        L"<ClassHasCurrentTimeStamp xmlns=\"Bentley_Standard_CustomAttributes.01.10\">"
+        L"<PropertyName>DateTimeProperty</PropertyName>"
+        L"</ClassHasCurrentTimeStamp>"
+        L"</ECCustomAttributes>"
+        L"</ECClass>"
+        L"</ECSchema>";
 
-       ECInstanceInserter inserter(db, *ecClass);
-       if (!inserter.IsValid())
-           {
-           LOG.errorv(L"Failed to create ECInstanceInserter for %ls", ecClass->GetName().c_str());
-           }
-       ASSERT_TRUE(inserter.IsValid());
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create("checkClassHasCurrentTimeStamp.ecdb");
+    ECSchemaPtr simpleSchema;
+    auto readContext = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(simpleSchema, schema, *readContext);
+    ASSERT_TRUE(simpleSchema != nullptr);
+    auto importStatus = db.GetSchemaManager().ImportECSchemas(readContext->GetCache());
+    ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
+    auto ecClass = simpleSchema->GetClassP(L"SimpleClass");
 
-       ECInstanceKey instanceKey;
-       auto insertStatus = inserter.Insert(instanceKey, *inst1);
-       ASSERT_EQ(SUCCESS, insertStatus);
-       Utf8String ecsql("SELECT * FROM ");
-       ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass)).append(" WHERE ECInstanceId = ?");
+    ECSqlStatement insertStatement;
+    Utf8CP insertQuery = "INSERT INTO adhoc.SimpleClass(testprop) VALUES(12)";
+    ASSERT_TRUE(ECSqlStatus::Success == insertStatement.Prepare(db, insertQuery));
+    insertStatement.Step();
+    db.SaveChanges();
+    Utf8String ecsql("SELECT DateTimeProperty FROM ");
+    ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
+    db.SaveChanges();
+    ECSqlStatement statement;
+    auto stat = statement.Prepare(db, ecsql.c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stat);
 
-       ECSqlStatement statement;
-       auto stat = statement.Prepare(db, ecsql.c_str());
-       ECInstanceECSqlSelectAdapter selectAdapter(statement);
-       IECInstancePtr instance = selectAdapter.GetInstance();
-       ECValue v1;
-       instance->GetValue(v1, L"DateTimeProperty");
+    ASSERT_EQ(ECSqlStatus::Success, stat);
+    Bentley::DateTime dateTime1;
+    ASSERT_TRUE(statement.Step() == ECSqlStepStatus::HasRow);
+        {
+        ASSERT_FALSE(statement.IsValueNull(0));
+        dateTime1 = statement.GetValueDateTime(0);
+        }
+    ASSERT_TRUE(statement.Step() == ECSqlStepStatus::Done);
+    ECSqlStatement updateStatment;
+    ecsql = "UPDATE  ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
+    stat = updateStatment.Prepare(db, ecsql.c_str());
+    ASSERT_TRUE(updateStatment.Step() == ECSqlStepStatus::Done);
+    ecsql = "SELECT DateTimeProperty FROM ";
+    ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
 
-       auto inst2 = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-       WChar actualInstanceId[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-       auto success = ECInstanceIdHelper::ToString(actualInstanceId, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId());
-       EXPECT_TRUE(success);
-
-       inst2->SetInstanceId(actualInstanceId);
-       ECInstanceUpdater updater(db, *ecClass);
-       insertStatus = updater.Update(*inst2);
-       ASSERT_EQ(SUCCESS, insertStatus);
-
-       ECValue v2;
-       inst1->GetValue(v2, L"DateTimeProperty");
-       v1.GetDateTime();
-       v2.GetDateTime();
-       ASSERT_NE(v1.GetDateTime(), v2.GetDateTime());
-       }
+    Bentley::DateTime dateTime2;
+    ECSqlStatement statement2;
+    stat = statement2.Prepare(db, ecsql.c_str());
+    ASSERT_TRUE(statement2.Step() == ECSqlStepStatus::HasRow);
+        {
+        ASSERT_FALSE(statement2.IsValueNull(0));
+        dateTime2 = statement2.GetValueDateTime(0);
+        }
+    ASSERT_TRUE(statement2.Step() == ECSqlStepStatus::Done);
+    ASSERT_FALSE(dateTime1 == dateTime2);
+    }
 END_ECDBUNITTESTS_NAMESPACE
