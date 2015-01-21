@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Bentley.r.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,6 +32,10 @@
         #if (_MSC_VER >= 1600)
             //  Microsoft started delivering stdint.h as of VS2010
             #define HAVE_STDINT
+            //  Microsoft started delivering inttypes.h as of VS2012
+            #if (_MSC_VER >= 1800)
+                #define HAVE_INTTYPES
+            #endif
             #if (_MSC_VER >= 1600)
                 //  Without this definition of INT64_MAX etc. generate an error if intsafe.h was previously included.
                 //  See http://connect.microsoft.com/VisualStudio/feedback/details/621653/including-stdint-after-intsafe-generates-warnings#
@@ -59,18 +63,13 @@
         #define ALIGNMENT_ATTRIBUTE(B)  __attribute__((aligned(B)))
         //  GCC always delivers stdint.h.
         #define HAVE_STDINT
+        #define HAVE_INTTYPES
     #else
         #error unknown compiler
     #endif
 
     #ifdef HAVE_STDINT
         #include <stdint.h>
-
-        #if defined (ANDROID)
-            // This define is only required on Android/GCC to get platform-independent printf macros such as PRI64d.
-            #define __STDC_FORMAT_MACROS
-        #endif
-        #include <inttypes.h>
     #else
         typedef signed char         int8_t;
         typedef unsigned char       uint8_t;
@@ -82,6 +81,14 @@
         typedef unsigned long long  uint64_t;
     #endif
 
+    // Toolsets that don't have inttypes.h are of limited use anyway, so don't bother replicating inttypes.h here for them.
+    #ifdef HAVE_INTTYPES
+        #if defined (ANDROID)
+            // This define is only required on Android/GCC to get platform-independent printf macros such as PRI64d.
+            #define __STDC_FORMAT_MACROS
+        #endif
+        #include <inttypes.h>
+    #endif
 #endif
 
 #if !defined (NO_BENTLEY_BASICTYPES)
