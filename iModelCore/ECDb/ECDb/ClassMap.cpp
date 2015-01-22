@@ -486,9 +486,9 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* p
     auto stat = AddPropertyMaps (mapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
-    if (mapInfo.GetClassHasCurrentTimeStamp() != NULL)
+    if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
         {
-        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStamp()->GetName().c_str());
+        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != NULL)
             {
             auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());

@@ -2918,14 +2918,14 @@ TEST(ECDbSchemas, checkClassHasCurrentTimeStamp)
     const WCharCP schema =
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         L"<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.10\" prefix=\"besc\" />"
+        L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
         L"<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
         L"<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
         L"<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
         L"<ECCustomAttributes>"
-        L"<ClassHasCurrentTimeStamp xmlns=\"Bentley_Standard_CustomAttributes.01.10\">"
+        L"<ClassHasCurrentTimeStampProperty xmlns=\"Bentley_Standard_CustomAttributes.01.11\">"
         L"<PropertyName>DateTimeProperty</PropertyName>"
-        L"</ClassHasCurrentTimeStamp>"
+        L"</ClassHasCurrentTimeStampProperty>"
         L"</ECCustomAttributes>"
         L"</ECClass>"
         L"</ECSchema>";
