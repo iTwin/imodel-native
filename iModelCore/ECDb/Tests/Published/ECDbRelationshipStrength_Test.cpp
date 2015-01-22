@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECDbRelationshipStrength_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -21,26 +21,9 @@ extern IECInstancePtr CreatePerson (ECClassCR ecClass, WCharCP firstName, WCharC
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DeleteInstance (IECInstanceCR instance, ECDbR ecDb)
     {
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        int m_rowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            m_rowsAffected = (int) args.GetInstanceKeys ().size ();
-            }
-
-    public:
-        EventHandler () {}
-        ~EventHandler () {}
-        
-        int GetRowsAffected () const { return m_rowsAffected; }
-        };
-
     ECClassCR ecClass = instance.GetClass();
 
-    EventHandler handler;
+    InstancesAffectedECSqlEventHandler handler;
     ECInstanceDeleter deleter (ecDb, ecClass, handler);
 
     if (!deleter.IsValid ())
@@ -50,7 +33,7 @@ int DeleteInstance (IECInstanceCR instance, ECDbR ecDb)
     if (status != SUCCESS)
         return -1;
 
-    return handler.GetRowsAffected ();
+    return handler.GetInstancesAffectedCount ();
     }
     
 /*---------------------------------------------------------------------------------**//**

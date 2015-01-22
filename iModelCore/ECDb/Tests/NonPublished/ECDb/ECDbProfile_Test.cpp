@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/NonPublished/ECDb/ECDbProfile_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -545,21 +545,6 @@ TEST (ECDbProfile, ECSqlUpdateAgainstLegacyFilesWithoutCGColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbProfile, ECSqlDeleteAgainstLegacyFilesWithoutCGColumns)
     {
-    struct TestEventHandler : ECSqlEventHandler
-        {
-    private:
-        int m_rowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override { m_rowsAffected = (int) args.GetInstanceKeys ().size (); }
-
-    public:
-        TestEventHandler ()
-            : ECSqlEventHandler (), m_rowsAffected (-1)
-            {}
-
-        int GetRowsAffected () const { return m_rowsAffected; }
-        };
-
     ECDbTestProject::Initialize ();
 
     Utf8String legacyECDbPath = CopyTestFile ("legacyfilewithoutcommongeometrycolumns.ecdb");
@@ -575,13 +560,13 @@ TEST (ECDbProfile, ECSqlDeleteAgainstLegacyFilesWithoutCGColumns)
 
         {
         ECSqlStatement stmt;
-        TestEventHandler eh;
+        InstancesAffectedECSqlEventHandler eh;
         stmt.RegisterEventHandler (eh);
         Utf8String ecsql;
         ecsql.Sprintf ("DELETE FROM ONLY %s", class1Name);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (legacyECDb, ecsql.c_str ()));
         ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-        ASSERT_GT (eh.GetRowsAffected (), 0);
+        ASSERT_GT (eh.GetInstancesAffectedCount (), 0);
         }
 
         {
@@ -600,13 +585,13 @@ TEST (ECDbProfile, ECSqlDeleteAgainstLegacyFilesWithoutCGColumns)
 
         {
         ECSqlStatement stmt;
-        TestEventHandler eh;
+        InstancesAffectedECSqlEventHandler eh;
         stmt.RegisterEventHandler (eh);
         Utf8String ecsql;
         ecsql.Sprintf ("DELETE FROM ONLY %s", class2Name);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (legacyECDb, ecsql.c_str ()));
         ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-        ASSERT_GT (eh.GetRowsAffected (), 0);
+        ASSERT_GT (eh.GetInstancesAffectedCount (), 0);
         }
 
         {

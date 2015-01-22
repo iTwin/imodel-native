@@ -45,34 +45,12 @@ public:
 struct ClassUpdaterImpl : ECInstanceUpdater::Impl
     {
 private:
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        bool m_noRowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            BeAssert (eventType == EventType::Update && "ECInstanceUpdater is expected to only execute ECSQL UPDATE statements.");
-            m_noRowsAffected = args.GetInstanceKeys ().empty ();
-            }
-
-    public:
-        EventHandler ()
-            : ECSqlEventHandler (), m_noRowsAffected (true)
-            {}
-
-        ~EventHandler () {}
-
-        bool NoRowsAffected () const { return m_noRowsAffected; }
-        };
-
-
     ECDbR m_ecdb;
     mutable ECSqlStatement m_statement;
     ECValueBindingInfoCollection m_ecValueBindingInfos;
     int m_ecinstanceIdParameterIndex;
     bool m_needsCalculatedPropertyEvaluation;
-    EventHandler m_internalEventHandler;
+    InstancesAffectedECSqlEventHandler m_internalEventHandler;
     bool m_isValid;
 
     void Initialize(bvector<ECPropertyCP>& propertiesToBind);
@@ -454,8 +432,9 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         return ERROR;
 
     //now execute statement
+    m_internalEventHandler.Reset ();
     ECSqlStepStatus stepStatus = m_statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done && !m_internalEventHandler.NoRowsAffected ()) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done && m_internalEventHandler.AreInstancesAffected ()) ? SUCCESS : ERROR;
     }
 
 //*************************************************************************************

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDbCRUD.sample.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ECDb/ECDbApi.h>
@@ -884,6 +884,49 @@ BentleyStatus ECDb_ECSqlInsertRelation ()
         // do error handling here...
         return ERROR;
         }
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_ECSqlInstancesAffected ()
+    {
+    ECDb ecdb;
+
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInstancesAffected.sampleCode
+
+    // Prepare statement
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare (ecdb, "DELETE FROM ONLY stco.Computer WHERE WarrantyExpiryDate < CURRENT_DATE");
+    if (stat != ECSqlStatus::Success)
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    // Register event handler that reports the number of instances deleted
+    // (Registration can be done before the call to Prepare, too)
+    InstancesAffectedECSqlEventHandler eventHandler;
+    stat = statement.RegisterEventHandler (eventHandler);
+    if (stat != ECSqlStatus::Success)
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    // Execute statement which calls the handler
+    ECSqlStepStatus stepStat = statement.Step ();
+    if (stepStat != ECSqlStepStatus::Done)
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    //now do something with the count
+    printf ("%d computers which no longer have warranty were deleted from the inventory system.", eventHandler.GetInstancesAffectedCount ());
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;

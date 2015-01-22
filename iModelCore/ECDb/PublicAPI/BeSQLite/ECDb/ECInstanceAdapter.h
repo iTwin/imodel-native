@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECInstanceAdapter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -203,7 +203,7 @@ private:
     ECDbR m_ecdb;
     ECN::ECClassCR m_ecClass;
     mutable ECSqlStatement m_statement;
-    EventHandler* m_internalEventHandler;
+    InstancesAffectedECSqlEventHandler m_internalEventHandler;
     bool m_isValid;
 
     //__PUBLISH_SECTION_END__

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECDbFileInfoTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -170,26 +170,7 @@ TEST (ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     stmt.Finalize ();
 
     //DELETE scenario
-    struct EventHandler : ECSqlEventHandler 
-        {
-    private:
-        size_t m_rowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            m_rowsAffected = args.GetInstanceKeys ().size ();
-            }
-
-    public:
-        EventHandler () : ECSqlEventHandler () {}
-
-        size_t GetRowsAffected () const
-            {
-            return m_rowsAffected;
-            }
-        };
-
-    EventHandler handler;
+    InstancesAffectedECSqlEventHandler handler;
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.RegisterEventHandler (handler));
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId = ?"));
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.BindId (1, fooKey.GetECInstanceId ()));
@@ -197,7 +178,7 @@ TEST (ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     stmt.Finalize ();
 
     //check referential integrity
-    ASSERT_EQ (3, handler.GetRowsAffected ()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
+    ASSERT_EQ (3, handler.GetInstancesAffectedCount ()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
 
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
     ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
