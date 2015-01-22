@@ -2307,9 +2307,8 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
         case ECDbSqlColumn::Type::Double:
             sql.append ("DOUBLE"); break;
         case ECDbSqlColumn::Type::Integer:
-            sql.append ("INTEGER"); break;
         case ECDbSqlColumn::Type::Long:
-            sql.append ("INT64"); break;
+            sql.append ("INTEGER"); break;
         case ECDbSqlColumn::Type::String:
             sql.append ("TEXT"); break;
         }
