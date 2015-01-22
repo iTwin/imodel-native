@@ -16,7 +16,7 @@ ECInstanceDeleter::ECInstanceDeleter
 (
 ECDbR ecdb, 
 ECClassCR ecClass
-) : m_ecdb (ecdb), m_ecClass (ecClass), m_internalEventHandler (nullptr)
+) : m_ecdb (ecdb), m_ecClass (ecClass)
     {
     Initialize (nullptr);
     }
