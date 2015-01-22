@@ -1418,6 +1418,16 @@ IGeometryPtr ECValue::GetIGeometry() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                 1/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+const Byte * ECValue::GetIGeometry(size_t& size) const
+    {
+    PRECONDITION (IsIGeometry() && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
+    size = m_binaryInfo.m_size;
+    return m_binaryInfo.m_data;
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECValue::SetIGeometry(const Byte * data, size_t size, bool holdADuplicate)
