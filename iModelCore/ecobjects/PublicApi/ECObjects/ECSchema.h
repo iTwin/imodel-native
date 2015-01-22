@@ -379,6 +379,9 @@ Base class for an object which provides the context for an IECTypeAdapter
 struct IECTypeAdapterContext : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
+private:
+    EvaluationOptions m_evalOptions;
+
 protected:
     virtual ECPropertyCP                        _GetProperty() const = 0;
     virtual uint32_t                            _GetComponentIndex() const = 0;
@@ -386,11 +389,17 @@ protected:
     virtual IECInstanceCP                       _GetECInstance() const = 0;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, uint32_t arrayIndex) const;
     ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
+    ECOBJECTS_EXPORT virtual EvaluationOptions  _GetEvaluationOptions () const;
+    ECOBJECTS_EXPORT virtual void               _SetEvaluationOptions (EvaluationOptions evalOptions);
+
 public:
 
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
     ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, uint32_t arrayIndex = -1) const;
+
+    ECOBJECTS_EXPORT EvaluationOptions          GetEvaluationOptions () const;
+    ECOBJECTS_EXPORT void                       SetEvaluationOptions (EvaluationOptions evalOptions);
 
     //! The following are relevant to adapters for point types.
     ECOBJECTS_EXPORT  uint32_t                  GetComponentIndex() const;
@@ -434,7 +443,7 @@ protected:
     virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
     virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const = 0;
 
-    virtual bool                _RequiresExpressionTypeConversion() const = 0;
+    virtual bool                _RequiresExpressionTypeConversion (EvaluationOptions evalOptions) const = 0;
     virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
     virtual bool                _ConvertFromExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
 
@@ -503,7 +512,7 @@ public:
     ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const;
 
     //! @return true if the value must be converted for use in ECExpressions.
-    ECOBJECTS_EXPORT        bool RequiresExpressionTypeConversion() const;
+    ECOBJECTS_EXPORT        bool RequiresExpressionTypeConversion (EvaluationOptions evalOptions = EVALOPT_Legacy) const;
 
     //! Converts the value to the value which should be used when evaluating ECExpressions.
     //! Typically no conversion is required. If the value has units, it should be converted to master units

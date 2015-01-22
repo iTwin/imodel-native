@@ -2,12 +2,13 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <Bentley/BeAssert.h>
 #include <Bentley/ValueFormat.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 enum ECValueStateFlags ENUM_UNDERLYING_TYPE(unsigned char)
@@ -1404,22 +1405,17 @@ BentleyStatus ECValue::SetUtf16CP (Utf16CP string, bool holdADuplicate)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                12/2012
+* @bsimethod                                    Carole.MacDonald                 1/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-const Byte * ECValue::GetIGeometry(size_t& size) const
+IGeometryPtr ECValue::GetIGeometry() const
     {
-    return GetBinary(size);
-    }
+    PRECONDITION(IsIGeometry() && "Tried to get an IGeometry from an ECN::ECValue that is not geometry", NULL);
+    bvector<byte> geomBuffer;
+    geomBuffer.resize(m_binaryInfo.m_size);
+    memcpy(&geomBuffer[0], m_binaryInfo.m_data, m_binaryInfo.m_size);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-const Byte * ECValue::GetBinary(size_t& size) const
-    {
-    PRECONDITION ((IsBinary() || IsIGeometry()) && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
-    size = m_binaryInfo.m_size;
-    return m_binaryInfo.m_data;
-    };
+    return BentleyGeometryFlatBuffer::BytesToGeometry (geomBuffer);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                12/2012
@@ -1431,6 +1427,27 @@ BentleyStatus ECValue::SetIGeometry(const Byte * data, size_t size, bool holdADu
     m_primitiveType = PRIMITIVETYPE_IGeometry;
     return SetBinaryInternal(data, size, holdADuplicate);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                 1/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECValue::SetIGeometry(IGeometryCR geometry)
+    {
+    Clear();
+    m_primitiveType = PRIMITIVETYPE_IGeometry;
+    bvector<byte> buffer;
+    BentleyGeometryFlatBuffer::GeometryToBytes (geometry, buffer);
+    return SetBinaryInternal(buffer.data(), buffer.size());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaseyMullen     01/10
++---------------+---------------+---------------+---------------+---------------+------*/
+const Byte * ECValue::GetBinary(size_t& size) const
+    {
+    PRECONDITION ((IsBinary() || IsIGeometry()) && "Tried to get binarydata from an ECN::ECValue that is not binary.", NULL);
+    size = m_binaryInfo.m_size;
+    return m_binaryInfo.m_data;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10

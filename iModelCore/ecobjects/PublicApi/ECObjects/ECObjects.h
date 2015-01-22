@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -241,6 +241,50 @@ enum SupplementedSchemaStatus
     SUPPLEMENTED_SCHEMA_STATUS_IECRelationship_Not_Allowed      = SUPPLEMENTED_SCHEMA_STATUS_BASE + 3,
     SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException             = SUPPLEMENTED_SCHEMA_STATUS_BASE + 4,
     SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass    = SUPPLEMENTED_SCHEMA_STATUS_BASE + 5,
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* Options to be used when evaluating an ECExpression.
+* The options are specified on an ExpressionContext. Inner contexts inherit the options
+* associated with their outer context.
+* @bsistruct                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+enum EvaluationOptions
+    {
+    //! Legacy behavior. IECTypeAdapter::_ConvertTo/FromExpressionType() will be invoked for each property value used in the ECExpression.
+    //! This can have undesirable results:
+    //!  -Converts linear units to dimensionsed meters
+    //!  -Converts boolean and StandardValues values to localized strings
+    //!  -etc.
+    //! This option is not appropriate for expressions intended to be persisted.
+    EVALOPT_Legacy                          = 0,
+
+    //! IECTypeAdapter::_ConvertTo/FromExpressionType() will not be invoked for property values used in the ECExpression.
+    //!  -Property values will retain their storage units
+    //!  -StandardValues values will retain their internal integer values
+    //!  -Boolean property values will be represented as non-localized true/false
+    //! This option is recommended when units are important, or if the results of the ECExpression will not be displayed to the user directly, or
+    //! if the expression will be persisted.
+    EVALOPT_SuppressTypeConversions         = 1 << 0,
+
+    //! Arithmetic, comparison, and assignment operations will check the units of their operands and:
+    //!  -Convert values to compatible units if possible, or
+    //!  -Produce an error if units are not compatible
+    //! If units are not specified for a numeric value within the ECExpression, an attempt will be made to infer the units from the other operand.
+    //! Currently, units are enforced as follows:
+    //!  -Addition, subtraction, and comparison: Units must be compatible (have same base unit).
+    //!  -Multiplication and division: Only one operand may have units; the other is a scalar.
+    //! This option implies type conversions will be suppressed.
+    EVALOPT_EnforceUnits                    = (1 << 1) | EVALOPT_SuppressTypeConversions,
+    
+    //! IECTypeAdapter::_ConvertTo/FromExpressionType() will be invoked only for property values used in the ECExpression 
+    //! that requires evaluation based on their global representation. For example: in Microstation LevelId for the same
+    //! LevelName in different files (references) can be different and evaluating against LevelId will not work. So instead
+    //! LevelId should be converted to global representation and compared against it.
+    //! When this option is turned on, ECExpression string should also be formated accordingly based on what global representation
+    //! is for that particular property. IECTypeAdapter::_RequiresExpressionTypeConversion() and IECTypeAdapter::_ConvertToExpressionType()
+    //! functions can be used to detect that.
+    EVALOPT_EnforceGlobalRepresentation     = (1 << 2),
     };
 
 
