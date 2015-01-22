@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ECDB/Published/ECSqlStatementCrudAsserter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementCrudAsserter.h"
@@ -674,7 +674,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
         }
 
     //rows affected test can be performed for update and delete
-    EventHandler eh;
+    InstancesAffectedECSqlEventHandler eh;
     auto stat = statement.RegisterEventHandler (eh);
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
     auto stepStat = Step (statement, !expectedToSucceed);
@@ -682,7 +682,7 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
         {
         ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << statement.GetLastStatusMessage ().c_str ();
         auto expectedRowsAffected = expectedResult.GetExpectedAffectedRowCount ();
-        auto actualRowsAffected = eh.GetRowsAffected ();
+        auto actualRowsAffected = eh.GetInstancesAffectedCount ();
         ASSERT_EQ (expectedRowsAffected, actualRowsAffected) << "Step returned Unexpected number of rows affected for ECSQL '" << ecsql << "'.";
         
         }

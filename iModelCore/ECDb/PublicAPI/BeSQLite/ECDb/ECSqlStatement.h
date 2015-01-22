@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECSqlStatement.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -103,6 +103,42 @@ public:
     //! @param[in] args EventArgs that contain changeset of the changes caused or will be caused by last CRUD operation.
     void OnEvent (EventType eventType, ECSqlEventArgs const& args);
     //__PUBLISH_SECTION_START__
+    };
+
+//=======================================================================================
+//! InstancesAffectedECSqlEventHandler allows clients to capture the number of ECInstances affected
+//! when executing a non-SELECT ECSqlStatement.
+//! @remarks This is a convenience implementation of ECSqlEventHandler for the common
+//! case where only the number of instances affected of a non-SELECT ECSQL is required. For
+//! more sophisticated cases, clients can implement their own ECSqlEventHandler in a hand-tailored way.
+//! @ingroup ECDbGroup
+// @bsiclass                                                     Krischan.Eberle  01/2015
+//+===============+===============+===============+===============+===============+======
+struct EXPORT_VTABLE_ATTRIBUTE InstancesAffectedECSqlEventHandler : ECSqlEventHandler
+    {
+private:
+    mutable int m_instancesAffectedCount;
+
+    ECDB_EXPORT virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override;
+
+public:
+    //! Instantiates a new InstancesAffectedECSqlEventHandler
+    ECDB_EXPORT InstancesAffectedECSqlEventHandler ();
+    virtual ~InstancesAffectedECSqlEventHandler () {}
+
+    //! Gets the number of instances affected by the last ECSQL event caught by this handler.
+    //! @remarks Returns a negative number if no ECSQL event has been caught by this handler yet.
+    //! @return number of instances affected
+    int GetInstancesAffectedCount () const {return m_instancesAffectedCount;}
+
+    //! Gets a value indicating whether any instances were affected by the last ECSQL event caught by this handler.
+    //! @return true if the last ECSQL event affected instances, false if it didn't affect any instances.
+    bool AreInstancesAffected () const { return m_instancesAffectedCount > 0; }
+
+    //! Resets the count.
+    //! @remarks This can be useful when the handler is used for subsequent executions of the statement and you
+    //! need to make sure that the handler doesn't return a count from a previous execution.
+    void Reset () const;
     };
 
 //=======================================================================================

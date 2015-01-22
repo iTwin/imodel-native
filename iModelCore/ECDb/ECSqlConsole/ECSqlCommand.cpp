@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ECSqlCommand.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ECDb/ECDbApi.h>
@@ -123,11 +123,11 @@ void ECSqlCommand::ExecuteInsert (ECSqlStatement& statement) const
 //---------------------------------------------------------------------------------------
 void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
     {
-    EventHandler handler;
+    InstancesAffectedECSqlEventHandler handler;
     auto stat = statement.RegisterEventHandler (handler);
     if (stat != ECSqlStatus::Success)
         {
-        Console::WriteErrorLine ("Programmer error: Could not register rows affected event handler in ECSQL Console.");
+        Console::WriteErrorLine ("Programmer error: Could not register instances affected event handler in ECSQL Console.");
         return;
         }
 
@@ -139,7 +139,7 @@ void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
         return;
         }
 
-    Console::WriteLine ("%d rows affected.", handler.GetRowsAffected ());
+    Console::WriteLine ("%d instances affected.", handler.GetInstancesAffectedCount ());
     }
 
 //---------------------------------------------------------------------------------------

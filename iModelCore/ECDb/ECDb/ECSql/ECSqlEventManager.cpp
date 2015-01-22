@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlEventManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -137,6 +137,36 @@ ECSqlEventHandler::~ECSqlEventHandler ()
 void ECSqlEventHandler::OnEvent (EventType eventType, ECSqlEventArgs const& args)
     {
     _OnEvent (eventType, args);
+    }
+
+
+//*************************************************************************************
+// InstancesAffectedECSqlEventHandler
+//*************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 01/2015
+//---------------------------------------------------------------------------------------
+InstancesAffectedECSqlEventHandler::InstancesAffectedECSqlEventHandler ()
+    : ECSqlEventHandler ()
+    {
+    Reset ();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 01/2015
+//---------------------------------------------------------------------------------------
+void InstancesAffectedECSqlEventHandler::_OnEvent (EventType eventType, ECSqlEventArgs const& args)
+    {
+    m_instancesAffectedCount = (int) args.GetInstanceKeys ().size ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 01/2015
+//---------------------------------------------------------------------------------------
+void InstancesAffectedECSqlEventHandler::Reset () const
+    {
+    m_instancesAffectedCount = -1;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

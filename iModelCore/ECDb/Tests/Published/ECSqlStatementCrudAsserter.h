@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ECDB/Published/ECSqlStatementCrudAsserter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,27 +73,6 @@ public:
 struct ECSqlNonSelectStatementCrudAsserter : public ECSqlStatementCrudAsserter
     {
 private:
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        int m_rowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            m_rowsAffected = (int) args.GetInstanceKeys ().size ();
-            }
-
-    public:
-        EventHandler ()
-            : ECSqlEventHandler (), m_rowsAffected (-1)
-            {}
-
-        ~EventHandler ()
-            {}
-
-        int GetRowsAffected () const { return m_rowsAffected; }
-        };
-
     virtual void _Assert (Utf8StringR statementErrorMessage, ECSqlTestItem const& testItem) const override;
 
     void AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, AffectedRowsECSqlExpectedResult const& expectedResult) const;

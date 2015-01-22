@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ConsoleCommand.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -205,25 +205,6 @@ public:
 struct ECSqlCommand : public ConsoleCommand, NonCopyableClass
     {
 private:
-    struct EventHandler : BeSQLite::EC::ECSqlEventHandler
-        {
-    private:
-        int m_rowsAffected;
-        virtual void _OnEvent (BeSQLite::EC::ECSqlEventHandler::EventType eventType, BeSQLite::EC::ECSqlEventArgs const& args) override
-            {
-            m_rowsAffected = (int) args.GetInstanceKeys ().size ();
-            }
-
-    public:
-        EventHandler ()
-            : BeSQLite::EC::ECSqlEventHandler (), m_rowsAffected (-1)
-            {}
-
-        ~EventHandler () {}
-
-        int GetRowsAffected () const { return m_rowsAffected; }
-        };
-
     virtual Utf8String _GetName () const override;
     virtual Utf8String _GetUsage () const override;
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
