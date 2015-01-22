@@ -516,6 +516,9 @@ public:
     ECOBJECTS_EXPORT IGeometryPtr   GetIGeometry () const;
 
     /*__PUBLISH_SECTION_END__*/
+    //! Returns the binary value of the IGeometry
+    //! @param[in]  size    The size of the binary data
+    ECOBJECTS_EXPORT const Byte *   GetIGeometry (size_t& size) const;
     //! Sets the value of this ECValue to the given IGeometry, using a serialized byte array
     ECOBJECTS_EXPORT BentleyStatus  SetIGeometry (const Byte * data, size_t size, bool holdADuplicate = false);
     /*__PUBLISH_SECTION_START__*/
