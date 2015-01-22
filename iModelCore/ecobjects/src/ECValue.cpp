@@ -1410,7 +1410,7 @@ BentleyStatus ECValue::SetUtf16CP (Utf16CP string, bool holdADuplicate)
 IGeometryPtr ECValue::GetIGeometry() const
     {
     PRECONDITION(IsIGeometry() && "Tried to get an IGeometry from an ECN::ECValue that is not geometry", NULL);
-    bvector<byte> geomBuffer;
+    bvector<Byte> geomBuffer;
     geomBuffer.resize(m_binaryInfo.m_size);
     memcpy(&geomBuffer[0], m_binaryInfo.m_data, m_binaryInfo.m_size);
 
@@ -1435,7 +1435,7 @@ BentleyStatus ECValue::SetIGeometry(IGeometryCR geometry)
     {
     Clear();
     m_primitiveType = PRIMITIVETYPE_IGeometry;
-    bvector<byte> buffer;
+    bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes (geometry, buffer);
     return SetBinaryInternal(buffer.data(), buffer.size());
     }
