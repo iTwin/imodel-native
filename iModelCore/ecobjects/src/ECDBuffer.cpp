@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -2552,20 +2552,21 @@ ECObjectsStatus       ECDBuffer::GetPrimitiveValueFromMemory (ECValueR v, Proper
                 break;
                 }
             case PRIMITIVETYPE_Binary:
-            case PRIMITIVETYPE_IGeometry:
                 {
-                // UInt32 size;
-                // if (useIndex)
-                //     size = GetPropertyValueSize (propertyLayout, index);
-                // else
-                //     size = GetPropertyValueSize (propertyLayout);
-
                 uint32_t const* actualSize   = (uint32_t const*)pValue;
                 Byte const*   actualBuffer = pValue+sizeof(uint32_t);
 
                 v.SetBinary (actualBuffer, *actualSize);
                 break;
-                }  
+                }
+            case PRIMITIVETYPE_IGeometry:
+                {
+                uint32_t const* actualSize   = (uint32_t const*)pValue;
+                Byte const*   actualBuffer = pValue+sizeof(uint32_t);
+
+                v.SetIGeometry (actualBuffer, *actualSize);
+                break;
+                }
             case PRIMITIVETYPE_Boolean:
                 {
                 bool value;
@@ -2882,7 +2883,8 @@ ECObjectsStatus       ECDBuffer::SetPrimitiveValueToMemory (ECValueCR v, Propert
         case PRIMITIVETYPE_IGeometry:
         case PRIMITIVETYPE_Binary:
             {
-            if (!v.IsBinary ())
+            if ((primitiveType == PRIMITIVETYPE_Binary && !v.IsBinary ()) ||
+                (primitiveType == PRIMITIVETYPE_IGeometry && !(v.IsIGeometry() || v.IsBinary())))
                 return ECOBJECTS_STATUS_DataTypeMismatch;
 
             uint32_t currentSize = 0;
