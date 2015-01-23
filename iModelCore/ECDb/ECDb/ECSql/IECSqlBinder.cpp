@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -73,21 +73,16 @@ ECSqlStatus IECSqlBinder::BindDouble (double value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindGeometry (IGeometryCR value)
     {
-    LOG.warning ("BindGeometry is not supported until the persistence format has been finalized.");
-    BeAssert (false && "BindGeometry is not supported until the persistence format has been finalized.");
-    return ECSqlStatus::UserError;
-
-    //WIP: TFS#141566 uncomment once BGFB has been finalized
-    /*bvector<byte> geometryBlob;
+    bvector<Byte> geometryBlob;
     BentleyGeometryFlatBuffer::GeometryToBytes (value, geometryBlob);
     if (geometryBlob.empty ())
         {
         LOG.error ("Failed to serialize IGeometry to BentleyGeometryFlatBuffer.");
         BeAssert (false && "Failed to serialize IGeometry to BentleyGeometryFlatBuffer.");
-        return ECSqlStatus::ProgramError;
+        return ECSqlStatus::ProgrammerError;
         }
 
-    return BindGeometryBlob (geometryBlob.data (), (int) geometryBlob.size (), MakeCopy::Yes);*/
+    return BindGeometryBlob (geometryBlob.data (), (int) geometryBlob.size (), MakeCopy::Yes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -95,10 +90,7 @@ ECSqlStatus IECSqlBinder::BindGeometry (IGeometryCR value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
-    LOG.warning ("BindGeometry is not supported until the persistence format has been finalized.");
-    return ECSqlStatus::Success;
-    //WIP: TFS#141566 uncomment once BGFB has been finalized
-    //return _BindPrimitive ()._BindGeometryBlob (value, blobSize, makeCopy);
+    return _BindPrimitive ()._BindGeometryBlob (value, blobSize, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------

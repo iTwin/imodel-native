@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParameterValue.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -358,7 +358,7 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindGeometryBlob (const void* value, 
     if (!CanBindValue (PRIMITIVETYPE_IGeometry))
         return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. IGeometry values can only be bound to IGeometry parameter values.");
 
-    auto ecstat = m_value.SetIGeometry (static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
+    auto ecstat = m_value.SetBinary (static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
     const auto stat = ToECSqlStatus (ecstat);
     if (stat != ECSqlStatus::Success)
         return GetStatusContext ().SetError (stat, "BindGeometry");
@@ -562,7 +562,7 @@ DPoint3d PrimitiveECSqlParameterValue::_GetPoint3D () const
 void const* PrimitiveECSqlParameterValue::_GetGeometryBlob (int* blobSize) const
     {
     size_t size = 0;
-    auto blob = m_value.GetIGeometry (size);
+    auto blob = m_value.GetBinary (size);
 
     if (blobSize != nullptr)
         *blobSize = static_cast<int> (size);
