@@ -1464,48 +1464,48 @@ TEST_F (NonPublishedMemoryLayoutTests, TestSetGetNull)
     EXPECT_FALSE (v.IsNull());     
     };
     
-void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
-    {
-    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
-    string[0] = '\0';
-    for (int i = 0; i < nChars; i++)
-        {
-        int digit = i % 10;
-        wchar_t digitAsString[2];
-        swprintf (digitAsString, L"%d", digit);
-        wcscat (string, digitAsString);
-        }
-        
-    ECValue v(string);
-    EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
-    }
-
-TEST_F (NonPublishedMemoryLayoutTests, ProfileSettingValues)
-    {
-    int nStrings = 100;
-    int nInstances = 1000;
-
-    ECSchemaPtr        schema      = CreateProfilingSchema(nStrings);
-    ECClassP           ecClass     = schema->GetClassP (L"Pidget");
-    ASSERT_TRUE (NULL != ecClass);
-        
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
-    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    
-    double elapsedSeconds = 0.0;
-    StopWatch timer (L"Time setting of values in a new StandaloneECInstance", true);
-    for (int i = 0; i < nInstances; i++)
-        {
-        timer.Start();
-        SetValuesForProfiling (*instance);
-        timer.Stop();
-        
-        elapsedSeconds += timer.GetElapsedSeconds();
-        instance->ClearValues();
-        }
-    
-    wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
-    }
+//void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
+//    {
+//    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
+//    string[0] = '\0';
+//    for (int i = 0; i < nChars; i++)
+//        {
+//        int digit = i % 10;
+//        wchar_t digitAsString[2];
+//        swprintf (digitAsString, L"%d", digit);
+//        wcscat (string, digitAsString);
+//        }
+//        
+//    ECValue v(string);
+//    EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
+//    }
+//
+//TEST_F (NonPublishedMemoryLayoutTests, ProfileSettingValues)
+//    {
+//    int nStrings = 100;
+//    int nInstances = 1000;
+//
+//    ECSchemaPtr        schema      = CreateProfilingSchema(nStrings);
+//    ECClassP           ecClass     = schema->GetClassP (L"Pidget");
+//    ASSERT_TRUE (NULL != ecClass);
+//        
+//    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+//    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+//    
+//    double elapsedSeconds = 0.0;
+//    StopWatch timer (L"Time setting of values in a new StandaloneECInstance", true);
+//    for (int i = 0; i < nInstances; i++)
+//        {
+//        timer.Start();
+//        SetValuesForProfiling (*instance);
+//        timer.Stop();
+//        
+//        elapsedSeconds += timer.GetElapsedSeconds();
+//        instance->ClearValues();
+//        }
+//    
+//    wprintf (L"  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
+//    }
     
 TEST_F (NonPublishedMemoryLayoutTests, PropertyLayoutBracketsTest)
     {
