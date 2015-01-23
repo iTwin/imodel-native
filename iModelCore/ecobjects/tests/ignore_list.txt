@@ -19,5 +19,3 @@ UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
 
 SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
-
-ECDBufferTests.ConvertDataBuffer_StructArrays # fails after merge

@@ -2,13 +2,15 @@
 |
 |     $Source: tests/NonPublished/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
+
+#define EXPECT_SUCCESS(EXPR) EXPECT_EQ (ECOBJECTS_STATUS_Success, (EXPR))
 
 #include <ECObjects/ECInstance.h>
 #include <ECObjects/StandaloneECInstance.h>
@@ -1462,6 +1464,22 @@ TEST_F (NonPublishedMemoryLayoutTests, TestSetGetNull)
     EXPECT_FALSE (v.IsNull());     
     };
     
+void SetStringToSpecifiedNumberOfCharacters (IECInstanceR instance, int nChars)
+    {
+    WCharP string = (WCharP)alloca ((nChars + 1) * sizeof(wchar_t));
+    string[0] = '\0';
+    for (int i = 0; i < nChars; i++)
+        {
+        int digit = i % 10;
+        wchar_t digitAsString[2];
+        swprintf (digitAsString, L"%d", digit);
+        wcscat (string, digitAsString);
+        }
+        
+    ECValue v(string);
+    EXPECT_TRUE (SUCCESS == instance.SetValue (L"S", v));
+    }
+
 TEST_F (NonPublishedMemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
@@ -2030,12 +2048,16 @@ TEST_F (ECDBufferTests, ConvertDataBuffer_StructArrays)
     StandaloneECInstancePtr instance2 = class2->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ (ECOBJECTS_STATUS_Success, instance2->CopyDataBuffer (*instance1, true));
 
-    ECValue null;
     ECValue arrayVal;
     arrayVal.SetStructArrayInfo (2, false);
     TestValue (*instance2, L"StructArray", arrayVal);
-    TestValue (*instance2, L"StructArray", null, 0);
-    TestValue (*instance2, L"StructArray", null, 1);
+#ifdef STRUCT_ENTRIES_COPIED
+    // this used to expect the struct array entries to be null, which happened to work due to a bug in the copying code
+    // After fixing the bug the struct entry IDs are copied, but (as advertised in method documentation) the struct array ECInstances themselves
+    // are not, so trying to access them with invalid ID raises an error.
+    TestValue (*instance2, L"StructArray", ECValue (/*null*/), 0);
+    TestValue (*instance2, L"StructArray", ECValue (/*null*/), 1);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2142,6 +2164,96 @@ TEST (ECValueTests, StringOwnership)
     AssertStringOwnership (nullptr, strUtf8, true, //create ECValue which owns the string
                            false, //expected value for OwnsString
                            true); //expected value for OwnsUtf8CP
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PropertyIndexTests : ECTestFixture
+    {
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (PropertyIndexTests, FlatteningIterator)
+    {
+    static const PrimitiveType testTypes[] = { PRIMITIVETYPE_Integer, PRIMITIVETYPE_String };
+    for (size_t typeIndex = 0; typeIndex < _countof (testTypes); typeIndex++)
+        {
+        auto primType = testTypes[typeIndex];
+        // Create an ECClass with nested structs like so:
+        //  1
+        //  2
+        //      3
+        //      4
+        //          5
+        //  6 { empty struct }
+        //  7
+        //      8
+        //  9
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema (schema, L"Schema", 1, 0);
+        PrimitiveECPropertyP primProp;
+        StructECPropertyP structProp;
+
+        ECClassP s4;
+        schema->CreateClass (s4, L"S4");
+        s4->SetIsStruct (true);
+        EXPECT_SUCCESS (s4->CreatePrimitiveProperty (primProp, L"P5", primType));
+
+        ECClassP s2;
+        schema->CreateClass (s2, L"S2");
+        s2->SetIsStruct (true);
+        EXPECT_SUCCESS (s2->CreatePrimitiveProperty (primProp, L"P3", primType));
+        EXPECT_SUCCESS (s2->CreateStructProperty (structProp, L"P4", *s4));
+
+        ECClassP s6;
+        schema->CreateClass (s6, L"S6");
+        s6->SetIsStruct (true);
+
+        ECClassP s7;
+        schema->CreateClass (s7, L"S7");
+        EXPECT_SUCCESS (s7->CreatePrimitiveProperty (primProp, L"P8", primType));
+        EXPECT_SUCCESS (s7->SetIsStruct (true));
+
+        ECClassP ecClass;
+        schema->CreateClass (ecClass, L"MyClass");
+        EXPECT_SUCCESS (ecClass->CreatePrimitiveProperty (primProp, L"P1", primType));
+        EXPECT_SUCCESS (ecClass->CreateStructProperty (structProp, L"P2", *s2));
+        EXPECT_SUCCESS (ecClass->CreateStructProperty (structProp, L"P6", *s6));
+        EXPECT_SUCCESS (ecClass->CreateStructProperty (structProp, L"P7", *s7));
+        EXPECT_SUCCESS (ecClass->CreatePrimitiveProperty (primProp, L"P9", primType));
+
+        // Expect property indices returned using depth-first traversal of struct members
+        // Expect indices of struct properties are not returned
+        // Note that order in which property indices are assigned and returned depends on fixed-sized vs variable-sized property types.
+        WCharCP expect[] = { L"P1", L"P2.P3", L"P2.P4.P5", L"P7.P8", L"P9" };
+
+        auto const& enabler = *ecClass->GetDefaultStandaloneEnabler();
+        uint32_t propIdx;
+        bset<WCharCP> matched;
+        for (PropertyIndexFlatteningIterator iter (enabler); iter.GetCurrent (propIdx); iter.MoveNext())
+            {
+            WCharCP accessString = nullptr;
+            EXPECT_SUCCESS (enabler.GetAccessString (accessString, propIdx));
+            bool foundMatch = false;
+            for (size_t i = 0; i < _countof(expect); i++)
+                {
+                if (0 == wcscmp (expect[i], accessString))
+                    {
+                    EXPECT_TRUE (matched.end() == matched.find (expect[i]));
+                    matched.insert (expect[i]);
+                    foundMatch = true;
+                    break;
+                    }
+                }
+
+            EXPECT_TRUE (foundMatch);
+            }
+
+        EXPECT_EQ (matched.size(), _countof (expect));
+        }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

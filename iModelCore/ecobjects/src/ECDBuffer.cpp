@@ -344,14 +344,23 @@ uint32_t        ClassLayout::GetChecksum () const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassLayout::SetPropertyLayoutModifierData (PropertyLayoutCR layout, uint32_t data)
+    {
+    const_cast<PropertyLayoutR>(layout).m_modifierData = data;
+    m_checkSum = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ClassLayout::Equals (ClassLayoutCR other) const
+bool            ClassLayout::Equals (ClassLayoutCR other, bool compareNames) const
     {
     if (this == &other)
         return true;
     else
-        return this->GetChecksum() == other.GetChecksum() && this->m_className.Equals (other.m_className);
+        return this->GetChecksum() == other.GetChecksum() && (!compareNames || this->m_className.Equals (other.m_className));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -923,6 +932,32 @@ ClassLayoutPtr    ClassLayout::CreateEmpty (WCharCP className)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassLayoutPtr  ClassLayout::Clone (WCharCP className) const
+    {
+    ClassLayoutPtr clone = CreateEmpty (nullptr != className ? className : GetECClassName().c_str());
+    for (auto const& propLayout : m_propertyLayouts)
+        {
+        uint32_t offset = 0, modFlags = 0, modData = 0, nullflagsOffset = 0, nullflagsMask = 0;
+        if (!propLayout->GetTypeDescriptor().IsStruct())
+            {
+            offset = propLayout->GetOffset();
+            modFlags = propLayout->GetModifierFlags();
+            modData = propLayout->GetModifierData();
+            nullflagsOffset = propLayout->GetNullflagsOffset();
+            nullflagsMask = propLayout->GetNullflagsBitmask();
+            }
+
+        clone->AddPropertyDirect (propLayout->GetAccessString(), propLayout->GetParentStructIndex(), propLayout->GetTypeDescriptor(),
+                                  offset, nullflagsOffset, nullflagsMask, modFlags, modData);
+        }
+
+    clone->FinishLayout();
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ClassLayout::SetClass (WCharCP className)
@@ -1217,7 +1252,10 @@ ECObjectsStatus     ClassLayout::GetPropertyIndex (uint32_t& propertyIndex, WCha
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus       ClassLayout::GetPropertyLayoutByIndex (PropertyLayoutCP & propertyLayout, uint32_t propertyIndex) const
     {
-    PRECONDITION (propertyIndex < m_propertyLayouts.size(), ECOBJECTS_STATUS_IndexOutOfRange);
+    BeAssert (propertyIndex < m_propertyLayouts.size());
+    if (propertyIndex >= m_propertyLayouts.size())
+        return ECOBJECTS_STATUS_IndexOutOfRange; 
+        
     propertyLayout = m_propertyLayouts[propertyIndex];
     return ECOBJECTS_STATUS_Success;
     }
@@ -1821,11 +1859,11 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
 
     // since we can not use memmove on XAttribute memory, copy the memory move it around and then use _ModifyData
     // copy the entire instance into allocated memory
-    ScopedArray<Byte> scoped((size_t)bytesAllocated);
+    ScopedArray<Byte> scoped((size_t)bytesAllocated, currentData);
     Byte*   _data = scoped.GetData();
-    memcpy (_data, currentData, (size_t)bytesAllocated);
 
     Byte*   propertyData = _data + GetOffsetToPropertyData();
+    uint32_t propertyBytesAllocated = bytesAllocated - GetOffsetToPropertyData();
 
     bool    hasFixedSizedElements = IsArrayOfFixedSizeElements (propertyLayout) || ((PRIMITIVETYPE_Integer == GetStructArrayPrimitiveType () && propertyLayout.GetTypeDescriptor().IsStructArray()));
     uint32_t arrayOffset           = GetOffsetOfPropertyValue (propertyLayout);   
@@ -1845,14 +1883,14 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
     if ((removeIndex + removeCount) >= preArrayCount) // removing entries an end of array
         {
         source = propertyData + *pNextProperty;
-        bytesToMove = bytesAllocated - *pNextProperty;
+        bytesToMove = propertyBytesAllocated - *pNextProperty;
         }
     else   // removing entries at beginning or in middle of array
         {
         SecondaryOffset endIndexValueOffset = GetOffsetOfArrayIndexValue (arrayOffset, propertyLayout, removeIndex+removeCount);
         source = propertyData + endIndexValueOffset;
 
-        bytesToMove = bytesAllocated - endIndexValueOffset;
+        bytesToMove = propertyBytesAllocated - endIndexValueOffset;
         }
 
     // WIP: bytesToMove is UInt32, and therefore will always be positive.
@@ -1878,7 +1916,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         uint32_t         offsetDelta = removeCount * sizeof(SecondaryOffset);
 
         source      = destination + offsetDelta;    
-        bytesToMove = bytesAllocated - (beginIndexValueOffset+offsetDelta);
+        bytesToMove = propertyBytesAllocated - (beginIndexValueOffset+offsetDelta);
 
         if (bytesToMove > 0)
             memmove (destination, source, bytesToMove);
@@ -1956,7 +1994,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         destination = arrayAddress + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask));
         source = (Byte*)firstArrayEntryOffset;
 
-        bytesToMove = bytesAllocated - (arrayOffset + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
+        bytesToMove = propertyBytesAllocated - (arrayOffset + sizeof(ArrayCount) + (postNullFlagBitmasksCount*sizeof(NullflagsBitmask)));
 
         memmove (destination, source, bytesToMove);
         totalBytesAdjusted += (uint32_t)(source - destination);
@@ -3112,13 +3150,20 @@ ECObjectsStatus  ECDBuffer::EvaluateCalculatedProperty (PropertyLayoutCR propLay
     if (ECOBJECTS_STATUS_Success != evalStatus || updatedValue.Equals (existingValue))
         return evalStatus;
 
-    // ###TODO: I don't like this cast. Calculated properties require that we modify the instance in order to store the calculated value
-    ECDBuffer& memInst = const_cast<ECDBuffer&> (*this);
-    evalStatus = memInst.SetPrimitiveValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex, true);
+    evalStatus = _SetCalculatedValueToMemory (updatedValue, propLayout, useArrayIndex, arrayIndex);
     if (ECOBJECTS_STATUS_Success == evalStatus)
         existingValue = updatedValue;
 
     return evalStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const
+    {
+    // Calculated properties require that we modify the instance in order to store the calculated value
+    return const_cast<ECDBuffer&>(*this).SetPrimitiveValueToMemory (v, propertyLayout, useIndex, index, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3781,21 +3826,38 @@ bool ECDBuffer::IsEmpty() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDBuffer::EvaluateAllCalculatedProperties()
     {
+    return EvaluateAllCalculatedProperties (false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDBuffer::EvaluateAllCalculatedProperties (bool includeDefaults)
+    {
     ScopedDataAccessor scopedDataAccessor (*this);
     if (!scopedDataAccessor.IsValid())
         { BeAssert (false); return false; }
 
+    ECValue null;
     for (PropertyLayout const* propLayout: GetClassLayout().m_propertyLayouts)
         {
         if (propLayout->HoldsCalculatedProperty())
             {
+            if (includeDefaults && !propLayout->GetTypeDescriptor().IsArray())
+                SetValueToMemory (null, *propLayout);
+
             ECValue v;
             if (ECOBJECTS_STATUS_Success == GetValueFromMemory (v, *propLayout) && v.IsArray())
                 {
                 // an array of calculated primitive values
                 uint32_t arrayCount = v.GetArrayInfo().GetCount();
                 for (uint32_t i = 0; i < arrayCount; i++)
+                    {
+                    if (includeDefaults)
+                        SetValueToMemory (null, *propLayout, i);
+
                     GetValueFromMemory (v, *propLayout, i);
+                    }
                 }
             }
         else if (propLayout->GetTypeDescriptor().IsStructArray())
@@ -3860,7 +3922,10 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
                                  srcType = srcPropLayout->GetTypeDescriptor();
 
                 if (dstType.GetTypeKind() != srcType.GetTypeKind())
+                    {
+                    BeAssert (false && "ECDBuffer::CopyDataBuffer() skipping property with mismatched types...this may be a programmer error");
                     continue;
+                    }
                 else if (dstType.IsStruct())
                     continue;   // embedded structs always null
                 else if (dstType.IsPrimitive())
