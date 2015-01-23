@@ -1771,7 +1771,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IGeometry)
         }
 
     ecdb.SaveChanges ();
-    ecdb.GetEC ().ClearCache ();
+    ecdb.ClearCache ();
 
     //now verify the inserts
 
