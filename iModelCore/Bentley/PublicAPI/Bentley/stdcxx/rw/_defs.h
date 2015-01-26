@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_defs.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,7 +48,7 @@
 #define _RWSTD_RW_DEFS_H_INCLUDED
 
 #include <Bentley/BeAssert.h>
-#include <Bentley/BeThread.h>
+#include <Bentley/BeAtomic.h>
 
 #include <stdexcept>
 #include <exception>

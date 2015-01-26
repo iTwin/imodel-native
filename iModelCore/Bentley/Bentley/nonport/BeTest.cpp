@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTest.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -30,7 +30,7 @@
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
 
-static BeCriticalSection                        s_bentleyCS;
+static BeMutex s_bentleyCS;
 static intptr_t                                 s_mainThreadId;                     // MT: set only during initialization
 static BeAssertFunctions::T_BeAssertHandler*    s_assertHandler;                    // MT: s_bentleyCS
 static bool                                     s_assertHandlerCanBeChanged=true;   // MT: s_bentleyCS
@@ -176,9 +176,9 @@ void Bentley::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP message
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Bentley::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP file, unsigned line)
     {
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
     T_BeAssertHandler* host = s_assertHandler;
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
 
     if (NULL != host)
         {
@@ -202,9 +202,9 @@ void     Bentley::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WChar
         return;
 #endif
     
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
     T_BeAssertHandler* host = s_assertHandler;
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
 
     if (NULL != host)
         {
@@ -220,10 +220,10 @@ void     Bentley::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WChar
 +---------------+---------------+---------------+---------------+---------------+------*/
 void     Bentley::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
     {
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
     if (s_assertHandlerCanBeChanged)
         s_assertHandler = h;
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,10 +231,10 @@ void     Bentley::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void     Bentley::BeAssertFunctions::SetBeTestAssertHandler (T_BeAssertHandler* h)
     {
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
     s_assertHandlerCanBeChanged = false;
     s_assertHandler = h;
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,7 +248,7 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
         return;
         }
 
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
 
     if (atype == BeAssertFunctions::AssertType::All)
         {
@@ -263,7 +263,7 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
         s_failOnAssert[(int)atype] = doFail;
         } 
 
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -271,9 +271,9 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            BeTest::SetBeAssertListener (T_BeAssertListener* l)
     {
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
     s_assertListeners.push_back(l);
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -286,7 +286,7 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
 
     bool failOnAssert;
         {
-        BeCriticalSectionHolder holder (s_bentleyCS);
+        BeMutexHolder holder (s_bentleyCS);
         failOnAssert = s_failOnAssert[(int)atype];
         }
 
@@ -314,7 +314,7 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
 
     if (!s_runningUnderGtest && BeThreadUtilities::GetCurrentThreadId () != s_mainThreadId)
         {
-        BeCriticalSectionHolder holder (s_bentleyCS);
+        BeMutexHolder holder (s_bentleyCS);
         s_hadAssertOnAnotherThread = true;
         return;
         }
@@ -357,7 +357,7 @@ uintptr_t pReserved
 
     if (!s_runningUnderGtest && BeThreadUtilities::GetCurrentThreadId() != s_mainThreadId)
         {
-        BeCriticalSectionHolder holder(s_bentleyCS);
+        BeMutexHolder holder(s_bentleyCS);
         s_hadAssertOnAnotherThread = true;
         return;
         }
@@ -391,7 +391,7 @@ void BeTest::Initialize (Host& host)
         return;
     s_initialized = true;
 
-    BeCriticalSection::StartupInitializeSystemCriticalSection();
+    BeSystemMutexHolder::StartupInitializeSystemMutex();
 
 #if defined (BENTLEY_WIN32)
 
@@ -857,7 +857,7 @@ static void incrementErrorCountAndEnableThrows()    {BeTest::IncrementErrorCount
 
 static void rethrowAssertFromOtherTreads () 
     {
-    BeCriticalSectionHolder holder (s_bentleyCS);
+    BeMutexHolder holder (s_bentleyCS);
     if (s_hadAssertOnAnotherThread)
         s_IFailureHandler->_OnAssertionFailure (L"assert failed in another thread");
     }
@@ -929,9 +929,9 @@ void testing::Test::Run()
     
     size_t e = BeTest::GetErrorCount();
     
-    s_bentleyCS.Enter ();
+    s_bentleyCS.lock();
     s_hadAssertOnAnotherThread = false;
-    s_bentleyCS.Leave ();
+    s_bentleyCS.unlock();
     
     BE_TEST_SEH_TRY
         {

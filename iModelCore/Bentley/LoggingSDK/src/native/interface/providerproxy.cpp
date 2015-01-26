@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/providerproxy.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -299,7 +299,7 @@ Provider::ILogProvider* LogProviderProxy::registerProvider
 Provider::ILogProvider* pProvider
 )
     {
-    BeSystemCriticalSectionHolder beCS;
+    BeSystemMutexHolder beCS;
 
     if (m_pLogProvider != nullptr)
         return m_pLogProvider;
@@ -313,7 +313,7 @@ Provider::ILogProvider* pProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 Provider::ILogProvider* LogProviderProxy::unregisterProvider ()
     {
-    BeSystemCriticalSectionHolder beCS;
+    BeSystemMutexHolder beCS;
     
     Provider::ILogProvider* was = m_pLogProvider;
     m_pLogProvider = nullptr;

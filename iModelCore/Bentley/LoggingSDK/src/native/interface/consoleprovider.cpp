@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/consoleprovider.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (ANDROID)
@@ -182,7 +182,7 @@ SEVERITY    severity
     {
     BeAssert ( NULL != nameSpace );
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     bmap<WString,SEVERITY>::iterator it = m_severity.find ( nameSpace );
 
@@ -209,7 +209,7 @@ SEVERITY    sev
     {
     BeAssert ( NULL != nameSpace );
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     SEVERITY    severity = m_defaultSeverity;
 

@@ -2,104 +2,131 @@
 |
 |     $Source: PublicAPI/Bentley/BeThread.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "BeCriticalSection.h"
-
 #include "BeAtomic.h"
 
 BEGIN_BENTLEY_NAMESPACE
 
-struct BeConditionVariable;
-
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
-//! A helper class that ties ownership of a BeCriticalSection object to the scope of a variable.
+//! A synchronization primitive that can be used to protect shared data from being simultaneously accessed by multiple threads.
+//! BeMutex offers exclusive, recursive ownership semantics.
+//! @see std::recursive_mutex
 //  @bsiclass 
 //=======================================================================================
-struct BeSystemCriticalSectionHolder
+struct BeMutex
     {
-    //! Enters the system critical section
-    BeSystemCriticalSectionHolder () {BeCriticalSection::GetSystemCriticalSection().Enter ();}
+private:
+    double m_osMutex[2];
 
-    //! Leaves the system critical section
-    ~BeSystemCriticalSectionHolder () {BeCriticalSection::GetSystemCriticalSection().Leave ();}
+public:
+    BENTLEYDLL_EXPORT BeMutex();
+    BENTLEYDLL_EXPORT ~BeMutex();
+
+    //! lock the mutex
+    BENTLEYDLL_EXPORT void lock();
+    void Enter() {lock();}
+
+    //! unlock the mutex
+    BENTLEYDLL_EXPORT void unlock();
+    void Leave() {unlock();}
     };
 
-//! Use this macro to generate a function that safely creates a singleton instance of a critical section.
-//! You can use this approach to avoid creating a critical section object unless or until you actually use it.
-//! Example:
-//! \code
-//! SINGLETON_CRITICAL_SECTION(MyCS)
-//! static bool s_value;
-//! static void foo()
-//!   {
-//!   MyCS().Enter();
-//!   s_value = true;
-//!   MyCS().Leave();
-//!   }
-//! \endcode
-#define SINGLETON_CRITICAL_SECTION(CSNAME)\
-static BeCriticalSection& CSNAME ()               \
-    {                                             \
-    static BeCriticalSection* s_##CSNAME;         \
-    if (NULL == s_##CSNAME)                       \
-        {                                         \
-        BeSystemCriticalSectionHolder sysCS;      \
-        if (NULL == s_##CSNAME)                   \
-            {                                     \
-            s_##CSNAME = new BeCriticalSection ();\
-            }                                     \
-        }                                         \
-    return *s_##CSNAME;                           \
-    }
+//=======================================================================================
+//! A BeMutex ownership wrapper.
+//! @see std::unique_lock
+//  @bsiclass 
+//=======================================================================================
+struct BeMutexHolder
+    {
+private:
+    BeMutex* m_mutex;
+    bool     m_owns;
+
+public:
+    enum class Lock : bool {No=false, Yes=true};
+
+    //! Associate this BeMutexHolder with a BeMutex, optionally locking it.
+    //! @param[in] lock if Yes, the lock on mutex is acquired via mutex.lock() 
+    BENTLEYDLL_EXPORT BeMutexHolder(BeMutex& mutex, Lock lock=Lock::Yes);
+
+    //! Unlocks BeMutex if locked.
+    BENTLEYDLL_EXPORT ~BeMutexHolder();
+
+    //! Get the BeMutex associated with this BeMutexHolder
+    BeMutex* GetMutex() {return m_mutex;}
+    //! Unlock the BeMutex
+    BENTLEYDLL_EXPORT void unlock();
+    //! Lock the BeMutex
+    BENTLEYDLL_EXPORT void lock();
+    //! Determine whether the BeMutex is currently locked by this BeMutexHolder
+    BENTLEYDLL_EXPORT bool owns_lock();
+    };
+
+//__PUBLISH_SECTION_END__
+//=======================================================================================
+//! Hold a lock on the system BeMutex
+//  @bsiclass 
+//=======================================================================================
+struct BeSystemMutexHolder : BeMutexHolder
+    {
+    //! Enters the system critical section
+    BeSystemMutexHolder() : BeMutexHolder(GetSystemMutex()) {}
+
+    BENTLEYDLL_EXPORT static void StartupInitializeSystemMutex();
+
+    //! Get the Bentley system CS. This can be used to bootstrap other CriticalSections.
+    //! @remarks Program must call StartupInitializeSystemCriticalSection before calling this function.
+    BENTLEYDLL_EXPORT static BeMutex& GetSystemMutex();
+    };
+
 //__PUBLISH_SECTION_START__
 
 //=======================================================================================
-//! Provides implementation of predicate for a condition variable
+//! Provides implementation of predicate for a BeConditionVariable
 //  @bsiclass 
 //=======================================================================================
 struct IConditionVariablePredicate
     {
     //! WaitOnCondition calls TestCondition with the critical section locked. WaitOnCondition
     //! returns to its caller if TestCondition returns true or it gets a timeout.
-    virtual bool _TestCondition (BeConditionVariable &cv) = 0;
+    virtual bool _TestCondition(struct BeConditionVariable &cv) = 0;
     };
 
 //=======================================================================================
-//! A condition variable object.
+//! A synchronization primitive that can be used to block a thread, or multiple threads at the same time, until:
+//! 1) a notification is received from another thread, 2) a timeout expires, or 3) a spurious wakeup occurs.
+//! @see std::condition_variable_any
+//! @note BeConditionVariable differs from std::condition_variable_any in that it includes a BeMutex internally, wheras
+//! std::condition_variable_any requires an external mutex.
 //  @bsiclass 
 //=======================================================================================
 struct  BeConditionVariable
     {
 private:
-    uint8_t                 m_conditionVariable[64];
-    BeCriticalSection*      m_csect;
-    bool                    m_ownCSect;
-    bool                    m_isValid;
+    double  m_osCV[4];
+    mutable BeMutex m_mutex;
 
-    void InfiniteWait();
-    void RelativeWait(bool&timedOut, uint32_t timeoutMillis);
+    void InfiniteWait(BeMutexHolder& holder);
+    bool RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis);
 
 public:
-    static const uint32_t   Infinite        = 0xFFFFFFFF;
+    static const uint32_t Infinite = 0xFFFFFFFF;
 
-    //! @private
-    void* GetNativeConditionVariable ()  { return m_conditionVariable; }
+    BENTLEYDLL_EXPORT BeConditionVariable();
+    BENTLEYDLL_EXPORT ~BeConditionVariable();
 
-    //! Constructs the condition variable object
-    //! @param[in]      csect If csect is not NULL the constructor associates it with the condition variable.
-    //!                 If csect is NULL the constructor creates a new critical section and associates it with
-    //!                 condition variable.  If the constructor creates a new critical section then the
-    //!                 destructor deletes it.
-    BENTLEYDLL_EXPORT BeConditionVariable (BeCriticalSection* csect=NULL);
-    BENTLEYDLL_EXPORT ~BeConditionVariable ();
-    BeCriticalSection&  GetCriticalSection () const { return *m_csect; }
+    // Get the mutex
+    BeMutex& GetMutex() const {return m_mutex;}
+
+    //! Like WaitOnCondition, but it does not enter the mutex at the start of the method or leave it at the end.
+    //! Use this if the caller has already locked the mutex
+    BENTLEYDLL_EXPORT bool ProtectedWaitOnCondition(BeMutexHolder&, IConditionVariablePredicate* predicate, uint32_t timeoutMillis);
+
     //! Enters the critical section, calls the predicate, and then waits on the condition if
     //! the predicate returns false.
     //! @param[in]      predicate   Provides an implementation of _TestCondition used to determine when to return.
@@ -107,22 +134,22 @@ public:
     //!                             timeout occurs.
     //! @param[in]      timeoutMillis Time out period in milliseconds. Specify BeConditionVariable::Infinite to disable time out.
     //! @return         the value that predicate->_TestCondition returns or true if predicate is NULL.
-    //! @remarks        WaitOnCondition first enters the critical section.  If predicate is non-NULL it next uses predicate to invoke
-    //!                 _TestCondition and returns true if the condition is satisfied. Of course, returning also releases the critical
-    //!                 section.  If the condition was not satisfied, it next uses the OS's primitive to wait for the critical section.
-    //!                 The primitive automatically leaves the critical section before waiting and re-enters it before returning.  The
-    //!                 OS primitive may return due to a time out or due to a wake call.  In case of wake call, WaitOnCondition returns
+    //! @remarks        WaitOnCondition first enters the mutex. If predicate is non-NULL it next uses predicate to invoke
+    //!                 _TestCondition and returns true if the condition is satisfied. Of course, returning also releases the mutex.
+    //!                 If the condition was not satisfied, it next waits for the mutex.
+    //!                 The primitive automatically leaves the mutex waiting and re-enters it before returning. The
+    //!                 return may be due to a time out or wake call. In case of wake call, WaitOnCondition returns
     //!                 true only if the condition is satisfied. In case of timeout, WaitOnCondition returns the value of _TestCondition.
     //!                 Note that the initial test waits if predicate is NULL, but the subsequent tests return if predicate is NULL.
-    BENTLEYDLL_EXPORT bool WaitOnCondition (IConditionVariablePredicate* predicate, uint32_t timeoutMillis);
-    //! Like WaitOnCondition, but it does not enter the critical section at the start of the method or leave it at the end.
-    //! Use this if the caller has to enter the critical section prior to calling WaitOnCondion.
-    BENTLEYDLL_EXPORT bool ProtectedWaitOnCondition (IConditionVariablePredicate* predicate, uint32_t timeoutMillis);
-    //! Wakes at least one thread that is waiting on the condition variable.
-    //! @param[in]      wakeAll If true Wake wakes all thread waiting on the condition variable. Otherwise, it just wakes one.
-    BENTLEYDLL_EXPORT void Wake (bool wakeAll);
-    //! False if creation failed or the BeCriticalSection is not valid.
-    BENTLEYDLL_EXPORT bool GetIsValid () const;
+    bool WaitOnCondition(IConditionVariablePredicate* predicate, uint32_t timeoutMillis)
+        {
+        BeMutexHolder holder(m_mutex);
+        return ProtectedWaitOnCondition(holder, predicate, timeoutMillis);
+        }
+
+    //! Wakes threads waiting on the condition variable.
+    //! @param[in]  wakeAll If true Wake wakes all thread waiting on the condition variable. Otherwise, it just wakes one.
+    BENTLEYDLL_EXPORT void Wake(bool wakeAll);
     };
 
 #if defined (__APPLE__) || defined (ANDROID) || defined (__linux)
@@ -146,7 +173,7 @@ struct  BeThreadUtilities
 //__PUBLISH_SECTION_END__
 
 #if defined (BENTLEY_WINRT)
-    BENTLEYDLL_EXPORT static void   SetThreadStartHandler (T_ThreadStartHandler);
+    BENTLEYDLL_EXPORT static void SetThreadStartHandler (T_ThreadStartHandler);
 #endif
 //__PUBLISH_SECTION_START__
 

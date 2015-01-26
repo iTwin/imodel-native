@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/Bentley/BeMutex.h $
+|     $Source: PublicAPI/Bentley/BeSharedMutex.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
-#include <climits>
-#include <system_error>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -20,11 +18,7 @@ BEGIN_BENTLEY_NAMESPACE
 // Mutexes synchronize multi-thread access to data.
 // @bsiclass                                                    Keith.Bentley   06/11
 //=======================================================================================
-typedef std::mutex                BeMutex;
 typedef std::recursive_mutex      BeRecursiveMutex;
-typedef std::unique_lock<BeMutex> BeMutexHolder;
-
-//__PUBLISH_SECTION_END__
 
 // shared mutex implementation adapted from:
 // Copyright Howard Hinnant 2007-2010. Distributed under the Boost
@@ -38,7 +32,7 @@ struct BeSharedMutex
     typedef std::condition_variable cond_t;
     typedef unsigned                count_t;
 
-    BeMutex m_gateMutex;
+    std::mutex m_gateMutex;
     cond_t  m_gate1;
     cond_t  m_gate2;
     count_t m_state;
@@ -48,12 +42,12 @@ struct BeSharedMutex
 
 public:
     BeSharedMutex() : m_state(0) {}
-    ~BeSharedMutex() {std::lock_guard<BeMutex> _(m_gateMutex);}
+    ~BeSharedMutex() {std::lock_guard<std::mutex> _(m_gateMutex);}
 
     // Exclusive ownership
     void lock()
         {
-        BeMutexHolder lk(m_gateMutex);
+        std::unique_lock<std::mutex> lk(m_gateMutex);
         while (m_state & writeEnteredFlag)
             m_gate1.wait(lk);
         m_state |= writeEnteredFlag;
@@ -63,7 +57,7 @@ public:
 
     bool try_lock()
         {
-        BeMutexHolder lk(m_gateMutex);
+        std::unique_lock<std::mutex> lk(m_gateMutex);
         if (m_state == 0)
             {
             m_state = writeEnteredFlag;
@@ -74,7 +68,7 @@ public:
 
     void unlock()
         {
-        std::lock_guard<BeMutex> _(m_gateMutex);
+        std::lock_guard<std::mutex> _(m_gateMutex);
         m_state = 0;
         m_gate1.notify_all();
         }
@@ -86,7 +80,7 @@ public:
 
     template <class Clock, class Duration> bool try_lock_until(const std::chrono::time_point<Clock, Duration>& abs_time)
         {
-        BeMutexHolder lk(m_gateMutex);
+        std::unique_lock<std::mutex> lk(m_gateMutex);
         if (m_state & writeEnteredFlag)
             {
             while (true)
@@ -119,7 +113,7 @@ public:
     // Shared ownership
     void lock_shared()
         {
-        BeMutexHolder lk(m_gateMutex);
+        std::unique_lock<std::mutex> lk(m_gateMutex);
         while ((m_state & writeEnteredFlag) || (m_state & readersMask) == readersMask)
             m_gate1.wait(lk);
         count_t num_readers = (m_state & readersMask) + 1;
@@ -129,7 +123,7 @@ public:
 
     bool try_lock_shared()
         {
-        BeMutexHolder lk(m_gateMutex);
+        std::unique_lock<std::mutex> lk(m_gateMutex);
         count_t num_readers = m_state & readersMask;
         if (!(m_state & writeEnteredFlag) && num_readers != readersMask)
             {
@@ -148,7 +142,7 @@ public:
 
     template <class Clock, class Duration> bool try_lock_shared_until(const std::chrono::time_point<Clock, Duration>& abs_time)
         {
-        BeMutexHolder lk(m_gateMutex);
+        std::unique_lock<std::mutex> lk(m_gateMutex);
         if ((m_state & writeEnteredFlag) || (m_state & readersMask) == readersMask)
             {
             while (true)
@@ -169,7 +163,7 @@ public:
 
     void unlock_shared()
         {
-        std::lock_guard<BeMutex> _(m_gateMutex);
+        std::lock_guard<std::mutex> _(m_gateMutex);
         count_t num_readers = (m_state & readersMask) - 1;
         m_state &= ~readersMask;
         m_state |= num_readers;
@@ -302,9 +296,7 @@ public:
 };
 
 template <class Mutex> inline void swap(BeSharedMutexLock<Mutex>& x, BeSharedMutexLock<Mutex>& y) {x.swap(y); }
-
 typedef BeSharedMutexLock<BeSharedMutex> BeSharedMutexHolder;
 
-//__PUBLISH_SECTION_START__
 
 END_BENTLEY_NAMESPACE

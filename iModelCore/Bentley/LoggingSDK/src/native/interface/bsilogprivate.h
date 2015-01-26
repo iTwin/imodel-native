@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/bsilogprivate.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -156,7 +156,7 @@ public:
 protected:
 
     LoggerMap            m_loggers;
-    BeCriticalSection    m_lock;
+    BeMutex m_lock;
 };
 
 
@@ -191,7 +191,7 @@ protected:
 
     NamespaceSeverityMap        m_severity;
     SEVERITY                    m_defaultSeverity;
-    BeCriticalSection           m_lock;
+    BeMutex m_lock;
 };
 
 

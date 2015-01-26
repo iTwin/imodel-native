@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/loggercache.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ WCharCP nameSpace
         throw std::invalid_argument ( "nameSpace" );
         }
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     LoggerMap::const_iterator it = m_loggers.find ( nameSpace );
 
@@ -64,7 +64,7 @@ ILogger* pLogger
         throw std::invalid_argument ( "pLogger" );
         }
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     bool retValue = false;
 
@@ -149,7 +149,7 @@ WCharCP nameSpace
         throw std::invalid_argument ( "nameSpace" );
         }
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     LoggerMap::const_iterator it = m_loggers.find ( nameSpace );
 
@@ -182,7 +182,7 @@ WCharCP nameSpace
         throw std::invalid_argument ( "nameSpace" );
         }
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     LoggerMap::iterator it = m_loggers.find ( nameSpace );
 
@@ -211,7 +211,7 @@ ILogger* pLogger
         throw std::invalid_argument ( "pLogger" );
         }
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     for ( LoggerMap::iterator it = m_loggers.begin() ; it != m_loggers.end() ; it++ )
         {
@@ -238,7 +238,7 @@ Provider::ILogProvider* pProvider
         throw std::invalid_argument ( "pProvider" );
         }
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     for ( LoggerMap::iterator it = m_loggers.begin() ; it != m_loggers.end() ; it++ )
         {
@@ -265,7 +265,7 @@ Provider::ILogProvider* pProvider
 
     Provider::ILogProviderContext* pContext = NULL;
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeMutexHolder lock(m_lock);
 
     for ( LoggerMap::iterator it = m_loggers.begin() ; it != m_loggers.end() ; it++ )
         {

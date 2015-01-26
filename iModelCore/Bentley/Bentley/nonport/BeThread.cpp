@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeThread.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -35,6 +35,8 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/WString.h>
+#include <mutex>
+#include <condition_variable>
 
 USING_NAMESPACE_BENTLEY
 
@@ -52,7 +54,7 @@ USING_NAMESPACE_BENTLEY
 #error unknown runtime
 #endif
 
-BeCriticalSection* BeCriticalSection::s_systemCS;
+BeMutex* s_systemCS;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
@@ -138,150 +140,71 @@ void* BeThreadLocalStorage::GetValueAsPointer ()
 #endif
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-BeConditionVariable::BeConditionVariable(BeCriticalSection* csect) : m_ownCSect(false), m_csect (csect)
+//=======================================================================================
+// The classe BeMutex, BeMutexHolder, and BeConditionVariable are each meant to be implemented by
+// std::recursive_mutex, std::unique_lock, and std::condition_variable_any respectively. All of this nonsense below 
+// is due to the fact that the MSVC compiler in /clr mode doesn't support them. Hence,
+// we can't include <mutex>, or <condition_variable> in our header files and we must hide those 
+// classes inside this file. The public types must be at least as large as the std types, and then
+// we simply forward the methods to them below.
+//=======================================================================================
+static_assert (sizeof BeMutex >= sizeof std::recursive_mutex, "BeMutex is too small");
+static_assert (sizeof BeMutexHolder == sizeof std::unique_lock<std::recursive_mutex>, "BeMutexHolder wrong size");
+static std::recursive_mutex& to_mutex(BeMutex* bmutex){return *(std::recursive_mutex*)bmutex;}
+static std::unique_lock<std::recursive_mutex>& to_uniquelock(BeMutexHolder* bholder){return *(std::unique_lock<std::recursive_mutex>*)bholder;}
+static std::condition_variable_any& to_cv(BeConditionVariable* bcv){return *(std::condition_variable_any*)bcv;}
+
+BeMutex::BeMutex()      {new (this) std::recursive_mutex();}
+BeMutex::~BeMutex()     {to_mutex(this).~recursive_mutex();}
+void BeMutex::lock()    {to_mutex(this).lock();}
+void BeMutex::unlock()  {to_mutex(this).unlock();}
+BeMutexHolder::BeMutexHolder(BeMutex& mutex, Lock lock)
     {
-    memset (m_conditionVariable, 0, sizeof (m_conditionVariable));
-    if (NULL == m_csect)
-        {
-        m_csect = new BeCriticalSection();
-        m_ownCSect = true;
-        }
-
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-    BeAssert (sizeof (m_conditionVariable) >= sizeof (CONDITION_VARIABLE));
-    InitializeConditionVariable((CONDITION_VARIABLE*)&m_conditionVariable[0]);
-    m_isValid = true;
-#elif defined (__unix__) || defined (__linux)
-    #if defined (BETHREAD_USE_PTHREAD)
-        BeAssert (sizeof (m_conditionVariable) >= sizeof (pthread_cond_t));
-
-        //  WIP May want support for failed pthread_cond_init; if so, we should have a create 
-        //  method that returns NULL instead of putting the pthread_cond_init call in the constructor
-        m_isValid = pthread_cond_init ((pthread_cond_t*)&m_conditionVariable[0], NULL) == 0;
-    #else
-        #error BeConditionVariable not implemented for this platform
-    #endif
-#endif
-    BeAssert (m_isValid);
+    if (lock == Lock::Yes)
+        new (this) std::unique_lock<std::recursive_mutex>(to_mutex(&mutex));
+    else
+        new (this) std::unique_lock<std::recursive_mutex>(to_mutex(&mutex), std::defer_lock);
+    }
+BeMutexHolder::~BeMutexHolder() {to_uniquelock(this).~unique_lock();}
+void BeMutexHolder::unlock()    {to_uniquelock(this).unlock();}
+void BeMutexHolder::lock()      {to_uniquelock(this).lock();}
+bool BeMutexHolder::owns_lock() {return to_uniquelock(this).owns_lock();}
+BeConditionVariable::BeConditionVariable()
+    {
+    static_assert (sizeof m_osCV > sizeof std::condition_variable_any, "BeConditionVariable is too small");
+    new (this) std::condition_variable_any();
+    }
+BeConditionVariable::~BeConditionVariable() {to_cv(this).~condition_variable_any();}
+void BeConditionVariable::InfiniteWait(BeMutexHolder& holder){to_cv(this).wait(to_uniquelock(&holder));}
+bool BeConditionVariable::RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis) 
+    {
+    return std::cv_status::timeout == to_cv(this).wait_for(to_uniquelock(&holder), std::chrono::milliseconds(timeoutMillis));
+    }
+void BeConditionVariable::Wake (bool wakeAll)
+    {
+    if (wakeAll)
+        to_cv(this).notify_all();
+    else
+        to_cv(this).notify_one();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2012
 //--------------+------------------------------------------------------------------------
-bool BeConditionVariable::GetIsValid() const
+bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, IConditionVariablePredicate* condition, uint32_t timeoutMillis)
     {
-    return m_csect->GetIsValid() && m_isValid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-BeConditionVariable::~BeConditionVariable()
-    {
-    if (m_ownCSect)
-        delete m_csect;
-
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-    //  It looks like there is nothing to do to clean up a condition variable
-#elif defined (__unix__)
-    #if defined (BETHREAD_USE_PTHREAD)
-        pthread_cond_destroy ((pthread_cond_t*)&m_conditionVariable[0]);
-    #endif
-#endif
-    }
-
-#if defined (__unix__)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2012
-//--------------+------------------------------------------------------------------------
-static void addToTimeSpec (struct timespec& ts, uint64_t millis)
-    {
-    int64_t     oneBillion = 1000000000;
-    int64_t     fullTime = ts.tv_sec * oneBillion + ts.tv_nsec;
-    fullTime += millis * 1000000;
-    ts.tv_sec = (int32_t)(fullTime/oneBillion);
-    ts.tv_nsec = (int32_t)(fullTime % oneBillion);
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2012
-//--------------+------------------------------------------------------------------------
-void BeConditionVariable::InfiniteWait()
-    {
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    CRITICAL_SECTION*   nativeCriticalSection = (CRITICAL_SECTION*) m_csect->GetNativeCriticalSection ();
-    SleepConditionVariableCS ((CONDITION_VARIABLE*) &m_conditionVariable[0], nativeCriticalSection, INFINITE);
-#elif defined (__unix__)
-    #if defined (BETHREAD_USE_PTHREAD)
-        pthread_mutex_t*    nativeCriticalSection = (pthread_mutex_t*) m_csect->GetNativeCriticalSection ();
-        int e = pthread_cond_wait ((pthread_cond_t*) &m_conditionVariable[0], nativeCriticalSection);
-        if (EPERM == e || EINVAL == e)
-            { BeAssert(false); }
-    #endif
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2012
-//--------------+------------------------------------------------------------------------
-void BeConditionVariable::RelativeWait(bool&timedOut, uint32_t timeoutMillis)
-    {
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    CRITICAL_SECTION*   nativeCriticalSection = (CRITICAL_SECTION*) m_csect->GetNativeCriticalSection ();
-    BOOL    status          = SleepConditionVariableCS ((CONDITION_VARIABLE*) &m_conditionVariable[0], nativeCriticalSection, timeoutMillis);
-    if (false == status && ERROR_TIMEOUT == GetLastError ())
-        timedOut = true;
-#elif defined (__unix__)
-    #if defined (BETHREAD_USE_PTHREAD)
-        pthread_mutex_t*    nativeCriticalSection = (pthread_mutex_t*) m_csect->GetNativeCriticalSection ();
-        pthread_cond_t* nativeCondVariable = (pthread_cond_t*) GetNativeConditionVariable ();
-        struct timespec     timeoutSpec;
-
-        #if !defined (__APPLE__)
-            clock_gettime (CLOCK_REALTIME, &timeoutSpec);
-            addToTimeSpec (timeoutSpec, timeoutMillis);
-            int e = pthread_cond_timedwait (nativeCondVariable, nativeCriticalSection, &timeoutSpec);
-        #else
-            //  iOS does not support clock_gettime (CLOCK_REALTIME, &timeoutSpec).
-            memset (&timeoutSpec, 0, sizeof (timeoutSpec));
-            addToTimeSpec (timeoutSpec, timeoutMillis);
-            int e = pthread_cond_timedwait_relative_np (nativeCondVariable, nativeCriticalSection, &timeoutSpec);
-        #endif
-
-        BeAssert (EPERM != e && EINVAL != e);
-        timedOut = ETIMEDOUT == e;
-    #endif
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2012
-//--------------+------------------------------------------------------------------------
-bool            BeConditionVariable::ProtectedWaitOnCondition(IConditionVariablePredicate* condition, uint32_t timeoutMillis)
-    {
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    BeAssert (m_csect->HasEntered ());
-    BeAssert (((CRITICAL_SECTION*) m_csect)->RecursionCount == 1);
-#endif
-
     bool    conditionSatisfied = NULL == condition ? false : condition->_TestCondition (*this);
     bool    timedOut           = timeoutMillis == 0;
 
     while (!conditionSatisfied && (Infinite == timeoutMillis || !timedOut))
         {
         if (Infinite == timeoutMillis)
-            {
-            InfiniteWait ();
-            }
-        else   //  Caller wants a timeout
+            InfiniteWait(holder);
+        else  
             {
             uint32_t    startTicks = BeTimeUtilities::QueryMillisecondsCounterUInt32();
 
-            RelativeWait(timedOut, timeoutMillis);
+            timedOut = RelativeWait(holder, timeoutMillis);
 
             uint32_t    elapsedTicks = BeTimeUtilities::QueryMillisecondsCounterUInt32() - startTicks;
             timeoutMillis = elapsedTicks > timeoutMillis ? 0 : (timeoutMillis - elapsedTicks);
@@ -291,144 +214,6 @@ bool            BeConditionVariable::ProtectedWaitOnCondition(IConditionVariable
         }
 
     return conditionSatisfied;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-bool            BeConditionVariable::WaitOnCondition(IConditionVariablePredicate* condition, uint32_t timeoutMillis)
-    {
-    BeCriticalSectionHolder holder (*m_csect);
-    return ProtectedWaitOnCondition (condition, timeoutMillis);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-void BeConditionVariable::Wake (bool wakeAll)
-    {
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-    if (wakeAll)
-        WakeAllConditionVariable ((CONDITION_VARIABLE*)&m_conditionVariable[0]);
-    else
-        WakeConditionVariable  ((CONDITION_VARIABLE*)&m_conditionVariable[0]);
-#elif defined (__unix__)
-    #if defined (BETHREAD_USE_PTHREAD)
-        if (wakeAll)
-            pthread_cond_broadcast((pthread_cond_t*)&m_conditionVariable[0]);
-        else
-            pthread_cond_signal((pthread_cond_t*)&m_conditionVariable[0]);
-    #endif
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeCriticalSection::BeCriticalSection ()
-    {
-    memset (m_osCSect, 0, sizeof(m_osCSect));
-
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-
-    m_isValid = InitializeCriticalSectionEx ((CRITICAL_SECTION*)&m_osCSect, 0, 0) != 0;
-
-#elif defined (__unix__)
-    
-    #if defined (BETHREAD_USE_PTHREAD)
-        BeAssert (sizeof (m_osCSect) >= sizeof (pthread_mutex_t));
-        pthread_mutexattr_t    attr;
-        pthread_mutexattr_init (&attr);
-        pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
-        m_isValid = pthread_mutex_init ((pthread_mutex_t*)&m_osCSect, &attr) == 0;
-        pthread_mutexattr_destroy (&attr);
-    #else
-        #error BeCriticalSection not implemented for this platform
-    #endif
-
-#else
-#error unknown runtime
-#endif
-    BeAssert (m_isValid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeCriticalSection::~BeCriticalSection ()
-    {
-    m_isValid = false;
-
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-
-    DeleteCriticalSection ((CRITICAL_SECTION*)&m_osCSect);
-
-#elif defined (__unix__)
-
-    #if defined (BETHREAD_USE_PTHREAD)
-        pthread_mutex_destroy ((pthread_mutex_t*)&m_osCSect);
-    #endif
-
-#else
-#error unknown runtime
-#endif
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeCriticalSection::Enter ()
-    {
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-
-    EnterCriticalSection ((CRITICAL_SECTION*)&m_osCSect);
-
-#elif defined (__unix__)
-
-    #if defined (BETHREAD_USE_PTHREAD)
-        int e = pthread_mutex_lock ((pthread_mutex_t*)&m_osCSect);
-        if (EINVAL == e)
-            { BeAssert(false); }
-    #endif
-
-#else
-#error unknown runtime
-#endif
-    }
-
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool BeCriticalSection::HasEntered() const
-    {
-    return (GetCurrentThreadId() == (intptr_t)((CRITICAL_SECTION*)&m_osCSect)->OwningThread);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    sam.wilson                      06/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    BeCriticalSection::Leave ()
-    {
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-
-    BeAssert (HasEntered());
-
-    LeaveCriticalSection ((CRITICAL_SECTION*)&m_osCSect);
-
-#elif defined (__unix__)
-
-    #if defined (BETHREAD_USE_PTHREAD)
-        int e = pthread_mutex_unlock ((pthread_mutex_t*)&m_osCSect);
-        if (EPERM == e || EINVAL == e)
-            { BeAssert(false); }
-    #endif
-
-#else
-#error unknown runtime
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -529,23 +314,18 @@ void BeThreadUtilities::BeSleep (uint32_t millis)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeCriticalSection::StartupInitializeSystemCriticalSection ()
+void BeSystemMutexHolder::StartupInitializeSystemMutex()
     {
-    if (NULL != s_systemCS)
-        return;
-    BeAssert (NULL == s_systemCS);
-    s_systemCS = new BeCriticalSection();
+    if (NULL == s_systemCS)
+        s_systemCS = new BeMutex();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeCriticalSection& BeCriticalSection::GetSystemCriticalSection ()
+BeMutex& BeSystemMutexHolder::GetSystemMutex()
     {
-    if (NULL == s_systemCS) // *** NEEDS WORK: This is not thread-safe. On the other hand, I don't want to change every app to call StartupInitializeSystemCriticalSection! My compromise is to change only the apps that might be multi-threaded to call StartupInitializeSystemCriticalSection.
-        StartupInitializeSystemCriticalSection();
-
-    BeAssert (NULL != s_systemCS);// "Call BeCriticalSection::StartupInitializeSystemCriticalSection at the start of your program");
+    StartupInitializeSystemMutex();
     return *s_systemCS;
     }
 

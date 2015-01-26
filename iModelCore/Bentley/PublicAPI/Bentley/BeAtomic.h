@@ -2,11 +2,13 @@
 |
 |     $Source: PublicAPI/Bentley/BeAtomic.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+
+#include <Bentley/Bentley.h>
 
 #if !defined (_WIN32)
     #define BENTLEY_HAVE_STD_ATOMIC
@@ -47,7 +49,7 @@
         public:\
             BeAtomic() : m_value(0) {;}\
             BeAtomic (UTYPE v) : m_value(v) {;}\
-            UTYPE operator++()    volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value);}\
+            UTYPE operator++() volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value);}\
             UTYPE operator++(int) volatile {return _InterlockedIncrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value)-1;}\
             UTYPE operator--()    volatile {return _InterlockedDecrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value);}\
             UTYPE operator--(int) volatile {return _InterlockedDecrement ## TYPE_SUFFIX ((CAST_TYPE volatile*)&m_value)+1;}\

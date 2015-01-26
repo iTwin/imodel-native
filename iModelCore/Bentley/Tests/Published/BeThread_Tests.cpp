@@ -2,35 +2,12 @@
 |
 |  $Source: Tests/Published/BeThread_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/BeThread.h>
 #include <thread>
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Julija.Suboc    09/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(BeConditionVariable, CreateByPassingNullToConstructor)
-    {
-    BeConditionVariable  conditionVar(NULL);
-    EXPECT_TRUE(conditionVar.GetIsValid())<<"Failed to create BeConditionVariable";
-    BeCriticalSection section = conditionVar.GetCriticalSection();
-    EXPECT_TRUE(section.GetIsValid())<<"Failed to create BeCriticalSection for BeConditionVariable";
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Julija.Suboc    09/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(BeConditionVariable, CreateByPassingBeCriticalSection)
-    {
-    BeCriticalSection section;
-    ASSERT_TRUE(section.GetIsValid())<<"Failed to create BeCriticalSection";
-    BeConditionVariable  conditionVar(&section);
-    ASSERT_TRUE(conditionVar.GetIsValid())<<"Failed to create BeConditionVariable";
-    BeCriticalSection sectionReturned = conditionVar.GetCriticalSection();
-    EXPECT_TRUE(sectionReturned.GetIsValid())<<"BeConditionVariable returned invalid BeCriticalSection.";
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/13
