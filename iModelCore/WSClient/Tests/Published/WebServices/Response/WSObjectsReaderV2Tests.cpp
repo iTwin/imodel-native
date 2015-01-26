@@ -82,7 +82,8 @@ TEST_F (WSObjectsReaderV2Tests, InstanceIsValid_JsonWithInstanceWithoutPropertie
         [{
         "instanceId" : "A",
         "className" : "A",
-        "schemaName" : "A"
+        "schemaName" : "A",
+        "eTag" : "A"
         }]
     })");
 
@@ -92,6 +93,47 @@ TEST_F (WSObjectsReaderV2Tests, InstanceIsValid_JsonWithInstanceWithoutPropertie
 
     EXPECT_FALSE (instances.IsEmpty ());
     EXPECT_FALSE ((*instances.begin ()).IsValid ());
+    BeTest::SetFailOnAssert (true);
+    }
+
+TEST_F (WSObjectsReaderV2Tests, ReadInstance_JsonInstanceWithETag_ReturnsETag)
+    {
+    auto json = ToRapidJson (R"({ "instances" :
+        [{
+        "instanceId" : "A",
+        "className" : "A",
+        "schemaName" : "A",
+        "eTag" : "TestEtag",
+        "properties" : {}
+        }]
+        })");
+
+    BeTest::SetFailOnAssert (false);
+    auto reader = WSObjectsReaderV2::Create ();
+    auto instances = reader->ReadInstances (json);
+
+    EXPECT_FALSE (instances.IsEmpty ());
+    EXPECT_EQ ("\"TestEtag\"", Utf8String((*instances.begin ()).GetETag ()));
+    BeTest::SetFailOnAssert (true);
+}
+
+TEST_F (WSObjectsReaderV2Tests, ReadInstance_JsonInstanceWithoutETag_ReturnsEmptyETag)
+    {
+    auto json = ToRapidJson (R"({ "instances" :
+        [{
+        "instanceId" : "A",
+        "className" : "A",
+        "schemaName" : "A",
+        "properties" : {}
+        }]
+        })");
+
+    BeTest::SetFailOnAssert (false);
+    auto reader = WSObjectsReaderV2::Create ();
+    auto instances = reader->ReadInstances (json);
+
+    EXPECT_FALSE (instances.IsEmpty ());
+    EXPECT_STREQ ("", (*instances.begin ()).GetETag ());
     BeTest::SetFailOnAssert (true);
     }
 
@@ -276,6 +318,48 @@ TEST_F (WSObjectsReaderV2Tests, BeginIncrement_JsonWithTwoInstances_ReturnsSecon
     EXPECT_EQ (ObjectId ("TestSchemaB", "TestClassB", "B"), instance.GetObjectId ());
     EXPECT_EQ ("ValueB", Utf8String (instance.GetProperties ()["Property"].GetString ()));
     EXPECT_TRUE (instance.GetRelationshipInstances ().IsEmpty ());
+    }
+
+TEST_F (WSObjectsReaderV2Tests, GetRelationshipInstance_JsonWithOneInstanceWithOneRelatedInstanceWithETag_ReturnsRelationshipInstanceWithETag)
+    {
+    auto json = ToRapidJson (R"({"instances" : 
+        [{
+        "instanceId" : "A",
+        "className" : "A",
+        "schemaName" : "A",
+        "properties" : {},
+        "relationshipInstances": [{
+            "instanceId" : "IdA",
+            "className" : "ClassA",
+            "schemaName" : "SchemaA",
+            "eTag" : "TestEtagA",
+            "direction" : "forward",
+            "relatedInstance": 
+                {
+                "instanceId" : "B",
+                "className" : "TestClassB",
+                "schemaName" : "TestSchemaB",
+                "eTag" : "TestEtagB",
+                "properties" : 
+                    {
+                    "Property": "ValueB"
+                    }
+                }
+            }]
+        }]
+    })");
+
+    auto reader = WSObjectsReaderV2::Create ();
+    WSObjectsReader::Instance instance = *reader->ReadInstances (json).begin ();
+
+    auto it = instance.GetRelationshipInstances ().begin ();
+
+    WSObjectsReader::RelationshipInstance relationshipInstance = *it;
+    EXPECT_EQ ("\"TestEtagA\"", Utf8String(relationshipInstance.GetETag ()));
+
+    ++it;
+
+    EXPECT_TRUE (it == instance.GetRelationshipInstances ().end ());
     }
 
 TEST_F (WSObjectsReaderV2Tests, Begin_JsonWithOneInstanceWithOneRelatedInstance_ReturnsInstanceWithRelationship)

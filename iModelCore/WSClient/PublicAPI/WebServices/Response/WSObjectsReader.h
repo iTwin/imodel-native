@@ -79,6 +79,7 @@ struct WSObjectsReader::Instance
     private:
         std::shared_ptr<const WSObjectsReader> m_reader;
         ObjectId m_objectId;
+        Utf8String m_eTag;
         const rapidjson::Value* m_instanceProperties;
         const rapidjson::Value* m_relationshipInstances;
 
@@ -88,12 +89,14 @@ struct WSObjectsReader::Instance
             (
             std::shared_ptr<const WSObjectsReader> adapter,
             ObjectId objectId,
+            Utf8StringCR eTag,
             const rapidjson::Value* instanceProperties,
             const rapidjson::Value* relationshipInstances
             );
 
         WS_EXPORT bool IsValid () const;
         WS_EXPORT ObjectIdCR GetObjectId () const;
+        WS_EXPORT Utf8CP GetETag () const;
         WS_EXPORT RapidJsonValueCR GetProperties () const;
         WS_EXPORT RelationshipInstances GetRelationshipInstances () const;
     };
@@ -128,6 +131,7 @@ struct WSObjectsReader::RelationshipInstance
     private:
         std::shared_ptr<const WSObjectsReader> m_reader;
         ObjectId m_objectId;
+        Utf8String m_eTag;
         const rapidjson::Value* m_relationshipInstanceProperties;
         const rapidjson::Value* m_relatedInstance;
         BentleyApi::ECN::ECRelatedInstanceDirection m_direction;
@@ -138,6 +142,7 @@ struct WSObjectsReader::RelationshipInstance
             (
             std::shared_ptr<const WSObjectsReader> adapter,
             ObjectId objectId,
+            Utf8StringCR eTag,
             const rapidjson::Value* relationshipInstanceProperties,
             const rapidjson::Value* relatedInstance,
             BentleyApi::ECN::ECRelatedInstanceDirection direction
@@ -145,6 +150,7 @@ struct WSObjectsReader::RelationshipInstance
 
         WS_EXPORT bool IsValid () const;
         WS_EXPORT ObjectIdCR GetObjectId () const;
+        WS_EXPORT Utf8CP GetETag () const;
         WS_EXPORT RapidJsonValueCR GetProperties () const;
         WS_EXPORT BentleyApi::ECN::ECRelatedInstanceDirection GetDirection () const;
         WS_EXPORT Instance GetRelatedInstance () const;

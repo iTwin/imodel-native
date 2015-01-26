@@ -85,6 +85,19 @@ TEST_F (WSObjectsReaderV1Tests, InstanceIsValid_InstanceInClassWithoutId_Returns
     BeTest::SetFailOnAssert (true);
     }
 
+TEST_F (WSObjectsReaderV1Tests, ReadInstances_JsonInstanceWithoutETag_ReturnsEmptyETag)
+    {
+    auto json = ToRapidJson (R"({ "TestClass1" : [{ "notId" : "A" }] })");
+
+    BeTest::SetFailOnAssert (false);
+    auto reader = WSObjectsReaderV1::Create ("TestSchema");
+    auto instances = reader->ReadInstances (json);
+
+    EXPECT_FALSE (instances.IsEmpty ());
+    EXPECT_STREQ ("", (*instances.begin ()).GetETag ());
+    BeTest::SetFailOnAssert (true);
+    }
+
 TEST_F (WSObjectsReaderV1Tests, RelationshipInstancesIsValid_V1FormatDoesNotHaveRelationships_ReturnsTrue)
     {
     auto json = ToRapidJson (R"({ "$id" : "A" })");

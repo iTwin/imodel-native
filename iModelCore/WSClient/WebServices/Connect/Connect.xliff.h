@@ -31,6 +31,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
     FIELDAPPS_UnknownError,                  // =="Unknown error."==
     FIELDAPPS_SignInUsername,                // =="Signed in username:"==
     FIELDAPPS_SignOut,                       // =="Sign Out"==
+    FIELDAPPS_SigningInDotDotDot,            // =="Signing In"==
     };
 MOBILEDGN_TRANSLATABLE_STRINGS_END
 

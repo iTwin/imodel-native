@@ -33,6 +33,7 @@
     <ClInclude Include="Published\Connect\MockLocalState.h" />
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
     <ClInclude Include="Published\Connect\SamlTokenTests.h" />
+    <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\Connect\StubLocalState.h" />
     <ClInclude Include="Published\MobileUtilsTests.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
@@ -118,6 +119,7 @@
     <ClCompile Include="Published\Connect\ConnectTokenProviderTests.cpp" />
     <ClCompile Include="Published\Connect\PasswordPersistenceTests.cpp" />
     <ClCompile Include="Published\Connect\SamlTokenTests.cpp" />
+    <ClCompile Include="Published\Connect\SecureStoreTests.cpp" />
     <ClCompile Include="Published\DgnProjectInfoExportServiceTests.cpp" />
     <ClCompile Include="Published\DgnXfTests.cpp" />
     <ClCompile Include="Published\MarkupTests.cpp" />

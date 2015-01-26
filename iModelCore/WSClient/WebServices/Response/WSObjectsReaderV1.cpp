@@ -118,7 +118,7 @@ WSObjectsReader::Instance WSObjectsReaderV1::ReadInstance (const rapidjson::Valu
 
     Utf8String remoteId ((*instanceProperties)["$id"].GetString ());
 
-    return Instance (shared_from_this (), ObjectId (m_schemaName, className, remoteId), instanceProperties, &s_emptyArrayJsonObject);
+    return Instance (shared_from_this (), ObjectId (m_schemaName, className, remoteId), nullptr, instanceProperties, &s_emptyArrayJsonObject);
     }
 
 /*--------------------------------------------------------------------------------------+
