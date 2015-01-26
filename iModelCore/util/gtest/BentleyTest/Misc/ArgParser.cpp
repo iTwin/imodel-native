@@ -2,7 +2,7 @@
 |
 |  $Source: BentleyTest/Misc/ArgParser.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define UNICODE 1
@@ -39,7 +39,7 @@ BentleyStatus argParser_loadLinesFromFile (Bentley::bvector<WString>& lines, WSt
 
     std::string buffer;
     while (getline(fin, buffer))
-        lines.push_back (WString(buffer.c_str()));
+        lines.push_back (WString(buffer.c_str(), true));
 
     return SUCCESS;
     }
@@ -179,7 +179,7 @@ bool ArgParser::LoadArg (CharCP arg)
             tmp[strlen(adjustedArg)] = NULL;
         if (0 == strcmpi (tmp, adjustedArg))
             {
-            iter->second.LoadValueFromString (WString(&arg[strlen(adjustedArg)]).c_str());
+            iter->second.LoadValueFromString (WString(&arg[strlen(adjustedArg)],true).c_str());
             if (0 == strcmpi (tmp, "--makeresponse"))
                 {
                 MakeResponseFile (responseFileOut.c_str(), true);
@@ -209,8 +209,8 @@ void ArgParser::PrintUsage ()
         if (!iter->second.displayInUsage)
             continue;
 
-        WString name("--");
-        name += WString (iter->first);
+        WString name(L"--");
+        name += WString (iter->first,true);
         name += L"=";
         name += iter->second.defaultValue.c_str();
         if (largest < name.length())
@@ -224,8 +224,8 @@ void ArgParser::PrintUsage ()
         if (!iter->second.displayInUsage)
             continue;
 
-        WString name("--");
-        name += WString (iter->first);
+        WString name(L"--");
+        name += WString (iter->first,true);
         name += L"=";
         name += iter->second.defaultValue.c_str();
         wprintf  (fmt, name.c_str(), iter->second.description.c_str());  
@@ -246,7 +246,7 @@ bool ArgParser::LoadResponseFile (CharCP arg)
         wprintf (L"Invalid response file...\n");
         return false;
         }
-    WString filename (&arg[1]);
+    WString filename (&arg[1],true);
 
     Bentley::bvector<WString> lines;
     if (SUCCESS != argParser_loadLinesFromFile (lines, filename))
@@ -378,8 +378,8 @@ BentleyStatus ArgParser::MakeResponseFile (WCharCP filename, bool useDefaults)
         if (0 == strcmpi("makeresponse", iter->first))
            continue; 
 
-        WString line ("--");
-        line += WString (iter->first);
+        WString line (L"--");
+        line += WString (iter->first,true);
         line += L"=";
         if (useDefaults)
             line += iter->second.defaultValue.c_str();
