@@ -171,7 +171,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithDefaultSchem
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
     StubInstances instances;
-    instances.Add ({ "TestSchema.TestClass", "TestId" });
+    instances.Add ({"TestSchema.TestClass", "TestId"});
 
     GetHandler ().ExpectRequests (2);
     GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0))); // WebApi 1.1
@@ -295,7 +295,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseConta
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     StubInstances instances;
-    instances.Add ({ "TestSchema.TestClass", "A" });
+    instances.Add ({"TestSchema.TestClass", "A"});
     HttpResponse response = StubHttpResponse (HttpStatus::OK, instances.ToJsonWebApiV2 ());
 
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
@@ -307,7 +307,6 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseConta
     EXPECT_EQ (ObjectId ("TestSchema.TestClass", "A"), (*result.GetValue ().GetInstances ().begin ()).GetObjectId ());
     }
 #endif // MOBILEUTILS_PORT
-
 
 TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithFollowRedirects)
     {

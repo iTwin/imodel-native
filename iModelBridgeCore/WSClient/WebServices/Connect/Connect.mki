@@ -21,8 +21,8 @@ ConnectHeaders  = $(ConnectPublicApiDirectory)Authentication.h                  
                   $(ConnectPublicApiDirectory)ConnectTokenProvider.h                \
                   $(ConnectPublicApiDirectory)IConnectAuthenticationPersistence.h   \
                   $(ConnectPublicApiDirectory)IConnectTokenProvider.h               \
-                  $(ConnectPublicApiDirectory)PasswordPersistence.h                 \
                   $(ConnectPublicApiDirectory)SamlToken.h                           \
+                  $(ConnectPublicApiDirectory)SecureStore.h                         \
                   $(ConnectSourceDirectory)AuthenticationData.h                     \
                   $(ConnectSourceDirectory)DatabaseHelper.h
 
@@ -47,6 +47,6 @@ $(o)ConnectTokenProvider$(oext)             : $(ConnectSourceDirectory)ConnectTo
 
 $(o)DatabaseHelper$(oext)                   : $(ConnectSourceDirectory)DatabaseHelper.cpp $(ConnectHeaders) ${MultiCompileDepends}
 
-$(o)PasswordPersistence$(oext)              : $(ConnectSourceDirectory)PasswordPersistence.cpp $(ConnectHeaders) ${MultiCompileDepends}
-
 $(o)SamlToken$(oext)                        : $(ConnectSourceDirectory)SamlToken.cpp $(ConnectHeaders) ${MultiCompileDepends}
+
+$(o)SecureStore$(oext)                      : $(ConnectSourceDirectory)SecureStore.cpp $(ConnectHeaders) ${MultiCompileDepends}

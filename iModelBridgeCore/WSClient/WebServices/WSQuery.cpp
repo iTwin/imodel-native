@@ -14,6 +14,9 @@
 #define WSQUERY_OPTION_Skip     "$skip"
 #define WSQUERY_OPTION_Top      "$top"
 
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_EC
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -31,6 +34,14 @@ m_aliasNumber (0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSQuery::WSQuery (Utf8StringCR schemaName, Utf8StringCR className) :
 WSQuery (schemaName, std::set<Utf8String> {className})
+    {
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+WSQuery::WSQuery (ECClassCR ecClass) :
+WSQuery (Utf8String (ecClass.GetSchema ().GetName ()), Utf8String (ecClass.GetName ()))
     {
     }
 

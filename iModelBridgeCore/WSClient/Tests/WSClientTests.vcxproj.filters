@@ -98,6 +98,7 @@
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
     <ClInclude Include="Published\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\StubLocalState.h" />
+    <ClInclude Include="Published\Connect\SecureStoreTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -228,5 +229,6 @@
     <ClCompile Include="Published\Connect\ConnectTokenProviderTests.cpp" />
     <ClCompile Include="Published\Connect\PasswordPersistenceTests.cpp" />
     <ClCompile Include="Published\Connect\SamlTokenTests.cpp" />
+    <ClCompile Include="Published\Connect\SecureStoreTests.cpp" />
   </ItemGroup>
 </Project>

@@ -1,13 +1,12 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: WebServices/Connect/PasswordPersistence.cpp $
+ |     $Source: WebServices/Connect/SecureStore.cpp $
  |
  |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
-
 #include "WebServicesInternal.h"
-#include <WebServices/Connect/PasswordPersistence.h>
+#include <WebServices/Connect/SecureStore.h>
 #include <Bentley/Base64Utilities.h>
 
 #if defined (__APPLE__)
@@ -178,7 +177,7 @@ Utf8String Decrypt (
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-PasswordPersistence::PasswordPersistence (ILocalState* customLocalState) :
+SecureStore::SecureStore (ILocalState* customLocalState) :
 m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App ().LocalState ())
     {
     }
@@ -186,9 +185,10 @@ m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App (
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PasswordPersistence::SavePassword (Utf8CP identifier, Utf8CP password)
+void SecureStore::SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP password)
     {
-    if (Utf8String::IsNullOrEmpty (identifier))
+    Utf8String identifier = CreateIdentifier (nameSpace, key);
+    if (identifier.empty ())
         {
         return;
         }
@@ -196,7 +196,7 @@ void PasswordPersistence::SavePassword (Utf8CP identifier, Utf8CP password)
 #if defined (BENTLEY_WIN32) || defined(ANDROID)
     if (Utf8String::IsNullOrEmpty (password))
         {
-        m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier, Json::nullValue);
+        m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), Json::nullValue);
         return;
         }
 
@@ -206,31 +206,36 @@ void PasswordPersistence::SavePassword (Utf8CP identifier, Utf8CP password)
 
     EVP_EncryptInit_ex (&ctx, EVP_aes_256_gcm (), nullptr, s_key, s_iv);
 
-    unsigned char outbuf[1024];
+    std::vector<unsigned char> outbuf;
+    size_t passwordLen = strlen (password);
+    // See documentation for EVP_EncryptUpdate at the page below for explanation of
+    // the required size for outbuf:
+    // https://www.openssl.org/docs/crypto/EVP_EncryptInit.html
+    outbuf.resize(passwordLen + EVP_CIPHER_CTX_block_size (&ctx) - 1);
     int outlen;
-    if (!EVP_EncryptUpdate (&ctx, outbuf, &outlen, (const unsigned char *)password, (int)strlen (password)))
+    if (!EVP_EncryptUpdate (&ctx, &outbuf[0], &outlen, (const unsigned char *)password, (int)passwordLen))
         {
         return;
         }
 
     EVP_CIPHER_CTX_cleanup (&ctx);
 
-    Utf8String encodedPassword = Base64Utilities::Encode ((Utf8CP)outbuf, outlen);
+    Utf8String encodedPassword = Base64Utilities::Encode ((Utf8CP)&outbuf[0], outlen);
 
-    m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier, encodedPassword);
+    m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), encodedPassword);
 #endif
 
 #ifdef __APPLE__
-    BEKeychainItem* item = [BEKeychainItem wsbKeychainItemWithIdentifier : [NSString stringWithUTF8String : identifier]];
-    item.username = [NSString stringWithUTF8String : identifier];
-    item.password = [NSString stringWithUTF8String : password];
-#endif /* __APPLE__ */
+    BEKeychainItem* item = [BEKeychainItem wsbKeychainItemWithIdentifier:[NSString stringWithUTF8String:identifier.c_str ()]];
+    item.username = [NSString stringWithUTF8String:identifier.c_str ()];
+    item.password = [NSString stringWithUTF8String:password];
+#endif
 
 #if defined (BENTLEY_WINRT)
     // If password is empty, we are attempting to delete this item. Its password should not be encrypted.
     if (Utf8String::IsNullOrEmpty (password))
         {
-        m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier, Json::nullValue);
+        m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), Json::nullValue);
         return;
         }
 
@@ -248,7 +253,7 @@ void PasswordPersistence::SavePassword (Utf8CP identifier, Utf8CP password)
     Utf8String encodedPassword (buffEncryptedString->Data ());
 
     // Save
-    m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier, encodedPassword);
+    m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), encodedPassword);
 
 #endif
     }
@@ -256,16 +261,18 @@ void PasswordPersistence::SavePassword (Utf8CP identifier, Utf8CP password)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PasswordPersistence::LoadPassword (Utf8CP identifier)
+Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
     {
+    Utf8String identifier = CreateIdentifier (nameSpace, key);
     Utf8String password;
-    if (Utf8String::IsNullOrEmpty (identifier))
+
+    if (identifier.empty ())
         {
         return password;
         }
 
 #if defined (BENTLEY_WIN32) || defined(ANDROID)
-    Utf8String encodedPassword = Base64Utilities::Decode (m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier).asString ());
+    Utf8String encodedPassword = Base64Utilities::Decode (m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ()).asString ());
 
     EVP_CIPHER_CTX ctx;
     EVP_CIPHER_CTX_set_padding (&ctx, 0);
@@ -273,22 +280,26 @@ Utf8String PasswordPersistence::LoadPassword (Utf8CP identifier)
 
     EVP_DecryptInit_ex (&ctx, EVP_aes_256_gcm (), nullptr, s_key, s_iv);
 
-    unsigned char outbuf[1024];
+    std::vector<unsigned char> outbuf;
+    // See documentation for EVP_DecryptUpdate at the page below for explanation of
+    // the required size for outbuf:
+    // https://www.openssl.org/docs/crypto/EVP_EncryptInit.html
+    outbuf.resize (encodedPassword.size () + EVP_CIPHER_CTX_block_size (&ctx));
     int outlen;
-    if (!EVP_DecryptUpdate (&ctx, outbuf, &outlen, (const unsigned char *)encodedPassword.c_str (), (int)encodedPassword.size ()))
+    if (!EVP_DecryptUpdate (&ctx, &outbuf[0], &outlen, (const unsigned char *)encodedPassword.c_str (), (int)encodedPassword.size ()))
         {
         return password;
         }
 
     EVP_CIPHER_CTX_cleanup (&ctx);
 
-    password = Utf8String ((CharCP)outbuf, (size_t)outlen);
+    password = Utf8String ((CharCP)&outbuf[0], (size_t)outlen);
 #endif
 
 #ifdef __APPLE__
-    BEKeychainItem* item = [BEKeychainItem wsbKeychainItemWithIdentifier : [NSString stringWithUTF8String : identifier]];
+    BEKeychainItem* item = [BEKeychainItem wsbKeychainItemWithIdentifier:[NSString stringWithUTF8String:identifier.c_str ()]];
     password = [item.password UTF8String];
-#endif /* __APPLE__ */
+#endif
 
 #if defined (BENTLEY_WINRT)
     // Initialize the encryption process
@@ -299,9 +310,9 @@ Utf8String PasswordPersistence::LoadPassword (Utf8CP identifier)
     SymmetricKeyAlgorithmProvider^ objAlg = SymmetricKeyAlgorithmProvider::OpenAlgorithm (strAlgName);
 
     // Read data
-    Utf8String utf8Password = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier).asString ();
-    if (utf8Password.empty ()) // if password is empty then this represents a deleted item and needs no decryption
-        return Utf8String ("");
+    Utf8String utf8Password = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ()).asString();
+    if (utf8Password.empty()) // if password is empty then this represents a deleted item and needs no decryption
+        return Utf8String("");
 
     WString bwString = WString (utf8Password.c_str (), true);
     Platform::String^ pString = ref new Platform::String (bwString.c_str ());
@@ -314,3 +325,19 @@ Utf8String PasswordPersistence::LoadPassword (Utf8CP identifier)
     return password;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SecureStore::CreateIdentifier (Utf8CP nameSpace, Utf8CP key)
+    {
+    if (Utf8String::IsNullOrEmpty (nameSpace) || Utf8String::IsNullOrEmpty (key))
+        {
+        return "";
+        }
+    if (nullptr != strchr (nameSpace, ':'))
+        {
+        BeAssert (false && "Namespace cannot contain ':'");
+        return "";
+        }
+    return Utf8PrintfString ("%s:%s", nameSpace, key);
+    }

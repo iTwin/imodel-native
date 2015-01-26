@@ -7,10 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #include "WebServicesInternal.h"
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/PasswordPersistence.h>
+#include <WebServices/Connect/SecureStore.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN
+
+#define SecureStoreNameSpace_ConnectLogin       "ConnectLogin"
+#define SecureStoreNameSpace_ConnectToken       "ConnectToken"
+#define SecureStoreKey_Token                    "Token"
+
+#define LocalStateNameSpace_Connect             "Connect"
+#define LocalStateKey_Username                  "Username"
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 #define LOCALSTATE_Namespace_BentleyConnect "BentleyCONNECT"
@@ -30,9 +37,8 @@ m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App (
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials)
     {
-    m_localState.SaveValue (LOCALSTATE_Namespace_BentleyConnect, LOCALSTATE_Key_Username, credentials.GetUsername ());
-    PasswordPersistence persistence (&m_localState);
-    persistence.SavePassword (credentials.GetUsername ().c_str (), credentials.GetPassword ().c_str ());
+    m_localState.SaveValue (LocalStateNameSpace_Connect, LocalStateKey_Username, credentials.GetUsername ());
+    SecureStore (&m_localState).SaveValue (SecureStoreNameSpace_ConnectLogin, credentials.GetUsername ().c_str (), credentials.GetPassword ().c_str ());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -40,9 +46,8 @@ void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials
 +---------------+---------------+---------------+---------------+---------------+------*/
 Credentials ConnectAuthenticationPersistence::GetCredentials () const
     {
-    Utf8String username = m_localState.GetValue (LOCALSTATE_Namespace_BentleyConnect, LOCALSTATE_Key_Username).asString ();
-    PasswordPersistence persistence (&m_localState);
-    Utf8String password = persistence.LoadPassword (username.c_str ());
+    Utf8String username = m_localState.GetValue (LocalStateNameSpace_Connect, LocalStateKey_Username).asString ();
+    Utf8String password = SecureStore (&m_localState).LoadValue (SecureStoreNameSpace_ConnectLogin, username.c_str ());
     return Credentials (std::move (username), std::move (password));
     }
 
@@ -51,8 +56,8 @@ Credentials ConnectAuthenticationPersistence::GetCredentials () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetToken (SamlTokenPtr token)
     {
-    m_localState.SaveValue (LOCALSTATE_Namespace_BentleyConnect, LOCALSTATE_Key_Token, token ? token->AsString () : nullptr);
-    m_token = token;
+    SecureStore (&m_localState).SaveValue (SecureStoreNameSpace_ConnectToken, SecureStoreKey_Token, token ? token->AsString ().c_str () : "");
+    m_token.reset ();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -62,7 +67,7 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
     {
     if (nullptr == m_token)
         {
-        Utf8String tokenStr = m_localState.GetValue (LOCALSTATE_Namespace_BentleyConnect, LOCALSTATE_Key_Token).asString ();
+        Utf8String tokenStr = SecureStore (&m_localState).LoadValue (SecureStoreNameSpace_ConnectToken, SecureStoreKey_Token);
         if (tokenStr.empty ())
             {
             return nullptr;

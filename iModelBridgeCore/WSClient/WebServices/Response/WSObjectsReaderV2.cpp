@@ -104,6 +104,17 @@ WSObjectsReader::Instance WSObjectsReaderV2::ReadInstance (const rapidjson::Valu
         return Instance (shared_from_this ());
         }
 
+    Utf8String eTag;
+    if (!instanceData["eTag"].IsNull ())
+        {
+        // HACK: temporary workaround to eTags not having quotes
+        eTag.Sprintf ("\"%s\"", instanceData["eTag"].GetString ());
+        }
+    else
+        {
+        eTag = nullptr;
+        }
+
     const rapidjson::Value* instanceProperties = &instanceData["properties"];
     if (!instanceProperties->IsObject ())
         {
@@ -126,7 +137,7 @@ WSObjectsReader::Instance WSObjectsReaderV2::ReadInstance (const rapidjson::Valu
         relationshipInstancesData = &s_emptyArrayJsonObject;
         }
 
-    return Instance (shared_from_this (), objectId, instanceProperties, relationshipInstancesData);
+    return Instance (shared_from_this (), objectId, eTag, instanceProperties, relationshipInstancesData);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -137,7 +148,7 @@ WSObjectsReader::Instance WSObjectsReaderV2::GetInstance (rapidjson::SizeType in
     if (index >= m_instanceCount)
         {
         BeAssert (false && "Index out of range");
-        return Instance (nullptr, ObjectId (), nullptr, nullptr);
+        return Instance (nullptr, ObjectId (), nullptr, nullptr, nullptr);
         }
 
     const rapidjson::Value& instanceData = (*m_data)["instances"][index];
@@ -170,6 +181,17 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV2::GetRelationshipInstance
         {
         BeAssert (false && "Bad format");
         return RelationshipInstance (shared_from_this ());
+        }
+
+    Utf8String eTag;
+    if (!(*relationshipInstance)["eTag"].IsNull ())
+        {
+        // HACK: temporary workaround to eTags not having quotes
+        eTag.Sprintf ("\"%s\"", (*relationshipInstance)["eTag"].GetString ());
+        }
+    else
+        {
+        eTag = nullptr;
         }
 
     const rapidjson::Value* instanceProperties = &(*relationshipInstance)["properties"];
@@ -206,5 +228,5 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV2::GetRelationshipInstance
         return RelationshipInstance (shared_from_this ());
         }
 
-    return RelationshipInstance (shared_from_this (), objectId, instanceProperties, relatedInstance, direction);
+    return RelationshipInstance (shared_from_this (), objectId, eTag, instanceProperties, relatedInstance, direction);
     }

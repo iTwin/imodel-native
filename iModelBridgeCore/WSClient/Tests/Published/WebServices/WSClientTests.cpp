@@ -123,7 +123,7 @@ TEST_F (WSClientTests, GetServerInfo_FirstResponseReturnsNotFoundSecondResponseH
 
     GetHandler ().ExpectRequests (3);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, "some other html", { { "Content-Type", "text/html" } }));
+    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, "some other html", {{"Content-Type", "text/html"}}));
     GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::OK));
 
     auto info = client->GetServerInfo ()->GetResult ();

@@ -29,6 +29,8 @@ BEGIN_WSCLIENT_UNIT_TESTS_NAMESPACE
 std::shared_ptr<rapidjson::Document> ToRapidJson (Utf8StringCR jsonString);
 Json::Value ToJson (Utf8StringCR jsonString);
 
+ECN::ECSchemaPtr ParseSchema (Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/

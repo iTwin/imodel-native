@@ -31,6 +31,20 @@ TEST_F (WSQueryTests, Ctor_SchemaAndClass_SetsSchemaAndClass)
 #endif
     }
 
+TEST_F (WSQueryTests, Ctor_ECClassPassed_SetsSchemaAndClass)
+    {
+    auto schema = ParseSchema (R"xml(
+        <ECSchema schemaName="TestSchema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" />
+        </ECSchema>)xml");
+
+    WSQuery query (*schema->GetClassCP (L"TestClass"));
+    EXPECT_STREQ (query.GetSchemaName ().c_str (), "TestSchema");
+#ifdef USE_GTEST
+    EXPECT_THAT (query.GetClasses (), ContainerEq (set<Utf8String>{"TestClass"}));
+#endif
+    }
+
 TEST_F (WSQueryTests, Ctor_ObjectIdPassed_SetsSchemaAndClassAndFilter)
     {
     WSQuery query (ObjectId ("TestSchema", "TestClass", "TestId"));

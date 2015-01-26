@@ -72,6 +72,7 @@ std::shared_ptr<const WSObjectsReader> adapter
 ) :
 m_reader (adapter),
 m_objectId (),
+m_eTag (),
 m_instanceProperties (nullptr),
 m_relationshipInstances (nullptr)
     {
@@ -84,11 +85,13 @@ WSObjectsReader::Instance::Instance
 (
 std::shared_ptr<const WSObjectsReader> adapter,
 ObjectId objectId,
+Utf8StringCR eTag,
 const rapidjson::Value* instanceProperties,
 const rapidjson::Value* relationshipInstances
 ) :
 m_reader (adapter),
 m_objectId (std::move (objectId)),
+m_eTag (eTag),
 m_instanceProperties (instanceProperties),
 m_relationshipInstances (relationshipInstances)
     {
@@ -108,6 +111,14 @@ bool WSObjectsReader::Instance::IsValid () const
 ObjectIdCR WSObjectsReader::Instance::GetObjectId () const
     {
     return m_objectId;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Vytenis.Navalinskas    12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP WSObjectsReader::Instance::GetETag () const
+    {
+    return m_eTag.c_str ();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -135,6 +146,7 @@ std::shared_ptr<const WSObjectsReader> adapter
 ) :
 m_reader (adapter),
 m_objectId (),
+m_eTag (),
 m_relationshipInstanceProperties (nullptr),
 m_relatedInstance (nullptr),
 m_direction (BentleyApi::ECN::ECRelatedInstanceDirection::Forward)
@@ -148,12 +160,14 @@ WSObjectsReader::RelationshipInstance::RelationshipInstance
 (
 std::shared_ptr<const WSObjectsReader> adapter,
 ObjectId objectId,
+Utf8StringCR eTag,
 const rapidjson::Value* relationshipInstanceProperties,
 const rapidjson::Value* relatedInstance,
 BentleyApi::ECN::ECRelatedInstanceDirection direction
 ) :
 m_reader (adapter),
 m_objectId (std::move (objectId)),
+m_eTag (eTag),
 m_relationshipInstanceProperties (relationshipInstanceProperties),
 m_relatedInstance (relatedInstance),
 m_direction (direction)
@@ -182,6 +196,14 @@ ObjectIdCR WSObjectsReader::RelationshipInstance::GetObjectId () const
 BentleyApi::ECN::ECRelatedInstanceDirection WSObjectsReader::RelationshipInstance::GetDirection () const
     {
     return m_direction;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Vytenis.Navalinskas    12/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP WSObjectsReader::RelationshipInstance::GetETag () const
+    {
+    return m_eTag.c_str ();
     }
 
 /*--------------------------------------------------------------------------------------+

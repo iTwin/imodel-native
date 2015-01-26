@@ -12,6 +12,7 @@
 #include "MobileUtilsTests.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
@@ -29,6 +30,23 @@ Json::Value Bentley::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
     bool success = Json::Reader::Parse (jsonString, json);
     BeAssert (success && "Check json string");
     return json;
+    }
+
+ECSchemaPtr ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
+    {
+    if (context.IsNull ())
+        {
+        context = ECSchemaReadContext::CreateContext ();
+        context->AddSchemaPath (FSTest::GetAssetsDir ().AppendToPath (L"/MobileUtilsAssets/ECSchemas/CacheSchemas/"));
+        }
+
+    ECSchemaPtr schema;
+    auto status = ECSchema::ReadFromXmlString (schema, schemaXml.c_str (), *context);
+
+    EXPECT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, status);
+    EXPECT_TRUE (schema.IsValid ());
+
+    return schema;
     }
 
 TestAppPathProvider::TestAppPathProvider ()
