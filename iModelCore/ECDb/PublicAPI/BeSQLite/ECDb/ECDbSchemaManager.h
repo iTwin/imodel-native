@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECDbSchemaManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -218,7 +218,7 @@ private:
     ECDbMapR              m_map;
     ECDbSchemaReaderPtr   m_ecReader;
     ECDbSchemaWriterPtr   m_ecImporter;
-    mutable BeCriticalSection m_criticalSection;
+    mutable BeMutex m_criticalSection;
 
     BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool saveSupplementals = true, bool addToReaderCache = false) const;
     void GetSupplementalSchemas (bvector<ECN::ECSchemaP>& supplementalSchemas, bvector<ECN::ECSchemaP> const& schemas, ECN::SchemaKeyCR primarySchemaKey) const;

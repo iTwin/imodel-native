@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/InstanceDeleter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -616,7 +616,7 @@ void RelationshipInstanceDeleter::GetUpdateSql (Utf8StringR updateSql)
     if (s != SUCCESS)
         { BeAssert(false); }
     
-    FOR_EACH (Binding& binding, parameterBindings)
+    for (Binding& binding : parameterBindings)
         {
         if (!binding.m_column)
             continue;

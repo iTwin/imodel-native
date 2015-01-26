@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaReader.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -22,7 +22,7 @@ void ECDbSchemaReader::AddECSchemaToCache (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaReader::CanAnalyze (ECClassId classId) const
     {
-    BeCriticalSectionHolder aGuard (m_criticalSection);
+    BeMutexHolder aGuard (m_criticalSection);
     return m_ecClassKeyByECClassIdLookup.find (classId) != m_ecClassKeyByECClassIdLookup.end();
     }
 
@@ -31,7 +31,7 @@ bool ECDbSchemaReader::CanAnalyze (ECClassId classId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
     {
-    BeCriticalSectionHolder aGuard (m_criticalSection);
+    BeMutexHolder aGuard (m_criticalSection);
     ECSchemaId ecSchemaId = schema.GetId();
     DbECSchemaEntryP schemaKey = FindDbECSchemaEntry (ecSchemaId);
     if (schemaKey == nullptr)
@@ -75,7 +75,7 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClassId)
     {
-    BeCriticalSectionHolder aGuard (m_criticalSection);
+    BeMutexHolder aGuard (m_criticalSection);
     DbResult r;
 
     DbECClassEntryP key = nullptr;
@@ -189,7 +189,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntryP& ou
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaReader::ReadECSchema (DbECSchemaEntryP& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesLoaded)
     {
-    BeCriticalSectionHolder aGuard (m_criticalSection);
+    BeMutexHolder aGuard (m_criticalSection);
     bvector<DbECSchemaEntryP> newlyLoadedSchemas;
     DbResult r = LoadECSchemaDefinition (outECSchemaKey, newlyLoadedSchemas, ctxECSchemaId);
     if (r != BE_SQLITE_ROW)
@@ -770,7 +770,7 @@ DbResult ECDbSchemaReader::GetECClass(ECClassP& ecClass, ECClassId ecClassId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbSchemaReader::ClearCache ()
     {
-    BeCriticalSectionHolder aGuard (m_criticalSection);
+    BeMutexHolder aGuard (m_criticalSection);
     for (DbECClassEntryMap::reference pair : m_ecClassKeyByECClassIdLookup)
         delete pair.second;
 

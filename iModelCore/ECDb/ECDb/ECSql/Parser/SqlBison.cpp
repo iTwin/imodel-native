@@ -8087,7 +8087,7 @@ void setParser(OSQLParser* _pParser)
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
 {
-    BeCriticalSectionHolder aGuard(getCriticalSection());
+    BeMutexHolder aGuard(getCriticalSection());
     m_pParseTree = pNewParseTree;
 }
 //-----------------------------------------------------------------------------
@@ -8159,7 +8159,7 @@ OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
 
 
     // Guard the parsing
-    BeCriticalSectionHolder aGuard(getCriticalSection());
+    BeMutexHolder aGuard(getCriticalSection());
     // must be reset
     setParser(this);
 

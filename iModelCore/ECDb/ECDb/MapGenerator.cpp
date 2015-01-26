@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapGenerator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -20,7 +20,7 @@ ECGraphPtr ECGraph::Create (bvector<ECSchemaPtr>& schemaList, IECMapInfoProvider
     
     graph->m_propertyMapStrategyProvider = &provider;
    
-    FOR_EACH (ECSchemaPtr schema, schemaList)
+    for (ECSchemaPtr schema : schemaList)
       graph->AddSchema(*schema);
     
     return graph;
@@ -46,13 +46,13 @@ ECNodeP ECGraph::FindNodeWithMaximumNumberOfColumns()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECGraph::AddSchema (ECSchemaR schema)
     {
-    FOR_EACH (ECSchemaPtr alreadyAddedSchema, m_schemas)
+    for (ECSchemaPtr alreadyAddedSchema : m_schemas)
         if ( alreadyAddedSchema.get() == &schema)
             return;
 
     m_schemas.push_back(&schema);
 
-    FOR_EACH (ECClassCP ecClass, schema.GetClasses())
+    for (ECClassCP ecClass : schema.GetClasses())
         {
         ECNodePtr node = GetOrAddNode(*ecClass);
         BeAssert (node.IsValid());
@@ -143,11 +143,11 @@ bool ECNode::Init()
     ECNodePtr n;
     bool      r = true;
 
-    FOR_EACH (ECClassCP baseClass, GetClass().GetBaseClasses())
+    for (ECClassCP baseClass : GetClass().GetBaseClasses())
         if ((n = GetGraph().GetOrAddNode(*baseClass)).IsValid())
             m_baseNodes.push_back(n.get());
 
-    FOR_EACH (ECClassCP derivedClass, GetClass().GetDerivedClasses())
+    for (ECClassCP derivedClass : GetClass().GetDerivedClasses())
         if ((n = GetGraph().GetOrAddNode(*derivedClass)).IsValid())
             m_derivedNodes.push_back(n.get());
 
@@ -273,7 +273,7 @@ int ECCluster::GetRootNodes(ECNodeListR rootNodes)
     for (NodeMapByECClass::const_iterator it =  m_nodes.begin(); it != m_nodes.end(); it++)
         {
         bool foundBaseClassInThisCluster = false;
-        FOR_EACH (ECNodeP baseNode, it->second->GetBaseNodes())
+        for (ECNodeP baseNode : it->second->GetBaseNodes())
             if (Find(baseNode->GetClass()).IsValid())
                 {
                 foundBaseClassInThisCluster = true;
@@ -295,7 +295,7 @@ int ECCluster::GetLeafNodes(ECNodeListR leafNodes)
     for (NodeMapByECClass::const_iterator it =  m_nodes.begin(); it != m_nodes.end(); it++)
         {
         bool foundDerivedClassInThisCluster = false;
-        FOR_EACH (ECNodeP baseNode, it->second->GetBaseNodes())
+        for (ECNodeP baseNode : it->second->GetBaseNodes())
             if (Find(baseNode->GetClass()).IsValid())
                 {
                 foundDerivedClassInThisCluster = true;
@@ -341,7 +341,7 @@ void ECCluster::AddToUniquePropertyMap(ECNodeR node, IECMapInfoProviderCR mapInf
     if(m_rebuildPropertyMap)
         BuildUniquePropertyMap();
 
-    FOR_EACH (ECPropertyCP property, node.GetProperties())
+    for (ECPropertyCP property : node.GetProperties())
         if (m_uniquePropertyMap.find(property) == m_uniquePropertyMap.end())
             {
             m_uniquePropertyMap[property] = &node.GetClass();
@@ -409,7 +409,7 @@ void ECClusterList::WriteDebugInfoToFile(Utf8String fileName)
 
     fprintf (file, "\n=====================================================================\n");
 
-    FOR_EACH (ECClusterPtr cluster, m_clusters)
+    for (ECClusterPtr cluster : m_clusters)
         {
         ECNodeList list;
         fprintf (file, "Cluster                 : %s\n", cluster->GetName().c_str());
@@ -474,7 +474,7 @@ bool ECClusterList::Remove (ECClusterR cluster)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClusterP ECClusterList::Find (Utf8CP clusterName)
     {
-    FOR_EACH (ECClusterPtr cluster, m_clusters)
+    for (ECClusterPtr cluster : m_clusters)
         if (cluster->GetName().EqualsI(clusterName))
             return cluster.get();
     return nullptr;
@@ -485,7 +485,7 @@ ECClusterP ECClusterList::Find (Utf8CP clusterName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClusterP ECClusterList::FindClusterWithNode (ECNodeCR node)
     {
-    FOR_EACH (ECClusterPtr cluster, m_clusters)
+    for (ECClusterPtr cluster : m_clusters)
         if (cluster->Find (node.GetClass()).IsValid())
             return cluster.get();
     return nullptr;
@@ -507,7 +507,7 @@ ECClusterP ECClusterList::operator [](int index)
 int ECClusterList::GetNoOfUniqueProperties ()
     {
     int nNoOfUniqueProperties = 0;
-    FOR_EACH (ECClusterPtr cluster, m_clusters)
+    for (ECClusterPtr cluster : m_clusters)
         nNoOfUniqueProperties += cluster->GetNoOfUniqueProperties();
     return nNoOfUniqueProperties;
     }
@@ -518,7 +518,7 @@ int ECClusterList::GetNoOfUniqueProperties ()
 int ECClusterList::GetNoOfUniqueColumns() 
     {
     int nNoOfUniqueColumns = 0;
-    FOR_EACH (ECClusterPtr cluster, m_clusters)
+    for (ECClusterPtr cluster : m_clusters)
         nNoOfUniqueColumns += cluster->GetNoOfUniqueColumns();
     return nNoOfUniqueColumns;
     }
@@ -648,7 +648,7 @@ int ECCluster::GetNoOfUniqueColumnsIfMergedWith(ECClusterR candiate)
     IECMapInfoProviderCR provider= GetParent()->GetGraph().GetECMapInfoProvider();
     for (NodeMapByECClass::const_iterator it =  candiate.m_nodes.begin(); it != candiate.m_nodes.end(); it++)
         {
-        FOR_EACH (ECPropertyCP property, it->second->GetProperties ())
+        for (ECPropertyCP property : it->second->GetProperties ())
             if (uniquePropertyMap.find(property) == uniquePropertyMap.end())
                 {
                 uniquePropertyMap[property] = it->first;
@@ -667,7 +667,7 @@ int ECCluster::GetNoOfUniqueColumnsIfNodeAdded(ECNodeR node)
     bmap<ECPropertyCP,ECClassCP> uniquePropertyMap = m_uniquePropertyMap; //copy
     int nMergeColumns = GetNoOfUniqueColumns();    
     IECMapInfoProviderCR provider= GetParent()->GetGraph().GetECMapInfoProvider();
-    FOR_EACH (ECPropertyCP property, node.GetProperties ())
+    for (ECPropertyCP property : node.GetProperties ())
         if (uniquePropertyMap.find(property) == uniquePropertyMap.end())
             {
             uniquePropertyMap[property] = &node.GetClass();
@@ -713,7 +713,7 @@ void DefaultClustringAlgorithm::ClusterCustomAttributes (ECClusterListR clusterL
     //1. Get only custom attributes and order them by number of derived classes
     graph.Select (nodes, FilterByCustomAttributes, OrderByNumberOfDerivedClasses);
     //2. Create CA class clusters each of which should not have more then the maximum number of properties requested.
-    FOR_EACH( ECNodeP n, nodes)
+    for ( ECNodeP n : nodes)
         {
         if (cluster == nullptr || 
             cluster->GetNoOfUniqueColumnsIfNodeAdded(*n) >= m_config->GetMaxColumnsPerTable())
@@ -736,7 +736,7 @@ void DefaultClustringAlgorithm::ClusterRelationships (ECClusterListR clusterList
     //1. Get only custom attributes and order them by number of derived classes
     graph.Select (nodes, FilterByRelationshipClassess);
     //2. Create CA class clusters each of which should not have more then the maximum number of properties requested.
-    FOR_EACH( ECNodeP n, nodes)
+    for ( ECNodeP n: nodes)
         {
         if (cluster == nullptr || 
             cluster->GetNoOfUniqueColumnsIfNodeAdded(*n) >= m_config->GetMaxColumnsPerTable())
@@ -758,7 +758,7 @@ void DefaultClustringAlgorithm::ClusterClassesWithExistingHints (ECClusterListR 
     //We want to ignore classes with ECDBClassHint on them.
     cluster->SetType (ECCLUSTERTYPE_UnmappableClasses); 
     graph.Select (nodes, FilterByECDbHint);
-    FOR_EACH( ECNodeP n, nodes)
+    for ( ECNodeP n: nodes)
         {
         if (!cluster->Contains (*n))
             {
@@ -778,7 +778,7 @@ void DefaultClustringAlgorithm::ClusterClassesWithExistingHints (ECClusterListR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefaultClustringAlgorithm::AddAllDerivedClassesToCluster (ECNodeR node, ECClusterR cluster)
     {
-    FOR_EACH(ECNodeP derivedNode, node.GetDerivedNodes())
+    for (ECNodeP derivedNode : node.GetDerivedNodes())
         {
         cluster.Add(*derivedNode);
         AddAllDerivedClassesToCluster (*derivedNode, cluster);
@@ -794,7 +794,7 @@ void DefaultClustringAlgorithm::ClusterStructs (ECClusterListR clusterList, ECGr
     ECClusterP cluster = nullptr;
     int i              = 0;  
     graph.Select (nodes, FilterByStruct);
-    FOR_EACH( ECNodeP n, nodes)
+    for ( ECNodeP n: nodes)
         {
         if (cluster == nullptr || 
             cluster->GetNoOfUniqueColumnsIfNodeAdded(*n) >= m_config->GetMaxColumnsPerTable())
@@ -814,7 +814,7 @@ void DefaultClustringAlgorithm::ClusterNonDomainAndEmptyClasses (ECClusterListR 
     ECClusterP cluster = nullptr;
     int i              = 0;
     graph.Select (nodes, FilterByNonMappedClasses);
-    FOR_EACH( ECNodeP n, nodes)
+    for ( ECNodeP n: nodes)
         {
         if (cluster == nullptr || 
             cluster->GetNoOfUniqueColumnsIfNodeAdded(*n) >= m_config->GetMaxColumnsPerTable())
@@ -835,7 +835,7 @@ void DefaultClustringAlgorithm::ClusterNonCyclicClasses (ECClusterListR clusterL
     bmap<ECClusterP,ECNodeList> unfitNodes;
     int                         i = 0; 
     graph.Select (nodes, FilterByClassThatHasExactlyOneBaseClass, OrderByDescendingNumberOfDerivedClasses);
-    FOR_EACH (ECNodeP n, nodes)
+    for (ECNodeP n: nodes)
         {
          ECNodeP    baseNode    = *n->GetBaseNodes().begin();
          ECClusterP nodeCluster = n->GetCluster();
@@ -909,7 +909,7 @@ void DefaultClustringAlgorithm::ClusterByHighConnectivity (ECClusterListR cluste
     int                         i = 0;  // Use to give serialize name for clusters 
 
     graph.Select (nodes, FilterByClassesWithConnectivityGreaterThanZero, OrderByDescendingConnectivity);
-    FOR_EACH (ECNodeP n, nodes)
+    for (ECNodeP n: nodes)
         {
         if ( n->HasMoreBaseClassesThanDerivedClasses() /* prioritize which cluster to try first*/)
             {
@@ -935,7 +935,7 @@ void DefaultClustringAlgorithm::ClusterByHighConnectivity (ECClusterListR cluste
 bool DefaultClustringAlgorithm::TryAddToABaseCluster (ECNodeR node)
     {
     bvector<ECClusterP> clusters;
-    FOR_EACH (ECNodeP n, node.GetBaseNodes())
+    for (ECNodeP n: node.GetBaseNodes())
         {
         if (n->GetCluster() != nullptr)
             clusters.push_back (n->GetCluster());
@@ -952,7 +952,7 @@ bool DefaultClustringAlgorithm::TryAddToADerivedCluster (ECNodeR node)
     {
     bvector<ECClusterP> clusters;
         {
-        FOR_EACH (ECNodeP n, node.GetDerivedNodes())
+        for (ECNodeP n: node.GetDerivedNodes())
             if (n->GetCluster() != nullptr)
                 clusters.push_back (n->GetCluster());
         }
@@ -965,7 +965,7 @@ bool DefaultClustringAlgorithm::TryAddToADerivedCluster (ECNodeR node)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DefaultClustringAlgorithm::TrySelectAClusterWithMinimumProperties (bvector<ECClusterP>& clusters, ECNodeR n)
     {
-    FOR_EACH (ECClusterP cluster, clusters)
+    for (ECClusterP cluster : clusters)
         if(cluster->GetType() != ECCLUSTERTYPE_UnmappableClasses && cluster->GetType() != ECCLUSTERTYPE_Relationships)
             if (cluster->GetNoOfUniqueColumnsIfNodeAdded(n) < m_config->GetMaxColumnsPerTable())
                 {
@@ -983,8 +983,8 @@ bool DefaultClustringAlgorithm::TryAddToASiblingCluster (ECNodeR node)
     bmap<ECClusterP, bool> clusterMap;
     bvector<ECClusterP>    clusters;
 
-    FOR_EACH (ECNodeP baseNode, node.GetBaseNodes())
-        FOR_EACH (ECNodeP sibliningNode, baseNode->GetDerivedNodes())
+    for (ECNodeP baseNode: node.GetBaseNodes())
+        for (ECNodeP sibliningNode: baseNode->GetDerivedNodes())
             {
             ECClusterP cluster = sibliningNode->GetCluster();
             if (cluster != nullptr)
@@ -1008,7 +1008,7 @@ void DefaultClustringAlgorithm::ClusterLonerClasses (ECClusterListR clusterList,
     //1. Get only classes with no derived or base classes
     graph.Select (nodes, FilterByClassesWithNoBaseOrDerivedClass);
     //2. Create loner class clusters each of which should not have more then the maximum number of properties requested.
-    FOR_EACH( ECNodeP n, nodes)
+    for ( ECNodeP n: nodes)
         {
         if ( cluster == nullptr || 
             cluster->GetNoOfUniqueColumnsIfNodeAdded(*n) >= m_config->GetMaxColumnsPerTable())
@@ -1162,7 +1162,7 @@ BentleyStatus MapGenerator::FindAndSetBSCASchema (ECDbSchemaManagerCR sm, bvecto
         BentleyStatus rc = sm.GetECSchema(bentleyStandardCustomAttributes, "Bentley_Standard_CustomAttributes.01.05", true);
         if (rc != SUCCESS)
             {
-            FOR_EACH (ECSchemaPtr schema, cache)
+            for (ECSchemaPtr schema: cache)
                 {
                 if (schema->GetName().EqualsI(L"Bentley_Standard_CustomAttributes") && schema->GetVersionMajor() >= 1 && schema->GetVersionMinor() >= 6 )
                     {

@@ -121,7 +121,7 @@ std::vector<WString> InstanceCRUDTests::GetTestClassNames()
                         continue;
                     }
                     auto const& classes = schema->GetClasses();
-                    FOR_EACH(ECClassCP ecClass, classes)
+                    for(ECClassCP ecClass: classes)
                     {
                         if (InstanceCRUDTests::addClass(ecClass))
                         {
@@ -355,7 +355,7 @@ void InstanceCRUDTests::importSchema()
     BeFileName dir(m_dirName);
     bvector<BeFileName> suppls;
     BeDirectoryIterator::WalkDirsAndMatch(suppls, dir, L"*Supplemental*.ecschema.xml", true);
-    FOR_EACH(BeFileName entry, suppls)
+    for (BeFileName entry: suppls)
     {
         WString supplSchemaPath(entry);
         ECSchemaPtr schema1;
@@ -463,13 +463,13 @@ void InstanceCRUDTests::addClassesForRelationship(ECRelationshipClassCP relClass
 {
     const ECConstraintClassesList& sourceClasses = relClass->GetSource().GetClasses();
     const ECConstraintClassesList& targetClasses = relClass->GetTarget().GetClasses();
-    FOR_EACH(ECClassCP ecClass2, sourceClasses)
+    for (ECClassCP ecClass2: sourceClasses)
     {
         if (InstanceCRUDTests::addClass(ecClass2))
         {
             m_classList.push_back(ecClass2);
             //For some relationships, it needs the struct Class instances to be there.
-            FOR_EACH(ECPropertyCP ecProperty, ecClass2->GetProperties(true))
+            for (ECPropertyCP ecProperty: ecClass2->GetProperties(true))
             {
                 if (ecProperty->GetIsStruct())
                 {
@@ -481,19 +481,19 @@ void InstanceCRUDTests::addClassesForRelationship(ECRelationshipClassCP relClass
         }
         //For some cases, we have to add child Domain classes of an Abstract class
         auto const& derivedClasses = ecClass2->GetDerivedClasses();
-        FOR_EACH(ECClassCP ecClass4, derivedClasses)
+        for (ECClassCP ecClass4: derivedClasses)
         {
             if (InstanceCRUDTests::addClass(ecClass4))
                 m_classList.push_back(ecClass4);
         }
     }
-    FOR_EACH(ECClassCP ecClass3, targetClasses)
+    for (ECClassCP ecClass3: targetClasses)
     {
         if (InstanceCRUDTests::addClass(ecClass3))
         {
             m_classList.push_back(ecClass3);
             //For some relationships, it needs the struct Class instances to be there.
-            FOR_EACH(ECPropertyCP ecProperty, ecClass3->GetProperties(true))
+            for (ECPropertyCP ecProperty: ecClass3->GetProperties(true))
             {
                 if (ecProperty->GetIsStruct())
                 {
@@ -505,7 +505,7 @@ void InstanceCRUDTests::addClassesForRelationship(ECRelationshipClassCP relClass
         }
         //For some cases, we have to add child Domain classes of an Abstract class
         auto const& derivedClasses = ecClass3->GetDerivedClasses();
-        FOR_EACH(ECClassCP ecClass5, derivedClasses)
+        for (ECClassCP ecClass5: derivedClasses)
         {
             if (InstanceCRUDTests::addClass(ecClass5))
                 m_classList.push_back(ecClass5);
@@ -705,7 +705,7 @@ TEST_F(InstanceCRUDTests, Insert)
     LOG1.infov("========INSERT TEST ====TOTAL CLASSES: %d ==============", classNames.size());
 
     int i = 0;
-    FOR_EACH(WString param, classNames)
+    for (WString param: classNames)
     {
         //Setup things
         setupSteps(param);
@@ -736,7 +736,7 @@ TEST_F(InstanceCRUDTests, Delete)
     LOG1.infov("========DELETE TEST ====TOTAL CLASSES: %d ==============", classNames.size());
 
     int i = 0;
-    FOR_EACH(WString param, classNames)
+    for (WString param: classNames)
     {
         //Setup things
         setupSteps(param);

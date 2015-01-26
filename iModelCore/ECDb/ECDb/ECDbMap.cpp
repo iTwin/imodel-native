@@ -180,7 +180,7 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
 
     BeAssert (GetClassMap (ecClass, false) == nullptr);
 
@@ -268,7 +268,7 @@ MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECC
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     ECClassCR ecClass = classMap->GetClass();
     if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
         {
@@ -287,7 +287,7 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbMap::RemoveClassMap (IClassMap const& classMap)
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     ECClassCR ecClass = classMap.GetClass();
     if (!classMap.IsUnmapped ())
         m_clustersByTable.erase (&classMap.GetTable());
@@ -344,7 +344,7 @@ ClassMapP ECDbMap::GetClassMapP (ECN::ECClassCR ecClass, bool loadIfNotFound) co
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     if (!ecClass.HasId ())
         {
         ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, ecClass);
@@ -380,7 +380,7 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable, bool allowReplacingEmptyTableWithView) 
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     auto table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
     auto ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
     if (table)
@@ -466,7 +466,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound)//ECDB_TODO this funtion name should be GetOrAddMappedTable()
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
 
     ClustersByTable::const_iterator it = m_clustersByTable.find (&classMap.GetTable());
     if (m_clustersByTable.end() != it)
@@ -523,7 +523,7 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
     {
-    BeCriticalSectionHolder aGurad (m_criticalSection);
+    BeMutexHolder aGurad (m_criticalSection);
     ClustersByTable::const_iterator cit = m_clustersByTable.find (&table);
     if (m_clustersByTable.end() == cit)
         {
@@ -604,7 +604,7 @@ void ECDbMap::LoadAllMetadata () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
     {
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     m_ecdb.GetStatementCache ().Empty ();
     StopWatch timer(L"", true);
     
@@ -737,7 +737,7 @@ bool ECDbMap::IsMappedToExistingTable (ECDbSqlTable& table) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbMap::FinishTableDefinition () const
     {
-    BeCriticalSectionHolder aGurad (m_criticalSection);
+    BeMutexHolder aGurad (m_criticalSection);
     auto it = m_clustersByTable.begin();
     for (; it != m_clustersByTable.end(); ++it)
         {
@@ -838,7 +838,7 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbMap::ClearCache()
     {
-    BeCriticalSectionHolder aGurad (m_criticalSection);
+    BeMutexHolder aGurad (m_criticalSection);
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
     m_tableCache.clear ();
@@ -850,7 +850,7 @@ void ECDbMap::ClearCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECDbMap::Save()
     {
-    BeCriticalSectionHolder aGurad (m_criticalSection);
+    BeMutexHolder aGurad (m_criticalSection);
     DbResult r;
     StopWatch stopWatch("", true);
     int i = 0;

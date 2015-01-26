@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ECDB/Published/ECSqlCrudTestFixture.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlCrudTestFixture.h"
@@ -90,7 +90,7 @@ struct ECSqlTestExecutor
         THREAD_MAIN_DECL RunTest (void* args)
             {
             ECSqlTestArg* ecsqlArgs = static_cast<ECSqlTestArg*>(args);
-            BeCriticalSectionHolder aGuard (ecsqlArgs->GetConditionVariable().GetCriticalSection ());
+            BeMutexHolder aGuard (ecsqlArgs->GetConditionVariable().GetMutex());
 
             const auto rollbackAfterwards = ecsqlArgs->GetDatasetItem ().GetRollbackAfterwards ();
             Savepoint perTestItemSavepoint (ecsqlArgs->GetECDb (), "AssertTestItem", rollbackAfterwards);

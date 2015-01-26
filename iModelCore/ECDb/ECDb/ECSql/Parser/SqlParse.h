@@ -114,7 +114,7 @@ namespace connectivity
     //==========================================================================
     class OSQLParseNodesContainer
         {
-        BeCriticalSection m_aCriticalSection;
+        BeMutex m_aCriticalSection;
         ::std::vector< OSQLParseNode* > m_aNodes;
         public:
             OSQLParseNodesContainer ();
@@ -181,7 +181,7 @@ namespace connectivity
             OSQLParseNode*  buildNode_STR_NUM (OSQLParseNode*& pLiteral);
             OSQLParseNode*  buildNode_Date (const double& fValue, sal_Int32 nType);
 
-            static BeCriticalSection& getCriticalSection ();
+            static BeMutex& getCriticalSection ();
 
 
         public:

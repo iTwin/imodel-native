@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,7 @@ typedef bmap<ECN::ECClassId, ClassMapPtr>       ClassMapDictionary;
 typedef bmap<ECDbSqlTable*, MappedTablePtr>          ClustersByTable;
 
 private:
-    mutable BeCriticalSection   m_criticalSection;
+    mutable BeMutex m_criticalSection;
     ECDbR                       m_ecdb;
     ECDbSQLManager              m_ecdbSqlManager;
     ClassMapDictionary          m_classMapDictionary;

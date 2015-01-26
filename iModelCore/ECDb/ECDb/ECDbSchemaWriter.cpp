@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -328,7 +328,7 @@ ECDbSchemaWriter::ECDbSchemaWriter (ECDbR ecdb) : m_ecdb(ecdb){}
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema, CustomAttributeTrackerP tracker)
     {
-    BeCriticalSectionHolder aGuard (m_aCriticalSection);
+    BeMutexHolder aGuard (m_aCriticalSection);
     StopWatch timer ("", true);
     ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, ecSchema);
     if (0 != ecSchemaId)
@@ -1333,7 +1333,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateReferences(ECN::ECSchemaCR updatedECS
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap, CustomAttributeTrackerP tracker)
     {
-    BeCriticalSectionHolder aGuard (m_aCriticalSection);
+    BeMutexHolder aGuard (m_aCriticalSection);
 
     auto& existingSchema = diff.GetLeftSchema();
     auto& updatedSchema = diff.GetRightSchema();

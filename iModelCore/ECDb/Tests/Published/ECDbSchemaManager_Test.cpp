@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECDbSchemaManager_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -611,7 +611,7 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
     EXPECT_EQ (3, ecclass->GetPropertyCount ());
     ECPropertyIterable iterator = ecclass->GetProperties();
     int i = 0;
-    FOR_EACH(ECPropertyP ecpropertyp, iterator)
+    for (ECPropertyP ecpropertyp: iterator)
     {
         ASSERT_TRUE(ecpropertyp != NULL);
         ecpropertyp = NULL;
@@ -668,7 +668,7 @@ TEST(ECDbSchemaManager, UpdateExsitingSchemaDifferntCache)
     //Property iterator
     ECPropertyIterable iterator = ecClass->GetProperties();
     int i = 0;
-    FOR_EACH(ECPropertyP ecpropertyp, iterator)
+    for(ECPropertyP ecpropertyp: iterator)
     {
         ASSERT_TRUE(ecpropertyp != NULL);
         ecpropertyp = NULL;
