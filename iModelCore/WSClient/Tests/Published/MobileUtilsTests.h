@@ -14,10 +14,6 @@
 #include <MobileDgn/Utils/Http/HttpResponse.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
 
-#ifdef MOBILEUTILS_PORT
-#include "ValuePrinter.h"
-#endif
-
 #define BEGIN_WSCLIENT_UNIT_TESTS_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace WSC { namespace UnitTests {
 #define END_WSCLIENT_UNIT_TESTS_NAMESPACE      } } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_WSCLIENT_UNIT_TESTS    using namespace Bentley::WSC::UnitTests;
