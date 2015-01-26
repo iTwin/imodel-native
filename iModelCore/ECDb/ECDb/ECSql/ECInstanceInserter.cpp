@@ -115,8 +115,15 @@ void ECInstanceInserter::Impl::Initialize ()
     m_ecinstanceIdBindingInfo = m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::ECInstanceId, parameterIndex);
     parameterIndex++;
 
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, m_ecClass);
+
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties (true))
         {
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 

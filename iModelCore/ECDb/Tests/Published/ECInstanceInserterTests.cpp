@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -281,5 +281,109 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     runInsertTest (*testInstance, "Non-empty instance");
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertCurrentTimeStamp (ECDbR ecdb, ECInstanceId const& id, bool expectedIsNull, Utf8CP assertMessage)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));
+    stmt.BindId (1, id);
+
+    int rowCount = 0;
+    while (stmt.Step () == ECSqlStepStatus::HasRow)
+        {
+        rowCount++;
+        ASSERT_EQ (expectedIsNull, stmt.IsValueNull (0)) << assertMessage;
+        }
+
+    ASSERT_EQ (1, rowCount) << assertMessage;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
+    {
+    SetTestProject (CreateTestProject ("insertwithcurrenttimestamptrigger.ecdb", L"ECSqlTest.01.00.ecschema.xml"));
+    ECDbR ecdb = GetTestProject ().GetECDb ();
+    auto testClass = ecdb.GetSchemaManager ().GetECClass ("ECSqlTest", "ClassWithLastModProp");
+    ASSERT_TRUE (testClass != nullptr);
+
+    //scenario 1: double-check what SQLite does with default values if the INSERT statement
+    //specifies NULL or a parameter:
+        {
+        ECInstanceId id (BeRepositoryId (2), 1);
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S) VALUES (?, 1,'INSERT without specifying LastMod column')"));
+        stmt.BindId (1, id);
+        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+
+        AssertCurrentTimeStamp (ecdb, id, false, "SQLITE INSERT with not specifying the last mod column");
+        }
+
+        {
+        ECInstanceId id (BeRepositoryId (2), 2);
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?, 1,'INSERT with literal NULL',NULL)"));
+        stmt.BindId (1, id);
+        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+
+        AssertCurrentTimeStamp (ecdb, id, true, "SQLITE INSERT with literal NULL");
+        }
+
+        {
+        ECInstanceId id (BeRepositoryId (2), 3);
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?,1,'INSERT with unbound parameter',?)"));
+        stmt.BindId (1, id);
+        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+
+        AssertCurrentTimeStamp (ecdb, id, true, "SQLITE INSERT with unbound parameter.");
+        }
+
+        {
+        ECInstanceId id (BeRepositoryId (2), 4);
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?,1,'INSERT with NULL-bound parameter',?)"));
+        stmt.BindId (1, id);
+        stmt.BindNull (2);
+        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+
+        AssertCurrentTimeStamp (ecdb, id, true, "SQLITE INSERT with NULL-bound parameter");
+        }
+
+        {
+        ECInstanceId id (BeRepositoryId (2), 5);
+        Statement stmt;
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?,1,'INSERT with bound parameter',?)"));
+        stmt.BindId (1, id);
+        stmt.BindDouble (2, 24565.5);
+        ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
+
+        AssertCurrentTimeStamp (ecdb, id, false, "SQLITE INSERT with bound parameter");
+        }
+
+    //scenario 2: test thta ECInstanceInserter works fine
+
+    auto testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    ECValue v (1);
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"I", v));
+
+    v.Clear ();
+    v.SetUtf8CP ("ECInstanceInserter");
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"S", v));
+
+    ECInstanceInserter inserter (ecdb, *testClass);
+    ASSERT_TRUE (inserter.IsValid ());
+
+    //scenario 1: Don't set current time prop at all in ECInstance
+    ECInstanceKey key;
+    ASSERT_EQ (SUCCESS, inserter.Insert (key, *testInstance));
+
+    AssertCurrentTimeStamp (ecdb, key.GetECInstanceId (), false, "ECInstanceInserter INSERT");
+    }
 
 END_ECDBUNITTESTS_NAMESPACE
