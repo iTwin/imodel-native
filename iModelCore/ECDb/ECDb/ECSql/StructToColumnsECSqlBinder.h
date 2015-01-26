@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructToColumnsECSqlBinder.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,6 +42,8 @@ private:
 
     //only needed at prepare time to set up the binder
     virtual void _SetSqliteIndex (int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
+    virtual void _OnClearBindings () override;
+    virtual ECSqlStatus _OnBeforeStep () override;
 
     //these are needed by the actual binding API
     virtual IECSqlBinder& _GetMember (WCharCP structMemberPropertyName) override;

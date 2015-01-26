@@ -288,13 +288,22 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     ECSqlUpdateBuilder builder;
     builder.Update (GetECClass (), false);
 
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
+
     int parameterIndex = 1;
     ECEnablerP enabler = GetECClass().GetDefaultStandaloneEnabler ();
     for (uint32_t propertyIndex : propertiesToBind)
         {
         ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
+
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
         if (ecProperty->GetIsStruct())
             continue;
+
 
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
@@ -356,9 +365,16 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     ECSqlUpdateBuilder builder;
     builder.Update (GetECClass (), false);
 
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
+
     int parameterIndex = 1;
     for (ECPropertyCP ecProperty : propertiesToBind)
         {
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 

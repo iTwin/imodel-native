@@ -1685,9 +1685,189 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
         }
     }
 
-    //---------------------------------------------------------------------------------------
-    // @bsiclass                                    Muhammad.zaighum                 08/14
-    //+---------------+---------------+---------------+---------------+---------------+------
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8P assertMessage)
+    {
+    ASSERT_TRUE (actual.IsSameStructureAndGeometry (const_cast<IGeometryR> (expected))) << assertMessage;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, ECSqlStatement_IGeometry)
+    {
+    // Create and populate a sample project
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
+
+    std::vector<IGeometryPtr> expectedGeoms {IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0))),
+                            IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (1.0, 1.0, 1.0, 2.0, 2.0, 2.0))),
+                            IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (2.0, 2.0, 2.0, 3.0, 3.0, 3.0)))};
+
+    IGeometryPtr expectedGeomSingle = expectedGeoms[0];
+
+    // insert geometries in various variations
+        {
+        auto ecsql = "INSERT INTO ecsql.PASpatial (Geometry, B, Geometry_Array) VALUES(?, True, ?)";
+
+        ECSqlStatement statement;
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindGeometry (1, *expectedGeomSingle));
+
+        IECSqlArrayBinder& arrayBinder = statement.BindArray (2, 3);
+        for (auto& geom : expectedGeoms)
+            {
+            auto& arrayElementBinder = arrayBinder.AddArrayElement ();
+            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+            ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
+            }
+
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ());
+        }
+
+        {
+        auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp.Geometry, PASpatialProp.Geometry_Array) VALUES(?,?)";
+
+        ECSqlStatement statement;
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+        
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindGeometry (1, *expectedGeomSingle));
+
+        IECSqlArrayBinder& arrayBinder = statement.BindArray (2, 3);
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "ECSqlStatement::BindArray is expected to succeed";
+        for (auto& geom : expectedGeoms)
+            {
+            auto& arrayElementBinder = arrayBinder.AddArrayElement ();
+            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+            ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
+            }
+
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ());
+        }
+
+        {
+        auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp) VALUES(?)";
+
+        ECSqlStatement statement;
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
+
+        IECSqlStructBinder& structBinder = statement.BindStruct (1);
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "ECSqlStatement::BindStruct is expected to succeed";
+
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) structBinder.GetMember (L"Geometry").BindGeometry (*expectedGeomSingle));
+
+        IECSqlArrayBinder& arrayBinder = structBinder.GetMember (L"Geometry_Array").BindArray (3);
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlBinder::BindArray is expected to succeed";
+        for (auto& geom : expectedGeoms)
+            {
+            auto& arrayElementBinder = arrayBinder.AddArrayElement ();
+            ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+            ASSERT_EQ ((int) ECSqlStatus::Success, (int) arrayElementBinder.BindGeometry (*geom));
+            }
+
+        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) statement.Step ());
+        }
+
+    ecdb.SaveChanges ();
+    ecdb.ClearCache ();
+
+    //now verify the inserts
+
+    ECSqlStatement statement;
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT B, Geometry_Array, Geometry FROM ecsql.PASpatial")) << "Preparation failed: " << statement.GetLastStatusMessage ();
+    int rowCount = 0;
+    while (statement.Step () == ECSqlStepStatus::HasRow)
+        {
+        rowCount++;
+
+        ASSERT_TRUE (statement.GetValueBoolean (0)) << "First column value is expected to be true";
+
+        IECSqlArrayValue const& arrayVal = statement.GetValueArray (1);
+        int i = 0;
+        for (IECSqlValue const* arrayElem : arrayVal)
+            {
+            IGeometryPtr actualGeom = arrayElem->GetGeometry ();
+            ASSERT_TRUE (actualGeom != nullptr);
+
+            AssertGeometry (*expectedGeoms[i], *actualGeom, "PASpatial.Geometry_Array");
+            i++;
+            }
+        ASSERT_EQ ((int) expectedGeoms.size (), i);
+
+        IGeometryPtr actualGeom = statement.GetValueGeometry (2);
+        ASSERT_TRUE (actualGeom != nullptr);
+        AssertGeometry (*expectedGeomSingle, *actualGeom, "PASpatial.Geometry");
+        }
+    ASSERT_EQ (1, rowCount);
+
+
+    statement.Finalize ();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed: " << statement.GetLastStatusMessage ();
+    rowCount = 0;
+    while (statement.Step () == ECSqlStepStatus::HasRow)
+        {
+        rowCount++;
+
+        IECSqlArrayValue const& arrayVal = statement.GetValueArray (0);
+        int i = 0;
+        for (IECSqlValue const* arrayElem : arrayVal)
+            {
+            IGeometryPtr actualGeom = arrayElem->GetGeometry ();
+            ASSERT_TRUE (actualGeom != nullptr);
+
+            AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.PASpatialProp.Geometry_Array");
+            i++;
+            }
+        ASSERT_EQ ((int) expectedGeoms.size (), i);
+
+        IGeometryPtr actualGeom = statement.GetValueGeometry (1);
+        ASSERT_TRUE (actualGeom != nullptr);
+        AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp.Geometry");
+        }
+    ASSERT_EQ (2, rowCount);
+
+
+    statement.Finalize ();
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed: " << statement.GetLastStatusMessage ();
+    rowCount = 0;
+    while (statement.Step () == ECSqlStepStatus::HasRow)
+        {
+        rowCount++;
+
+        IECSqlStructValue const& structVal = statement.GetValueStruct (0);
+        for (int i = 0; i < structVal.GetMemberCount (); i++)
+            {
+            IECSqlValue const& structMemberVal = structVal.GetValue (0);
+            WStringCR structMemberName = structMemberVal.GetColumnInfo ().GetProperty ()->GetName ();
+            if (structMemberName.Equals (L"Geometry"))
+                {
+                IGeometryPtr actualGeom = structMemberVal.GetGeometry ();
+                AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp > Geometry");
+                }
+            else if (structMemberName.Equals (L"Geometry_Array"))
+                {
+                IECSqlArrayValue const& arrayVal = structMemberVal.GetArray ();
+                int i = 0;
+                for (IECSqlValue const* arrayElem : arrayVal)
+                    {
+                    IGeometryPtr actualGeom = arrayElem->GetGeometry ();
+                    ASSERT_TRUE (actualGeom != nullptr);
+
+                    AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.PASpatialProp > Geometry_Array");
+                    i++;
+                    }
+                ASSERT_EQ ((int) expectedGeoms.size (), i);
+                }
+            }
+        }
+    ASSERT_EQ (2, rowCount);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                    Muhammad.zaighum                 08/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsert)
     {
     const auto perClassRowCount = 0;

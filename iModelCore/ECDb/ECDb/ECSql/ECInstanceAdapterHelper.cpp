@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -395,14 +395,15 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue (IECSqlBinder& binder,
 
             case ECN::PRIMITIVETYPE_IGeometry:
                 {
-                //WIP: TFS#141566 drop geometries (as we did before) until ECD has changed its geometry blob format to flatbuffers.
-                /*size_t blobSize;
-                auto blob = value.GetIGeometry (blobSize);
+                //call ECValue::GetBinary to get the Geometry blob as stored in the ECInstance. No need to 
+                //deserialize it to IGeometry and then back to a blob when inserting in database
+                size_t blobSize;
+                auto blob = value.GetBinary (blobSize);
 
                 //if blob owner is IECInstance which will be alive until ECInstance adapter is done executing,
                 //we don't need to copy
                 const auto makeCopy = DetermineMakeCopy (value);
-                stat = binder.BindGeometryBlob (static_cast<const void* const> (blob), (int) blobSize, makeCopy);*/
+                stat = binder.BindGeometryBlob (static_cast<const void* const> (blob), (int) blobSize, makeCopy);
                 break;
                 }
 
@@ -618,6 +619,32 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (ECN::ECPropertyCR 
         }
 
     return false;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   01/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass)
+    {
+    currentTimeStampProp = nullptr;
+    auto ca = ecClass.GetCustomAttribute (L"ClassHasCurrentTimeStampProperty");
+    if (ca == nullptr)
+        return false;
+
+    ECValue v;
+    ca->GetValue (v, L"PropertyName");
+
+    if (v.IsNull ())
+        return false;
+
+    if (v.IsUtf8 ())
+        currentTimeStampProp = ecClass.GetPropertyP (v.GetUtf8CP (), true);
+    else
+        currentTimeStampProp = ecClass.GetPropertyP (v.GetString (), true);
+
+    return currentTimeStampProp != nullptr;
     }
 
 //---------------------------------------------------------------------------------------

@@ -322,7 +322,8 @@ BentleyStatus RandomPropertyValueGenerator::_NextDouble(ECN::ECValueR value)
 
 BentleyStatus RandomPropertyValueGenerator::_NextIGeometry(ECN::ECValueR value)
     {
-    return BentleyStatus::ERROR;
+    IGeometryPtr line = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    return value.SetIGeometry (*line);
     }
 
 BentleyStatus RandomPropertyValueGenerator::_NextInteger(ECN::ECValueR value)

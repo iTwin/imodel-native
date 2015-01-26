@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ECDB/Published/ECSqlSelectStatementCrudTestDataset.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlSelectStatementCrudTestDataset.h"
@@ -877,46 +877,46 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (int rowCountPerClass
     ecsql = "SELECT I FROM ecsql.PSA WHERE ECInstanceId >= 0 OR I > 123";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (I-31, I-32.0)";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (I-21, I-22.0)";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId = '98'";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId = '108'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 1);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId <= '10000'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, rowCountPerClass);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN ('91', '92')";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN ('101', '102')";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 2);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId BETWEEN '91' AND '94'";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId BETWEEN '101' AND '104'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 4);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (91, (select ECInstanceId from ecsql.P where ECInstanceId = 92))";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (101, (select ECInstanceId from ecsql.P where ECInstanceId = 102))";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (91LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (101LL)));
         }
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue ("91")));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue ("101")));
         }
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (92LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (102LL)));
         }
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("91")));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("101")));
         }
 
         {
