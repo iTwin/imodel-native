@@ -139,7 +139,6 @@ TEST_F (WSErrorTests, Ctor_JsonErrorFormatWithFilledFields_SetsErrorReceivedStat
     EXPECT_TRUE (error.GetDisplayDescription ().find ("DESCRIPTION") != Utf8String::npos);
     }
 
-#ifdef MOBILEUTILS_PORT
 TEST_F (WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMessage)
     {
     WSError error (StubHttpResponseWithUrl (HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
@@ -149,8 +148,6 @@ TEST_F (WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMes
     EXPECT_EQ (HttpError::GetHttpDisplayMessage (HttpStatus::Unauthorized), error.GetDisplayMessage ());
     EXPECT_EQ ("", error.GetDisplayDescription ());
     }
-#endif // MOBILEUTILS_PORT
-
 
 TEST_F (WSErrorTests, Ctor_HttpStatus500_SetsIdServerError)
     {

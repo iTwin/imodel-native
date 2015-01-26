@@ -7,9 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "WebServicesInternal.h"
 #include <map>
-#ifdef MOBILEUTILS_PORT
-#include <MobileDgn/Utils/Web/Connect/Connect.h>
-#endif
+#include <WebServices/Connect/Connect.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
 
@@ -101,7 +99,6 @@ WSError::WSError (HttpResponseCR httpResponse) : WSError ()
         return;
         }
 
-#ifdef MOBILEUTILS_PORT
     if (Connect::IsImsLoginRedirect (httpResponse))
         {
         // Bentley CONNECT login redirect
@@ -111,7 +108,6 @@ WSError::WSError (HttpResponseCR httpResponse) : WSError ()
         m_id = Id::LoginFailed;
         return;
         }
-#endif
 
     if (SUCCESS != ParseBody (httpResponse))
         {
