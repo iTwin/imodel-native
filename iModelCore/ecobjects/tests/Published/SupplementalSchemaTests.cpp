@@ -1162,7 +1162,7 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     }
 #endif
 
-TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
+TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
