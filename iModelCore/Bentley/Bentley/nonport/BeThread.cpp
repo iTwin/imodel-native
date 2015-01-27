@@ -148,8 +148,8 @@ void* BeThreadLocalStorage::GetValueAsPointer ()
 // classes inside this file. The public types must be at least as large as the std types, and then
 // we simply forward the methods to them below.
 //=======================================================================================
-static_assert (sizeof BeMutex >= sizeof std::recursive_mutex, "BeMutex is too small");
-static_assert (sizeof BeMutexHolder == sizeof std::unique_lock<std::recursive_mutex>, "BeMutexHolder wrong size");
+static_assert (sizeof (BeMutex) >= sizeof (std::recursive_mutex), "BeMutex is too small");
+static_assert (sizeof (BeMutexHolder) == sizeof (std::unique_lock<std::recursive_mutex>), "BeMutexHolder wrong size");
 static std::recursive_mutex& to_mutex(BeMutex* bmutex){return *(std::recursive_mutex*)bmutex;}
 static std::unique_lock<std::recursive_mutex>& to_uniquelock(BeMutexHolder* bholder){return *(std::unique_lock<std::recursive_mutex>*)bholder;}
 static std::condition_variable_any& to_cv(BeConditionVariable* bcv){return *(std::condition_variable_any*)bcv;}
@@ -171,7 +171,7 @@ void BeMutexHolder::lock()      {to_uniquelock(this).lock();}
 bool BeMutexHolder::owns_lock() {return to_uniquelock(this).owns_lock();}
 BeConditionVariable::BeConditionVariable()
     {
-    static_assert (sizeof m_osCV > sizeof std::condition_variable_any, "BeConditionVariable is too small");
+    static_assert (sizeof (m_osCV) > sizeof (std::condition_variable_any), "BeConditionVariable is too small");
     new (this) std::condition_variable_any();
     }
 BeConditionVariable::~BeConditionVariable() {to_cv(this).~condition_variable_any();}
@@ -287,7 +287,7 @@ void BeThreadUtilities::BeSleep (uint32_t millis)
     static HANDLE s_sleepEvent = nullptr;
     if (s_sleepEvent == nullptr)
         {
-        BeSystemCriticalSectionHolder singletonlock;
+        BeSystemMutexHolder singletonlock;
         if (s_sleepEvent == nullptr)
             {
             s_sleepEvent = CreateEventExW (nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
