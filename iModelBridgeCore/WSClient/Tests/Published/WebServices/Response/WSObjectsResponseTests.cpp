@@ -8,8 +8,8 @@
 
 #include "WSObjectsResponseTests.h"
 
-#include <WebServices/Response/WSObjectsResponse.h>
-#include <WebServices/Response/WSObjectsReaderV1.h>
+#include <WebServices/Client/Response/WSObjectsResponse.h>
+#include <WebServices/Client/Response/WSObjectsReaderV1.h>
 #include "../WebServicesTestsHelper.h"
 
 TEST_F (WSObjectsResponseTests, Ctor_NoParams_IsModifiedTrueToDetectInvalidInstances)

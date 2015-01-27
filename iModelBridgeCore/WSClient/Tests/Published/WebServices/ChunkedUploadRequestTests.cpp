@@ -8,7 +8,7 @@
 
 #include "ChunkedUploadRequestTests.h"
 
-#include <WebServices/ChunkedUploadRequest.h>
+#include <WebServices/Client/ChunkedUploadRequest.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS

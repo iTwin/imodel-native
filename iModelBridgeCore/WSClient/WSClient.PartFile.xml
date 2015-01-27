@@ -2,48 +2,48 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="PublicAPI" BentleyBuildMakeFile="WSClient.prewire.mke">
+    <Part Name="WebServicesClient">
+        <SubPart PartName="WebServicesClient-PublicAPI" />
+        <SubPart PartName="WebServicesClient-Xliffs" />
+        <SubPart PartName="WebServicesClient-Library" />
+        <SubPart PartName="WebServicesClient-Bindings" />
+        <SubPart PartName="WebServicesClient-Bindings-Android" />
+    </Part>
+
+    <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="Client/prewire.mke">
         <Bindings>
             <PublicAPI Domain="WebServices"/>
         </Bindings>
     </Part>
 
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
-        <SubPart PartName="PublicAPI"/>
+    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient"/>
         </Bindings>
     </Part>
 
-    <Part Name="WebServices">
-        <SubPart PartName="PublicAPI" />
-        <SubPart PartName="WSClientXliffs" />
-        <SubPart PartName="WebServices-Library" />
-        <SubPart PartName="WebServices-Bindings" />
-        <SubPart PartName="WebServices-Bindings-Android" />
-    </Part>
-
-    <Part Name="WebServices-Library" BentleyBuildMakeFile="WebServices/WebServices.mke">
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="Client/Client.mke">
         <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
     </Part>
 
-    <Part Name="WebServices-Bindings" ExcludePlatforms="Android*">
+    <Part Name="WebServicesClient-Bindings" ExcludePlatforms="Android*">
         <Bindings>
-            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServices$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServices$(shlibext)</Assemblies>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="WebServices-Bindings-Android" OnlyPlatforms="Android*">
+    <Part Name="WebServicesClient-Bindings-Android" OnlyPlatforms="Android*">
         <Bindings>
-            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServices.so</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServices.so</Assemblies>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient.so</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="WSClientXliffs" BentleyBuildMakeFile="WSClientXliffs.mke">
+    <Part Name="WebServicesClient-Xliffs" BentleyBuildMakeFile="Client/xliffs.mke">
         <Bindings>
             <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
                 Delivery/xliffs/WSError_en.xliff
@@ -53,9 +53,9 @@
 
     <Part Name="WSClientUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
         <!-- Get the tested API -->
-        <SubPart    PartName="WebServices" />
+        <SubPart    PartName="WebServicesClient" />
         <!-- Needed for published unit tests -->
-        <SubPart    PartName="PublishedAPI" />
+        <SubPart    PartName="WebServicesClient-PublishedAPI" />
     </Part>
 
 </BuildContext>

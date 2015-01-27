@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSQueryTests.h"
-#include <WebServices/WSQuery.h>
+#include <WebServices/Client/WSQuery.h>
 #include "WebServicesTestsHelper.h"
 
 using namespace ::testing;

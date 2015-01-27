@@ -8,7 +8,7 @@
 
 #include "SecureStoreTests.h"
 
-#include <WebServices/Connect/SecureStore.h>
+#include <WebServices/Client/Connect/SecureStore.h>
 #include "MockLocalState.h"
 #include "StubLocalState.h"
 
@@ -109,10 +109,10 @@ TEST_F (SecureStoreTests, LoadValue_IdentifierPassed_CallsReadValueWithGenerated
 
 TEST_F (SecureStoreTests, LoadValue_ValueSavedWithSameKey_ReturnsSameValue)
     {
-    MockLocalState localState;
+    StubLocalState localState;
     SecureStore store (&localState);
 
     store.SaveValue ("A", "B", "TestValue");
-    EXPECT_EQ ("TestValue", store.LoadValue ("A", "B"));
+    EXPECT_STREQ ("TestValue", store.LoadValue ("A", "B").c_str ());
     }
 #endif

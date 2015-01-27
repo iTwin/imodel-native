@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <WebServices/WSClient.h>
+#include <WebServices/Client/WSClient.h>
 
 using namespace ::testing;
 

@@ -8,7 +8,7 @@
 #pragma once
 
 #include <MobileDgn/Utils/Http/HttpClient.h>
-#include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Client/Connect/SamlToken.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS

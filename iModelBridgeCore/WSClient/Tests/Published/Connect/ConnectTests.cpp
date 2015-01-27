@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTests.h"
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Client/Connect/Connect.h>
 #include <Bentley/Base64Utilities.h>
 #include "../WebServices/WebServicesTestsHelper.h"
 

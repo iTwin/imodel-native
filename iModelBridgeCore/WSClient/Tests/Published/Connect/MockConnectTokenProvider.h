@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Client/Connect/IConnectTokenProvider.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

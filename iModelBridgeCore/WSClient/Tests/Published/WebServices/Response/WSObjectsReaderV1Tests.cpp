@@ -8,7 +8,7 @@
 
 #include "WSObjectsReaderV1Tests.h"
 
-#include <WebServices/Response/WSObjectsReaderV1.h>
+#include <WebServices/Client/Response/WSObjectsReaderV1.h>
 #include "../WebServicesTestsHelper.h"
 
 TEST_F (WSObjectsReaderV1Tests, InstancesIsValid_JsonAsNullValue_ReturnsFalse)
