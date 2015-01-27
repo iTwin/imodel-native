@@ -712,8 +712,21 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintClassesFromDb(ECRel
         r = ReadECClass(relationEndClass, info.m_relationECClassId);
         if (r != BE_SQLITE_ROW)
             return r;
-
-        ecRelationship.AddClass (*relationEndClass);
+        ECRelationshipConstraintClassP ecRelationShipconstraintClass;
+        ecRelationship.AddConstraintClass(ecRelationShipconstraintClass,*relationEndClass);
+        if (ecRelationShipconstraintClass != nullptr)
+            {
+            CachedStatementPtr statement;
+            Utf8CP sql = "SELECT  P.NAME FROM ec_RelationshipConstraintClassProperty I INNER JOIN ec_Property P on p.[ECPropertyId] = i.RelationECPropertyId WHERE I.ECClassId = ? AND I.ECRelationshipEnd = ? AND I.RelationECClassId = ? ";
+            m_db.GetCachedStatement(statement, sql);
+            statement->BindInt64(1, ecClassId);
+            statement->BindInt(2, relationshipEnd);
+            statement->BindInt64(3, relationEndClass->GetId());
+            while ((r = statement->Step() )== BE_SQLITE_ROW)
+                {
+                ecRelationShipconstraintClass->AddKey(WString(statement->GetValueText(0),BentleyCharEncoding::Utf8).c_str());
+                }
+            }
         }
     return r;
     }

@@ -439,11 +439,11 @@ ECDbSqlTrigger::ECDbSqlTrigger(ECDbSqlTable& table) :m_table(table){}
 //---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType)
+BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType)
     {
     if (m_trigers.find(triggerName) == m_trigers.end())
         {
-        m_trigers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, table, condition, body, ecsqlType));
+        m_trigers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, table, condition, body, ecsqlType, triggerSubType));
         return SUCCESS;
         }
     return ERROR;
@@ -2087,11 +2087,24 @@ Utf8String DDLGenerator::GetCreateTriggerDDL(ECDbSqlTrigger const& trigger)
         {
         case TriggerType::Create:
             sql.append("CREATE ");
+            break;
+        default:
+            BeAssert(false && "Only Create Trigger is supported Yet");
         }
     sql.append("TRIGGER ");
     sql.append(trigger.GetName());
     sql.append(" ");
-    sql.append("AFTER UPDATE ON ");
+    switch (trigger.GetSubType())
+        {
+        case TriggerSubType::After:
+            sql.append("AFTER ");
+            break;
+        case TriggerSubType::Before:
+            sql.append("Before ");
+        default:
+            break;
+        }
+    sql.append("UPDATE ON ");
     sql.append(trigger.GetTable().GetName());
     sql.append(" ");
     sql.append("WHEN ");

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECDbRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -571,6 +571,7 @@ TEST(ECDbRelationships, testRelationshipKeys)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("relationshipKeystest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
+    ecdbr.ClearCache();
     ECSchemaCP ecSchema=ecdbr.GetSchemaManager().GetECSchema("UserWorkBench", true);
     ASSERT_TRUE(ecSchema!=NULL);
 
@@ -579,17 +580,17 @@ TEST(ECDbRelationships, testRelationshipKeys)
     {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(3, keys.size());
-        ASSERT_TRUE(((WString)keys[0]).Equals(L"province_id"));
-        ASSERT_TRUE(((WString)keys[1]).Equals(L"name"));
-        ASSERT_TRUE(((WString)keys[2]).Equals(L"area_id"));
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"province_id") != keys.end());
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"name") != keys.end());
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
     }
     for (auto constraintClass : areaTown->GetTarget().GetConstraintClasses())
     {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(3, keys.size());
-        ASSERT_TRUE(((WString)keys[0]).Equals(L"town_id"));
-        ASSERT_TRUE(((WString)keys[1]).Equals(L"name"));
-        ASSERT_TRUE(((WString)keys[2]).Equals(L"area_id"));
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"town_id") != keys.end());
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"name") != keys.end());
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
     }
     ECRelationshipClassCP countryContinent = ecSchema->GetClassCP(L"country_continent")->GetRelationshipClassCP();
     for (auto constraintClass : countryContinent->GetSource().GetConstraintClasses())

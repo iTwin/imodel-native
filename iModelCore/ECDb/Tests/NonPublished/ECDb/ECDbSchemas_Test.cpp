@@ -2913,7 +2913,7 @@ TEST(ECDbSchemas, IntegrityCheck)
 
     ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";
     }
-TEST(ECDbSchemas, checkClassHasCurrentTimeStamp)
+TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     {
     const WCharCP schema =
         L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"

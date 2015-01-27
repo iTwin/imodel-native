@@ -28,6 +28,11 @@ enum class TriggerType
     Update,
     Delete
     };
+enum class TriggerSubType
+    {
+    Before,
+    After
+    };
 enum class PersistenceType
     {
     Persisted, //! Persisted in DB
@@ -705,7 +710,7 @@ struct ECDbSqlTable :  Identity
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, uint32_t userFlag = 0, PersistenceType persistenceType = PersistenceType::Persisted);
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, uint32_t userFlag = 0, PersistenceType persistenceType = PersistenceType::Persisted);
 
-        BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType);
+        BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
         std::vector<const ECDbSqlTrigger*> GetTriggers()const;
         ECDbSqlColumn const* FindColumnCP (Utf8CP name) const;
         ECDbSqlColumn* FindColumnP (Utf8CP name) const;
@@ -746,14 +751,15 @@ struct ECDbSqlTrigger : NonCopyableClass
     {
     public:
         
-        friend BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType);
+        friend BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
     private:
         Utf8String m_triggerName;
         ECDbSqlTable& m_table;
         Utf8String m_condition;
         Utf8String m_body;
         TriggerType m_triggerType;
-        ECDbSqlTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType) : m_triggerName(triggerName), m_table(table), m_condition(condition), m_body(body), m_triggerType(ecsqlType)
+        TriggerSubType m_triggerSubType;
+        ECDbSqlTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType, TriggerSubType triggerSubType) : m_triggerName(triggerName), m_table(table), m_condition(condition), m_body(body), m_triggerType(ecsqlType), m_triggerSubType(triggerSubType)
             {}
         ECDbSqlTrigger(ECDbSqlTable& table) ;
     public:
@@ -762,6 +768,7 @@ struct ECDbSqlTrigger : NonCopyableClass
         ECDbSqlTable& GetTable()const { return m_table; }
         Utf8String GetBody()const { return m_body; }
         TriggerType GetType()const{ return m_triggerType; }
+        TriggerSubType GetSubType()const{ return m_triggerSubType; }
 
     };
 //======================================================================================
