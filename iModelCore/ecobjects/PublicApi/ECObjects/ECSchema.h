@@ -1461,7 +1461,12 @@ public:
     //! will replace the current class applied to the constraint with the new class.
     //! @param[in] classConstraint  The class to add
     ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECClassCR classConstraint);
-
+    //! Adds the specified class to the constraint.
+    //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
+    //! will replace the current class applied to the constraint with the new class.
+    //! @param[in] ecClass  The class to add
+    //! @param[out] classConstraint  list of contraint classes
+    ECOBJECTS_EXPORT ECObjectsStatus            AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
 
     //! Removes the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove

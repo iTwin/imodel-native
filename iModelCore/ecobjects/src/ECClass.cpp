@@ -1757,7 +1757,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         ECRelationshipConstraintClassP ecRelationshipconstaintClass;
-        m_constraintClasses.Add(ecRelationshipconstaintClass,*constraintClass);
+        m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintClass);
         if (ecRelationshipconstaintClass != nullptr)
             {
             for (BeXmlNodeP childNodekey = childNode->GetFirstChild(); NULL != childNodekey; childNodekey = childNode->GetNextSibling())
@@ -1824,9 +1824,15 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     {
 
     ECRelationshipConstraintClassP ecRelationShipconstraintClass;
-    m_constraintClasses.Add(ecRelationShipconstraintClass,classConstraint );
-
     return  m_constraintClasses.Add(ecRelationShipconstraintClass, classConstraint);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                       MUHAMMAD.ZAIGHUM                             01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass)
+    {
+    return  m_constraintClasses.Add(classConstraint, ecClass);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
