@@ -1701,10 +1701,15 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IGeometry)
     // Create and populate a sample project
     auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
 
-    std::vector<IGeometryPtr> expectedGeoms {IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0))),
-                            IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (1.0, 1.0, 1.0, 2.0, 2.0, 2.0))),
-                            IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (2.0, 2.0, 2.0, 3.0, 3.0, 3.0)))};
+    std::vector<IGeometryPtr> expectedGeoms;
+        
+    IGeometryPtr line1 = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    IGeometryPtr line2 = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (1.0, 1.0, 1.0, 2.0, 2.0, 2.0)));
+    IGeometryPtr line3 = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (2.0, 2.0, 2.0, 3.0, 3.0, 3.0)));
 
+    expectedGeoms.push_back(line1);
+    expectedGeoms.push_back(line2);
+    expectedGeoms.push_back(line3);
     IGeometryPtr expectedGeomSingle = expectedGeoms[0];
 
     // insert geometries in various variations
