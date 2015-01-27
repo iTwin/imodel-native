@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include <Bentley/Base64Utilities.h>
-#include <WebServices/WSRepositoryClient.h>
+#include <WebServices/Client/WSRepositoryClient.h>
 
 #ifdef MOBILEUTILS_PORT
 #include "../../Caching/StubInstances.h"

@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <WebServices/WSClient.h>
+#include <WebServices/Client/WSClient.h>
 #include "WSClientTests.h"
 #include "MockServerInfoListener.h"
 #include "WebServicesTestsHelper.h"

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <WebServices/WSError.h>
+#include <WebServices/Client/WSError.h>
 #include "WSErrorTests.h"
 #include "WebServicesTestsHelper.h"
 

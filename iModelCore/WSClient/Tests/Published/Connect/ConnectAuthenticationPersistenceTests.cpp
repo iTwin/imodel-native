@@ -8,7 +8,7 @@
 
 #include "ConnectAuthenticationPersistenceTests.h"
 
-#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+#include <WebServices/Client/Connect/ConnectAuthenticationPersistence.h>
 #include "StubLocalState.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

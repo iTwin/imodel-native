@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTokenProviderTests.h"
-#include <WebServices/Connect/ConnectTokenProvider.h>
-#include <WebServices/Connect/Connect.h>
+#include <WebServices/Client/Connect/ConnectTokenProvider.h>
+#include <WebServices/Client/Connect/Connect.h>
 #include <Bentley/Base64Utilities.h>
 #include "MockConnectAuthenticationPersistence.h"
 

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <WebServices/Connect/ConnectAuthenticationPersistence.h>
+#include <WebServices/Client/Connect/ConnectAuthenticationPersistence.h>
 
 using namespace ::testing;
 

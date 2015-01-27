@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/BeTest.h>
-#include <WebServices/WSError.h>
-#include <WebServices/WSRepositoryClient.h>
-#include <WebServices/ObjectId.h>
+#include <WebServices/Client/WSError.h>
+#include <WebServices/Client/WSRepositoryClient.h>
+#include <WebServices/Client/ObjectId.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS

@@ -8,7 +8,7 @@
 
 #include "ObjectIdTests.h"
 
-#include <WebServices/ObjectId.h>
+#include <WebServices/Client/ObjectId.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 

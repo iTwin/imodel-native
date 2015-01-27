@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <WebServices/WSRepositoryClient.h>
+#include <WebServices/Client/WSRepositoryClient.h>
 #include "MockWSClient.h"
 
 using namespace ::testing;

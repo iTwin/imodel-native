@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "SamlTokenTests.h"
-#include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Client/Connect/SamlToken.h>
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

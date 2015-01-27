@@ -32,7 +32,7 @@ Json::Value Bentley::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
     return json;
     }
 
-ECSchemaPtr ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
+ECSchemaPtr Bentley::WSC::UnitTests::ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
     {
     if (context.IsNull ())
         {
