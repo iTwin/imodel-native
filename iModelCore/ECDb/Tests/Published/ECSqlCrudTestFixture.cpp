@@ -103,7 +103,7 @@ struct ECSqlTestExecutor
             if (rollbackAfterwards)
                 perTestItemSavepoint.Cancel ();
             
-            ecsqlArgs->GetConditionVariable ().Wake (true);
+            ecsqlArgs->GetConditionVariable ().notify_all();
             return 0;
             }
     public:
