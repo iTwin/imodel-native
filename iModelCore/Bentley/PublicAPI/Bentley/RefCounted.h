@@ -29,7 +29,7 @@ BEGIN_BENTLEY_NAMESPACE
 struct  IRefCounted
     {
 protected:
-    virtual ~IRefCounted() {}         // force virtual destructor for all subclasses
+    virtual ~IRefCounted() {}         // force virtual destructor for subclasses
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -37,6 +37,29 @@ public:
     virtual uint32_t AddRef () const = 0;
     virtual uint32_t Release () const = 0;
     };
+
+// You can use this macro to add an implementation of IRefCounted, i.e., the reference-counted pattern, directly into your class.
+// You must also put the DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT below into your constructor.
+// You should normally make your class non-copyable. If not, you must define a copy constructor and assignment operator, as shown in the RefCounted template below.
+#define DEFINE_BENTLEY_REF_COUNTED_MEMBERS private:\
+    mutable BeAtomic<uint32_t> m_refCount;        \
+protected:\
+    void* operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }                               \
+    void  operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }         \
+public:\
+    uint32_t AddRef() const {return ++m_refCount;}\
+    uint32_t Release() const                      \
+        {                                         \
+        if (1 < m_refCount--)                     \
+            return  m_refCount.load();            \
+        delete this;                              \
+        return  0;                                \
+        }
+
+// If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition,
+// you must also put the following macro into your constructor:
+#define DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT m_refCount.store(0);
+
 
 /*=================================================================================**//**
 * Template to simplify the task of writing a class that implements the reference-counting pattern.
@@ -56,27 +79,16 @@ struct MyClass : RefCounted<ISomeInterface> {...};
 +===============+===============+===============+===============+===============+======*/
 template <class Base> class RefCounted : public Base
     {
-private:
-    mutable BeAtomic<uint32_t> m_refCount;
+    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
+
 protected:
-    virtual ~RefCounted() {}         // force virtual destructor for all subclasses
-    void* operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
-    void  operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+    virtual ~RefCounted() {}    // force virtual destructor for subclasses
 
 public:
-    RefCounted() {m_refCount.store(0);}
-    RefCounted(RefCounted const& rhs) {m_refCount.store(0);}
-    RefCounted& operator=(RefCounted const& rhs) {if (this != &rhs) {Base::operator=(rhs);} return *this;} // NB: Preserve my ref count! Assigning rhs' data to me does not add a reference to me.
+    RefCounted() {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT}
+    RefCounted(RefCounted const& rhs) {DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT} // Initialize my ref count to zero. Adopting rhs' data does not add a *reference* to me.
+    RefCounted& operator=(RefCounted const& rhs) {if (this != &rhs) {Base::operator=(rhs);} return *this;} // NB: Preserve my ref count! Assigning rhs' data to me does not add a *reference* to me.
     uint32_t GetRefCount() const {return m_refCount.load();}
-    uint32_t AddRef() const {return ++m_refCount;}
-    uint32_t Release() const
-        {
-        if (1 < m_refCount--)
-            return  m_refCount.load();
-
-        delete this;
-        return  0;
-        }
     };
 
 /*=================================================================================**//**
@@ -87,8 +99,7 @@ public:
 class RefCountedBase : public RefCounted <IRefCounted>
     {
 public:
-    void* operator new(size_t size) {return bentleyAllocator_allocateRefCounted (size);}
-    void operator delete(void* rawMemory, size_t size) {bentleyAllocator_deleteRefCounted (rawMemory, size);}
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
     };
 
 /*=================================================================================**//**
