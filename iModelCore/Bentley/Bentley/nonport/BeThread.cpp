@@ -148,8 +148,8 @@ void* BeThreadLocalStorage::GetValueAsPointer ()
 // classes inside this file. The public types must be at least as large as the std types, and then
 // we simply forward the methods to them below.
 //=======================================================================================
-static_assert (sizeof (BeMutex) >= sizeof (std::recursive_mutex), "BeMutex is too small");
-static_assert (sizeof (BeMutexHolder) == sizeof (std::unique_lock<std::recursive_mutex>), "BeMutexHolder wrong size");
+static_assert (sizeof(BeMutex) == sizeof(std::recursive_mutex), "BeMutex wrong size");
+static_assert (sizeof(BeMutexHolder) == sizeof(std::unique_lock<std::recursive_mutex>), "BeMutexHolder wrong size");
 static std::recursive_mutex& to_mutex(BeMutex* bmutex){return *(std::recursive_mutex*)bmutex;}
 static std::unique_lock<std::recursive_mutex>& to_uniquelock(BeMutexHolder* bholder){return *(std::unique_lock<std::recursive_mutex>*)bholder;}
 static std::condition_variable_any& to_cv(BeConditionVariable* bcv){return *(std::condition_variable_any*)bcv;}
@@ -169,30 +169,20 @@ BeMutexHolder::~BeMutexHolder() {to_uniquelock(this).~unique_lock();}
 void BeMutexHolder::unlock()    {to_uniquelock(this).unlock();}
 void BeMutexHolder::lock()      {to_uniquelock(this).lock();}
 bool BeMutexHolder::owns_lock() {return to_uniquelock(this).owns_lock();}
-BeConditionVariable::BeConditionVariable()
-    {
-    static_assert (sizeof (m_osCV) > sizeof (std::condition_variable_any), "BeConditionVariable is too small");
-    new (this) std::condition_variable_any();
-    }
+BeConditionVariable::BeConditionVariable()  {new (this) std::condition_variable_any();}
 BeConditionVariable::~BeConditionVariable() {to_cv(this).~condition_variable_any();}
 void BeConditionVariable::InfiniteWait(BeMutexHolder& holder){to_cv(this).wait(to_uniquelock(&holder));}
-bool BeConditionVariable::RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis) 
-    {
-    return std::cv_status::timeout == to_cv(this).wait_for(to_uniquelock(&holder), std::chrono::milliseconds(timeoutMillis));
-    }
-void BeConditionVariable::Wake (bool wakeAll)
-    {
-    if (wakeAll)
-        to_cv(this).notify_all();
-    else
-        to_cv(this).notify_one();
-    }
+bool BeConditionVariable::RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis) {return std::cv_status::timeout == to_cv(this).wait_for(to_uniquelock(&holder), std::chrono::milliseconds(timeoutMillis));}
+void BeConditionVariable::notify_all() {to_cv(this).notify_all();}
+void BeConditionVariable::notify_one() {to_cv(this).notify_one();}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2012
 //--------------+------------------------------------------------------------------------
 bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, IConditionVariablePredicate* condition, uint32_t timeoutMillis)
     {
+    static_assert (sizeof(m_osCV) == sizeof(std::condition_variable_any), "BeConditionVariable wrong size");
+
     bool    conditionSatisfied = NULL == condition ? false : condition->_TestCondition (*this);
     bool    timedOut           = timeoutMillis == 0;
 
@@ -279,8 +269,6 @@ void BeThreadUtilities::BeSleep (uint32_t millis)
     ::Sleep (millis);
 
 #elif defined (BENTLEY_WINRT)
-
-//	new System.Threading.ManualResetEvent(false).WaitOne(ms);
 
     // Thanks to http://blogs.msdn.com/b/shawnhar/archive/2012/03/12/createthread-for-windows-8-metro.aspx for the work-around idea
 
@@ -372,7 +360,7 @@ void BeThreadUtilities::SetThreadStartHandler (T_ThreadStartHandler handler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startAddr, void* arg)
+void BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startAddr, void* arg)
     {
 #if defined (__unix__)
     pthread_attr_t  threadAttr;
@@ -384,16 +372,15 @@ uintptr_t BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startA
     if (0 == retval)
         pthread_detach(threadHandle);
     pthread_attr_destroy(&threadAttr);
-    return  retval;
 #elif defined (BENTLEY_WIN32)
-    return _beginthreadex(NULL, (unsigned) stackSize, startAddr, arg, 0, NULL);
+    _beginthreadex(NULL, (unsigned) stackSize, startAddr, arg, 0, NULL);
 #elif defined (BENTLEY_WINRT)
     if (NULL == s_threadStartHandler)
         {
         BeAssert (false);
-    return 0;
+        return ;
         }
-    return s_threadStartHandler (startAddr, arg);
+    s_threadStartHandler (startAddr, arg);
 #else
     #error unknown platform
 #endif

@@ -21,7 +21,7 @@ BEGIN_BENTLEY_NAMESPACE
 struct BeMutex
     {
 private:
-    double m_osMutex[2];
+    double m_osMutex[1];
 
 public:
     BENTLEYDLL_EXPORT BeMutex();
@@ -67,25 +67,6 @@ public:
     BENTLEYDLL_EXPORT bool owns_lock();
     };
 
-//__PUBLISH_SECTION_END__
-//=======================================================================================
-//! Hold a lock on the system BeMutex
-//  @bsiclass 
-//=======================================================================================
-struct BeSystemMutexHolder : BeMutexHolder
-    {
-    //! Enters the system critical section
-    BeSystemMutexHolder() : BeMutexHolder(GetSystemMutex()) {}
-
-    BENTLEYDLL_EXPORT static void StartupInitializeSystemMutex();
-
-    //! Get the Bentley system CS. This can be used to bootstrap other CriticalSections.
-    //! @remarks Program must call StartupInitializeSystemCriticalSection before calling this function.
-    BENTLEYDLL_EXPORT static BeMutex& GetSystemMutex();
-    };
-
-//__PUBLISH_SECTION_START__
-
 //=======================================================================================
 //! Provides implementation of predicate for a BeConditionVariable
 //  @bsiclass 
@@ -108,7 +89,7 @@ struct IConditionVariablePredicate
 struct  BeConditionVariable
     {
 private:
-    double  m_osCV[4];
+    double  m_osCV[2];
     mutable BeMutex m_mutex;
 
     void InfiniteWait(BeMutexHolder& holder);
@@ -147,9 +128,10 @@ public:
         return ProtectedWaitOnCondition(holder, predicate, timeoutMillis);
         }
 
-    //! Wakes threads waiting on the condition variable.
-    //! @param[in]  wakeAll If true Wake wakes all thread waiting on the condition variable. Otherwise, it just wakes one.
-    BENTLEYDLL_EXPORT void Wake(bool wakeAll);
+    //! Notify one thread waiting on this BeConditionVariable.
+    BENTLEYDLL_EXPORT void notify_one();
+    //! Notify all threads waiting on this BeConditionVariable.
+    BENTLEYDLL_EXPORT void notify_all();
     };
 
 #if defined (__APPLE__) || defined (ANDROID) || defined (__linux)
@@ -185,7 +167,7 @@ struct  BeThreadUtilities
     //!@param[in] stackSize the number of bytes for the newly created thread's stack
     //!@param[in] startAddr the function to call at thread start. Thread exits when this function returns.
     //!@param[in] arg Argument to startAddr
-    BENTLEYDLL_EXPORT static uintptr_t StartNewThread (int stackSize, T_ThreadStart startAddr, void* arg);
+    BENTLEYDLL_EXPORT static void StartNewThread (int stackSize, T_ThreadStart startAddr, void* arg);
 
     //! Suspend the current thread for a specified amount of time
     //! @param[in] millis   Duration of sleep in milliseconds
@@ -194,5 +176,25 @@ struct  BeThreadUtilities
     //! Get the identifier of the current thread
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();
     };
+
+//__PUBLISH_SECTION_END__
+//=======================================================================================
+//! Hold a lock on the system BeMutex
+//  @bsiclass 
+//=======================================================================================
+struct BeSystemMutexHolder : BeMutexHolder
+    {
+    //! Enters the system critical section
+    BeSystemMutexHolder() : BeMutexHolder(GetSystemMutex()) {}
+
+    BENTLEYDLL_EXPORT static void StartupInitializeSystemMutex();
+
+    //! Get the Bentley system CS. This can be used to bootstrap other CriticalSections.
+    //! @remarks Program must call StartupInitializeSystemCriticalSection before calling this function.
+    BENTLEYDLL_EXPORT static BeMutex& GetSystemMutex();
+    };
+
+//__PUBLISH_SECTION_START__
+
 
 END_BENTLEY_NAMESPACE
