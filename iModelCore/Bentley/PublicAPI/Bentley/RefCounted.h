@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/RefCounted.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,13 +16,8 @@
 #if !defined (DOCUMENTATION_GENERATOR)
 extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteRefCounted (void*object, size_t size);
 extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateRefCounted (size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteArrayRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateArrayRefCounted (size_t size);
-
 extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteIRefCounted (void*object, size_t size);
 extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateIRefCounted (size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteArrayIRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateArrayIRefCounted (size_t size);
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
@@ -67,8 +62,6 @@ protected:
     virtual ~RefCounted() {}         // force virtual destructor for all subclasses
     void* operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
     void  operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
-    void* operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
-    void  operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
 
 public:
     RefCounted() {m_refCount.store(0);}
