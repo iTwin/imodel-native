@@ -26,7 +26,7 @@ IHttpHandlerPtr customHttpHandler
 AuthenticationHandler (customHttpHandler),
 m_urlBaseToAuth (urlBaseToAuth),
 m_tokenProvider (customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider> ()),
-m_thread (std::make_shared<WorkerThread> ("ConnectAuthenticationHandler"))
+m_thread (WorkerThread::Create ("ConnectAuthenticationHandler"))
     {
     }
 

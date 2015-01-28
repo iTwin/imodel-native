@@ -12,7 +12,7 @@
 %include DefaultToolSet.mki
 
 #--------------------------------------------------------------------------------------
-#   Building the WebServices library
+#   Building the WebServicesClient library
 #--------------------------------------------------------------------------------------
 nameToDefine = __WSCLIENT_DLL_BUILD__
 %include cdefapnd.mki

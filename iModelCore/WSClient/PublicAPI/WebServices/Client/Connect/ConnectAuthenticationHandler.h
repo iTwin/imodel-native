@@ -21,7 +21,7 @@ struct ConnectAuthenticationHandler : public MobileDgn::Utils::AuthenticationHan
     private:
         Utf8String m_urlBaseToAuth;
         std::shared_ptr<IConnectTokenProvider> m_tokenProvider;
-        std::shared_ptr<MobileDgn::Utils::WorkerThread> m_thread;
+        MobileDgn::Utils::WorkerThreadPtr m_thread;
 
     private:
         bool ShouldStopSendingToken (AttemptCR previousAttempt) const;

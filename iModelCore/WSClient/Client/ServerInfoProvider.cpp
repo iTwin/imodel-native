@@ -15,7 +15,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 ServerInfoProvider::ServerInfoProvider (std::shared_ptr<const ClientConfiguration> configuration) :
 m_configuration (configuration),
-m_thread (std::make_shared<WorkerThread> ("ServerInfoProvider")),
+m_thread (WorkerThread::Create ("ServerInfoProvider")),
 m_serverInfo (HttpResponse ()),
 m_serverInfoUpdated (0)
     {
