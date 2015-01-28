@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -216,10 +216,12 @@ public:
     ECOBJECTS_EXPORT uint32_t               GetParentPropertyIndex (uint32_t childIndex) const;
 
     // Returns true if this ClassLayout is equivalent to the other ClassLayout (checks name and checksum)
-    ECOBJECTS_EXPORT bool                    Equals (ClassLayoutCR other) const;
+    ECOBJECTS_EXPORT bool                   Equals (ClassLayoutCR other, bool compareNames = true) const;
 
-    ECOBJECTS_EXPORT void            AddPropertyDirect (WCharCP accessString, uint32_t parentStructIndex, ECTypeDescriptor typeDescriptor, uint32_t offset, uint32_t nullflagsOffset, uint32_t nullflagsBitmask, uint32_t modifierFlags, uint32_t modifierData);
-    ECOBJECTS_EXPORT ECObjectsStatus FinishLayout ();
+    ECOBJECTS_EXPORT void                   AddPropertyDirect (WCharCP accessString, uint32_t parentStructIndex, ECTypeDescriptor typeDescriptor, uint32_t offset, uint32_t nullflagsOffset, uint32_t nullflagsBitmask, uint32_t modifierFlags, uint32_t modifierData);
+    ECOBJECTS_EXPORT ECObjectsStatus        FinishLayout ();
+    ECOBJECTS_EXPORT ClassLayoutPtr         Clone (WCharCP name = nullptr) const;
+    ECOBJECTS_EXPORT void                   SetPropertyLayoutModifierData (PropertyLayoutCR layout, uint32_t modifierData);
 //__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
@@ -579,8 +581,6 @@ private:
     virtual bool                      _AcquireData (bool forWrite) const = 0;
     virtual bool                      _ReleaseData() const = 0;
 protected:
-    //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
-    ECOBJECTS_EXPORT uint32_t               CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECDHeader const*       GetECDHeaderCP() const;
 
     //! Returns the number of elements in the specfieid array that are currently allocated in the instance data memory block.
@@ -607,12 +607,10 @@ protected:
     ECOBJECTS_EXPORT ECObjectsStatus  SetPrimitiveValueToMemory   (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex = false, uint32_t index = 0);    
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index) const;    
-    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, uint32_t index = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, uint32_t propertyIndex, bool useArrayIndex = false, uint32_t arrayIndex = 0) const;
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout);          
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, uint32_t index);              
     ECOBJECTS_EXPORT ECObjectsStatus  SetInternalValueToMemory (PropertyLayoutCR propertyLayout, ECValueCR v, bool useIndex = false, uint32_t index = 0);
-    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, uint32_t index = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex = false, uint32_t arrayIndex = 0);      
     ECOBJECTS_EXPORT ECObjectsStatus  InsertNullArrayElementsAt (uint32_t propIdx, uint32_t insertIndex, uint32_t insertCount);
     ECOBJECTS_EXPORT ECObjectsStatus  AddNullArrayElementsAt (uint32_t propIdx, uint32_t insertCount);
@@ -671,6 +669,7 @@ protected:
 
     virtual ECObjectsStatus     _EvaluateCalculatedProperty (ECValueR evaluatedValue, ECValueCR existingValue, PropertyLayoutCR propLayout) const = 0;
     virtual ECObjectsStatus     _UpdateCalculatedPropertyDependents (ECValueCR calculatedValue, PropertyLayoutCR propLayout) = 0;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const;
 
     // Helper for implementations of calculated property methods above
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;
@@ -679,6 +678,10 @@ protected:
     ECOBJECTS_EXPORT Byte const*    GetPropertyData() const;
 
 public:
+    ECOBJECTS_EXPORT ECObjectsStatus  GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex = false, uint32_t index = 0) const;
+    ECOBJECTS_EXPORT ECObjectsStatus  SetValueToMemory (WCharCP propertyAccessString, ECValueCR v,  bool useIndex = false, uint32_t index = 0);      
+    //! Returns the number of bytes which must be allocated to store the header + the fixed portion of the property data, using ECDFormat_Current
+    ECOBJECTS_EXPORT uint32_t               CalculateBytesUsed () const;
     ECOBJECTS_EXPORT ECObjectsStatus        GetStructArrayValueFromMemory (ECValueR v, PropertyLayoutCR propertyLayout, uint32_t index, int* structValueIdentifier = NULL) const;
 
     //! Returns the number of elements in the specfieid array that are currently reserved but not necessarily allocated.
@@ -735,9 +738,10 @@ public:
     // (Call GetBufferSize() to determine the required size of the allocation).
     ECOBJECTS_EXPORT void                   GetBufferData (Byte* dest) const;
 
-    // Evaluates all calculated property values in the buffer. Recurses into struct array members.
+    // Evaluates all calculated property values in the buffer. Recurses into struct array members. Does not re-evaluate default value specifications if value has been overridden
     ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties ();
-/*__PUBLISH_SECTION_START__*/
+    ECOBJECTS_EXPORT bool                   EvaluateAllCalculatedProperties (bool includeDefaultValueSpecifications);
+/*__PUBLISH_SECTION_START__*/  
 public:
     //! Returns true if the buffer is empty (all values are null and all arrays are empty)
     ECOBJECTS_EXPORT bool                   IsEmpty() const;
