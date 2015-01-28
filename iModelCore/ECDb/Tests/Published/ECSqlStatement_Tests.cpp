@@ -1690,7 +1690,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_LastStatus)
 //+---------------+---------------+---------------+---------------+---------------+------
 void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8P assertMessage)
     {
-    ASSERT_TRUE (actual.IsSameStructureAndGeometry (const_cast<IGeometryR> (expected))) << assertMessage;
+    ASSERT_TRUE (actual.IsSameStructureAndGeometry (expected)) << assertMessage;
     }
 
 //---------------------------------------------------------------------------------------
