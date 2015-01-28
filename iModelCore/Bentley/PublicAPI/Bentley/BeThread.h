@@ -21,7 +21,7 @@ BEGIN_BENTLEY_NAMESPACE
 struct BeMutex
     {
 private:
-    double m_osMutex[1];
+    void* m_osMutex[1]; // match sizeof (std::recursive_mutex), force alignment on pointer type boundary
 
 public:
     BENTLEYDLL_EXPORT BeMutex();
@@ -89,7 +89,7 @@ struct IConditionVariablePredicate
 struct  BeConditionVariable
     {
 private:
-    double  m_osCV[2];
+    void* m_osCV[2]; // match sizeof (std::condition_variable_any), force alignment on pointer type boundary
     mutable BeMutex m_mutex;
 
     void InfiniteWait(BeMutexHolder& holder);
