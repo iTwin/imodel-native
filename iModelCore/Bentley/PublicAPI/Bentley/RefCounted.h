@@ -65,7 +65,7 @@ public:\
 
 // If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition,
 // you must also put the following macro into your constructor:
-#define     \
+#define DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT\
     m_refCount.store(0);
 
 
