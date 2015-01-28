@@ -13,6 +13,27 @@
 BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
+// BEMUTEX_DATA_ARRAY_LENGTH = sizeof (std::recursive_mutex) / sizeof (void*)
+// BECONDITIONVARIABLE_DATA_ARRAY_LENGTH = sizeof (std::condition_variable_any) / sizeof (void*)
+// Array of void* is used to force pointer type alignment
+// Must avoid including std headers here for CLR reasons
+//=======================================================================================
+#if defined (_WIN32) || defined (ANDROID)
+    #define BEMUTEX_DATA_ARRAY_LENGTH 1
+    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 2
+#elif defined (__APPLE__)
+    #if defined (__LP64__)
+        #define BEMUTEX_DATA_ARRAY_LENGTH 8
+        #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 8
+    #else
+        #define BEMUTEX_DATA_ARRAY_LENGTH 11
+        #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 9
+    #endif
+#else
+    #error unknown platform: must define BEMUTEX_DATA_ARRAY_LENGTH and BECONDITIONVARIABLE_DATA_ARRAY_LENGTH
+#endif
+
+//=======================================================================================
 //! A synchronization primitive that can be used to protect shared data from being simultaneously accessed by multiple threads.
 //! BeMutex offers exclusive, recursive ownership semantics.
 //! @see std::recursive_mutex
@@ -20,9 +41,19 @@ BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
 struct BeMutex
     {
-private:
-    void* m_osMutex[1]; // match sizeof (std::recursive_mutex), force alignment on pointer type boundary
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
+    
+private:
+    void* m_osMutex[BEMUTEX_DATA_ARRAY_LENGTH];
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    
 public:
     BENTLEYDLL_EXPORT BeMutex();
     BENTLEYDLL_EXPORT ~BeMutex();
@@ -45,8 +76,18 @@ struct BeMutexHolder
     {
 private:
     BeMutex* m_mutex;
-    bool     m_owns;
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
+    
+    bool m_owns;
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    
 public:
     enum class Lock : bool {No=false, Yes=true};
 
@@ -89,7 +130,7 @@ struct IConditionVariablePredicate
 struct  BeConditionVariable
     {
 private:
-    void* m_osCV[2]; // match sizeof (std::condition_variable_any), force alignment on pointer type boundary
+    void* m_osCV[BECONDITIONVARIABLE_DATA_ARRAY_LENGTH];
     mutable BeMutex m_mutex;
 
     void InfiniteWait(BeMutexHolder& holder);

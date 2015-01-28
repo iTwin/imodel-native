@@ -149,6 +149,7 @@ void* BeThreadLocalStorage::GetValueAsPointer ()
 // we simply forward the methods to them below.
 //=======================================================================================
 static_assert (sizeof(BeMutex) == sizeof(std::recursive_mutex), "BeMutex wrong size");
+static_assert (sizeof(BeMutex) == BEMUTEX_DATA_ARRAY_LENGTH * sizeof(void*), "BEMUTEX_DATA_ARRAY_LENGTH wrong size");
 static_assert (sizeof(BeMutexHolder) == sizeof(std::unique_lock<std::recursive_mutex>), "BeMutexHolder wrong size");
 static std::recursive_mutex& to_mutex(BeMutex* bmutex){return *(std::recursive_mutex*)bmutex;}
 static std::unique_lock<std::recursive_mutex>& to_uniquelock(BeMutexHolder* bholder){return *(std::unique_lock<std::recursive_mutex>*)bholder;}
