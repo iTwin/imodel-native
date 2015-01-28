@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BentleyAllocator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,15 @@ extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_realloc (void*, size_t
 extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_free (void*, size_t);
 extern "C" BENTLEYALLOCATOR_EXPORT void* bentleyAllocator_getNullRefBuffer ();
 extern "C" BENTLEYALLOCATOR_EXPORT void  bentleyAllocator_enableLowFragmentationCRTHeap ();
+
+extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteRefCounted (void*object, size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateRefCounted (size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteArrayRefCounted (void*object, size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateArrayRefCounted (size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteIRefCounted (void*object, size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateIRefCounted (size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteArrayIRefCounted (void*object, size_t size);
+extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateArrayIRefCounted (size_t size);
 
 BEGIN_BENTLEY_NAMESPACE
 

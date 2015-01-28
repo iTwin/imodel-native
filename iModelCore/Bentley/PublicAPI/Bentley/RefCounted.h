@@ -13,13 +13,6 @@
 // For std::move on Android.
 #include <utility>
 
-#if !defined (DOCUMENTATION_GENERATOR)
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateRefCounted (size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void  bentleyAllocator_deleteIRefCounted (void*object, size_t size);
-extern "C" BENTLEYALLOCATOR_EXPORT  void* bentleyAllocator_allocateIRefCounted (size_t size);
-#endif
-
 BEGIN_BENTLEY_NAMESPACE
 
 /*=================================================================================**//**
@@ -41,11 +34,11 @@ public:
 // You can use this macro to add an implementation of IRefCounted, i.e., the reference-counted pattern, directly into your class.
 // You must also put the DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT below into your constructor.
 // You should normally make your class non-copyable. If not, you must define a copy constructor and assignment operator, as shown in the RefCounted template below.
-#define DEFINE_BENTLEY_REF_COUNTED_MEMBERS private:\
+#define DEFINE_BENTLEY_REF_COUNTED_MEMBERS \
+private:\
     mutable BeAtomic<uint32_t> m_refCount;        \
 protected:\
-    void* operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }                               \
-    void  operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }         \
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS           \
 public:\
     uint32_t AddRef() const {return ++m_refCount;}\
     uint32_t Release() const                      \
@@ -56,10 +49,8 @@ public:\
         return  0;                                \
         }
 
-// If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition,
-// you must also put the following macro into your constructor:
+// If you put DEFINE_BENTLEY_REF_COUNTED_MEMBERS in your class definition, also put the following macro into your constructor:
 #define DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT m_refCount.store(0);
-
 
 /*=================================================================================**//**
 * Template to simplify the task of writing a class that implements the reference-counting pattern.
