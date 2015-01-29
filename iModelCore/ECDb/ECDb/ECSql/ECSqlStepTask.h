@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStepTask.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -287,8 +287,8 @@ private:
         ECInstanceId deletedInstanceId,
         ECDbR ecDb);
 
-    BentleyStatus DeleteDependentInstances (int& numDeleted, const ECInstanceIdSet& deletedInstanceIds);
-    BentleyStatus DeleteInstances (int& numDeleted, const ECInstanceKeyMultiMap& instanceMap, ECDbR ecDb);
+    BentleyStatus DeleteDependentInstances (const ECInstanceIdSet& deletedInstanceIds);
+    BentleyStatus DeleteInstances (ECDbR ecDb, const ECInstanceKeyMultiMap& instanceMap);
 
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
 

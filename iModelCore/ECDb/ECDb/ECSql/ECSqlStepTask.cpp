@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStepTask.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -444,8 +444,7 @@ ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId cons
     {
     ECInstanceIdSet set;
     set.insert (instanceId);
-    int deletedCount; 
-    if (DeleteDependentInstances (deletedCount, set) != BentleyStatus::SUCCESS)
+    if (DeleteDependentInstances (set) != BentleyStatus::SUCCESS)
         return ECSqlStepStatus::Error;
    
     return ECSqlStepStatus::Done;
@@ -467,10 +466,8 @@ ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_pt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (int& numDeleted, const ECInstanceIdSet& deletedInstanceIds)
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (const ECInstanceIdSet& deletedInstanceIds)
     {
-    numDeleted = 0;
-
     for (ECInstanceId deletedInstanceId : deletedInstanceIds)
         {
         ECInstanceKeyMultiMap orphanedRelationshipInstances;
@@ -491,18 +488,13 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (int
         * FKeys causes the relationship to get deleted automatically, messing up the count of
         * number of items deleted.
         */
-        int numRelationshipsDeleted;
-        status = DeleteInstances (numRelationshipsDeleted, orphanedRelationshipInstances, m_ecdb);
-        if (status != SUCCESS)
-            return status;
-        numDeleted += numRelationshipsDeleted;
-
-        int numInstancesDeleted;
-        status = DeleteInstances (numInstancesDeleted, orphanedInstances, m_ecdb);
+        status = DeleteInstances (m_ecdb, orphanedRelationshipInstances);
         if (status != SUCCESS)
             return status;
 
-        numDeleted += numInstancesDeleted;
+        status = DeleteInstances (m_ecdb, orphanedInstances);
+        if (status != SUCCESS)
+            return status;
         }
 
     return SUCCESS;
@@ -511,9 +503,8 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (int
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (int& numDeleted, const ECInstanceKeyMultiMap& instanceMap, ECDbR ecDb)
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, const ECInstanceKeyMultiMap& instanceMap)
     {
-    numDeleted = 0;
     ECInstanceKeyMultiMapConstIterator instanceIdIter;
     for (ECInstanceKeyMultiMapConstIterator classIdIter = instanceMap.begin (); classIdIter != instanceMap.end (); classIdIter = instanceIdIter)
         {
@@ -534,11 +525,9 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (int& numDele
         for (instanceIdIter = keyRange.first; instanceIdIter != keyRange.second; instanceIdIter++)
             ecInstanceIdSet.insert (instanceIdIter->second);
 
-        int numChildDeleted;
-        DeleteStatus deleteStatus = persistence->Delete (&numChildDeleted, ecInstanceIdSet, &m_deleteHander);
+        DeleteStatus deleteStatus = persistence->Delete (nullptr, ecInstanceIdSet, &m_deleteHander);
         if (deleteStatus != DELETE_Success)
             return ERROR;
-        numDeleted += numChildDeleted;
         }
 
     return SUCCESS;
@@ -558,24 +547,25 @@ ECDbR ecDb
     {
     ECInstanceKey seedInstanceKey (deletedClassId, deletedInstanceId);
 
-    ECInstanceFinder* instanceFinder = &m_orphanInstanceFinder;
-
     // Add *all* relationship instances that relate the deleted instance (at either end)
     ECInstanceKeyMultiMap allRelationshipInstances;
-    BentleyStatus status = instanceFinder->FindRelatedInstances (nullptr, &allRelationshipInstances, seedInstanceKey, ECInstanceFinder::RelatedDirection_All);
-    POSTCONDITION (status == SUCCESS, status);
+    if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (nullptr, &allRelationshipInstances, seedInstanceKey, ECInstanceFinder::RelatedDirection_All))
+        return ERROR;
+
     orphanedRelationshipInstances.insert (allRelationshipInstances.begin (), allRelationshipInstances.end ());
 
     // Add embedded children
     ECInstanceKeyMultiMap embeddedChildren;
-    status = instanceFinder->FindRelatedInstances (&embeddedChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_EmbeddedChildren);
-    POSTCONDITION (status == SUCCESS, status);
+    if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (&embeddedChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_EmbeddedChildren))
+        return ERROR;
+
     orphanedInstances.insert (embeddedChildren.begin (), embeddedChildren.end ());
 
     // Add held relationship instances, and child instances (only if they don't have any other parents left)
     ECInstanceKeyMultiMap heldChildren;
-    status = instanceFinder->FindRelatedInstances (&heldChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_HeldChildren);
-    POSTCONDITION (status == SUCCESS, status);
+    if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (&heldChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_HeldChildren))
+        return ERROR;
+
     for (ECInstanceKeyMultiMapConstIterator iter = heldChildren.begin (); iter != heldChildren.end (); iter++)
         {
         ECClassId relatedClassId = iter->first;
@@ -583,8 +573,9 @@ ECDbR ecDb
         seedInstanceKey = ECInstanceKey (iter->first, iter->second);
 
         ECInstanceKeyMultiMap holdingParentRelationships;
-        status = instanceFinder->FindRelatedInstances (nullptr, &holdingParentRelationships, seedInstanceKey, ECInstanceFinder::RelatedDirection_HoldingParents);
-        POSTCONDITION (status == SUCCESS, status);
+        if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (nullptr, &holdingParentRelationships, seedInstanceKey, ECInstanceFinder::RelatedDirection_HoldingParents))
+            return ERROR;
+
         if (holdingParentRelationships.size () < 2)
             {
             ECInstanceKeyMultiMapPair mapEntry (relatedClassId, relatedInstanceId);
