@@ -21,6 +21,9 @@ BEGIN_BENTLEY_NAMESPACE
 #if defined (_WIN32) || defined (ANDROID)
     #define BEMUTEX_DATA_ARRAY_LENGTH 1
     #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 2
+#elif defined(__linux) && defined (__LP64__)
+    #define BEMUTEX_DATA_ARRAY_LENGTH (40 /*__SIZEOF_PTHREAD_MUTEX_T*/ / sizeof(void*))
+    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH ((48 /*__SIZEOF_PTHREAD_COND_T*/ + 40 /*__SIZEOF_PTHREAD_MUTEX_T*/) / sizeof(void*))
 #elif defined (__APPLE__)
     #if defined (__LP64__)
         #define BEMUTEX_DATA_ARRAY_LENGTH 8
