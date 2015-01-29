@@ -81,7 +81,12 @@ class GtestStdoutResultParser ():
                 else:
                     testName = line.strip()
                     fullName = testGroup + testName
-                    self.m_listOfAllTests.append (fullName)
+                    # gtest 1.7, now outputs params of templated test. see util\gtest\test\gtest_list_tests_unittest.py.
+                    # Cleanup so PrepareListOfTestsNotFinished can do its comparaison without using stringified pointer values.
+                    # ex: 
+                    #   CopyFromTests/0  # GetParam() = (0000008454964720, 000000845495E5C0)
+                    fullNameNoTypedParam = fullName.split("#")[0].strip()
+                    self.m_listOfAllTests.append (fullNameNoTypedParam)
         file.close()
 
         # if we don't find __START_TESTS__" at the start of a line, then the output is either malformed or the test exe did not run
@@ -140,6 +145,9 @@ class GtestStdoutResultParser ():
                     self.m_listOfFailingTests.append (lineBuffer)
                 fillBuffer = False
                 failingTestName = line[pos + len("[  FAILED  ]"):len(line)].strip().split()[0]
+                # gtest 1.7, now outputs params of templated tests. Cleanup the templated parts that might include pointer adresses.
+                # ex: CopyFromTests/0, where GetParam() = (0000008454964720, 000000845495E5C0)
+                failingTestName = failingTestName.split(",")[0].strip();
                 self.AddFinishedTest (failingTestName)
                 self.m_listOfFailingTestNames.append (failingTestName);
                 lineBuffer.append (line)
