@@ -104,18 +104,77 @@ void RenderPipeline_GLShader::setUpShaderForBuffer( const PointsBufferI *buffer,
 }
 /*****************************************************************************/
 /**
+* @brief		called before the start of frame to allow the renderer to
+*				do any pre-frame setup. 
+*/
+/*****************************************************************************/
+void	RenderPipeline_GLShader::initializeFrame( RenderContext *context )
+{	
+	if (context->settings()->clippingEnabled())
+	{
+		// clipping is enabled, use two passes, one with clipping
+		// switched on in the shader and one with it switched off
+		m_numRenderPasses = 2;		
+	}
+
+	m_numRenderPasses = 1; // only one pass needed
+}
+/*****************************************************************************/
+/**
+* @brief		check if the passed voxel should be rendered given the current
+*				render context and render pass. At the moment the only thing
+*				we do an additional render pass for is clipped voxels that use
+*				a different shader.
+*/
+/*****************************************************************************/
+bool RenderPipeline_GLShader::renderOnThisPass( RenderContext* context, int renderPass, pcloud::Voxel* vox )
+{
+	if (!vox) 
+		return false;
+
+	// 2 stage clipping rendering passes
+	if (m_numRenderPasses == 2)
+	{
+		if (context->settings()->clippingEnabled() && !vox->flag(pcloud::PartClipped))
+			return false;
+
+		if (!context->settings()->clippingEnabled() && vox->flag(pcloud::PartClipped))
+			return false;
+	}
+
+	return true;
+}
+/*****************************************************************************/
+/**
 * @brief		notify pipeline of start of a frame. Between start and end frame 
 *               there can be no context switch.
 *				maybe better to enforce this by storing context on start frame
 *               and removing it from the renderPoints parameter list
 */
 /*****************************************************************************/
-void RenderPipeline_GLShader::startFrame( RenderContext *context )
+void RenderPipeline_GLShader::startFrame( RenderContext *context, int renderPass )
 {
 	m_lastShader = 0;
 	m_avalBuffers = 0;
+
+	// if we are doing more than one rendering pass, do one pass with clipping and one without
+	if (m_numRenderPasses > 1)
+	{
+		// check if clipping is required there will be 2 render passes,
+		// renderPass 0 and renderPass 1 - only render partially clipped voxels on pass 1
+		if (renderPass == 1)
+		{
+			pointsengine::ClipManager::instance().enableClipping();
+			context->settings()->clippingEnabled(true);
+		}
+		else
+		{
+			pointsengine::ClipManager::instance().disableClipping();
+			context->settings()->clippingEnabled(false);
+		}
+	}
 }
-void RenderPipeline_GLShader::endFrame( RenderContext *context )
+void RenderPipeline_GLShader::endFrame( RenderContext *context, int renderPass )
 {
 	if (m_lastShader)
 	{
@@ -127,7 +186,7 @@ void RenderPipeline_GLShader::endFrame( RenderContext *context )
     glUseProgram(0);
 
 	m_lastShader = 0;
-	m_avalBuffers = 0;
+	m_avalBuffers = 0;	
 }
 /*****************************************************************************/
 /**
@@ -234,7 +293,7 @@ void RenderPipeline_GLShader::renderSelPoints( PointsBufferI *buffer, RenderCont
 /*****************************************************************************/
 RenderPipeline_GLShader::RenderPipeline_GLShader( RenderMethodI *method ) : RenderPipelineI(method)
 {	
-
+	m_numRenderPasses = 1;
 }
 RenderPipeline_GLShader::~RenderPipeline_GLShader()
 {

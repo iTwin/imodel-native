@@ -11,8 +11,6 @@
 #include <pt/project.h>
 
 
-//#define POINTS_ON_PLANE_ARE_INSIDE
-
 
 namespace pointsengine
 {
@@ -48,17 +46,14 @@ ClipResult ClipPlane::clipNode( pcloud::PointCloud& cloud, pcloud::Node* n )
 			pt::Project3D::project().registration().matrix()(3,1), 
 			pt::Project3D::project().registration().matrix()(3,2));
 		bb.translateBy(-basePoint);
+	
+		double tol = 0.0000001;	
 
 		for (int i = 0; i < 8; i++)
-		{		
-			
+		{					
 			bb.getExtrema(i, v);				
-			int side = m_plane.whichSide(v);	
-#ifdef POINTS_ON_PLANE_ARE_INSIDE
+			int side = m_plane.whichSideWithTolerance(v, tol);	
 			if (side <= 0) // treat points actually on the plane as inside
-#else
-			if (side < 0)
-#endif
 				numInside++;
 		}
 	}	
@@ -81,11 +76,7 @@ ClipResult ClipPlane::clipBox( const pt::BoundingBoxD &box )
 		// N.B. assumes box is in ProjectSpace
 		box.getExtrema(i, v);	
 		int side = m_plane.whichSide(v);
-#ifdef POINTS_ON_PLANE_ARE_INSIDE
 		if (side <= 0) // treat points actually on the plane as inside
-#else
-		if (side < 0)
-#endif
 			numInside++;	
 	}	
 

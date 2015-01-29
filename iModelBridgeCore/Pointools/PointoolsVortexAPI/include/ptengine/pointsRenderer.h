@@ -47,7 +47,7 @@ public:
 private:
 	void						filterVoxelList( bool dismissRendered, const pcloud::Scene *scene=0 );
 	void						renderDiagnostics();;
-	int							fillAndRenderPointsBuffers( RenderContext *context, bool dynamic );
+	int							fillAndRenderPointsBuffers( RenderContext *context, bool dynamic, int renderPass );
 
 	PointsBufferI				*determineBufferToUse( const RenderContext *context, const pcloud::Voxel *vox );
 	int							numVoxelPointsToRender( const pcloud::Voxel * vox, float minOutput );

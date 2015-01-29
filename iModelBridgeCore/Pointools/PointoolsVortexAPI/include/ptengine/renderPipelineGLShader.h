@@ -20,8 +20,12 @@ namespace pointsengine
 		bool			isSupportedOnPlatform() const;
 		bool			useAggregateBuffers( const RenderSettings *settings, const pcloud::Voxel *voxel ) const;
 
-		void			startFrame( RenderContext *context ); 
-		void			endFrame( RenderContext *context );
+		void			initializeFrame( RenderContext *context );		
+		int				getNumRenderPasses() { return m_numRenderPasses; }
+		bool			renderOnThisPass( RenderContext* context, int renderPass, pcloud::Voxel* vox );
+
+		void			startFrame( RenderContext *context, int renderPass ); 
+		void			endFrame( RenderContext *context, int renderPass );
 
 	private:
 		
@@ -43,5 +47,6 @@ namespace pointsengine
 		
 		uint			m_avalBuffers;
 		ptgl::Shader	*m_lastShader;
+		int				m_numRenderPasses;
 	};
 }

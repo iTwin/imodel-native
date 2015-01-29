@@ -286,6 +286,13 @@ public:
 		if ( d > 0 ) return 1;
 		return 0;		
 	}
+	int whichSideWithTolerance(const VectorType &v, T tol) const
+	{
+		T d = distToPlane(v);
+		if ( d < -tol ) return -1;
+		if ( d > tol ) return 1;
+		return 0;		
+	}
 	inline T distToPlane(const VectorType &v) const
 	{ 
 		return m_normal.dot(v) - m_constant; 

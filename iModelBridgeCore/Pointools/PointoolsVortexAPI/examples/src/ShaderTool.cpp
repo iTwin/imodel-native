@@ -13,7 +13,7 @@ Demonstrates a number of shading options available in Vortex
 #include "ClassificationRender.h"
 
 //-----------------------------------------------------------------------------
-ShaderTool::ShaderTool() : Tool(CmdShaderUpdate, CmdShaderUpdate)
+ShaderTool::ShaderTool() : Tool(CmdShaderUpdate, CmdIncIntensity)
 //-----------------------------------------------------------------------------
 {
 	m_lastRenderer=0;
@@ -26,6 +26,19 @@ void ShaderTool::command( int cmdId )
 {
 	if (cmdId == CmdShaderUpdate)
 	{
+		m_shader.updateVortex();
+
+		handleClassificationShader();
+
+		viewRedraw();
+	}
+	else if (cmdId == CmdIncIntensity)
+	{
+		int numRamps = ptNumRamps();
+		m_shader.intensityRamp++;
+		if (m_shader.intensityRamp >= numRamps)
+			m_shader.intensityRamp = 1;
+
 		m_shader.updateVortex();
 
 		handleClassificationShader();
@@ -204,7 +217,9 @@ void ShaderTool::buildUserInterface(GLUI_Node *parent)
 
 		// ramps
 		new GLUI_StaticText( inten, "" );
-
+		
+		// GLUI_Listbox causes a crash with the current x64 build that is linking to freeglut
+#ifndef _M_X64
 		GLUI_Listbox *rampList = new GLUI_Listbox( inten, "Ramp ", &m_shader.intensityRamp, CmdShaderUpdate, &Tool::dispatchCmd );
 
 		int i;
@@ -212,6 +227,9 @@ void ShaderTool::buildUserInterface(GLUI_Node *parent)
 		{
 			rampList->add_item( i+1, m_shader.intensityRamps[i].c_str() );
 		}
+#else
+		GLUI_Button* but = new GLUI_Button( inten, "Next Ramp", CmdIncIntensity, &Tool::dispatchCmd );
+#endif // _M_X64
 
 	//// Options Roll out
 	GLUI_Rollout *rolloutOptions = new GLUI_Rollout(parent, "Options", true );

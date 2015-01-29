@@ -101,12 +101,19 @@ void PointsRenderer::renderPoints( RenderContext *context, const pcloud::Scene *
 	
 	if (g_showDebugInfo) renderDiagnostics();					// debug output	
 
-	m_pipeline->startFrame( context );
+											// see how many passes are required to render the current scene, scenes with
+											// clipped voxels for example may require more than one rendering pass	
+	m_pipeline->initializeFrame(context);
 
-	fillAndRenderPointsBuffers( context, dynamic );
+	for (int pass = 0; pass < m_pipeline->getNumRenderPasses(); pass++)
+	{									
+		m_pipeline->startFrame( context, pass );
 
-	m_pipeline->endFrame( context );
+		fillAndRenderPointsBuffers( context, dynamic, pass );
 
+		m_pipeline->endFrame( context, pass );			
+	}
+	
 	if (dynamic) computeDynamicFPS( t0, context->settings()->framesPerSec() );
 }
 
@@ -164,7 +171,7 @@ inline static int voxPriorityCmp(const pcloud::Voxel *a, const pcloud::Voxel *b)
 * @brief		fills the points buffer and sends to render
 */
 /*****************************************************************************/
-int PointsRenderer::fillAndRenderPointsBuffers( RenderContext *context, bool dynamic )
+int PointsRenderer::fillAndRenderPointsBuffers( RenderContext *context, bool dynamic, int renderPass )
 {	
 	PointsScene::VOXELSLIST OOCvoxels;
 
@@ -198,6 +205,10 @@ int PointsRenderer::fillAndRenderPointsBuffers( RenderContext *context, bool dyn
 		{ 
 			pcloud::Voxel *vox = *i;
 			++i;
+
+			// check this voxel against the current context and render pass
+			if (!m_pipeline->renderOnThisPass(context, renderPass, vox))			
+				continue;			
 
 			if ( !vox->flag(pcloud::RenderDismiss) )
 			{

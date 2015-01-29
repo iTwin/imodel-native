@@ -142,12 +142,13 @@ void	ClippingTool::drawPostDisplay()
 			if (ptIsClippingPlaneEnabled(i))
 			{				
 				// calculate plane corners
-				// TODO: the u,v values of -10 and 10 here are arbitrary and should be updated to
+				// TODO: the u,v values of -1 and 1 here are arbitrary and should be updated to
 				// take into account the scene size
-				m_planes[i].to3D(-10, -10, pt0);
-				m_planes[i].to3D(-10, 10, pt1);
-				m_planes[i].to3D(10, -10, pt2);
-				m_planes[i].to3D(10, 10, pt3);		
+				int planeSize = 10;
+				m_planes[i].to3D(-planeSize, -planeSize, pt0);
+				m_planes[i].to3D(-planeSize, planeSize, pt1);
+				m_planes[i].to3D(planeSize, -planeSize, pt2);
+				m_planes[i].to3D(planeSize, planeSize, pt3);		
 
 				if (i == selected)
 					glColor4f(1.0f, 0.5f, 0.0f, 0.5f);

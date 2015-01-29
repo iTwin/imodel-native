@@ -394,8 +394,9 @@ int Scene::buildPreliminaryOctree( IncNode *root, int initial_depth, int target_
 		if (!numSubdivided) break;
 	}
 	/* merge nodes that have been subdivided past SUBDIVISION_COUNT and are deeper than req_depth */  
-	int thresholds [] = { 2e6, 5e6, 1e7, 5e7, 1e8, 5e8 };
-	int points[] = { 5e4, 1e5, 2e5, 5e5, 12e5, 16e5, 18e5 };
+	int thresholds [] = { 2e6, 5e6, 1e7, 5e7, 1e8, 5e8, 1e9, 10e9 }; 
+	int points[] = { 5e4, 1e5, 1e5, 1e5, 1e5, 1e5, 2e5, 1e6, 2e6 };
+
 
 	int i;
 	for (i=0; i<6; i++)

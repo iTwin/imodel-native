@@ -39,8 +39,8 @@ void main(void)
 	{		
 		if (pCPe[i] == 1)
 		{
-			pt.x = pA.x; pt.y = pA.y; pt.z = pA.z;
-			pl.x = pCP[i].x; pl.y = pCP[i].y; pl.z = pCP[i].z;
+			pt.xyz = pA.xyz;
+			pl.xyz = pCP[i].xyz;
 			if ((dot(pl, pt) - pCP[i].w) > 0.0) 
 			{
 				if (CSt == 1) 

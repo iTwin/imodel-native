@@ -84,12 +84,12 @@ void	RenderClipEffectGL::startShaderFrame( const RenderContext *context, ShaderO
 			}			
 		}					
 	}	
-		
+
 	ptgl::Shader *shaderGL = reinterpret_cast<ptgl::Shader *>(shader);
 	shaderGL->setUniform4fv("pCP", numClipPlanes, planes);	
 	shaderGL->setUniform1iv("pCPe", numClipPlanes, planeEnabled);	
 	shaderGL->setUniform1i("CSt", ClipManager::instance().getClipStyle());	
-	
+
 	delete [] planeEnabled;
 	delete [] planes;	
 }

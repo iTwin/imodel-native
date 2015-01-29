@@ -61,7 +61,8 @@ class ShaderTool : public Tool
 public:
 	enum
 	{
-		CmdShaderUpdate = 200
+		CmdShaderUpdate = 200,
+		CmdIncIntensity = 201
 	};
 
 	ShaderTool();

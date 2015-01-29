@@ -82,6 +82,9 @@ bool SnapTest::onMouseButtonDown( int button, int x, int y )
 bool SnapTest::findSnapPoint( int mx, int my )
 //-----------------------------------------------------------------------------
 {
+	pt::PerformanceTimer t0;
+	t0.start();
+
 	PTdouble pnt[3];
 
 	// find nearest screen point based on reading GL buffer and searching for point
@@ -107,24 +110,28 @@ bool SnapTest::findSnapPoint( int mx, int my )
 		
 		/* do intersection test */ 
 		bool didIntersect = ptIntersectRay(0, camera, dir, pnt, PT_QUERY_DENSITY_VIEW, 1);
+
+		// get timing information
+		t0.end();
+		double millis = t0.millisecs();
 		
 		char output[256];
 
 		if (didIntersect)
 		{			
-			sprintf( output, "\nIntersection at %0.3f, %0.3f, %0.3f",
-				pnt[0], pnt[1], pnt[2] );
+			sprintf( output, "\nIntersection at %0.3f, %0.3f, %0.3f (%dms)",
+				pnt[0], pnt[1], pnt[2], (int)millis );
 
 			m_lastPointType = PointRayIntersection;
 		}
 		else
 		{	
-			sprintf( output, "\nNearest point is %0.3f, %0.3f, %0.3f",
-				pnt[0], pnt[1], pnt[2] );
+			sprintf( output, "\nNearest point is %0.3f, %0.3f, %0.3f (%dms)",
+				pnt[0], pnt[1], pnt[2], (int)millis );
 
 			m_lastPointType = PointNearest;
 		}
-		m_outputString += output;	
+		m_outputString = output;	
 
 		m_lastSnapPoint[0] = pnt[0];
 		m_lastSnapPoint[1] = pnt[1];

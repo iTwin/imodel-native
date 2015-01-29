@@ -60,6 +60,8 @@ void TuningTool::buildUserInterface( GLUI_Node *parent )
 	GLUI_StaticText * spacer = new GLUI_StaticText( rolloutTuning, "" );
 	spacer->set_w( PANEL_WIDTH );
 
+	// GLUI_Listbox causes a crash with the current x64 build that is linking to freeglut
+#ifndef _M_X64
 	GLUI_Listbox * list = new GLUI_Listbox( rolloutTuning, "Cache Size ", &m_cacheSize, CmdUpdateTuningParams ,&Tool::dispatchCmd);
 	list->add_item( -1, "Auto size");
 	list->add_item( 0, "0Mb");
@@ -87,6 +89,7 @@ void TuningTool::buildUserInterface( GLUI_Node *parent )
 	list->add_item( 2.5e6, "2.5m pnts");
 	list->add_item( 5e6, "5m pnts");
 	list->add_item( 1e7, "10m pnts");
+#endif // _M_X64
 
 	spacer = new GLUI_StaticText( rolloutTuning, "" );
 	spacer = new GLUI_StaticText( rolloutTuning, "Renderer" );
@@ -104,6 +107,7 @@ void TuningTool::buildUserInterface( GLUI_Node *parent )
 	spacer = new GLUI_StaticText( rolloutTuning, "" );
 	spacer->set_w( PANEL_WIDTH );
 
+#ifndef _M_X64
 	list = new GLUI_Listbox( rolloutTuning, "Points Cap ", &m_pointsCap,  CmdUpdateTuningParams ,&Tool::dispatchCmd);
 	list->add_item( -1, "No Limit");
 	list->add_item( 5e5, "500,000 pnts");
@@ -112,6 +116,7 @@ void TuningTool::buildUserInterface( GLUI_Node *parent )
 	list->add_item( 2.5e6, "2.5m pnts");
 	list->add_item( 5e6, "5m pnts");
 	list->add_item( 1e7, "10m pnts");
+#endif // _M_X64
 }
 
 //-----------------------------------------------------------------------------

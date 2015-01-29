@@ -3742,28 +3742,7 @@ PTbool PTAPI ptIntersectRay(PThandle scene, const PTdouble *origin,
 		Dist2Ray<double> raydistVisitor(ray, sc, densityType, densityValue);
  
 		if (bb.intersectsRay(ray))
-		{
-			/* try the cache first */
-			if (g_rayIntData.cloudGUID && g_rayIntData.voxelIndexInCloud >= 0)
-			{
-				pcloud::PointCloud * pc = thePointsScene().cloudByGUID( g_rayIntData.cloudGUID );
-
-				if (pc && pc->voxels().size() < g_rayIntData.voxelIndexInCloud)
-				{
-					pcloud::Voxel * vox = pc->voxels()[ g_rayIntData.voxelIndexInCloud ];
-
-					raydistVisitor.voxel( vox );
-					if (raydistVisitor.mindist < RAY_LARGE_DISTANCE)
-					{
-						raydistVisitor.closestPnt.get(pnt);
-						pnt[0] *= g_unitScale;
-						pnt[1] *= g_unitScale;
-						pnt[2] *= g_unitScale;
-						return true;
-					}
-				}
-			}
-
+		{		
 			int numClouds = sc->numObjects();
 			for (int c=0; c<numClouds; c++)
 			{

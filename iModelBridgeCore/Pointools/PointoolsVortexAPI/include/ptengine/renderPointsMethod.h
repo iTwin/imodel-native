@@ -48,8 +48,12 @@ public:
 	virtual bool	isSupportedOnPlatform() const=0;
 	virtual	bool	useAggregateBuffers( const RenderSettings *settings, const pcloud::Voxel *voxel ) const=0;
 
-	virtual void	startFrame( RenderContext *context ){};
-	virtual void	endFrame( RenderContext *context )	{};
+	virtual void	initializeFrame( RenderContext *context ) {};		
+	virtual int		getNumRenderPasses() { return 1; }
+	virtual bool	renderOnThisPass( RenderContext* context, int renderPass, pcloud::Voxel* vox ) { return true; }
+
+	virtual void	startFrame( RenderContext *context, int renderPass ) {};
+	virtual void	endFrame( RenderContext *context, int renderPass  )	{};
 
 protected:
 	RenderMethodI	*renderMethod();
