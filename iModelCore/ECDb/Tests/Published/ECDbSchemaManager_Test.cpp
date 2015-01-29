@@ -877,21 +877,21 @@ TEST(ECDbSchemaManager, ImportLowPrioritySupplementalSchama)
     }
 
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  11/14
+//                                               Muhammad Hassan                  1/15
 //+---------------+---------------+---------------+---------------+---------------+------
  TEST(ECDbSchemaManager, ImportReferenceSchemaReferedByMultipleSchemas)
     {
      ECDbTestProject::Initialize();
      ECDb testecdb;
-     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
+     auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"referancedSchematest.ecdb");
      ASSERT_TRUE(stat == BE_SQLITE_OK);
      ECSchemaReadContextPtr  context = nullptr;
 
      ECSchemaPtr schemaptr;
-     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"OpenPlant_PID.01.04.ecschema.xml", nullptr);
+     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"StartupCompany.02.00.ecschema.xml", nullptr);
      ASSERT_TRUE(schemaptr != NULL);
      ECSchemaPtr supplementalSchemaptr;
-     ECDbTestUtility::ReadECSchemaFromDisk(supplementalSchemaptr, context, L"OpenPlant_PID_Supplemental_Imperial.01.04.ecschema.xml", nullptr);
+     ECDbTestUtility::ReadECSchemaFromDisk(supplementalSchemaptr, context, L"StartupCompany_Supplemental_ECDbTest.01.00.ecschema.xml", nullptr);
      ASSERT_TRUE(supplementalSchemaptr != NULL);
 
      ECSchemaCachePtr schemacache = ECSchemaCache::Create();

@@ -18,6 +18,7 @@ InstanceCRUDTests.InsertUpdateDeleteTest
 
 ECDbSchemas.IntegrityCheck
 
+# TFS#172731 to address this
 ECDbSchemas.CTESupportTest # Started failing after merging in schema changes
 
 #----------------------------------------------------------------------------------------
