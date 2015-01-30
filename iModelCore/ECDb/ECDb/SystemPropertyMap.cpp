@@ -62,14 +62,6 @@ MapStatus PropertyMapSystem::_FindOrCreateColumnsInTable (ClassMap& classMap)
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-bool PropertyMapSystem::_MapsToColumn (Utf8CP columnName) const
-    {
-    return (!m_column.expired()) && (0 == BeStringUtilities::Stricmp (columnName, m_column.lock()->GetName ().c_str()));
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
 void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
     BeAssert (!m_column.expired ());

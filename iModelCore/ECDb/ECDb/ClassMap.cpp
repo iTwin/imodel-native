@@ -877,26 +877,6 @@ bool ClassMap::TryGetECInstanceIdPropertyMap (PropertyMapPtr& ecInstanceIdProper
     return GetPropertyMaps ().TryGetPropertyMap (ecInstanceIdPropertyMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP ClassMap::GetPropertyMapForColumnName (Utf8CP columnName) const
-    {
-    auto const& propMaps = GetPropertyMaps ();
-    for (auto it = propMaps.begin (); it != propMaps.end (); ++it)
-        {
-        PropertyMapCP propertyMap = *it;
-        BeAssert (propertyMap != nullptr);
-        if (propertyMap == nullptr)
-            continue;
-
-        if (propertyMap->MapsToColumn (columnName))
-            return propertyMap;
-        }
-
-    return nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------

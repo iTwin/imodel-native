@@ -180,14 +180,6 @@ ECPropertyCR PropertyMap::GetProperty() const
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyMap::_MapsToColumn (Utf8CP columnName) const
-    {
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString PropertyMap::_ToString() const
@@ -201,14 +193,6 @@ WString PropertyMap::_ToString() const
 WCharCP PropertyMap::GetPropertyAccessString() const
     {
     return m_propertyAccessString.c_str();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyMap::MapsToColumn (Utf8CP columnName) const
-    {
-    return _MapsToColumn (columnName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -832,14 +816,6 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-bool PropertyMapToColumn::_MapsToColumn (Utf8CP columnName) const
-    {
-    return m_column->GetName ().EqualsI(columnName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
 void PropertyMapToColumn::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
     columns.push_back(m_column);
@@ -939,16 +915,6 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
     zColumnName.append(".Z");
     m_zColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, zColumnName.c_str (), primitiveType, nullable, unique, collate, "Z");
     return MapStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyMapPoint::_MapsToColumn( Utf8CP columnName ) const 
-    {
-    return (0 == BeStringUtilities::Stricmp (columnName, m_xColumn->GetName ().c_str()) ||
-        0 == BeStringUtilities::Stricmp (columnName, m_yColumn->GetName ().c_str ()) ||
-        m_is3d && 0 == BeStringUtilities::Stricmp (columnName, m_zColumn->GetName ().c_str ()));
     }
 
 /*---------------------------------------------------------------------------------------

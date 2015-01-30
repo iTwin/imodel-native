@@ -85,9 +85,6 @@ protected:
     virtual bool _IsVirtual () const;
     virtual bool _IsUnmapped () const;
 
-    //! Checks whether this PropertyMap maps to a column of the given name
-    virtual bool _MapsToColumn (Utf8CP columnName) const;
-
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
@@ -132,9 +129,6 @@ public:
     //! Gets a value indicating whether the property of this property map is not mapped to a database column.
     //! @return true if the property is not mapped, false otherwise
     bool IsUnmapped () const;
-
-    //! Checks whether this PropertyMap maps to a column of the given name
-    bool MapsToColumn (Utf8CP columnName) const;
 
     //! Gets the columns (if any) mapped to this property
     void GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
@@ -231,9 +225,6 @@ protected:
 
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
-
-    //! Checks whether this PropertyMap maps to a column of the given name
-    virtual bool _MapsToColumn (Utf8CP columnName) const override;
 
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
@@ -347,9 +338,6 @@ private:
     
     //! Make sure our table has the necessary columns, if any
     MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
-
-    //! Checks whether this PropertyMap maps to a column of the given name
-    bool _MapsToColumn (Utf8CP columnName) const override;
 
     //! @see PropertyMap::GetColumns
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;

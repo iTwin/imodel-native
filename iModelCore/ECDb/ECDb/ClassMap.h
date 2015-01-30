@@ -302,7 +302,6 @@ protected:
     std::unique_ptr<ClassDbView> m_dbView;
     ColumnFactory               m_columnFactory;
 private:
-    PropertyMapCP GetPropertyMapForColumnName (Utf8CP columnName) const;
     MapStatus ProcessIndices (ClassMapInfoCR classMapInfo);
     void ProcessStandardKeySpecifications (ClassMapInfoCR mapInfo);
     void SetUserProvidedIndex (bvector<ClassIndexInfoPtr> const& indexes)
