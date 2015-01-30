@@ -61,9 +61,6 @@ ECDbAllHeaders = \
                 $(baseDir)SchemaImportContext.h \
                 $(baseDir)ClassMapInfo.h \
                 $(baseDir)MapHintReader.h \
-                $(baseDir)ECPersistence.h \
-                $(baseDir)InstanceDeleter.h \
-                $(baseDir)ECDbUtility.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ECDbClassDependencyAnalyzer.h \
                 $(baseDir)ECDbProfileManager.h \
@@ -194,15 +191,11 @@ $(o)ColumnInfo$(oext):										$(baseDir)ColumnInfo.cpp                      $(
 
 $(o)SqlGenerator$(oext):									$(baseDir)SqlGenerator.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECPersistence$(oext):									$(baseDir)ECPersistence.cpp                 $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                     $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECInstanceId$(oext):									$(baseDir)ECInstanceId.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)InstanceDeleter$(oext):									$(baseDir)InstanceDeleter.cpp               $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaPersistence$(oext):							$(baseDir)ECDbSchemaPersistence.cpp         $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -223,8 +216,6 @@ $(o)ECDbPolicyManager$(oext):								$(baseDir)ECDbPolicyManager.cpp            
 $(o)ECSqlBuilder$(oext):									$(baseDir)ECSqlBuilder.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlBuilderClauses$(oext):								$(baseDir)ECSqlBuilderClauses.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECDbUtility$(oext):										$(baseDir)ECDbUtility.cpp                   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbProfileManager$(oext):								$(baseDir)ECDbProfileManager.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -12,7 +12,6 @@
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
 
-ECDB_TYPEDEFS_PTR (InstanceDeleter);
 ECDB_TYPEDEFS(ClassMapInfo);
 ECDB_TYPEDEFS(RelationshipClassMapInfo);
 ECDB_TYPEDEFS_PTR (ClassMap);
@@ -27,7 +26,6 @@ ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(RelevantRelationship);
-ECDB_TYPEDEFS_PTR(InstanceUpdater);
 ECDB_TYPEDEFS_PTR(DbForignKeyConstraint);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
@@ -180,12 +178,6 @@ enum class MapStatus
                                                 // of multiple inheritance, where we attempt to map a child class for which 
                                                 // not all parent classes have been mapped
     Error                           = 666
-    };
-
-enum BindStatus
-    {
-    BIND_Success        = SUCCESS,
-    BIND_Error          = 1,
     };
 
 enum SqlUpdateActions

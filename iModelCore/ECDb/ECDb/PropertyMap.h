@@ -15,9 +15,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct Binding;
-typedef bvector<Binding> Bindings;
-
 enum class TraversalFeedback
     {
     Cancel, //! cancel traversal altogether and return
@@ -117,17 +114,6 @@ protected:
     //! For debugging and logging
     virtual WString _ToString() const;
 
-    //********* DEPRECATED. Will be removed once ECPersistence is removed ******************
-    //! The default implementation adds a "dummy" placeholder binding with m_sqlIndex = BINDING_NotBound (-1). It is needed to handle cases where the requested property
-    //! is not handled (at the time of writing IGeometry properties were not handled) or arrays of structs (which are handled differently, at the time of writing)
-    virtual void _AddBindings (Bindings& bindings, uint32_t propertyIndex, int& sqlIndex, ECN::ECEnablerCR enabler) const;
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    virtual DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
-
 public:
     virtual ~PropertyMap () {}
     ECN::ECPropertyId GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const { return _GetECPropertyIdForPersistence (relativeToECClassId, db); }
@@ -198,22 +184,8 @@ public:
     //! For debugging and logging
     WString ToString() const;
 
-    //*************** DEPRECATED **********************************************
-    //Will be removed once ECDbStatement (and/or ECPersistence) was removed
-    //**************************************************************************
-
-    //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    void AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const;
-
     //! An abstract factory method that constructs a subtype of PropertyMap, based on the ecProperty, hints, and mapping rules
     static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding             will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings    holds bindings for all parameters relevant for the statement
-    //! @param statement            The statement with parameters to be bound
-    //! @param ecInstance           holds values that are to be bound to the statement
-    DbResult Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
     };
 
 
@@ -251,8 +223,6 @@ private:
     virtual bool _IsVirtual () const override;
     virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
-    DbResult BindECValueToParameter (Statement& statement, ECN::ECValueCR v, Binding const& binding) const;
-
 protected:
     //! Metadata from which the column can be created
     ColumnInfo      m_columnInfo;
@@ -279,22 +249,9 @@ protected:
 
     //! @see PropertyMap::SetColumnBaseName
     virtual void _SetColumnBaseName(Utf8CP columnName) override;
-
-    //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    virtual void _AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
-
-   //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    virtual DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
-    
+   
     //! For debugging and logging
     virtual WString _ToString() const override;
-
-public:
-    DbResult BindDateTime (double jd, bool hasMetadata, DateTime::Info const& metadata, Binding const& binding, BeSQLiteStatementR statement) const;
-    DbResult GetValueDateTime (double& jd, DateTime::Info& metadata, Binding const& binding, BeSQLiteStatementR statement) const;
 };
 
 /*---------------------------------------------------------------------------------------
@@ -336,8 +293,6 @@ private:
     // WIP_ECDB: These seem redundant, m_elementType will always be the ECClass from m_classMapForProperty, right?
     ECN::ECClassCR m_structElementType;
     mutable bmap<ECN::ECClassId, ECN::ECPropertyId> m_persistenceECPropertyIdMap;
-    //! @see PropertyMap::IsValueNull
-    bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
 
     //! For debugging and logging
     virtual WString _ToString() const override;
@@ -370,15 +325,6 @@ private:
     PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
     
     virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
-
-    //! @see PropertyMap::IsValueNull
-    bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
     
     //! For debugging and logging
     WString _ToString() const override;
@@ -422,19 +368,7 @@ private:
 
     //! @see PropertyMap::SetColumnBaseName
     void _SetColumnBaseName(Utf8CP columnName) override;
-
-    //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    void _AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
     
-    //! @see PropertyMap::IsValueNull
-    bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
-
     //! For debugging and logging
     WString _ToString() const override;
 };

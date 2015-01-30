@@ -1053,28 +1053,6 @@ ECPropertyCP ClassMap::GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAc
     return getECPropertyFromTokens (ecClass, tokens, 0);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::GenerateParameterBindings (Bindings& parameterBindings, int firstParameterIndex) const
-    {
-    BeAssert (parameterBindings.size () == 0);
-    // WIP_ECDB: Use same technique as in ClassMap::GenerateSelectedPropertyBindings to get the order to follow the order in the ECClass
-    int sqlIndex = firstParameterIndex;
-
-    GetPropertyMaps ().Traverse ([&parameterBindings, &sqlIndex, this] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        BeAssert (propMap != nullptr);
-        if (propMap->IsSystemPropertyMap ())
-            return; //ignore system props as they are not used in ECDbStatement API.
-
-        //WIP_ECDB: remove the unused 0... the propertyIndex parameter!
-        propMap->AddBindings (parameterBindings, 0, sqlIndex, *m_ecClass.GetDefaultStandaloneEnabler ());
-        }, true);
-
-    return SUCCESS;
-    }
-
 
 //************************** MappedTable ***************************************************
 /*---------------------------------------------------------------------------------------

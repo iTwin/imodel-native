@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,8 +44,6 @@ public:
     };
 
 //=======================================================================================
-//! PropertyMapECInstanceId can only be used with the ECSqlStatement API as it does not implement
-//! the Binding / ECInstance related methods of PropertyMap.
 // @bsiclass                                                 Krischan.Eberle    06/2013
 //+===============+===============+===============+===============+===============+======
 struct PropertyMapECInstanceId : PropertyMapSystem

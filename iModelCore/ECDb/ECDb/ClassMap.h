@@ -367,9 +367,6 @@ public:
     void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
-    //! @deprecated: Remove once ECPersistence is being removed
-    //! Adds parameter bindings to the supplied vector
-    BentleyStatus GenerateParameterBindings (Bindings& parameterBindings, int firstParameterIndex) const;
     };
 
 

@@ -140,7 +140,7 @@ public:
         //!                           7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
         //!                          Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
         //!                          Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
-        //!                          Any existing references to ECSchemas, ECClasses, ECSqlStatements or ECPersistence become invalid.  
+        //!                          Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
         ECDB_EXPORT ImportOptions (bool doSupplementation, bool updateExistingSchemas);
 
         //! Gets a value indicating whether supplementation should be performed or not.
@@ -163,7 +163,7 @@ public:
         //!     7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
         //!        Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
         //!     Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
-        //!     Any existing references to ECSchemas, ECClasses, ECSqlStatements or ECPersistence become invalid.  
+        //!     Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
         ECDB_EXPORT bool UpdateExistingSchemas () const;
 
         //__PUBLISH_SECTION_END__
