@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -90,13 +90,6 @@ Utf8CP PropertyMapSystem::_GetColumnBaseName () const
         return m_column.lock()->GetName ().c_str();
     }
 
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-void PropertyMapSystem::_SetColumnBaseName (Utf8CP columnName)
-    {
-    BeAssert (false && "PropertyMapSystem::_SetColumnBaseName should never be called.");
-    }
 
 //******************************** PropertyMapECInstanceId ****************************************
 //----------------------------------------------------------------------------------

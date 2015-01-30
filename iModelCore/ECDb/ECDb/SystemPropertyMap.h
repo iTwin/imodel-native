@@ -28,7 +28,6 @@ private:
     virtual bool _MapsToColumn (Utf8CP columnName) const override;
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual Utf8CP _GetColumnBaseName () const override;
-    virtual void _SetColumnBaseName (Utf8CP columnName) override;
 
 protected:
     PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind);

@@ -94,9 +94,6 @@ protected:
     //! @see PropertyMap::GetColumnBaseName
     virtual Utf8CP _GetColumnBaseName() const;
 
-    //! @see PropertyMap::SetColumnBaseName
-    virtual void _SetColumnBaseName(Utf8CP columnName) { };
-
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap);
 
@@ -149,9 +146,6 @@ public:
     //! e.g. "origin", when the actual columns are origin.X and origin.Y
     //! @return nullptr if there is no relevant column, or column names does not differ from the default
     Utf8CP GetColumnBaseName() const;
-
-    //! For cases where a column name must be remapped by the system due to a conflict
-    void SetColumnBaseName(Utf8CP columnName);
 
     //! Generates the native SQL snippets from the columns related to this property map.
     //! SQL generation depends on various properties of the property map (e.g whether the property map is virtual)
@@ -246,9 +240,6 @@ protected:
 
     //! @see PropertyMap::GetColumnBaseName
     virtual Utf8CP _GetColumnBaseName() const override;
-
-    //! @see PropertyMap::SetColumnBaseName
-    virtual void _SetColumnBaseName(Utf8CP columnName) override;
    
     //! For debugging and logging
     virtual WString _ToString() const override;
@@ -365,9 +356,6 @@ private:
 
     //! @see PropertyMap::GetColumnBaseName
     Utf8CP _GetColumnBaseName() const override;
-
-    //! @see PropertyMap::SetColumnBaseName
-    void _SetColumnBaseName(Utf8CP columnName) override;
     
     //! For debugging and logging
     WString _ToString() const override;

@@ -228,14 +228,6 @@ Utf8CP PropertyMap::GetColumnBaseName() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void PropertyMap::SetColumnBaseName (Utf8CP columnName)
-    {
-    _SetColumnBaseName(columnName);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
 NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const
@@ -865,14 +857,6 @@ Utf8CP PropertyMapToColumn::_GetColumnBaseName() const
         return m_columnInfo.GetName();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void PropertyMapToColumn::_SetColumnBaseName (Utf8CP columnName)
-    {
-    m_columnInfo.SetColumnName (columnName);
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   11/2014
@@ -988,27 +972,6 @@ Utf8CP PropertyMapPoint::_GetColumnBaseName() const
         return nullptr;
     else
         return m_columnInfo.GetName();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void PropertyMapPoint::_SetColumnBaseName (Utf8CP columnName)
-    {
-    m_columnInfo.SetColumnName (columnName);
-    Utf8String name = columnName;
-    if (name.size() < 3)
-        return;
-
-    size_t len = name.size();
-    Utf8CP ending = &name[len - 2];
-
-    if ( 0 == BeStringUtilities::Stricmp(ending, ".X") ||
-         0 == BeStringUtilities::Stricmp(ending, ".Y") ||
-         0 == BeStringUtilities::Stricmp(ending, ".Z") )
-        name[len - 2] = '\0'; // Truncate any .X, .Y, .Z
-
-    m_columnInfo.SetColumnName (name.c_str());
     }
     
 //---------------------------------------------------------------------------------------
