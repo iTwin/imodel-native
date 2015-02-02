@@ -9,10 +9,6 @@
 #include <WebServices/Client/Connect/SecureStore.h>
 #include <Bentley/Base64Utilities.h>
 
-#if defined (__APPLE__)
-#import <MobileUtils/Platform/BEKeychainItem.h>
-#endif
-
 #if defined (BENTLEY_WINRT)
 #include <Stringapiset.h>
 #include <Windows.h>
@@ -182,6 +178,7 @@ m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App (
     {
     }
 
+#if !defined (__APPLE__)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -223,12 +220,6 @@ void SecureStore::SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP password)
     Utf8String encodedPassword = Base64Utilities::Encode ((Utf8CP)&outbuf[0], outlen);
 
     m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), encodedPassword);
-#endif
-
-#ifdef __APPLE__
-    BEKeychainItem* item = [BEKeychainItem wsbKeychainItemWithIdentifier:[NSString stringWithUTF8String:identifier.c_str ()]];
-    item.username = [NSString stringWithUTF8String:identifier.c_str ()];
-    item.password = [NSString stringWithUTF8String:password];
 #endif
 
 #if defined (BENTLEY_WINRT)
@@ -296,11 +287,6 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
     password = Utf8String ((CharCP)&outbuf[0], (size_t)outlen);
 #endif
 
-#ifdef __APPLE__
-    BEKeychainItem* item = [BEKeychainItem wsbKeychainItemWithIdentifier:[NSString stringWithUTF8String:identifier.c_str ()]];
-    password = [item.password UTF8String];
-#endif
-
 #if defined (BENTLEY_WINRT)
     // Initialize the encryption process
     Platform::String^ strAlgName = SymmetricAlgorithmNames::AesCbcPkcs7;    //Do not change this or you will need to update encryption/decryption logic
@@ -324,6 +310,7 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
 #endif
     return password;
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

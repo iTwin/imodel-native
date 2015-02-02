@@ -15,9 +15,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 HttpResponse StubHttpResponse (ConnectionStatus status = ConnectionStatus::CouldNotConnect);
-HttpResponse StubHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = {});
-HttpResponse StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = {});
-HttpResponse StubJsonHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = {});
+HttpResponse StubHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
+HttpResponse StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
+HttpResponse StubJsonHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
 HttpResponse StubHttpResponseWithUrl (HttpStatus httpStatus, Utf8StringCR url);
 
 void WriteStringToHttpBody (Utf8StringCR string, HttpBodyPtr body);

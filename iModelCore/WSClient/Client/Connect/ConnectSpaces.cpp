@@ -1221,7 +1221,7 @@ bool ConnectSpaces::OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj
 
 void ConnectSpaces::DecreaseDates()
     {
-    BeFileName docsPathName = MobileDgnCommon::GetDocumentsDirectory();
+    BeFileName docsPathName = MobileDgnCommon::GetApplicationPaths ().GetDocumentsDirectory();
     bvector<BeFileName> imodelPaths;
     BeDirectoryIterator::WalkDirsAndMatch(imodelPaths, docsPathName, L"*.imodel", false);
     int i = 0;

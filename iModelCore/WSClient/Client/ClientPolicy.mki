@@ -29,3 +29,10 @@ nameToDefine = __WSCLIENT_DLL_BUILD__
 %if $(TARGET_PLATFORM)=="WinRT"
     ENABLE_CPP_CX_EXTENSIONS = 1
 %endif
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+# Ignore unknown pragmas
+LLVMCommonCompOpts + -Wno-unknown-pragmas

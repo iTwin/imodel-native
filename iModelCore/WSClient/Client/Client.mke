@@ -118,15 +118,17 @@ $(o)WebApiV1BentleyConnect$(oext)           : $(ClientSourceDirectory)WebApi/Web
 
 $(o)WebApiV2$(oext)                         : $(ClientSourceDirectory)WebApi/WebApiV2.cpp $(ClientHeaders) ${MultiCompileDepends}
 
-%include Connect/Connect.mki
-
 %include MultiCppCompileGo.mki
+
+WSClientObjectList = $(MultiCompileObjectList)
+
+%include Connect/Connect.mki
 
 #--------------------------------------------------------------------------------------
 #   Link the library
 #--------------------------------------------------------------------------------------
 DLM_NAME                    = WebServicesClient
-DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_FILES            = $(WSClientObjectList)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_PCH              = $(o)ClientInternal$(oext) 
 DLM_DEST                    = $(o)
