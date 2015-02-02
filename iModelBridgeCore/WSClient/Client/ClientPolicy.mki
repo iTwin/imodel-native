@@ -13,8 +13,7 @@
 
 %if $(TARGET_PLATFORM)=="Windows"
     # Ignore inheritance via dominance warning
-    nameToDefine = -wd4250
-    %include cdefapnd.mki
+    cDefs + -wd4250
 %endif
 
 #--------------------------------------------------------------------------------------

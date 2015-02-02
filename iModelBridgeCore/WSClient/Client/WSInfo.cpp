@@ -136,7 +136,7 @@ BentleyStatus WSInfo::ExtractTypeAndVersionFromAboutPage (Utf8StringCR body, Typ
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSInfo::IsValid () const
     {
-    return m_version.major != 0 && m_type != Type::Unknown;
+    return m_version.GetMajor () != 0 && m_type != Type::Unknown;
     }
 
 /*--------------------------------------------------------------------------------------+
