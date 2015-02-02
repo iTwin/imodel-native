@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ECDB/Published/ECSqlInsertStatementCrudTestDataset.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlInsertStatementCrudTestDataset.h"
@@ -55,7 +55,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::CommonGeometryTests ()
 
         {
         ecsql = "INSERT INTO ecsql.PASpatial (I, Geometry) VALUES (123, ?)";
-        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+        auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 1);
         IGeometryPtr line = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (line));
         }

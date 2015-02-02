@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -397,7 +397,7 @@ IECSqlValue const& value
             {
             int bgfbSize = -1;
             void const* bgfb = value.GetGeometryBlob (&bgfbSize);
-            val.SetIGeometry (static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
+            val.SetBinary (static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
             break;
             }
         }

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceUpdater.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -429,10 +429,10 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         auto stat = ECInstanceAdapterHelper::BindValue (m_statement.GetBinder (bindingInfo->GetECSqlParameterIndex ()), instanceInfo, *bindingInfo);
         if (stat != SUCCESS)
             {
-            WString errorMessage;
-            errorMessage.Sprintf (L"Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex (),
+            Utf8String errorMessage;
+            errorMessage.Sprintf ("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex (),
                 m_statement.GetECSql ());
-            LogFailure (instance, Utf8String (errorMessage).c_str ());
+            LogFailure (instance, errorMessage.c_str ());
             return ERROR;
             }
         }
