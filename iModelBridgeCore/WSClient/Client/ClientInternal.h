@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
+#ifndef __CLIENTINTERNAL_H__
+#define __CLIENTINTERNAL_H__
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeDebugLog.h>
@@ -30,3 +31,5 @@
 USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+#endif // __CLIENTINTERNAL_H__

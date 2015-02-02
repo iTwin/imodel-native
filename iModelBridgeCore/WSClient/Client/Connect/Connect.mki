@@ -50,3 +50,48 @@ $(o)DatabaseHelper$(oext)                   : $(ConnectSourceDirectory)DatabaseH
 $(o)SamlToken$(oext)                        : $(ConnectSourceDirectory)SamlToken.cpp $(ConnectHeaders) ${MultiCompileDepends}
 
 $(o)SecureStore$(oext)                      : $(ConnectSourceDirectory)SecureStore.cpp $(ConnectHeaders) ${MultiCompileDepends}
+
+WSClientObjectList + $(o)Authentication$(oext)                      \
+                     $(o)AuthenticationData$(oext)                  \
+                     $(o)Connect$(oext)                             \
+                     $(o)ConnectAuthenticationHandler$(oext)        \
+                     $(o)ConnectAuthenticationPersistence$(oext)    \
+                     $(o)ConnectSetup$(oext)                        \
+                     $(o)ConnectSpaces$(oext)                       \
+                     $(o)ConnectTokenProvider$(oext)                \
+                     $(o)DatabaseHelper$(oext)                      \
+                     $(o)SamlToken$(oext)                           \
+                     $(o)SecureStore$(oext) 
+
+#---------------------------------------------------------------------------------------+
+#   iOS-specific
+#---------------------------------------------------------------------------------------+
+%if $(TARGET_PLATFORM) == "iOS"
+
+CCPchOpts = 
+CPchOpts =
+
+ConnectHeaders + $(ClientSourceDirectory)libsrc/KeychainItemWrapper/KeychainItemWrapper.h   \
+                 $(ConnectSourceDirectory)BEKeychainItem.h                                  \
+                 $(ConnectSourceDirectory)BEUniqueIdManager.h
+
+$(o)SecureStoreIos$(oext)                   : $(ConnectSourceDirectory)SecureStoreIos.mm $(ConnectHeaders) ${MultiCompileDepends}
+
+$(o)BEUniqueIdManager$(oext)                : $(ConnectSourceDirectory)BEUniqueIdManager.m $(ConnectHeaders) ${MultiCompileDepends}
+
+_llvm_no_arc_option = -fno-objc-arc
+LLVMSpecialCompOpts + $(_llvm_no_arc_option)
+
+$(o)BEKeychainItem$(oext)                   : $(ConnectSourceDirectory)BEKeychainItem.m $(ConnectHeaders) ${MultiCompileDepends}
+
+$(o)KeychainItemWrapper$(oext)              : $(ClientSourceDirectory)libsrc/KeychainItemWrapper/KeychainItemWrapper.m $(ConnectHeaders) ${MultiCompileDepends}
+
+_llvm_no_arc_option = 
+
+WSClientObjectList + $(o)SecureStoreIos$(oext)      \
+                     $(o)BEUniqueIdManager$(oext)   \
+                     $(o)BEKeychainItem$(oext)      \
+                     $(o)KeychainItemWrapper$(oext)
+                     
+%endif
+
