@@ -53,7 +53,6 @@ ECDbAllHeaders = \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
                 $(baseDir)SystemPropertyMap.h \
-                $(baseDir)SqlGenerator.h \
                 $(baseDir)ECDbSchemaPersistence.h \
                 $(baseDir)ECDbSchemaReader.h \
                 $(baseDir)ECDbSchemaWriter.h \
@@ -188,8 +187,6 @@ $(o)PropertyMap$(oext):										$(baseDir)PropertyMap.cpp                   $(E
 $(o)SystemPropertyMap$(oext):								$(baseDir)SystemPropertyMap.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
  
 $(o)ColumnInfo$(oext):										$(baseDir)ColumnInfo.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SqlGenerator$(oext):									$(baseDir)SqlGenerator.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbImpl$(oext):										$(baseDir)ECDbImpl.cpp                     $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -413,9 +413,6 @@
     <ClInclude Include="ColumnInfo.h">
       <Filter>ECDbMap\Db</Filter>
     </ClInclude>
-    <ClInclude Include="SqlGenerator.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -790,9 +787,6 @@
     </ClCompile>
     <ClCompile Include="ColumnInfo.cpp">
       <Filter>ECDbMap\Db</Filter>
-    </ClCompile>
-    <ClCompile Include="SqlGenerator.cpp">
-      <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

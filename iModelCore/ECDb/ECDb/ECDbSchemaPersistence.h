@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistence.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -522,5 +522,6 @@ public:
     bool TryGetContainer(IECCustomAttributeContainerCP& container, IECInstanceCR customAttribute);
     static CustomAttributeTrackerPtr Create (CustomAttributeTrackerStatus* status, bvector<ECSchemaP> const& schemas);
     };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

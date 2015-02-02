@@ -24,7 +24,6 @@
 #include "ClassMapFactory.h"
 #include "ClassMapSubclasses.h"
 #include "RelationshipClassMap.h"
-#include "SqlGenerator.h"
 #include "ClassMapInfo.h"
 #include "MapHintReader.h"
 #include "ECDbProfileManager.h"
