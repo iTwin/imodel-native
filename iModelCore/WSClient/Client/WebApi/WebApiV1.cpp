@@ -803,8 +803,8 @@ ICancellationTokenPtr cancellationToken
             Json::Value schemaDefInstance;
             schemaDefInstance["$id"] = info.CreateDummyRemoteId ();
             schemaDefInstance["Name"] = info.name;
-            schemaDefInstance["VersionMajor"] = info.version.major;
-            schemaDefInstance["VersionMinor"] = info.version.minor;
+            schemaDefInstance["VersionMajor"] = info.version.GetMajor ();
+            schemaDefInstance["VersionMinor"] = info.version.GetMinor ();
 
             auto schemaDefContent = HttpResponseContent::Create (HttpStringBody::Create (schemaDefInstance.toStyledString ()));
             schemaDefContent->GetHeaders ().SetETag (result.GetValue ().eTag);
@@ -975,7 +975,7 @@ ICancellationTokenPtr cancellationToken
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String WebApiV1::SchemaInfo::CreateDummyRemoteId () const
     {
-    return Utf8PrintfString ("DUMMY_SCHEMA_OBJECT-%s.%02d.%02d", name.c_str (), version.major, version.minor);
+    return Utf8PrintfString ("DUMMY_SCHEMA_OBJECT-%s.%02d.%02d", name.c_str (), version.GetMajor (), version.GetMinor ());
     }
 
 /*--------------------------------------------------------------------------------------+
