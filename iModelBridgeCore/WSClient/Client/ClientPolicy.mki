@@ -11,6 +11,12 @@
 %include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
 %include DefaultToolSet.mki
 
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    nameToDefine = -wd4250
+    %include cdefapnd.mki
+%endif
+
 #--------------------------------------------------------------------------------------
 #   Building the WebServicesClient library
 #--------------------------------------------------------------------------------------
