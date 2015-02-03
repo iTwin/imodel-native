@@ -9,6 +9,8 @@
 //__PUBLISH_SECTION_START__
 
 #include "BeAtomic.h"
+#include "RefCounted.h"
+#include "WString.h"
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -222,6 +224,37 @@ struct  BeThreadUtilities
     };
 
 //__PUBLISH_SECTION_END__
+
+//=======================================================================================
+//  @bsiclass 
+//=======================================================================================
+struct BeThread : virtual IRefCounted
+{
+private:
+    intptr_t    m_threadId;
+    Utf8String  m_threadName;
+
+//__PUBLISH_SECTION_END__
+private:
+    static void RunThread (void* arg);
+#if defined (__unix__)
+    static void* RunPlatformThread (void* arg) { RunThread (arg); return NULL; }
+#else
+    static unsigned __stdcall RunPlatformThread (void* arg) { RunThread (arg); return 0; }
+#endif
+
+//__PUBLISH_SECTION_START__
+protected:
+    BENTLEYDLL_EXPORT BeThread (Utf8CP threadName = NULL);
+    virtual void _Run () = 0;
+
+public:
+    virtual ~BeThread () {}
+    intptr_t GetThreadId () const { return m_threadId; }
+    BENTLEYDLL_EXPORT Utf8CP GetThreadName () const;
+    BENTLEYDLL_EXPORT void Start ();
+};
+
 //=======================================================================================
 //! Hold a lock on the system BeMutex
 //  @bsiclass 
@@ -239,6 +272,5 @@ struct BeSystemMutexHolder : BeMutexHolder
     };
 
 //__PUBLISH_SECTION_START__
-
 
 END_BENTLEY_NAMESPACE

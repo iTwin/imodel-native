@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTest.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,6 +40,7 @@
             #define _UNICODE 1
         #endif
         #include <gtest/gtest.h>
+        #include <gmock/gmock.h>
 
     #endif
 
@@ -101,7 +102,7 @@
     #endif
 
     #define RUN_ALL_TESTS BeTest::RunAllTests
-
+    
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
@@ -239,10 +240,11 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     #define BE_TEST_EXPECTED_RESULT_STREQ(expected,actual,fatal)    BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), true,  #expected, #actual, __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_STRNE(expected,actual,fatal)    BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), false, #expected, #actual, __FILE__ , __LINE__,fatal)
 #else
-    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       BeTest::ExpectedResult ((expected) == (actual),       #expected, #actual,      __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NE(val1,val2,fatal)             BeTest::ExpectedResult ((val1) != (val2),             #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,fatal)          BeTest::ExpectedResult (BeTest::EqStr(val1,val2),     #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)          BeTest::ExpectedResult (!BeTest::EqStr(val1,val2),    #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       BeTest::ExpectedResult ((expected) == (actual),          #expected, #actual,      __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NE(val1,val2,fatal)             BeTest::ExpectedResult ((val1) != (val2),                #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,fatal)          BeTest::ExpectedResult (BeTest::EqStr(val1,val2,false),  #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,fatal)      BeTest::ExpectedResult (BeTest::EqStr(val1,val2,true),   #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)          BeTest::ExpectedResult (!BeTest::EqStr(val1,val2,false), #val1,     #val2,        __FILE__ , __LINE__,fatal)
 #endif //defined (EXPERIMENT_COMMENT_OFF)
     #define BE_TEST_EXPECTED_RESULT_TRUE(expression,fatal)          BeTest::ExpectedResult ((expression) != 0,            "TRUE",    #expression,  __FILE__ , __LINE__,fatal)
     #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)         BeTest::ExpectedResult ((expression) == 0,            "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
@@ -273,6 +275,8 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     #define EXPECT_GT(val1,val2)         BE_TEST_EXPECTED_RESULT_GT(val1,val2,false)
     #define ASSERT_STREQ(val1,val2)      BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,true)
     #define EXPECT_STREQ(val1,val2)      BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,false)
+    #define ASSERT_STRCASEEQ(val1,val2)  BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,true)
+    #define EXPECT_STRCASEEQ(val1,val2)  BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,false)
     #define ASSERT_STRNE(val1,val2)      BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,true)
     #define EXPECT_STRNE(val1,val2)      BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,false)
     #define ASSERT_NEAR(val1, val2, tol) BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,true)
@@ -349,9 +353,9 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     //! Compare two integers for equality <= tolerance
     BENTLEYDLL_EXPORT static bool EqTol (int    v1, int    v2, int    tol);
     //! Compare two Utf-8 strings
-    static bool EqStr (Utf8CP s1, Utf8CP s2) {return 0==strcmp(s1,s2);}
+    BENTLEYDLL_EXPORT static bool EqStr (Utf8CP s1, Utf8CP s2, bool ignoreCase);
     //! Compare two wchar_t strings
-    static bool EqStr (WCharCP s1, WCharCP s2) {return 0==wcscmp(s1,s2);}
+    BENTLEYDLL_EXPORT static bool EqStr (WCharCP s1, WCharCP s2, bool ignoreCase);
     //! Call this before running tests
     BENTLEYDLL_EXPORT static void ClearErrorCount();
     //! Call this when a test fails

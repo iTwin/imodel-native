@@ -386,3 +386,45 @@ void BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startAddr, 
     #error unknown platform
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BeThread::BeThread (Utf8CP threadName) 
+    : m_threadId (0), m_threadName (threadName) 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP BeThread::GetThreadName () const 
+    {
+    return m_threadName.c_str ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Grigas.Petraitis               10/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeThread::RunThread (void* arg)
+    {
+    auto& thread = *(BeThread*) arg;
+    thread.m_threadId = BeThreadUtilities::GetCurrentThreadId ();
+    if (!thread.m_threadName.empty ())
+        BeThreadUtilities::SetCurrentThreadName (thread.m_threadName.c_str ());
+
+    thread._Run ();
+
+    thread.m_threadId = 0;
+    thread.m_threadName.clear ();
+    thread.Release ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeThread::Start ()
+    {
+    AddRef ();
+    BeThreadUtilities::StartNewThread (1024 * 1024, RunPlatformThread, this);
+    }

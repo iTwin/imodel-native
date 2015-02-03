@@ -561,6 +561,28 @@ bool BeTest::EqTol (double v1, double v2, double tol) {return fabs(v1-v2) <= tol
 bool BeTest::EqTol (int    v1, int    v2, int    tol) {return  abs(v1-v2) <= tol;}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeTest::EqStr (Utf8CP s1, Utf8CP s2, bool ignoreCase)
+    {
+    if (ignoreCase)
+        return 0 == BeStringUtilities::Stricmp (s1, s2);
+    else
+        return 0 == strcmp (s1, s2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeTest::EqStr (WCharCP s1, WCharCP s2, bool ignoreCase)
+    {
+    if (ignoreCase)
+        return 0 == BeStringUtilities::Wcsicmp (s1, s2);
+    else
+        return 0 == wcscmp (s1, s2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeTest::ExpectedResult::ExpectedResult (bool isAsExpected, CharCP actualExpression, CharCP expectedExpression, CharCP fileName, size_t  lineNum, bool abortImmediately)

@@ -2,7 +2,7 @@
 #
 #     $Source: Bentley.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile=$(SrcRoot)Bentley/AssertBentleyPolicy.mki
@@ -76,6 +76,8 @@ $(o)BeThread$(oext)             : $(nonportDir)BeThread.cpp $(BentleyAPISrc)BeTh
 $(o)BeDebugLog$(oext)           : $(nonportDir)BeDebugLog.cpp $(BentleyAPISrc)BeDebugLog.h ${MultiCompileDepends}
 
 $(o)ValueFormat$(oext)          : $(nonportDir)ValueFormat.cpp $(BentleyAPISrc)ValueFormat.h ${MultiCompileDepends}
+
+$(o)Base64Utilities$(oext)      : $(nonportDir)Base64Utilities.cpp $(BentleyAPISrc)Base64Utilities.h ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM)=="Windows"
     # Windows-specific COM-related utilities

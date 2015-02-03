@@ -49,6 +49,8 @@
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <SubPart PartName="BentleyAllocator"/>
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"    Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib"    PartFile="gmock"    Repository="util-gmock" />
         <Bindings>
             <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)Bentley$(libext)</Libs>
             <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
@@ -63,7 +65,6 @@
     </Part>
  <Part Name="BentleyUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Bentley/Tests/ -dBEGTEST_NAME=Bentley">
         <SubPart PartName="BentleyDll"/>
-        <SubPart PartName="google_gtest_lib"    PartFile="gtest"    Repository="util-gtest" />
         <SubPart PartName="PublishedApi"        PartFile="Bentley"  Repository="Bentley" />
     </Part>
 </BuildContext>

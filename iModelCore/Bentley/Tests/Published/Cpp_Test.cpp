@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
+#include <Bentley/BeThread.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
