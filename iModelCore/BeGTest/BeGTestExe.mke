@@ -2,7 +2,7 @@
 #
 #     $Source: BeGTestExe.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -57,7 +57,7 @@ LOCAL_GUNITTEST_OBJS + $[@wildcard $(unitTestsDir)*$(oext)]
 GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
 GUNITTEST_LIBS       + $[@readfile $(tmp)libraries.list]
 %if $(TARGET_PLATFORM)=="Windows"
-    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext)
+    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext)
 %elif $(TARGET_PLATFORM)=="Linux"
     GUNITTEST_LIBS   + -lpthread
 %endif

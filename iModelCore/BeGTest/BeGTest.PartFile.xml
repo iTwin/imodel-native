@@ -87,6 +87,7 @@
 
     <Part Name="BeGTestExe" BentleyBuildMakeFile="BeGTestExe.mke"  BMakeOptions="+dUSE_GTEST +dBUILD_BEGTEST_GTEST_EXE" ExcludePlatforms="Android*,iOS*">
         <SubPart PartName="google_gtest_lib"                PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib"                PartFile="gmock"            Repository="util-gmock" />
         <SubPart PartName="LoggingNative"                   PartFile="LoggingSDK"       Repository="loggingsdk" />
         <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
         <SubPart PartName="Base"/>
@@ -154,7 +155,7 @@
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="SampleDgnV8Converter"/>
         <SubPart PartName="LinkDgnDbPublisherIntoToolContext" />
-        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="ECDb" Repository="ECDb" />
     </Product>
 
     <Part Name="SampleDgnV8Converter" OnlyPlatforms="x64,x86">
@@ -194,22 +195,24 @@
     </Part>
 
     <Part Name="PlatformUnitTests-Windows-No-View" OnlyPlatforms="x86,x64,WinRT*,Linux*">
-        <SubPart    PartName="BentleyUnitTests"             PartFile="Bentley"              Repository="Bentley" />
+        <SubPart    PartName="BentleyUnitTests"         PartFile="Bentley"              Repository="Bentley" />
         <SubPart    PartName="ECObjectsUnitTests"       PartFile="ecobjects"            Repository="ecobjects" />
         <SubPart    PartName="GeomLibsUnitTests"        PartFile="geomlibs"             Repository="GeomLibs" />
-        <SubPart    PartName="BeSQLiteUnitTests"            PartFile="BeSQLite"             Repository="BeSQLite" />
-        <SubPart    PartName="ECDbUnitTests"                PartFile="BeSQLite"             Repository="BeSQLite" />
-        <SubPart    PartName="DgnProjectUnitTests"          PartFile="DgnPlatform"          Repository="DgnPlatform" />
+        <SubPart    PartName="BeSQLiteUnitTests"        PartFile="BeSQLite"             Repository="BeSQLite" />
+        <SubPart    PartName="ECDbUnitTests"            PartFile="ECDb"                 Repository="ECDb" />
+        <SubPart    PartName="DgnProjectUnitTests"      PartFile="DgnPlatform"          Repository="DgnPlatform" />
+        <SubPart    PartName="WSClientUnitTests"        PartFile="WSClient"             Repository="WSClient" />
         <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema" />
     </Part>
 
     <Part Name="PlatformUnitTests-Static-No-View" ExcludePlatforms="x86,x64,WinRT*,Linux*">
-        <SubPart    PartName="BentleyUnitTests"             PartFile="Bentley"              Repository="Bentley"                LibType="Static" />
+        <SubPart    PartName="BentleyUnitTests"         PartFile="Bentley"              Repository="Bentley"                LibType="Static" />
         <SubPart    PartName="ECObjectsUnitTests"       PartFile="ecobjects"            Repository="ecobjects"              LibType="Static" />
         <SubPart    PartName="GeomLibsUnitTests"        PartFile="geomlibs"             Repository="GeomLibs"               LibType="Static" />
-        <SubPart    PartName="BeSQLiteUnitTests"            PartFile="BeSQLite"             Repository="BeSQLite"               LibType="Static" />
-        <SubPart    PartName="ECDbUnitTests"                PartFile="BeSQLite"             Repository="BeSQLite"               LibType="Static" />
-        <SubPart    PartName="DgnProjectUnitTests"          PartFile="DgnPlatform"          Repository="DgnPlatform"            LibType="Static" />
+        <SubPart    PartName="BeSQLiteUnitTests"        PartFile="BeSQLite"             Repository="BeSQLite"               LibType="Static" />
+        <SubPart    PartName="ECDbUnitTests"            PartFile="ECDb"                 Repository="ECDb"                   LibType="Static" />
+        <SubPart    PartName="DgnProjectUnitTests"      PartFile="DgnPlatform"          Repository="DgnPlatform"            LibType="Static" />
+        <SubPart    PartName="WSClientUnitTests"        PartFile="WSClient"             Repository="WSClient"               LibType="Static" />
         <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema"     LibType="Static" />
     </Part>
 

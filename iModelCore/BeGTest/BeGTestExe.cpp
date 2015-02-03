@@ -2,7 +2,7 @@
 |
 |     $Source: BeGTestExe.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -226,7 +226,8 @@ int main (int argc, char **argv)
     //  Finish initializing libraries
     initializeSqlangLocalization(hostPtr.get());
     BeTest::Initialize(*hostPtr);
-    ::testing::InitGoogleTest(&argc, argv);
+    ::testing::InitGoogleTest (&argc, argv);
+    ::testing::InitGoogleMock (&argc, argv);
     //listener with test failure output
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
     listeners.Append(new BeGTestListener);
