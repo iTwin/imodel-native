@@ -19,7 +19,7 @@ private:
     Utf8String m_delimiter;
 
 public:
-    explicit SqlClauseBuilder (Utf8P delimiter)
+    explicit SqlClauseBuilder (Utf8CP delimiter)
         : m_delimiter (delimiter)
         {}
 
