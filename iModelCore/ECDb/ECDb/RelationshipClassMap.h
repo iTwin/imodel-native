@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -133,7 +133,7 @@ private:
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
-
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
 public:
     ~RelationshipClassEndTableMap () {}
 
@@ -181,7 +181,9 @@ private:
     static void         AddColumnsToIndex (ECDbSqlIndex& index, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
 
     bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
-
+    //virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph) override;
+    //virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
 public:
     ~RelationshipClassLinkTableMap () {}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }

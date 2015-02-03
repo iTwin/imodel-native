@@ -82,20 +82,20 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
     if (stat != MapStatus::Success)
         return stat;
 
-    if (BE_SQLITE_DONE != Save ())
-        {
-        ClearCache ();
-        schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
-            "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
-        return MapStatus::Error;
-        }
-
     if (CreateOrUpdateRequiredTables () != CREATE_ECTABLE_Success)
         {
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
             "Failed to import ECSchemas. Data tables could not be created or updated. Please see log for details.");
 
         ClearCache ();
+        return MapStatus::Error;
+        }
+
+    if (BE_SQLITE_DONE != Save ())
+        {
+        ClearCache ();
+        schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
+            "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
         return MapStatus::Error;
         }
 
@@ -184,8 +184,18 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
 
     BeAssert (GetClassMap (ecClass, false) == nullptr);
 
-    m_classMapLoadAccessCounter++;
+    //m_classMapLoadAccessCounter++;
     MapStatus mapStatus;
+    if (!GetSQLManagerR ().IsLoaded ())
+        {
+        if (GetSQLManagerR ().Load () != BentleyStatus::SUCCESS)
+            {
+            BeAssert (false && "Failed to map information");
+            return nullptr;
+            }
+        }
+
+
     auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
     if (classMapPtr != nullptr)
         {
@@ -198,17 +208,18 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
         m_classMapLoadTable.push_back (&ecClass);
         //Also load associated .
         //WIP_ECDB: Bad style because easy to misinterpret. Do decrement and comparison in two steps
-        if (--m_classMapLoadAccessCounter == 0)
-            {
-            for (ECClassCP classToFinish : m_classMapLoadTable)
-                FinishTableDefinition (*classToFinish);
+        //if (--m_classMapLoadAccessCounter == 0)
+        //    {
+        //    for (ECClassCP classToFinish : m_classMapLoadTable)
+        //        if (classToFinish->GetId () == 0LL)
+        //            FinishTableDefinition (*classToFinish);
 
-            m_classMapLoadTable.clear ();
-            }
+        //    m_classMapLoadTable.clear ();
+        //    }
         return classMapPtr;
         }
 
-    m_classMapLoadAccessCounter--;
+    //m_classMapLoadAccessCounter--;
     return nullptr;
     }
 
@@ -624,8 +635,8 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
         // <<-----------------
         // Load all the classes mapped to this table. This is done to ensure that the table definition is complete.
         classesMappedToDbTable.clear ();
-        if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToDbTable, *table, GetECDbR (), true) != BE_SQLITE_DONE)
-            return CREATE_ECTABLE_Error;
+        //if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToDbTable, *table, GetECDbR (), true) != BE_SQLITE_DONE)
+        //    return CREATE_ECTABLE_Error;
 
         for (auto ecClassId : classesMappedToDbTable)
             {
@@ -680,7 +691,6 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
             }
         }
 
-    GetSQLManagerR ().Save ();
     timer.Stop();
     LOG.infov("Created %d tables, Skipped %d and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
 
@@ -842,6 +852,7 @@ void ECDbMap::ClearCache()
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
     m_tableCache.clear ();
+    GetSQLManagerR ().Reset ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -851,9 +862,9 @@ void ECDbMap::ClearCache()
 DbResult ECDbMap::Save()
     {
     BeCriticalSectionHolder aGurad (m_criticalSection);
-    DbResult r;
     StopWatch stopWatch("", true);
     int i = 0;
+    std::set<ClassMap const*> doneList;
     for (auto it =  m_classMapDictionary.begin(); it != m_classMapDictionary.end(); it++)
         {
         ClassMapPtr const& classMap = it->second;
@@ -861,17 +872,18 @@ DbResult ECDbMap::Save()
         if (classMap->IsDirty())
             {
             i++;
-            r = classMap->Save (false);
-            if (r != BE_SQLITE_DONE)
+            auto r = classMap->Save (doneList);
+            if (r != BentleyStatus::SUCCESS)
                 {
                 LOG.errorv ("Failed to save ECDbMap for ECClass %s. db error: %s", Utf8String (ecClass.GetFullName ()).c_str (), GetECDbR ().GetLastError ());
-                return r;
+                return BE_SQLITE_ERROR;
                 }
             }
         }
 
     stopWatch.Stop();
-    LOG.infov(L"Saving EC to db mappings took %.4lf seconds to save %d classes", stopWatch.GetElapsedSeconds(), i);
+    GetSQLManagerR ().Save ();
+    LOG.infov (L"Saving EC to db mappings took %.4lf seconds to save %d classes", stopWatch.GetElapsedSeconds (), i);
 
     return BE_SQLITE_DONE;
     }

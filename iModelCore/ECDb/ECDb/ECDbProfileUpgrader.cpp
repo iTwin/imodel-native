@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -784,6 +784,14 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "    <ECCustomAttributes> "
         "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.06'/> "
         "    </ECCustomAttributes> "
+        "    <ECClass typeName='ECDbPoint2D' isDomainClass='True' isStruct='True' > "
+        "        <ECProperty propertyName='X' typeName='double'/>"
+        "        <ECProperty propertyName='Y' typeName='double'/>"
+        "    </ECClass> "
+        "    <ECClass typeName='ECDbPoint3D' isDomainClass='True' isStruct='True' > "
+        "        <BaseClass>ECDbPoint2D</BaseClass> "
+        "        <ECProperty propertyName='Z' typeName='double'/>"
+        "    </ECClass> "
         "    <ECClass typeName='ArrayOfPrimitives' isDomainClass='False' isStruct='True' > "
         "        <ECCustomAttributes> "
         "            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.06'> "

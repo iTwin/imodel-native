@@ -341,6 +341,32 @@ struct CompareIWChar
     bool operator()(WCharCP s1, WCharCP s2) const { return (BeStringUtilities::Wcsicmp(s1, s2) < 0);}
     };
 
+//=======================================================================================
+// @bsienum                                                
+// @remarks See @ref ECDbSchemaPersistence to find how these enum values map to actual 
+// persisted values in the Db. 
+//+===============+===============+===============+===============+===============+======
+enum class MapStrategy
+    {
+    // This first group of strategies no ramifications for subclasses
+    NoHint = 0,         // Use default rules, which may include inheriting strategy of parent
+    DoNotMap,           // Skip this one, but child ECClasses may still be mapped
+    TableForThisClass,  // Put this class in a table, but do not pass the strategy along to child ECClasses 
+    // Only DoNotMap and TableForThisClass are valid default strategies
+
+    // These strategies are directly inherited, except for TablePerHierarchy, which causes its children to use InParentTable
+    // They are listed in order of priority (when it comes to conflicts with/among base ECClasses)
+    TablePerHierarchy,  // This class and all child ECClasses stored in one table
+    InParentTable,      // Assigned by system for subclasses of ECClasses using TablePerHierarchy
+    TablePerClass,      // Put each class in its own table (including child ECClasses
+    DoNotMapHierarchy,  // Also don't map children (unless they are reached by a different inheritance pathway) 
+    SharedTableForThisClass, // TableName must be provided. 
+    // These strategies are applicable only to relationships
+    RelationshipSourceTable,     // Store the relationship in the table in which the source class(es) are stored 
+    RelationshipTargetTable,     // Store the relationship in the table in which the target class(es) are stored 
+    };
+
+
 #define ECdbDataColumn  0x0U
 #define ECdbSystemColumnECId  0x1U
 #define ECdbSystemColumnECClassId  0x2U

@@ -113,6 +113,9 @@ protected:
 
     virtual bool _IsECInstanceIdPropertyMap () const;
     virtual bool _IsSystemPropertyMap () const;
+    virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const;
+    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo);
+
 
     //! For debugging and logging
     virtual WString _ToString() const;
@@ -136,6 +139,15 @@ public:
     PropertyMapArrayOfPrimitivesCP GetAsPropertyMapArrayOfPrimitives () const {return _GetAsPropertyMapArrayOfPrimitives();}
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
+    PropertyMapCR GetRoot () const 
+        { 
+        auto current = this;
+        while (current->m_parentPropertyMap != nullptr)
+            current = current->m_parentPropertyMap;
+
+        return *current;
+        }
+
     static uint32_t GetPropertyIndex (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class
     
     PropertyMapCollection const& GetChildren () const { return m_children; }
@@ -180,7 +192,8 @@ public:
     NativeSqlBuilder::List ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const;
 
     //! Saves the base column name, if it differs from the property name
-    BeSQLite::DbResult Save(ECDbR ecdb) const;
+    BeSQLite::DbResult Save (ECDbClassMapInfo & classMapInfo) const;
+    BeSQLite::DbResult Load (ECDbClassMapInfo const& classMapInfo)  { return _Load (classMapInfo); }
 
     WCharCP GetPropertyAccessString () const;
 
@@ -230,7 +243,8 @@ private:
 
     virtual bool _IsUnmapped () const override { return true; }
     virtual WString _ToString () const override;
-
+    virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override { return BE_SQLITE_DONE; }
+    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override {return BE_SQLITE_DONE;}
 public:
     static PropertyMapPtr Create (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
 
@@ -252,6 +266,23 @@ private:
     virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
     DbResult BindECValueToParameter (Statement& statement, ECN::ECValueCR v, Binding const& binding) const;
+    /*---------------------------------------------------------------------------------------
+    * @bsimethod                                                    affan.khan      01/2015
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override
+        {
+        
+        BeAssert (m_column == nullptr);
+        auto info = classMapInfo.FindPropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str ());
+        if (info == nullptr)
+            {
+            BeAssert (false && "Failed to read back property map");
+            return BE_SQLITE_ERROR;
+            }
+
+        m_column = const_cast<ECDbSqlColumn*>(&info->GetColumn ());
+        return BE_SQLITE_DONE;
+        }
 
 protected:
     //! Metadata from which the column can be created
@@ -348,7 +379,8 @@ protected:
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual ECN::ECPropertyId _GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const override;
-
+    virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override { return BE_SQLITE_DONE; }
+    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override { return BE_SQLITE_DONE; }
 public:
     static PropertyMapToTablePtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
     ECN::ECPropertyId GetPropertyId ();
@@ -435,6 +467,82 @@ private:
     //! @see PropertyMap::IsValueNull
     bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
 
+    virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override
+        {        
+        BeAssert (m_xColumn != nullptr);
+        BeAssert (m_yColumn != nullptr);
+
+        auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
+        auto accessString = Utf8String (GetPropertyAccessString ());
+        auto pm = classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".X").c_str (), *m_xColumn);
+        if (pm == nullptr)
+            {
+            BeAssert (false && "Failed to create propertymap");
+            return BE_SQLITE_ERROR;
+            }
+
+        classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Y").c_str (), *m_yColumn);
+        if (pm == nullptr)
+            {
+            BeAssert (false && "Failed to create propertymap");
+            return BE_SQLITE_ERROR;
+            }
+
+        if (m_is3d)
+            {
+            BeAssert (m_zColumn != nullptr);
+            classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Z").c_str (), *m_zColumn);
+            if (pm == nullptr)
+                {
+                BeAssert (false && "Failed to create propertymap");
+                return BE_SQLITE_ERROR;
+                }
+            }
+
+        return BE_SQLITE_DONE;
+        }
+    /*---------------------------------------------------------------------------------------
+    * @bsimethod                                                    affan.khan      01/2015
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override
+        {
+        BeAssert (m_xColumn == nullptr);
+        BeAssert (m_yColumn == nullptr);
+        BeAssert (m_zColumn == nullptr);
+
+        auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
+        auto accessString = Utf8String (GetPropertyAccessString ());
+        auto pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".X").c_str ());
+        if (pm == nullptr)
+            {
+            BeAssert (false && "Failed to load propertymap");
+            return BE_SQLITE_ERROR;
+            }
+
+        m_xColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
+        pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".Y").c_str ());
+        if (pm == nullptr)
+            {
+            BeAssert (false && "Failed to load propertymap");
+            return BE_SQLITE_ERROR;
+            }
+
+        m_yColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
+
+        if (m_is3d)
+            {
+            pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".Z").c_str ());
+            if (pm == nullptr)
+                {
+                BeAssert (false && "Failed to load propertymap");
+                return BE_SQLITE_ERROR;
+                }
+
+            m_zColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
+            }
+
+        return BE_SQLITE_DONE;
+        }
     //! For debugging and logging
     WString _ToString() const override;
 };

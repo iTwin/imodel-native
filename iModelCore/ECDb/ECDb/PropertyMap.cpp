@@ -68,17 +68,15 @@ bool PropertyMap::_IsUnmapped () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
+    if (!ecProperty.HasId ())
+        {
+        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (ecDbMap.GetECDbR (), ecProperty);
+        }
+
     IECInstancePtr hint = ecProperty.GetCustomAttributeLocal (BSCAC_ECDbPropertyHint);
     // WIP_ECDB: honor the hint for non-default mappings
 
     ColumnInfo columnInfo (ecProperty, propertyAccessString, hint.get());
-    DbResult r = ColumnInfo::LoadMappingInformationFromDb (columnInfo, ecProperty, ecDbMap.GetECDbR()); 
-    if (r != BE_SQLITE_ROW && r != BE_SQLITE_DONE)
-        {
-        LOG.errorv(L"Failed to load ECDbMap information for ECProperty '%ls.%ls' from database'", rootClass.GetFullName (), propertyAccessString);
-        return nullptr;
-        }
-
     auto policy = ECDbPolicyManager::GetPropertyPolicy (ecProperty, IsValidInECSqlPolicyAssertion::Get ());
     if (!policy.IsSupported ())
         {
@@ -160,16 +158,66 @@ bool PropertyMap::_IsSystemPropertyMap () const
     }
 
 /*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult PropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
+    {
+    auto& children = GetChildren ();
+    if (children.IsEmpty ())
+        {
+        std::vector<ECDbSqlColumn const*> columns;
+        GetColumns (columns);
+        if (columns.size () == 0)
+            return BE_SQLITE_DONE;
+
+        if (columns.size () > 1)
+            {
+            BeAssert (false && "Overide this funtion for multicolumn mapping");
+            return BE_SQLITE_ERROR;
+            }
+
+        return classMapInfo.CreatePropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str (), *columns.at (0)) != nullptr ? BE_SQLITE_DONE : BE_SQLITE_ERROR;
+        }
+
+    for (auto& child : children)
+        {
+        auto r = child->Save (classMapInfo);
+        if (r != BE_SQLITE_DONE)
+            return r;
+        }
+
+    return BE_SQLITE_DONE;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult PropertyMap::_Load (ECDbClassMapInfo const& classMapInfo)
+    {
+    auto& children = GetChildren ();
+    if (children.IsEmpty ())
+        {
+        BeAssert (false && "This funtion must be overriden in derived class");
+        return BE_SQLITE_ERROR;
+        }
+
+    for (auto child : children)
+        {
+ 
+        auto r = const_cast<PropertyMap*>(child)->Load (classMapInfo);
+        if (r != BE_SQLITE_DONE)
+            return r;
+        }
+
+    return BE_SQLITE_DONE;
+    }
+
+/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::Save (ECDbR ecdb) const
+DbResult PropertyMap::Save (ECDbClassMapInfo & classMapInfo) const
     {
-    Utf8CP columnName = GetColumnBaseName();
-    if (!columnName)
-        return BE_SQLITE_DONE; // WIP_ECDB: What if it used to be different and is now changing back to default?
-
-    ECPropertyId  propertyId = GetProperty().GetId();
-    return ECDbSchemaPersistence::SetECPropertyMapColumnName (propertyId, columnName, ecdb);
+    return _Save (classMapInfo);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -808,7 +856,7 @@ ECN::ECPropertyId PropertyMapToTable::_GetECPropertyIdForPersistence (ECClassId 
 
     ECPropertyId propertyId = 0;
     if (depth > 1)
-        propertyId = ECDbSchemaPersistence::GetECPropertyAlias (relativeToECClassId, accessString.c_str (), db);
+        propertyId = ECDbSchemaPersistence::GetECPropertyAlias (GetRoot().GetProperty().GetId(), accessString.c_str (), db);
 
     if (propertyId == 0)
         {
@@ -851,7 +899,7 @@ WString PropertyMapToTable::_ToString() const
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
 PropertyMapToColumn::PropertyMapToColumn (ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
-: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_columnInfo (columnInfo), m_primitiveProperty (ecProperty.GetAsPrimitiveProperty ())
+: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_columnInfo (columnInfo), m_primitiveProperty (ecProperty.GetAsPrimitiveProperty ()), m_column (nullptr)
     {
     }
 
@@ -1082,7 +1130,7 @@ DbResult PropertyMapToColumn::GetValueDateTime (double& jd, DateTime::Info& meta
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
-    : PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_columnInfo(columnInfo)
+: PropertyMap (ecProperty, propertyAccessString, parentPropertyMap), m_columnInfo (columnInfo), m_xColumn (nullptr), m_yColumn (nullptr), m_zColumn (nullptr)
     {
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (!EXPECTED_CONDITION(primitiveProperty))

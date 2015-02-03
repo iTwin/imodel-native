@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -259,7 +259,7 @@ PropertyMapCR propertyMap
     if (propertyPath.Size () > 1)
         {
         Utf8String accessString;
-        ECClassId rootECClassId = 0;
+        ECPropertyId rootECPropertyId = 0;
         for (auto i = static_cast<int>(propertyPath.Size ()) - 1; i >= 0 ; i--)
             {
             auto const& entry = propertyPath.At (i);
@@ -267,11 +267,11 @@ PropertyMapCR propertyMap
                 {
                 break;
                 }
-            rootECClassId = entry.GetProperty ()->GetClass().GetId();
+            rootECPropertyId = entry.GetProperty ()->GetId ();
             accessString = Utf8String (entry.GetProperty ()->GetName ().c_str ()) + (accessString.empty () ? "" : "." + accessString);
             }       
 
-        persistedPropertyId = ECDbSchemaPersistence::GetECPropertyAlias (rootECClassId, accessString.c_str (), ecdb);
+        persistedPropertyId = ECDbSchemaPersistence::GetECPropertyAlias (rootECPropertyId, accessString.c_str (), ecdb);
         }
 
     if (persistedPropertyId == 0 )

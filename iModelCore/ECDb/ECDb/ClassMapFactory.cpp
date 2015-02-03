@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapFactory.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -17,44 +17,60 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 //static
 ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDbMapCR ecdbMap)
-    {
-    BeAssert (ecClass.HasId () && "ClassMapFactory::Load is expected to look up the class id if not present.");
-    auto classId = ecClass.GetId ();
-    DbECClassMapInfo info;
-    info.ColsWhere = DbECClassMapInfo::COL_ECClassId;
-    info.ColsSelect =
-        DbECClassMapInfo::COL_MapStrategy |
-        DbECClassMapInfo::COL_MapToDbTable |
-        DbECClassMapInfo::COL_MapParentECClassId |
-        DbECClassMapInfo::COL_ECInstanceIdColumn;
-    // Key column(s)
-
-    info.m_ecClassId = classId;
-
-    CachedStatementPtr stmt = nullptr;
-    ECDbSchemaPersistence::FindECClassMapInfo (stmt, ecdbMap.GetECDbR (), info);
-    if (BE_SQLITE_ROW != ECDbSchemaPersistence::Step (info, *stmt))
-        return nullptr;
-
-    //Set map strategy
+    {   
     auto const& schemaManager = ecdbMap.GetECDbR ().GetSchemaManager ();
-
-    bool isMapInParent = (info.m_mapStrategy == MapStrategy::InParentTable);
-    // Save Parent ECClassId if this class is mapped to parent
-    IClassMap const* parentClassMap = nullptr;
-    if (isMapInParent)
+    auto& mapStorage = ecdbMap.GetSQLManager ().GetMapStorage ();
+    auto classMaps = mapStorage.FindClassMapsByClassId (ecClass.GetId ());
+    if (classMaps == nullptr)
         {
-        auto mapParentECClass = schemaManager.GetECClass (info.m_mapParentECClassId);
-        if (mapParentECClass == nullptr)
-            LOG.errorv (L"Fail to get parent class to which current class is mapped.");
-        else
-            parentClassMap = ecdbMap.GetClassMap (*mapParentECClass);
+     //   BeAssert (false && "Failed to find classMap info for give ECClass");
+        return nullptr;
         }
 
-    Utf8CP pk = (info.ColsNull & DbECClassMapInfo::COL_ECInstanceIdColumn) ? nullptr : info.m_primaryKeyColumnName.c_str ();
+    if (classMaps->empty ())
+        {
+        BeAssert (false && "Failed to find classMap info for give ECClass");
+        return nullptr;
+        }
 
-    ClassMapInfoPtr classMapInfo = ClassMapInfoFactory::CreateInstance (ecClass, ecdbMap, info.m_mapToDbTable.c_str (), pk, 
-                                            info.m_mapStrategy);
+    if (classMaps->size () > 1)
+        {
+        BeAssert (false && "Feature of nested class map not implemented");
+        return nullptr;
+        }
+
+    auto& classMapInfo = *classMaps->front();
+    auto baseClassMapInfo = classMapInfo.GetBaseClassMap ();
+    auto baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass (baseClassMapInfo->GetClassId ());
+    auto baseClassMap = baseClass == nullptr ? nullptr : ecdbMap.GetClassMap (*baseClass);
+
+
+    bool setIsDirty = false;
+    auto mapStrategy = classMapInfo.GetMapStrategy ();
+    ClassMapPtr classMap = nullptr;
+    if (IClassMap::IsDoNotMapStrategy (mapStrategy))
+        classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+    else
+        {
+        auto ecRelationshipClass = ecClass.GetRelationshipClassCP ();
+        if (ecRelationshipClass != nullptr)
+            {
+            if (RelationshipClassMap::IsMapToRelationshipLinkTableStrategy (mapStrategy))
+                classMap = RelationshipClassLinkTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+            else
+                classMap = RelationshipClassEndTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+            }
+        else if (IClassMap::IsMapToSecondaryTableStrategy (ecClass))
+            classMap = SecondaryTableClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+        else
+            classMap = ClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+        }
+    std::set<ClassMap const*> loadGraph;
+    auto stat = classMap->Load (loadGraph, classMapInfo, baseClassMap);
+    if (stat != BentleyStatus::SUCCESS)
+        {
+        return nullptr;
+        }
 
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP ();
     // Construct and initialize the class map
@@ -70,35 +86,6 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
             {
             ecdbMap.GetClassMap (*endECClassToLoad);
             }
-        }
-
-    classMapInfo->SetParentClassMap (parentClassMap);
-
-    auto classMap = CreateInstance (mapStatus, *classMapInfo, false);
-    BeAssert (info.m_mapStrategy == classMapInfo->GetMapStrategy ());
-
-    //now see if there are struct type properties
-    classMap->GetPropertyMaps ().Traverse ([&ecdbMap, classId] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        BeAssert (propMap != nullptr);
-        auto propertyMapToTable = propMap->GetAsPropertyMapToTable ();
-        if (propertyMapToTable == nullptr)
-            return;
-
-        ECClassCR elementType = propertyMapToTable->GetElementType ();
-        //If the struct type happens to be the same as the one which is currently being loaded
-        //don't try to load it again to prevent endless loop
-        if (!elementType.HasId () || elementType.GetId () != classId)
-            ecdbMap.GetClassMap (elementType);
-        }, true);
-
-    //This is hack solution. For SharedTables can have unrelated classes and FinishTableDefinition only add classed when there is more then one classes in a table.
-    //TODO: come up with a better solution. 
-    if (classMap->GetMapStrategy () == MapStrategy::SharedTableForThisClass &&
-        classMap->GetTable ().FindColumnCP(ECDB_COL_ECClassId) == nullptr)
-        {
-        if (ecdbMap.GetECDbR ().ColumnExists (classMap->GetTable ().GetName ().c_str(), ECDB_COL_ECClassId))
-            classMap->GetTable ().FindColumnCP (ECDB_COL_ECClassId);
         }
 
     return classMap;

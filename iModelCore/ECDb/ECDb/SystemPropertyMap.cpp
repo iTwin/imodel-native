@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -108,8 +108,8 @@ WCharCP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = L"ECInstanceId";
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn*& column)
-: PropertyMapSystem (ecInstanceIdProperty, column->GetWeakPtr(), ECSqlSystemProperty::ECInstanceId)
+PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn* column)
+: PropertyMapSystem (ecInstanceIdProperty, (column != nullptr ? column->GetWeakPtr () : std::weak_ptr<ECDbSqlColumn>()), ECSqlSystemProperty::ECInstanceId)
     {}
 
 //----------------------------------------------------------------------------------
@@ -130,8 +130,8 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         }
 
     auto systemColumn = const_cast<ECDbSqlColumn*>(systemColumns.front ());
-    if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName().c_str()) != BentleyStatus::SUCCESS)
-        return nullptr;
+    //if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName().c_str()) != BentleyStatus::SUCCESS)
+    //    return nullptr;
 
     return new PropertyMapECInstanceId (*property, systemColumn);
     }
@@ -158,7 +158,7 @@ WString PropertyMapECInstanceId::_ToString () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSecondaryTableKey::PropertyMapSecondaryTableKey (ECPropertyCR ecProperty, ECDbSqlColumn*& column, ECSqlSystemProperty kind)
+PropertyMapSecondaryTableKey::PropertyMapSecondaryTableKey (ECPropertyCR ecProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind)
  : PropertyMapSystem (ecProperty, column->GetWeakPtr(), kind)
  {}
 
@@ -242,8 +242,8 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
-    if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName ().c_str ()) != BentleyStatus::SUCCESS)
-        return nullptr;
+    //if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName ().c_str ()) != BentleyStatus::SUCCESS)
+    //    return nullptr;
 
     return new PropertyMapSecondaryTableKey (*property, systemColumn, kind);
     }
@@ -265,7 +265,7 @@ WString PropertyMapSecondaryTableKey::_ToString () const
 PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint
 (
 ECN::ECPropertyCR constraintProperty,
-ECDbSqlColumn*& column,
+ECDbSqlColumn* column,
 ECSqlSystemProperty kind,
 Utf8CP viewColumnAlias
 )
@@ -292,7 +292,7 @@ void PropertyMapRelationshipConstraint::AppendSelectClauseSqlSnippetForView (Nat
 PropertyMapRelationshipConstraintECInstanceId::PropertyMapRelationshipConstraintECInstanceId
 (
 ECPropertyCR constraintProperty,
-ECDbSqlColumn*& column,
+ECDbSqlColumn* column,
 ECSqlSystemProperty kind,
 Utf8CP viewColumnAlias
 )
@@ -304,7 +304,7 @@ Utf8CP viewColumnAlias
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn*& column, IClassMap const& classMap, Utf8CP viewColumnAlias)
+PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn* column, IClassMap const& classMap, Utf8CP viewColumnAlias)
     {
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
@@ -350,7 +350,7 @@ WString PropertyMapRelationshipConstraintECInstanceId::_ToString () const
 PropertyMapRelationshipConstraintClassId::PropertyMapRelationshipConstraintClassId
 (
 ECN::ECPropertyCR constraintProperty,
-ECDbSqlColumn*& column,
+ECDbSqlColumn* column,
 ECSqlSystemProperty kind,
 ECClassId defaultConstraintECClassId,
 Utf8CP viewColumnAlias,
@@ -382,7 +382,7 @@ PropertyMapPtr PropertyMapRelationshipConstraintClassId::Create
 (
 ECRelationshipEnd constraintEnd,
 ECDbSchemaManagerCR schemaManager,
-ECDbSqlColumn*& column,
+ECDbSqlColumn* column,
 ECClassId defaultSourceECClassId,
 IClassMap const& classMap,
 Utf8CP viewColumnAlias,

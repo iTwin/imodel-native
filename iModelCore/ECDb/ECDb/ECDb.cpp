@@ -93,7 +93,12 @@ BeRepositoryId newRepositoryId
 void ECDb::_OnDbClose ()
     {
     BeAssert (m_pimpl != nullptr && "DbClose was called in destructor after pimpl was deleted.");
-    m_pimpl->Close ();
+    if (m_pimpl != nullptr)
+        {
+        delete m_pimpl;
+        m_pimpl = new Impl (*this);
+        }
+
     Db::_OnDbClose ();
     }
 

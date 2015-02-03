@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,7 +54,7 @@ public:
     static WCharCP const PROPERTYACCESSSTRING;
 
 private:
-    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn*& column);
+    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn* column);
 
     virtual bool _IsECInstanceIdPropertyMap () const override;
     virtual WString _ToString () const override;
@@ -73,7 +73,7 @@ public:
 struct PropertyMapSecondaryTableKey : PropertyMapSystem
     {
 private:
-    explicit PropertyMapSecondaryTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn*& column, ECSqlSystemProperty kind);
+    explicit PropertyMapSecondaryTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind);
 
     virtual WString _ToString () const override;
 
@@ -91,7 +91,7 @@ private:
     Utf8String m_viewColumnAlias;
 
 protected:
-    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*& column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
+    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
 
     bool HasViewColumnAlias () const { return !m_viewColumnAlias.empty (); }
     //! In the view generated for select statements, the constraint columns cannot be used directly for end-table mappings
@@ -115,7 +115,7 @@ public:
 struct PropertyMapRelationshipConstraintECInstanceId : PropertyMapRelationshipConstraint
     {
 private:
-    PropertyMapRelationshipConstraintECInstanceId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*& column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
+    PropertyMapRelationshipConstraintECInstanceId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
 
     virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const override;
 
@@ -124,7 +124,7 @@ private:
 public:
     ~PropertyMapRelationshipConstraintECInstanceId () {}
 
-    static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn*& column, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr);
+    static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn* column, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr);
     };
 
 //=======================================================================================
@@ -135,7 +135,7 @@ struct PropertyMapRelationshipConstraintClassId : PropertyMapRelationshipConstra
 private:
     ECN::ECClassId m_defaultConstraintClassId;
 
-    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*& column, ECSqlSystemProperty kind, ECN::ECClassId defaultClassId, Utf8CP columnAliasInView, ECDbSqlTable* table);
+    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECN::ECClassId defaultClassId, Utf8CP columnAliasInView, ECDbSqlTable* table);
 
     virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const override;
 
@@ -144,7 +144,7 @@ private:
 public:
     ~PropertyMapRelationshipConstraintClassId () {}
 
-    static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn*& column, ECN::ECClassId defaultSourceECClassId, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr, ECDbSqlTable* table = nullptr);
+    static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn* column, ECN::ECClassId defaultSourceECClassId, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr, ECDbSqlTable* table = nullptr);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -65,33 +65,6 @@ void ColumnInfo::InitializeFromHint(IECInstanceCP hint, ECPropertyCR ecProperty)
     //WIP_ECDB: needswork: handle DoNotMap
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ColumnInfo::LoadMappingInformationFromDb (ColumnInfo& columnInfo, ECPropertyCR ecProperty, BeSQLite::Db& db)
-    {
-    Utf8String mapColumnName;
-    DbResult r;
-    ECPropertyId propertyId;
-    if (ecProperty.HasId())
-        propertyId = ecProperty.GetId();
-    else
-        propertyId = ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (db, ecProperty);
-
-    if (BE_SQLITE_ROW == (r = ECDbSchemaPersistence::GetECPropertyMapColumnName(mapColumnName, propertyId, db)))
-        {
-        if (Utf8String::IsNullOrEmpty (mapColumnName.c_str ()))
-            {
-            LOG.warningv (L"Property map MappedColumnName has empty string for %ls.%ls", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-            BeAssert(Utf8String::IsNullOrEmpty (mapColumnName.c_str ()));
-            }
-        columnInfo.m_columnName = mapColumnName;
-        }
-    return r;
-    }
-
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/

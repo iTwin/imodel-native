@@ -27,7 +27,6 @@ private:
         ProfileCreator ();
         ~ProfileCreator ();
         static DbResult CreateECProfileTables (Db& db);
-
         static DbResult CreateTableECSchema (Db& db);
         static DbResult CreateTableECClass (Db& db);
         static DbResult CreateTableECClassMap (Db& db);
@@ -39,7 +38,13 @@ private:
         static DbResult CreateTableCustomAttributes (Db& db);
         static DbResult CreateTableReferences (Db& db);
         static DbResult CreateTableECPropertyMap (Db& db);
-        static DbResult CreateTablePropertyAlias (Db& db);
+        static DbResult CreateTablePropertyPath (Db& db);
+        static DbResult CreateTableTable (Db& db);
+        static DbResult CreateTableColumn (Db& db);
+        static DbResult CreateTableIndex (Db& db);
+        static DbResult CreateTableIndexColumn (Db& db);
+        static DbResult CreateTableForeignKey (Db& db);
+        static DbResult CreateTableForeignKeyColumn (Db& db);
 
     public:
         static DbResult Create (ECDbR ecdb);

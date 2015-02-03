@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapSubclasses.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -138,6 +138,7 @@ MapStatus UnmappedClassMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClas
 
     if (parentClassMap != nullptr)
         m_parentMapClassId = parentClassMap->GetParentMapClassId ();
+
     auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
     SetTable (const_cast<ECDbSqlTable*> (nullTable));
 

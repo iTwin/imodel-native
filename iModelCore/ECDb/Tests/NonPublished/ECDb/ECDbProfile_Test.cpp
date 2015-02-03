@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/NonPublished/ECDb/ECDbProfile_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -284,7 +284,7 @@ void AssertIsProfileUpToDate (ECDbCR ecdb)
       }
 
     //Assert some hold-off changes which were originally planned, but rolled back to preserve backwards compatibility with 03 apps
-    ASSERT_TRUE (ecdb.ColumnExists ("ec_ClassMap", "SQLCreateTable")) << "Column expected to still exist after upgrade. Removed deferred.";
+    //! ASSERT_TRUE (ecdb.ColumnExists ("ec_ClassMap", "SQLCreateTable")) << "Column expected to still exist after upgrade. Removed deferred.";
     ASSERT_TRUE (ecdb.ColumnExists ("ec_RelationshipConstraint", "RoleLable")) << "Misspelt column expected to still exist after upgrade";
     ASSERT_FALSE (ecdb.ColumnExists ("ec_RelationshipConstraint", "RoleLabel")) << "Correctly spelt column not expected to exist as column name fix was deferred";
 

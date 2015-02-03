@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapSubclasses.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,7 +70,13 @@ private:
     virtual Type _GetClassMapType () const override;
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     virtual IClassMap const& _GetView (View classView) const override;
-
+    //virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
+        {
+        auto a =  ClassMap::_Load (loadGraph, mapInfo, parentClassMap);
+        m_embeddedTypeClassView->Initialize ();
+        return a;
+        }
 public:
     ~SecondaryTableClassMap () {}
 
@@ -101,8 +107,13 @@ private:
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual Type _GetClassMapType () const override { return IClassMap::Type::Unmapped; }
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
-
     UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty);
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
+        {
+        auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
+        SetTable (const_cast<ECDbSqlTable*> (nullTable));
+        return BentleyStatus::SUCCESS;
+        }
 
 public:
     ~UnmappedClassMap () {}

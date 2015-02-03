@@ -372,12 +372,12 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
             return stat;
         }
 
-    auto propertyPathUpdateStatus = ECDbSchemaPersistence::UpdatePropertyPath (m_ecdb);
-    if (propertyPathUpdateStatus != BE_SQLITE_OK)
-        {
-        LOG.errorv ("Failed to update property path information");
-        return BentleyStatus::ERROR;
-        }
+    //auto propertyPathUpdateStatus = ECDbSchemaPersistence::UpdatePropertyPath (m_ecdb);
+    //if (propertyPathUpdateStatus != BE_SQLITE_OK)
+    //    {
+    //    LOG.errorv ("Failed to update property path information");
+    //    return BentleyStatus::ERROR;
+    //    }
 
     if (!diffs.empty ())
         ClearCache ();

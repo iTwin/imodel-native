@@ -1760,23 +1760,31 @@ MapStrategy ECDbSchemaPersistence::GetClassMapStrategy (bool* hasMapEntry, ECN::
 DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db, bool includeRelationshipEndTables)
     {
     BeSQLite::Statement stmt;
-    auto stat = stmt.Prepare(db, "SELECT ec_ClassMap.ECClassId, MapStrategy FROM ec_ClassMap  JOIN ec_Class ON ec_ClassMap.ECClassId = ec_Class.ECClassId WHERE MapToDbTable = ? AND ec_Class.IsRelationship = 0");
+    auto stat = stmt.Prepare(db,         
+        "SELECT DISTINCT ec_ClassMap.ECClassId  FROM ec_ClassMap"
+        "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.[ClassMapId] = ec_ClassMap.[Id]"
+        "   INNER JOIN ec_Column ON ec_Column.[Id] = ec_PropertyMap.[ColumnId]"
+        "   INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.[TableId]"
+        "   INNER JOIN ec_Class ON ec_Class.[ECClassId] = ec_ClassMap.ECClassId"
+        "   WHERE  ec_Table.[Id] = ? AND ec_Class.IsRelationship = 0"
+        );
+
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stmt.BindText (1, table.GetName (), Statement::MakeCopy::No);
+    stmt.BindInt64 (1, table.GetId());
 
     while ((stat = stmt.Step ()) == BE_SQLITE_ROW)
         {
         auto ecClassId = stmt.GetValueInt64 (0);
-        auto mapStrategy = ToMapStrategy (stmt.GetValueInt (1));
+        //auto mapStrategy = ToMapStrategy (stmt.GetValueInt (1));
         classIds.push_back (ecClassId);
-        if (mapStrategy == MapStrategy::TablePerHierarchy)
-            {
-            stat = GetClassesMappedToParent (classIds, ecClassId, db);
-            if (stat != BE_SQLITE_DONE)
-                return stat;
-            }
+        //if (mapStrategy == MapStrategy::TablePerHierarchy)
+        //    {
+        //    stat = GetClassesMappedToParent (classIds, ecClassId, db);
+        //    if (stat != BE_SQLITE_DONE)
+        //        return stat;
+        //    }
         }
     
     if (includeRelationshipEndTables)
@@ -2210,56 +2218,214 @@ CustomAttributeTrackerPtr CustomAttributeTracker::Create(CustomAttributeTrackerS
         *status = r;
     return tracker;
     }
-
-
+//
+//struct ECPropertyKey
+//    {
+//    private:
+//        ECPropertyId m_propertyId;
+//        Utf8String m_accessString;
+//
+//    public:
+//        ECPropertyKey (ECPropertyId propertyId, Utf8CP accessString)
+//            :m_propertyId (propertyId), m_accessString (accessString)
+//            {
+//            }
+//        ~ECPropertyKey () {}
+//        ECPropertyId GetId () const { return m_propertyId; }
+//        Utf8StringCR GetAccessString () const { return m_accessString; }
+//        bool operator == (ECPropertyKey const& propertyKey) const
+//            {
+//            return (m_propertyId == propertyKey.m_propertyId) && (m_accessString == propertyKey.m_accessString);
+//            }
+//        bool operator != (ECPropertyKey const& propertyKey) const
+//            {
+//            return !(this->operator==(propertyKey));
+//            }
+//        bool operator < (ECPropertyKey const& propertyKey) const
+//            {
+//            if (m_propertyId < propertyKey.m_propertyId)
+//                return true;
+//
+//            if (m_propertyId > propertyKey.m_propertyId)
+//                return false;
+//
+//            if (m_accessString < propertyKey.m_accessString)
+//                return true;
+//
+//            if (m_accessString > propertyKey.m_accessString)
+//                return false;
+//
+//            return false;
+//            }
+//        bool operator > (ECPropertyKey const& propertyKey) const
+//            {
+//            if (m_propertyId > propertyKey.m_propertyId)
+//                return true;
+//
+//            if (m_propertyId < propertyKey.m_propertyId)
+//                return false;
+//
+//            if (m_accessString > propertyKey.m_accessString)
+//                return true;
+//
+//            if (m_accessString < propertyKey.m_accessString)
+//                return false;
+//
+//            return false;
+//            }
+//        bool operator <= (ECPropertyKey const& propertyKey) const
+//            {
+//            return !(this->operator> (propertyKey));
+//            }
+//        bool operator >= (ECPropertyKey const& propertyKey) const
+//            {
+//            return !(this->operator< (propertyKey));
+//            }
+//
+//        static std::vector<ECPropertyKey> From (ECClassCR ecClass)
+//            {
+//            std::vector<ECPropertyKey> kp;
+//            for (auto ecProperty : ecClass.GetProperties ())
+//                {
+//                if (ecProperty->GetIsStruct ())
+//                    Traverse (ecProperty->GetAsStructProperty ()->GetType ());
+//                else if (ecProperty->GetAsArrayProperty ()->GetKind () == ArrayKind::ARRAYKIND_Struct)
+//                    Traverse (*ecProperty->GetAsArrayProperty ()->GetStructElementType ());
+//                else
+//                    kp.push_back (ECPropertyKey (ecProperty->GetId (), Utf8String (ecProperty->GetName ()).c_str ()));
+//                }
+//            }
+//    };
+//
+//void Traverse (ECClassCR ecClass, std::vector<ECPropertyKey>& kp, std::vector<ECPropertyCP>& propertyPath)
+//    {
+//    for (auto ecProperty : ecClass.GetProperties ())
+//        {
+//        if (ecProperty->GetIsStruct ())
+//            Traverse (ecProperty->GetAsStructProperty ()->GetType (), kp, propertyPath);
+//        else if (ecProperty->GetAsArrayProperty ()->GetKind () == ArrayKind::ARRAYKIND_Struct)
+//            Traverse (*ecProperty->GetAsArrayProperty ()->GetStructElementType (), kp, propertyPath);
+//        else
+//        kp.push_back (ECPropertyKey (baseProperty, accessString.c_str());
+//        }
+//    }
+//void Traverse (ECPropertyCR property)
+//    {
+//    if (ecProperty->GetIsStruct ())
+//        Traverse (ecProperty->GetAsStructProperty ()->GetType ());
+//    else if (ecProperty->GetAsArrayProperty ()->GetKind () == ArrayKind::ARRAYKIND_Struct)
+//        Traverse (*ecProperty->GetAsArrayProperty ()->GetStructElementType ())        
+//    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECDbSchemaPersistence::UpdatePropertyPath (ECDb& db)
     {
-    auto sql =
+    const auto cte =
         "WITH RECURSIVE "
-        "   TravseECClassStructProperties (parentECClassId, AccessString, LeafECPropertyId, PropertyType, RootECClassId, ProperytPathDepth, ArrayNestingLevel, RootECPropertyId) "
-        "   AS ( "
-        "       SELECT ECClassId, NULL, NULL, '', ECClassId, 0, 0, NULL  FROM ec_Class "
-        "       UNION"
-        "       SELECT TypeECStruct,"
-        "           (CASE when AccessString IS NOT NULL > 0 THEN AccessString || '.' ELSE '' END) "
-        "           || P.Name, "
-        "           P.ECPropertyId, "
-        "           S.Name, "
-        "           RootECClassId, "
-        "           ProperytPathDepth + 1, "
-        "           ArrayNestingLevel + IsArray, "
-        "           (CASE when ProperytPathDepth = 0 THEN P.ECPropertyId ELSE RootECPropertyId END) "
-        "       FROM ec_Property P, TravseECClassStructProperties "
-        "           INNER JOIN ec_Class C ON C.ECClassId = P.ECClassId "
-        "           INNER JOIN ec_Class S ON S.ECClassId = P.TypeECStruct "
-        "       WHERE TypeECStruct IS NOT NULL  AND TravseECClassStructProperties.[parentECClassId] = C.ECClassId "
-        "       ORDER BY 2 "
-        "   ) "
-        "SELECT RootECClassId, RootECPropertyId, LeafECPropertyId, AccessString "
-        "FROM TravseECClassStructProperties "
-        "   INNER JOIN ec_Property ON ec_Property.ECPropertyId = LeafECPropertyId "
-        "WHERE ProperytPathDepth > 1 AND ArrayNestingLevel = 1 AND ec_Property.IsArray = 1 "
-        "EXCEPT SELECT RootECClassId, RootECPropertyId, LeafECPropertyId, AccessString FROM ec_PropertyAlias";
+        "  PropertyView ( "
+        "            ECClassId, "
+        "            ECPropertyId, "
+        "            Name, "
+        "            DisplayLabel, "
+        "            Description, "
+        "            ECIndex, "
+        "            IsArray, "
+        "            TypeCustom, "
+        "            TypeECPrimitive, "
+        "            TypeGeometry, "
+        "            IsReadOnly, "
+        "            MinOccurs, "
+        "            MaxOccurs, "
+        "            TypeECStruct) "
+        "  AS "
+        "  ( "
+        "     SELECT "
+        "            ECClassId, "
+        "            ECPropertyId, "
+        "            Name, "
+        "            DisplayLabel, "
+        "            Description, "
+        "            ECIndex, "
+        "            IsArray, "
+        "            TypeCustom, "
+        "            TypeECPrimitive, "
+        "            TypeGeometry, "
+        "            IsReadOnly, "
+        "            MinOccurs, "
+        "            MaxOccurs, "
+        "            (CASE "
+        "                  WHEN TypeECPrimitive = 1793 THEN "
+        "                        (SELECT ECClassId FROM ec_Class WHERE Name = 'ECDbPoint2D' LIMIT 1) "
+        "                  WHEN TypeECPrimitive = 2049 THEN "
+        "                        (SELECT ECClassId FROM ec_Class WHERE Name = 'ECDbPoint3D' LIMIT 1) "
+        "                  ELSE "
+        "                        TypeECStruct "
+        "            END) TypeECStruct "
+        "    FROM ec_Property "
+        " ), "
+        " TravsePropertyPath (ClassId, PropertyId, RootECPropertyId, StructClassId , AccessString, ProperytPathDepth, ArrayNestingLevel) "
+        "  AS ( "
+        "     SELECT ECClassId, ECPropertyId, ECPropertyId, TypeECStruct, Name, 0, 0 FROM PropertyView "
+        "     UNION "
+        "     SELECT    P.ECClassId, "
+        "               P.ECPropertyId, "
+        "               PropertyId, "
+        "               P.TypeECStruct, "
+        "               (CASE when AccessString IS NOT NULL > 0 THEN AccessString || '.' ELSE '' END) || P.Name, "
+        "               ProperytPathDepth + 1, "
+        "               ArrayNestingLevel + P.IsArray "
+        "           FROM TravsePropertyPath "
+        "           INNER JOIN PropertyView P ON P.ECClassId = TravsePropertyPath.StructClassId "
+        "   ) ";
 
-    Statement newPropertyPathStmt, propertyPathInsertStmt;
-    auto stat = newPropertyPathStmt.Prepare (db, sql);
+    const auto deleteSQL =
+        " DELETE FROM ec_PropertyPath "
+        "   WHERE Id IN ("
+        "       SELECT P.Id FROM ec_PropertyPath P"
+        "           LEFT JOIN TravsePropertyPath T ON P.RootECPropertyId = T.RootECPropertyId AND P.AccessString = T.AccessString"
+        "       WHERE (T.RootECPropertyId IS NULL AND T.AccessString IS NULL))";
+
+    const auto selectSQL =
+        " SELECT T.RootECPropertyId, T.AccessString FROM TravsePropertyPath T"
+        "   LEFT JOIN ec_PropertyPath P ON P.RootECPropertyId = T.RootECPropertyId AND P.AccessString = T.AccessString"
+        " WHERE  (P.RootECPropertyId IS NULL AND P.AccessString IS NULL)";
+        
+
+    const auto insertSQL =
+        "INSERT INTO ec_PropertyPath (Id, RootECPropertyId, AccessString) VALUES (? , ? , ?)";
+
+    Statement selectStmt, deleteStmt, insertStmt;
+    auto stat = deleteStmt.Prepare (db, SqlPrintfString ("%s %s", cte, deleteSQL));
     if (stat != BE_SQLITE_OK)
         {
-        BeAssert (false && "Failed to prepare CTE query to get new property path that need to be added");
+        BeAssert (false && "Failed to prepare CTE query to delete outdated property path");
         return stat;
         }
 
-    stat = propertyPathInsertStmt.Prepare (db, "INSERT INTO ec_PropertyAlias (AliasECPropertyId, RootECClassId, RootECPropertyId, LeafECPropertyId, AccessString) VALUES (?, ?, ?, ?, ?)");
+    stat = selectStmt.Prepare (db, SqlPrintfString ("%s %s", cte, selectSQL));
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert (false && "Failed to prepare CTE query to reterive new property path");
+        return stat;
+        }
+
+    stat = insertStmt.Prepare (db, insertSQL);
     if (stat != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to prepare insert query for ec_PropertyAlias");
         return stat;
         }
+   
+    //Delete outdated accessStrings
+    if (deleteStmt.Step () != BE_SQLITE_DONE)
+        {
+        BeAssert (false && "Failed to update ec_PropertyPath");
+        return stat;
+        }
 
-    while (newPropertyPathStmt.Step () == BE_SQLITE_ROW)
+    //Select and insert any new accessStrings
+    while (selectStmt.Step () == BE_SQLITE_ROW)
         {
         BeRepositoryBasedId propertyPathId;
         stat = db.GetImplR ().GetECPropertyIdSequence ().GetNextValue (propertyPathId);
@@ -2268,17 +2434,16 @@ DbResult ECDbSchemaPersistence::UpdatePropertyPath (ECDb& db)
             BeAssert (false && "Failed to generate new aliasECPropertyId");
             return stat;
             }
-        stat = propertyPathInsertStmt.Reset ();
-        stat = propertyPathInsertStmt.ClearBindings ();
-        stat = propertyPathInsertStmt.BindId (1, propertyPathId); //AliasECPropertyId
-        stat = propertyPathInsertStmt.BindInt64 (2, newPropertyPathStmt.GetValueInt64 (0)); // RootECClassId
-        stat = propertyPathInsertStmt.BindInt64 (3, newPropertyPathStmt.GetValueInt64 (1)); // RootECPropertyId
-        stat = propertyPathInsertStmt.BindInt64 (4, newPropertyPathStmt.GetValueInt64 (2)); // LeafECPropertyId
-        stat = propertyPathInsertStmt.BindText (5, newPropertyPathStmt.GetValueText (3), Statement::MakeCopy::No); //AccessString
-        stat = propertyPathInsertStmt.Step ();
+
+        stat = insertStmt.Reset ();
+        stat = insertStmt.ClearBindings ();
+        stat = insertStmt.BindId (1, propertyPathId); //Id
+        stat = insertStmt.BindInt64 (2, selectStmt.GetValueInt64 (0)); // RootECPropertyId
+        stat = insertStmt.BindText (3, selectStmt.GetValueText (1), Statement::MakeCopy::No); //AccessString
+        stat = insertStmt.Step ();
         if (stat != BE_SQLITE_DONE)
             {
-            BeAssert (false && "Failed to insert record into ec_PropertyAlias");
+            BeAssert (false && "Failed to insert record into ec_PropertyPath");
             return stat;
             }
         }
@@ -2289,17 +2454,17 @@ DbResult ECDbSchemaPersistence::UpdatePropertyPath (ECDb& db)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyId ECDbSchemaPersistence::GetECPropertyAlias (ECClassId ecClassId, Utf8CP accessString, BeSQLite::Db& db)
+ECPropertyId ECDbSchemaPersistence::GetECPropertyAlias (ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db& db)
     {
     Statement stmt;
-    auto stat = stmt.Prepare (db, "SELECT AliasECPropertyId FROM ec_PropertyAlias WHERE RootECClassId = ? AND AccessString = ?");
+    auto stat = stmt.Prepare (db, "SELECT Id FROM ec_PropertyPath WHERE RootECPropertyId = ? AND AccessString = ?");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to prepare statement");
         return 0;
         }
 
-    stmt.BindInt64 (1, ecClassId);
+    stmt.BindInt64 (1, rootECPropertyId);
     stmt.BindText (2, accessString, Statement::MakeCopy::No);
     if (stmt.Step () == BE_SQLITE_ROW)
         return stmt.GetValueInt64 (0);

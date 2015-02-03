@@ -307,13 +307,13 @@ DbResult ECDbProfileManager::ProfileCreator::Create (ECDbR ecdb)
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::ProfileCreator::CreateECProfileTables 
+DbResult ECDbProfileManager::ProfileCreator::CreateECProfileTables
 (
 Db& db
 )
     {
     StopWatch timer ("", true);
-    auto stat = CreateTableECSchema (db); 
+    auto stat = CreateTableECSchema (db);
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -353,11 +353,35 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = CreateTableECPropertyMap (db);
+    stat = CreateTablePropertyPath (db);
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = CreateTablePropertyAlias (db);
+    stat = CreateTableTable (db);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = CreateTableColumn (db);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = CreateTableIndex (db);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = CreateTableIndexColumn (db);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = CreateTableForeignKey (db);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = CreateTableForeignKeyColumn (db);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = CreateTableECPropertyMap (db);
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -434,16 +458,19 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECClassMap
 Db& db
 )
     {
-    return db.ExecuteSql (
-        "CREATE TABLE ec_ClassMap "   
+    auto stat = db.ExecuteSql (
+        "CREATE Table ec_ClassMap"
         "("
-        "ECClassId INTEGER NOT NULL PRIMARY KEY REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
-        "MapParentECClassId INTEGER REFERENCES ec_Class(ECClassId), "
-        "MapStrategy SMALLINT NOT NULL, "
-        "MapToDbTable CHAR, "
-        "SQLCreateTable CHAR, "  //deprecated, to be removed once backwards compatibility with 03 apps is no longer needed
-        "PrimaryKeyColumnName CHAR"
+        "    [Id] INTEGER PRIMARY KEY,"
+        "    [ECClassId] INTEGER  NOT NULL REFERENCES ec_Class (ECClassId) ON DELETE CASCADE,"
+        "    [ParentId] INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
+        "    [MapStrategy] INTEGER NOT NULL"
         ");");
+
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_ClassMap_ECClassIdANDParentId ON ec_ClassMap ([ECClassId], [ParentId]) WHERE [ParentId] IS NOT NULL;");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -475,26 +502,26 @@ Db& db
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::ProfileCreator::CreateTablePropertyAlias
+DbResult ECDbProfileManager::ProfileCreator::CreateTablePropertyPath
 (
 Db& db
 )
     {
     auto stat = db.ExecuteSql (
-        "CREATE TABLE ec_PropertyAlias "
+        "CREATE Table ec_PropertyPath"
         "("
-        "AliasECPropertyId INTEGER PRIMARY KEY, " 
-        "RootECClassId INTEGER  REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
-        "RootECPropertyId INTEGER  REFERENCES ec_Property(ECPropertyId) ON DELETE CASCADE, "
-        "LeafECPropertyId INTEGER NOT NULL REFERENCES ec_Property(ECPropertyId) ON DELETE CASCADE, "
-        "AccessString CHAR NOT NULL " 
-        ");" );
+        "    [Id] INTEGER PRIMARY KEY,"
+        "    [RootECPropertyId] INTEGER NOT NULL REFERENCES ec_Property (ECPropertyId) ON DELETE CASCADE,"
+        "    [AccessString] TEXT NOT NULL"
+        ");");
+
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX idx_ec_PropertyAliasCIDA ON ec_PropertyAlias (RootECClassId, AccessString);");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_PropertyPath_PropertyIdAndAccessString ON ec_PropertyPath (RootECPropertyId, AccessString);");
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -544,13 +571,14 @@ Db& db
 )
     {
     return db.ExecuteSql (
-        "CREATE TABLE ec_PropertyMap "
+        "CREATE Table ec_PropertyMap"
         "("
-        "ECPropertyId INTEGER NOT NULL, "
-        "MapColumnName CHAR NOT NULL, "
-        "PRIMARY KEY (ECPropertyId), "
-        "FOREIGN KEY (ECPropertyId) REFERENCES ec_Property(ECPropertyId) ON DELETE CASCADE"
+        "    [ClassMapId] INTEGER NOT NULL REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
+        "    [PropertyPathId] INTEGER NOT NULL REFERENCES ec_PropertyPath (Id) ON DELETE CASCADE,"
+        "    [ColumnId] INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "    PRIMARY KEY (ClassMapId, PropertyPathId, ColumnId)"
         ");");
+
     }
 
 //-----------------------------------------------------------------------------------------
@@ -658,6 +686,140 @@ Db& db
         "ReferenceECSchemaId INTEGER REFERENCES ec_Schema(ECSchemaId) ON DELETE CASCADE"
         ");");
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::ProfileCreator::CreateTableTable
+(
+Db& db
+)
+    {
+    return db.ExecuteSql (
+        "CREATE TABLE ec_Table"
+        "("
+        "    [Id] INTEGER PRIMARY KEY,"
+        "    [Name] TEXT NOT NULL COLLATE NOCASE,"
+        "    [IsOwnedByECDb] BOOLEAN NOT NULL,"
+        "    [IsVirtual] BOOLEAN NOT NULL"
+        ");");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::ProfileCreator::CreateTableColumn
+(
+Db& db
+)
+    {
+    return db.ExecuteSql (
+        "CREATE TABLE ec_Column"
+        "("
+        "    [Id] INTEGER PRIMARY KEY,"
+        "    [TableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "    [Name] TEXT NOT NULL COLLATE NOCASE,"
+        "    [Type] SMALLINT NOT NULL,"
+        "    [IsVirtual] BOOLEAN NOT NULL,"
+        "    [Ordinal] INTEGER NOT NULL,"
+        "    [Constraint_NotNull] BOOLEAN,"
+        "    [Constraint_Unique] BOOLEAN,"
+        "    [Constraint_Check] TEXT,"
+        "    [Constraint_Default] TEXT,"
+        "    [Constraint_Collate] SMALLINT,"
+        "    [PrimaryKey_Ordinal] SMALLINT,"
+        "    [UserData] INTEGER"
+        ");");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::ProfileCreator::CreateTableIndex
+(
+Db& db
+)
+    {
+    auto stat = db.ExecuteSql (
+        "CREATE TABLE ec_Index"
+        "("
+        "    [Id] INTEGER PRIMARY KEY,"
+        "    [Name] TEXT NOT NULL COLLATE NOCASE,"
+        "    [TableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "    [Unique] BOOLEAN NOT NULL,"
+        "    [Where] TEXT"
+        ");");
+
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_Index_TableIdAndName ON ec_Index (TableId, [Name]);");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::ProfileCreator::CreateTableIndexColumn
+(
+Db& db
+)
+    {
+    return db.ExecuteSql (
+        "CREATE TABLE ec_IndexColumn"
+        "("
+        "    [IndexId] INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
+        "    [ColumnId] INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "    [Ordinal] SMALLINT NOT NULL,"
+        "    PRIMARY KEY (IndexId, ColumnId)"
+
+        ");");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::ProfileCreator::CreateTableForeignKey
+(
+Db& db
+)
+    {
+    return db.ExecuteSql (
+        "CREATE TABLE ec_ForeignKey"
+        "("
+        "    [Id] INTEGER PRIMARY KEY,"
+        "    [TableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "    [ReferenceTableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "    [Name] TEXT COLLATE NOCASE,"
+        "    [OnDelete] INTEGER,"
+        "    [OnUpdate] INTEGER,"
+        "    [MatchType] INTEGER"
+        ");");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::ProfileCreator::CreateTableForeignKeyColumn
+(
+Db& db
+)
+    {
+    return db.ExecuteSql (
+        "CREATE TABLE ec_ForeignKeyColumn"
+        "("
+        "    [ForeignKeyId] INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
+        "    [ColumnId] INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "    [ReferenceColumnId] INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "    [Ordinal] INTEGER NOT NULL"
+        ");");
+    }
+
 
 //*************************************** ECDbProfileManager::ProfileUpgradeContext *************************
 //-----------------------------------------------------------------------------------------

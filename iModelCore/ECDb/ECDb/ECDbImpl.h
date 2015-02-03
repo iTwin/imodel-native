@@ -28,6 +28,13 @@ private:
     static Utf8CP const ECCLASSIDSEQUENCE_BELOCALKEY;
     static Utf8CP const ECPROPERTYIDSEQUENCE_BELOCALKEY;
 
+    static Utf8CP const TABLEIDSEQUENCE_BELOCALKEY;
+    static Utf8CP const COLUMNIDSEQUENCE_BELOCALKEY;
+    static Utf8CP const INDEXIDSEQUENCE_BELOCALKEY;
+    static Utf8CP const CONSTRAINTIDSEQUENCE_BELOCALKEY;
+    static Utf8CP const CLASSMAPIDSEQUENCE_BELOCALKEY;
+    static Utf8CP const PROPERTYPATHIDSEQUENCE_BELOCALKEY;
+
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
     std::unique_ptr<ECDbMap> m_ecdbMap;
 
@@ -36,6 +43,12 @@ private:
     BeRepositoryBasedIdSequence m_ecClassIdSequence;
     BeRepositoryBasedIdSequence m_ecPropertyIdSequence;
 
+    BeRepositoryBasedIdSequence m_tableIdSequence;
+    BeRepositoryBasedIdSequence m_columnIdSequence;
+    BeRepositoryBasedIdSequence m_indexIdSequence;
+    BeRepositoryBasedIdSequence m_constraintIdSequence;
+    BeRepositoryBasedIdSequence m_classmapIdSequence;
+    BeRepositoryBasedIdSequence m_propertypathIdSequence;
     mutable bmap<IClassMap const*, ECPersistencePtr> m_ecPersistenceCache;
 
 
@@ -43,7 +56,6 @@ private:
     explicit Impl (ECDbR ecdb);
     static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
-    void Close ();
     void ClearCache () const;
 
     ECDbSchemaManager const& GetSchemaManager () const;
@@ -70,6 +82,12 @@ public:
     BeRepositoryBasedIdSequence& GetECSchemaIdSequence () {return m_ecSchemaIdSequence; }
     BeRepositoryBasedIdSequence& GetECClassIdSequence () { return m_ecClassIdSequence; }
     BeRepositoryBasedIdSequence& GetECPropertyIdSequence () { return m_ecPropertyIdSequence; }
+    BeRepositoryBasedIdSequence& GetTableIdSequence () { return m_tableIdSequence; }
+    BeRepositoryBasedIdSequence& GetColumnIdSequence () { return m_columnIdSequence; }
+    BeRepositoryBasedIdSequence& GetIndexIdSequence () { return m_indexIdSequence; }
+    BeRepositoryBasedIdSequence& GetConstraintIdSequence () { return m_constraintIdSequence; }
+    BeRepositoryBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
+    BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
 
     ECPersistencePtr GetECPersistence (ECN::ECClassCR ecClass) const;
     };

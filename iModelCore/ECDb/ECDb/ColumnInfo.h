@@ -48,7 +48,6 @@ public:
     void              SetColumnType (ECN::PrimitiveType columnType) { m_columnType = columnType; }
     bool              GetUnique() const;
     ECDbSqlColumn::Constraint::Collate           GetCollate ()const { return m_collate; }
-    static DbResult   LoadMappingInformationFromDb(ColumnInfo& columnInfo, ECN::ECPropertyCR ecProperty, BeSQLite::Db& db);
     void SetColumnName (Utf8CP columnName);
     };
 

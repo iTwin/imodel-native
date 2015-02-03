@@ -12,30 +12,6 @@
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//=======================================================================================
-// @bsienum                                                
-// @remarks See @ref ECDbSchemaPersistence to find how these enum values map to actual 
-// persisted values in the Db. 
-//+===============+===============+===============+===============+===============+======
-enum class MapStrategy
-    {
-    // This first group of strategies no ramifications for subclasses
-    NoHint = 0,         // Use default rules, which may include inheriting strategy of parent
-    DoNotMap,           // Skip this one, but child ECClasses may still be mapped
-    TableForThisClass,  // Put this class in a table, but do not pass the strategy along to child ECClasses 
-    // Only DoNotMap and TableForThisClass are valid default strategies
-
-    // These strategies are directly inherited, except for TablePerHierarchy, which causes its children to use InParentTable
-    // They are listed in order of priority (when it comes to conflicts with/among base ECClasses)
-    TablePerHierarchy,  // This class and all child ECClasses stored in one table
-    InParentTable,      // Assigned by system for subclasses of ECClasses using TablePerHierarchy
-    TablePerClass,      // Put each class in its own table (including child ECClasses
-    DoNotMapHierarchy,  // Also don't map children (unless they are reached by a different inheritance pathway) 
-    SharedTableForThisClass, // TableName must be provided. 
-    // These strategies are applicable only to relationships
-    RelationshipSourceTable,     // Store the relationship in the table in which the source class(es) are stored 
-    RelationshipTargetTable,     // Store the relationship in the table in which the target class(es) are stored 
-    };
 
 
 struct NativeSqlBuilder;
@@ -276,7 +252,7 @@ protected:
         {
     private:
         ClassMapCR m_classMap;
-
+       
     protected:
         virtual ECSqlStatus _GetWhereClause (NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const override;
 
@@ -293,8 +269,9 @@ private:
     ECDbSqlTable*               m_table;
     MapStrategy                 m_mapStrategy;
     bool                        m_isDirty;
-    bvector<ClassIndexInfoPtr> m_indexes;
+    bvector<ClassIndexInfoPtr>  m_indexes;
     bool                        m_useSharedColumnStrategy;
+    ECDbClassMapId              m_id;
 protected:
     ECN::ECClassCR              m_ecClass;
     ECN::ECClassId              m_parentMapClassId;
@@ -321,8 +298,10 @@ protected:
 
     virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
+    virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
-    MapStatus AddPropertyMaps (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
+    MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo);
     void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
     virtual PropertyMapCollection const& _GetPropertyMaps () const;
     virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
@@ -362,8 +341,10 @@ public:
     bool TryGetECInstanceIdPropertyMap (PropertyMapPtr& ecIstanceIdPropertyMap) const;
     
     bool IsDirty () const { return m_isDirty; }
+    ECDbClassMapId GetId () const { return m_id; }
+    BentleyStatus Save (std::set<ClassMap const*>& savedGraph) { return _Save (savedGraph); }
+    BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
 
-    DbResult Save (bool includeFullGraph);
     void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }

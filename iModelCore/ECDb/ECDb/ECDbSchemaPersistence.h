@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistence.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -159,7 +159,7 @@ public:
     static  BeSQLite::DbResult DeleteECProperty                         (ECPropertyId propertyId, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetRelationshipEndsMappedToTable         (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db);
     static  BeSQLite::DbResult UpdatePropertyPath                       (ECDb& db);
-    static   ECN::ECPropertyId GetECPropertyAlias                       (ECClassId ecClassId, Utf8CP accessString, BeSQLite::Db& db);
+    static   ECN::ECPropertyId GetECPropertyAlias                       (ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db& db);
 
     };
 
