@@ -147,6 +147,12 @@
     <Filter Include="Bentley Build Files\Part Files\PointoolsLibs">
       <UniqueIdentifier>{8b923df3-049d-4242-8099-8c2202f40096}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ptlic">
+      <UniqueIdentifier>{9dc5f267-b58c-4955-b49c-4990c76bd9bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ptlic">
+      <UniqueIdentifier>{cdaa72c3-87ab-447a-8d3c-01bce12dac96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\pt\BoundingBox.cpp">
@@ -785,6 +791,9 @@
     <ClCompile Include="src\ptengine\clipPlane.cpp">
       <Filter>Source Files\ptengine</Filter>
     </ClCompile>
+    <ClCompile Include="src\ptlic\PointoolsBentleyLicense.cpp">
+      <Filter>Source Files\ptlic</Filter>
+    </ClCompile>    
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pt\ViewParams.h">
@@ -1489,8 +1498,8 @@
     <ClInclude Include="include\ptengine\clipObject.h">
       <Filter>Header Files\ptengine</Filter>
     </ClInclude>
-    <ClInclude Include="include\ptengine\clipPlane.h">
-      <Filter>Header Files\ptengine</Filter>
+    <ClInclude Include="include\ptlic\PointoolsBentleyLicenseAPI.h">
+      <Filter>Header Files\ptlic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

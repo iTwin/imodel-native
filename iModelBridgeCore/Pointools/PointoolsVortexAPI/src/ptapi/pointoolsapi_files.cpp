@@ -2,6 +2,8 @@
 #include <commdlg.h>
 #define POINTOOLS_API_BUILD_DLL
 
+#include <ptlic/PointoolsBentleyLicenseAPI.h>
+
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
@@ -499,6 +501,9 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 
 	if (!_initialized)
 	{
+		if(startLicenseBentley() == false)
+			return PT_FALSE;
+
 		PTRMI::initialize();
 															// Initialize server data sources with PTRMI
 		PTRMI::getManager().newMetaInterface<ptds::DataSourceServer>(L"DataSourceServer");

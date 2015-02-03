@@ -24,7 +24,7 @@
     <SubPart PartName="PointoolsVortexAPI_FeatureExtract_DLL_VS2012"/>
 
     <SubPart PartName="PointoolsIO_VS2012" PartFile="${srcroot}Pointools/PointoolsIO/PointoolsIO_VS2012" Repository="PointoolsIO"/>
-
+	
   </Part>
 
 
@@ -54,7 +54,11 @@
   
   
   <Part Name="PointoolsVortexAPI_DLL_VS2012" BMakeFile="PointoolsVortexAPI_DLL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-
+		
+    <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
+		
+    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />	
+  
     <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
 
     <SubPart PartName="PointoolsVortexAPI_Vortex_DLL_Makefile_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1"/>

@@ -39,6 +39,8 @@ o                   = $(PointoolsVortexAPIOut)/
 BuildContextIncPath = $(OutputRootDir)BuildContexts/PointoolsLibs_$(VSOutputSubfolder)/VendorAPI/
 BuildContextLibPath = $(OutputRootDir)BuildContexts/PointoolsLibs_$(VSOutputSubfolder)/Delivery/
 
+BuildContextSubpartLibPath = $(BuildContext)SubParts/Libs/
+
 appName = PointoolsVortexAPI
 baseDir = ${_MakeFilePath}/
 privateInc = $(baseDir)
@@ -136,25 +138,26 @@ $(BuildContextSrc)pshader.frag.cpp: $(PointoolsVortexAPIShaderSrc)pshader.frag
 #   Link
 #----------------------------------------------------------------------
 
-DLM_NAME                = $(appName)
-#DLS_NAME                = $(appName)
-DLM_OBJECT_DEST         = $(o)
-DLM_DEST                = $(o)
-DLM_OBJECT_FILES        = $(dlmObjs)
-DLM_SPECIAL_LINKOPT     + -LIBPATH:$(BuildContextLibPath)
-DLM_SPECIAL_LINKOPT     + $(dlmLibs)
-#DLM_NO_DELAYLOAD        = 1
-DLM_NO_DLS              = 1
-DLM_NO_DEF              = 1
-DLM_SPECIAL_LINKOPT     + -def:$(baseDir)api.def
+DLM_NAME                   = $(appName)
+#DLS_NAME                  = $(appName)
+DLM_OBJECT_DEST            = $(o)
+DLM_DEST                   = $(o)
+DLM_OBJECT_FILES           = $(dlmObjs)
+DLM_SPECIAL_LINKOPT        + -LIBPATH:$(BuildContextLibPath)
+DLM_SPECIAL_LINKOPT        + -LIBPATH:$(BuildContextSubpartLibPath)
+DLM_SPECIAL_LINKOPT        + $(dlmLibs)
+#DLM_NO_DELAYLOAD          = 1
+DLM_NO_DLS                 = 1
+DLM_NO_DEF                 = 1
+DLM_SPECIAL_LINKOPT        + -def:$(baseDir)api.def
 
-DLM_NOMSBUILTINS        = 1
+DLM_NOMSBUILTINS           = 1
 
-DLM_NOENTRY				= 1
+DLM_NOENTRY				   = 1
 
-ASSEMBLY_NAME           = $(appName)
-ASSEMBLY_TITLE          = $(appName)
-ASSEMBLY_DESCRIPTION	= $(appName)
+ASSEMBLY_NAME              = $(appName)
+ASSEMBLY_TITLE             = $(appName)
+ASSEMBLY_DESCRIPTION	   = $(appName)
 
 
 %include dlmlink.mki
