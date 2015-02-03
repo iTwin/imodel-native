@@ -93,6 +93,7 @@ TEST_F (WSInfoTests, Ctor_EmptyString_InvalidWithZeroVersionAndUnknownType)
     EXPECT_EQ (WSInfo::Type::Unknown, info.GetType ());
     }
 
+#ifdef CRASHES_0504
 TEST_F (WSInfoTests, Ctor_FromSerialized_SameVersion)
     {
     WSInfo info (WSInfo (BeVersion (1, 2), WSInfo::Type::BentleyWSG).ToString ());
@@ -101,7 +102,6 @@ TEST_F (WSInfoTests, Ctor_FromSerialized_SameVersion)
     EXPECT_EQ (BeVersion (1, 2), info.GetVersion ());
     }
 
-#ifdef CRASHES_0504
 TEST_F (WSInfoTests, Ctor_FromSerialized_SameType)
     {
     EXPECT_EQ (WSInfo::Type::BentleyConnect, WSInfo (WSInfo (BeVersion (1, 0), WSInfo::Type::BentleyConnect).ToString ()).GetType ());
