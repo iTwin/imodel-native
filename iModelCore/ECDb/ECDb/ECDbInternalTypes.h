@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <BeSQLite/ECDb/ECDbTypes.h>
+#include <ECDb/ECDbTypes.h>
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"

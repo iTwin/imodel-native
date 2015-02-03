@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <algorithm>

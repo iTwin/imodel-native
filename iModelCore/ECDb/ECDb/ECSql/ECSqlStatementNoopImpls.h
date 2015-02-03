@@ -2,13 +2,13 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementNoopImpls.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <BeSQLite/ECDb/IECSqlBinder.h>
-#include <BeSQLite/ECDb/IECSqlValue.h>
+#include <ECDb/IECSqlBinder.h>
+#include <ECDb/IECSqlValue.h>
 #include "ECSqlField.h"
 #include "IECSqlPrimitiveValue.h"
 #include "IECSqlPrimitiveBinder.h"

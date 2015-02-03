@@ -2,13 +2,13 @@
 |
 |     $Source: ECSqlConsole/ECSqlStatementIterator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 
 #pragma once
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <ECObjects/ECObjectsAPI.h>
 
 

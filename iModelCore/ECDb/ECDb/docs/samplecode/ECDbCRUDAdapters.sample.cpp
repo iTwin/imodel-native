@@ -2,10 +2,10 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDbCRUDAdapters.sample.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_EC

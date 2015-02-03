@@ -2,12 +2,12 @@
 |
 |     $Source: ECSqlConsole/main.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
 #include <Logging/BentleyLogging.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include "ECSqlConsole.h"
 #include "Console.h"
 //#include <BeXml/BeXml.h>

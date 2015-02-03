@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Performance/PerformanceTestFixture.h $
+|     $Source: Tests/Performance/PerformanceTestFixture.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <Bentley/BeTest.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
 
 #include "PerformanceTests.h"

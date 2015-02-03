@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: ECDb.prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+PolicyFile = $(InternalSystemPolicy)
+%include mdl.mki
+
+$(BuildContext)PublicAPI/ECDb : $(_MakeFilePath)PublicAPI/ECDb
+    $(LinkFirstDepToFirstTargetAsDirectory)

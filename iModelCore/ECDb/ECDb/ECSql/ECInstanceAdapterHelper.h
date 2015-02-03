@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <BeSQLite/ECDb/IECSqlBinder.h>
-#include <BeSQLite/ECDb/ECInstanceId.h>
+#include <ECDb/IECSqlBinder.h>
+#include <ECDb/ECInstanceId.h>
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE

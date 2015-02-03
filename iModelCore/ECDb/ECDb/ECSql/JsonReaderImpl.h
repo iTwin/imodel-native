@@ -3,15 +3,15 @@
 |
 |     $Source: ECDb/ECSql/JsonReaderImpl.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <BeSQLite/ECDb/ECSqlStatement.h>
-#include <BeSQLite/ECDb/JsonAdapter.h>
-#include <BeSQLite/ECDb/ECRelationshipPath.h> 
-#include <BeSQLite/ECDb/ECInstanceFinder.h> 
+#include <ECDb/ECSqlStatement.h>
+#include <ECDb/JsonAdapter.h>
+#include <ECDb/ECRelationshipPath.h> 
+#include <ECDb/ECInstanceFinder.h> 
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

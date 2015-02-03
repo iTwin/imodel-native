@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDbPolicy.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
@@ -10,7 +10,7 @@
 
 %include DefaultToolSet.mki
 
-publicApiDir = $(SrcRoot)BeSQLite/PublicAPI/BeSQLite/ECDb/
+publicApiDir = $(SrcRoot)ECDb/PublicAPI/ECDb/
 buildDir = $(OutputRootDir)build/
 
 BeSQLiteLib         = $(libprefix)BeSQLite$(libext)

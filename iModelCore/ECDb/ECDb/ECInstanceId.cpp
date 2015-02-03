@@ -2,11 +2,11 @@
 |
 |     $Source: ECDb/ECInstanceId.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeSQLite/ECDb/ECInstanceId.h>
+#include <ECDb/ECInstanceId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

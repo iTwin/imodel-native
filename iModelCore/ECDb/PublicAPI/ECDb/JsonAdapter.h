@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/BeSQLite/ECDb/JsonAdapter.h $
+|     $Source: PublicAPI/ECDb/JsonAdapter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <BeSQLite/ECDb/ECSqlStatement.h>
+#include <ECDb/ECSqlStatement.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <rapidjson/BeRapidJson.h>
 #include <Bentley/NonCopyableClass.h>

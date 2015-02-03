@@ -2,14 +2,14 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlStatusContext.h"
-#include <BeSQLite/ECDb/IECSqlBinder.h>
+#include <ECDb/IECSqlBinder.h>
 #include "ECSqlBinderFactory.h"
 #include "ECSqlStatementNoopImpls.h"
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/PerformanceECInstanceInserterTests.cpp $
+|  $Source: Tests/Performance/PerformanceECInstanceInserterTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 
 #include <Bentley/BeTest.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
 #include <UnitTests/BackDoor/ECDb/Backdoor.h>

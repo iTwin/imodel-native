@@ -1,7 +1,7 @@
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
 #include <vector>
 #include <BeXml/BeXml.h>
