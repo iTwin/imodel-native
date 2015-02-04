@@ -4111,11 +4111,10 @@ ECDbClassMapInfo const*  ECDbClassMapInfo::GetBaseClassMap () const
 //---------------------------------------------------------------------------------------
 ECDbPropertyMapInfo const* ECDbClassMapInfo::FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const
     {
-    auto& mapSet = GetPropertyMapByColumnName (false);
-    for (auto& kp : mapSet)
+    for (auto kp : GetPropertyMaps(false))
         {
-        if (kp.second->GetPropertyPath ().GetRootPropertyId () == rootPropertyId && kp.second->GetPropertyPath ().GetAccessString () == accessString)
-            return kp.second;
+        if (kp->GetPropertyPath ().GetRootPropertyId () == rootPropertyId && kp->GetPropertyPath ().GetAccessString () == accessString)
+            return kp;
         }
 
     return nullptr;

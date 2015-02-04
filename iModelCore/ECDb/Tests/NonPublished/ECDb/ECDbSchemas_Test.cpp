@@ -228,7 +228,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         order_PropertyOrderTest.append (stmt1.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_PropertyOrderTest == "ECId OwnerECId ECPropertyId ECArrayIndex x h i d.X d.Y d.Z u.X u.Y f e p o.a o.g o.c o.z.X o.z.Y o.z.Z o.y.X o.y.Y o.t o.u o.k o.r z ");
+    ASSERT_TRUE (order_PropertyOrderTest == "ECId OwnerECId ECPropertyPathId ECArrayIndex x h i d.X d.Y d.Z u.X u.Y f e p o.a o.g o.c o.z.X o.z.Y o.z.Z o.y.X o.y.Y o.t o.u o.k o.r z ");
     
     Statement stmt2;
     stmt2.Prepare (db, "PRAGMA table_info('os_ArrayOfOrderedStruct')");
@@ -238,7 +238,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         order_OrderedStruct.append (stmt2.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_OrderedStruct == "ECId OwnerECId ECPropertyId ECArrayIndex a g c z.X z.Y z.Z y.X y.Y t u k r "); 
+    ASSERT_TRUE (order_OrderedStruct == "ECId OwnerECId ECPropertyPathId ECArrayIndex a g c z.X z.Y z.Z y.X y.Y t u k r "); 
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
@@ -669,7 +669,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_EQ   (16, GetColumnCount(db, tblStructWithPrimitiveProperties));
     ASSERT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"ECId"));
     ASSERT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"OwnerECId"));
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"ECArrayIndex"));
 
     //Verify columns
@@ -715,7 +715,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_EQ   (13, GetColumnCount(db, tblStructWithPrimitiveArrayProperties));    
     ASSERT_TRUE (ColumnExist (db, tblStructWithPrimitiveArrayProperties, L"ECId"));
     ASSERT_TRUE (ColumnExist (db, tblStructWithPrimitiveArrayProperties, L"OwnerECId"));
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveArrayProperties, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveArrayProperties, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveArrayProperties, L"ECArrayIndex"));
 
     //Verify columns
@@ -735,7 +735,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfBinary"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfBinary"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBinary", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBinary", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBinary", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBinary", L"ECArrayIndex"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBinary", L"ElementValue"));
 
@@ -743,7 +743,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfBoolean"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfBoolean"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBoolean", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBoolean", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBoolean", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBoolean", L"ECArrayIndex"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfBoolean", L"ElementValue"));
 
@@ -751,7 +751,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfDateTime"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfDateTime"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDateTime", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDateTime", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDateTime", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDateTime", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDateTime", L"ElementValue"));
 
@@ -759,7 +759,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfDouble"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfDouble"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDouble", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDouble", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDouble", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDouble", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfDouble", L"ElementValue"));
 
@@ -767,7 +767,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfInteger"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfInteger"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfInteger", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfInteger", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfInteger", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfInteger", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfInteger", L"ElementValue"));
 
@@ -775,7 +775,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfLong"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfLong"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfLong", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfLong", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfLong", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfLong", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfLong", L"ElementValue"));
 
@@ -783,7 +783,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfString"));
     EXPECT_EQ   (4, GetColumnCount(db, L"ec_ArrayOfString"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfString", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfString", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfString", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfString", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfString", L"ElementValue"));
 
@@ -791,7 +791,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfPoint2d"));
     EXPECT_EQ   (5, GetColumnCount(db, L"ec_ArrayOfPoint2d"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint2d", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint2d", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint2d", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint2d", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint2d", L"ElementValue_X"));
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint2d", L"ElementValue_Y"));
@@ -800,7 +800,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (TableExist(db, L"ec_ArrayOfPoint3d"));
     EXPECT_EQ   (6, GetColumnCount(db, L"ec_ArrayOfPoint3d"));        
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint3d", L"ECId"));
-    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint3d", L"ECPropertyId"));    
+    EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint3d", L"ECPropertyPathId"));    
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint3d", L"ECArrayIndex"));            
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint3d", L"ElementValue_X"));
     EXPECT_TRUE (ColumnExist (db, L"ec_ArrayOfPoint3d", L"ElementValue_Y"));
@@ -904,7 +904,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
 
     ASSERT_TRUE (ColumnExist (db, tblEmployeeCertification, L"ECId"));
     ASSERT_TRUE (ColumnExist (db, tblEmployeeCertification, L"OwnerECId"));
-    EXPECT_TRUE (ColumnExist (db, tblEmployeeCertification, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tblEmployeeCertification, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tblEmployeeCertification, L"ECArrayIndex"));
     
     EXPECT_TRUE (ColumnExist (db, tblEmployeeCertification, L"Name"));
@@ -1079,7 +1079,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
 
     ASSERT_TRUE (ColumnExist (db, tblLocation, L"ECId"));
     ASSERT_TRUE (ColumnExist (db, tblLocation, L"OwnerECId"));
-    EXPECT_TRUE (ColumnExist (db, tblLocation, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tblLocation, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tblLocation, L"ECArrayIndex"));
 
     //It must not have ECClassId to differentiate each row to see which class it belong to.
@@ -1144,7 +1144,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
 
     ASSERT_TRUE (ColumnExist (db, tblAnglesStruct, L"ECId"));
     ASSERT_TRUE (ColumnExist (db, tblAnglesStruct, L"OwnerECId"));
-    EXPECT_TRUE (ColumnExist (db, tblAnglesStruct, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tblAnglesStruct, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tblAnglesStruct, L"ECArrayIndex"));
 
     //It must not have ECClassId to differentiate each row to see which class it belong to.
@@ -1259,7 +1259,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tbl, L"OwnerECId"));
     //Local properties
     EXPECT_TRUE (ColumnExist (db, tbl, L"stringProp"));
-    EXPECT_TRUE (ColumnExist (db, tbl, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tbl, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tbl, L"ECArrayIndex"));
 
     //========================[sc_ArrayOfStructNoneDomainClass]===========================================================
@@ -1271,7 +1271,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tbl, L"OwnerECId"));
     //Local properties
     EXPECT_TRUE (ColumnExist (db, tbl, L"stringProp"));
-    EXPECT_TRUE (ColumnExist (db, tbl, L"ECPropertyId"));
+    EXPECT_TRUE (ColumnExist (db, tbl, L"ECPropertyPathId"));
     EXPECT_TRUE (ColumnExist (db, tbl, L"ECArrayIndex"));
     
     //========================[sc_ArrayOfStructDomainClassWithNoProperties]===========================================================
