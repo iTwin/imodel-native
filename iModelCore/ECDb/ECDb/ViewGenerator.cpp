@@ -104,7 +104,7 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
 BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, IClassMap const& classMap)
     {
     if (classMap.IsMappedToSecondaryTable ())
-        viewSql.Append ("SELECT NULL ECClassId, NULL ECId, NULL OwnerECId, NULL ECPropertyId, NULL ECArrayIndex");
+        viewSql.Append ("SELECT NULL ECClassId, NULL ECId, NULL OwnerECId, NULL ECPropertyPathId, NULL ECArrayIndex");
     else
         viewSql.Append ("SELECT NULL ECClassId, NULL ECId");
 
@@ -402,7 +402,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
         where.Append (" AND ");
 
         if (prepareContext.GetParentArrayProperty() == nullptr)
-            where.Append ("(ECPropertyId IS NULL AND ECArrayIndex IS NULL)");
+            where.Append ("(ECPropertyPathId IS NULL AND ECArrayIndex IS NULL)");
         }
 
     if (!where.IsEmpty())
@@ -968,7 +968,7 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
 
         if (forStructArray)
             {
-            viewSql.AppendComma (true).Append ("ECPropertyId").AppendComma (true).Append ("ECArrayIndex");
+            viewSql.AppendComma (true).Append (ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME).AppendComma (true).Append (ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME);
             }
 
         viewSql.AppendSpace ().Append ("FROM", true).AppendEscaped (tableP->GetName ().c_str ()).AppendSpace ();
@@ -1003,9 +1003,9 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
                 viewSql.Append ("AND", true);
 
             if (forStructArray)
-                viewSql.Append ("(ECPropertyId IS NOT NULL AND ECArrayIndex IS NOT NULL)");
+                viewSql.Append ("(ECPropertyPathId IS NOT NULL AND ECArrayIndex IS NOT NULL)");
             else
-                viewSql.Append ("(ECPropertyId IS NULL AND ECArrayIndex IS NULL)");
+                viewSql.Append ("(ECPropertyPathId IS NULL AND ECArrayIndex IS NULL)");
             }
         first = false;
         }

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStepTask.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -202,13 +202,13 @@ struct InsertStructArrayStepTask : public ParametericStepTask
 private:
     static const int PARAMETER_ECINSTANCEID = 1;
     static const int PARAMETER_OWNERECINSTANCEID = 2;
-    static const int PARAMETER_ECPROPERTYID = 3;
+    static const int PARAMETER_ECPROPERTYPATHID = 3;
     static const int PARAMETER_ECARRAYINDEX = 4;
     static const int PARAMETER_STRUCTARRAY = 5;
 
     std::unique_ptr<EmbeddedECSqlStatement> m_insertStmt;
     ECSqlParameterValue* m_parameterValue;
-    ECPropertyId m_persistenceECPropertyId;
+    ECPropertyId m_propertyPathId;
 private:
     InsertStructArrayStepTask (ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap);
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;

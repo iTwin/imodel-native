@@ -936,7 +936,8 @@ struct ECDbClassMapInfo : NonCopyableClass
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
             {
             }
-
+        ECDbMapStorage& GetMapStorageR () { return m_map; }
+        ECDbMapStorage const& GetMapStorage () const{ return m_map; }
         ECDbClassMapId GetId () const { return m_id; }
         ECN::ECClassId GetClassId () const { return m_ecClassId; }
         const std::vector<ECDbPropertyMapInfo const*>  GetPropertyMaps (bool onlyLocal) const;

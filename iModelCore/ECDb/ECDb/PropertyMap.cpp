@@ -17,18 +17,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMap::PropertyMap (ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty (ecProperty), m_propertyAccessString (propertyAccessString), m_parentPropertyMap (parentPropertyMap)
+PropertyMap::PropertyMap (ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty (ecProperty), m_propertyAccessString (propertyAccessString), m_parentPropertyMap (parentPropertyMap), m_propertyPathId (0)
     {
     BeAssert (propertyAccessString);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-
-ECN::ECPropertyId PropertyMap::_GetECPropertyIdForPersistence (ECClassId relativeToECClassId, ECDbR db) const
-    {
-    return GetProperty ().GetId ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,7 +167,13 @@ DbResult PropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
             return BE_SQLITE_ERROR;
             }
 
-        return classMapInfo.CreatePropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str (), *columns.at (0)) != nullptr ? BE_SQLITE_DONE : BE_SQLITE_ERROR;
+        auto mapInfo = classMapInfo.CreatePropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str (), *columns.at (0));
+        if (mapInfo != nullptr)
+            m_propertyPathId = mapInfo->GetPropertyPath ().GetId ();
+        else
+            return BE_SQLITE_ERROR;
+
+        return BE_SQLITE_DONE;
         }
 
     for (auto& child : children)
@@ -200,7 +197,7 @@ DbResult PropertyMap::_Load (ECDbClassMapInfo const& classMapInfo)
         BeAssert (false && "This funtion must be overriden in derived class");
         return BE_SQLITE_ERROR;
         }
-
+   // classMapInfo.GetMapStorage ().FindPropertyPath ("")
     for (auto child : children)
         {
  
@@ -831,41 +828,6 @@ PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbM
     return new PropertyMapToTable (ecProperty, *tableECType, propertyAccessString, parentPropertyMap);
     }
 
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-
-ECN::ECPropertyId PropertyMapToTable::_GetECPropertyIdForPersistence (ECClassId relativeToECClassId, ECDbR db) const
-    {
-    auto itor = m_persistenceECPropertyIdMap.find (relativeToECClassId);
-    if (itor != m_persistenceECPropertyIdMap.end ())
-        return itor->second;
-
-    auto accessString = Utf8String (GetPropertyAccessString ());
-    //WIP: ECClassId of root classMap is require here.
-
-    PropertyMapCP current = this;
-    int depth = 1;
-    while (current->GetParent ())
-        {
-        current = GetParent ();
-        depth = depth + 1;
-        }
-
-    ECPropertyId propertyId = 0;
-    if (depth > 1)
-        propertyId = ECDbSchemaPersistence::GetECPropertyAlias (GetRoot().GetProperty().GetId(), accessString.c_str (), db);
-
-    if (propertyId == 0)
-        {
-        propertyId = PropertyMap::_GetECPropertyIdForPersistence (relativeToECClassId, db);        
-        }
-
-    m_persistenceECPropertyIdMap[relativeToECClassId] = propertyId;
-    return propertyId;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2012

@@ -80,7 +80,7 @@ NativeSqlBuilder& whereClauseBuilder, ECSqlType ecsqlType, bool isPolymorphicCla
 ) const
     {
     BeAssert (whereClauseBuilder.IsEmpty ());
-    whereClauseBuilder.AppendParenLeft ().Append (tableAlias, ECDB_COL_ECPropertyId).Append (" IS NULL AND ");
+    whereClauseBuilder.AppendParenLeft ().Append (tableAlias, ECDB_COL_ECPropertyPathId).Append (" IS NULL AND ");
     whereClauseBuilder.Append (tableAlias, ECDB_COL_ECArrayIndex).Append (" IS NULL)");
 
     return ClassMap::NativeSqlConverterImpl::_GetWhereClause (whereClauseBuilder, ecsqlType, isPolymorphicClassExp, tableAlias);
@@ -101,7 +101,7 @@ MapStatus SecondaryTableClassMap::EmbeddedTypeClassMap::Initialize ()
     systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::OwnerECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECPropertyId, *this);
+    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECPropertyPathId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
     systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECArrayIndex, *this);

@@ -45,7 +45,6 @@ ECDB_TYPEDEFS2(bvector<ECN::ECPropertyCP>, ECPropertyList);
 //ECDbSchemaManager API
 ECDB_TYPEDEFS(DbECSchemaInfo);
 ECDB_TYPEDEFS(DbECClassInfo);
-ECDB_TYPEDEFS(DbECClassMapInfo);
 ECDB_TYPEDEFS(DbBaseClassInfo);
 ECDB_TYPEDEFS(DbECPropertyInfo);
 ECDB_TYPEDEFS(DbECRelationshipConstraintInfo);
@@ -293,7 +292,7 @@ enum ECContainerType
 
 #define ECDB_COL_ECInstanceId           "ECId"
 #define ECDB_COL_ECClassId              "ECClassId"
-#define ECDB_COL_ECPropertyId           "ECPropertyId"
+#define ECDB_COL_ECPropertyPathId           "ECPropertyPathId"
 #define ECDB_COL_OwnerECInstanceId      "OwnerECId" //ToDO: Should be renamed to ParentECInstanceId
 #define ECDB_COL_ECArrayIndex           "ECArrayIndex"
 
@@ -371,10 +370,10 @@ enum class MapStrategy
 #define ECdbSystemColumnECId  0x1U
 #define ECdbSystemColumnECClassId  0x2U
 #define ECdbSystemColumnOwnerECId  0x4U
-#define ECdbSystemColumnECPropertyId  0x8U
+#define ECdbSystemColumnECPropertyPathId  0x8U
 #define ECdbSystemColumnECArraryIndex  0x10U
 
-#define ECdbSystemColumns  (ECdbSystemColumnECId | ECdbSystemColumnECClassId | ECdbSystemColumnOwnerECId | ECdbSystemColumnECPropertyId | ECdbSystemColumnECArraryIndex)
+#define ECdbSystemColumns  (ECdbSystemColumnECId | ECdbSystemColumnECClassId | ECdbSystemColumnOwnerECId | ECdbSystemColumnECPropertyPathId | ECdbSystemColumnECArraryIndex)
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

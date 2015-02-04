@@ -173,9 +173,9 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
-    if (kind != ECSqlSystemProperty::ECInstanceId && kind != ECSqlSystemProperty::ECPropertyId && kind != ECSqlSystemProperty::ECArrayIndex&& kind != ECSqlSystemProperty::OwnerECInstanceId)
+    if (kind != ECSqlSystemProperty::ECInstanceId && kind != ECSqlSystemProperty::ECPropertyPathId && kind != ECSqlSystemProperty::ECArrayIndex&& kind != ECSqlSystemProperty::OwnerECInstanceId)
         {
-        BeAssert (false && "PropertyMapSecondaryTableKey::Create must only be called with ECSqlSystemProperty::ECInstanceId, ECSqlSystemProperty::ECPropertyId, or ECSqlSystemProperty::ECArrayIndex or ECSqlSystemProperty::OwnerECInstanceId.");
+        BeAssert (false && "PropertyMapSecondaryTableKey::Create must only be called with ECSqlSystemProperty::ECInstanceId, ECSqlSystemProperty::ECPropertyPathId, or ECSqlSystemProperty::ECArrayIndex or ECSqlSystemProperty::OwnerECInstanceId.");
         return nullptr;
         }
 
@@ -211,9 +211,9 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
 
                     break;
                     }
-                case ECSqlSystemProperty::ECPropertyId:
+                case ECSqlSystemProperty::ECPropertyPathId:
                     {
-                    if (column->GetUserFlags () == ECdbSystemColumnECPropertyId)
+                    if (column->GetUserFlags () == ECdbSystemColumnECPropertyPathId)
                         found = true;
 
                     break;

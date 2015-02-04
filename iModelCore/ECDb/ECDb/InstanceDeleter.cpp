@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/InstanceDeleter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -99,14 +99,14 @@ void InstanceDeleter::GetDeleteSql (Utf8StringR deleteSql)
         {
         if (m_ecClass.GetIsStruct())
             {
-            deleteBuilder.AddWhere (ECDB_COL_ECPropertyId, "is null");
+            deleteBuilder.AddWhere (ECDB_COL_ECPropertyPathId, "is null");
             deleteBuilder.AddWhere (ECDB_COL_ECArrayIndex, "is null");
             }
         }
     else
         {
         // A child is always a struct
-        deleteBuilder.AddWhere (ECDB_COL_ECPropertyId, " = ? ");
+        deleteBuilder.AddWhere (ECDB_COL_ECPropertyPathId, " = ? ");
         }
 
     if (m_ecClass.GetIsStruct())
@@ -187,7 +187,7 @@ void InstanceDeleter::InitializeStructArrayDeleters (IClassMap const& classMap, 
         if (propertyMapToTable != nullptr)
             {
             ECPropertyId ecPropertyIdForPersistence = 0;
-            ecPropertyIdForPersistence = propMap->GetECPropertyIdForPersistence (classMap.GetClass ().GetId (), m_ecDbMap.GetECDbR ());
+            ecPropertyIdForPersistence = propMap->GetPropertyPathId ();
             InstanceDeleterPtr deleter = CreateChildDeleter (m_ecDbMap, propertyMapToTable->GetElementType (), propertyMapToTable->GetProperty (), ecPropertyIdForPersistence);
             BeAssert (!deleter.IsNull ());
             m_propertyDeleters.push_back (deleter);
@@ -403,7 +403,7 @@ void InstanceDeleter::GetSelectSql (Utf8StringR selectSql, Utf8CP whereCriteria)
     selectBuilder.AddSelect (ECDB_COL_ECInstanceId);
     if (m_ecClass.GetIsStruct())
         {
-        selectBuilder.AddWhere (ECDB_COL_ECPropertyId, "is null");
+        selectBuilder.AddWhere (ECDB_COL_ECPropertyPathId, "is null");
         selectBuilder.AddWhere (ECDB_COL_ECArrayIndex, "is null");
         }
 

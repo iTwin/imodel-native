@@ -425,22 +425,22 @@ DbResult ECDbProfileUpgrader_1002::UnmapUnsupportedStandardClasses (ECDbR ecdb)
 //static
 DbResult ECDbProfileUpgrader_1002::ReadMapping (MapStrategy& mapStrategy, Utf8StringR mappedTableName, ECDbR ecdb, ECN::ECClassCR ecClass)
     {
-    DbECClassMapInfo info;
-    info.ColsSelect = DbECClassMapInfo::COL_MapStrategy | DbECClassMapInfo::COL_MapToDbTable;
-    info.ColsWhere = DbECClassMapInfo::COL_ECClassId;
-    info.m_ecClassId = ecClass.GetId ();
+    //DbECClassMapInfo info;
+    //info.ColsSelect = DbECClassMapInfo::COL_MapStrategy | DbECClassMapInfo::COL_MapToDbTable;
+    //info.ColsWhere = DbECClassMapInfo::COL_ECClassId;
+    //info.m_ecClassId = ecClass.GetId ();
 
-    CachedStatementPtr stmt = nullptr;
-    auto stat = ECDbSchemaPersistence::FindECClassMapInfo (stmt, ecdb, info);
-    if (stat != BE_SQLITE_OK)
-        return stat;
+    //CachedStatementPtr stmt = nullptr;
+    //auto stat = ECDbSchemaPersistence::FindECClassMapInfo (stmt, ecdb, info);
+    //if (stat != BE_SQLITE_OK)
+    //    return stat;
 
-    stat = ECDbSchemaPersistence::Step (info, *stmt);
-    if (stat != BE_SQLITE_ROW) //must find a row. Everything else is an error
-        return stat;
+    //stat = ECDbSchemaPersistence::Step (info, *stmt);
+    //if (stat != BE_SQLITE_ROW) //must find a row. Everything else is an error
+    //    return stat;
 
-    mapStrategy = info.m_mapStrategy;
-    mappedTableName = info.m_mapToDbTable;
+    //mapStrategy = info.m_mapStrategy;
+    //mappedTableName = info.m_mapToDbTable;
 
     return BE_SQLITE_OK;
     }
@@ -451,25 +451,27 @@ DbResult ECDbProfileUpgrader_1002::ReadMapping (MapStrategy& mapStrategy, Utf8St
 //static
 DbResult ECDbProfileUpgrader_1002::UpdateMapStrategy (ECDbR ecdb, ECN::ECClassCR ecClass, MapStrategy mapStrategy)
     {
-    DbECClassMapInfo info;
-    info.ColsUpdate = DbECClassMapInfo::COL_MapStrategy;
-    info.m_mapStrategy = mapStrategy;
+    //DbECClassMapInfo info;
+    //info.ColsUpdate = DbECClassMapInfo::COL_MapStrategy;
+    //info.m_mapStrategy = mapStrategy;
 
-    //When updating to "Do Not Map" strategy, also clear out the mapped table name.
-    if (ClassMap::IsDoNotMapStrategy (mapStrategy))
-        {
-        info.ColsUpdate |= DbECClassMapInfo::COL_MapToDbTable;
-        info.ColsNull |= DbECClassMapInfo::COL_MapToDbTable;
-        }
+    ////When updating to "Do Not Map" strategy, also clear out the mapped table name.
+    //if (ClassMap::IsDoNotMapStrategy (mapStrategy))
+    //    {
+    //    info.ColsUpdate |= DbECClassMapInfo::COL_MapToDbTable;
+    //    info.ColsNull |= DbECClassMapInfo::COL_MapToDbTable;
+    //    }
 
-    info.ColsWhere = DbECClassMapInfo::COL_ECClassId;
-    info.m_ecClassId = ecClass.GetId ();
+    //info.ColsWhere = DbECClassMapInfo::COL_ECClassId;
+    //info.m_ecClassId = ecClass.GetId ();
 
-    auto stat = ECDbSchemaPersistence::UpdateECClassMapInfo (ecdb, info);
-    if (stat == BE_SQLITE_DONE)
-        return BE_SQLITE_OK;
-    else
-        return stat;
+    //auto stat = ECDbSchemaPersistence::UpdateECClassMapInfo (ecdb, info);
+    //if (stat == BE_SQLITE_DONE)
+    //    return BE_SQLITE_OK;
+    //else
+    //    return stat;
+
+    return BE_SQLITE_OK;
     }
 
 
@@ -847,7 +849,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "        <ECProperty propertyName='TargetECInstanceId' typeName='long' description='Represents the TargetECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECClassId' typeName='long' description='Represents the TargetECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='OwnerECInstanceId' typeName='long' description='For ECClasses mapped to secondary table storage (e.g. ECStructs), this system property represents the ECInstanceId of the owning (embedding) ECInstance.' />"
-        "        <ECProperty propertyName='ECPropertyId' typeName='long' description='For ECClasses mapped to secondary table storage, this system property represents the id of the ECProperty in the owning ECClass to which a row in the secondary table refers to.' />"
+        "        <ECProperty propertyName='ECPropertyPathId' typeName='long' description='For ECClasses mapped to secondary table storage, this system property represents the id of the ECProperty in the owning ECClass to which a row in the secondary table refers to.' />"
         "        <ECProperty propertyName='ECArrayIndex' typeName='int' description='For EC arrays mapped to secondary table storage, this system property represents the index of the array element which a row in the secondary table represents.' />"
         "    </ECClass> "
         "</ECSchema>";

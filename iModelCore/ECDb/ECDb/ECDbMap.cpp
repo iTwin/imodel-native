@@ -429,14 +429,14 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         if (mapToSecondaryTable)
             {            
             column = table->CreateColumn (ECDB_COL_OwnerECInstanceId, ECDbSqlColumn::Type::Long, ECdbSystemColumnOwnerECId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECPropertyId, ECDbSqlColumn::Type::Long, ECdbSystemColumnECPropertyId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ECdbSystemColumnECPropertyPathId, PersistenceType::Persisted);
             column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECdbSystemColumnECArraryIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType () == PersistenceType::Persisted)
                 {
                 auto index = table->CreateIndex ((table->GetName() + "_StructArrayIndex").c_str());
                 index->SetIsUnique (true);
                 index->Add (ECDB_COL_OwnerECInstanceId);
-                index->Add (ECDB_COL_ECPropertyId);
+                index->Add (ECDB_COL_ECPropertyPathId);
                 index->Add (ECDB_COL_ECArrayIndex);
                 index->Add (primaryKeyColumnName);
                 }
@@ -622,36 +622,11 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
     int nCreated = 0;
     int nUpdated = 0;
     int nSkipped = 0;
-    ClustersByTable::iterator it = m_clustersByTable.begin();
-
-    auto& schemaManager = GetECDbR ().GetSchemaManager ();
-    std::vector<ECClassId> classesMappedToDbTable;
-    
+    ClustersByTable::iterator it = m_clustersByTable.begin();    
     for (; it != m_clustersByTable.end(); ++it)
         {
         MappedTablePtr & mappedTable = it->second;
         ECDbSqlTable* table = it->first;
-
-        // <<-----------------
-        // Load all the classes mapped to this table. This is done to ensure that the table definition is complete.
-        classesMappedToDbTable.clear ();
-        //if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToDbTable, *table, GetECDbR (), true) != BE_SQLITE_DONE)
-        //    return CREATE_ECTABLE_Error;
-
-        for (auto ecClassId : classesMappedToDbTable)
-            {
-            ECClassCP ecClass = schemaManager.GetECClass (ecClassId);
-            BeAssert (ecClass != nullptr);
-            if (ecClass != nullptr)
-                {
-                auto classMapP = GetClassMap (*ecClass);
-                if (classMapP == nullptr)
-                    {
-                    BeAssert (false && "Failed to find classmap for a ECClass");
-                    }
-                }
-            }
-           // -------------------->>
                 
         if (!mappedTable->IsFinished())
             {

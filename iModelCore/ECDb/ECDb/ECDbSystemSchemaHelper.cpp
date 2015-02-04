@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSystemSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -26,8 +26,8 @@ Utf8CP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME = "TargetECInst
 WCharCP const ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W = L"TargetECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME = "TargetECClassId";
 WCharCP const ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME_W = L"TargetECClassId";
-Utf8CP const ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME = "ECPropertyId";
-WCharCP const ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME_W = L"ECPropertyId";
+Utf8CP const ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME = "ECPropertyPathId";
+WCharCP const ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME_W = L"ECPropertyPathId";
 Utf8CP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME = "ECArrayIndex";
 WCharCP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W = L"ECArrayIndex";
 Utf8CP const ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME = "OwnerECInstanceId";
@@ -162,8 +162,8 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName (ECSqlSystemProperty kind)
                 return TARGETECINSTANCEID_PROPNAME;
             case ECSqlSystemProperty::TargetECClassId:
                 return TARGETECCLASSID_PROPNAME;
-            case ECSqlSystemProperty::ECPropertyId:
-                return ECPROPERTYID_PROPNAME;
+            case ECSqlSystemProperty::ECPropertyPathId:
+                return ECPROPERTYPATHID_PROPNAME;
             case ECSqlSystemProperty::ECArrayIndex:
                 return ECARRAYINDEX_PROPNAME;
             case ECSqlSystemProperty::OwnerECInstanceId:
@@ -192,8 +192,8 @@ WCharCP ECDbSystemSchemaHelper::GetPropertyNameW (ECSqlSystemProperty kind)
                 return TARGETECINSTANCEID_PROPNAME_W;
             case ECSqlSystemProperty::TargetECClassId:
                 return TARGETECCLASSID_PROPNAME_W;
-            case ECSqlSystemProperty::ECPropertyId:
-                return ECPROPERTYID_PROPNAME_W;
+            case ECSqlSystemProperty::ECPropertyPathId:
+                return ECPROPERTYPATHID_PROPNAME_W;
             case ECSqlSystemProperty::ECArrayIndex:
                 return ECARRAYINDEX_PROPNAME_W;
             case ECSqlSystemProperty::OwnerECInstanceId:
@@ -213,7 +213,7 @@ bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind (ECSqlSystemProperty& kind
     std::vector<ECSqlSystemProperty> kindList { ECSqlSystemProperty::ECInstanceId, 
                         ECSqlSystemProperty::SourceECInstanceId, ECSqlSystemProperty::SourceECClassId, 
                         ECSqlSystemProperty::TargetECInstanceId, ECSqlSystemProperty::TargetECClassId, 
-                        ECSqlSystemProperty::ECPropertyId, 
+                        ECSqlSystemProperty::ECPropertyPathId, 
                         ECSqlSystemProperty::ECArrayIndex, 
                         ECSqlSystemProperty::OwnerECInstanceId };
    

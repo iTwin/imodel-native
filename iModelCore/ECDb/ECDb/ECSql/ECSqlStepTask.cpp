@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStepTask.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -199,7 +199,7 @@ ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create (unique_ptr<UpdateSt
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
 InsertStructArrayStepTask::InsertStructArrayStepTask (ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap)
-: ParametericStepTask (ExecutionCategory::ExecuteAfterParentStep, statusContext, property, classMap), m_insertStmt (new EmbeddedECSqlStatement ()), m_parameterValue (nullptr), m_persistenceECPropertyId (0)
+: ParametericStepTask (ExecutionCategory::ExecuteAfterParentStep, statusContext, property, classMap), m_insertStmt (new EmbeddedECSqlStatement ()), m_parameterValue (nullptr), m_propertyPathId (0)
     {
     }
 
@@ -243,7 +243,7 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
         m_insertStmt->ClearBindings ();
         m_insertStmt->GetBinder (PARAMETER_ECINSTANCEID).BindId (generatedECInstanceId);
         m_insertStmt->GetBinder (PARAMETER_OWNERECINSTANCEID).BindId (instanceId);
-        m_insertStmt->GetBinder (PARAMETER_ECPROPERTYID).BindInt64 (m_persistenceECPropertyId);
+        m_insertStmt->GetBinder (PARAMETER_ECPROPERTYPATHID).BindInt64 (m_propertyPathId);
         m_insertStmt->GetBinder (PARAMETER_ECARRAYINDEX).BindInt64 (nArrayElementIndex++);   
        
         auto structArrayElementValue = static_cast<StructECSqlParameterValue const*> (&arrayElement->GetStruct ());
@@ -315,10 +315,10 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertSt
     builder.InsertInto (arrayElementType);
 
     //ECSQL_Todo: Change following to constants defines
-    builder.AddValue ("ECInstanceId", "?");
-    builder.AddValue ("OwnerECInstanceId", "?");
-    builder.AddValue ("ECPropertyId", "?");
-    builder.AddValue ("ECArrayIndex", "?");
+    builder.AddValue (ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, "?");
+    builder.AddValue (ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME, "?");
+    builder.AddValue (ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, "?");
+    builder.AddValue (ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, "?");
 
     for (auto& propertyMap : arrayElementTypeMap->GetPropertyMaps ())
         {
@@ -338,7 +338,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertSt
     if (ecsqlStatus != ECSqlStatus::Success)
         return ECSqlStepTaskCreateStatus::ECSqlError;
 
-    aInsertStepTask->m_persistenceECPropertyId = structArrayPropertyMap->GetECPropertyIdForPersistence (classMap.GetClass ().GetId (), ecdb);
+    aInsertStepTask->m_propertyPathId = structArrayPropertyMap->GetPropertyPathId ();
 
     insertStepTask = std::move (aInsertStepTask);
     return ECSqlStepTaskCreateStatus::Success;
@@ -402,10 +402,10 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
 
     Utf8String schemaName = Utf8String (arrayElementType.GetSchema ().GetName ().c_str ());
     Utf8String structName = Utf8String (arrayElementType.GetName ().c_str ());
-    auto persistenceECPropertyId = propertyMap->GetECPropertyIdForPersistence (classMap.GetClass ().GetId (), ecdb);
+    auto persistenceECPropertyId = propertyMap->GetPropertyPathId ();
  
     Utf8String ecsql; 
-    ecsql.Sprintf ("DELETE FROM ONLY [%s].[%s] WHERE OwnerECInstanceId = ? AND ECPropertyId = %llu AND ECArrayIndex IS NOT NULL", schemaName.c_str (), structName.c_str (), persistenceECPropertyId);
+    ecsql.Sprintf ("DELETE FROM ONLY [%s].[%s] WHERE OwnerECInstanceId = ? AND ECPropertyPathId = %llu AND ECArrayIndex IS NOT NULL", schemaName.c_str (), structName.c_str (), persistenceECPropertyId);
 
     unique_ptr<DeleteStructArrayStepTask>  aDeleteStepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask (preparedContext.GetECSqlStatementR ().GetStatusContextR (), *structArrayPropertyMap, classMap));
     aDeleteStepTask->GetStatement ().Initialize (preparedContext, propertyMap->GetProperty ().GetAsArrayProperty (), nullptr);

@@ -82,7 +82,7 @@ protected:
     PropertyMapCP           m_parentPropertyMap;
     WString                 m_propertyAccessString; // We need to own this for nested property in embedded struct as they are dynamically generated
     PropertyMapCollection   m_children;
-
+    mutable ECDbPropertyPathId      m_propertyPathId;
     PropertyMap (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
 
     virtual bool _IsVirtual () const;
@@ -105,7 +105,6 @@ protected:
 
     virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const;
 
-    virtual ECN::ECPropertyId _GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const;
 
     virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const { return nullptr; }
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const { return nullptr; }
@@ -133,7 +132,11 @@ protected:
 
 public:
     virtual ~PropertyMap () {}
-    ECN::ECPropertyId GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const { return _GetECPropertyIdForPersistence (relativeToECClassId, db); }
+   ECDbPropertyPathId GetPropertyPathId () const 
+        { 
+        BeAssert (m_propertyPathId != 0);
+        return m_propertyPathId;
+        }
     PropertyMapToColumnCP GetAsPropertyMapToColumn () const {return _GetAsPropertyMapToColumn ();}
     PropertyMapToTableCP GetAsPropertyMapToTable () const {return _GetAsPropertyMapToTable();}
     PropertyMapArrayOfPrimitivesCP GetAsPropertyMapArrayOfPrimitives () const {return _GetAsPropertyMapArrayOfPrimitives();}
@@ -366,7 +369,6 @@ friend struct PropertyMap;
 private:
     // WIP_ECDB: These seem redundant, m_elementType will always be the ECClass from m_classMapForProperty, right?
     ECN::ECClassCR m_structElementType;
-    mutable bmap<ECN::ECClassId, ECN::ECPropertyId> m_persistenceECPropertyIdMap;
     //! @see PropertyMap::IsValueNull
     bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
 
@@ -378,9 +380,40 @@ protected:
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
-    virtual ECN::ECPropertyId _GetECPropertyIdForPersistence (ECN::ECClassId relativeToECClassId, ECDbR db) const override;
-    virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override { return BE_SQLITE_DONE; }
-    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override { return BE_SQLITE_DONE; }
+    virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override 
+        { 
+        auto& manager = classMapInfo.GetMapStorageR ();
+        auto propertyId = GetRoot ().GetProperty ().GetId ();
+        auto accessString = Utf8String (GetPropertyAccessString ());
+        ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString.c_str ());
+        if (propertyPath == nullptr)
+            propertyPath = manager.CreatePropertyPath (propertyId, accessString.c_str ());
+
+        if (propertyPath == nullptr)
+            {
+            BeAssert (false && "Failed to create propertyPath");
+            return BE_SQLITE_ERROR;
+            }
+
+        m_propertyPathId = propertyPath->GetId ();
+        return BE_SQLITE_DONE; 
+        }
+
+    virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override
+        {
+        auto& manager = classMapInfo.GetMapStorage ();
+        auto propertyId = GetRoot ().GetProperty ().GetId ();
+        auto accessString = Utf8String (GetPropertyAccessString ());
+        ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString.c_str ());
+        if (propertyPath == nullptr)
+            {
+            BeAssert (false && "Failed to find propertyPath");
+            return BE_SQLITE_ERROR;
+            }
+
+        m_propertyPathId = propertyPath->GetId ();
+        return BE_SQLITE_DONE;
+        }
 public:
     static PropertyMapToTablePtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
     ECN::ECPropertyId GetPropertyId ();

@@ -254,30 +254,8 @@ PropertyMapCR propertyMap
 
     Utf8String whereClause;
 
-    ECPropertyId  persistedPropertyId = 0;
-    auto const& propertyPath = ecsqlColumnInfo.GetPropertyPath ();
-    if (propertyPath.Size () > 1)
-        {
-        Utf8String accessString;
-        ECPropertyId rootECPropertyId = 0;
-        for (auto i = static_cast<int>(propertyPath.Size ()) - 1; i >= 0 ; i--)
-            {
-            auto const& entry = propertyPath.At (i);
-            if (entry.GetKind () == ECSqlPropertyPath::Entry::Kind::ArrayIndex)
-                {
-                break;
-                }
-            rootECPropertyId = entry.GetProperty ()->GetId ();
-            accessString = Utf8String (entry.GetProperty ()->GetName ().c_str ()) + (accessString.empty () ? "" : "." + accessString);
-            }       
-
-        persistedPropertyId = ECDbSchemaPersistence::GetECPropertyAlias (rootECPropertyId, accessString.c_str (), ecdb);
-        }
-
-    if (persistedPropertyId == 0 )
-        persistedPropertyId = arrayProperty->GetId ();
-
-    whereClause.Sprintf ("OwnerECInstanceId = ? AND ECPropertyId = %d", persistedPropertyId);
+    ECPropertyId  persistedPropertyId = propertyMap.GetPropertyPathId ();
+    whereClause.Sprintf ("OwnerECInstanceId = ? AND ECPropertyPathId = %d", persistedPropertyId);
     innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy ("ECArrayIndex");
 
     auto structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(

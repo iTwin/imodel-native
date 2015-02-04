@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSystemSchemaHelper.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,7 @@ enum class ECSqlSystemProperty
     SourceECClassId,
     TargetECInstanceId,
     TargetECClassId,
-    ECPropertyId,
+    ECPropertyPathId,
     ECArrayIndex,
     OwnerECInstanceId,
     };
@@ -43,8 +43,8 @@ public:
     static WCharCP const TARGETECINSTANCEID_PROPNAME_W;
     static Utf8CP const TARGETECCLASSID_PROPNAME;
     static WCharCP const TARGETECCLASSID_PROPNAME_W;
-    static Utf8CP const ECPROPERTYID_PROPNAME;
-    static WCharCP const ECPROPERTYID_PROPNAME_W;
+    static Utf8CP const ECPROPERTYPATHID_PROPNAME;
+    static WCharCP const ECPROPERTYPATHID_PROPNAME_W;
     static Utf8CP const ECARRAYINDEX_PROPNAME;
     static WCharCP const ECARRAYINDEX_PROPNAME_W;
     static Utf8CP const OWNERECINSTANCEID_PROPNAME;

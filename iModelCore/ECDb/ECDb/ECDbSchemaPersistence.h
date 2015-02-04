@@ -76,7 +76,6 @@ public:
     //Insert new item
     static  BeSQLite::DbResult InsertECSchemaInfo                          (BeSQLite::Db& db, DbECSchemaInfoCR info);
     static  BeSQLite::DbResult InsertECClassInfo                           (BeSQLite::Db& db, DbECClassInfoCR info);
-    static  BeSQLite::DbResult InsertECClassMapInfo                        (BeSQLite::Db& db, DbECClassMapInfoCR info);
     static  BeSQLite::DbResult InsertBaseClass                             (BeSQLite::Db& db, DbBaseClassInfoCR info);
     static  BeSQLite::DbResult InsertECPropertyInfo                        (BeSQLite::Db& db, DbECPropertyInfoCR info);
     static  BeSQLite::DbResult InsertECRelationConstraintInfo              (BeSQLite::Db& db, DbECRelationshipConstraintInfoCR info);
@@ -88,7 +87,6 @@ public:
     //update existing items
     static  BeSQLite::DbResult UpdateECSchemaInfo                          (BeSQLite::Db& db, DbECSchemaInfoCR info);
     static  BeSQLite::DbResult UpdateECClassInfo                           (BeSQLite::Db& db, DbECClassInfoCR info);
-    static  BeSQLite::DbResult UpdateECClassMapInfo                        (BeSQLite::Db& db, DbECClassMapInfoCR info);
     static  BeSQLite::DbResult UpdateECPropertyInfo                        (BeSQLite::Db& db, DbECPropertyInfoCR info);
     static  BeSQLite::DbResult UpdateECRelationshipConstraintClass         (BeSQLite::Db& db, DbECRelationshipConstraintClassInfoCR info);
     static  BeSQLite::DbResult UpdateCustomAttributeInfo                   (BeSQLite::Db& db, DbCustomAttributeInfoCR info);
@@ -102,9 +100,6 @@ public:
     //Find ECClassInfo
     static  BeSQLite::DbResult FindECClassInfo                          (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbECClassInfoCR spec);
     static  BeSQLite::DbResult Step                                     (DbECClassInfoR info, BeSQLite::Statement& stmt);
-    //Find ECClassMapInfo
-    static  BeSQLite::DbResult FindECClassMapInfo                       (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbECClassMapInfoCR spec);
-    static  BeSQLite::DbResult Step                                     (DbECClassMapInfoR info, BeSQLite::Statement& stmt);    
     //Find BaseClass
     static  BeSQLite::DbResult FindBaseClassInfo                        (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbBaseClassInfoCR spec);
     static  BeSQLite::DbResult Step                                     (DbBaseClassInfoR info, BeSQLite::Statement& stmt);
@@ -144,22 +139,16 @@ public:
     static  BeSQLite::DbResult ResolveECSchemaId                        (DbECSchemaEntryR key, ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetPrimaryECSchemas                      (ECSchemaKeyListR schemaKeys, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteECClass                            (ECClassId ecClassId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult DeleteECClassMap                         (ECClassId ecClassId, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteECSchema                           (ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteCustomAttribute                    (ECContainerId containerId, ECContainerType containerType, ECClassId customAttributeClassId, BeSQLite::Db& db);
 
     static  BeSQLite::DbResult GetECSchemaKeys                          (DbECSchemaKeysR keys, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetECClassKeys                           (DbECClassKeysR keys, ECSchemaId schemaId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetECPropertyMapColumnName               (Utf8StringR mapColumnName, ECPropertyId propertyId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult SetECPropertyMapColumnName               (ECPropertyId propertyId, Utf8CP mapColumnName, BeSQLite::Db& db);
-    static  MapStrategy        GetClassMapStrategy                      (bool* hasMapEntry,ECN::ECClassCR ecClass, BeSQLite::Db& db);
     static                bool IsECSchemaMapped                         (bool* schemaNotFound, ECN::ECSchemaCR ecSchema, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetClassesMappedToTable                  (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db, bool includeRelationshipEndTables = false);
+    static  BeSQLite::DbResult GetClassesMappedToTable                  (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db);
     static                bool IsCustomAttributeDefined                 (BeSQLite::Db& db, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
     static  BeSQLite::DbResult DeleteECProperty                         (ECPropertyId propertyId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetRelationshipEndsMappedToTable         (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db);
-    static  BeSQLite::DbResult UpdatePropertyPath                       (ECDb& db);
-    static   ECN::ECPropertyId GetECPropertyAlias                       (ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db& db);
+    static  ECDbPropertyPathId GetECPropertyPathId (ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db& db);
 
     };
 
@@ -269,29 +258,6 @@ public:
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECClassMapInfo : DbInfoBase
-    {
-    public:
-        enum Columns
-            {
-            COL_ECClassId                 = 0x01,
-            COL_MapParentECClassId        = 0x02,
-            COL_MapStrategy               = 0x04,
-            COL_MapToDbTable              = 0x08,
-            COL_ECInstanceIdColumn                = 0x10,
-            COL_ALL                       = 0xffffffff
-            };      
-
-        ECClassId                  m_ecClassId;
-        ECClassId                  m_mapParentECClassId;
-        MapStrategy                m_mapStrategy;  
-        Utf8String                 m_mapToDbTable;
-        Utf8String                 m_primaryKeyColumnName;
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct DbBaseClassInfo : DbInfoBase
     {
 public:
@@ -350,25 +316,6 @@ public:
     bool          m_isReadOnly;
     };
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-//For ECPropertyMapInfo we using Get/Set method SetECPropertyMapColumnName() GetECPropertyMapColumnName();
-//struct DbECPropertyMapInfo : DbInfoBase
-//    {
-//    public:
-//        enum Columns
-//            {
-//            COL_ECClassId                 = 0x01,
-//            COL_ECPropertyId              = 0x02,
-//            COL_MapColumnName             = 0x04,
-//            COL_ALL                       = 0xffffffff
-//            };      
-//
-//        ECClassId                  m_ecClassId;
-//        ECPropertyId               m_ecPropertyId;
-//        Utf8String                 m_MapColumnName;
-//    };
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
