@@ -151,7 +151,7 @@ private:
     MobileDgn::Utils::SimpleCancellationTokenPtr m_cancelToken;
     MobileDgn::Utils::HttpClient m_client;
 
-    BeCriticalSection m_credentialsCriticalSection;
+    BeMutex m_credentialsCriticalSection;
     static std::map<Utf8String, StatusAction> sm_actionMap;
     static std::map<std::string, int> sm_monthMap;
     static std::set<std::string> sm_dayNames;

@@ -575,7 +575,7 @@ BentleyStatus WebApiV1::ReadSchemaInfoFromXmlDom (BeXmlStatus xmlDomReadStatus, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebApiV1::SchemaInfo WebApiV1::GetCachedSchemaInfo () const
     {
-    BeCriticalSectionHolder mutex (m_schemaInfoCS);
+    BeMutexHolder mutex (m_schemaInfoCS);
     return m_schemaInfo;
     }
 
@@ -584,7 +584,7 @@ WebApiV1::SchemaInfo WebApiV1::GetCachedSchemaInfo () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebApiV1::SetCachedSchemaInfo (SchemaInfo schemaInfo) const
     {
-    BeCriticalSectionHolder mutex (m_schemaInfoCS);
+    BeMutexHolder mutex (m_schemaInfoCS);
     m_schemaInfo = std::move (schemaInfo);
     }
 

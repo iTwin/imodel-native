@@ -45,7 +45,7 @@ struct WebApiV1 : public WebApi
 
     protected:
         WSInfo m_info;
-        mutable BeCriticalSection m_schemaInfoCS;
+        mutable BeMutex m_schemaInfoCS;
         mutable SchemaInfo m_schemaInfo;
 
     protected:
