@@ -3493,7 +3493,7 @@ DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
     if (auto c = dynamic_cast<ECDbSqlForiegnKeyConstraint const*>(&o))
         return InsertForiegnKey (*c);
 
-    if (auto c = dynamic_cast<ECDbSqlPrimaryKeyConstraint const*>(&o))
+    if (dynamic_cast<ECDbSqlPrimaryKeyConstraint const*>(&o))
         return BE_SQLITE_DONE;
 
     return BE_SQLITE_ERROR;
@@ -3741,7 +3741,7 @@ std::vector<ECDbClassMapInfo const*> const* ECDbMapStorage::FindClassMapsByClass
 //---------------------------------------------------------------------------------------
 ECDbPropertyPath* ECDbMapStorage::CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString)
     {
-    if (auto propertyPath = FindPropertyPath (rootPropertyId, accessString))
+    if (FindPropertyPath (rootPropertyId, accessString))
         {
         BeAssert (false && "PropertyPath already exist");
         return nullptr;
