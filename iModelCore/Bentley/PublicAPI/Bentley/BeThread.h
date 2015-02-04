@@ -223,12 +223,10 @@ struct  BeThreadUtilities
     BENTLEYDLL_EXPORT static intptr_t GetCurrentThreadId();
     };
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //  @bsiclass 
 //=======================================================================================
-struct BeThread : virtual IRefCounted
+struct BeThread : IRefCounted
 {
 private:
     intptr_t    m_threadId;
@@ -254,6 +252,8 @@ public:
     BENTLEYDLL_EXPORT Utf8CP GetThreadName () const;
     BENTLEYDLL_EXPORT void Start ();
 };
+
+//__PUBLISH_SECTION_END__
 
 //=======================================================================================
 //! Hold a lock on the system BeMutex
