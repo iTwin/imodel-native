@@ -34,12 +34,10 @@
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
     <ClCompile Include="ECDbUseCases.cpp" />
-    <ClCompile Include="ECDbUtility.cpp" />
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECInstanceId.cpp" />
     <ClCompile Include="ECInstanceFinder.cpp" />
     <ClCompile Include="ECInstanceSerializer.cpp" />
-    <ClCompile Include="ECPersistence.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
     <ClCompile Include="ECDbProfileUpgrader.cpp" />
     <ClCompile Include="ECSchemaComparers.cpp" />
@@ -122,13 +120,11 @@
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
-    <ClCompile Include="InstanceDeleter.cpp" />
     <ClCompile Include="MapGenerator.cpp" />
     <ClCompile Include="MapHintReader.cpp" />
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
-    <ClCompile Include="SqlGenerator.cpp" />
     <ClCompile Include="SystemPropertyMap.cpp" />
     <ClCompile Include="ViewGenerator.cpp" />
   </ItemGroup>
@@ -170,11 +166,9 @@
     <ClInclude Include="ECDbSchemaWriter.h" />
     <ClInclude Include="ECDbSql.h" />
     <ClInclude Include="ECDbSystemSchemaHelper.h" />
-    <ClInclude Include="ECDbUtility.h" />
     <ClInclude Include="ECInstanceSerializer.h" />
     <ClInclude Include="ECDbProfileManager.h" />
     <ClInclude Include="ECDbProfileUpgrader.h" />
-    <ClInclude Include="ECPersistence.h" />
     <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="ECSchemaValidator.h" />
     <ClInclude Include="ECSql\ClassRefExp.h" />
@@ -243,13 +237,11 @@
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
-    <ClInclude Include="InstanceDeleter.h" />
     <ClInclude Include="MapGenerator.h" />
     <ClInclude Include="MapHintReader.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
-    <ClInclude Include="SqlGenerator.h" />
     <ClInclude Include="SystemPropertyMap.h" />
     <ClInclude Include="ViewGenerator.h" />
   </ItemGroup>

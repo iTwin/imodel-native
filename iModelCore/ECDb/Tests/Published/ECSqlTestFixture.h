@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ECDB/Published/ECSqlTestFixture.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,28 +15,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 struct ECSqlTestFixture : public ::testing::Test
     {
-public:
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        int m_rowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            m_rowsAffected = (int) args.GetInstanceKeys ().size ();
-            }
-
-    public:
-        EventHandler ()
-            : ECSqlEventHandler (), m_rowsAffected (-1)
-            {}
-
-        ~EventHandler ()
-            {}
-
-        int GetRowsAffected () const { return m_rowsAffected; }
-        };
-
 private:
     std::unique_ptr<ECDbTestProject> m_testProject;
 

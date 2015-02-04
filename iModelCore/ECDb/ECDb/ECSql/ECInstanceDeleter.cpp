@@ -2,33 +2,12 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceDeleter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-struct ECInstanceDeleter::EventHandler : ECSqlEventHandler
-    {
-private:
-    bool m_noRowsAffected;
-
-    virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-        {
-        BeAssert (eventType == EventType::Delete && "ECInstanceDeleter is expected to only execute ECSQL DELETE statements.");
-        m_noRowsAffected = args.GetInstanceKeys ().empty ();
-        }
-
-public:
-    EventHandler ()
-        : ECSqlEventHandler (), m_noRowsAffected (true)
-        {}
-
-    ~EventHandler () {}
-
-    bool NoRowsAffected () const { return m_noRowsAffected; }
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   02 / 14
@@ -37,7 +16,7 @@ ECInstanceDeleter::ECInstanceDeleter
 (
 ECDbR ecdb, 
 ECClassCR ecClass
-) : m_ecdb (ecdb), m_ecClass (ecClass), m_internalEventHandler (nullptr)
+) : m_ecdb (ecdb), m_ecClass (ecClass)
     {
     Initialize (nullptr);
     }
@@ -50,7 +29,7 @@ ECInstanceDeleter::ECInstanceDeleter
 ECDbR ecdb,
 ECClassCR ecClass,
 ECSqlEventHandler& eventHandler
-) : m_ecdb (ecdb), m_ecClass (ecClass), m_internalEventHandler (nullptr)
+) : m_ecdb (ecdb), m_ecClass (ecClass)
     {
     Initialize (&eventHandler);
     }
@@ -59,13 +38,8 @@ ECSqlEventHandler& eventHandler
 // @bsimethod                                   Krischan.Eberle                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceDeleter::~ECInstanceDeleter ()
-    {
-    if (m_internalEventHandler != nullptr)
-        {
-        delete m_internalEventHandler;
-        m_internalEventHandler = nullptr;
-        }
-    }
+    {}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -80,8 +54,7 @@ bool ECInstanceDeleter::IsValid () const
 void ECInstanceDeleter::Initialize (ECSqlEventHandler* listener)
     {
     //register internal event handler
-    m_internalEventHandler = new EventHandler ();
-    auto stat = m_statement.RegisterEventHandler (*m_internalEventHandler);
+    auto stat = m_statement.RegisterEventHandler (m_internalEventHandler);
     if (stat != ECSqlStatus::Success)
         {
         m_isValid = false;
@@ -128,8 +101,9 @@ ECInstanceId const& ecInstanceId
     m_statement.ClearBindings();
     m_statement.BindId (1, ecInstanceId);
 
+    m_internalEventHandler.Reset ();
     const ECSqlStepStatus stepStatus = m_statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done && !m_internalEventHandler->NoRowsAffected ()) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done && m_internalEventHandler.AreInstancesAffected ()) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

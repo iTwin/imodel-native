@@ -10,7 +10,6 @@
 #include <BeSQLite/ECDb/ECDbSchemaManager.h>
 #include "ECDbMap.h"
 #include "BeRepositoryBasedIdSequence.h"
-#include "ECPersistence.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -42,15 +41,12 @@ private:
     BeRepositoryBasedIdSequence m_ecSchemaIdSequence;
     BeRepositoryBasedIdSequence m_ecClassIdSequence;
     BeRepositoryBasedIdSequence m_ecPropertyIdSequence;
-
     BeRepositoryBasedIdSequence m_tableIdSequence;
     BeRepositoryBasedIdSequence m_columnIdSequence;
     BeRepositoryBasedIdSequence m_indexIdSequence;
     BeRepositoryBasedIdSequence m_constraintIdSequence;
     BeRepositoryBasedIdSequence m_classmapIdSequence;
     BeRepositoryBasedIdSequence m_propertypathIdSequence;
-    mutable bmap<IClassMap const*, ECPersistencePtr> m_ecPersistenceCache;
-
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl (ECDbR ecdb);
@@ -88,8 +84,6 @@ public:
     BeRepositoryBasedIdSequence& GetConstraintIdSequence () { return m_constraintIdSequence; }
     BeRepositoryBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
     BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
-
-    ECPersistencePtr GetECPersistence (ECN::ECClassCR ecClass) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

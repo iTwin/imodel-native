@@ -2,12 +2,13 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include <BeSQLite/ECDb/IECSqlBinder.h>
+#include <BeSQLite/ECDb/ECInstanceId.h>
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -294,6 +295,8 @@ public:
     static BentleyStatus BindValue (IECSqlBinder& binder, ECInstanceInfo const& instance, ECValueBindingInfo const& valueBindingInfo);
     
     static bool IsOrContainsCalculatedProperty (ECN::ECPropertyCR prop);
+
+    static bool TryGetCurrentTimeStampProperty (ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass);
 
     //! Sets the ECInstanceId on the given ECInstance.
     //! @param[in,out] instance ECInstance on which the id is set

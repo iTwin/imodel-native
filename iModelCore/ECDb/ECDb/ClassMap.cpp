@@ -424,7 +424,7 @@ MapStatus ClassMap::Initialize (ClassMapInfoCR mapInfo)
     auto stat = _InitializePart1 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
-
+    
     stat = _InitializePart2 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
@@ -486,7 +486,29 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* p
     auto stat = AddPropertyMaps (parentClassMap, nullptr);
     if (stat != MapStatus::Success)
         return stat;
-    
+    if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
+        {
+        PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
+        if (propertyMap != NULL)
+            {
+            auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
+            BeAssert(column != nullptr && "TimeStamp column cannot be null");
+            if (column)
+                {
+                //! TODO: Handle this case for shared column strategy;
+                BeAssert(column->GetType() == ECDbSqlColumn::Type::DateTime);
+                column->GetConstraintR().SetDefaultExpression("julianday('now')");
+                Utf8String whenCondtion;
+                whenCondtion.Sprintf("old.%s=new.%s", column->GetName().c_str(), column->GetName().c_str());
+                Utf8String body;
+                Utf8CP instanceID = GetPropertyMap(L"ECInstanceId")->GetFirstColumn()->GetName().c_str();
+                body.Sprintf("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s; END", column->GetTableR().GetName().c_str(), column->GetName().c_str(), instanceID, instanceID);
+                Utf8String triggerName;
+                triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
+                column->GetTableR().CreateTrigger(triggerName.c_str(), column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create, TriggerSubType::After);
+                }
+            }
+        }
     stat = ProcessIndices (mapInfo);
     if (stat != MapStatus::Success)
         return stat;
@@ -870,26 +892,6 @@ bool ClassMap::TryGetECInstanceIdPropertyMap (PropertyMapPtr& ecInstanceIdProper
     return GetPropertyMaps ().TryGetPropertyMap (ecInstanceIdPropertyMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP ClassMap::GetPropertyMapForColumnName (Utf8CP columnName) const
-    {
-    auto const& propMaps = GetPropertyMaps ();
-    for (auto it = propMaps.begin (); it != propMaps.end (); ++it)
-        {
-        PropertyMapCP propertyMap = *it;
-        BeAssert (propertyMap != nullptr);
-        if (propertyMap == nullptr)
-            continue;
-
-        if (propertyMap->MapsToColumn (columnName))
-            return propertyMap;
-        }
-
-    return nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
@@ -1036,28 +1038,6 @@ ECPropertyCP ClassMap::GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAc
         };
 
     return getECPropertyFromTokens (ecClass, tokens, 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::GenerateParameterBindings (Bindings& parameterBindings, int firstParameterIndex) const
-    {
-    BeAssert (parameterBindings.size () == 0);
-    // WIP_ECDB: Use same technique as in ClassMap::GenerateSelectedPropertyBindings to get the order to follow the order in the ECClass
-    int sqlIndex = firstParameterIndex;
-
-    GetPropertyMaps ().Traverse ([&parameterBindings, &sqlIndex, this] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        BeAssert (propMap != nullptr);
-        if (propMap->IsSystemPropertyMap ())
-            return; //ignore system props as they are not used in ECDbStatement API.
-
-        //WIP_ECDB: remove the unused 0... the propertyIndex parameter!
-        propMap->AddBindings (parameterBindings, 0, sqlIndex, *m_ecClass.GetDefaultStandaloneEnabler ());
-        }, true);
-
-    return SUCCESS;
     }
 
 

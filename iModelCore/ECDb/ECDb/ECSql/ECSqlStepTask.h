@@ -14,7 +14,6 @@
 #include <BeSQLite/ECDb/ECInstanceId.h>
 #include <BeSQLite/ECDb/ECSqlStatement.h>
 #include "ECSqlEventManager.h"
-//#include "EmbeddedECSqlStatement.h"
 
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -257,40 +256,62 @@ private:
 struct DeleteRelatedInstancesECSqlStepTask : public ECSqlStepTask
     {
 private:
-    struct ECDbStepTaskDeleteHandler : ECDbDeleteHandler
+    //! Catches events from nested ECSQL DELETE and propagates them to the top-level statement's event handlers
+    struct EventHandler : ECSqlEventHandler
         {
-        private:
-            ECSqlEventArgs::ECInstanceKeyList& m_instanceKeyList;
-
-        private:
-            virtual void _OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, ECDbR ecDb) override;
-
-        public:
-            ECDbStepTaskDeleteHandler(ECSqlEventArgs::ECInstanceKeyList &owner) :m_instanceKeyList(owner)
-                {}
-        };
     private:
-    ECDbStepTaskDeleteHandler m_deleteHander;
+        ECSqlEventManager& m_eventManager;
+
+        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
+            {
+            if (m_eventManager.HasEventHandlers ())
+                {
+                auto& keyList = m_eventManager.GetEventArgsR ().GetInstanceKeysR ();
+                auto const& argsKeyList = args.GetInstanceKeys ();
+                keyList.insert (keyList.end (), argsKeyList.begin (), argsKeyList.end ());
+                }
+
+            /*if (LOG.isSeverityEnabled (NativeLogging::SEVERITY::LOG_TRACE))
+                {
+                LOG.trace ("Cascade Delete>Nested ECSQL deleted these instances:");
+                for (ECInstanceKey const& key : args.GetInstanceKeys ())
+                    LOG.tracev ("\t%lld:%lld", key.GetECClassId (), key.GetECInstanceId ().GetValue ());
+                }
+                */
+            }
+
+     public:
+        explicit EventHandler (ECSqlEventManager& eventManager)
+            : ECSqlEventHandler (), m_eventManager (eventManager)
+            {}
+
+        ~EventHandler () {}
+        };
+
+    static const int MAX_PARAMETER_COUNT = 30;
+
     ECDbR m_ecdb;
     ECSqlEventManager& m_eventManager;
-    ECInstanceFinder m_orphanInstanceFinder;
+    mutable ECInstanceFinder m_orphanInstanceFinder;
     ECClassId m_ecClassId;
+    mutable EventHandler m_eventHandler;
 
-private:
+    mutable std::map<ECN::ECClassId, std::unique_ptr<ECSqlStatement>> m_statementCache;
+
+
     DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId);
 
-    BentleyStatus FindOrphanedInstances
-        (
-        ECInstanceKeyMultiMap& orphanedRelationshipInstances,
-        ECInstanceKeyMultiMap& orphanedInstances,
-        ECClassId deletedClassId,
-        ECInstanceId deletedInstanceId,
-        ECDbR ecDb);
+    BentleyStatus FindOrphanedInstances (ECInstanceKeyMultiMap& orphanedRelationshipInstances, ECInstanceKeyMultiMap& orphanedInstances,
+                                         ECDbR ecdb, ECClassId seedClassId, ECInstanceId seedInstanceId) const;
 
-    BentleyStatus DeleteDependentInstances (int& numDeleted, const ECInstanceIdSet& deletedInstanceIds);
-    BentleyStatus DeleteInstances (int& numDeleted, const ECInstanceKeyMultiMap& instanceMap, ECDbR ecDb);
+    BentleyStatus DeleteDependentInstances (ECInstanceId const& seedInstanceId) const;
+
+    BentleyStatus DeleteInstances (ECDbR ecDb, ECInstanceKeyMultiMap const & candidateKeyMap) const;
+    BentleyStatus DeleteInstances (ECDbR ecDb, ECN::ECClassId classId, std::vector<ECInstanceKey> const& keyList) const;
 
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
+
+    ECSqlStatement* GetDeleteStatement (ECN::ECClassCR ecClass) const;
 
 public:
     ~DeleteRelatedInstancesECSqlStepTask (){}

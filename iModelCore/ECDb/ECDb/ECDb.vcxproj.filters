@@ -25,9 +25,6 @@
     <Filter Include="ECDbSchemaManager">
       <UniqueIdentifier>{b512b729-dbde-4f4d-a0f4-00d306962fc8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ECPersistence">
-      <UniqueIdentifier>{90b370ec-6324-4ba8-9fc0-7552812ed80a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECSql\ECSqlParser">
       <UniqueIdentifier>{90e71772-67b6-4546-a326-1459d237154f}</UniqueIdentifier>
     </Filter>
@@ -106,7 +103,6 @@
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbSchemaManager.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbUtility.h" />
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlBuilder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -276,9 +272,6 @@
     <ClInclude Include="ECSql\Parser\SqlBison.hpp">
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
-    <ClInclude Include="InstanceDeleter.h">
-      <Filter>ECPersistence</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\InsertStatementExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
@@ -377,9 +370,6 @@
     <ClInclude Include="ECSql\ECSqlStepTask.h">
       <Filter>ECSql\StepTask</Filter>
     </ClInclude>
-    <ClInclude Include="SqlGenerator.h">
-      <Filter>ECPersistence</Filter>
-    </ClInclude>
     <ClInclude Include="ECSchemaValidator.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
@@ -418,9 +408,6 @@
     </ClInclude>
     <ClInclude Include="ECDbSql.h">
       <Filter>ECDbSql</Filter>
-    </ClInclude>
-    <ClInclude Include="ECPersistence.h">
-      <Filter>ECPersistence</Filter>
     </ClInclude>
     <ClInclude Include="BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ColumnInfo.h">
@@ -470,7 +457,6 @@
       <Filter>BeSQLite</Filter>
     </ClCompile>
     <ClCompile Include="ECDbUseCases.cpp" />
-    <ClCompile Include="ECDbUtility.cpp" />
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
       <Filter>ECSql\OSQLParser</Filter>
@@ -547,9 +533,6 @@
     </ClCompile>
     <ClCompile Include="RelationshipClassMap.cpp">
       <Filter>ECDbMap\Map</Filter>
-    </ClCompile>
-    <ClCompile Include="ECPersistence.cpp">
-      <Filter>ECPersistence</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlParser.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
@@ -634,9 +617,6 @@
     </ClCompile>
     <ClCompile Include="ECDbClassDependencyAnalyzer.cpp">
       <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceDeleter.cpp">
-      <Filter>ECPersistence</Filter>
     </ClCompile>
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp">
       <Filter>docs\samplecode</Filter>
@@ -762,9 +742,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlStepTask.cpp">
       <Filter>ECSql\StepTask</Filter>
-    </ClCompile>
-    <ClCompile Include="SqlGenerator.cpp">
-      <Filter>ECPersistence</Filter>
     </ClCompile>
     <ClCompile Include="SchemaImportContext.cpp">
       <Filter>ECDbSchemaManager</Filter>

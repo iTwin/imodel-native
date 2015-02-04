@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -314,7 +314,6 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationshipConstraintClassEntry (E
     info.m_ecClassId            = ecClassId;
     info.m_relationECClassId    = constraintClassId;
     info.m_ecRelationshipEnd    = endpoint;
-
     return ECDbSchemaPersistence::InsertECRelationConstraintClassInfo (m_ecdb, info);
     }
 
@@ -328,7 +327,7 @@ ECDbSchemaWriter::ECDbSchemaWriter (ECDbR ecdb) : m_ecdb(ecdb){}
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema, CustomAttributeTrackerP tracker)
     {
-    BeCriticalSectionHolder aGuard (m_aCriticalSection);
+    BeMutexHolder aGuard (m_aCriticalSection);
     StopWatch timer ("", true);
     ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, ecSchema);
     if (0 != ecSchemaId)
@@ -1333,7 +1332,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateReferences(ECN::ECSchemaCR updatedECS
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap, CustomAttributeTrackerP tracker)
     {
-    BeCriticalSectionHolder aGuard (m_aCriticalSection);
+    BeMutexHolder aGuard (m_aCriticalSection);
 
     auto& existingSchema = diff.GetLeftSchema();
     auto& updatedSchema = diff.GetRightSchema();
@@ -1513,7 +1512,6 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECClass (ECN::ECClassCR ecClass)
         if (r != BE_SQLITE_DONE)
             return r;
         }
-
     return ImportCustomAttributes(ecClass, ecClassId, ECONTAINERTYPE_Class);
     }
 
@@ -1545,10 +1543,34 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId e
             return r;
 
         r = CreateECRelationshipConstraintClassEntry (ecClassId, ecClass->GetId(), endpoint);
+
         if (r != BE_SQLITE_DONE)
             return r;
         }
-
+    for (auto ecClass : relationshipConstraint.GetConstraintClasses())
+        {
+        for (auto key : ecClass->GetKeys())
+            {
+            DbECRelationshipConstraintClassPropertyInfo propertyInfo;
+            propertyInfo.ColsInsert =
+                DbECRelationshipConstraintClassInfo::COL_ECClassId |
+                DbECRelationshipConstraintClassInfo::COL_RelationECClassId |
+                DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd;
+            propertyInfo.m_ecClassId = ecClassId;
+            propertyInfo.m_relationECClassId = ecClass->GetClass().GetId();
+            propertyInfo.m_ecRelationshipEnd = endpoint;
+            auto keyProperty = ecClass->GetClass().GetPropertyP(key.c_str());
+            if (keyProperty == nullptr)
+                {
+                LOG.warningv(L"%ls ECProperty not found in %ls class", key.c_str(), ecClass->GetClass().GetName().c_str());
+                continue;
+                }
+            propertyInfo.m_relationECPropertyId = keyProperty->GetId();
+            r = ECDbSchemaPersistence::InsertECRelationConstraintClassPropertyInfo(m_ecdb, propertyInfo);
+            if (r != BE_SQLITE_DONE)
+                return r;
+            }
+        }
     ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECONTAINERTYPE_RelationshipConstraintSource: ECONTAINERTYPE_RelationshipConstraintTarget;
     return ImportCustomAttributes (relationshipConstraint, ecClassId, containerType);
     }

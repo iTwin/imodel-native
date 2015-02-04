@@ -436,6 +436,29 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type
     {
     return CreateColumn (name, type, m_orderedColumns.size (), userFlag, persistenceType);
     }
+ECDbSqlTrigger::ECDbSqlTrigger(ECDbSqlTable& table) :m_table(table){}
+//---------------------------------------------------------------------------------------
+// @bsimethod                          muhammad.zaighum                           01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType)
+    {
+    if (m_trigers.find(triggerName) == m_trigers.end())
+        {
+        m_trigers[triggerName] = std::unique_ptr<ECDbSqlTrigger>(new ECDbSqlTrigger(triggerName, table, condition, body, ecsqlType, triggerSubType));
+        return SUCCESS;
+        }
+    return ERROR;
+    }
+std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
+    {
+    std::vector<const ECDbSqlTrigger*> triggers;
+    for (auto &trigger : m_trigers)
+        {
+        triggers.push_back(trigger.second.get());
+        }
+    return triggers;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -872,6 +895,12 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Create (ECDbR ecdb, bool createI
                 BeAssert (false && "Failed to create index");
                 return BentleyStatus::ERROR;
                 }
+            }
+        for (auto trigger : m_table.GetTriggers())
+            {
+            auto sql = DDLGenerator::GetCreateTriggerDDL(*trigger);
+            if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
+                return BentleyStatus::ERROR;
             }
         }
 
@@ -2050,6 +2079,46 @@ BentleyStatus DDLGenerator::AddColumns (ECDbSqlTable const& table, std::vector<U
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                       muhammad.zaighum        1/2015
+//---------------------------------------------------------------------------------------
+//static 
+
+Utf8String DDLGenerator::GetCreateTriggerDDL(ECDbSqlTrigger const& trigger)
+    {
+    //CREATE TRIGGER lastModElm AFTER UPDATE ON  dgn_Element WHEN old.LastMod = new.LastMod BEGIN UPDATE dgn_Element SET LastMod = julianday('now') WHERE Id = new.Id; END
+
+    Utf8String sql = "";
+    switch (trigger.GetType())
+        {
+        case TriggerType::Create:
+            sql.append("CREATE ");
+            break;
+        default:
+            BeAssert(false && "Only Create Trigger is supported Yet");
+        }
+    sql.append("TRIGGER ");
+    sql.append(trigger.GetName());
+    sql.append(" ");
+    switch (trigger.GetSubType())
+        {
+        case TriggerSubType::After:
+            sql.append("AFTER ");
+            break;
+        case TriggerSubType::Before:
+            sql.append("Before ");
+        default:
+            break;
+        }
+    sql.append("UPDATE ON ");
+    sql.append(trigger.GetTable().GetName());
+    sql.append(" ");
+    sql.append("WHEN ");
+    sql.append(trigger.GetCondition());
+    sql.append(" ");
+    sql.append(trigger.GetBody());
+    return sql;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
@@ -2252,13 +2321,12 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
         case ECDbSqlColumn::Type::Boolean:
             sql.append ("BOOLEAN"); break;
         case ECDbSqlColumn::Type::DateTime:
-            sql.append ("DATETIME"); break;
+            sql.append ("TIMESTAMP"); break;
         case ECDbSqlColumn::Type::Double:
             sql.append ("DOUBLE"); break;
         case ECDbSqlColumn::Type::Integer:
-            sql.append ("INTEGER"); break;
         case ECDbSqlColumn::Type::Long:
-            sql.append ("INT64"); break;
+            sql.append ("INTEGER"); break;
         case ECDbSqlColumn::Type::String:
             sql.append ("TEXT"); break;
         }
@@ -2273,7 +2341,7 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
         sql.append (" ").append("COLLATE ").append (ECDbSqlColumn::Constraint::CollateToString (o.GetConstraint ().GetCollate ()));
 
     if (!o.GetConstraint ().GetDefaultExpression ().empty ())
-        sql.append (" ").append ("DEFAULT ('").append (o.GetConstraint ().GetDefaultExpression ()).append ("')");
+        sql.append (" ").append ("DEFAULT (").append (o.GetConstraint ().GetDefaultExpression ()).append (")");
 
     if (!o.GetConstraint ().GetCheckExpression ().empty ())
         sql.append (" ").append ("CHECK ('").append (o.GetConstraint ().GetCheckExpression ()).append ("')");

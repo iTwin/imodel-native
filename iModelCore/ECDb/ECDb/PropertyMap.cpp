@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECPersistence.h"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
@@ -228,39 +227,9 @@ ECPropertyCR PropertyMap::GetProperty() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMap::_AddBindings( Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const 
-    {
-    uint32_t propertyIndex;
-    ECObjectsStatus status = enabler.GetPropertyIndex(propertyIndex, GetPropertyAccessString());
-    if (ECOBJECTS_STATUS_Success != status)
-        { BeAssert(false); }
-
-    Binding binding(enabler, *this, propertyIndex, 0, BINDING_NotBound, nullptr);
-    bindings.push_back(binding);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyMap::_MapsToColumn (Utf8CP columnName) const
-    {
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 WString PropertyMap::_ToString() const
     {
     return WPrintfString(L"PropertyMap: ecProperty=%ls.%ls (%ls)", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str(), m_ecProperty.GetTypeName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMap::AddBindings( Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const
-    {
-    _AddBindings(bindings, propertyIndexUnused, sqlIndex, enabler);
     }
 
 //---------------------------------------------------------------------------------------
@@ -269,14 +238,6 @@ void PropertyMap::AddBindings( Bindings& bindings, uint32_t propertyIndexUnused,
 WCharCP PropertyMap::GetPropertyAccessString() const
     {
     return m_propertyAccessString.c_str();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyMap::MapsToColumn (Utf8CP columnName) const
-    {
-    return _MapsToColumn (columnName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -293,14 +254,6 @@ Utf8CP PropertyMap::_GetColumnBaseName() const
 Utf8CP PropertyMap::GetColumnBaseName() const
     {
     return _GetColumnBaseName();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void PropertyMap::SetColumnBaseName (Utf8CP columnName)
-    {
-    _SetColumnBaseName(columnName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -363,24 +316,6 @@ MapStatus PropertyMap::FindOrCreateColumnsInTable (ClassMap& classMap)
 WString PropertyMap::ToString() const
     {
     return _ToString();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-DbResult PropertyMap::_Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, IECInstanceR ecInstance) const
-    {
-    iBinding++; // WIP_ECD remove this default implementation when we've cleaned out all of the dead PropertyMaps
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-DbResult PropertyMap::Bind( int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, IECInstanceR ecInstance ) const 
-    {
-    auto stat = _Bind (iBinding, parameterBindings, statement, ecInstance);
-    return stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -891,14 +826,6 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-bool PropertyMapToColumn::_MapsToColumn (Utf8CP columnName) const
-    {
-    return m_column->GetName ().EqualsI(columnName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
 void PropertyMapToColumn::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
     columns.push_back(m_column);
@@ -914,14 +841,6 @@ Utf8CP PropertyMapToColumn::_GetColumnBaseName() const
         return nullptr;
     else
         return m_columnInfo.GetName();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void PropertyMapToColumn::_SetColumnBaseName (Utf8CP columnName)
-    {
-    m_columnInfo.SetColumnName (columnName);
     }
 
 
@@ -943,149 +862,6 @@ WString PropertyMapToColumn::_ToString() const
     {
     return WPrintfString(L"PropertyMapToColumn: ecProperty=%ls.%ls, columnName=%ls", GetProperty().GetClass().GetFullName(), 
         GetProperty().GetName().c_str(), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapToColumn::_AddBindings( Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler ) const 
-    {
-    uint32_t propertyIndex;
-    ECObjectsStatus status = enabler.GetPropertyIndex(propertyIndex, GetPropertyAccessString());
-    if (ECOBJECTS_STATUS_Success != status)
-        { BeAssert(false); }
-
-    Binding binding(enabler, *this, propertyIndex, 0, sqlIndex, m_column);
-    bindings.push_back(binding);
-    sqlIndex++;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapToColumn::BindECValueToParameter (Statement& statement, ECValueCR v, Binding const& binding) const
-    {
-    const int parameterIndex = binding.m_sqlIndex;
-
-    if (v.IsNull())
-        return statement.BindNull(parameterIndex);
-
-    BeAssert (v.IsPrimitive());
-    switch (v.GetPrimitiveType())
-        {
-        case PRIMITIVETYPE_Boolean:
-            return statement.BindInt(parameterIndex, v.GetBoolean()); //needswork: add BindBoolean
-
-        case PRIMITIVETYPE_Integer:
-            return statement.BindInt(parameterIndex, v.GetInteger());
-
-        case PRIMITIVETYPE_Long:
-            return statement.BindInt64(parameterIndex, v.GetLong());
-
-        case PRIMITIVETYPE_Double:
-            return statement.BindDouble(parameterIndex, v.GetDouble());
-
-        case PRIMITIVETYPE_String:
-            {
-            if (v.IsUtf8 ())
-                {
-                return statement.BindText (parameterIndex, v.GetUtf8CP (), Statement::MakeCopy::Yes);
-                }
-            else
-                {
-                return statement.BindText (parameterIndex, Utf8String (v.GetString ()), Statement::MakeCopy::Yes);
-                }
-            }
-
-        case PRIMITIVETYPE_Point2D:
-            {
-            // Only for the case where the Point2D was mapped to a single blob column, otherwise Point2d is mapped to two double columns
-            // WIP_ECDB: start handling componentMask in case the caller only wants to bind some of the components of the point
-            DPoint2d point = v.GetPoint2D();
-            return statement.BindBlob (parameterIndex, &point, sizeof(DPoint2d), Statement::MakeCopy::Yes);
-            }
-        case PRIMITIVETYPE_Point3D:
-            {
-            // Only for the case where the Point3D was mapped to a single blob column, otherwise Point2d is mapped to three double columns
-            // WIP_ECDB: start handling componentMask in case the caller only wants to bind some of the components of the point
-            DPoint3d point = v.GetPoint3D();
-            return statement.BindBlob (parameterIndex, &point, sizeof(DPoint3d), Statement::MakeCopy::Yes);
-            }
-        case PRIMITIVETYPE_DateTime:
-            {
-            bool hasMetadata = false;
-            DateTime::Info metadata;
-            const int64_t ceTicks = v.GetDateTimeTicks (hasMetadata, metadata);
-            uint64_t jdHns = DateTime::CommonEraTicksToJulianDay (ceTicks);
-            const double jd = DateTime::HnsToRationalDay (jdHns);
-
-            return BindDateTime (jd, hasMetadata, metadata, binding, statement);
-            }
-        case PRIMITIVETYPE_Binary:
-            {
-            size_t size;
-            const Byte * blob = v.GetBinary (size);
-            return statement.BindBlob (parameterIndex, blob, (int)size, Statement::MakeCopy::No);
-            }
-
-        default:
-            BeAssert(false && "unrecognized type");
-            return BE_SQLITE_ERROR;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-DbResult PropertyMapToColumn::_Bind( int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, IECInstanceR ecInstance ) const
-    {
-    Binding const& binding = parameterBindings[iBinding];
-    iBinding++;
-
-    ECValue v;
-    ECObjectsStatus s = ecInstance.GetValue(v, binding.m_propertyIndex);
-    if (ECOBJECTS_STATUS_Success != s)
-        return BE_SQLITE_ERROR;
-
-    return BindECValueToParameter(statement, v, binding);
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle    02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult PropertyMapToColumn::BindDateTime (double jd, bool hasMetadata, DateTime::Info const& metadata, Binding const& binding, BeSQLiteStatementR statement) const
-    {
-    if (hasMetadata)
-        {
-        DateTimeInfo ecPropertyMetadata;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo (ecPropertyMetadata, GetProperty ()) == ECOBJECTS_STATUS_Success && !ecPropertyMetadata.IsMatchedBy (metadata))
-            {
-            LOG.errorv ("Metadata of DateTime to bind to index %d doesn't match the metadata on the corresponding ECProperty.", binding.m_propertyIndex);
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    return statement.BindDouble (binding.m_sqlIndex, jd);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle    02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult PropertyMapToColumn::GetValueDateTime (double& jd, DateTime::Info& metadata, Binding const& binding, BeSQLiteStatementR statement) const
-    {
-    const int columnIndex = binding.m_sqlIndex;
-    jd = statement.GetValueDouble (columnIndex);
-
-    //This takes default values for the members of the DateTimeInfo CA that are unset in the CA.
-    //Defaults: Kind::Unspecified
-    //          Component::DateAndTime
-    ECN::DateTimeInfo customAttributeContent;
-    if (ECN::StandardCustomAttributeHelper::GetDateTimeInfo (customAttributeContent, GetProperty ()) == ECOBJECTS_STATUS_Success)
-        metadata = customAttributeContent.GetInfo (true);
-    else
-        return BE_SQLITE_ERROR;
-
-    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1126,34 +902,6 @@ WString PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapPoint::_AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECEnablerCR enabler) const
-    {
-    uint32_t propertyIndex;
-    ECObjectsStatus status = enabler.GetPropertyIndex (propertyIndex, GetPropertyAccessString ());
-    if (ECOBJECTS_STATUS_Success != status)
-        {
-        BeAssert (false);
-        }
-
-    Binding xbinding (enabler, *this, propertyIndex, 1, sqlIndex, m_xColumn);
-    bindings.push_back (xbinding);
-    sqlIndex++;
-
-    Binding ybinding (enabler, *this, propertyIndex, 2, sqlIndex, m_yColumn);
-    bindings.push_back (ybinding);
-    sqlIndex++;
-
-    if (m_is3d)
-        {
-        Binding zbinding (enabler, *this, propertyIndex, 3, sqlIndex, m_zColumn);
-        bindings.push_back (zbinding);
-        sqlIndex++;
-        }
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
@@ -1182,16 +930,6 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyMapPoint::_MapsToColumn( Utf8CP columnName ) const 
-    {
-    return (0 == BeStringUtilities::Stricmp (columnName, m_xColumn->GetName ().c_str()) ||
-        0 == BeStringUtilities::Stricmp (columnName, m_yColumn->GetName ().c_str ()) ||
-        m_is3d && 0 == BeStringUtilities::Stricmp (columnName, m_zColumn->GetName ().c_str ()));
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyMapPoint::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
     {
     columns.push_back(m_xColumn);
@@ -1210,88 +948,6 @@ Utf8CP PropertyMapPoint::_GetColumnBaseName() const
         return nullptr;
     else
         return m_columnInfo.GetName();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void PropertyMapPoint::_SetColumnBaseName (Utf8CP columnName)
-    {
-    m_columnInfo.SetColumnName (columnName);
-    Utf8String name = columnName;
-    if (name.size() < 3)
-        return;
-
-    size_t len = name.size();
-    Utf8CP ending = &name[len - 2];
-
-    if ( 0 == BeStringUtilities::Stricmp(ending, ".X") ||
-         0 == BeStringUtilities::Stricmp(ending, ".Y") ||
-         0 == BeStringUtilities::Stricmp(ending, ".Z") )
-        name[len - 2] = '\0'; // Truncate any .X, .Y, .Z
-
-    m_columnInfo.SetColumnName (name.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-DbResult PropertyMapPoint::_Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, IECInstanceR ecInstance) const
-    {
-    BeAssert (static_cast<size_t> (iBinding) < parameterBindings.size ());
-    uint32_t propertyIndex = parameterBindings[iBinding].m_propertyIndex;
-
-    ECValue v;
-    ECObjectsStatus s = ecInstance.GetValue(v, propertyIndex);
-    if (ECOBJECTS_STATUS_Success != s)
-        {
-        iBinding++; // We have to move along, or get stuck in an endless loop
-        return BE_SQLITE_ERROR;
-        }
-
-    if (v.IsNull())
-        {
-        BeAssert (static_cast<size_t> (iBinding) < parameterBindings.size ());
-        DbResult stat = statement.BindNull(parameterBindings[iBinding].m_sqlIndex);
-        iBinding++;
-        return stat;
-        }
-
-    DPoint3d point;
-    if (m_is3d)
-        point = v.GetPoint3D();
-    else
-        {
-        DPoint2d point2d = v.GetPoint2D();
-        memcpy (&point, &point2d, sizeof(DPoint2d)); //we will ignore the garbage z... in the name of avoiding redundant code
-        }
-
-    for ( ; iBinding < (int)parameterBindings.size() && propertyIndex == parameterBindings[iBinding].m_propertyIndex; ++iBinding)
-        {
-        Binding const& binding = parameterBindings[iBinding];
-        BeAssert (this == &binding.m_propertyMap); 
-
-        DbResult r;
-        if (binding.m_componentMask == 1)
-            r = statement.BindDouble (binding.m_sqlIndex, point.GetComponent(0));
-        else if (binding.m_componentMask == 2)
-            r = statement.BindDouble (binding.m_sqlIndex, point.GetComponent(1));
-        else if (m_is3d && binding.m_componentMask == 3)
-            r = statement.BindDouble (binding.m_sqlIndex, point.GetComponent(2));
-        else
-            {
-            BeAssert (false);
-            r = BE_SQLITE_ERROR;
-            }
-
-        if (BE_SQLITE_OK != r)
-            {
-            iBinding++;
-            return r;
-            }
-        }
-
-    return BE_SQLITE_OK;
     }
     
 //---------------------------------------------------------------------------------------
@@ -1331,68 +987,6 @@ WString PropertyMapArrayOfPrimitives::_ToString() const
         GetProperty().GetName().c_str(), ECDbMap::GetPrimitiveTypeName(primitiveType), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      11/2012
-//---------------------------------------------------------------------------------------
-DbResult PropertyMapArrayOfPrimitives::_Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, IECInstanceR instance) const
-    {
-    Binding const& binding = parameterBindings[iBinding];
-    iBinding++;
-
-    ECValue v;
-    ECObjectsStatus status = instance.GetValue(v, binding.m_propertyIndex);
-    PRECONDITION (status == ECOBJECTS_STATUS_Success, BE_SQLITE_ERROR);
-    if (ECDbUtility::IsECValueEmpty (v))
-        return statement.BindBlob(binding.m_sqlIndex, nullptr, 0, Statement::MakeCopy::No); //Null it out in case it was not previously cleared
-
-    ArrayECPropertyCP arrayECProperty = GetProperty().GetAsArrayProperty();
-    POSTCONDITION(arrayECProperty, BE_SQLITE_ERROR);
-
-    PrimitiveType primitiveType = arrayECProperty->GetPrimitiveElementType();
-    POSTCONDITION (v.GetArrayInfo().GetElementPrimitiveType() == primitiveType, BE_SQLITE_ERROR);
-    if (primitiveType == PRIMITIVETYPE_IGeometry)
-        {
-        LOG.errorv ("Array of common geometry ECProperty is not supported by ECPersistence API. Use ECSqlStatement instead.");
-        return BE_SQLITE_ERROR;
-        }
-
-    int nElements = v.GetArrayInfo().GetCount();
-    if (nElements == 0)
-        return statement.BindBlob(binding.m_sqlIndex, nullptr, 0, Statement::MakeCopy::No); //Null it out in case it was not previously cleared
-
-    //Needswork: if incoming is ECDInstance and we make GetPropertyValueSize(*propertyLayout) public, this could always get the precise size
-    int sizeOfPrimitive;
-    if (PRIMITIVETYPE_Binary == primitiveType || PRIMITIVETYPE_String == primitiveType)
-        sizeOfPrimitive = 32; // impossible to estimate, but this will help avoid some re-allocs
-    else
-        sizeOfPrimitive = ECValue::GetFixedPrimitiveValueSize (primitiveType);
-    uint32_t anticipatedSize = nElements * sizeOfPrimitive + 6 * sizeof(uint32_t); // flags, null flags, secondary offset, offset to end, plus a little extra
-
-    StandaloneECInstancePtr persistedInstance = m_primitiveArrayEnabler->CreateInstance(anticipatedSize); // WIP_ECDB: Could be cached/shared or created more directly, with guaranteed correct size.
-    BeAssert (persistedInstance.IsValid());
-
-    // Allocate 1 more than we need, then remove it, to ensure we have some "slack" in our memory buffer.
-    persistedInstance->AddArrayElements(L"PrimitiveArray", nElements + 1);
-    persistedInstance->RemoveArrayElement(L"PrimitiveArray", nElements);
-
-    //WIP_ECDB: Rather than copying them one-by-one, we could enhance MemoryInstanceSupport to allow memcpy from one to the other, if this shows up in a profiler
-    for (int i = 0; i < nElements; i++)
-        {
-        ECValue elementValue;
-        if (ECOBJECTS_STATUS_Success != instance.GetValue(elementValue, binding.m_propertyIndex, i))
-            return BE_SQLITE_ERROR;
-
-        ECObjectsStatus s = persistedInstance->SetValue((uint32_t)1, elementValue, i);
-        if (ECOBJECTS_STATUS_Success != s && ECOBJECTS_STATUS_PropertyValueMatchesNoChange != s)
-            return BE_SQLITE_ERROR;
-        }
-
-    Byte* data = const_cast<Byte*>(persistedInstance->GetData());
-    int bytesUsed = persistedInstance->GetBytesUsed();
-    BeAssert(ECDBuffer::IsCompatibleVersion(nullptr, data, true) && "Should have a header that claims we can write it" );
-
-    return statement.BindBlob(binding.m_sqlIndex, data, bytesUsed, Statement::MakeCopy::Yes);
-    }
         
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

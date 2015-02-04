@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECDbRelationshipStrength_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -21,26 +21,9 @@ extern IECInstancePtr CreatePerson (ECClassCR ecClass, WCharCP firstName, WCharC
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DeleteInstance (IECInstanceCR instance, ECDbR ecDb)
     {
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        int m_rowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            m_rowsAffected = (int) args.GetInstanceKeys ().size ();
-            }
-
-    public:
-        EventHandler () {}
-        ~EventHandler () {}
-        
-        int GetRowsAffected () const { return m_rowsAffected; }
-        };
-
     ECClassCR ecClass = instance.GetClass();
 
-    EventHandler handler;
+    InstancesAffectedECSqlEventHandler handler;
     ECInstanceDeleter deleter (ecDb, ecClass, handler);
 
     if (!deleter.IsValid ())
@@ -50,7 +33,7 @@ int DeleteInstance (IECInstanceCR instance, ECDbR ecDb)
     if (status != SUCCESS)
         return -1;
 
-    return handler.GetRowsAffected ();
+    return handler.GetInstancesAffectedCount ();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -80,10 +63,10 @@ TEST(ECDbInstances, RelationshipStrengthBackwardEmbedding)
     /*
     *                         SingleParent
     *                             |
-    *                             | SingleParentHasChildren (Backward EMBEDDING)
-    *      _______________________|__________________________
-    *     |                                                  |
-    *   Child1                                             Child2
+    *                             | ChildrenHasSingleParent (Backward EMBEDDING)
+    *      _______________________|__________________________________________________________________
+    *     |                                                  |                                      |
+    *   Child1                                             Child2                                 Child3
     */
     ECClassCP personClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP(L"Person");
     IECInstancePtr child1 = CreatePerson(*personClass, L"First", L"Child");
@@ -98,25 +81,25 @@ TEST(ECDbInstances, RelationshipStrengthBackwardEmbedding)
     //Backward Embedding relationship (SingleParent -> Child1, Child2)
     ECRelationshipClassP ChildrenHasSingleParent = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP(L"ChildrenHasSingleParent")->GetRelationshipClassP();
     IECRelationshipInstancePtr child1HasSingleParent;
-    child1HasSingleParent = CreateRelationship(*ChildrenHasSingleParent, *singleParent, *child1);
+    child1HasSingleParent = CreateRelationship (*ChildrenHasSingleParent, *child1, *singleParent);
     InsertInstance(ecdbr, *ChildrenHasSingleParent, *child1HasSingleParent);
     IECRelationshipInstancePtr child2HasSingleParent;
-    child2HasSingleParent = CreateRelationship(*ChildrenHasSingleParent, *singleParent, *child2);
+    child2HasSingleParent = CreateRelationship (*ChildrenHasSingleParent, *child2, *singleParent);
     InsertInstance(ecdbr, *ChildrenHasSingleParent, *child2HasSingleParent);
     IECRelationshipInstancePtr child3HasSingleParent;
-    child3HasSingleParent = CreateRelationship(*ChildrenHasSingleParent, *singleParent, *child3);
+    child3HasSingleParent = CreateRelationship (*ChildrenHasSingleParent, *child3, *singleParent);
     InsertInstance(ecdbr, *ChildrenHasSingleParent, *child3HasSingleParent);
     /*
     * Test 1: Delete Child1
-    * Validate child1HasSingleParent, child2HasSingleParent, child3HasSingleParent, singleParent has been deleted
-    * Validate child2 is still around (Embedding relationship with other child remaining)
+    * Validate child1HasSingleParent,  child1 has been deleted
     */
     int numDeleted = DeleteInstance(*child1, ecdbr);
-    ASSERT_EQ(5, numDeleted);
-    ASSERT_FALSE (HasInstance(*singleParent, ecdbr));
+    ASSERT_EQ (2, numDeleted);
+    ASSERT_FALSE (HasInstance (*child1, ecdbr));
+    ASSERT_TRUE (HasInstance (*singleParent, ecdbr));
     ASSERT_FALSE(HasInstance(*child1HasSingleParent, ecdbr));
-    ASSERT_FALSE (HasInstance(*child2HasSingleParent, ecdbr));
-    ASSERT_FALSE(HasInstance(*child3HasSingleParent, ecdbr));
+    ASSERT_TRUE (HasInstance(*child2HasSingleParent, ecdbr));
+    ASSERT_TRUE(HasInstance(*child3HasSingleParent, ecdbr));
     ASSERT_TRUE(HasInstance(*child2, ecdbr));
     ASSERT_TRUE(HasInstance(*child3, ecdbr));
     }
@@ -260,10 +243,10 @@ TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
     // Backward Holding relationship (GrandParent1, GrandParent2 <- SingleParent)
     ECRelationshipClassP ChildrenHaveManyParents = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP(L"ChildrenHaveManyParents")->GetRelationshipClassP();
     IECRelationshipInstancePtr singleParentHasGrandParent1;
-    singleParentHasGrandParent1 = CreateRelationship(*ChildrenHaveManyParents, *grandParent1, *singleParent);
+    singleParentHasGrandParent1 = CreateRelationship (*ChildrenHaveManyParents, *singleParent, *grandParent1);
     InsertInstance(ecdbr, *ChildrenHaveManyParents, *singleParentHasGrandParent1);
     IECRelationshipInstancePtr singleParentHasGrandParent2;
-    singleParentHasGrandParent2 = CreateRelationship(*ChildrenHaveManyParents, *grandParent2, *singleParent);
+    singleParentHasGrandParent2 = CreateRelationship (*ChildrenHaveManyParents, *singleParent, *grandParent2);
     InsertInstance(ecdbr, *ChildrenHaveManyParents, *singleParentHasGrandParent2);
 
     //Forward Embedding relationship (SingleParent -> Child1, Child2)
@@ -288,8 +271,7 @@ TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
 
     /*
     * Test 1: Delete Child1
-    * Validate singleParentHasChild1 has been deleted
-    * Validate singleParent is still around (Embedding relationship with other child and grand parents remaining)
+    * Validate Child1 and singleParentHasChild1 have been deleted
     */
     ASSERT_TRUE(HasInstance(*singleParentHasChild1, ecdbr));
 
@@ -302,7 +284,7 @@ TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
 
     /*
     * Test 2: Delete Child2
-    * Validate singleParentHasChild2 has been deleted
+    * Validate Child2 and singleParentHasChild2 have been deleted
     * Validate singleParent is still around (relationship grand parents remaining)
     */
     ASSERT_TRUE(HasInstance(*singleParentHasChild2, ecdbr));
@@ -316,7 +298,7 @@ TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
 
     /*
     * Test 3: Delete GrandParent1
-    * Validate grandParent1HasSpouse, grandParent2HasSpouse, singleParentHasGrandParent1 have been deleted
+    * Validate GrandParent1, grandParent1HasSpouse, grandParent2HasSpouse, singleParentHasGrandParent1 have been deleted
     * Validate singleParent is still around (holding relationship with one parent remaining)
     */
     numDeleted = DeleteInstance(*grandParent1, ecdbr);
@@ -329,13 +311,13 @@ TEST(ECDbInstances, RelationshipStrengthBackwardHoldingForwardEmbedding)
 
     /*
     * Test 3: Delete GrandParent2
-    * Validate singleParentHasGrandParent2 have been deleted
-    * Validate singleParent is still around
+    * Validate GrandParent2, singleParentHasGrandParent2 have been deleted.
+    * Single parent has been deleted too as no parent exists anymore
     */
     numDeleted = DeleteInstance(*grandParent2, ecdbr);
-    ASSERT_EQ(2, numDeleted);
+    ASSERT_EQ(3, numDeleted);
     ASSERT_FALSE(HasInstance(*singleParentHasGrandParent2, ecdbr));
-    ASSERT_TRUE(HasInstance(*singleParent, ecdbr));
+    ASSERT_FALSE (HasInstance(*singleParent, ecdbr));
 }
 
 /*---------------------------------------------------------------------------------**//**

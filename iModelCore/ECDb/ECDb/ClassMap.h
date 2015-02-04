@@ -279,7 +279,6 @@ protected:
     std::unique_ptr<ClassDbView> m_dbView;
     ColumnFactory               m_columnFactory;
 private:
-    PropertyMapCP GetPropertyMapForColumnName (Utf8CP columnName) const;
     MapStatus ProcessIndices (ClassMapInfoCR classMapInfo);
     void ProcessStandardKeySpecifications (ClassMapInfoCR mapInfo);
     void SetUserProvidedIndex (bvector<ClassIndexInfoPtr> const& indexes)
@@ -348,9 +347,6 @@ public:
     void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
-    //! @deprecated: Remove once ECPersistence is being removed
-    //! Adds parameter bindings to the supplied vector
-    BentleyStatus GenerateParameterBindings (Bindings& parameterBindings, int firstParameterIndex) const;
     };
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceUpdater.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -45,34 +45,12 @@ public:
 struct ClassUpdaterImpl : ECInstanceUpdater::Impl
     {
 private:
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        bool m_noRowsAffected;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            BeAssert (eventType == EventType::Update && "ECInstanceUpdater is expected to only execute ECSQL UPDATE statements.");
-            m_noRowsAffected = args.GetInstanceKeys ().empty ();
-            }
-
-    public:
-        EventHandler ()
-            : ECSqlEventHandler (), m_noRowsAffected (true)
-            {}
-
-        ~EventHandler () {}
-
-        bool NoRowsAffected () const { return m_noRowsAffected; }
-        };
-
-
     ECDbR m_ecdb;
     mutable ECSqlStatement m_statement;
     ECValueBindingInfoCollection m_ecValueBindingInfos;
     int m_ecinstanceIdParameterIndex;
     bool m_needsCalculatedPropertyEvaluation;
-    EventHandler m_internalEventHandler;
+    InstancesAffectedECSqlEventHandler m_internalEventHandler;
     bool m_isValid;
 
     void Initialize(bvector<ECPropertyCP>& propertiesToBind);
@@ -252,9 +230,12 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass)
 : Impl (ecClass), m_ecdb (ecdb), m_needsCalculatedPropertyEvaluation (false)
     {
     bvector<ECPropertyCP> propertiesToBind;
-    for (ECPropertyCP ecProperty : GetECClass ().GetProperties (true))
+    for (ECPropertyCP ecProperty : GetECClass().GetProperties(true))
+        {
+        if (ecProperty->GetIsReadOnly())
+            continue;
         propertiesToBind.push_back(ecProperty);
-
+        }
     Initialize(propertiesToBind);
     }
 
@@ -307,13 +288,22 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     ECSqlUpdateBuilder builder;
     builder.Update (GetECClass (), false);
 
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
+
     int parameterIndex = 1;
     ECEnablerP enabler = GetECClass().GetDefaultStandaloneEnabler ();
     for (uint32_t propertyIndex : propertiesToBind)
         {
         ECPropertyCP ecProperty = enabler->LookupECProperty(propertyIndex);
+
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
         if (ecProperty->GetIsStruct())
             continue;
+
 
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
@@ -375,9 +365,16 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     ECSqlUpdateBuilder builder;
     builder.Update (GetECClass (), false);
 
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, GetECClass ());
+
     int parameterIndex = 1;
     for (ECPropertyCP ecProperty : propertiesToBind)
         {
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
@@ -429,10 +426,10 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         auto stat = ECInstanceAdapterHelper::BindValue (m_statement.GetBinder (bindingInfo->GetECSqlParameterIndex ()), instanceInfo, *bindingInfo);
         if (stat != SUCCESS)
             {
-            WString errorMessage;
-            errorMessage.Sprintf (L"Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex (),
+            Utf8String errorMessage;
+            errorMessage.Sprintf ("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex (),
                 m_statement.GetECSql ());
-            LogFailure (instance, Utf8String (errorMessage).c_str ());
+            LogFailure (instance, errorMessage.c_str ());
             return ERROR;
             }
         }
@@ -451,8 +448,9 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         return ERROR;
 
     //now execute statement
+    m_internalEventHandler.Reset ();
     ECSqlStepStatus stepStatus = m_statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done && !m_internalEventHandler.NoRowsAffected ()) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done && m_internalEventHandler.AreInstancesAffected ()) ? SUCCESS : ERROR;
     }
 
 //*************************************************************************************

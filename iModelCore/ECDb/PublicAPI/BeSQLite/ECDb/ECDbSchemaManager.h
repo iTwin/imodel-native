@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ECDb/ECDbSchemaManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -140,7 +140,7 @@ public:
         //!                           7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
         //!                          Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
         //!                          Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
-        //!                          Any existing references to ECSchemas, ECClasses, ECSqlStatements or ECPersistence become invalid.  
+        //!                          Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
         ECDB_EXPORT ImportOptions (bool doSupplementation, bool updateExistingSchemas);
 
         //! Gets a value indicating whether supplementation should be performed or not.
@@ -163,7 +163,7 @@ public:
         //!     7. If existing schema have different value of customAttribute for a container then it will be replaced with its new value.
         //!        Updating of ECDb Mapping Hint custom attribute on existing ECClasses or ECProperties will be ignored with warning.
         //!     Any other kind of change will cause operation to fail. After upgrade the schemas cached by ECDb has been cleared. 
-        //!     Any existing references to ECSchemas, ECClasses, ECSqlStatements or ECPersistence become invalid.  
+        //!     Any existing references to ECSchemas, ECClasses, or ECSqlStatements become invalid.  
         ECDB_EXPORT bool UpdateExistingSchemas () const;
 
         //__PUBLISH_SECTION_END__
@@ -218,7 +218,7 @@ private:
     ECDbMapR              m_map;
     ECDbSchemaReaderPtr   m_ecReader;
     ECDbSchemaWriterPtr   m_ecImporter;
-    mutable BeCriticalSection m_criticalSection;
+    mutable BeMutex m_criticalSection;
 
     BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool saveSupplementals = true, bool addToReaderCache = false) const;
     void GetSupplementalSchemas (bvector<ECN::ECSchemaP>& supplementalSchemas, bvector<ECN::ECSchemaP> const& schemas, ECN::SchemaKeyCR primarySchemaKey) const;

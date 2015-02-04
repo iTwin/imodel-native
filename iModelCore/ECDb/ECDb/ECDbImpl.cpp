@@ -165,8 +165,6 @@ void ECDb::Impl::ClearCache () const
 
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache ();
-
-    m_ecPersistenceCache.clear ();
     }
 
 //--------------------------------------------------------------------------------------
@@ -237,29 +235,4 @@ DbResult ECDb::Impl::ResetSequences (ECDbR ecdb, BeRepositoryId* repoId)
     return BE_SQLITE_OK;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-ECPersistencePtr ECDb::Impl::GetECPersistence (ECN::ECClassCR ecClass) const
-    {
-    auto classMap = GetECDbMap ().GetClassMap (ecClass, true);
-
-    // Error checks
-    if (classMap == nullptr || classMap->IsUnmapped () || classMap->GetTable ().GetPersistenceType() == PersistenceType::Virtual)
-        return nullptr;
-
-    if (ecClass.GetIsStruct () && !ecClass.GetIsDomainClass ())
-        return nullptr;
-
-    // Look up cache
-    auto it = m_ecPersistenceCache.find (classMap);
-    if (it != m_ecPersistenceCache.end ())
-        return it->second;
-
-    // Create a new persistence
-    ECPersistencePtr ecPersistence = new ECPersistence (*classMap);
-    m_ecPersistenceCache[classMap] = ecPersistence;
-    return ecPersistence;
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

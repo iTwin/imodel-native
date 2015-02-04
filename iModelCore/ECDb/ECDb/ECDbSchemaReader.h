@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaReader.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ private:
     DbECClassEntryMap          m_ecClassKeyByECClassIdLookup;
     DbECSchemaMap              m_ecSchemaByECSchemaIdLookup;
     bool                       m_loadOnlyPrimaryCustomAttributes;
-    mutable BeCriticalSection  m_criticalSection;
+    mutable BeMutex m_criticalSection;
 
     BeSQLite::DbResult         LoadECSchemaClassesFromDb               (DbECSchemaEntryP ecSchemaKey, std::set<DbECSchemaEntryP>& fullyLoadedSchemas);
     BeSQLite::DbResult         LoadECSchemaFromDb                      (ECSchemaPtr& ecSchemaOut, ECSchemaId ecSchemaId);

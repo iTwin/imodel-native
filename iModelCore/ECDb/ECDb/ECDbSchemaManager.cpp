@@ -168,7 +168,7 @@ IImportIssueListener const* userProvidedIssueListener
         return ERROR;
         }
 
-    BeCriticalSectionHolder lock (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     bvector<ECSchemaP> schemas;
     cache.GetSchemas (schemas);
     for (ECSchemaP schema : schemas)

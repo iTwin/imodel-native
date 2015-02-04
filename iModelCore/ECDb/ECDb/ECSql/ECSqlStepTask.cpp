@@ -426,26 +426,15 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
 DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId)
-: ECSqlStepTask(ExecutionCategory::ExecuteBeforeParentStep, statusContext, name), m_ecdb(ecdb), m_eventManager(eventManager), m_orphanInstanceFinder(ecdb), m_ecClassId(classId), m_deleteHander(eventManager.GetEventArgsR().GetInstanceKeysR())
-    {
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                        Muhammad.zaighum                                 02/2014
-//---------------------------------------------------------------------------------------
-void DeleteRelatedInstancesECSqlStepTask::ECDbStepTaskDeleteHandler::_OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, ECDbR ecDb) 
-    {
-    ECInstanceKey key = ECInstanceKey(ecClass.GetId(), ecInstanceId);
-    m_instanceKeyList.push_back(key);
-    }
+    : ECSqlStepTask (ExecutionCategory::ExecuteBeforeParentStep, statusContext, name), m_ecdb (ecdb), m_eventManager (eventManager), m_orphanInstanceFinder (ecdb), m_ecClassId (classId), m_eventHandler (eventManager)
+    {}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId const& instanceId)
+ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId const& seedInstanceId)
     {
-    ECInstanceIdSet set;
-    set.insert (instanceId);
-    int deletedCount; 
-    if (DeleteDependentInstances (deletedCount, set) != BentleyStatus::SUCCESS)
+    if (DeleteDependentInstances (seedInstanceId) != BentleyStatus::SUCCESS)
         return ECSqlStepStatus::Error;
    
     return ECSqlStepStatus::Done;
@@ -458,8 +447,7 @@ ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId cons
 //---------------------------------------------------------------------------------------
 ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlPrepareContext& preparedContext, IClassMap const& classMap)
     {
-    auto aDeleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, eventManager, preparedContext.GetECSqlStatementR ().GetStatusContextR (), L"$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
-    deleteStepTask = std::move (aDeleteStepTask);
+    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, eventManager, preparedContext.GetECSqlStatementR ().GetStatusContextR (), L"$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
     return ECSqlStepTaskCreateStatus::Success;
     }
     
@@ -467,43 +455,29 @@ ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_pt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (int& numDeleted, const ECInstanceIdSet& deletedInstanceIds)
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (ECInstanceId const& seedInstanceId) const
     {
-    numDeleted = 0;
+    ECInstanceKeyMultiMap orphanedRelationshipInstances;
+    ECInstanceKeyMultiMap orphanedInstances;
 
-    for (ECInstanceId deletedInstanceId : deletedInstanceIds)
+    BentleyStatus status = FindOrphanedInstances (orphanedRelationshipInstances, orphanedInstances, m_ecdb, m_ecClassId, seedInstanceId);
+    if (status != SUCCESS)
+        return status;
+
+    if (m_eventManager.HasEventHandlers ())
         {
-        ECInstanceKeyMultiMap orphanedRelationshipInstances;
-        ECInstanceKeyMultiMap orphanedInstances;
-
-        BentleyStatus status = FindOrphanedInstances (orphanedRelationshipInstances, orphanedInstances, m_ecClassId, deletedInstanceId, m_ecdb);
-        if (status != SUCCESS)
-            return status;
-
-        if (m_eventManager.HasEventHandlers ())
-            {
-            auto& ecInstanceKeyList = m_eventManager.GetEventArgsR().GetInstanceKeysR();
-            ecInstanceKeyList.reserve(ecInstanceKeyList.size() + orphanedInstances.size() + orphanedRelationshipInstances.size());
-            }
-
-        /*
-        * Note: Delete relationship instances first. Deleting instances that hold relationships as
-        * FKeys causes the relationship to get deleted automatically, messing up the count of
-        * number of items deleted.
-        */
-        int numRelationshipsDeleted;
-        status = DeleteInstances (numRelationshipsDeleted, orphanedRelationshipInstances, m_ecdb);
-        if (status != SUCCESS)
-            return status;
-        numDeleted += numRelationshipsDeleted;
-
-        int numInstancesDeleted;
-        status = DeleteInstances (numInstancesDeleted, orphanedInstances, m_ecdb);
-        if (status != SUCCESS)
-            return status;
-
-        numDeleted += numInstancesDeleted;
+        auto& ecInstanceKeyList = m_eventManager.GetEventArgsR ().GetInstanceKeysR ();
+        ecInstanceKeyList.reserve (ecInstanceKeyList.size () + orphanedInstances.size () + orphanedRelationshipInstances.size ());
         }
+
+    status = DeleteInstances (m_ecdb, orphanedRelationshipInstances);
+    if (status != SUCCESS)
+        return status;
+
+    status = DeleteInstances (m_ecdb, orphanedInstances);
+    if (status != SUCCESS)
+        return status;
+
 
     return SUCCESS;
     }
@@ -511,34 +485,121 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (int
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (int& numDeleted, const ECInstanceKeyMultiMap& instanceMap, ECDbR ecDb)
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecdb, ECInstanceKeyMultiMap const& candidateKeyMap) const
     {
-    numDeleted = 0;
-    ECInstanceKeyMultiMapConstIterator instanceIdIter;
-    for (ECInstanceKeyMultiMapConstIterator classIdIter = instanceMap.begin (); classIdIter != instanceMap.end (); classIdIter = instanceIdIter)
+    if (candidateKeyMap.empty ())
+        return SUCCESS;
+
+    std::vector<ECInstanceKey> keyList;
+    ECClassId previousClassId = -1LL;
+    bool isFirstItem = true;
+    for (auto const& kvPair : candidateKeyMap)
         {
-        ECClassId classId = classIdIter->first;
-        ECClassCP ecClass = ecDb.GetSchemaManager ().GetECClass (classId);
-        if (ecClass == nullptr)
+        //keys are ordered by class id. Do bulk delete per class, so gather all keys for the current class first before deleting.
+        ECClassId classId = kvPair.first;
+        if (isFirstItem)
+            previousClassId = classId;
+
+        isFirstItem = false;
+
+        if (classId == previousClassId)
             {
-            LOG.errorv ("Failed to get ECClass for ECClassId %x", classId);
+            keyList.push_back (ECInstanceKey (classId, kvPair.second));
+            continue;
+            }
+
+        //Sequence of keys with same class id has ended. So delete now
+        if (SUCCESS != DeleteInstances (ecdb, previousClassId, keyList))
+            return ERROR;
+
+        keyList.clear ();
+        keyList.push_back (ECInstanceKey (classId, kvPair.second));
+        previousClassId = classId;
+        }
+
+    //Last sequence keys with same class id needs to be deleted now.
+    if (!keyList.empty ())
+        return DeleteInstances (ecdb, previousClassId, keyList);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle         01/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, ECClassId classId, std::vector<ECInstanceKey> const& keyList) const
+    {
+    ECClassCP ecClass = ecDb.GetSchemaManager ().GetECClass (classId);
+    if (ecClass == nullptr)
+        {
+        LOG.errorv ("ECSQL cascade delete of related instances with ECClassId %lld failed: Could not retrieve ECClass for the ECClassId.", classId);
+        return ERROR;
+        }
+
+    //if this is a relationship class with end table mapping and cardinality on other end is 1:1, we don't need to delete
+    //it as it gets implicitly deleted with the end instance.
+    //This prevents us from running into null constraint violations if the foreign key column is not nullable
+    //(See TFS#168619)
+    auto relationshipClass = ecClass->GetRelationshipClassCP ();
+    if (relationshipClass != nullptr)
+        {
+        auto classMap = ecDb.GetImplR ().GetECDbMap ().GetClassMapCP (*relationshipClass);
+        if (classMap == nullptr)
+            {
+            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Cound not retrieve class map.", relationshipClass->GetFullName ());
             return ERROR;
             }
 
-        ECPersistencePtr persistence = ecDb.GetImplR ().GetECPersistence (*ecClass);
-        if (!persistence.IsValid ())
-            return ERROR;
+        if (classMap->GetClassMapType () == IClassMap::Type::RelationshipEndTable)
+            {
+            BeAssert (dynamic_cast<RelationshipClassEndTableMapCP> (classMap) != nullptr);
+            auto relClassMap = static_cast<RelationshipClassEndTableMapCP> (classMap);
+            auto const& otherEndConstraint = relClassMap->GetThisEnd () == ECRelationshipEnd_Source ? relationshipClass->GetTarget () : relationshipClass->GetSource ();
+            if (otherEndConstraint.GetCardinality ().GetLowerLimit () == 1)
+                {
+                //add found ids to event arg list, so that notification works fine, but don't delete them
+                auto& eventArgsKeyList = m_eventManager.GetEventArgsR ().GetInstanceKeysR ();
+                eventArgsKeyList.insert (eventArgsKeyList.end (), keyList.begin (), keyList.end ());
+                return SUCCESS;
+                }
+            }
+        }
 
-        ECInstanceIdSet ecInstanceIdSet;
-        bpair<ECInstanceKeyMultiMapConstIterator, ECInstanceKeyMultiMapConstIterator> keyRange = instanceMap.equal_range (classId);
-        for (instanceIdIter = keyRange.first; instanceIdIter != keyRange.second; instanceIdIter++)
-            ecInstanceIdSet.insert (instanceIdIter->second);
+    auto statement = GetDeleteStatement (*ecClass);
+    if (statement == nullptr)
+        return ERROR; //error logging already done in GetDeleteStatement
 
-        int numChildDeleted;
-        DeleteStatus deleteStatus = persistence->Delete (&numChildDeleted, ecInstanceIdSet, &m_deleteHander);
-        if (deleteStatus != DELETE_Success)
+    //in order to reuse the prepared statement, the number of parameters in the ECSQL must be constant
+    //We therefore split the delete in chunks of MAX_PARAMETER_COUNT instance ids
+    const int keyCount = (int) keyList.size ();
+    for (int i = 0; i < keyCount; i++)
+        {
+        const int parameterIndex = (i % MAX_PARAMETER_COUNT) + 1;
+
+        if (ECSqlStatus::Success != statement->BindId (parameterIndex, keyList[i].GetECInstanceId ()))
+            {
+            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Binding to nested ECSQL DELETE failed.", ecClass->GetFullName ());
             return ERROR;
-        numDeleted += numChildDeleted;
+            }
+
+        //once the chunk of MAX_PARAMETER_COUNT keys has been bound (or the last key has been reached),
+        //we execute the statement
+        const bool isLastKey = (i + 1) == keyCount;
+        if (parameterIndex == MAX_PARAMETER_COUNT || isLastKey)
+            {
+            if (ECSqlStepStatus::Done != statement->Step ())
+                {
+                LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Execution of nested ECSQL DELETE failed.", ecClass->GetFullName ());
+                return ERROR;
+                }
+
+            //no need to reset the statement if this is the last execution
+            if (!isLastKey)
+                {
+                statement->ClearBindings ();
+                statement->Reset ();
+                }
+            }
         }
 
     return SUCCESS;
@@ -551,31 +612,33 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::FindOrphanedInstances
 (
 ECInstanceKeyMultiMap& orphanedRelationshipInstances,
 ECInstanceKeyMultiMap& orphanedInstances,
+ECDbR ecdb,
 ECClassId deletedClassId,
-ECInstanceId deletedInstanceId,
-ECDbR ecDb
-)
+ECInstanceId seedInstanceId
+) const
     {
-    ECInstanceKey seedInstanceKey (deletedClassId, deletedInstanceId);
+    ECInstanceKey seedInstanceKey (deletedClassId, seedInstanceId);
 
-    ECInstanceFinder* instanceFinder = &m_orphanInstanceFinder;
-
-    // Add *all* relationship instances that relate the deleted instance (at either end)
-    ECInstanceKeyMultiMap allRelationshipInstances;
-    BentleyStatus status = instanceFinder->FindRelatedInstances (nullptr, &allRelationshipInstances, seedInstanceKey, ECInstanceFinder::RelatedDirection_All);
-    POSTCONDITION (status == SUCCESS, status);
-    orphanedRelationshipInstances.insert (allRelationshipInstances.begin (), allRelationshipInstances.end ());
+    // Add relationship instances that that point to the deleted instance
+    // except for embedded relationships pointing to embedded children (i.e. where this instance is the parent), 
+    // because deleting the embedded related instances
+    // will find and delete those relationships themselves.
+    if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (nullptr, &orphanedRelationshipInstances, seedInstanceKey, ECInstanceFinder::RelatedDirection::RelatedDirection_EmbeddingParent |
+        ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren | ECInstanceFinder::RelatedDirection::RelatedDirection_HoldingParents | ECInstanceFinder::RelatedDirection::RelatedDirection_Referencing))
+        return ERROR;
 
     // Add embedded children
-    ECInstanceKeyMultiMap embeddedChildren;
-    status = instanceFinder->FindRelatedInstances (&embeddedChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_EmbeddedChildren);
-    POSTCONDITION (status == SUCCESS, status);
-    orphanedInstances.insert (embeddedChildren.begin (), embeddedChildren.end ());
+    if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (&orphanedInstances, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_EmbeddedChildren))
+        return ERROR;
 
-    // Add held relationship instances, and child instances (only if they don't have any other parents left)
+    // Add held child instances (only if they don't have any other parents left)
+    // Step 1: first find all held child instances
     ECInstanceKeyMultiMap heldChildren;
-    status = instanceFinder->FindRelatedInstances (&heldChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_HeldChildren);
-    POSTCONDITION (status == SUCCESS, status);
+    if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (&heldChildren, nullptr, seedInstanceKey, ECInstanceFinder::RelatedDirection_HeldChildren))
+        return ERROR;
+
+    // Step 2: only add those held instances for who this instance is the only parent. Which means they will 
+    // be deleted if this instance is deleted
     for (ECInstanceKeyMultiMapConstIterator iter = heldChildren.begin (); iter != heldChildren.end (); iter++)
         {
         ECClassId relatedClassId = iter->first;
@@ -583,8 +646,9 @@ ECDbR ecDb
         seedInstanceKey = ECInstanceKey (iter->first, iter->second);
 
         ECInstanceKeyMultiMap holdingParentRelationships;
-        status = instanceFinder->FindRelatedInstances (nullptr, &holdingParentRelationships, seedInstanceKey, ECInstanceFinder::RelatedDirection_HoldingParents);
-        POSTCONDITION (status == SUCCESS, status);
+        if (SUCCESS != m_orphanInstanceFinder.FindRelatedInstances (nullptr, &holdingParentRelationships, seedInstanceKey, ECInstanceFinder::RelatedDirection_HoldingParents))
+            return ERROR;
+
         if (holdingParentRelationships.size () < 2)
             {
             ECInstanceKeyMultiMapPair mapEntry (relatedClassId, relatedInstanceId);
@@ -593,6 +657,51 @@ ECDbR ecDb
         }
 
     return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle         01/2015
+//---------------------------------------------------------------------------------------
+ECSqlStatement* DeleteRelatedInstancesECSqlStepTask::GetDeleteStatement (ECN::ECClassCR ecClass) const
+    {
+    auto it = m_statementCache.find (ecClass.GetId ());
+    if (it == m_statementCache.end ())
+        {
+        Utf8String ecsql ("DELETE FROM ONLY ");
+        ecsql.append (ECSqlBuilder::ToECSqlSnippet (ecClass)).append (" WHERE ECInstanceId IN (");
+        bool isFirstParameter = true;
+        for (int i = 0; i < MAX_PARAMETER_COUNT; i++)
+            {
+            if (!isFirstParameter)
+                ecsql.append (",");
+
+            ecsql.append ("?");
+            isFirstParameter = false;
+            }
+        ecsql.append (")");
+
+        auto statement = std::unique_ptr<ECSqlStatement> (new ECSqlStatement ());
+        statement->RegisterEventHandler (m_eventHandler);
+
+        if (statement->Prepare (m_ecdb, ecsql.c_str ()) != ECSqlStatus::Success)
+            {
+            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Preparation of nested ECSQL DELETE failed.", ecClass.GetFullName ());
+            return nullptr;
+            }
+
+        auto statementP = statement.get ();
+
+        m_statementCache[ecClass.GetId ()] = std::move (statement);
+        return statementP;
+        }
+
+    auto statement = it->second.get ();
+    BeAssert (statement != nullptr);
+
+    statement->Reset ();
+    statement->ClearBindings ();
+    return statement;
     }
 
 //*************************************ECSqlStepTaskFactory*******************************************

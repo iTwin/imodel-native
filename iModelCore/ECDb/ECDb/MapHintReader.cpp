@@ -61,6 +61,17 @@ IECInstancePtr ClassHintReader::ReadHint (ECClassCR ecClass)
     return HintReaderHelper::ReadHint (ecClass, BSCAC_ECDbClassHint);
     }
 
+//*******************************************************************************************
+// ClassMapHintReader
+//*******************************************************************************************
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+IECInstancePtr ClassHintReader::ReadClassHasCurrentTimeStampProperty(ECClassCR ecClass)
+    {
+    return HintReaderHelper::ReadHint(ecClass, BSCAC_ECDbClassHasCurrentTimeStamp);
+    }
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceInserter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -115,8 +115,15 @@ void ECInstanceInserter::Impl::Initialize ()
     m_ecinstanceIdBindingInfo = m_ecValueBindingInfos.AddBindingInfo (ECValueBindingInfo::SystemPropertyKind::ECInstanceId, parameterIndex);
     parameterIndex++;
 
+    ECPropertyCP currentTimeStampProp = nullptr;
+    bool hasCurrentTimeStampProp = ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (currentTimeStampProp, m_ecClass);
+
     for (ECPropertyCP ecProperty : m_ecClass.GetProperties (true))
         {
+        //Current time stamp props are populated by SQLite, so ignore them here.
+        if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
@@ -249,10 +256,10 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
         auto stat = ECInstanceAdapterHelper::BindValue (m_statement.GetBinder (bindingInfo->GetECSqlParameterIndex ()), instanceInfo, *bindingInfo);
         if (stat != SUCCESS)
             {
-            WString errorMessage;
-            errorMessage.Sprintf (L"Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex (),
+            Utf8String errorMessage;
+            errorMessage.Sprintf ("Could not bind value to ECSQL parameter %d [ECSQL: '%s'].", bindingInfo->GetECSqlParameterIndex (),
                 m_statement.GetECSql ());
-            LogFailure (instance, Utf8String (errorMessage).c_str ());
+            LogFailure (instance, errorMessage.c_str ());
             return ERROR;
             }
         }

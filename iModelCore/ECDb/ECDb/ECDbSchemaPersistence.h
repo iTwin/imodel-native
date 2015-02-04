@@ -470,4 +470,5 @@ public:
     static CustomAttributeTrackerPtr Create (CustomAttributeTrackerStatus* status, bvector<ECSchemaP> const& schemas);
     };
 
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

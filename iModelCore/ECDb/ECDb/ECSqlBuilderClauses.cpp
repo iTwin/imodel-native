@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSqlBuilderClauses.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -166,16 +166,9 @@ Utf8String ClassClause::ToString (bool ignoreIsPolymorphic) const
 //static
 Utf8String ClassClause::ToString (ECN::ECClassCR ecClass)
     {
-    //add fully qualified class name, i.e. <schema namespace prefix>.<class name> 
+    //add fully qualified class name, i.e. <schema name>.<class name> 
     WString fullClassName (L"[");
-    auto const& schema = ecClass.GetSchema ();
-    auto const& schemaPrefix = schema.GetNamespacePrefix ();
-    if (schemaPrefix.empty ())
-        fullClassName.append (schema.GetName ());
-    else
-        fullClassName.append (schemaPrefix);
-
-    fullClassName.append (L"].[").append (ecClass.GetName ().c_str ()).append (L"]");
+    fullClassName.append (ecClass.GetSchema ().GetName ()).append (L"].[").append (ecClass.GetName ().c_str ()).append (L"]");
 
     return Utf8String (fullClassName);
     }

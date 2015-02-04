@@ -104,7 +104,7 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy)
 : m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_mapToExistingTable (false),
-m_mapStrategy (mapStrategy), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)), m_replaceEmptyTableWithEmptyView (true), m_useSharedColumnStrategy (false)
+m_mapStrategy(mapStrategy), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_replaceEmptyTableWithEmptyView(true), m_ClassHasCurrentTimeStampProperty(NULL), m_useSharedColumnStrategy(false)
     {
     if (Utf8String::IsNullOrEmpty (tableName))
         InitializeFromSchema ();
@@ -215,7 +215,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
 void ClassMapInfo::InitializeFromSchema ()
     {
     InitializeFromClassHint ();
-
+    InitializeFromClassHasCurrentTimeStampProperty();
     // Add indices for important identifiers
     ProcessStandardKeys (m_ecClass, L"BusinessKeySpecification");
     ProcessStandardKeys (m_ecClass, L"GlobalIdSpecification");
@@ -224,6 +224,36 @@ void ClassMapInfo::InitializeFromSchema ()
     //TODO: VerifyThatTableNameIsNotReservedName, e.g. dgn element table, etc.
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 muhammad.zaighum                01/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
+    {
+    auto classHint = ClassHintReader::ReadClassHasCurrentTimeStampProperty(m_ecClass);
+    if (classHint == nullptr)
+        return;
+   
+    WString propertyName;
+    ECValue v;
+    if (classHint->GetValue(v, L"PropertyName") == ECOBJECTS_STATUS_Success && !v.IsNull())
+        {
+        propertyName = v.GetString();
+        ECPropertyP dateTimeProperty = m_ecClass.GetPropertyP(propertyName);
+        if (NULL == dateTimeProperty)
+            {
+            BeAssert(false && "ClassHasCurrentTimeStamp Property Not Found in ECClass");
+            return;
+            }
+        if (dateTimeProperty->GetTypeName().Equals(L"dateTime"))
+            {
+            m_ClassHasCurrentTimeStampProperty = dateTimeProperty;
+            }
+        else
+            {
+            BeAssert(false && "Property is not of type dateTime");
+            }
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                03/2014
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,7 +51,7 @@ private:
 //    ECSchemaCP                                                  m_PrimaryECSchema; -- detected as unused by clang
     CustomAttributeTrackerP                                     m_customAttributeTracker;
     std::unique_ptr<SchemaUpdateContext>                        m_updateContext;
-    BeCriticalSection                                           m_aCriticalSection;
+    BeMutex m_aCriticalSection;
 private:
                   bool EnsureNamespacePrefixIsUnique            (ECSchemaCR ecSchema);
     BeSQLite::DbResult CreateECSchemaEntry                      (ECSchemaCR ecSchema, ECSchemaId ecSchemaId);

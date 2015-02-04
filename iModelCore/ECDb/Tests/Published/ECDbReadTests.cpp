@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Published/ECDbReadTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -51,7 +51,14 @@ TEST(ECDbInstances, ReadECInstances)
 
         ASSERT_TRUE (readInstance.IsValid());
         ASSERT_TRUE (importedInstance->GetInstanceId() == readInstance->GetInstanceId());
-        ASSERT_TRUE (ECDbTestUtility::CompareECInstances (*importedInstance, *readInstance)) << L"Failed to correctly read instance of class " << Utf8String (importedInstance->GetClass().GetName()).c_str();
+        if (!ECDbTestUtility::CompareECInstances(*importedInstance, *readInstance))
+            {
+            InstanceWriteStatus s = importedInstance->WriteToXmlFile(L"C:\\testInstance1.xml", true, true);
+            EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, s);
+            s = readInstance->WriteToXmlFile(L"C:\\testInstance2.xml", true, true);
+            EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, s);
+            }
+        //ASSERT_TRUE (ECDbTestUtility::CompareECInstances (*importedInstance, *readInstance)) << L"Failed to correctly read instance of class " << Utf8String (importedInstance->GetClass().GetName()).c_str();
         
         }
     }

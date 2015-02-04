@@ -25,10 +25,8 @@ private:
     virtual bool _IsECInstanceIdPropertyMap () const override;
     virtual bool _IsSystemPropertyMap () const override;
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
-    virtual bool _MapsToColumn (Utf8CP columnName) const override;
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual Utf8CP _GetColumnBaseName () const override;
-    virtual void _SetColumnBaseName (Utf8CP columnName) override;
 
 protected:
     PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind);
@@ -44,8 +42,6 @@ public:
     };
 
 //=======================================================================================
-//! PropertyMapECInstanceId can only be used with the ECSqlStatement API as it does not implement
-//! the Binding / ECInstance related methods of PropertyMap.
 // @bsiclass                                                 Krischan.Eberle    06/2013
 //+===============+===============+===============+===============+===============+======
 struct PropertyMapECInstanceId : PropertyMapSystem

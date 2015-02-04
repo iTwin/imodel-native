@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/Performance/PerformanceECInstanceInserterTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //*************************************************************************************************
-// ECInstanceInserter vs ECPersistence performance
+// ECInstanceInserter vs ECSQL performance
 //*************************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  07/14
@@ -502,90 +502,90 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, AllPropertyTypes)
+TEST(Performance_ECSQLVersusECInstanceInserter, AllPropertyTypes)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence AllPropertyTypes";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter AllPropertyTypes";
     RunPerformanceComparisonTest(nullptr, 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, PrimitiveProperties)
+TEST (Performance_ECSQLVersusECInstanceInserter, PrimitiveProperties)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence PrimitiveProperties";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter PrimitiveProperties";
     RunPerformanceComparisonTest("P", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, IntProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, IntProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence IntProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter IntProperty";
     RunPerformanceComparisonTest("Int", 1000, TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, DateTimeProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence DateTimeProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter DateTimeProperty";
     RunPerformanceComparisonTest("DateTime", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, StringProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, StringProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence StringProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StringProperty";
     RunPerformanceComparisonTest("String", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, StructProperties)
+TEST (Performance_ECSQLVersusECInstanceInserter, StructProperties)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence StructProperties";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StructProperties";
     RunPerformanceComparisonTest("S", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, IntArrayProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, IntArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence IntArrayProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter IntArrayProperty";
     RunPerformanceComparisonTest("IntA", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, DateTimeArrayProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, DateTimeArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence DateTimeArrayProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter DateTimeArrayProperty";
     RunPerformanceComparisonTest("DateTimeA", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, StringArrayProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, StringArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence StringArrayProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StringArrayProperty";
     RunPerformanceComparisonTest("StringA", 1000,TestDetails);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(Performance_ECSQLVersusECPersistence, StructArrayProperty)
+TEST (Performance_ECSQLVersusECInstanceInserter, StructArrayProperty)
 {
-    Utf8String TestDetails = "Performance_ECSQLVersusECPersistence StructArrayProperty";
+    Utf8String TestDetails = "Performance_ECSQLVersusECInstanceInserter StructArrayProperty";
     RunPerformanceComparisonTest("SA", 1000,TestDetails);
 }
 END_ECDBUNITTESTS_NAMESPACE

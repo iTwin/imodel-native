@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructToColumnsECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
 StructToColumnsECSqlBinder::StructToColumnsECSqlBinder (ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-: ECSqlBinder (ecsqlStatement, ecsqlTypeInfo, 0, false, false), IECSqlStructBinder ()
+: ECSqlBinder (ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder ()
     {
     Initialize ();
     }
@@ -65,6 +65,32 @@ void StructToColumnsECSqlBinder::_SetSqliteIndex (int ecsqlParameterComponentInd
     int compIndexOfMember = ecsqlParameterComponentIndex - mapping.GetECSqlComponentIndexOffset ();
 
     mapping.GetMemberBinder ().SetSqliteIndex (compIndexOfMember, sqliteIndex);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2015
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructToColumnsECSqlBinder::_OnBeforeStep ()
+    {
+    for (auto const& kvPair : m_memberBinders)
+        {
+        auto stat = kvPair.second->OnBeforeStep ();
+        if (stat != ECSqlStatus::Success)
+            return stat;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2015
+//---------------------------------------------------------------------------------------
+void StructToColumnsECSqlBinder::_OnClearBindings ()
+    {
+    for (auto const& kvPair : m_memberBinders)
+        {
+        kvPair.second->OnClearBindings ();
+        }
     }
 
 //---------------------------------------------------------------------------------------

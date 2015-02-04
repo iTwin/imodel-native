@@ -15,9 +15,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct Binding;
-typedef bvector<Binding> Bindings;
-
 enum class TraversalFeedback
     {
     Cancel, //! cancel traversal altogether and return
@@ -88,17 +85,11 @@ protected:
     virtual bool _IsVirtual () const;
     virtual bool _IsUnmapped () const;
 
-    //! Checks whether this PropertyMap maps to a column of the given name
-    virtual bool _MapsToColumn (Utf8CP columnName) const;
-
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! @see PropertyMap::GetColumnBaseName
     virtual Utf8CP _GetColumnBaseName() const;
-
-    //! @see PropertyMap::SetColumnBaseName
-    virtual void _SetColumnBaseName(Utf8CP columnName) { };
 
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap);
@@ -118,17 +109,6 @@ protected:
 
     //! For debugging and logging
     virtual WString _ToString() const;
-
-    //********* DEPRECATED. Will be removed once ECPersistence is removed ******************
-    //! The default implementation adds a "dummy" placeholder binding with m_sqlIndex = BINDING_NotBound (-1). It is needed to handle cases where the requested property
-    //! is not handled (at the time of writing IGeometry properties were not handled) or arrays of structs (which are handled differently, at the time of writing)
-    virtual void _AddBindings (Bindings& bindings, uint32_t propertyIndex, int& sqlIndex, ECN::ECEnablerCR enabler) const;
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    virtual DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
 
 public:
     virtual ~PropertyMap () {}
@@ -165,9 +145,6 @@ public:
     //! @return true if the property is not mapped, false otherwise
     bool IsUnmapped () const;
 
-    //! Checks whether this PropertyMap maps to a column of the given name
-    bool MapsToColumn (Utf8CP columnName) const;
-
     //! Gets the columns (if any) mapped to this property
     void GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
@@ -178,9 +155,6 @@ public:
     //! e.g. "origin", when the actual columns are origin.X and origin.Y
     //! @return nullptr if there is no relevant column, or column names does not differ from the default
     Utf8CP GetColumnBaseName() const;
-
-    //! For cases where a column name must be remapped by the system due to a conflict
-    void SetColumnBaseName(Utf8CP columnName);
 
     //! Generates the native SQL snippets from the columns related to this property map.
     //! SQL generation depends on various properties of the property map (e.g whether the property map is virtual)
@@ -214,22 +188,8 @@ public:
     //! For debugging and logging
     WString ToString() const;
 
-    //*************** DEPRECATED **********************************************
-    //Will be removed once ECDbStatement (and/or ECPersistence) was removed
-    //**************************************************************************
-
-    //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    void AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const;
-
     //! An abstract factory method that constructs a subtype of PropertyMap, based on the ecProperty, hints, and mapping rules
     static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding             will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings    holds bindings for all parameters relevant for the statement
-    //! @param statement            The statement with parameters to be bound
-    //! @param ecInstance           holds values that are to be bound to the statement
-    DbResult Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
     };
 
 
@@ -268,7 +228,6 @@ private:
     virtual bool _IsVirtual () const override;
     virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
-    DbResult BindECValueToParameter (Statement& statement, ECN::ECValueCR v, Binding const& binding) const;
     /*---------------------------------------------------------------------------------------
     * @bsimethod                                                    affan.khan      01/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -286,7 +245,6 @@ private:
         m_column = const_cast<ECDbSqlColumn*>(&info->GetColumn ());
         return BE_SQLITE_DONE;
         }
-
 protected:
     //! Metadata from which the column can be created
     ColumnInfo      m_columnInfo;
@@ -302,33 +260,14 @@ protected:
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
 
-    //! Checks whether this PropertyMap maps to a column of the given name
-    virtual bool _MapsToColumn (Utf8CP columnName) const override;
-
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! @see PropertyMap::GetColumnBaseName
     virtual Utf8CP _GetColumnBaseName() const override;
-
-    //! @see PropertyMap::SetColumnBaseName
-    virtual void _SetColumnBaseName(Utf8CP columnName) override;
-
-    //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    virtual void _AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
-
-   //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    virtual DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
-    
+   
     //! For debugging and logging
     virtual WString _ToString() const override;
-
-public:
-    DbResult BindDateTime (double jd, bool hasMetadata, DateTime::Info const& metadata, Binding const& binding, BeSQLiteStatementR statement) const;
-    DbResult GetValueDateTime (double& jd, DateTime::Info& metadata, Binding const& binding, BeSQLiteStatementR statement) const;
 };
 
 /*---------------------------------------------------------------------------------------
@@ -369,8 +308,6 @@ friend struct PropertyMap;
 private:
     // WIP_ECDB: These seem redundant, m_elementType will always be the ECClass from m_classMapForProperty, right?
     ECN::ECClassCR m_structElementType;
-    //! @see PropertyMap::IsValueNull
-    bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
 
     //! For debugging and logging
     virtual WString _ToString() const override;
@@ -435,15 +372,6 @@ private:
     PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
     
     virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
-
-    //! @see PropertyMap::IsValueNull
-    bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
     
     //! For debugging and logging
     WString _ToString() const override;
@@ -476,30 +404,12 @@ private:
     //! Make sure our table has the necessary columns, if any
     MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap) override;
 
-    //! Checks whether this PropertyMap maps to a column of the given name
-    bool _MapsToColumn (Utf8CP columnName) const override;
-
     //! @see PropertyMap::GetColumns
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! @see PropertyMap::GetColumnBaseName
     Utf8CP _GetColumnBaseName() const override;
-
-    //! @see PropertyMap::SetColumnBaseName
-    void _SetColumnBaseName(Utf8CP columnName) override;
-
-    //! Called when preparing an ECDbStatement's parameter or selected column bindings. Adds 0 or more bindings
-    void _AddBindings (Bindings& bindings, uint32_t propertyIndexUnused, int& sqlIndex, ECN::ECEnablerCR enabler) const override;
-
-    //! Bind an ECProperty value from the ecInstance to the statement
-    //! @param iBinding will be incremented by 1 or more. It is an index into parameterBindings
-    //! @param parameterBindings holds bindings for all parameters relevant for the statement
-    //! @param ecInstance holds values that are to be bound to the statement
-    DbResult _Bind (int& iBinding, Bindings const& parameterBindings, BeSQLiteStatementR statement, ECN::IECInstanceR ecInstance) const;
     
-    //! @see PropertyMap::IsValueNull
-    bool _IsValueNull (int iFirstBinding, Bindings const& columnBindings, BeSQLiteStatementR statement) const;
-
     virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override
         {        
         BeAssert (m_xColumn != nullptr);
