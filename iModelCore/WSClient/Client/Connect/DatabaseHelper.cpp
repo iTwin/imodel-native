@@ -44,7 +44,7 @@ DbResult DatabaseHelper::PrepareAndBindStatement(Statement& sqlStatement,
             else if (item.isString())
                 {
                 dbResult = sqlStatement.BindText (bindIndex, item.asString(),
-                    Statement::MAKE_COPY_Yes);
+                    Statement::MakeCopy::Yes);
                 }
             else if (item.isInt())
                 {
@@ -57,7 +57,7 @@ DbResult DatabaseHelper::PrepareAndBindStatement(Statement& sqlStatement,
             else
                 {
                 dbResult = sqlStatement.BindText (bindIndex, jsonWriter.write (item).c_str(),
-                    Statement::MAKE_COPY_Yes);
+                    Statement::MakeCopy::Yes);
                 }
 
             if (BE_SQLITE_OK != dbResult)
@@ -162,7 +162,7 @@ DbResult DatabaseHelper::Retrieve (Db& db, Utf8CP key, Utf8StringR value, Utf8CP
         return dbResult;
         }
 
-    dbResult = statement.BindText (1, key, Statement::MAKE_COPY_No);
+    dbResult = statement.BindText (1, key, Statement::MakeCopy::No);
     if (BE_SQLITE_OK != dbResult)
         {
         MOBILEDGN_LOGE ("Failed to bind value in query \'%s\', error %d", sql, dbResult);
@@ -186,7 +186,7 @@ DbResult DatabaseHelper::Retrieve (Db& db, Utf8CP key, Utf8StringR value, Utf8CP
     return BE_SQLITE_DONE;
     }
 
-BeSQLite::DbResult DatabaseHelper::RetrieveProjectObject (BeSQLite::Db& db, DgnProjectR project,
+BeSQLite::DbResult DatabaseHelper::RetrieveProjectObject (BeSQLite::Db& db, DgnDbR project,
                                                           Json::Value& dbObject)
     {
     dbObject.clear();
@@ -235,7 +235,7 @@ BeSQLite::DbResult DatabaseHelper::RetrieveProjectObject (BeSQLite::Db& db, DgnP
     return BE_SQLITE_DONE;
     }
 
-BeSQLite::DbResult DatabaseHelper::SetProjectValue (BeSQLite::Db& db, DgnProjectR project, Utf8CP key,
+BeSQLite::DbResult DatabaseHelper::SetProjectValue (BeSQLite::Db& db, DgnDbR project, Utf8CP key,
                                                     const Json::Value& value)
     {
     Json::Value dbObject;
@@ -252,7 +252,7 @@ BeSQLite::DbResult DatabaseHelper::SetProjectValue (BeSQLite::Db& db, DgnProject
         PROJECT_PERSISTENCE_TABLE);
     }
 
-BeSQLite::DbResult DatabaseHelper::GetProjectValue (BeSQLite::Db& db, DgnProjectR project, Utf8CP key,
+BeSQLite::DbResult DatabaseHelper::GetProjectValue (BeSQLite::Db& db, DgnDbR project, Utf8CP key,
                                                     Json::Value& value)
     {
     value = Json::nullValue;

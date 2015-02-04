@@ -8,7 +8,7 @@
 #pragma once
 #include <WebServices/Client/WebServicesClient.h>
 #include <MobileDgn/MobileDgnApplication.h>
-#include <DgnPlatform/DgnCore/DgnProject.h>
+#include <DgnPlatform/DgnCore/DgnDb.h>
 
 #define DEFAULT_PERSISTENCE_TABLE "storage"
 #define PROJECT_PERSISTENCE_TABLE "project_data"
@@ -20,7 +20,7 @@ struct DatabaseHelper : NonCopyableClass
 private:
 
     static BeSQLite::DbResult EnsureStorageTableExists (BeSQLite::Db& db, Utf8CP table);
-    static BeSQLite::DbResult RetrieveProjectObject (BeSQLite::Db& db, DgnProjectR project, Json::Value& dbObject);
+    static BeSQLite::DbResult RetrieveProjectObject (BeSQLite::Db& db, DgnDbR, Json::Value& dbObject);
 
 public:
 
@@ -44,11 +44,11 @@ public:
     
     // Store key-value pair in a database ensuring that the value can only be retrieved
     // for the same project file
-    static BeSQLite::DbResult SetProjectValue (BeSQLite::Db& db, DgnProjectR project,
+    static BeSQLite::DbResult SetProjectValue (BeSQLite::Db& db, DgnDbR,
         Utf8CP key, const Json::Value& value);
 
     // Get the value stored by SetProjectValue
-    static BeSQLite::DbResult GetProjectValue (BeSQLite::Db& db, DgnProjectR project,
+    static BeSQLite::DbResult GetProjectValue (BeSQLite::Db& db, DgnDbR,
         Utf8CP key, Json::Value& value);
     };
 

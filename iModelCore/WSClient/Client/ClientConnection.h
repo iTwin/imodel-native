@@ -25,7 +25,7 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
         std::shared_ptr<ClientConfiguration> m_configuration;
         std::shared_ptr<struct ServerInfoProvider> m_infoProvider;
 
-        mutable BeCriticalSection m_webApiCS;
+        mutable BeMutex m_webApiCS;
         mutable std::shared_ptr<WebApi> m_webApi;
 
     private:

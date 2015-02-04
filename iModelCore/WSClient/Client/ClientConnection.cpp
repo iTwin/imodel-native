@@ -94,7 +94,7 @@ ICancellationTokenPtr cancellationToken
             }
 
         WSInfo& info = result.GetValue ();
-        BeCriticalSectionHolder webApiMutex (m_webApiCS);
+        BeMutexHolder webApiMutex (m_webApiCS);
 
         m_webApi = GetWebApi (info);
 
