@@ -2,12 +2,12 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDb.sample.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Overview_ECDb_Include.sampleCode
 // this includes the standard ECDb headers and its dependencies
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 //__PUBLISH_EXTRACT_END__
 
 USING_NAMESPACE_BENTLEY_EC

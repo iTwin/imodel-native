@@ -2,11 +2,11 @@
 |
 |     $Source: ECDb/ECSql/IECSqlValue.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeSQLite/ECDb/IECSqlValue.h>
+#include <ECDb/IECSqlValue.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include "IECSqlPrimitiveValue.h"
 #include "ECSqlStatementNoopImpls.h"

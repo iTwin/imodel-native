@@ -2,14 +2,14 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementScenarios.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //*******************************************************************
 // This shows sample code which illustrates how the new ECSqlStatement API is used
 //
 //*******************************************************************
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 
 using namespace Bentley::BeSQLite;
 using namespace Bentley::BeSQLite::EC;

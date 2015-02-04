@@ -2,11 +2,11 @@
 |
 |     $Source: ECDb/ECSql/ECSqlColumnInfo.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeSQLite/ECDb/ECSqlColumnInfo.h>
+#include <ECDb/ECSqlColumnInfo.h>
 #include "ECSqlPropertyPathImpl.h"
 
 using namespace std;

@@ -2,12 +2,12 @@
 |
 |     $Source: ECDb/ECSchemaComparers.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <BeSQLite/ECDb/ECDbTypes.h>
+#include <ECDb/ECDbTypes.h>
 
 //non-member functions that should be considered part of the interface
 //of the type they operate on should be in same namespace as the type (

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/BeSQLite/ECDb/ECDb.h $
+|     $Source: PublicAPI/ECDb/ECDb.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/ECDb/ECInstanceId.h>
+#include <ECDb/ECInstanceId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

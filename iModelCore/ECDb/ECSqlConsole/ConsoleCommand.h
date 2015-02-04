@@ -10,7 +10,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <vector>
 #include <map>
-#include <BeSQLite/ECDb/ECSqlStatement.h>
+#include <ECDb/ECSqlStatement.h>
 #include <ECObjects/ECObjectsAPI.h>
 USING_NAMESPACE_BENTLEY
 

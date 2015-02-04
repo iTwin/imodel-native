@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <BeSQLite/ECDb/ECDbSchemaManager.h>
+#include <ECDb/ECDbSchemaManager.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/BeSQLite/ECDb/IECSqlValue.h $
+|     $Source: PublicAPI/ECDb/IECSqlValue.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <BeSQLite/ECDb/ECSqlColumnInfo.h>
+#include <ECDb/ECSqlColumnInfo.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

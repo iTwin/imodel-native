@@ -9,10 +9,10 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlStatusContext.h"
-#include <BeSQLite/ECDb/IECSqlBinder.h>
+#include <ECDb/IECSqlBinder.h>
 #include "ECSqlParameterValue.h"
-#include <BeSQLite/ECDb/ECInstanceId.h>
-#include <BeSQLite/ECDb/ECSqlStatement.h>
+#include <ECDb/ECInstanceId.h>
+#include <ECDb/ECSqlStatement.h>
 #include "ECSqlEventManager.h"
 
 

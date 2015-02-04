@@ -445,7 +445,7 @@ DLM_NOMSBUILTINS            = 1
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_FILES            = $(cppObjects)
 DLM_OBJECT_PCH              = $(o)ECDbPch$(oext) 
-LINKER_LIBRARIES            = $(ContextDeliveryDir)$(BeSQLiteLib) \
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                               $(ContextSubpartsLibs)$(BentleyGeomLib) \
                               $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \

@@ -3,7 +3,7 @@
 #include <Logging/BentleyLogging.h>
 #include <Bentley/Bentley.h>
 #include <BeSQLite/BeSQLite.h>
-#include <BeSQLite/ECDb/ECDbApi.h>
+#include <ECDb/ECDbApi.h>
 #include <Logging/BentleyLogging.h>
 #include <Geom/GeomApi.h>
 #include <ECObjects/ECObjectsAPI.h>

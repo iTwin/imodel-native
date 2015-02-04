@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeSQLite/ECDb/ECInstanceFinder.h>
+#include <ECDb/ECInstanceFinder.h>
 #include "EmbeddedECSqlStatement.h"
 using namespace std;
 

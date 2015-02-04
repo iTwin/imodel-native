@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeSQLite/ECDb/IECSqlBinder.h>
+#include <ECDb/IECSqlBinder.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 #include "IECSqlPrimitiveBinder.h"
 

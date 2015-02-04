@@ -2,11 +2,11 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatement.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <BeSQLite/ECDb/ECSqlStatement.h>
+#include <ECDb/ECSqlStatement.h>
 #include "ECSqlStatementImpl.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
