@@ -45,7 +45,7 @@ public:
     BeVersion (uint16_t major, uint16_t minor) : BeVersion (major, minor, 0, 0) { }
     BeVersion (uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : m_major (major), m_minor (minor), m_sub1 (sub1), m_sub2 (sub2) { }
     BeVersion (int major, int minor) : BeVersion ((uint16_t) major, (uint16_t) minor) { }
-    BeVersion (Utf8CP versionStr, Utf8CP format = VERSION_FORMAT) : BeVersion () { BE_STRING_UTILITIES_UTF8_SSCANF (versionStr, format, &m_major, &m_minor, &m_sub1, &m_sub2); }
+    BeVersion (Utf8CP versionStr, Utf8CP format = VERSION_FORMAT) : BeVersion () { FromString (versionStr, format); }
 
     //! Get the Major version. Typically indicates a software "generation".
     //! When this number changes, older versions will no longer open the database.
@@ -78,12 +78,12 @@ public:
 
     void FromString (Utf8CP versionStr, Utf8CP format = VERSION_FORMAT) 
         {
-        int major, minor, sub1, sub2;
+        int major = 0, minor = 0, sub1 = 0, sub2 = 0;
         BE_STRING_UTILITIES_UTF8_SSCANF (versionStr, format, &major, &minor, &sub1, &sub2);
-        m_major = (uint16_t) major;
-        m_minor = (uint16_t) minor;
-        m_sub1  = (uint16_t) sub1;
-        m_sub2  = (uint16_t) sub2;
+        m_major = (uint16_t) (0xFFFF & major);
+        m_minor = (uint16_t) (0xFFFF & minor);
+        m_sub1  = (uint16_t) (0xFFFF & sub1);
+        m_sub2  = (uint16_t) (0xFFFF & sub2);
         }
 };
 
