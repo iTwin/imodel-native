@@ -178,7 +178,7 @@
       <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glew32s.lib;glu32.lib;shlwapi.lib;Wm4Foundation110.lib;libboost_thread-vc110-mt-1_43.lib;libboost_system-vc110-mt-1_43.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Bentley.liclib.lib;opengl32.lib;glew32s.lib;glu32.lib;shlwapi.lib;Wm4Foundation110.lib;libboost_thread-vc110-mt-1_43.lib;libboost_system-vc110-mt-1_43.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\vc11\PointoolsVortexAPId.dll</OutputFile>
       <Version>
       </Version>
@@ -269,7 +269,7 @@ call %25PointoolsVortex%25\postbuild_scripts\setupMicrostation32d.bat
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;shlwapi.lib;wsock32.lib;Wm4Foundation110.lib;libboost_thread-vc110-mt-1_43.lib;libboost_system-vc110-mt-1_43.lib;glew32s.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Bentley.liclib.lib;opengl32.lib;glu32.lib;shlwapi.lib;wsock32.lib;Wm4Foundation110.lib;libboost_thread-vc110-mt-1_43.lib;libboost_system-vc110-mt-1_43.lib;glew32s.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\vc11\PointoolsVortexAPI.dll</OutputFile>
       <Version>
       </Version>
@@ -314,7 +314,7 @@ call %25PointoolsVortex%25\postbuild_scripts\setupMicrostation32d.bat
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;shlwapi.lib;wsock32.lib;Wm4Foundation110-x64.lib;glew64s.lib;libboost_thread-vc110-mt-1_43.lib;libboost_system-vc110-mt-1_43.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Bentley.liclib.lib;opengl32.lib;glu32.lib;shlwapi.lib;wsock32.lib;Wm4Foundation110-x64.lib;glew64s.lib;libboost_thread-vc110-mt-1_43.lib;libboost_system-vc110-mt-1_43.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>bin\vc11\PointoolsVortexAPI64.dll</OutputFile>
       <Version>
       </Version>
@@ -504,7 +504,7 @@ copy "%25PointoolsVortex%25\include\ptapi\PointoolsVortexAPI_import.h"   "%25Poi
     <ClCompile Include="src\ptengine\clipObject.cpp" />
     <ClCompile Include="src\ptengine\clipPlane.cpp" />
     <ClCompile Include="src\ptlic\PointoolsBentleyLicense.cpp" />
-    <ClCompile Include="src\ptlic\PointoolsBentleyLicenseAPI.cpp" />    
+    <ClCompile Include="src\ptlic\PointoolsBentleyLicenseAPI.cpp" />
     <ClCompile Include="src\pt\BoundingBox.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Static|Win32'">true</ExcludedFromBuild>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug Static|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
@@ -1416,7 +1416,7 @@ copy "%25PointoolsVortex%25\include\ptapi\PointoolsVortexAPI_import.h"   "%25Poi
     <ClInclude Include="include\ptengine\clipObject.h" />
     <ClInclude Include="include\ptengine\clipPlane.h" />
     <ClInclude Include="include\ptlic\PointoolsBentleyLicense.h" />
-    <ClInclude Include="include\ptlic\PointoolsBentleyLicenseAPI.h" />    
+    <ClInclude Include="include\ptlic\PointoolsBentleyLicenseAPI.h" />
     <ClInclude Include="include\pt\ViewParams.h" />
     <ClInclude Include="include\ptrmi\ptrmi.h" />
     <ClInclude Include="resource.h" />

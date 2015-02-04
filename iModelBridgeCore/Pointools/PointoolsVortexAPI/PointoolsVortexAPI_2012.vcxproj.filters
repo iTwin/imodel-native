@@ -793,7 +793,10 @@
     </ClCompile>
     <ClCompile Include="src\ptlic\PointoolsBentleyLicense.cpp">
       <Filter>Source Files\ptlic</Filter>
-    </ClCompile>    
+    </ClCompile>
+    <ClCompile Include="src\ptlic\PointoolsBentleyLicenseAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pt\ViewParams.h">
@@ -1500,6 +1503,12 @@
     </ClInclude>
     <ClInclude Include="include\ptlic\PointoolsBentleyLicenseAPI.h">
       <Filter>Header Files\ptlic</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ptengine\clipPlane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ptlic\PointoolsBentleyLicense.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
