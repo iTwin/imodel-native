@@ -55,13 +55,8 @@ public:
 struct ECDbSchemaPersistence
     {   
 private:
-    //To not break existing ECDb files, MapStrategy values must be added the offset (as old enum values 0 and 1 were removed)
-    //@todo in Graphite06 we can break compatiblity and store the MapStrategy without offset
-    static const int MapStrategyPersistedIntOffset = 2;
     static int ToInt (ECN::ECRelatedInstanceDirection direction);
-    static int ToInt (MapStrategy mapStrategy);
     static ECRelatedInstanceDirection ToECRelatedInstanceDirection (int relatedInstanceDirection);
-    static MapStrategy ToMapStrategy (int mapStrategy);
 
     static DbResult GetClassesMappedToParent (std::vector<ECClassId>& classIds, ECClassId baseClassId, BeSQLite::Db& db);
 

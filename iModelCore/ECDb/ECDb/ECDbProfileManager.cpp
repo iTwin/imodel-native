@@ -445,7 +445,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE INDEX idx_ECClassName ON ec_Class ([Name]);");
+    return db.ExecuteSql ("CREATE INDEX idx_ECClassName ON ec_Class (Name);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -469,7 +469,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_ClassMap_ECClassIdANDParentId ON ec_ClassMap ([ECClassId], [ParentId]) WHERE [ParentId] IS NOT NULL;");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_ClassMap_ECClassIdANDParentId ON ec_ClassMap (ECClassId, ParentId) WHERE ParentId IS NOT NULL;");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -745,14 +745,14 @@ Db& db
         "Id INTEGER PRIMARY KEY,"
         "Name TEXT NOT NULL COLLATE NOCASE,"
         "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
-        "Unique BOOLEAN NOT NULL,"
-        "Where TEXT"
+        "IsUnique BOOLEAN NOT NULL,"
+        "WhereClause TEXT"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_Index_TableIdAndName ON ec_Index (TableId, [Name]);");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_Index_TableIdAndName ON ec_Index (TableId, Name);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -768,7 +768,7 @@ Db& db
         "CREATE TABLE ec_IndexColumn"
         "("
         "IndexId INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
-        "ColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
         "Ordinal INTEGER NOT NULL,"
         "PRIMARY KEY (IndexId, ColumnId)"
         ");");

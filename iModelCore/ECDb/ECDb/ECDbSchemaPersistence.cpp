@@ -413,39 +413,6 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
     }
 
 /*---------------------------------------------------------------------------------------
-    Utf8String select;
-
-    //prepare select list
-    sql.AddFrom("ec_ClassMap");
-
-    if (info.ColsSelect & DbECClassMapInfo::COL_ECClassId) sql.AddSelect ("ECClassId");
-    if (info.ColsSelect & DbECClassMapInfo::COL_MapParentECClassId) sql.AddSelect ("MapParentECClassId");
-    if (info.ColsSelect & DbECClassMapInfo::COL_MapStrategy) sql.AddSelect ("MapStrategy");
-    if (info.ColsSelect & DbECClassMapInfo::COL_MapToDbTable) sql.AddSelect ("MapToDbTable");
-    if (info.ColsSelect & DbECClassMapInfo::COL_ECInstanceIdColumn) sql.AddSelect ("PrimaryKeyColumnName");
-    BeAssert (!selectClause.IsEmpty ());
-    sql.append (selectClause.ToString ()).append (" FROM ec_ClassMap");
-
-    SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId) sql.AddWhere ("ECClassId", "=?");
-    sql.GetSql(select);
-        sql.append (" WHERE ").append (whereClause.ToString ());
-    auto stat = db.GetCachedStatement (stmt, select.c_str());
-    update.SetTable("ec_ClassMap");
-    if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId                ) update.AddWhere("ECClassId","=?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_ECClassId                ) update.AddUpdateColumn("ECClassId","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_MapParentECClassId       ) update.AddUpdateColumn("MapParentECClassId","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_MapStrategy              ) update.AddUpdateColumn("MapStrategy","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_MapToDbTable             ) update.AddUpdateColumn("MapToDbTable","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_ECInstanceIdColumn               ) update.AddUpdateColumn("PrimaryKeyColumnName","?");
-    Utf8String sql;
-    update.GetSql(sql);
-
-    SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
-
-    if (!whereClause.IsEmpty ())
-        sql.append (" WHERE ").append (whereClause.ToString ());
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECDbSchemaPersistence::InsertBaseClass (BeSQLite::Db& db, DbBaseClassInfoCR info)
@@ -1624,15 +1591,6 @@ int ECDbSchemaPersistence::ToInt (ECN::ECRelatedInstanceDirection direction)
 // @bsimethod                                              Krischan.Eberle        04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int ECDbSchemaPersistence::ToInt (MapStrategy mapStrategy)
-    {
-    return static_cast<int> (mapStrategy) + MapStrategyPersistedIntOffset;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle        04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
 ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (int relatedInstanceDirection)
     {
     BeAssert ((relatedInstanceDirection == 1 || relatedInstanceDirection == 2) &&"Integer cannot be converted to ECRelatedInstanceDirection.");
@@ -1641,16 +1599,6 @@ ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (
         return ECRelatedInstanceDirection::Backward;
 
     return ECRelatedInstanceDirection::Forward;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle        04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-MapStrategy ECDbSchemaPersistence::ToMapStrategy (int mapStrategy)
-    {
-    BeAssert (mapStrategy - MapStrategyPersistedIntOffset >= 0);
-    return static_cast<MapStrategy> (mapStrategy - MapStrategyPersistedIntOffset);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1693,7 +1641,7 @@ DbResult ECDbSchemaPersistence::GetClassesMappedToParent (std::vector<ECClassId>
         return stat;
 
     stmt->BindInt64 (1, baseClassId);
-    stmt->BindInt (2, ToInt (MapStrategy::InParentTable));
+    stmt->BindInt (2, (int) MapStrategy::InParentTable);
 
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
         {
