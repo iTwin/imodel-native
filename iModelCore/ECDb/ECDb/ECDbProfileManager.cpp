@@ -16,6 +16,9 @@ Utf8CP const ECDbProfileManager::PROFILENAME = "ECDb";
 //static
 const PropertySpec ECDbProfileManager::PROFILEVERSION_PROPSPEC = PropertySpec ("SchemaVersion", "ec_Db");
 //static
+const SchemaVersion ECDbProfileManager::MINIMUM_SUPPORTED_VERSION = SchemaVersion (2, 0, 0, 0);
+
+//static
 std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileManager::s_upgraderSequence;
 
 //----------------------------------------------------------------------------------
@@ -226,6 +229,10 @@ DbResult ECDbProfileManager::AssignProfileVersion (ECDbR ecdb)
 //static
 SchemaVersion ECDbProfileManager::GetExpectedProfileVersion ()
     {
+    //if there are no upgraders yet, the current version is the minimally supported version
+    if (GetUpgraderSequence ().empty ())
+        return GetMinimumAutoUpgradableProfileVersion ();
+
     //Version of latest upgrader is the version currently required by the API
     return GetLatestUpgrader ().GetTargetVersion ();
     }
@@ -236,8 +243,8 @@ SchemaVersion ECDbProfileManager::GetExpectedProfileVersion ()
 //static
 SchemaVersion ECDbProfileManager::GetMinimumAutoUpgradableProfileVersion()
     {
-    //Auto-upgradable back to version 1.0.0.0
-    return SchemaVersion (1, 0, 0, 0);
+    //Auto-upgradable back to this version
+    return SchemaVersion (2, 0, 0, 0);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -260,9 +267,7 @@ ECDbProfileManager::ECDbProfileUpgraderSequence::const_iterator ECDbProfileManag
         {
         auto const& upgrader = *it;
         if (currentProfileVersion < upgrader->GetTargetVersion ())
-            {
             return it;
-            }
         }
 
     return end;
@@ -276,10 +281,7 @@ ECDbProfileManager::ECDbProfileUpgraderSequence const& ECDbProfileManager::GetUp
     {
     if (s_upgraderSequence.empty ())
         {
-        s_upgraderSequence.push_back (std::unique_ptr<ECDbProfileUpgrader> (new ECDbProfileUpgrader_1001 ()));
-        s_upgraderSequence.push_back (std::unique_ptr<ECDbProfileUpgrader> (new ECDbProfileUpgrader_1002 ()));
-        s_upgraderSequence.push_back (std::unique_ptr<ECDbProfileUpgrader> (new ECDbProfileUpgrader_1003 ()));
-        s_upgraderSequence.push_back (std::unique_ptr<ECDbProfileUpgrader> (new ECDbProfileUpgrader_1004 ()));
+        //no upgraders on top of the minimally supported version for this version of ECDb yet
         }
 
     return s_upgraderSequence;
@@ -341,7 +343,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = CreateTableCustomAttributes (db);
+    stat = CreateTableCustomAttribute (db);
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -400,16 +402,13 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECSchema (Db& db)
         "CREATE TABLE ec_Schema "
         "("
         "ECSchemaId INTEGER NOT NULL PRIMARY KEY, "
-        "Name CHAR NOT NULL, "
-        "DisplayLabel CHAR, "
-        "Description CHAR, "
-        "NamespacePrefix CHAR, "
-        "VersionMajor SMALLINT, "
-        "VersionMinor SMALLINT, "
-        "MapVersion SMALLINT, " //deprecated, to be removed once backwards compatibility with 03 apps is no longer needed
-        "SchemaAsBlob BLOB, " //deprecated, to be removed once backwards compatibility with 03 apps is no longer needed
-        "SchemaType SMALLINT, "
-        "IsReadonly BOOL CHECK (IsReadonly IN (0, 1))" //deprecated, to be removed once backwards compatibility with 03 apps is no longer needed
+        "Name TEXT NOT NULL, "
+        "DisplayLabel TEXT, "
+        "Description TEXT, "
+        "NamespacePrefix TEXT, "
+        "VersionMajor INTEGER, "
+        "VersionMinor INTEGER, "
+        "SchemaType INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)
@@ -432,21 +431,21 @@ Db& db
         "("
         "ECClassId INTEGER NOT NULL PRIMARY KEY, "
         "ECSchemaId INTEGER NOT NULL REFERENCES ec_Schema(ECSchemaId) ON DELETE CASCADE, "
-        "Name CHAR NOT NULL, "
-        "DisplayLabel CHAR, "
-        "Description CHAR, "
+        "Name TEXT NOT NULL, "
+        "DisplayLabel TEXT, "
+        "Description TEXT, "
         "IsDomainClass BOOL NOT NULL CHECK (IsDomainClass IN (0, 1)), "
         "IsStruct BOOL NOT NULL CHECK (IsStruct IN (0, 1)), "
         "IsCustomAttribute BOOL NOT NULL CHECK (IsCustomAttribute IN (0, 1)), "
-        "RelationStrength SMALLINT, "
-        "RelationStrengthDirection SMALLINT, "
+        "RelationStrength INTEGER, "
+        "RelationStrengthDirection INTEGER, "
         "IsRelationship BOOL NOT NULL CHECK (IsRelationship IN (0, 1))"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE INDEX idx_ECClassName ON ec_Class ([Name]);");
+    return db.ExecuteSql ("CREATE INDEX idx_ECClassName ON ec_Class (Name);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -461,16 +460,16 @@ Db& db
     auto stat = db.ExecuteSql (
         "CREATE Table ec_ClassMap"
         "("
-        "    [Id] INTEGER PRIMARY KEY,"
-        "    [ECClassId] INTEGER  NOT NULL REFERENCES ec_Class (ECClassId) ON DELETE CASCADE,"
-        "    [ParentId] INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
-        "    [MapStrategy] INTEGER NOT NULL"
+        "Id INTEGER PRIMARY KEY,"
+        "ECClassId INTEGER  NOT NULL REFERENCES ec_Class (ECClassId) ON DELETE CASCADE,"
+        "ParentId INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
+        "MapStrategy INTEGER NOT NULL"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_ClassMap_ECClassIdANDParentId ON ec_ClassMap ([ECClassId], [ParentId]) WHERE [ParentId] IS NOT NULL;");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_ClassMap_ECClassIdANDParentId ON ec_ClassMap (ECClassId, ParentId) WHERE ParentId IS NOT NULL;");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -487,7 +486,7 @@ Db& db
         "("
         "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
         "BaseECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
-        "ECIndex SMALLINT NOT NULL, /*Location of baseclass in BaseClasses array*/ "
+        "ECIndex INTEGER NOT NULL, /*Location of baseclass in BaseClasses array*/ "
         "PRIMARY KEY (ECClassId, BaseECClassId)"
         ");");
 
@@ -510,9 +509,9 @@ Db& db
     auto stat = db.ExecuteSql (
         "CREATE Table ec_PropertyPath"
         "("
-        "    [Id] INTEGER PRIMARY KEY,"
-        "    [RootECPropertyId] INTEGER NOT NULL REFERENCES ec_Property (ECPropertyId) ON DELETE CASCADE,"
-        "    [AccessString] TEXT NOT NULL"
+        "Id INTEGER PRIMARY KEY,"
+        "RootECPropertyId INTEGER NOT NULL REFERENCES ec_Property (ECPropertyId) ON DELETE CASCADE,"
+        "AccessString TEXT NOT NULL"
         ");");
 
 
@@ -536,14 +535,14 @@ Db& db
         "("
         "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
         "ECPropertyId INTEGER NOT NULL, "
-        "Name CHAR NOT NULL, "
-        "DisplayLabel CHAR, "
-        "Description CHAR, "
-        "ECIndex SMALLINT, "
+        "Name TEXT NOT NULL, "
+        "DisplayLabel TEXT, "
+        "Description TEXT, "
+        "ECIndex INTEGER, "
         "IsArray BOOL NOT NULL CHECK (IsArray IN (0, 1)), "
-        "TypeCustom CHAR, "
+        "TypeCustom TEXT, "
         "TypeECPrimitive SMALLINT, "
-        "TypeGeometry CHAR, "
+        "TypeGeometry TEXT, "
         "TypeECStruct INTEGER REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
         "IsReadOnly BOOL NOT NULL CHECK (IsReadOnly IN (0, 1)), "
         "MinOccurs INTEGER,"
@@ -554,7 +553,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = db.ExecuteSql ("CREATE INDEX idx_ECPropertyName ON ec_Property ([Name]);");
+    stat = db.ExecuteSql ("CREATE INDEX idx_ECPropertyName ON ec_Property (Name);");
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -573,10 +572,10 @@ Db& db
     return db.ExecuteSql (
         "CREATE Table ec_PropertyMap"
         "("
-        "    [ClassMapId] INTEGER NOT NULL REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
-        "    [PropertyPathId] INTEGER NOT NULL REFERENCES ec_PropertyPath (Id) ON DELETE CASCADE,"
-        "    [ColumnId] INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "    PRIMARY KEY (ClassMapId, PropertyPathId, ColumnId)"
+        "ClassMapId INTEGER NOT NULL REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
+        "PropertyPathId INTEGER NOT NULL REFERENCES ec_PropertyPath (Id) ON DELETE CASCADE,"
+        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "PRIMARY KEY (ClassMapId, PropertyPathId, ColumnId)"
         ");");
 
     }
@@ -595,9 +594,9 @@ Db& db
         "("
         "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
         "ECRelationshipEnd BOOL NOT NULL CHECK (ECRelationshipEnd IN (0, 1)), "
-        "CardinalityLowerLimit SMALLINT, "
-        "CardinalityUpperLimit SMALLINT, "
-        "RoleLable CHAR, " //Deprecated: To be renamed to RoleLabel once backwards compatibility to 03 apps is not needed anymore
+        "CardinalityLowerLimit INTEGER, "
+        "CardinalityUpperLimit INTEGER, "
+        "RoleLabel TEXT, " 
         "IsPolymorphic BOOL NOT NULL CHECK (IsPolymorphic IN (0, 1)), "
         "PRIMARY KEY (ECClassId, ECRelationshipEnd)"
         ");");
@@ -618,7 +617,6 @@ Db& db
         "ECClassId INTEGER NOT NULL, "
         "ECRelationshipEnd BOOL NOT NULL, "
         "RelationECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId) ON DELETE CASCADE, "
-        "RelationKeyDbColumnName CHAR, " //deprecated, to be removed once backwards compatibility with 03 apps is no longer needed
         "PRIMARY KEY (ECClassId, ECRelationshipEnd, RelationECClassId), "
         "FOREIGN KEY (ECClassId, ECRelationshipEnd) "
         "REFERENCES ec_RelationshipConstraint(ECClassId, ECRelationshipEnd) ON DELETE CASCADE"
@@ -653,7 +651,7 @@ Db& db
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::ProfileCreator::CreateTableCustomAttributes 
+DbResult ECDbProfileManager::ProfileCreator::CreateTableCustomAttribute 
 (
 Db& db
 )
@@ -661,11 +659,9 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_CustomAttribute ("
         "ContainerId INTEGER NOT NULL, "
-        "ContainerType SMALLINT NOT NULL, "
-        "OverridenByContainerId INTEGER, "
-        "[Index] SMALLINT NOT NULL, "
+        "ContainerType INTEGER NOT NULL, "
+        "[Index] INTEGER NOT NULL, "
         "ECClassId INTEGER NOT NULL REFERENCES ec_Class(ECClassId), "
-        "ECId INTEGER, "
         "Instance TEXT, "
         "PRIMARY KEY (ContainerId, ContainerType, ECClassId)"
         ");");
@@ -699,10 +695,10 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_Table"
         "("
-        "    [Id] INTEGER PRIMARY KEY,"
-        "    [Name] TEXT NOT NULL COLLATE NOCASE,"
-        "    [IsOwnedByECDb] BOOLEAN NOT NULL,"
-        "    [IsVirtual] BOOLEAN NOT NULL"
+        "Id INTEGER PRIMARY KEY,"
+        "Name TEXT NOT NULL COLLATE NOCASE,"
+        "IsOwnedByECDb BOOLEAN NOT NULL,"
+        "IsVirtual BOOLEAN NOT NULL"
         ");");
     }
 
@@ -718,19 +714,19 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_Column"
         "("
-        "    [Id] INTEGER PRIMARY KEY,"
-        "    [TableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
-        "    [Name] TEXT NOT NULL COLLATE NOCASE,"
-        "    [Type] SMALLINT NOT NULL,"
-        "    [IsVirtual] BOOLEAN NOT NULL,"
-        "    [Ordinal] INTEGER NOT NULL,"
-        "    [Constraint_NotNull] BOOLEAN,"
-        "    [Constraint_Unique] BOOLEAN,"
-        "    [Constraint_Check] TEXT,"
-        "    [Constraint_Default] TEXT,"
-        "    [Constraint_Collate] SMALLINT,"
-        "    [PrimaryKey_Ordinal] SMALLINT,"
-        "    [UserData] INTEGER"
+        "Id INTEGER PRIMARY KEY,"
+        "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "Name TEXT NOT NULL COLLATE NOCASE,"
+        "Type INTEGER NOT NULL,"
+        "IsVirtual BOOLEAN NOT NULL,"
+        "Ordinal INTEGER NOT NULL,"
+        "Constraint_NotNull BOOLEAN,"
+        "Constraint_Unique BOOLEAN,"
+        "Constraint_Check TEXT,"
+        "Constraint_Default TEXT,"
+        "Constraint_Collate INTEGER,"
+        "PrimaryKey_Ordinal INTEGER,"
+        "UserData INTEGER"
         ");");
     }
 
@@ -746,17 +742,17 @@ Db& db
     auto stat = db.ExecuteSql (
         "CREATE TABLE ec_Index"
         "("
-        "    [Id] INTEGER PRIMARY KEY,"
-        "    [Name] TEXT NOT NULL COLLATE NOCASE,"
-        "    [TableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
-        "    [Unique] BOOLEAN NOT NULL,"
-        "    [Where] TEXT"
+        "Id INTEGER PRIMARY KEY,"
+        "Name TEXT NOT NULL COLLATE NOCASE,"
+        "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "IsUnique BOOLEAN NOT NULL,"
+        "WhereClause TEXT"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_Index_TableIdAndName ON ec_Index (TableId, [Name]);");
+    return db.ExecuteSql ("CREATE UNIQUE INDEX ec_Index_TableIdAndName ON ec_Index (TableId, Name);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -771,11 +767,10 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_IndexColumn"
         "("
-        "    [IndexId] INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
-        "    [ColumnId] INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "    [Ordinal] SMALLINT NOT NULL,"
-        "    PRIMARY KEY (IndexId, ColumnId)"
-
+        "IndexId INTEGER NOT NULL REFERENCES ec_Index (Id) ON DELETE CASCADE,"
+        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "Ordinal INTEGER NOT NULL,"
+        "PRIMARY KEY (IndexId, ColumnId)"
         ");");
     }
 
@@ -791,13 +786,13 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_ForeignKey"
         "("
-        "    [Id] INTEGER PRIMARY KEY,"
-        "    [TableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
-        "    [ReferenceTableId] INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
-        "    [Name] TEXT COLLATE NOCASE,"
-        "    [OnDelete] INTEGER,"
-        "    [OnUpdate] INTEGER,"
-        "    [MatchType] INTEGER"
+        "Id INTEGER PRIMARY KEY,"
+        "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "ReferenceTableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "Name TEXT COLLATE NOCASE,"
+        "OnDelete INTEGER,"
+        "OnUpdate INTEGER,"
+        "MatchType INTEGER"
         ");");
     }
 
@@ -813,10 +808,10 @@ Db& db
     return db.ExecuteSql (
         "CREATE TABLE ec_ForeignKeyColumn"
         "("
-        "    [ForeignKeyId] INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
-        "    [ColumnId] INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "    [ReferenceColumnId] INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "    [Ordinal] INTEGER NOT NULL"
+        "ForeignKeyId INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
+        "ColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "ReferenceColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "Ordinal INTEGER NOT NULL"
         ");");
     }
 

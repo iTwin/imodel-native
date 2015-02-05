@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "ECDbPch.h"
+
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -30,7 +30,7 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
     //verify ns is unique
     Utf8String currentNSPrefix = Utf8String(ns.c_str());
     Statement stmt;
-    stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NameSpacePrefix = ?");
+    stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NamespacePrefix = ?");
     stmt.BindText(1, currentNSPrefix, Statement::MakeCopy::No);
     if (stmt.Step() == BE_SQLITE_ROW)
         {       
@@ -273,6 +273,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationConstraintEntry (ECClassId 
 //+---------------+---------------+---------------+---------------+---------------+------
 BeSQLite::DbResult ECDbSchemaWriter::InsertCAEntry (IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index)
     {
+    BeAssert (overridenContainerId == 0 && "OverriddenContainerId was removed from ec_CustomAttribute. We don't expect that to be set during schema import/update.");
     DbCustomAttributeInfo insertInfo;
     insertInfo.ColsInsert =
         DbCustomAttributeInfo::COL_ContainerId |
@@ -293,11 +294,6 @@ BeSQLite::DbResult ECDbSchemaWriter::InsertCAEntry (IECInstanceP customAttribute
         insertInfo.ColsInsert |=DbCustomAttributeInfo::COL_Instance;
         }
 
-    if (overridenContainerId != 0 )
-        {
-        insertInfo.m_overridenByContainerId = overridenContainerId;
-        insertInfo.ColsInsert |=DbCustomAttributeInfo::COL_OverridenByContainerId;
-        }
     return ECDbSchemaPersistence::InsertCustomAttributeInfo (m_ecdb, insertInfo);
     }
 
@@ -509,18 +505,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportCustomAttributes (IECCustomAttributeC
                 return BE_SQLITE_ERROR;
                 }
            BeAssert(consolidatedContainer != primaryContainer);
-#ifndef NDEBUG
-            // The first custom attribute has to be from primary
-            if (!m_customAttributeTracker->TryGetContainer(primaryContainer, *primaryCustomAttribute))
-                {
-                //Error
-                LOG.error("Failed to determine  primary container id");
-                BeAssert(false && "Fail to determine primary container id");
-                return BE_SQLITE_ERROR;
-                }
-            BeAssert( primaryContainer == &sourceContainer); // check to ensure it always primary
-#endif
-            }
+           }
         else
             {
             BeAssert(false && "Something wrong with SupplementedSchemaBuilder. We must either get one or two custom attributes"); 

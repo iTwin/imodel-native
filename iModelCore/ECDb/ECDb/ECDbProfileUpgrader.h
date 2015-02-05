@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileUpgrader.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,84 +55,6 @@ public:
     DbResult Upgrade (ECDbR ecdb) const;
     };
 
-//=======================================================================================
-// @bsiclass                                                 Krischan.Eberle      07/2013
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_1001 : ECDbProfileUpgrader
-    {
-//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-private:
-    virtual SchemaVersion _GetTargetVersion () const override {return SchemaVersion (1, 0, 0, 1);}
-    virtual DbResult _Upgrade (ECDbR ecdb) const override;
-    };
-
-//=======================================================================================
-// @bsiclass                                                 Krischan.Eberle      02/2014
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_1002 : ECDbProfileUpgrader
-    {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-private:
-    typedef std::map<Utf8String, std::vector<Utf8String>> ClassNameList;
-
-    virtual SchemaVersion _GetTargetVersion () const override { return SchemaVersion (1, 0, 0, 2); }
-    virtual DbResult _Upgrade (ECDbR ecdb) const override;
-
-    //! Removes the mapping of now unsupported standard classes.
-    //! @return ::BE_SQLITE_OK in case of success. ::BE_SQLITE_ERROR_ProfileUpgradeFailed otherwise.
-    static DbResult UnmapUnsupportedStandardClasses (ECDbR ecdb);
-
-    //! Reads some mapping information for the specified class from the ECDb file. This
-    //! does not go through the ClassMap API but reads out data from the DB directly. The ClassMap
-    //! API is not available during profile upgrade as it requires the ECDbSystem schema to be up-to-date
-    static DbResult ReadMapping (MapStrategy& mapStrategy, Utf8StringR mappedTableName, ECDbR ecdb, ECN::ECClassCR ecClass);
-
-    //! Updates the map strategy for the specified class.
-    //! @return ::BE_SQLITE_OK in case of success. Error code otherwise.
-    static DbResult UpdateMapStrategy (ECDbR ecdb, ECN::ECClassCR ecClass, MapStrategy mapStrategy);
-    };
-
-//=======================================================================================
-// @bsiclass                                                 Krischan.Eberle      06/2014
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_1003 : ECDbProfileUpgrader
-    {
-//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-private:
-    virtual SchemaVersion _GetTargetVersion () const override { return SchemaVersion (1, 0, 0, 3); }
-    virtual DbResult _Upgrade (ECDbR ecdb) const override;
-
-    static DbResult MapTransformationValueMapClass (ECDbR ecdb);
-    static DbResult AddECIdColumnToLegacyStructArrayTable (ECDbR ecdb);
-    static DbResult CreateTablePropertyAlias (ECDbR ecdb);
-    };
-
-//=======================================================================================
-// @bsiclass                                                 Krischan.Eberle      10/2014
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_1004 : ECDbProfileUpgrader
-    {
-//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-private:
-    virtual SchemaVersion _GetTargetVersion () const override
-        {
-        return SchemaVersion (1, 0, 0, 4);
-        }
-    virtual DbResult _Upgrade (ECDbR ecdb) const override;
-    };
-
-//=======================================================================================
-// This upgrade is not used yet as it breaks older apps. It is there though
-// to hold changes already planned. 
-// @bsiclass                                                 Krischan.Eberle      11/2013
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_1100 : ECDbProfileUpgrader
-    {
-//intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-private:
-    virtual SchemaVersion _GetTargetVersion () const override {return SchemaVersion (1, 1, 0, 0);}
-    virtual DbResult _Upgrade (ECDbR ecdb) const override;
-    };
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013

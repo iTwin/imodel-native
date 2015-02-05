@@ -413,39 +413,6 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
     }
 
 /*---------------------------------------------------------------------------------------
-    Utf8String select;
-
-    //prepare select list
-    sql.AddFrom("ec_ClassMap");
-
-    if (info.ColsSelect & DbECClassMapInfo::COL_ECClassId) sql.AddSelect ("ECClassId");
-    if (info.ColsSelect & DbECClassMapInfo::COL_MapParentECClassId) sql.AddSelect ("MapParentECClassId");
-    if (info.ColsSelect & DbECClassMapInfo::COL_MapStrategy) sql.AddSelect ("MapStrategy");
-    if (info.ColsSelect & DbECClassMapInfo::COL_MapToDbTable) sql.AddSelect ("MapToDbTable");
-    if (info.ColsSelect & DbECClassMapInfo::COL_ECInstanceIdColumn) sql.AddSelect ("PrimaryKeyColumnName");
-    BeAssert (!selectClause.IsEmpty ());
-    sql.append (selectClause.ToString ()).append (" FROM ec_ClassMap");
-
-    SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId) sql.AddWhere ("ECClassId", "=?");
-    sql.GetSql(select);
-        sql.append (" WHERE ").append (whereClause.ToString ());
-    auto stat = db.GetCachedStatement (stmt, select.c_str());
-    update.SetTable("ec_ClassMap");
-    if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId                ) update.AddWhere("ECClassId","=?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_ECClassId                ) update.AddUpdateColumn("ECClassId","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_MapParentECClassId       ) update.AddUpdateColumn("MapParentECClassId","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_MapStrategy              ) update.AddUpdateColumn("MapStrategy","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_MapToDbTable             ) update.AddUpdateColumn("MapToDbTable","?");
-    if (info.ColsUpdate & DbECClassMapInfo::COL_ECInstanceIdColumn               ) update.AddUpdateColumn("PrimaryKeyColumnName","?");
-    Utf8String sql;
-    update.GetSql(sql);
-
-    SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECClassMapInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
-
-    if (!whereClause.IsEmpty ())
-        sql.append (" WHERE ").append (whereClause.ToString ());
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECDbSchemaPersistence::InsertBaseClass (BeSQLite::Db& db, DbBaseClassInfoCR info)
@@ -794,7 +761,7 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
 DbResult ECDbSchemaPersistence::InsertECRelationConstraintInfo (BeSQLite::Db& db, DbECRelationshipConstraintInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraint (ECClassId, ECRelationshipEnd, CardinalityLowerLimit, CardinalityUpperLimit, RoleLable, IsPolymorphic) VALUES (?, ?, ?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraint (ECClassId, ECRelationshipEnd, CardinalityLowerLimit, CardinalityUpperLimit, RoleLabel, IsPolymorphic) VALUES (?, ?, ?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -824,7 +791,7 @@ DbResult ECDbSchemaPersistence::UpdateECRelationConstraintInfo (BeSQLite::Db& db
         setClause.AddItem ("ECRelationshipEnd=?");
     
     if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_RoleLabel) 
-        setClause.AddItem ("RoleLable=?");
+        setClause.AddItem ("RoleLabel=?");
     
     if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_IsPolymorphic) 
         setClause.AddItem ("IsPolymorphic=?");
@@ -914,7 +881,7 @@ DbResult ECDbSchemaPersistence::FindECRelationshipConstraintInfo (BeSQLite::Cach
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) selectClause.AddItem ("ECRelationshipEnd");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) selectClause.AddItem ("CardinalityLowerLimit");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) selectClause.AddItem ("CardinalityUpperLimit");
-    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RoleLabel) selectClause.AddItem ("RoleLable");
+    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RoleLabel) selectClause.AddItem ("RoleLabel");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_IsPolymorphic) selectClause.AddItem ("IsPolymorphic");
     
     BeAssert (!selectClause.IsEmpty ());
@@ -1070,20 +1037,17 @@ DbResult ECDbSchemaPersistence::UpdateECRelationshipConstraintClass (BeSQLite::D
 DbResult ECDbSchemaPersistence::InsertCustomAttributeInfo (BeSQLite::Db& db, DbCustomAttributeInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_CustomAttribute (ContainerId, ContainerType, OverridenByContainerId, ECClassId, [Index], ECId, Instance) VALUES(?, ?, ?, ?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_CustomAttribute (ContainerId, ContainerType, ECClassId, [Index], Instance) VALUES(?, ?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerId) stmt->BindInt64 (1, info.m_containerId);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (2, info.m_containerType);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_OverridenByContainerId) stmt->BindInt64 (3, info.m_overridenByContainerId);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_ECClassId) stmt->BindInt64 (4, info.m_ecClassId);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_Index) stmt->BindInt (5, info.m_index);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_ECInstanceId) stmt->BindId (6, info.m_ecInstanceId);
+    if (info.ColsInsert & DbCustomAttributeInfo::COL_ECClassId) stmt->BindInt64 (3, info.m_ecClassId);
+    if (info.ColsInsert & DbCustomAttributeInfo::COL_Index) stmt->BindInt (4, info.m_index);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_Instance)
         {
-        //old format (ECD): stmt->BindBlob  (8, info.m_caAsBlob.GetData(), (int)info.m_caAsBlob.GetLength(), Statement::MakeCopy::No);
-        DbResult stat = stmt->BindText (7, info.GetCaInstanceXml (), Statement::MakeCopy::No);
+        DbResult stat = stmt->BindText (5, info.GetCaInstanceXml (), Statement::MakeCopy::No);
         POSTCONDITION (stat == BE_SQLITE_OK, stat);
         }
 
@@ -1093,7 +1057,7 @@ DbResult ECDbSchemaPersistence::InsertCustomAttributeInfo (BeSQLite::Db& db, DbC
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbCustomAttributeInfoCR info, bool getOnlyPrimaryCustomAttributes)
+DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbCustomAttributeInfoCR info)
     {
     Utf8String sql ("SELECT ");
 
@@ -1103,30 +1067,9 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
     //prepare select list
     if (info.ColsSelect & DbCustomAttributeInfo::COL_ContainerId) selectClause.AddItem ("ContainerId");
     if (info.ColsSelect & DbCustomAttributeInfo::COL_ContainerType) selectClause.AddItem ("ContainerType");
-    if (info.ColsSelect & DbCustomAttributeInfo::COL_OverridenByContainerId) selectClause.AddItem ("OverridenByContainerId");
     if (info.ColsSelect & DbCustomAttributeInfo::COL_ECClassId) selectClause.AddItem ("ECClassId");
     if (info.ColsSelect & DbCustomAttributeInfo::COL_Index) selectClause.AddItem ("[Index]");
-    if (info.ColsSelect & DbCustomAttributeInfo::COL_ECInstanceId)
-        {
-        if (getOnlyPrimaryCustomAttributes)
-            selectClause.AddItem ("ECId");
-        else
-            selectClause.AddItem ("(CASE WHEN (OverridenByContainerId IS NULL) "
-            "THEN ECId "
-            "ELSE (SELECT S.ECId FROM ec_CustomAttribute S WHERE S.ContainerType = ec_CustomAttribute.ContainerType AND S.ECClassId = ec_CustomAttribute.ECClassId AND S.ContainerId = ec_CustomAttribute.OverridenByContainerId) "
-            "END) AS ECId");
-        }
-
-    if (info.ColsSelect & DbCustomAttributeInfo::COL_Instance)
-        {
-        if (getOnlyPrimaryCustomAttributes)
-            selectClause.AddItem ("Instance");
-        else
-            selectClause.AddItem ("(CASE WHEN OverridenByContainerId IS NULL "
-            "THEN Instance "
-            "ELSE (SELECT S.Instance FROM ec_CustomAttribute S WHERE S.ContainerType = ec_CustomAttribute.ContainerType AND S.ECClassId = ec_CustomAttribute.ECClassId AND S.ContainerId = ec_CustomAttribute.OverridenByContainerId) "
-            "END) AS Instance");
-        }
+    if (info.ColsSelect & DbCustomAttributeInfo::COL_Instance) selectClause.AddItem ("Instance");
 
     BeAssert (!selectClause.IsEmpty ());
     sql.append (selectClause.ToString ()).append (" FROM ec_CustomAttribute");
@@ -1137,14 +1080,10 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
         whereClause.AddItem ("ContainerId=?");
     if (info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)
         whereClause.AddItem ("ContainerType=?");
-    if (info.ColsWhere & DbCustomAttributeInfo::COL_OverridenByContainerId)
-        whereClause.AddItem ("OverridenByContainerId=?");
     if (info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId)
         whereClause.AddItem ("ECClassId=?");
     if (info.ColsWhere & DbCustomAttributeInfo::COL_Index)
         whereClause.AddItem ("[Index]=?");
-    if (info.ColsWhere & DbCustomAttributeInfo::COL_ECInstanceId)
-        whereClause.AddItem ("ECId=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -1158,10 +1097,8 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
     int nCol = 1;
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerId)            stmt->BindInt64 (nCol++, info.m_containerId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)          stmt->BindInt (nCol++, info.m_containerType);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_OverridenByContainerId) stmt->BindInt64 (nCol++, info.m_overridenByContainerId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId)              stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Index)                  stmt->BindInt (nCol++, info.m_index);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ECInstanceId)           stmt->BindId (nCol++, info.m_ecInstanceId);
     return stat;
     }
 
@@ -1174,8 +1111,6 @@ DbResult ECDbSchemaPersistence::UpdateCustomAttributeInfo (BeSQLite::Db& db, DbC
 
     SqlClauseBuilder setClause (",");
     if (info.ColsUpdate & DbCustomAttributeInfo::COL_Instance) setClause.AddItem ("Instance=?");
-    if (info.ColsUpdate & DbCustomAttributeInfo::COL_OverridenByContainerId) setClause.AddItem ("OverridenByContainerId=?");
-    if (info.ColsUpdate & DbCustomAttributeInfo::COL_ECInstanceId) setClause.AddItem ("ECId=?");
 
     BeAssert (!setClause.IsEmpty ());
     sql.append (setClause.ToString ());
@@ -1209,8 +1144,6 @@ DbResult ECDbSchemaPersistence::UpdateCustomAttributeInfo (BeSQLite::Db& db, DbC
         stat = stmt->BindText (nCol++, info.GetCaInstanceXml (), Statement::MakeCopy::No);
         POSTCONDITION (stat == BE_SQLITE_OK, stat);
         }
-    if (~info.ColsNull & info.ColsUpdate & DbCustomAttributeInfo::COL_OverridenByContainerId) stmt->BindInt64 (nCol++, info.m_overridenByContainerId);
-    if (~info.ColsNull & info.ColsUpdate & DbCustomAttributeInfo::COL_ECInstanceId) stmt->BindId (nCol++, info.m_ecInstanceId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerId) stmt->BindInt64 (nCol++, info.m_containerId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (nCol++, info.m_containerType);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
@@ -1233,14 +1166,10 @@ DbResult ECDbSchemaPersistence::Step (DbCustomAttributeInfoR info, BeSQLite::Sta
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ContainerId; nCol++; } else info.m_containerId = stmt.GetValueInt64 (nCol++);
         if (info.ColsSelect & DbCustomAttributeInfo::COL_ContainerType) 
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ContainerType; nCol++; } else info.m_containerType = (ECContainerType)stmt.GetValueInt (nCol++);
-        if (info.ColsSelect & DbCustomAttributeInfo::COL_OverridenByContainerId) 
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_OverridenByContainerId; nCol++; } else info.m_overridenByContainerId = stmt.GetValueInt64 (nCol++);
         if (info.ColsSelect & DbCustomAttributeInfo::COL_ECClassId)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ECClassId; nCol++; } else info.m_ecClassId = stmt.GetValueInt64 (nCol++);
         if (info.ColsSelect & DbCustomAttributeInfo::COL_Index) 
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_Index; nCol++; } else info.m_index = stmt.GetValueInt(nCol++);
-        if (info.ColsSelect & DbCustomAttributeInfo::COL_ECInstanceId)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ECInstanceId; nCol++; } else info.m_ecInstanceId = stmt.GetValueId<ECInstanceId> (nCol++);
         if (info.ColsSelect & DbCustomAttributeInfo::COL_Instance)
             if (stmt.IsColumnNull(nCol)) 
                 { 
@@ -1252,8 +1181,6 @@ DbResult ECDbSchemaPersistence::Step (DbCustomAttributeInfoR info, BeSQLite::Sta
                 //TODO: is it ensured that the info object is not used after the next call to ECDbSchemaPersistence::Step?
                 Utf8CP caInstanceXml = stmt.GetValueText (nCol);
                 info.SetCaInstanceXml (caInstanceXml);
-                //old way with ECD format
-                //info.m_caAsBlob.SetData (const_cast<byte*>((byte*)stmt.GetValueBlob(nCol)), stmt.GetColumnBytes(nCol));
                 }
         }
     return r;
@@ -1664,15 +1591,6 @@ int ECDbSchemaPersistence::ToInt (ECN::ECRelatedInstanceDirection direction)
 // @bsimethod                                              Krischan.Eberle        04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int ECDbSchemaPersistence::ToInt (MapStrategy mapStrategy)
-    {
-    return static_cast<int> (mapStrategy) + MapStrategyPersistedIntOffset;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle        04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
 ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (int relatedInstanceDirection)
     {
     BeAssert ((relatedInstanceDirection == 1 || relatedInstanceDirection == 2) &&"Integer cannot be converted to ECRelatedInstanceDirection.");
@@ -1681,16 +1599,6 @@ ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (
         return ECRelatedInstanceDirection::Backward;
 
     return ECRelatedInstanceDirection::Forward;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle        04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-MapStrategy ECDbSchemaPersistence::ToMapStrategy (int mapStrategy)
-    {
-    BeAssert (mapStrategy - MapStrategyPersistedIntOffset >= 0);
-    return static_cast<MapStrategy> (mapStrategy - MapStrategyPersistedIntOffset);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1733,7 +1641,7 @@ DbResult ECDbSchemaPersistence::GetClassesMappedToParent (std::vector<ECClassId>
         return stat;
 
     stmt->BindInt64 (1, baseClassId);
-    stmt->BindInt (2, ToInt (MapStrategy::InParentTable));
+    stmt->BindInt (2, (int) MapStrategy::InParentTable);
 
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
         {
@@ -1999,10 +1907,7 @@ ECSchemaCR schema
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-void DbCustomAttributeInfo::SetCaInstanceXml 
-(
-Utf8CP caInstanceXml
-)
+void DbCustomAttributeInfo::SetCaInstanceXml (Utf8CP caInstanceXml)
     {
     m_caInstanceXml = Utf8String (caInstanceXml);
     }
@@ -2010,12 +1915,11 @@ Utf8CP caInstanceXml
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP DbCustomAttributeInfo::GetCaInstanceXml 
-(
-) const
+Utf8CP DbCustomAttributeInfo::GetCaInstanceXml () const
     {
     return m_caInstanceXml.c_str ();
     }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
