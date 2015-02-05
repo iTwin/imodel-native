@@ -76,8 +76,6 @@ TEST(ECDbProfile, CreationTest)
 
         int64_t lastECInstanceId = -1LL;
         EXPECT_EQ (BE_SQLITE_OK, ecdb.QueryRepositoryLocalValue (lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
-
-        AssertIsProfileUpToDate (ecdb);
         }
     }
 //---------------------------------------------------------------------------------------
@@ -202,7 +200,7 @@ TEST(ECDbProfile, OpenNonECDbFileTest)
 //---------------------------------------------------------------------------------------
 // @bsimethods                                     Krischan.Eberle                  07/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertProfileUpgrade (Utf8CP ecdbPath, Db::OpenParams const& openParams, bool isExpectedToUpgrade, SchemaVersion const* expectedProfileVersion = nullptr)
+void AssertProfileUpgrade (Utf8CP ecdbPath, Db::OpenParams const& openParams, bool isExpectedToUpgrade, SchemaVersion const* expectedProfileVersion)
     {
     ECDb ecdb;
     const auto openStat = ecdb.OpenBeSQLiteDb (ecdbPath, openParams);
@@ -214,7 +212,7 @@ void AssertProfileUpgrade (Utf8CP ecdbPath, Db::OpenParams const& openParams, bo
         ASSERT_EQ (BE_SQLITE_ROW, ecdb.QueryProperty (actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << "ECDb file '" << ecdbPath << "' is expected to contain an entry for the ECDb profile version in be_prop.";
         SchemaVersion actualProfileVersion (actualProfileVersionStr.c_str ());
         if (expectedProfileVersion != nullptr)
-            ASSERT_TRUE ((*expectedProfileVersion) == actualProfileVersion) << "ECDb file '" << ecdbPath << "' has unexpected version of ECDb profile. Expected: " << expectedProfileVersion.ToJson ().c_str () << " Actual: " << actualProfileVersionStr.c_str ();
+            ASSERT_TRUE ((*expectedProfileVersion) == actualProfileVersion) << "ECDb file '" << ecdbPath << "' has unexpected version of ECDb profile. Expected: " << expectedProfileVersion->ToJson ().c_str () << " Actual: " << actualProfileVersionStr.c_str ();
         }
     else
         ASSERT_EQ (BE_SQLITE_ERROR_ProfileTooOld, openStat) << "Opening ECDb file '" << ecdbPath << "' succeeded unexpectedly.";
