@@ -566,16 +566,15 @@ BeSQLite::DbResult ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContain
         DbCustomAttributeInfo::COL_ContainerId |
         DbCustomAttributeInfo::COL_ContainerType;
 
-    readerInfo.ColsSelect  =
+    readerInfo.ColsSelect =
         DbCustomAttributeInfo::COL_ECClassId |
-        DbCustomAttributeInfo::COL_Instance |
-        DbCustomAttributeInfo::COL_ECInstanceId;
+        DbCustomAttributeInfo::COL_Instance;
 
     readerInfo.m_containerId = containerId;
     readerInfo.m_containerType = containerType;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    DbResult r = ECDbSchemaPersistence::FindCustomAttributeInfo(stmt, m_db, readerInfo, false);
+    DbResult r = ECDbSchemaPersistence::FindCustomAttributeInfo(stmt, m_db, readerInfo);
     if (r != BE_SQLITE_OK)
         return r;
 
@@ -588,24 +587,6 @@ BeSQLite::DbResult ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContain
             return r;
 
         IECInstancePtr inst;
-#if WIP_READ_CA_FROM_DB
-        if ( readerInfo.m_ecInstanceId != 0 && !(DbCustomAttributeInfo::COL_ECInstanceId & readerInfo.ColsNull))
-            {
-            ECSqlSelectBuilder sqlBuilder;
-            sqlBuilder.From (*caClass, false).SelectAll().Where("ECId = ?");
-            ECDbStatement statement;
-            r = statement.Prepare (m_db, sqlBuilder);
-            if (r != BE_SQLITE_OK)
-                return r;
-            statement.BindInt64 (1, readerInfo.m_ecInstanceId);
-            ECDbInstanceAdapter adaptor(statement, *caClass);
-            if((r = statement.Step()) == BE_SQLITE_ROW)
-                inst = adaptor.GetInstance();
-            else
-                return r;
-            }
-        else
-#endif
         if (!Utf8String::IsNullOrEmpty(readerInfo.GetCaInstanceXml()) && !(DbCustomAttributeInfo::COL_Instance & readerInfo.ColsNull))
             {
             BentleyStatus stat = readerInfo.DeserializeCaInstance (inst, caClass->GetSchema ());

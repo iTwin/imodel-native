@@ -35,7 +35,7 @@ private:
         static DbResult CreateTableECRelationshipConstraint (Db& db);
         static DbResult CreateTableECRelationshipConstraintClass (Db& db);
         static DbResult CreateTableECRelationshipConstraintClassProperty (Db& db);
-        static DbResult CreateTableCustomAttributes (Db& db);
+        static DbResult CreateTableCustomAttribute (Db& db);
         static DbResult CreateTableReferences (Db& db);
         static DbResult CreateTableECPropertyMap (Db& db);
         static DbResult CreateTablePropertyPath (Db& db);
@@ -54,6 +54,8 @@ private:
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
     static Utf8CP const PROFILENAME;
     static const PropertySpec PROFILEVERSION_PROPSPEC;
+    //! Oldest version supported by this version of ECDb.
+    static const SchemaVersion MINIMUM_SUPPORTED_VERSION;
 
     static ECDbProfileUpgraderSequence s_upgraderSequence;
 

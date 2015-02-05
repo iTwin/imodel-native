@@ -113,7 +113,7 @@ public:
     static  BeSQLite::DbResult FindECRelationConstraintClassInfo        (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbECRelationshipConstraintClassInfoCR spec);
     static  BeSQLite::DbResult Step                                     (DbECRelationshipConstraintClassInfoR info, BeSQLite::Statement& stmt);
     //Find CustomAttributeInfo
-    static  BeSQLite::DbResult FindCustomAttributeInfo                  (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbCustomAttributeInfoCR spec, bool getOnlyPrimaryCustomAttributes);
+    static  BeSQLite::DbResult FindCustomAttributeInfo                  (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbCustomAttributeInfoCR spec);
     static  BeSQLite::DbResult Step                                     (DbCustomAttributeInfoR info, BeSQLite::Statement& stmt);
     //Find CustomAttributeInfo
     static  BeSQLite::DbResult FindECSchemaReferenceInfo                (BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbECSchemaReferenceInfoCR spec);
@@ -391,11 +391,9 @@ public:
         {
         COL_ContainerId            = 0x01,
         COL_ContainerType          = 0x02,
-        COL_OverridenByContainerId = 0x04,
-        COL_ECClassId              = 0x08,
-        COL_Index                  = 0x10,
-        COL_Instance               = 0x20,
-        COL_ECInstanceId           = 0x40,
+        COL_ECClassId              = 0x04,
+        COL_Index                  = 0x08,
+        COL_Instance               = 0x10,
         COL_ALL                    = 0xffffffff
         }; 
 
@@ -406,10 +404,8 @@ public:
     //TODO should be made private eventually, too
     ECContainerId     m_containerId;        
     ECContainerType   m_containerType;
-    ECContainerId     m_overridenByContainerId;
     ECClassId         m_ecClassId;
     int32_t           m_index;
-    ECInstanceId      m_ecInstanceId;
 
     BentleyStatus     SerializeCaInstance (IECInstanceR caInstance);
     BentleyStatus     DeserializeCaInstance (IECInstancePtr& caInstance, ECSchemaCR schema) const;
@@ -423,9 +419,7 @@ public:
         {
         m_containerId=0;
         m_containerType = ECONTAINERTYPE_Schema;
-        m_overridenByContainerId=0;
         m_ecClassId=0;
-        m_ecInstanceId = ECInstanceId ();
         m_caInstanceXml.clear();
         }
     };
