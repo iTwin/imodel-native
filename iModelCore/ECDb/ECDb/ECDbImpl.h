@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <BeSQLite/ECDb/ECDb.h>
-#include <BeSQLite/ECDb/ECDbSchemaManager.h>
+#include <ECDb/ECDb.h>
+#include <ECDb/ECDbSchemaManager.h>
 #include "ECDbMap.h"
 #include "BeRepositoryBasedIdSequence.h"
 
