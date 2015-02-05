@@ -30,7 +30,7 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
     //verify ns is unique
     Utf8String currentNSPrefix = Utf8String(ns.c_str());
     Statement stmt;
-    stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NameSpacePrefix = ?");
+    stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NamespacePrefix = ?");
     stmt.BindText(1, currentNSPrefix, Statement::MakeCopy::No);
     if (stmt.Step() == BE_SQLITE_ROW)
         {       
