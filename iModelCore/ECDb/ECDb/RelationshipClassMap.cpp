@@ -348,7 +348,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
     //other end requires a class id if the constraint consists of more than one classes or of AnyClass 
     ECDbSqlColumn* otherEndECInstanceIdColumn = nullptr;
     ECDbSqlColumn* otherEndECClassIdColumn = nullptr;
-    auto stat = CreateConstraintColumns (otherEndECInstanceIdColumn, otherEndECClassIdColumn, relationshipClassMapInfo, thisEnd, addOtherEndECClassIdColumnToTable);
+    auto stat = CreateConstraintColumns(otherEndECInstanceIdColumn, otherEndECClassIdColumn, relationshipClassMapInfo, thisEnd, addOtherEndECClassIdColumnToTable, thisEndConstraint.GetConstraintClasses());
     if (stat != MapStatus::Success)
         return stat;
 
@@ -415,7 +415,26 @@ MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfoCR classMa
 
     return MapStatus::Success;
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                      muhammad.zaighum                               1/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool RelationshipClassEndTableMap::IsKeyPropertyMappable(const ECRelationshipConstraintClassList & constraintclasses)
+    {
+    if (constraintclasses.size() == 1 && constraintclasses[0]->GetKeys().size() == 1)
+        {
+        auto constaintClass = constraintclasses[0];
+        BeAssert(constaintClass && "Constraint Class is NULL");
+        auto key = constaintClass->GetKeys()[0];
+        BeAssert(key.size() && "Key property is NULL");
+        auto &ecClass = constaintClass->GetClass();
+        auto ecProperty = ecClass.GetPropertyP(key.c_str());
+        if (ecProperty != nullptr && (ecProperty->GetTypeName().Equals(L"long") || ecProperty->GetTypeName().Equals(L"int")))
+            {
+            return true;
+            }
+        }
+    return false;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan           01/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -506,19 +525,37 @@ BentleyStatus RelationshipClassEndTableMap::_Load (std::set<ClassMap const*>& lo
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 MapStatus RelationshipClassEndTableMap::CreateConstraintColumns (ECDbSqlColumn*& otherEndECInstanceIdColumn, ECDbSqlColumn*& otherEndECClassIdColumn,
-                                                                 RelationshipClassMapInfoCR mapInfo, ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable)
+    RelationshipClassMapInfoCR mapInfo, ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable, const ECRelationshipConstraintClassList & constraintclasses)
     {
-    //** Other End ECInstanceId column
-    Utf8String columnName = thisEnd == ECRelationshipEnd_Source ? 
-                  mapInfo.GetTargetECInstanceIdColumn() : mapInfo.GetSourceECInstanceIdColumn();
+    Utf8String columnName;
+    if (IsKeyPropertyMappable(constraintclasses))
+        {
+        auto constaintClass = constraintclasses[0];
+        BeAssert(constaintClass && "Constraint Class is NULL");
+        auto classMap = GetECDbMap().GetClassMap(constaintClass->GetClass());
+        auto key = constaintClass->GetKeys()[0];
+        BeAssert(key.size() && "Key property is NULL");
+        auto propertyMap = classMap->GetPropertyMap(key.c_str());
+        std::vector<ECDbSqlColumn const*> columns;
+        propertyMap->GetColumns(columns);
+        BeAssert(columns.size() == 1 && "more than 1 column is mapped to property");
+        otherEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(columns[0]);
+        BeAssert(otherEndECInstanceIdColumn != nullptr);
+       // return MapStatus::Success;
+        }
+    else
+        {
+        //** Other End ECInstanceId column
+        columnName = thisEnd == ECRelationshipEnd_Source ?
+            mapInfo.GetTargetECInstanceIdColumn() : mapInfo.GetSourceECInstanceIdColumn();
 
-    if(columnName.empty())
-        if (!GetOtherEndKeyColumnName (columnName, GetTable (), true))
-            return MapStatus::Error;
+        if (columnName.empty())
+            if (!GetOtherEndKeyColumnName(columnName, GetTable(), true))
+                return MapStatus::Error;
 
-    otherEndECInstanceIdColumn = CreateConstraintColumn (columnName.c_str(), true);
-    BeAssert (otherEndECInstanceIdColumn!=nullptr);
-
+        otherEndECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), true);
+        BeAssert(otherEndECInstanceIdColumn != nullptr);
+        }
     //** Other End ECClassId column
     columnName.clear ();
     Utf8String defaultECClassIdColumnName;

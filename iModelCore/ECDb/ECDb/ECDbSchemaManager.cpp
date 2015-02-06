@@ -239,7 +239,6 @@ IImportIssueListener const* userProvidedIssueListener
     MapStatus mapStatus = m_map.MapSchemas (context, schemasToImportCP, !diffs.empty ());
     if (mapStatus == MapStatus::Error)
         return ERROR;
-
     //Clear cache in case we have diffs
     if (!diffs.empty ())
         m_ecdb.ClearCache ();
@@ -577,6 +576,21 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
         }
 
     }
+
+
+bool ECDbSchemaManager::IsRelationShipConstraintClassKeyProperty(ECN::ECPropertyId id)const
+    {
+    BeSQLite::CachedStatementPtr stmt = nullptr;
+    auto stat = m_ecdb.GetCachedStatement(stmt, "select RelationECPropertyId from ec_RelationshipConstraintClassProperty where RelationECPropertyId = ?");
+    if (BE_SQLITE_OK != stat)
+        return false;
+    stmt->BindInt64(1, id);
+    stat = stmt->Step();
+    if (BE_SQLITE_ROW != stat)
+        return false;
+    return true;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
 //---------------------------------------------------------------------------------------

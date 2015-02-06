@@ -126,8 +126,8 @@ private:
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
-
-    MapStatus CreateConstraintColumns (ECDbSqlColumn*& otherEndECInstanceIdColumn, ECDbSqlColumn*& otherEndECClassIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable);
+    bool IsKeyPropertyMappable(const ECN::ECRelationshipConstraintClassList & constraintclasses);
+    MapStatus CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, ECDbSqlColumn*& otherEndECClassIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable, const ECN::ECRelationshipConstraintClassList &);
     MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
 
     ECN::ECRelationshipEnd GetOtherEnd () const;
