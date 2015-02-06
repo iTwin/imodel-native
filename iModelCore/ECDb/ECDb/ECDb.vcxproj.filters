@@ -7,9 +7,6 @@
     <Filter Include="Pch">
       <UniqueIdentifier>{5e830855-8429-4b6c-af08-980a24bcc630}</UniqueIdentifier>
     </Filter>
-    <Filter Include="BeSQLite">
-      <UniqueIdentifier>{cfa93ef3-272f-468f-8f85-b5e75c12ca2a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECSql">
       <UniqueIdentifier>{ca571631-8c21-4c73-949d-9878bf88d78e}</UniqueIdentifier>
     </Filter>
@@ -90,15 +87,6 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDb.h">
       <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\BeSQLite.h">
-      <Filter>BeSQLite</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\RTreeMatch.h">
-      <Filter>BeSQLite</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\SQLiteAPI.h">
-      <Filter>BeSQLite</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbSchemaManager.h">
       <Filter>PublicApi</Filter>
@@ -400,9 +388,7 @@
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="..\BeSQLiteProfileManager.h">
-      <Filter>BeSQLite</Filter>
-    </ClInclude>
+
     <ClInclude Include="ECDbImpl.h">
       <Filter>ECDb</Filter>
     </ClInclude>
@@ -453,9 +439,6 @@
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Pch</Filter>
     </ClCompile>
-    <ClCompile Include="..\BeSQLite.cpp">
-      <Filter>BeSQLite</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbUseCases.cpp" />
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
@@ -477,9 +460,6 @@
       <Filter>ECSql</Filter>
     </ClCompile>
     <ClCompile Include="ECSchemaComparers.cpp" />
-    <ClCompile Include="..\L10N.cpp">
-      <Filter>BeSQLite</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
@@ -775,9 +755,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
-    <ClCompile Include="..\BeSQLiteProfileManager.cpp">
-      <Filter>BeSQLite</Filter>
     </ClCompile>
     <ClCompile Include="ECDbImpl.cpp">
       <Filter>ECDb</Filter>

@@ -11,9 +11,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\BeSQLite.cpp" />
-    <ClCompile Include="..\BeSQLiteProfileManager.cpp" />
-    <ClCompile Include="..\L10N.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapFactory.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
@@ -129,8 +126,6 @@
     <ClCompile Include="ViewGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\BeSQLiteProfileManager.h" />
-    <ClInclude Include="..\PublicAPI\BeSQLite\BeSQLite.h" />
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDb.h" />
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbSchemaManager.h" />
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbApi.h" />
@@ -146,8 +141,6 @@
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\IECSqlValue.h" />
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\JsonAdapter.h" />
-    <ClInclude Include="..\PublicAPI\BeSQLite\RTreeMatch.h" />
-    <ClInclude Include="..\PublicAPI\BeSQLite\SQLiteAPI.h" />
     <ClInclude Include="BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapFactory.h" />
@@ -294,7 +287,7 @@
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c &amp; python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE) -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\ECSql\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLite\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\BeSQLite\PublicAPI\;$(SrcRoot)ecobjects\PublicApi\;$(SrcRoot)\GeomLibs\PublicAPI\;$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\;$(SrcRoot)DgnPlatform\PublicAPI\DgnPlatform\DgnCore\;$(SrcRoot)DgnPlatform\PrivateApi\;$(SrcRoot)DgnPlatform\PublicApi\;$(SrcRoot)DgnPlatform\DgnCore\;$(SrcRoot)DgnPlatform\ecobjects\PublicApi\;$(VCInstallDir)INCLUDE\;$(SrcRoot)Bentley\PublicApi\;$(SrcRoot)\BentleyApi\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\ECSql\;$(ProjectDir);$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>ECDb.exe</NMakeOutput>
