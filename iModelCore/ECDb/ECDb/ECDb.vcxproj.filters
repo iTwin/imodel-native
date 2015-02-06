@@ -399,6 +399,63 @@
     <ClInclude Include="ColumnInfo.h">
       <Filter>ECDbMap\Db</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\BeRepositoryBasedIdSequence.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDb.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbStore.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECJsonPersistence.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECPersistence.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

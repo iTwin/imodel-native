@@ -341,6 +341,7 @@ public:
     
     bool IsDirty () const { return m_isDirty; }
     ECDbClassMapId GetId () const { return m_id; }
+    void SetId (ECDbClassMapId id) { m_id = id; }
     BentleyStatus Save (std::set<ClassMap const*>& savedGraph) { return _Save (savedGraph); }
     BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
 

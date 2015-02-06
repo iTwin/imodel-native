@@ -44,7 +44,6 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     auto baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass (baseClassMapInfo->GetClassId ());
     auto baseClassMap = baseClass == nullptr ? nullptr : ecdbMap.GetClassMap (*baseClass);
 
-
     bool setIsDirty = false;
     auto mapStrategy = classMapInfo.GetMapStrategy ();
     ClassMapPtr classMap = nullptr;
@@ -65,6 +64,8 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
         else
             classMap = ClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
         }
+    classMap->SetId (classMapInfo.GetId ());
+
     std::set<ClassMap const*> loadGraph;
     auto stat = classMap->Load (loadGraph, classMapInfo, baseClassMap);
     if (stat != BentleyStatus::SUCCESS)

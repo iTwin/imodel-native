@@ -226,7 +226,7 @@ IImportIssueListener const* userProvidedIssueListener
         }
 
     bvector<ECDiffPtr> diffs; 
-    auto stat = BatchImportOrUpdateECSchemas (context, diffs, schemasToImport, options, false, true);
+    auto stat = BatchImportOrUpdateECSchemas (context, diffs, schemasToImport, options, true);
     if (SUCCESS != stat)
         return ERROR;
   
@@ -277,7 +277,7 @@ bool isSupplemental (ECSchemaCR schema)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool saveSupplementals, bool addToReaderCache) const
+BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache) const
     {
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
     bvector<ECSchemaP> schemasToImport;
@@ -303,12 +303,6 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                         //TODO: print detail error in log. We cannot revert so we will import what we got
                         LOG.warningv (L"Encountered error while supplementing %ls", primarySchema->GetFullSchemaName ().c_str ());
                         }
-
-                    if (saveSupplementals)
-                        {
-                        for (ECSchemaP supplementalSchema : supplementalSchemas)
-                            schemasToImport.push_back (supplementalSchema);
-                        }
                     }
                 //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not
                 //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
@@ -330,10 +324,6 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         schemasToImport.push_back (primarySchema);
         }
 
-    CustomAttributeTrackerPtr customAttributeTracker; //Needswork: Needs a comment explaining what this thing is doing... 
-    if (saveSupplementals)
-        customAttributeTracker = CustomAttributeTracker::Create (nullptr, schemas);
-
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
     bvector<ECSchemaP> dependencyOrderedSchemas;
     for (ECSchemaP schema : schemasToImport)
@@ -353,9 +343,9 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
             //Go a head and attempt to update ECSchema
             if (isSupplemental (*schema))
-                stat = UpdateECSchema (context, diff, *schema, nullptr);
+                stat = UpdateECSchema (context, diff, *schema);
             else
-                stat = UpdateECSchema (context, diff, *schema, customAttributeTracker.get ());
+                stat = UpdateECSchema (context, diff, *schema);
 
             if (SUCCESS == stat && diff->GetStatus () == DIFFSTATUS_Success && !diff->IsEmpty ())
                 diffs.push_back (diff);
@@ -363,9 +353,9 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         else
             {
             if (isSupplemental (*schema))
-                stat = ImportECSchema (context, *schema, addToReaderCache, nullptr);
+                stat = ImportECSchema (context, *schema, addToReaderCache);
             else
-                stat = ImportECSchema (context, *schema, addToReaderCache, customAttributeTracker.get ());
+                stat = ImportECSchema (context, *schema, addToReaderCache);
             }
         if (SUCCESS != stat)
             return stat;
@@ -387,9 +377,9 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& context, ECSchemaCR ecSchema, bool addToReaderCache, CustomAttributeTrackerP tracker) const
+BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& context, ECSchemaCR ecSchema, bool addToReaderCache) const
     {
-    auto stat = m_ecImporter->Import (ecSchema, tracker);
+    auto stat = m_ecImporter->Import (ecSchema);
     if (BE_SQLITE_OK != stat)
         {
         context.GetIssueListener ().Report (IImportIssueListener::Severity::Error,
@@ -408,7 +398,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& cont
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& context, ECDiffPtr& diff, ECSchemaCR ecSchema, CustomAttributeTrackerP tracker) const
+BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& context, ECDiffPtr& diff, ECSchemaCR ecSchema) const
     {
     Utf8String schemaName (ecSchema.GetName ().c_str ());
     auto existingSchema = GetECSchema (schemaName.c_str (), true);
@@ -447,7 +437,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
     if (diff->IsEmpty ())
         return SUCCESS; //nothing to update
 
-    DbResult r = m_ecImporter->Update (*diff, *m_ecReader, m_map, tracker);
+    DbResult r = m_ecImporter->Update (*diff, *m_ecReader, m_map);
     if (BE_SQLITE_OK != r)
         {
         ReportUpdateError (context, ecSchema, *existingSchema, "Please see log for details.");
