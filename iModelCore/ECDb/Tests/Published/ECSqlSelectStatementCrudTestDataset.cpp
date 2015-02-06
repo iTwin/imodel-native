@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlSelectStatementCrudTestDataset.cpp $
+|     $Source: Tests/Published/ECSqlSelectStatementCrudTestDataset.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -1278,7 +1278,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ECSqlTestDataset dataset;
 
     //JOIN USING
-    Utf8CP ecsql = "select ECId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA";
+    Utf8CP ecsql = "select ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA REVERSE";

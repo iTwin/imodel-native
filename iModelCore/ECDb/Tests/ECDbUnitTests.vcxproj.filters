@@ -142,9 +142,6 @@
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\WriteAndVerifyGeometryInstances.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>

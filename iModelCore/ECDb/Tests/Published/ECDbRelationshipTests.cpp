@@ -126,7 +126,7 @@ int64_t expectedId
 )
     {
     Utf8String whereClause;
-    whereClause.Sprintf ("WHERE ECId=%lld", whereECInstanceId.GetValue ());
+    whereClause.Sprintf ("WHERE ECInstanceId=%lld", whereECInstanceId.GetValue ());
     const int64_t actualId = ECDbTestUtility::ReadCellValueAsInt64 (db, tableName, expectedIdColumnName, whereClause.c_str());
     ASSERT_EQ (expectedId, actualId);
     }

@@ -512,7 +512,7 @@ void RelationshipClassMapInfo::InitializeFromSchema ()
     RelationshipConstraintInfo::ReadFromConstraint (m_sourceInfo, relClass->GetSource ());
     RelationshipConstraintInfo::ReadFromConstraint (m_targetInfo, relClass->GetTarget ());
 
-    //! The goal is that source/target ECid/ECClassId column should be provided in ECDbRelationshipConstraintHint and not ECDbRelationshipHint
+    //! The goal is that source/target ECInstanceId/ECClassId column should be provided in ECDbRelationshipConstraintHint and not ECDbRelationshipHint
     if (!m_sourceInfo.GetECClassIdColumn ().empty ())
         m_sourceECClassIdColumn = m_sourceInfo.GetECClassIdColumn ();
 

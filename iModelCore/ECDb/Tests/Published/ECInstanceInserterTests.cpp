@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECInstanceInserterTests.cpp $
+|  $Source: Tests/Published/ECInstanceInserterTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -316,7 +316,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         {
         ECInstanceId id (BeRepositoryId (2), 1);
         Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S) VALUES (?, 1,'INSERT without specifying LastMod column')"));
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S) VALUES (?, 1,'INSERT without specifying LastMod column')"));
         stmt.BindId (1, id);
         ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 
@@ -326,7 +326,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         {
         ECInstanceId id (BeRepositoryId (2), 2);
         Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?, 1,'INSERT with literal NULL',NULL)"));
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?, 1,'INSERT with literal NULL',NULL)"));
         stmt.BindId (1, id);
         ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 
@@ -336,7 +336,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         {
         ECInstanceId id (BeRepositoryId (2), 3);
         Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?,1,'INSERT with unbound parameter',?)"));
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?,1,'INSERT with unbound parameter',?)"));
         stmt.BindId (1, id);
         ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
 
@@ -346,7 +346,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         {
         ECInstanceId id (BeRepositoryId (2), 4);
         Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?,1,'INSERT with NULL-bound parameter',?)"));
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?,1,'INSERT with NULL-bound parameter',?)"));
         stmt.BindId (1, id);
         stmt.BindNull (2);
         ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());
@@ -357,7 +357,7 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
         {
         ECInstanceId id (BeRepositoryId (2), 5);
         Statement stmt;
-        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECId,I,S,LastMod) VALUES (?,1,'INSERT with bound parameter',?)"));
+        ASSERT_EQ (BE_SQLITE_OK, stmt.Prepare (ecdb, "INSERT INTO ecsqltest_ClassWithLastModProp (ECInstanceId,I,S,LastMod) VALUES (?,1,'INSERT with bound parameter',?)"));
         stmt.BindId (1, id);
         stmt.BindDouble (2, 24565.5);
         ASSERT_EQ (BE_SQLITE_DONE, stmt.Step ());

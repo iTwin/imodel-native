@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECDb_Tests.cpp $
+|  $Source: Tests/Published/ECDb_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -310,10 +310,10 @@ TEST(ECDbTests, createEmptyProject)
 // @bsiclass                                     Muhammad Hassan                  12/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //this test might fail if changes made to the classes Furniture and Employee in the ECsql schema.
-TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECId)
+TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
 {
-    Utf8CP sc_Furniture = "CREATE TABLE [sc_Furniture] ([ECId] INTEGER not null , [ECClassId] INTEGER not null , [AssetID] CHAR, [AssetOwner] CHAR, [BarCode] CHAR, [AssetUserID] CHAR, [Cost] DOUBLE, [Room] CHAR, [AssetRecordKey] CHAR, [Condition] INTEGER, [Material] INTEGER, [Weight] DOUBLE, [ChairFootPrint] BLOB, [Type] CHAR, [Color] CHAR, [DeskFootPrint] CHAR, [NumberOfCabinets] INTEGER, [Size] CHAR, [Length] DOUBLE, [Breadth] DOUBLE, [Employee__src_01_id] INTEGER, PRIMARY KEY  (ECId)) ";
-    Utf8CP sc_Employee = "CREATE TABLE [sc_Employee] ([ECId] INTEGER not null , [EmployeeID] INTEGER, [FirstName] CHAR, [JobTitle] CHAR, [LastName] CHAR, [ManagerID] INTEGER, [Room] CHAR, [SSN] INTEGER, [Project] CHAR, [WorkPhone] BLOB, [MobilePhone] BLOB, [FullName] CHAR, [Location.Coordinate.X] DOUBLE, [Location.Coordinate.Y] DOUBLE, [Location.Coordinate.Z] DOUBLE, [Location.Street] CHAR, [Location.City] CHAR, [Location.State] CHAR, [Location.Country] CHAR, [Location.Zip] CHAR, [EmployeeType] INTEGER, [Address.Coordinate.X] DOUBLE, [Address.Coordinate.Y] DOUBLE, [Address.Coordinate.Z] DOUBLE, [Address.Street] CHAR, [Address.City] CHAR, [Address.State] CHAR, [Address.Country] CHAR, [Address.Zip] CHAR, [EmployeeRecordKey] TIMESTAMP, [Company__trg_11_id] INTEGER, [Phone__trg_01_id] INTEGER, PRIMARY KEY  (ECId)) ";
+    Utf8CP sc_Furniture = "CREATE TABLE [sc_Furniture] ([ECInstanceId] INTEGER not null , [ECClassId] INTEGER not null , [AssetID] CHAR, [AssetOwner] CHAR, [BarCode] CHAR, [AssetUserID] CHAR, [Cost] DOUBLE, [Room] CHAR, [AssetRecordKey] CHAR, [Condition] INTEGER, [Material] INTEGER, [Weight] DOUBLE, [ChairFootPrint] BLOB, [Type] CHAR, [Color] CHAR, [DeskFootPrint] CHAR, [NumberOfCabinets] INTEGER, [Size] CHAR, [Length] DOUBLE, [Breadth] DOUBLE, [Employee__src_01_id] INTEGER, PRIMARY KEY  (ECInstanceId)) ";
+    Utf8CP sc_Employee = "CREATE TABLE [sc_Employee] ([ECInstanceId] INTEGER not null , [EmployeeID] INTEGER, [FirstName] CHAR, [JobTitle] CHAR, [LastName] CHAR, [ManagerID] INTEGER, [Room] CHAR, [SSN] INTEGER, [Project] CHAR, [WorkPhone] BLOB, [MobilePhone] BLOB, [FullName] CHAR, [Location.Coordinate.X] DOUBLE, [Location.Coordinate.Y] DOUBLE, [Location.Coordinate.Z] DOUBLE, [Location.Street] CHAR, [Location.City] CHAR, [Location.State] CHAR, [Location.Country] CHAR, [Location.Zip] CHAR, [EmployeeType] INTEGER, [Address.Coordinate.X] DOUBLE, [Address.Coordinate.Y] DOUBLE, [Address.Coordinate.Z] DOUBLE, [Address.Street] CHAR, [Address.City] CHAR, [Address.State] CHAR, [Address.Country] CHAR, [Address.Zip] CHAR, [EmployeeRecordKey] TIMESTAMP, [Company__trg_11_id] INTEGER, [Phone__trg_01_id] INTEGER, PRIMARY KEY  (ECInstanceId)) ";
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("EcdbRepositoryIdTest.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
     Statement sqlstmt0;
