@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/ECDB/NonPublished/ECDb/ECDbSchemas_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -488,38 +488,6 @@ TEST(ECDbSchemas, LoadECSchemas)
             LOG.errorv(L"Found unexpected ECSchema '%ls'", schemaName.c_str());
         }
     EXPECT_EQ (expectedSchemas.size(), nSchemas);
-    }
-
-// @bsimethod                                   Affan.Khan                  06/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemas, CTESupportTest)
-    {
-    ECDbTestProject testProject;
-    testProject.Create ("CTEQueryTest.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-
-    auto sql =
-        "WITH RECURSIVE"
-        "    child_of (childCID, parentCID) AS ("
-        "    SELECT 0, ?"
-        "    UNION"
-        "    SELECT ECClassId, BaseECClassId FROM ec_BaseClass, child_of WHERE BaseECClassId = parentCID  ORDER BY 2 DESC"
-        "    )"
-        "    SELECT parentCID, childCID FROM ec_Class, child_of WHERE child_of.[parentCID] = ECClassId";
-
-    Statement stmt;
-    auto r = stmt.Prepare (testProject.GetECDb (), sql);
-    ASSERT_TRUE (r == BE_SQLITE_OK);
-    r = stmt.BindInt (1, 132);
-    ASSERT_TRUE (r == BE_SQLITE_OK);
-    r = stmt.Step ();
-    ASSERT_TRUE (r == BE_SQLITE_ROW);
-    int rowCount = 0;
-    do
-        {
-        rowCount++;
-        } while (BE_SQLITE_ROW == stmt.Step ());
-
-    ASSERT_EQ (1, rowCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
