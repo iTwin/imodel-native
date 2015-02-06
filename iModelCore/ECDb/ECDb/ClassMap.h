@@ -190,7 +190,7 @@ struct  ColumnFactory : NonCopyableClass
                 GenerateColumnNameOptions generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence,
                 Utf8CP columnName = nullptr,
                 ECDbSqlColumn::Type columnType = ECDbSqlColumn::Type::Any,
-                uint32_t columnUserData = ECdbDataColumn,
+                uint32_t columnUserData = ECDbDataColumn,
                 PersistenceType persistenceType = PersistenceType::Persisted,
                 Utf8CP accessStringPrefix = nullptr,
                 bool isNotNull = false,

@@ -51,13 +51,13 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, 
 
     if (GetTable ().GetOwnerType () == OwnerType::ECDb)
         {
-        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECdbDataColumn,
+        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECDbDataColumn,
             addToTable ? PersistenceType::Persisted : PersistenceType::Virtual);
         }
     else
         {
         GetTable ().GetEditHandleR ().BeginEdit ();
-        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECdbDataColumn, PersistenceType::Virtual);
+        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECDbDataColumn, PersistenceType::Virtual);
         GetTable ().GetEditHandleR ().EndEdit ();
         }
     return column;
@@ -594,7 +594,7 @@ ECClassId defaultOtherEndClassId
     //Existing this end instance id and class id columns will be reused
     auto& persistenceEndTable = GetTable();
     std::vector<ECDbSqlColumn const*> systemColumns;
-    if (persistenceEndTable.GetFilteredColumnList (systemColumns, ECdbSystemColumnECId) == BentleyStatus::ERROR)
+    if (persistenceEndTable.GetFilteredColumnList (systemColumns, ECDbSystemColumnECInstanceId) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return MapStatus::Error;

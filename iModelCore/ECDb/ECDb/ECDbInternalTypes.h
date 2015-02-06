@@ -283,10 +283,10 @@ enum ECContainerType
 #define BSCAP_ColumnName                L"ColumnName"
 #define BSCAP_Blob                      L"Blob"
 
-#define ECDB_COL_ECInstanceId           "ECId"
+#define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"
-#define ECDB_COL_ECPropertyPathId           "ECPropertyPathId"
-#define ECDB_COL_OwnerECInstanceId      "OwnerECId" //ToDO: Should be renamed to ParentECInstanceId
+#define ECDB_COL_ECPropertyPathId       "ECPropertyPathId"
+#define ECDB_COL_ParentECInstanceId     "ParentECInstanceId"
 #define ECDB_COL_ECArrayIndex           "ECArrayIndex"
 
 #define UTF8_Stricmp(S1,S2)  BeStringUtilities::Stricmp(S1, S2) 
@@ -359,14 +359,14 @@ enum class MapStrategy
     };
 
 
-#define ECdbDataColumn  0x0U
-#define ECdbSystemColumnECId  0x1U
-#define ECdbSystemColumnECClassId  0x2U
-#define ECdbSystemColumnOwnerECId  0x4U
-#define ECdbSystemColumnECPropertyPathId  0x8U
-#define ECdbSystemColumnECArraryIndex  0x10U
+#define ECDbDataColumn  0x0U
+#define ECDbSystemColumnECInstanceId  0x1U
+#define ECDbSystemColumnECClassId  0x2U
+#define ECDbSystemColumnParentECInstanceId  0x4U
+#define ECDbSystemColumnECPropertyPathId  0x8U
+#define ECDbSystemColumnECArraryIndex  0x10U
 
-#define ECdbSystemColumns  (ECdbSystemColumnECId | ECdbSystemColumnECClassId | ECdbSystemColumnOwnerECId | ECdbSystemColumnECPropertyPathId | ECdbSystemColumnECArraryIndex)
+#define ECDbSystemColumns  (ECDbSystemColumnECInstanceId | ECDbSystemColumnECClassId | ECDbSystemColumnParentECInstanceId | ECDbSystemColumnECPropertyPathId | ECDbSystemColumnECArraryIndex)
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

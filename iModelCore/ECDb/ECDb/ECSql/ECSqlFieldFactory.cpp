@@ -248,15 +248,15 @@ PropertyMapCR propertyMap
         }
 
     if (isFirstProp)
-        innerECSqlSelectClause.append ("[ECInstanceId]");
+        innerECSqlSelectClause.append (ECDB_COL_ECInstanceId);
     else
-        innerECSqlSelectClause.append (", [ECInstanceId]");
+        innerECSqlSelectClause.append (", " ECDB_COL_ECInstanceId);
 
     Utf8String whereClause;
 
     ECPropertyId  persistedPropertyId = propertyMap.GetPropertyPathId ();
-    whereClause.Sprintf ("OwnerECInstanceId = ? AND ECPropertyPathId = %d", persistedPropertyId);
-    innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy ("ECArrayIndex");
+    whereClause.Sprintf (ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %d", persistedPropertyId);
+    innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy (ECDB_COL_ECArrayIndex);
 
     auto structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
         new StructArrayMappedToSecondaryTableECSqlField (ctx, *arrayProperty, move (ecsqlColumnInfo)));

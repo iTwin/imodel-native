@@ -23,7 +23,7 @@ enum class ECSqlSystemProperty
     TargetECClassId,
     ECPropertyPathId,
     ECArrayIndex,
-    OwnerECInstanceId,
+    ParentECInstanceId,
     };
 
 //=======================================================================================
@@ -47,8 +47,8 @@ public:
     static WCharCP const ECPROPERTYPATHID_PROPNAME_W;
     static Utf8CP const ECARRAYINDEX_PROPNAME;
     static WCharCP const ECARRAYINDEX_PROPNAME_W;
-    static Utf8CP const OWNERECINSTANCEID_PROPNAME;
-    static WCharCP const OWNERECINSTANCEID_PROPNAME_W;
+    static Utf8CP const PARENTECINSTANCEID_PROPNAME;
+    static WCharCP const PARENTECINSTANCEID_PROPNAME_W;
 
 private:
     static WCharCP const ECSQLSYSTEMPROPERTIES_CLASSNAME;

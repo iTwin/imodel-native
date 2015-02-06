@@ -30,8 +30,8 @@ Utf8CP const ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME = "ECPropertyPath
 WCharCP const ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME_W = L"ECPropertyPathId";
 Utf8CP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME = "ECArrayIndex";
 WCharCP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W = L"ECArrayIndex";
-Utf8CP const ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME = "OwnerECInstanceId";
-WCharCP const ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME_W = L"OwnerECInstanceId";
+Utf8CP const ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME = "ParentECInstanceId";
+WCharCP const ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME_W = L"ParentECInstanceId";
 
 
 WCharCP const ECDbSystemSchemaHelper::ECSQLSYSTEMPROPERTIES_CLASSNAME = L"ECSqlSystemProperties";
@@ -166,8 +166,8 @@ Utf8CP ECDbSystemSchemaHelper::GetPropertyName (ECSqlSystemProperty kind)
                 return ECPROPERTYPATHID_PROPNAME;
             case ECSqlSystemProperty::ECArrayIndex:
                 return ECARRAYINDEX_PROPNAME;
-            case ECSqlSystemProperty::OwnerECInstanceId:
-                return OWNERECINSTANCEID_PROPNAME;
+            case ECSqlSystemProperty::ParentECInstanceId:
+                return PARENTECINSTANCEID_PROPNAME;
             default:
                 BeAssert (false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;
@@ -196,8 +196,8 @@ WCharCP ECDbSystemSchemaHelper::GetPropertyNameW (ECSqlSystemProperty kind)
                 return ECPROPERTYPATHID_PROPNAME_W;
             case ECSqlSystemProperty::ECArrayIndex:
                 return ECARRAYINDEX_PROPNAME_W;
-            case ECSqlSystemProperty::OwnerECInstanceId:
-                return OWNERECINSTANCEID_PROPNAME_W;
+            case ECSqlSystemProperty::ParentECInstanceId:
+                return PARENTECINSTANCEID_PROPNAME_W;
             default:
                 BeAssert (false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
                 return nullptr;
@@ -215,7 +215,7 @@ bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind (ECSqlSystemProperty& kind
                         ECSqlSystemProperty::TargetECInstanceId, ECSqlSystemProperty::TargetECClassId, 
                         ECSqlSystemProperty::ECPropertyPathId, 
                         ECSqlSystemProperty::ECArrayIndex, 
-                        ECSqlSystemProperty::OwnerECInstanceId };
+                        ECSqlSystemProperty::ParentECInstanceId };
    
     for (auto candidateKind : kindList)
         {
