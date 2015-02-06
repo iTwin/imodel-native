@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECDbRelationshipTests.cpp $
+|  $Source: Tests/Published/ECDbRelationshipTests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -567,53 +567,108 @@ TEST(ECDbRelationships, JoinTests)
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  12/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbRelationships, testRelationshipKeys)
+TEST(ECDbRelationships, TestRelationshipKeys)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("relationshipKeystest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
     ecdbr.ClearCache();
-    ECSchemaCP ecSchema=ecdbr.GetSchemaManager().GetECSchema("UserWorkBench", true);
-    ASSERT_TRUE(ecSchema!=NULL);
+    ECSchemaCP ecSchema = ecdbr.GetSchemaManager().GetECSchema("UserWorkBench", true);
+    ASSERT_TRUE(ecSchema != NULL);
 
     ECRelationshipClassCP areaTown = ecSchema->GetClassCP(L"area_town")->GetRelationshipClassCP();
     for (auto constraintClass : areaTown->GetSource().GetConstraintClasses())
-    {
+        {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(3, keys.size());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"province_id") != keys.end());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"name") != keys.end());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
-    }
+        }
     for (auto constraintClass : areaTown->GetTarget().GetConstraintClasses())
-    {
+        {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(3, keys.size());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"town_id") != keys.end());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"name") != keys.end());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
-    }
+        }
     ECRelationshipClassCP countryContinent = ecSchema->GetClassCP(L"country_continent")->GetRelationshipClassCP();
     for (auto constraintClass : countryContinent->GetSource().GetConstraintClasses())
-    {
+        {
         WString key = constraintClass->GetKeys().at(0);
         ASSERT_TRUE(key.Equals(L"country_id"));
-    }
+        }
     for (auto constraintClass : countryContinent->GetTarget().GetConstraintClasses())
-    {
+        {
         WString key = constraintClass->GetKeys().at(0);
         ASSERT_TRUE(key.Equals(L"continent_id"));
-    }
+        }
     ECRelationshipClassCP houseUser = ecSchema->GetClassCP(L"house_user")->GetRelationshipClassCP();
     for (auto constraintClass : houseUser->GetSource().GetConstraintClasses())
-    {
+        {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(0, keys.size());
-    }
+        }
     for (auto constraintClass : houseUser->GetTarget().GetConstraintClasses())
-    {
+        {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(0, keys.size());
+        }
     }
+
+TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
+    {
+    const auto perClassRowCount = 0;
+    ECDbTestProject testProj;
+    auto& ecdb = testProj.Create("ecdbKeysTests.ecdb", L"ECSqlTestKeys.01.00.ecschema.xml", perClassRowCount);
+    ECSqlStatement stmt;
+
+    auto ecsql = "INSERT INTO ecsqltestKeys.P (I) VALUES(123)";
+    ECSqlStatement statement;
+    auto stat = statement.Prepare(ecdb, ecsql);
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ECInstanceKey instanceKey;
+    auto stepStatus = statement.Step(instanceKey);
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    statement.Finalize();
+
+    ecsql = "INSERT INTO ecsqltestKeys.PSA (I) VALUES(?)";
+    stat = statement.Prepare(ecdb, ecsql);
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    statement.BindInt64(1, instanceKey.GetECInstanceId().m_id);
+
+    stepStatus = statement.Step();
+    ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    statement.Finalize();
+
+    ecsql = "SELECT * FROM ecsqltestKeys.PSAHasPKey_N1 ";
+    stat = statement.Prepare(ecdb, ecsql);
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
+    ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
+    statement.Finalize();
+
+    ECClassCP pClass = ecdb.GetSchemaManager().GetECClass("ecsqltestKeys", "P",ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    IECInstancePtr pInstance = pClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+    InsertInstance(ecdb, *pClass, *pInstance);
+    ECClassCP psaClass = ecdb.GetSchemaManager().GetECClass("ecsqltestKeys", "PSA", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    IECInstancePtr psaInstance = psaClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
+    InsertInstance(ecdb, *psaClass, *psaInstance);
+    auto PSAHasPKey_N1Class = ecdb.GetSchemaManager().GetECClass("ecsqltestKeys", "PSAHasPKey_N1", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix)->GetRelationshipClassCP();
+    IECInstancePtr PSAHasPKey_N1Instance = PSAHasPKey_N1Class->GetRelationshipClassCP()->GetDefaultStandaloneEnabler()->CreateInstance(0);
+    auto relationshipInstance = CreateRelationship(*PSAHasPKey_N1Class, *psaInstance.get(),*pInstance.get());
+    ASSERT_TRUE(relationshipInstance.IsValid());
+    PersistRelationship(*relationshipInstance, ecdb);
+
+    ecsql = "SELECT * FROM ecsqltestKeys.PSAHasPKey_N1 ";
+    stat = statement.Prepare(ecdb, ecsql);
+    ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
+    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
+    ASSERT_TRUE(ECSqlStepStatus::HasRow == statement.Step());
+    ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
+    statement.Finalize();
+
     }
+
 END_ECDBUNITTESTS_NAMESPACE
 

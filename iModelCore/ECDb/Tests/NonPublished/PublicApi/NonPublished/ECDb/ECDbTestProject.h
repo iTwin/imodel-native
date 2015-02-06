@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h $
+|  $Source: Tests/NonPublished/PublicApi/NonPublished/ECDb/ECDbTestProject.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,8 +90,8 @@ public:
     BeSQLite::EC::ECDbCR   GetECDbCR () const;
     ECInstanceMapCR        GetImportedECInstances() const   {return m_ecInstances;}
     BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, WCharCP className);
-    static ECN::IECInstancePtr  CreateArbitraryECInstance (ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
-    static void                 PopulateECInstance (ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
+    static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
+    static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static ECN::IECInstancePtr  CreateECInstance (ECN::ECClassCR ecClass);
     static void            AssignRandomValueToECInstance (ECN::ECValueP createdValue, ECN::IECInstancePtr instance, WCharCP propertyName);
     BentleyStatus InsertECInstance (BeSQLite::EC::ECInstanceKey& ecInstanceKey, ECN::IECInstancePtr ecInstance);
