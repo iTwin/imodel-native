@@ -578,7 +578,7 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
     }
 
 
-bool ECDbSchemaManager::IsRelationShipConstraintClassKeyProperty(ECN::ECPropertyId id)const
+bool ECDbSchemaManager::IsRelationshipConstraintKeyProperty(ECN::ECPropertyId id)const
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
     auto stat = m_ecdb.GetCachedStatement(stmt, "select RelationECPropertyId from ec_RelationshipConstraintClassProperty where RelationECPropertyId = ?");

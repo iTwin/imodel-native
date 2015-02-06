@@ -79,19 +79,19 @@
       <Filter>Pch</Filter>
     </ClInclude>
     <ClInclude Include="ECDbInternalTypes.h" />
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbApi.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbTypes.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDb.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECDb.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECDbSchemaManager.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlBuilder.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\Parser\SqlBison.h">
@@ -128,13 +128,13 @@
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
     <ClInclude Include="ECSchemaComparers.h" />
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\IECSqlBinder.h">
+    <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\IECSqlValue.h">
+    <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlStatement.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlField.h">
@@ -230,7 +230,7 @@
     <ClInclude Include="ECSql\ECSqlFieldFactory.h">
       <Filter>ECSql\Fields</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECSqlColumnInfo.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECDbSystemSchemaHelper.h">
@@ -321,16 +321,16 @@
     <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECJsonUtility.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECInstanceId.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="SystemPropertyMap.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECRelationshipPath.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ClassMapFactory.h">
@@ -361,7 +361,7 @@
     <ClInclude Include="ECSchemaValidator.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECInstanceFinder.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\EmbeddedECSqlStatement.h">
@@ -373,10 +373,10 @@
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h">
       <Filter>ECSql\Adapters</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\ECInstanceAdapter.h">
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\ECDb\JsonAdapter.h">
+    <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlEventManager.h">

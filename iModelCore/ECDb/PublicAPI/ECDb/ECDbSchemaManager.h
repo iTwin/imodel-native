@@ -354,7 +354,7 @@ public:
     void ClearCache () const;
     ECDbCR GetECDb () const;
     //__PUBLISH_SECTION_START__
-    ECDB_EXPORT bool IsRelationShipConstraintClassKeyProperty(ECN::ECPropertyId ecPropertyId)const;
+    ECDB_EXPORT bool IsRelationshipConstraintKeyProperty (ECN::ECPropertyId ecPropertyId)const;
     };
 
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;
