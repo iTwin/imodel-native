@@ -354,6 +354,9 @@ public:
     void ClearCache () const;
     ECDbCR GetECDb () const;
     //__PUBLISH_SECTION_START__
+    //! 
+    //! Return true of the given @ecproprtyId is in Relationship Constraing Class 
+    //! @param ecPropertyId. the property id of ECProperty
     ECDB_EXPORT bool IsRelationshipConstraintKeyProperty (ECN::ECPropertyId ecPropertyId)const;
     };
 
