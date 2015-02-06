@@ -220,10 +220,10 @@ private:
     ECDbSchemaWriterPtr   m_ecImporter;
     mutable BeMutex m_criticalSection;
 
-    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool saveSupplementals = true, bool addToReaderCache = false) const;
+    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECDiffPtr>&  diffs, bvector<ECN::ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache = false) const;
     void GetSupplementalSchemas (bvector<ECN::ECSchemaP>& supplementalSchemas, bvector<ECN::ECSchemaP> const& schemas, ECN::SchemaKeyCR primarySchemaKey) const;
-    BentleyStatus ImportECSchema (SchemaImportContext const& context, ECN::ECSchemaCR ecSchema, bool addToReaderCache = false, CustomAttributeTrackerP tracker = nullptr) const;
-    BentleyStatus UpdateECSchema (SchemaImportContext const& context, ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema, CustomAttributeTrackerP tracker) const;
+    BentleyStatus ImportECSchema (SchemaImportContext const& context, ECN::ECSchemaCR ecSchema, bool addToReaderCache = false) const;
+    BentleyStatus UpdateECSchema (SchemaImportContext const& context, ECN::ECDiffPtr& diff, ECN::ECSchemaCR ecSchema) const;
     //! The list excludes ECSchemas that have already been imported into the ECDb file
     void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
     static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);

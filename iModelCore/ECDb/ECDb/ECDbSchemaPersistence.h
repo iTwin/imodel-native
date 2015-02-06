@@ -12,13 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
-
-enum CustomAttributeTrackerStatus
-    {
-    CUSTOMATTRIBUTETRACKERSTATUS_Success,
-    CUSTOMATTRIBUTETRACKERSTATUS_SchemaAlreadyExist,
-    };
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -434,29 +427,6 @@ public:
     
     ECSchemaId m_ecSchemaId;
     ECSchemaId m_referenceECSchemaId;
-    };
-
-typedef bmap<IECInstanceCP, IECCustomAttributeContainerCP> CAContainerByCA;
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct CustomAttributeTracker : public RefCountedBase
-    {
-private:
-    CAContainerByCA m_caContainerByCA;
-    bvector<ECSchemaPtr> m_schemas;
-
-private:
-    CustomAttributeTrackerStatus AddSchema (ECSchemaR schema);
-    void AddCustomAttributes (IECCustomAttributeContainerCR container);
-    void AddCustomAttributes (ECClassCR relationshipClass, ECRelationshipConstraintCR container);
-
-    bool SchemaExist(ECSchemaCR schema);
-    CustomAttributeTrackerStatus Init (bvector<ECSchemaP> const& schemas);
-public:
-    CustomAttributeTracker(){}
-    bool TryGetContainer(IECCustomAttributeContainerCP& container, IECInstanceCR customAttribute);
-    static CustomAttributeTrackerPtr Create (CustomAttributeTrackerStatus* status, bvector<ECSchemaP> const& schemas);
     };
 
 

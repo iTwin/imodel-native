@@ -48,8 +48,6 @@ struct ECDbSchemaWriter : RefCountedBase
     {
 private:
     ECDbR m_ecdb;
-//    ECSchemaCP                                                  m_PrimaryECSchema; -- detected as unused by clang
-    CustomAttributeTrackerP                                     m_customAttributeTracker;
     std::unique_ptr<SchemaUpdateContext>                        m_updateContext;
     BeMutex m_aCriticalSection;
 private:
@@ -91,9 +89,9 @@ private:
     bool               DiffExist (IECDiffNodeCR diff, WCharCP name);
 
 public:  
-    BeSQLite::DbResult    Import                                (ECSchemaCR ecSchema, CustomAttributeTrackerP tracker);
+    BeSQLite::DbResult    Import                                (ECSchemaCR ecSchema);
     //in diff Left schema = existing stored schema and Right schema = newly provided schema by user with same name
-    BeSQLite::DbResult    Update                                (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap, CustomAttributeTrackerP tracker);
+    BeSQLite::DbResult    Update                                (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap);
 
     static ECDbSchemaWriterPtr Create                           (ECDbR ecdb);
 

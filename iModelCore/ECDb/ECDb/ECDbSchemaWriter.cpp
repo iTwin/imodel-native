@@ -321,7 +321,7 @@ ECDbSchemaWriter::ECDbSchemaWriter (ECDbR ecdb) : m_ecdb(ecdb){}
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema, CustomAttributeTrackerP tracker)
+BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema)
     {
     BeMutexHolder aGuard (m_aCriticalSection);
     StopWatch timer ("", true);
@@ -332,7 +332,6 @@ BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema, CustomAttribut
         return BE_SQLITE_OK;
         }
 
-    m_customAttributeTracker = tracker;
     DbResult r = ImportECSchema (ecSchema); 
     if (r != BE_SQLITE_DONE)
         {
@@ -443,113 +442,26 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportCustomAttributes (IECCustomAttributeC
     int index = 0; // Its useless if we enumerate map since it doesn't ensure order in which we added it
 
     bmap<ECClassCP,bvector<IECInstanceP> >::const_iterator itor = customAttributeMap.begin();
-//  1. Lossy saving of supplemented schema
-//     ===================================
-    if (m_customAttributeTracker == nullptr)
-        {
-        //Here we consider consolidated attribute a primary. This is lossy operation some overridden primary custom attributes would be lost
-        for ( ; itor != customAttributeMap.end(); ++itor)
-            {
-            bvector<IECInstanceP> const& customAttributes = itor->second;
-            IECInstanceP customAttribute = customAttributes.size() == 1 ? customAttributes[0] : customAttributes[1];
-            ECClassCP ecClass = itor->first;
-            ECClassId customAttributeClassId;
-            if (ecClass->HasId())
-                customAttributeClassId = ecClass->GetId();
-            else
-                customAttributeClassId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, *ecClass);
 
-            r = InsertCAEntry (customAttribute, customAttributeClassId, sourceContainerId, containerType, 0 /*Overriden continer id is nullptr=0*/, index++);
-            if (r != BE_SQLITE_DONE)
-                return r;
-            }
-
-        return BE_SQLITE_DONE;
-        }
-
-//  2. Lossless saving of supplemented schema
-//     ======================================
-    //1. Primary attribute comes first and followed by consolidated while enumerating GetCustomAttributes()
-    //2. So in customAttributeMap the first value would be primary instance and second would be consolidated
-    //3. If it only has one, then either it was primary and not overridden, or it didn’t exist on the primary and was cleanly supplemented (with no real override). 
-    //4. We need the pair of consolidated and primary container id at same time so we can use just one insertion to put both.
-    //5. Supplemental schema must already exist for above to work
+    //Here we consider consolidated attribute a primary. This is lossy operation some overridden primary custom attributes would be lost
     for ( ; itor != customAttributeMap.end(); ++itor)
         {
         bvector<IECInstanceP> const& customAttributes = itor->second;
-        IECInstanceP consolidatedCustomAttribute = nullptr;
-        IECInstanceP primaryCustomAttribute = nullptr;
-        IECCustomAttributeContainerCP consolidatedContainer = nullptr;
-        IECCustomAttributeContainerCP primaryContainer = &sourceContainer;
-        ECClassCP     customAttributeClass = itor->first;
-
-        if (customAttributes.size() == 1) // Either primary or supplemental CA.
-            {
-            IECInstanceP customAttribute = customAttributes[0];
-            IECCustomAttributeContainerCP container;
-            if (m_customAttributeTracker->TryGetContainer(container, *customAttribute))
-                {
-                if (container == primaryContainer)
-                    primaryCustomAttribute = customAttribute;
-                else
-                    consolidatedContainer = container;
-                }
-            }
-        else if (customAttributes.size() == 2)// Supplemental CA override Primary CA so both exists
-            {
-            primaryCustomAttribute = customAttributes[0];
-            consolidatedCustomAttribute = customAttributes[1];
-            if (!m_customAttributeTracker->TryGetContainer(consolidatedContainer, *consolidatedCustomAttribute))
-                {
-                LOG.error("Failed to determine consolidated container id");
-                return BE_SQLITE_ERROR;
-                }
-           BeAssert(consolidatedContainer != primaryContainer);
-           }
-        else
-            {
-            BeAssert(false && "Something wrong with SupplementedSchemaBuilder. We must either get one or two custom attributes"); 
-            }
-
+        IECInstanceP customAttribute = customAttributes.size() == 1 ? customAttributes[0] : customAttributes[1];
+        ECClassCP ecClass = itor->first;
         ECClassId customAttributeClassId;
-        if (customAttributeClass->HasId())
-            customAttributeClassId = customAttributeClass->GetId();
+        if (ecClass->HasId())
+            customAttributeClassId = ecClass->GetId();
         else
-            customAttributeClassId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, *customAttributeClass);
-        BeAssert(customAttributeClassId != 0);
+            customAttributeClassId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, *ecClass);
 
-        int64_t primaryContainerId;
-        int64_t consolidatedContainerId;
-        switch (containerType)
-            {
-            case ECONTAINERTYPE_Schema:
-                BeAssert (dynamic_cast<ECSchemaCP>(primaryContainer));
-                primaryContainerId = static_cast<ECSchemaCP>(primaryContainer)->GetId();
-                consolidatedContainerId = consolidatedContainer ? static_cast<ECSchemaCP>(consolidatedContainer)->GetId() : 0;
-                break;
-            case ECONTAINERTYPE_Class:
-            case ECONTAINERTYPE_RelationshipConstraintSource:
-            case ECONTAINERTYPE_RelationshipConstraintTarget:
-                BeAssert (dynamic_cast<ECClassCP>(primaryContainer));
-                primaryContainerId = static_cast<ECClassCP>(primaryContainer)->GetId();
-                consolidatedContainerId = consolidatedContainer ? static_cast<ECClassCP>(consolidatedContainer)->GetId() : 0;
-                break;
-            case ECONTAINERTYPE_Property:
-                BeAssert (dynamic_cast<ECPropertyCP>(primaryContainer));
-                primaryContainerId = static_cast<ECPropertyCP>(primaryContainer)->GetId();
-                consolidatedContainerId = consolidatedContainer ? static_cast<ECPropertyCP>(consolidatedContainer)->GetId() : 0;
-                break;
-            default:
-                BeAssert (false);
-                return BE_SQLITE_ERROR;
-            }
-
-        r = InsertCAEntry (primaryCustomAttribute, customAttributeClassId, primaryContainerId, containerType, consolidatedContainerId, index++);
+        r = InsertCAEntry (customAttribute, customAttributeClassId, sourceContainerId, containerType, 0 /*Overriden continer id is nullptr=0*/, index++);
         if (r != BE_SQLITE_DONE)
             return r;
         }
 
     return BE_SQLITE_DONE;
+     
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1315,7 +1227,7 @@ BeSQLite::DbResult ECDbSchemaWriter::UpdateReferences(ECN::ECSchemaCR updatedECS
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap, CustomAttributeTrackerP tracker)
+BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap)
     {
     BeMutexHolder aGuard (m_aCriticalSection);
 
@@ -1359,7 +1271,6 @@ BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR sch
         return BE_SQLITE_ERROR;
         }
 
-    m_customAttributeTracker = tracker;
     DbResult r = BE_SQLITE_ERROR;
 
     if (auto n = diffTree->GetChildById (DiffNodeId::References))

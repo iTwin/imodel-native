@@ -82,6 +82,4 @@ ECDB_TYPEDEFS(ECDbMap);
 ECDB_TYPEDEFS_PTR(ECDbSchemaWriter);
 ECDB_TYPEDEFS_PTR(ECDbSchemaReader);
 
-ECDB_TYPEDEFS_PTR(CustomAttributeTracker);
-
 #define USING_NAMESPACE_BENTLEY_EC using namespace BentleyApi::ECN;
