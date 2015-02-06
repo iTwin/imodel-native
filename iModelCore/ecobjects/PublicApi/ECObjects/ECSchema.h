@@ -1375,6 +1375,8 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
         ECOBJECTS_EXPORT ECObjectsStatus            Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
         //! Clears the vector Constraint classes
         ECOBJECTS_EXPORT ECObjectsStatus            clear();
+        //! Clears the vector Constraint classes
+        ECOBJECTS_EXPORT uint32_t            size()const;
         //! Removes specified ECClass from Constraint class vector
         ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECClassCR);
         ~ECRelationshipConstraintClassList();

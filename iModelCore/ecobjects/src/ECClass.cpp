@@ -2481,6 +2481,13 @@ ECObjectsStatus ECRelationshipConstraintClassList::clear()
     m_constraintClasses.clear();
     return ECObjectsStatus::ECOBJECTS_STATUS_Success;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECRelationshipConstraintClassList::size()const
+    {
+    return (uint32_t)m_constraintClasses.size();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
