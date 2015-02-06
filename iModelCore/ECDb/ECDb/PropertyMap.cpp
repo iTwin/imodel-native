@@ -736,6 +736,47 @@ PropertyMapToTable::PropertyMapToTable (ECPropertyCR ecProperty, ECClassCR struc
     }
 
 /*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult PropertyMapToTable::_Save (ECDbClassMapInfo & classMapInfo) const
+    {
+    auto& manager = classMapInfo.GetMapStorageR ();
+    auto propertyId = GetRoot ().GetProperty ().GetId ();
+    auto accessString = Utf8String (GetPropertyAccessString ());
+    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString.c_str ());
+    if (propertyPath == nullptr)
+        propertyPath = manager.CreatePropertyPath (propertyId, accessString.c_str ());
+
+    if (propertyPath == nullptr)
+        {
+        BeAssert (false && "Failed to create propertyPath");
+        return BE_SQLITE_ERROR;
+        }
+
+    m_propertyPathId = propertyPath->GetId ();
+    return BE_SQLITE_DONE;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult PropertyMapToTable::_Load (ECDbClassMapInfo const& classMapInfo) 
+    {
+    auto& manager = classMapInfo.GetMapStorage ();
+    auto propertyId = GetRoot ().GetProperty ().GetId ();
+    auto accessString = Utf8String (GetPropertyAccessString ());
+    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString.c_str ());
+    if (propertyPath == nullptr)
+        {
+        BeAssert (false && "Failed to find propertyPath");
+        return BE_SQLITE_ERROR;
+        }
+
+    m_propertyPathId = propertyPath->GetId ();
+    return BE_SQLITE_DONE;
+    }
+
+/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap)
@@ -886,6 +927,85 @@ PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, WCharCP propertyAcc
     BeAssert (false && "Constructed a PropertyMapPoint for a property that is not a Point2d or Point3d");
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
+    {
+    BeAssert (m_xColumn != nullptr);
+    BeAssert (m_yColumn != nullptr);
+
+    auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
+    auto accessString = Utf8String (GetPropertyAccessString ());
+    auto pm = classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".X").c_str (), *m_xColumn);
+    if (pm == nullptr)
+        {
+        BeAssert (false && "Failed to create propertymap");
+        return BE_SQLITE_ERROR;
+        }
+
+    classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Y").c_str (), *m_yColumn);
+    if (pm == nullptr)
+        {
+        BeAssert (false && "Failed to create propertymap");
+        return BE_SQLITE_ERROR;
+        }
+
+    if (m_is3d)
+        {
+        BeAssert (m_zColumn != nullptr);
+        classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Z").c_str (), *m_zColumn);
+        if (pm == nullptr)
+            {
+            BeAssert (false && "Failed to create propertymap");
+            return BE_SQLITE_ERROR;
+            }
+        }
+
+    return BE_SQLITE_DONE;
+    }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
+    {
+    BeAssert (m_xColumn == nullptr);
+    BeAssert (m_yColumn == nullptr);
+    BeAssert (m_zColumn == nullptr);
+
+    auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
+    auto accessString = Utf8String (GetPropertyAccessString ());
+    auto pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".X").c_str ());
+    if (pm == nullptr)
+        {
+        BeAssert (false && "Failed to load propertymap");
+        return BE_SQLITE_ERROR;
+        }
+
+    m_xColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
+    pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".Y").c_str ());
+    if (pm == nullptr)
+        {
+        BeAssert (false && "Failed to load propertymap");
+        return BE_SQLITE_ERROR;
+        }
+
+    m_yColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
+
+    if (m_is3d)
+        {
+        pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".Z").c_str ());
+        if (pm == nullptr)
+            {
+            BeAssert (false && "Failed to load propertymap");
+            return BE_SQLITE_ERROR;
+            }
+
+        m_zColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
+        }
+
+    return BE_SQLITE_DONE;
+    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
