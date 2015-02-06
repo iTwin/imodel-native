@@ -228,13 +228,11 @@ private:
     void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
     static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
     static bool AssertOnDuplicateCopyOfSchema(const bvector<ECN::ECSchemaP>& schema);
-
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
     //! @param[in] ecClass ECClass whose direct subclasses should be loaded
     //! @return ::SUCCESS or ::ERROR
     BentleyStatus EnsureDerivedClassesExist (ECN::ECClassCR ecClass) const;
-
     //! Implementation of IECSchemaLocater
     virtual ECN::ECSchemaPtr _LocateSchema (ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
 
@@ -355,8 +353,11 @@ public:
 
     void ClearCache () const;
     ECDbCR GetECDb () const;
-
-//__PUBLISH_SECTION_START__
+    //__PUBLISH_SECTION_START__
+    //! 
+    //! Return true of the given @ecproprtyId is in Relationship Constraing Class 
+    //! @param ecPropertyId. the property id of ECProperty
+    ECDB_EXPORT bool IsRelationshipConstraintKeyProperty (ECN::ECPropertyId ecPropertyId)const;
     };
 
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;

@@ -7,9 +7,6 @@
     <Filter Include="Pch">
       <UniqueIdentifier>{5e830855-8429-4b6c-af08-980a24bcc630}</UniqueIdentifier>
     </Filter>
-    <Filter Include="BeSQLite">
-      <UniqueIdentifier>{cfa93ef3-272f-468f-8f85-b5e75c12ca2a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECSql">
       <UniqueIdentifier>{ca571631-8c21-4c73-949d-9878bf88d78e}</UniqueIdentifier>
     </Filter>
@@ -82,14 +79,20 @@
       <Filter>Pch</Filter>
     </ClInclude>
     <ClInclude Include="ECDbInternalTypes.h" />
-    <ClInclude Include="..\PublicAPI\BeSQLite\BeSQLite.h">
-      <Filter>BeSQLite</Filter>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\RTreeMatch.h">
-      <Filter>BeSQLite</Filter>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\BeSQLite\SQLiteAPI.h">
-      <Filter>BeSQLite</Filter>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDb.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlBuilder.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\Parser\SqlBison.h">
       <Filter>ECSql\OSQLParser</Filter>
@@ -125,6 +128,15 @@
       <Filter>ECSql\OSQLParser</Filter>
     </ClInclude>
     <ClInclude Include="ECSchemaComparers.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlStatement.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
     <ClInclude Include="ECSql\ECSqlField.h">
       <Filter>ECSql\Fields</Filter>
     </ClInclude>
@@ -218,6 +230,9 @@
     <ClInclude Include="ECSql\ECSqlFieldFactory.h">
       <Filter>ECSql\Fields</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
     <ClInclude Include="ECDbSystemSchemaHelper.h">
       <Filter>ECDbProfile</Filter>
     </ClInclude>
@@ -306,8 +321,17 @@
     <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
     <ClInclude Include="SystemPropertyMap.h">
       <Filter>ECDbMap\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ClassMapFactory.h">
       <Filter>ECDbMap\Map</Filter>
@@ -337,6 +361,9 @@
     <ClInclude Include="ECSchemaValidator.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceFinder.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
     <ClInclude Include="ECSql\EmbeddedECSqlStatement.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
@@ -345,6 +372,12 @@
     </ClInclude>
     <ClInclude Include="ECSql\ECInstanceAdapterHelper.h">
       <Filter>ECSql\Adapters</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlEventManager.h">
       <Filter>ECSql\ECSqlStatement</Filter>
@@ -355,9 +388,7 @@
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-    <ClInclude Include="..\BeSQLiteProfileManager.h">
-      <Filter>BeSQLite</Filter>
-    </ClInclude>
+
     <ClInclude Include="ECDbImpl.h">
       <Filter>ECDb</Filter>
     </ClInclude>
@@ -465,9 +496,6 @@
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Pch</Filter>
     </ClCompile>
-    <ClCompile Include="..\BeSQLite.cpp">
-      <Filter>BeSQLite</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbUseCases.cpp" />
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
@@ -489,9 +517,6 @@
       <Filter>ECSql</Filter>
     </ClCompile>
     <ClCompile Include="ECSchemaComparers.cpp" />
-    <ClCompile Include="..\L10N.cpp">
-      <Filter>BeSQLite</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
@@ -787,9 +812,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\SystemPropertyECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
-    <ClCompile Include="..\BeSQLiteProfileManager.cpp">
-      <Filter>BeSQLite</Filter>
     </ClCompile>
     <ClCompile Include="ECDbImpl.cpp">
       <Filter>ECDb</Filter>

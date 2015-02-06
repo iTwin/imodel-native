@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/NonPublished/ECDb/ECDbTestProject.cpp $
+|  $Source: Tests/NonPublished/ECDb/ECDbTestProject.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -341,7 +341,7 @@ ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR target, IECInstanceCR s
 // @bsimethod                                                   Affan.Khan     03/12
 //---------------------------------------------------------------------------------------
 //static
-IECInstancePtr ECDbTestProject::CreateArbitraryECInstance (ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+IECInstancePtr ECDbTestProject::CreateArbitraryECInstance(ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
     {
     IECInstancePtr instance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     PopulateECInstance (instance, populatePrimitiveValueCallback, skipStructs, skipArrays);
@@ -351,7 +351,7 @@ IECInstancePtr ECDbTestProject::CreateArbitraryECInstance (ECClassCR ecClass, Po
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     03/12
 //---------------------------------------------------------------------------------------
-void ECDbTestProject::PopulateECInstance (ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+void ECDbTestProject::PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
     {
     ECValue value;
     for (ECPropertyCP ecProperty : ecInstance->GetClass().GetProperties(true))
