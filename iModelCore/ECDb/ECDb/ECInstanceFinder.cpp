@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECInstanceFinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -388,7 +388,7 @@ int findRelatedDirections
             
             auto classP = queryableRelationship.GetRelationshipClass ();
             POSTCONDITION (classP != nullptr, ERROR)
-            auto classMapP = m_ecDb.GetImplR ().GetECDbMap ().GetClassMap (*classP);
+            auto classMapP = m_ecDb.GetECDbImplR().GetECDbMap ().GetClassMap (*classP);
             POSTCONDITION (classMapP != nullptr, ERROR)
             if (classMapP->IsUnmapped ())
                 {

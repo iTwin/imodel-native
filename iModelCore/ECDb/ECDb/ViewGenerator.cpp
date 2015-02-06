@@ -142,7 +142,7 @@ BentleyStatus ViewGenerator::GetRootClasses (std::vector<IClassMap const*>& root
             {
             if (ecClass->GetDerivedClasses().empty())
                 {
-                auto classMap = db.GetImplR ().GetECDbMap ().GetClassMap (*ecClass);
+                auto classMap = db.GetECDbImplR().GetECDbMap ().GetClassMap (*ecClass);
                 BeAssert (classMap != nullptr);
                 if (!ECDbPolicyManager::GetClassPolicy (*classMap, IsValidInECSqlPolicyAssertion::Get ()).IsSupported ())
                     continue;

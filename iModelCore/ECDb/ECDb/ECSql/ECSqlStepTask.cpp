@@ -225,14 +225,14 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
     
     auto structType = GetPropertyMapR ().GetProperty ().GetAsArrayProperty ()->GetStructElementType ();
     auto& ecdb = preparedStmt->GetECDbR ();
-    auto structClassMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (*structType);
+    auto structClassMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
     auto const& structMemberPropMaps = structClassMap->GetPropertyMaps ();
     int nArrayElementIndex = 0;
    
     for (auto arrayElement : structArrayParameterValue->GetArray ())
         {       
         ECInstanceId generatedECInstanceId;
-        auto dbStat = ecdb.GetImplR ().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
+        auto dbStat = ecdb.GetECDbImplR().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
         if (dbStat != BE_SQLITE_OK)
             {
             //GetStatusContext ().SetStatus (&ecdb, dbStat, true, "InsertStructArrayStepTask::_Execute (ECSqlStepTaskArgs& args) failed: Could not generate an ParentECInstanceId.");
@@ -300,7 +300,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertSt
         }
 
     auto& arrayElementType = structArrayPropertyMap->GetElementType ();
-    auto arrayElementTypeMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (arrayElementType);
+    auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (arrayElementType);
     if (!arrayElementTypeMap)
         {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
@@ -389,7 +389,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
         }
 
     auto& arrayElementType = structArrayPropertyMap->GetElementType ();
-    auto arrayElementTypeMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (arrayElementType);
+    auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (arrayElementType);
     if (arrayElementTypeMap == nullptr)
         {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
@@ -543,7 +543,7 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
     auto relationshipClass = ecClass->GetRelationshipClassCP ();
     if (relationshipClass != nullptr)
         {
-        auto classMap = ecDb.GetImplR ().GetECDbMap ().GetClassMapCP (*relationshipClass);
+        auto classMap = ecDb.GetECDbImplR().GetECDbMap ().GetClassMapCP (*relationshipClass);
         if (classMap == nullptr)
             {
             LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Cound not retrieve class map.", relationshipClass->GetFullName ());

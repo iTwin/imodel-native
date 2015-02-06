@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparedStatement.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -414,7 +414,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
     BeAssert (ecinstanceidBinder != nullptr);
 
     auto& ecdb = GetECDbR ();
-    auto dbStat = ecdb.GetImplR ().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
+    auto dbStat = ecdb.GetECDbImplR().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
     if (dbStat != BE_SQLITE_OK)
         return GetStatusContextR ().SetError (&ecdb, dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
 

@@ -563,7 +563,8 @@ TEST(ECDbRelationships, JoinTests)
     ASSERT_EQ(joinVal, "2");
     stmt.Finalize();
     ecdb.CloseDb();
-	}
+    }
+
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  12/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -571,7 +572,7 @@ TEST(ECDbRelationships, TestRelationshipKeys)
     {
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create("relationshipKeystest.ecdb", L"UserWorkBench.01.00.ecschema.xml", true);
-    ecdbr.ClearCache();
+    ecdbr.ClearECDbCache();
     ECSchemaCP ecSchema = ecdbr.GetSchemaManager().GetECSchema("UserWorkBench", true);
     ASSERT_TRUE(ecSchema != NULL);
 

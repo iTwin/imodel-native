@@ -80,10 +80,10 @@ public:
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater () const;
 
     //! Clears the ECDb cache
-    ECDB_EXPORT void ClearCache () const;
+    ECDB_EXPORT void ClearECDbCache() const;
 
     //__PUBLISH_SECTION_END__
-    Impl& GetImplR () const;
+    Impl& GetECDbImplR () const;
     //__PUBLISH_SECTION_START__
 };
 

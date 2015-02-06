@@ -193,7 +193,7 @@ PropertyNameExp const* propertyName, //NOT USED
 PrimitiveType primitiveType
 )
     {
-    auto const& primArraySystemClass = ctx.GetECSqlStatementR().GetPreparedStatementP ()->GetECDbR ().GetImplR ().GetECDbMap ().GetClassForPrimitiveArrayPersistence(primitiveType);
+    auto const& primArraySystemClass = ctx.GetECSqlStatementR().GetPreparedStatementP ()->GetECDbR ().GetECDbImplR().GetECDbMap ().GetClassForPrimitiveArrayPersistence(primitiveType);
     field = unique_ptr<ECSqlField> (
         new PrimitiveArrayMappedToSingleColumnECSqlField (ctx.GetECSqlStatementR (), move (ecsqlColumnInfo), sqlColumnIndex++, primArraySystemClass));  
     return ECSqlStatus::Success;
@@ -226,7 +226,7 @@ PropertyMapCR propertyMap
         }
 
     auto structType = arrayProperty->GetStructElementType();
-    auto structTypeMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (*structType);
+    auto structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
     //1. Generate ECSQL statement to read nested struct array.
     ECSqlSelectBuilder innerECSql;
     Utf8String innerECSqlSelectClause;

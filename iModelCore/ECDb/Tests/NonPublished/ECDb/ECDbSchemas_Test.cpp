@@ -249,7 +249,7 @@ TEST (ECDbSchemas, DWGRTest)
     //DWGR19_L1.01.01.ecschema.xml
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create ("dwgr.ecdb");
-    db.ClearCache ();
+    db.ClearECDbCache();
     BeFileName sourceDir;
     BeTest::GetHost ().GetDocumentsRoot (sourceDir);
     sourceDir.AppendToPath (L"DgnDb");
@@ -276,8 +276,6 @@ TEST (ECDbSchemas, DWGRTest)
 
     }
 
-
-    // S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -597,7 +595,7 @@ TEST(ECDbSchemas, VerifyEmptyECSchemaCanBeRead)
     cache->AddSchema (*emptySchema);
     auto schemaStat = ecdb.GetSchemaManager().ImportECSchemas(*cache);
     ASSERT_EQ (SUCCESS, schemaStat) << "Importing empty ECSchema failed";
-    ecdb.ClearCache();
+    ecdb.ClearECDbCache();
     ECSchemaCP stroedEmptySchema = ecdb. GetSchemaManager ().GetECSchema ("EmptyECSchema");
     ASSERT_TRUE (stroedEmptySchema != nullptr);
     }
@@ -1988,7 +1986,7 @@ TEST (ECDbSchemas, ArrayPropertyTest)
     ECDbTestProject saveTestProject;
 
     ECDbR db = saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
-    db.ClearCache ();
+    db.ClearECDbCache();
     ECSchemaCP startupCompanySchema = db. GetSchemaManager ().GetECSchema ("StartupCompany", true);
     ASSERT_TRUE (startupCompanySchema != nullptr);
 
@@ -2108,7 +2106,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     LOG.infov (L"Comparing Db %ls to disk version Took : %.4lf seconds", openPlant3D->GetFullSchemaName().c_str(), s1.GetElapsedSeconds());
 
     //////////////////////////////////////////////////////////////////////
-    db.ClearCache ();
+    db.ClearECDbCache();
     DbECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov(L"No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
@@ -2688,7 +2686,7 @@ TEST_F(ECDbSchemaFixture,TestDuplicateNamespacePrefix)
 
     auto status = db.GetSchemaManager ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions (true, false));
     ASSERT_EQ (SUCCESS, status);
-    db.ClearCache();
+    db.ClearECDbCache();
     for(auto& x : data)
         {
         auto name       = x[0];

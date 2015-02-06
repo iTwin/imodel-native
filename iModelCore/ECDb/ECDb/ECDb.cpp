@@ -150,15 +150,15 @@ ECN::IECClassLocaterR ECDb::GetClassLocater () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ClearCache () const
+void ECDb::ClearECDbCache() const
     {
-    m_pimpl->ClearCache ();
+    m_pimpl->ClearECDbCache();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl& ECDb::GetImplR () const
+ECDb::Impl& ECDb::GetECDbImplR () const
     {
     BeAssert (m_pimpl != nullptr);
     return *m_pimpl;

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECSqlStatement_Tests.cpp $
+|  $Source: Tests/Published/ECSqlStatement_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -1776,7 +1776,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IGeometry)
         }
 
     ecdb.SaveChanges ();
-    ecdb.ClearCache ();
+    ecdb.ClearECDbCache();
 
     //now verify the inserts
 

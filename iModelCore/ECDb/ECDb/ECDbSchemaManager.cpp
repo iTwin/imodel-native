@@ -241,7 +241,7 @@ IImportIssueListener const* userProvidedIssueListener
         return ERROR;
     //Clear cache in case we have diffs
     if (!diffs.empty ())
-        m_ecdb.ClearCache ();
+        m_ecdb.ClearECDbCache();
 
     return SUCCESS;
     }

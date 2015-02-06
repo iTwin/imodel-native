@@ -3565,7 +3565,7 @@ DbResult ECDbSqlPersistence::InsertForiegnKey (ECDbSqlForiegnKeyConstraint const
 ECDbTableId ECDbRepositoryBaseId::_NextTableId ()
     {
     BeRepositoryBasedId id;
-    if (m_ecdb.GetImplR ().GetTableIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetTableIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new tableId");
         return 0;
@@ -3580,7 +3580,7 @@ ECDbTableId ECDbRepositoryBaseId::_NextTableId ()
 ECDbColumnId ECDbRepositoryBaseId::_NextColumnId ()
     {
     BeRepositoryBasedId id;
-    if (m_ecdb.GetImplR ().GetColumnIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetColumnIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new columnid");
         return 0;
@@ -3595,7 +3595,7 @@ ECDbColumnId ECDbRepositoryBaseId::_NextColumnId ()
 ECDbIndexId ECDbRepositoryBaseId::_NextIndexId ()
     {
     BeRepositoryBasedId id;
-    if (m_ecdb.GetImplR ().GetIndexIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetIndexIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new indexid");
         return 0;
@@ -3610,7 +3610,7 @@ ECDbIndexId ECDbRepositoryBaseId::_NextIndexId ()
 ECDbConstraintId ECDbRepositoryBaseId::_NextConstraintId ()
     {
     BeRepositoryBasedId id;
-    if (m_ecdb.GetImplR ().GetConstraintIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetConstraintIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new constraintid");
         return 0;
@@ -3624,7 +3624,7 @@ ECDbConstraintId ECDbRepositoryBaseId::_NextConstraintId ()
 ECDbClassMapId ECDbRepositoryBaseId::_NextClassMapId ()
     {
     BeRepositoryBasedId id;
-    if (m_ecdb.GetImplR ().GetClassMapIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetClassMapIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new constraintid");
         return 0;
@@ -3638,7 +3638,7 @@ ECDbClassMapId ECDbRepositoryBaseId::_NextClassMapId ()
 ECDbPropertyPathId ECDbRepositoryBaseId::_NextPropertyPathId ()
     {
     BeRepositoryBasedId id;
-    if (m_ecdb.GetImplR ().GetPropertyMapIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
+    if (m_ecdb.GetECDbImplR().GetPropertyMapIdSequence ().GetNextValue (id) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to generate new constraintid");
         return 0;

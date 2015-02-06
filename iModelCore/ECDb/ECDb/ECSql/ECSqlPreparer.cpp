@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1584,7 +1584,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
             }
         else
             {
-            auto structRootMap = preparedStatement->GetECDbR ().GetImplR ().GetECDbMap ().GetClassMap (*structRoot);
+            auto structRootMap = preparedStatement->GetECDbR ().GetECDbImplR().GetECDbMap ().GetClassMap (*structRoot);
             auto sourcePropertyMap = structRootMap->GetPropertyMap(sourcePropertyPath.c_str());
 
             auto nativeSqlSnippets = sourcePropertyMap->ToNativeSql (classAlias, ctx.GetCurrentScope ().GetECSqlType ());
