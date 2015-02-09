@@ -164,6 +164,6 @@ END_BENTLEY_SQLITE_EC_NAMESPACE
     {\
         classname() : subclassname() {} \
         classname (ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : subclassname (classId, instanceId) {} \
-        static classname FromECInstanceKey (BeSQLite::EC::ECInstanceKeyCR key) {return classname (key.GetECClassId(), key.GetECInstanceId());} \
+        explicit classname (BeSQLite::EC::ECInstanceKeyCR key) : subclassname (key) {} \
     };\
     typedef classname const& classname##CR;
