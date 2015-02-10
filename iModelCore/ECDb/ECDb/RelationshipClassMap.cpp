@@ -1246,6 +1246,8 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName (Utf8Str
 
     if (GetMapStrategy() == MapStrategy::SharedTableForThisClass)
         return true;
+    if (GetMapStrategy() == MapStrategy::InParentTable)
+        return true;
     //Following error occure in Upgrading ECSchema but is not fatal.
     LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());
@@ -1265,7 +1267,8 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
 
     if (GetMapStrategy() == MapStrategy::SharedTableForThisClass)
         return true;
-
+    if (GetMapStrategy() == MapStrategy::InParentTable)
+        return true;
     //Following error occure in Upgrading ECSchema but is not fatal.
     LOG.errorv (L"Table %s already contains column named %s. ECRelationship %s has failed to map.", 
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());

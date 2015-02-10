@@ -103,11 +103,11 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy)
-: m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_mapToExistingTable (false),
+    : m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_ecInstanceIdColumnName(primaryKeyColumnName), m_tableName(tableName), m_mapToExistingTable(false), m_parentClassMap(nullptr),
 m_mapStrategy(mapStrategy), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_replaceEmptyTableWithEmptyView(true), m_ClassHasCurrentTimeStampProperty(NULL), m_useSharedColumnStrategy(false)
     {
     if (Utf8String::IsNullOrEmpty (tableName))
-        InitializeFromSchema ();
+        _InitializeFromSchema ();
 
     //Default values for table name and primary key column name
     if (m_tableName.empty ())
@@ -212,7 +212,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMapInfo::InitializeFromSchema ()
+void ClassMapInfo::_InitializeFromSchema ()
     {
     InitializeFromClassHint ();
     InitializeFromClassHasCurrentTimeStampProperty();
@@ -477,15 +477,16 @@ ClassMapInfoPtr RelationshipClassMapInfo::Create (ECRelationshipClassCR relation
         m_allowDuplicateRelationships(TriState::Default)
     {
 
-    InitializeFromSchema (); //Necessary even when loading from db as part of the info is held in the hint CA stored in the db
+    _InitializeFromSchema (); //Necessary even when loading from db as part of the info is held in the hint CA stored in the db
     DetermineCardinality ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassMapInfo::InitializeFromSchema ()
+void RelationshipClassMapInfo::_InitializeFromSchema ()
     {  
+    ClassMapInfo::_InitializeFromSchema();
     auto relClass = GetECClass ().GetRelationshipClassCP ();
     BeAssert (relClass != nullptr);
     auto relClassHint = RelationshipClassHintReader::ReadHint (*relClass);
@@ -539,7 +540,7 @@ MapStatus RelationshipClassMapInfo::_EvaluateMapStrategy ()
 
     if (IClassMap::IsDoNotMapStrategy (m_mapStrategy))
         return MapStatus::Success;
-
+  
     return DetermineRelationshipMapStrategy ();
     }
 
@@ -554,7 +555,21 @@ MapStatus RelationshipClassMapInfo::DetermineRelationshipMapStrategy ()
         m_mapStrategy = MapStrategy::DoNotMap;
         return MapStatus::Success;
         }
-
+    if (m_mapStrategy == MapStrategy::TablePerHierarchy)
+        {
+        //m_mapStrategy = MapStrategy::TableForThisClass;
+        return MapStatus::Success;
+        }
+    if (GetParentClassMap() != nullptr)
+        {
+        auto classMap = GetParentClassMap();
+        if (classMap->GetMapStrategy() == MapStrategy::InParentTable || classMap->GetMapStrategy() == MapStrategy::TablePerHierarchy)
+            {
+            m_mapStrategy = MapStrategy::InParentTable;
+            return MapStatus::Success;
+            }
+        }
+    
     if (m_mapStrategy == MapStrategy::SharedTableForThisClass)
         return MapStatus::Success;
 
