@@ -2,7 +2,7 @@
 #
 #     $Source: LinkDgnDbPublisherIntoToolContext.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
@@ -13,12 +13,9 @@ PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 always:
     !~@mkdir $(OutputRootDir)ToolContext
 
-#$(OutputRootDir)ToolContext/DgnDbPublisher.exe : $(OutputRootDir)Product/SampleIDgnToIDgnDbPublisher/SampleIDgnToIDgnDbPublisher.exe
-#    $(LinkFirstDepToFirstTarget)
-    
-$(OutputRootDir)ToolContext/DgnDbPublisher.bat : $(OutputRootDir)Product/SampleDgnV8Converter/SampleDgnV8Converter.exe $(_MakeFileSpec)
+$(OutputRootDir)ToolContext/DgnDbPublisher.bat : $(OutputRootDir)Product/DgnV8Converter/DgnV8Converter.exe $(_MakeFileSpec)
     $(msg)
     >$@
-    $(OutputRootDir)Product/SampleDgnV8Converter/SampleDgnV8Converter.exe %*
+    $(OutputRootDir)Product/DgnV8Converter/DgnV8Converter.exe %*
     <
     ~time  
