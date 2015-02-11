@@ -213,12 +213,14 @@ TEST_F (WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerN
     {
     auto client = WSClient::Create ("https://srv.com/ws", {}, GetHandlerPtr ());
 
-    static int listenerCallCount = 0;
+    int listenerCallCount = 0;
     struct StubServerInfoListener : public IWSClient::IServerInfoListener
         {
+        int& m_listenerCallCount;
+        StubServerInfoListener (int& listenerCallCount) : m_listenerCallCount (listenerCallCount) {}
         void OnServerInfoReceived (WSInfoCR info)
             {
-            listenerCallCount ++;
+            m_listenerCallCount++;
             }
         };
 
@@ -227,7 +229,7 @@ TEST_F (WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerN
         return StubWSInfoHttpResponse (BeVersion (1, 2));
         });
 
-    auto listener = std::make_shared<StubServerInfoListener> ();
+    auto listener = std::make_shared<StubServerInfoListener> (listenerCallCount);
     client->RegisterServerInfoListener (listener);
     EXPECT_EQ (0, listenerCallCount);
 
