@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapInfo.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -39,33 +39,40 @@ ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, Schem
     if (!ClassMap::IsDoNotMapStrategy (info->GetMapStrategy ()))
         {
         auto validationResult = schemaImportContext.GetSchemaValidationResult (ecClass.GetSchema ());
-        for (auto& error : validationResult->GetErrors ())
+        if (validationResult != nullptr)
             {
-            if (error->GetRuleType () == ECSchemaValidationRule::Type::CaseInsensitiveClassNames)
+            for (auto& error : validationResult->GetErrors ())
                 {
-                auto casingError = static_cast<CaseInsensitiveClassNamesRule::Error const*> (error.get ());
-                auto invalidClasses = casingError->TryGetInvalidClasses (ecClass);
-                if (invalidClasses != nullptr)
+                if (error->GetRuleType () == ECSchemaValidationRule::Type::CaseInsensitiveClassNames)
                     {
-                    for (auto invalidClass : *invalidClasses)
+                    auto casingError = static_cast<CaseInsensitiveClassNamesRule::Error const*> (error.get ());
+                    auto invalidClasses = casingError->TryGetInvalidClasses (ecClass);
+                    if (invalidClasses != nullptr)
                         {
-                        if (invalidClass == &ecClass) //don't check the class against itself.
-                            continue;
-
-                        auto classMap = ecDbMap.GetClassMap (*invalidClass, false);
-                        if (classMap == nullptr)
-                            continue;
-
-                        //Relationship classes for which the name only differs by case are not supported by ECDb (in contrast to regular ECClasses)
-                        if (ecClass.GetRelationshipClassCP () != nullptr && classMap->IsRelationshipClassMap ())
+                        for (auto invalidClass : *invalidClasses)
                             {
-                            info->m_mapStrategy = MapStrategy::DoNotMap;
-                            schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Warning,
-                                "Did not map ECRelationshipClass '%s': ECRelationshipClasses for which names only differ by case are not supported by ECDb.", Utf8String (ecClass.GetFullName ()).c_str ());
+                            if (invalidClass == &ecClass) //don't check the class against itself.
+                                continue;
+
+                            auto classMap = ecDbMap.GetClassMap (*invalidClass, false);
+                            if (classMap == nullptr)
+                                continue;
+
+                            //Relationship classes for which the name only differs by case are not supported by ECDb (in contrast to regular ECClasses)
+                            if (ecClass.GetRelationshipClassCP () != nullptr && classMap->IsRelationshipClassMap ())
+                                {
+                                info->m_mapStrategy = MapStrategy::DoNotMap;
+                                schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Warning,
+                                                                                "Did not map ECRelationshipClass '%s': ECRelationshipClasses for which names only differ by case are not supported by ECDb.", Utf8String (ecClass.GetFullName ()).c_str ());
+                                }
                             }
                         }
                     }
                 }
+            }
+        else
+            {
+            LOG.fatalv (L"Programmer error: No schema validation result found for ECSchema %ls", ecClass.GetSchema ().GetName ().c_str ());
             }
         }
 
