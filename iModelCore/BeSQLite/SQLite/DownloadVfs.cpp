@@ -2,7 +2,7 @@
 |
 |     $Source: SQLite/DownloadVfs.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/DownloadAdmin.h>
@@ -419,9 +419,9 @@ void ChunkReceiveQueue::_OnChunkReceived(ChunkBuffer& chunk)
     BeAssert (g_dlVfsThreadId.InRequesterThread());
     DBG_LOG (3, "Received chunk %d\n", (int)chunk.GetChunkNo());
 
-    BeCriticalSectionHolder _v (m_chunkAvaliable.GetCriticalSection());
+    BeMutexHolder _v (m_chunkAvaliable.GetMutex());
     m_dlChunks.push (&chunk);
-    m_chunkAvaliable.Wake(true);
+    m_chunkAvaliable.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -432,7 +432,7 @@ bool ChunkReceiveQueue::recv_ProcessNextAvailableChunk()
     {
     BeAssert (g_dlVfsThreadId.InReceiverThread());
 
-    BeCriticalSectionHolder _v (m_chunkAvaliable.GetCriticalSection());
+    BeMutexHolder _v (m_chunkAvaliable.GetMutex());
     ChunkBuffer* chunk=NULL;
     if (m_aborted || m_dlChunks.empty())
         return false;
@@ -454,10 +454,10 @@ bool ChunkReceiveQueue::recv_ProcessNextAvailableChunk()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChunkReceiveQueue::Abort()
     {
-    BeCriticalSectionHolder _v (m_chunkAvaliable.GetCriticalSection());
+    BeMutexHolder _v (m_chunkAvaliable.GetMutex());
     m_aborted = true;
     m_dlFile = NULL;
-    m_chunkAvaliable.Wake (true);
+    m_chunkAvaliable.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -467,7 +467,7 @@ void ChunkReceiveQueue::Abort()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChunkReceiveQueue::recv_WaitForChunkAvailable()
     {
-    BeCriticalSectionHolder _v (m_chunkAvaliable.GetCriticalSection());
+    BeMutexHolder _v (m_chunkAvaliable.GetMutex());
 
     if (IsAborted())
         return false;
@@ -476,7 +476,7 @@ bool ChunkReceiveQueue::recv_WaitForChunkAvailable()
         return true;
 
     // no more chunks available. Wait until more come down from server. The timeout is so we can preemptively request chunks
-    m_chunkAvaliable.ProtectedWaitOnCondition (NULL, m_dlFile->GetPreemptiveDelay() / 2);
+    m_chunkAvaliable.ProtectedWaitOnCondition (_v, NULL, m_dlFile->GetPreemptiveDelay() / 2);
 
     DBG_LOG (3, "receive queue triggered, abort=%d\n", IsAborted());
     return !IsAborted();
@@ -494,7 +494,7 @@ void ChunkReceiveQueue::recv_ReceiveChunkLoop()
         while (recv_ProcessNextAvailableChunk())
             {}
 
-        BeCriticalSectionHolder _v (m_chunkAvaliable.GetCriticalSection());
+        BeMutexHolder _v (m_chunkAvaliable.GetMutex());
         if (m_dlFile)
             {
             m_dlFile->CheckPreemptiveRequest();
@@ -511,9 +511,9 @@ void ChunkReceiveQueue::recv_ReceiveChunkLoop()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChunkRequestQueue::Abort()
     {
-    BeCriticalSectionHolder _v (m_chunkNeeded.GetCriticalSection());
+    BeMutexHolder _v (m_chunkNeeded.GetMutex());
     m_aborted=true;
-    m_chunkNeeded.Wake (true);
+    m_chunkNeeded.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -522,7 +522,7 @@ void ChunkRequestQueue::Abort()
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t ChunkRequestQueue::req_GetNextRequestedChunk()
     {
-    BeCriticalSectionHolder _v (m_chunkNeeded.GetCriticalSection());
+    BeMutexHolder _v (m_chunkNeeded.GetMutex());
     if (m_chunksToFetch.empty())
         return  INVALID_CHUNK;
 
@@ -537,7 +537,7 @@ uint32_t ChunkRequestQueue::req_GetNextRequestedChunk()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChunkRequestQueue::req_WaitForChunkRequest()
     {
-    BeCriticalSectionHolder _v (m_chunkNeeded.GetCriticalSection());
+    BeMutexHolder _v (m_chunkNeeded.GetMutex());
     if (IsAborted())
         return false;
 
@@ -545,7 +545,7 @@ bool ChunkRequestQueue::req_WaitForChunkRequest()
         return true;
 
     DBG_LOG (4, "Wait for request\n");
-    m_chunkNeeded.ProtectedWaitOnCondition (NULL, BeConditionVariable::Infinite);
+    m_chunkNeeded.ProtectedWaitOnCondition (_v, NULL, BeConditionVariable::Infinite);
     DBG_LOG (3, "Received request\n");
 
     return !IsAborted();
@@ -611,9 +611,9 @@ void ChunkRequestQueue::QueueChunkRequest(uint32_t chunkNo)
         return;
 
     DBG_LOG (2,"requesting page %d\n", (unsigned int) chunkNo);
-    BeCriticalSectionHolder _v (m_chunkNeeded.GetCriticalSection());
+    BeMutexHolder _v (m_chunkNeeded.GetMutex());
     m_chunksToFetch.push_front(chunkNo);
-    m_chunkNeeded.Wake(true);
+    m_chunkNeeded.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,7 +904,7 @@ void DownloadFile::recv_OnChunkAvailable (ChunkBuffer const& chunk)
     BeAssert (g_dlVfsThreadId.InReceiverThread());
     BeAssert (!m_done);
 
-    BeCriticalSectionHolder _v (m_chunkWait.GetCriticalSection());
+    BeMutexHolder _v (m_chunkWait.GetMutex());
 
     uint32_t chunkNo = chunk.GetChunkNo();
     if (m_chunkArray->CheckChunk(chunkNo))
@@ -950,7 +950,7 @@ void DownloadFile::recv_OnChunkAvailable (ChunkBuffer const& chunk)
 
     // mark the chunks as now valid, and wake up waiting threads.
     m_done = m_chunkArray->SetChunkValid (chunkNo);
-    m_chunkWait.Wake(true);
+    m_chunkWait.notify_all();
 
     if (m_done)
         {
@@ -968,7 +968,7 @@ void DownloadFile::wt_WaitForChunk ()
     BeAssert (g_dlVfsThreadId.InMainThread());
     BeAssert (m_waitingChunk != INVALID_CHUNK);
 
-    BeCriticalSectionHolder _v (m_chunkWait.GetCriticalSection());
+    BeMutexHolder _v (m_chunkWait.GetMutex());
     DBG_LOG (3,"waiting for %d \n", (unsigned int) m_waitingChunk);
 
     while (!IsChunkValid(m_waitingChunk))
@@ -982,7 +982,7 @@ void DownloadFile::wt_WaitForChunk ()
                 }
             }
 
-        m_chunkWait.ProtectedWaitOnCondition (NULL, GetDownloadTimeout()/2);
+        m_chunkWait.ProtectedWaitOnCondition(_v, NULL, GetDownloadTimeout()/2);
         }
 
     DBG_LOG (3,"got chunk %d \n",(unsigned int) m_waitingChunk);
@@ -999,7 +999,7 @@ void DownloadFile::wt_WaitForChunk ()
 void DownloadFile::RequestChunk(uint32_t chunkNo, bool directRequest)
     {
     BeAssert (g_dlVfsThreadId.InMainThread() || g_dlVfsThreadId.InReceiverThread());
-    BeCriticalSectionHolder _v (m_chunkWait.GetCriticalSection());
+    BeMutexHolder _v (m_chunkWait.GetMutex());
 
     if (m_waitingChunk != INVALID_CHUNK)
         {

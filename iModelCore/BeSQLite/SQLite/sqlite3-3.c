@@ -6865,8 +6865,8 @@ static int balance_nonroot(
           /* Do not allow any cells smaller than 4 bytes. If a smaller cell
           ** does exist, pad it with 0x00 bytes. */
           assert( szCell[nCell]==3 );
-          assert( apCell[nCell]==&pTemp[iSpace1-3] );
-          pTemp[iSpace1++] = 0x00;
+          assert( apCell[nCell]==&aSpace1[iSpace1-3] );
+          aSpace1[iSpace1++] = 0x00;
           szCell[nCell] = 4;
         }
       }
@@ -9146,7 +9146,7 @@ SQLITE_PRIVATE int sqlite3BtreeIsReadonly(Btree *p){
 /*
 ** Return the size of the header added to each page by this module.
 */
-SQLITE_PRIVATE int sqlite3HeaderSizeBtree(void){ return sizeof(MemPage); }
+SQLITE_PRIVATE int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
 
 /************** End of btree.c ***********************************************/
 /************** Begin file backup.c ******************************************/
@@ -25938,12 +25938,12 @@ SQLITE_PRIVATE void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 */
 static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
   if( nByte<=(i64)(db->nMaxSorterMmap) && pFd->pMethods->iVersion>=3 ){
-    int rc = sqlite3OsTruncate(pFd, nByte);
-    if( rc==SQLITE_OK ){
-      void *p = 0;
-      sqlite3OsFetch(pFd, 0, (int)nByte, &p);
-      sqlite3OsUnfetch(pFd, 0, p);
-    }
+    void *p = 0;
+    int chunksize = 4*1024;
+    sqlite3OsFileControlHint(pFd, SQLITE_FCNTL_CHUNK_SIZE, &chunksize);
+    sqlite3OsFileControlHint(pFd, SQLITE_FCNTL_SIZE_HINT, &nByte);
+    sqlite3OsFetch(pFd, 0, (int)nByte, &p);
+    sqlite3OsUnfetch(pFd, 0, p);
   }
 }
 #else

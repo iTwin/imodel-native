@@ -3917,24 +3917,27 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
       }while( err==EINTR );
       if( err ) return SQLITE_IOERR_WRITE;
 #else
-      /* If the OS does not have posix_fallocate(), fake it. First use
-      ** ftruncate() to set the file size, then write a single byte to
-      ** the last byte in each block within the extended region. This
-      ** is the same technique used by glibc to implement posix_fallocate()
-      ** on systems that do not have a real fallocate() system call.
+      /* If the OS does not have posix_fallocate(), fake it. Write a 
+      ** single byte to the last byte in each block that falls entirely
+      ** within the extended region. Then, if required, a single byte
+      ** at offset (nSize-1), to set the size of the file correctly.
+      ** This is a similar technique to that used by glibc on systems
+      ** that do not have a real fallocate() call.
       */
       int nBlk = buf.st_blksize;  /* File-system block size */
       i64 iWrite;                 /* Next offset to write to */
 
-      if( robust_ftruncate(pFile->h, nSize) ){
-        pFile->lastErrno = errno;
-        return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
-      }
       iWrite = ((buf.st_size + 2*nBlk - 1)/nBlk)*nBlk-1;
-      while( iWrite<nSize ){
+      assert( iWrite>=buf.st_size );
+      assert( (iWrite/nBlk)==((buf.st_size+nBlk-1)/nBlk) );
+      assert( ((iWrite+1)%nBlk)==0 );
+      for(/*no-op*/; iWrite<nSize; iWrite+=nBlk ){
         int nWrite = seekAndWrite(pFile, iWrite, "", 1);
         if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
-        iWrite += nBlk;
+      }
+      if( nSize%nBlk ){
+        int nWrite = seekAndWrite(pFile, nSize-1, "", 1);
+        if( nWrite!=1 ) return SQLITE_IOERR_WRITE;
       }
 #endif
     }
@@ -14112,7 +14115,8 @@ SQLITE_PRIVATE int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
   if( pCache->szPage ){
     sqlite3_pcache *pNew;
     pNew = sqlite3GlobalConfig.pcache2.xCreate(
-                szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
+                szPage, pCache->szExtra + ROUND8(sizeof(PgHdr)),
+                pCache->bPurgeable
     );
     if( pNew==0 ) return SQLITE_NOMEM;
     sqlite3GlobalConfig.pcache2.xCachesize(pNew, numberOfCachePages(pCache));
@@ -14571,7 +14575,7 @@ SQLITE_PRIVATE void sqlite3PcacheShrink(PCache *pCache){
 ** Return the size of the header added by this middleware layer
 ** in the page-cache hierarchy.
 */
-SQLITE_PRIVATE int sqlite3HeaderSizePcache(void){ return sizeof(PgHdr); }
+SQLITE_PRIVATE int sqlite3HeaderSizePcache(void){ return ROUND8(sizeof(PgHdr)); }
 
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
@@ -14887,7 +14891,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
     pPg = 0;
   }
 #else
-  pPg = pcache1Alloc(sizeof(PgHdr1) + pCache->szPage + pCache->szExtra);
+  pPg = pcache1Alloc(ROUND8(sizeof(PgHdr1)) + pCache->szPage + pCache->szExtra);
   p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
 #endif
   pcache1EnterMutex(pCache->pGroup);
@@ -15575,7 +15579,7 @@ SQLITE_PRIVATE void sqlite3PCacheSetDefault(void){
 /*
 ** Return the size of the header on each page of this PCACHE implementation.
 */
-SQLITE_PRIVATE int sqlite3HeaderSizePcache1(void){ return sizeof(PgHdr1); }
+SQLITE_PRIVATE int sqlite3HeaderSizePcache1(void){ return ROUND8(sizeof(PgHdr1)); }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*
@@ -16934,6 +16938,7 @@ struct Pager {
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
   u8 subjInMemory;            /* True to use in-memory sub-journals */
   u8 bUseFetch;               /* True to use xFetch() */
+  u8 hasBeenUsed;             /* True if any content previously read from this pager*/
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
   Pgno dbFileSize;            /* Number of pages in the database file */
@@ -20184,7 +20189,7 @@ static int pagerAcquireMapPage(
   PgHdr **ppPage                  /* OUT: Acquired page object */
 ){
   PgHdr *p;                       /* Memory mapped page to return */
-
+  
   if( pPager->pMmapFreelist ){
     *ppPage = p = pPager->pMmapFreelist;
     pPager->pMmapFreelist = p->pDirty;
@@ -21415,16 +21420,12 @@ SQLITE_PRIVATE int sqlite3PagerSharedLock(Pager *pPager){
       );
     }
 
-    if( !pPager->tempFile && (
-        pPager->pBackup 
-     || sqlite3PcachePagecount(pPager->pPCache)>0 
-     || USEFETCH(pPager)
-    )){
-      /* The shared-lock has just been acquired on the database file
-      ** and there are already pages in the cache (from a previous
-      ** read or write transaction).  Check to see if the database
-      ** has been modified.  If the database has changed, flush the
-      ** cache.
+    if( !pPager->tempFile && pPager->hasBeenUsed ){
+      /* The shared-lock has just been acquired then check to
+      ** see if the database has been modified.  If the database has changed,
+      ** flush the cache.  The pPager->hasBeenUsed flag prevents this from
+      ** occurring on the very first access to a file, in order to save a
+      ** single unnecessary sqlite3OsRead() call at the start-up.
       **
       ** Database changes is detected by looking at 15 bytes beginning
       ** at offset 24 into the file.  The first 4 of these 16 bytes are
@@ -21589,6 +21590,7 @@ SQLITE_PRIVATE int sqlite3PagerAcquire(
   if( pgno==0 ){
     return SQLITE_CORRUPT_BKPT;
   }
+  pPager->hasBeenUsed = 1;
 
   /* If the pager is in the error state, return an error immediately. 
   ** Otherwise, request the page from the PCache layer. */
@@ -21738,6 +21740,7 @@ SQLITE_PRIVATE DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   assert( pgno!=0 );
   assert( pPager->pPCache!=0 );
   pPage = sqlite3PcacheFetch(pPager->pPCache, pgno, 0);
+  assert( pPage==0 || pPager->hasBeenUsed );
   return sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pPage);
 }
 
@@ -25974,7 +25977,7 @@ SQLITE_PRIVATE int sqlite3WalFindFrame(
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
       if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
-        /* assert( iFrame>iRead ); -- not true if there is corruption */
+        assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }
       if( (nCollide--)==0 ){

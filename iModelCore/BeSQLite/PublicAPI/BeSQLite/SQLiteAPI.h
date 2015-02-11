@@ -81,7 +81,7 @@ extern "C" {
 /*
 ** These no-op macros are used in front of interfaces to mark those
 ** interfaces as either deprecated or experimental.  New applications
-** should not use deprecated interfaces - they are support for backwards
+** should not use deprecated interfaces - they are supported for backwards
 ** compatibility only.  Application writers should be aware that
 ** experimental interfaces are subject to change in point releases.
 **
@@ -1594,7 +1594,7 @@ struct sqlite3_mem_methods {
 ** 8-byte aligned
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument should be the size of the largest database page
-** (a power of two between 512 and 32768) plus some extra bytes for each
+** (a power of two between 512 and 65536) plus some extra bytes for each
 ** page header.  ^The number of extra bytes needed by the page header
 ** can be determined using the [SQLITE_CONFIG_PCACHE_HDRSZ] option 
 ** to [sqlite3_config()].
@@ -4200,7 +4200,7 @@ SQLITE_API int sqlite3_create_function_v2(
 #define SQLITE_UTF8           1    /* IMP: R-37514-35566 */
 #define SQLITE_UTF16LE        2    /* IMP: R-03371-37637 */
 #define SQLITE_UTF16BE        3    /* IMP: R-51971-34154 */
-#define SQLITE_UTF16          4    /* Use native Byte order */
+#define SQLITE_UTF16          4    /* Use native byte order */
 #define SQLITE_ANY            5    /* Deprecated */
 #define SQLITE_UTF16_ALIGNED  8    /* sqlite3_create_collation only */
 

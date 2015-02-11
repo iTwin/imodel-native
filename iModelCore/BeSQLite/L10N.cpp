@@ -27,7 +27,7 @@ Utf8String L10NLookup::SQLangDb::GetString(Utf8CP scope, int id, bool& hasString
         DbResult rc = GetCachedStatement(stmt, "SELECT Value FROM " L10N_TABLE_Strings " WHERE Namespace=? AND Id=?");
         BeAssert (rc == BE_SQLITE_OK);
 
-        stmt->BindText(1, scope, Statement::MAKE_COPY_No);
+        stmt->BindText(1, scope, Statement::MakeCopy::No);
         stmt->BindInt(2, id);
 
         rc = stmt->Step();
@@ -53,8 +53,8 @@ Utf8String L10NLookup::SQLangDb::GetString (Utf8CP scope, Utf8CP name, bool& has
         DbResult rc = GetCachedStatement(stmt, "SELECT Value FROM " L10N_TABLE_Strings " WHERE Namespace=? AND ResName=?");
         BeAssert (rc == BE_SQLITE_OK);
 
-        stmt->BindText(1, scope, Statement::MAKE_COPY_No);
-        stmt->BindText(2, name, Statement::MAKE_COPY_No);
+        stmt->BindText(1, scope, Statement::MakeCopy::No);
+        stmt->BindText(2, name, Statement::MakeCopy::No);
 
         rc = stmt->Step();
         if (BE_SQLITE_ROW == rc)
@@ -206,10 +206,7 @@ void L10N::Shutdown() {DELETE_AND_CLEAR(s_lookup);}
 void L10N::Suspend()
     {
     if (NULL == s_lookup)
-        {
-        BeAssert(false); // Call L10N::Initialize first
         return;
-        }
 
     s_lookup->Suspend();
     }
@@ -220,10 +217,7 @@ void L10N::Suspend()
 void L10N::Resume()
     {
     if (NULL == s_lookup)
-        {
-        BeAssert(false); // Call L10N::Initialize first
         return;
-        }
 
     s_lookup->Resume();
     }

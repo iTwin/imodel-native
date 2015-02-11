@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
@@ -639,7 +639,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
         primaryStmt.ClearBindings ();
         primaryStmt.BindInt (1, i);
         primaryStmt.BindDouble (2, i * 3.1415);
-        primaryStmt.BindText (3, "Some text", Statement::BindMakeCopy::MAKE_COPY_Yes);
+        primaryStmt.BindText (3, "Some text", Statement::MakeCopy::Yes);
         primaryStmt.BindInt (4, -i);
 
         stat = primaryStmt.Step ();
@@ -666,7 +666,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
             secondaryStmt.ClearBindings ();
             secondaryStmt.BindInt (1, i);
             secondaryStmt.BindInt (2, j);
-            secondaryStmt.BindText (3, "Some text", Statement::BindMakeCopy::MAKE_COPY_Yes);
+            secondaryStmt.BindText (3, "Some text", Statement::MakeCopy::Yes);
             secondaryStmt.BindInt (4, i*j);
 
             stat = secondaryStmt.Step ();
@@ -697,7 +697,7 @@ Utf8String PopulateDeleteCascadingTestDb (WCharCP dbFileName, bool withIndex, bo
                 ternaryStmt.BindInt (1, i);
                 ternaryStmt.BindInt (2, j);
                 ternaryStmt.BindInt (3, k);
-                ternaryStmt.BindText (4, "Some text", Statement::BindMakeCopy::MAKE_COPY_Yes);
+                ternaryStmt.BindText (4, "Some text", Statement::MakeCopy::Yes);
                 ternaryStmt.BindDouble (5, i*j*k*3.14);
 
                 stat = ternaryStmt.Step ();

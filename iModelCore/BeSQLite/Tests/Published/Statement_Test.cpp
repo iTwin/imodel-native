@@ -66,8 +66,8 @@ TEST(StatementTests, NewStatement)
     EXPECT_EQ (BE_SQLITE_ROW, stat1.Step());
     //Verify data
     EXPECT_EQ (2, stat1.GetColumnCount()); //there are 2 columns in linestyles table
-    EXPECT_EQ (BE_SQLITE_INTEGER, stat1.GetColumnType(0));
-    EXPECT_EQ (BE_SQLITE_TEXT, stat1.GetColumnType(1));
+    EXPECT_EQ (DbValueType::IntegerVal, stat1.GetColumnType(0));
+    EXPECT_EQ (DbValueType::TextVal, stat1.GetColumnType(1));
     EXPECT_TRUE (stat1.IsColumnNull(2));
     EXPECT_FALSE (stat1.IsColumnNull(1));
     EXPECT_STREQ ("lsId", stat1.GetColumnName(0));
@@ -180,7 +180,7 @@ TEST(StatementTests, BindToStatement)
     
     result = stat2.BindInt (1, 20);
     EXPECT_EQ (result, BE_SQLITE_OK) << " The result is: " << result;
-    result = stat2.BindText (2, "BLOCK", Statement::MAKE_COPY_No);
+    result = stat2.BindText (2, "BLOCK", Statement::MakeCopy::No);
     EXPECT_EQ (result, BE_SQLITE_OK) << " The result is: " << result;
     //Execute command and verify data
     EXPECT_EQ (BE_SQLITE_DONE, stat2.Step());

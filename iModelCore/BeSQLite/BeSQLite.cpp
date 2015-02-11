@@ -31,11 +31,8 @@
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"BeSQLite"))
 
-#define DELETE_AND_CLEAR(ptr) {if(ptr){delete (ptr); ptr=NULL;}}
-#define RUNONCE_CHECK(var)    {if(var) return; var=true;}
-
-// this is used to quiet compiler warnings for variables only used in BeAsserts
-#define UNUSED_VARIABLE(x) (void)(x)
+#define DELETE_AND_CLEAR(ptr)   {if(ptr){delete (ptr); ptr=NULL;}}
+#define RUNONCE_CHECK(var,stat) {if(var) return stat; var=true;}
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -322,12 +319,12 @@ void        Statement::Finalize() {if(m_stmt){sqlite3_finalize(m_stmt);m_stmt=NU
 DbResult    Statement::Step() { return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
 DbResult    Statement::ClearBindings() { return m_stmt ? (DbResult)sqlite3_clear_bindings(m_stmt): BE_SQLITE_ERROR;}
-DbResult    Statement::BindInt (int col, int val)           { return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
-DbResult    Statement::BindInt64 (int col, int64_t val)       { return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
-DbResult    Statement::BindDouble (int col, double val)     { return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
-DbResult    Statement::BindText (int col, Utf8CP val, BindMakeCopy makeCopy, int nBytes) { return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy ? SQLITE_TRANSIENT : SQLITE_STATIC);}
+DbResult    Statement::BindInt (int col, int val)        { return (DbResult)sqlite3_bind_int(m_stmt, col, val);}
+DbResult    Statement::BindInt64 (int col, int64_t val)  { return (DbResult)sqlite3_bind_int64(m_stmt, col, val);}
+DbResult    Statement::BindDouble (int col, double val)  { return (DbResult)sqlite3_bind_double(m_stmt, col, val);}
+DbResult    Statement::BindText (int col, Utf8CP val, MakeCopy makeCopy, int nBytes) { return (DbResult)sqlite3_bind_text(m_stmt, col, val, nBytes, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindZeroBlob (int col, int size) { return (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);}
-DbResult    Statement::BindBlob (int col, void const* val, int size, BindMakeCopy makeCopy) { return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy ? SQLITE_TRANSIENT : SQLITE_STATIC);}
+DbResult    Statement::BindBlob (int col, void const* val, int size, MakeCopy makeCopy) { return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindGuid (int col, BeGuidCR guid) { return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);}
 DbResult    Statement::BindLuid (int col, BeLuid luid) { return (DbResult)sqlite3_bind_int64(m_stmt, col, luid.GetValue());}
 DbResult    Statement::BindNull (int col) { return (DbResult)sqlite3_bind_null(m_stmt, col);}
@@ -492,12 +489,7 @@ DbFile::DbFile (SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) 
     m_inCommit = false;
     m_allowImplicitTxns = m_settingsTableCreated = m_settingsDirty = false;
     m_dataVersion = 0;
-
-    memset (&m_flags,       0, sizeof(m_flags));
-    memset (&m_dummyBool,   0, sizeof(m_dummyBool));
-    memset (&m_dummyInt32,  0, sizeof(m_dummyInt32));
-    memset (&m_dummyInt64,  0, sizeof(m_dummyInt64));
-    memset (&m_dummyDouble, 0, sizeof(m_dummyDouble));
+    memset (&m_flags, 0, sizeof(m_flags));
 
     if (retry)
         {
@@ -588,7 +580,7 @@ DbResult DbFile::StartSavepoint (Savepoint& txn, BeSQLiteTxnMode txnMode)
         rc = stmt.Step();
         BeAssert (BE_SQLITE_ROW == rc);
 
-        UInt64 newDataVersion = stmt.GetValueInt64(0);
+        uint64_t newDataVersion = stmt.GetValueInt64(0);
         if (0 != m_dataVersion && newDataVersion != m_dataVersion) // don't call this on the first Savepoint
             txn.m_db->_OnDbChangedByOtherConnection();
 
@@ -663,7 +655,8 @@ DbResult DbFile::StopSavepoint (Savepoint& txn, bool isCommit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Db::Db () : m_embeddedFiles(*this), m_appData(*this)
     {
-    m_statements=0;
+    m_dbFile = nullptr;
+    m_statements = nullptr;
     }
 
 Db::~Db() {DoCloseDb();}
@@ -671,7 +664,7 @@ Db::~Db() {DoCloseDb();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode txnMode) : m_dbFile(db.m_dbFile.get()), m_name(name), m_txnMode(txnMode)
+Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode txnMode) : m_dbFile(db.m_dbFile), m_name(name), m_txnMode(txnMode)
     {
     m_db = &db;
     m_depth = -1;
@@ -846,10 +839,10 @@ void DbFile::SaveCachedRlvs(bool isCommit) const
                     { BeAssert(false); }
                 }
 
-            stmt->BindText (1, rlv.GetName (), Statement::MAKE_COPY_No);
+            stmt->BindText (1, rlv.GetName (), Statement::MakeCopy::No);
 
             int64_t int64Val = rlv.GetValue ();
-            stmt->BindBlob (2, &int64Val, (int) sizeof (int64Val), Statement::MAKE_COPY_No);
+            stmt->BindBlob (2, &int64Val, (int) sizeof (int64Val), Statement::MakeCopy::No);
             DbResult rc = stmt->Step ();
             if (BE_SQLITE_DONE != rc)
                 { BeAssert(false); }
@@ -894,12 +887,12 @@ DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void cons
     if (spec.IsSetting())
         m_settingsDirty = true;
 
-    stmt->BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-    stmt->BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+    stmt->BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+    stmt->BindText(2, spec.GetName(), Statement::MakeCopy::No);
     stmt->BindInt64 (3, id);
     stmt->BindInt64 (4, subId);
     stmt->BindInt (5, spec.IsSetting());
-    stmt->BindText(8, stringData, Statement::MAKE_COPY_No);
+    stmt->BindText(8, stringData, Statement::MakeCopy::No);
 
     bool doCompress = spec.IsCompress();
     bvector<Byte> compressed; // use bvector just so destructor will free make sure this is outside if!
@@ -911,20 +904,20 @@ DbResult DbFile::SaveProperty (PropertySpecCR spec, Utf8CP stringData, void cons
         if (doCompress)
             {
             unsigned long compressedSize= (uint32_t) (size*1.01) + 12;
-            compressed.reserve (compressedSize);
+            compressed.resize (compressedSize);
             if (Z_OK != compress2 (compressed.data(), &compressedSize, (ByteCP) value, size, DefaultCompressionLevel) || (compressedSize >= size))
                 doCompress = false;
             else
                 {
                 stmt->BindInt(6, size);     // this is the uncompressed size, when compressed
-                stmt->BindBlob (7, compressed.data(), compressedSize, Statement::MAKE_COPY_No);
+                stmt->BindBlob (7, compressed.data(), compressedSize, Statement::MakeCopy::No);
                 }
             }
 
         if (!doCompress) // dont use "else" here, value of compress can change if zip fails!
             {
             stmt->BindNull(6);
-            stmt->BindBlob (7, value, size, Statement::MAKE_COPY_No);
+            stmt->BindBlob (7, value, size, Statement::MakeCopy::No);
             }
         }
 
@@ -959,8 +952,8 @@ DbResult DbFile::QueryPropertySize (uint32_t& size, PropertySpecCR spec, uint64_
     DbResult rc = stmt.Prepare (*this, SqlPrintfString("SELECT RawSize,length(Data) FROM %s" BEDB_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?",getTempPrefix(useSettingsTable)));
     if (BE_SQLITE_OK == rc)
         {
-        stmt.BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-        stmt.BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+        stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+        stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
         stmt.BindInt64(3, id);
         stmt.BindInt64(4, subId);
         rc = stmt.Step();
@@ -993,8 +986,8 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, uint32_t
         DbResult rc = m_statements.GetPreparedStatement(stmt, *this, SqlPrintfString("SELECT RawSize,Data,StrData" FROM_PROPERTY_TABLE_SQL, getTempPrefix(false)));
         if (BE_SQLITE_OK == rc)
             {
-            stmt->BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-            stmt->BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+            stmt->BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+            stmt->BindText(2, spec.GetName(), Statement::MakeCopy::No);
             stmt->BindInt64(3, id);
             stmt->BindInt64(4, subId);
             rc = stmt->Step();
@@ -1030,7 +1023,8 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, uint32_t
             if (blobsize < size)
                 return BE_SQLITE_MISMATCH;
 
-            memcpy ((Byte*)cachedProp->m_value.data(), blobdata, bytes);
+            if (!cachedProp->m_value.empty())
+                memcpy ((Byte*)cachedProp->m_value.data(), blobdata, bytes);
             }
         }
 
@@ -1040,7 +1034,7 @@ DbResult DbFile::QueryCachedProperty (Utf8String* strval, void** value, uint32_t
     if (size>cachedProp->GetSize())
         size = cachedProp->GetSize();
 
-    if (value)
+    if (value && !cachedProp->m_value.empty())
         memcpy (*value, cachedProp->m_value.data(), size);
 
     return BE_SQLITE_ROW;
@@ -1059,8 +1053,8 @@ DbResult DbFile::QueryProperty (void* value, uint32_t size, PropertySpecCR spec,
     DbResult rc = m_statements.GetPreparedStatement(stmt, *this, SqlPrintfString("SELECT RawSize,Data" FROM_PROPERTY_TABLE_SQL, getTempPrefix(useSettingsTable)));
     if (BE_SQLITE_OK == rc)
         {
-        stmt->BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-        stmt->BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+        stmt->BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+        stmt->BindText(2, spec.GetName(), Statement::MakeCopy::No);
         stmt->BindInt64(3, id);
         stmt->BindInt64(4, subId);
         rc = stmt->Step();
@@ -1109,8 +1103,8 @@ DbResult DbFile::QueryProperty (Utf8StringR value, PropertySpecCR spec, uint64_t
     DbResult rc = m_statements.GetPreparedStatement(stmt, *this, SqlPrintfString("SELECT StrData" FROM_PROPERTY_TABLE_SQL, getTempPrefix(useSettingsTable)));
     if (BE_SQLITE_OK == rc)
         {
-        stmt->BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-        stmt->BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+        stmt->BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+        stmt->BindText(2, spec.GetName(), Statement::MakeCopy::No);
         stmt->BindInt64(3, id);
         stmt->BindInt64(4, subId);
         rc = stmt->Step();
@@ -1139,8 +1133,8 @@ bool DbFile::HasProperty (PropertySpecCR spec, uint64_t id, uint64_t subId) cons
     DbResult rc = stmt.Prepare (*this, SqlPrintfString("SELECT 1" FROM_PROPERTY_TABLE_SQL, getTempPrefix(useSettingsTable)));
     if (BE_SQLITE_OK == rc)
         {
-        stmt.BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-        stmt.BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+        stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+        stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
         stmt.BindInt64(3, id);
         stmt.BindInt64(4, subId);
         rc = stmt.Step();
@@ -1165,8 +1159,8 @@ DbResult DbFile::DeleteProperty (PropertySpecCR spec, uint64_t id, uint64_t subI
     DbResult rc = stmt.Prepare (*this, SqlPrintfString("DELETE" FROM_PROPERTY_TABLE_SQL, getTempPrefix(useSettingsTable)));
     if (BE_SQLITE_OK == rc)
         {
-        stmt.BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-        stmt.BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+        stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+        stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
         stmt.BindInt64(3, id);
         stmt.BindInt64(4, subId);
         rc = stmt.Step();
@@ -1190,8 +1184,8 @@ DbResult DbFile::DeleteProperties (PropertySpecCR spec, uint64_t* id)
     DbResult rc = stmt.Prepare (*this, sql.c_str());
     if (BE_SQLITE_OK == rc)
         {
-        stmt.BindText(1, spec.GetNamespace(), Statement::MAKE_COPY_No);
-        stmt.BindText(2, spec.GetName(), Statement::MAKE_COPY_No);
+        stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+        stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
         if (id)
             stmt.BindInt64(3, *id);
 
@@ -1322,14 +1316,23 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP colName)
+DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP colName, NamedParams* whereParams)
     {
     if (value.IsValid())
         value.UseNext();
     else
         {
+        Utf8String sql (SqlPrintfString ("SELECT max(%s) FROM %s WHERE %s<?", colName, tableName, colName));
+        if (whereParams)
+            {
+            sql.append (" AND ");
+            sql.append (whereParams->GetWhere());
+            }
+
         Statement stmt;
-        stmt.Prepare (*this, SqlPrintfString ("SELECT max(%s) FROM %s WHERE %s<?", colName, tableName, colName));
+        stmt.Prepare (*this, sql.c_str());
+        if (whereParams)
+            whereParams->Bind(stmt);
 
         BeRepositoryBasedId lastId(m_dbFile->m_repositoryId.GetNextRepositoryId(), 0);
         stmt.BindInt64 (1, lastId.GetValue());
@@ -1432,37 +1435,40 @@ DbResult Db::CreateNewDb (Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& pa
     m_dbFile->m_dbGuid = dbGuid;
 
     ExecuteSql (SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\"", params.m_pagesize,
-                              params.m_encoding==ENCODING_Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
+                              params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
                               params.m_startDefaultTxn==DefaultTxn_Exclusive ? "EXCLUSIVE" : "NORMAL"));
 
-    rc = m_dbFile->CreatePropertyTable(BEDB_TABLE_Property, PROPERTY_TABLE_DDL, false);
-    if (BE_SQLITE_OK != rc)
-        return  rc;
+    if (!params.m_rawSQLite)
+        {
+        rc = m_dbFile->CreatePropertyTable(BEDB_TABLE_Property, PROPERTY_TABLE_DDL, false);
+        if (BE_SQLITE_OK != rc)
+            return  rc;
 
-    // this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
-    // local to the repository and never in a changeset.
-    rc = CreateTable (BEDB_TABLE_Local, "Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Val BLOB");
-    if (BE_SQLITE_OK != rc)
-        return  rc;
+        // this table purposely has no primary key so it won't be tracked / merged. It is meant to hold values that are
+        // local to the repository and never in a changeset.
+        rc = CreateTable (BEDB_TABLE_Local, "Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Val BLOB");
+        if (BE_SQLITE_OK != rc)
+            return  rc;
 
-    rc = SaveBeDbGuid();
-    if (BE_SQLITE_OK != rc)
-        return  rc;
+        rc = SaveBeDbGuid();
+        if (BE_SQLITE_OK != rc)
+            return  rc;
 
-    rc = SaveRepositoryId();
-    if (BE_SQLITE_OK != rc)
-        return  rc;
+        rc = SaveRepositoryId();
+        if (BE_SQLITE_OK != rc)
+            return  rc;
 
-    rc = EmbeddedFiles ().CreateTable ();
-    if (rc != BE_SQLITE_OK)
-        return rc;
+        rc = EmbeddedFiles ().CreateTable ();
+        if (rc != BE_SQLITE_OK)
+            return rc;
 
-    if (params.m_expirationDate != DateTime())
-        SetExpirationDate (params.m_expirationDate);
+        if (params.m_expirationDate != DateTime())
+            SetExpirationDate (params.m_expirationDate);
 
-    rc = BeSQLiteProfileManager::AssignProfileVersion (*this);
-    if (rc != BE_SQLITE_OK)
-        return rc;
+        rc = BeSQLiteProfileManager::AssignProfileVersion (*this);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        }
 
     rc = _OnDbCreated (params);
     if (BE_SQLITE_OK != rc)
@@ -1495,7 +1501,7 @@ DbResult Db::AttachDb (Utf8CP filename, Utf8CP alias)
     if (wasActive)
         txn->Begin();
 
-    return  rc;
+    return rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1601,7 +1607,7 @@ bool Db::TryQueryRepositoryLocalValue (CachedRlValue*& value, size_t rlvIndex) c
         {
         Statement stmt;
         stmt.Prepare (*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
-        stmt.BindText (1, cachedRlv.GetName (), Statement::MAKE_COPY_No);
+        stmt.BindText (1, cachedRlv.GetName (), Statement::MakeCopy::No);
 
         const DbResult rc = stmt.Step ();
         if (rc != BE_SQLITE_ROW)
@@ -1634,8 +1640,7 @@ DbResult Db::DeleteRepositoryLocalValues ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateTable (Utf8CP tableName, Utf8CP ddl)
     {
-    DbResult rc = TryExecuteSql(SqlPrintfString("CREATE TABLE %s (%s)", tableName, ddl));
-    return  rc;
+    return ExecuteSql(SqlPrintfString("CREATE TABLE %s (%s)", tableName, ddl));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1793,7 +1798,10 @@ DbFile::~DbFile()
         {
         sqlite3_stmt* stmt = NULL;
         while (NULL != (stmt = sqlite3_next_stmt(m_sqlDb, stmt)))
-            LOG.errorv("Statement not closed: '%s'", sqlite3_sql(stmt));
+            {
+            Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
+            LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
+            };
 
         LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
         BeAssert (false);
@@ -1807,7 +1815,7 @@ DbFile::~DbFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::IsDbOpen() const
     {
-    return  (m_dbFile.IsValid() && NULL != m_dbFile->m_sqlDb);
+    return  (nullptr != m_dbFile) && (NULL != m_dbFile->m_sqlDb);
     }
 
 struct CleanupCaller
@@ -1829,7 +1837,7 @@ void Db::DoCloseDb ()
     m_appData.m_entries.m_list.clear();
 
     DELETE_AND_CLEAR (m_statements);
-    m_dbFile = 0;
+    DELETE_AND_CLEAR (m_dbFile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1870,19 +1878,6 @@ DbAppData* Db::DbAppDataList::Find(DbAppData::Key const& key) const
 Db::DbAppDataList& Db::AppData() const {return const_cast<DbAppDataList&>(m_appData);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::ShareDbFileFrom (Db& from)
-    {
-    if (IsDbOpen() || !from.IsDbOpen())
-        return  BE_SQLITE_ERROR;
-
-    m_dbFile = from.m_dbFile;
-    _OnDbShared (from);
-    return  BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 int Db::SetLimit (int id, int newVal) {return sqlite3_limit (m_dbFile->m_sqlDb, id, newVal);}
@@ -1892,7 +1887,7 @@ int Db::SetLimit (int id, int newVal) {return sqlite3_limit (m_dbFile->m_sqlDb, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP Db::GetDbFileName() const
     {
-    return  (m_dbFile.IsValid() && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : NULL;
+    return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2098,8 +2093,10 @@ DbResult Db::AbandonChanges()
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult Db::_OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
 DbResult Db::_OnDbOpened() {return QueryDbIds();}
-DbResult Db::_OnDbShared(Db& from) {return QueryDbIds();}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
 void Db::_OnDbChangedByOtherConnection()
     {
     m_dbFile->DeleteCachedPropertyMap();
@@ -2266,7 +2263,7 @@ int DbFile::RemoveFunction(DbFunction& function) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int filterCaller (void* tracker, Utf8CP tableName) {return ((ChangeTracker*) tracker)->_FilterTable(tableName);}
+static int filterCaller (void* tracker, Utf8CP tableName) {return (int) ((ChangeTracker*) tracker)->_FilterTable(tableName);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
@@ -2372,8 +2369,8 @@ void ChangeSet::Free()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int conflictCallback (void *pCtx, int cause, SqlChangesetIterP iter) {return ((ChangeSet*) pCtx)->_OnConflict ((ChangeSet::ConflictCause) cause, Changes::Change(iter, true));}
-static int filterTableCallback (void *pCtx, Utf8CP tableName) {return ((ChangeSet*) pCtx)->_FilterTable (tableName);}
+static int conflictCallback (void *pCtx, int cause, SqlChangesetIterP iter) {return (int) ((ChangeSet*) pCtx)->_OnConflict ((ChangeSet::ConflictCause) cause, Changes::Change(iter, true));}
+static int filterTableCallback (void *pCtx, Utf8CP tableName) {return (int) ((ChangeSet*) pCtx)->_FilterTable (tableName);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
@@ -2460,7 +2457,7 @@ DbResult Db::AddChangeTracker (ChangeTracker& tracker)
     if (!m_dbFile->m_trackers.Insert (tracker.GetName(), &tracker).second)
         return  BE_SQLITE_ERROR;
 
-    tracker.SetDbFile(m_dbFile.get());
+    tracker.SetDbFile(m_dbFile);
     return  BE_SQLITE_OK;
     }
 
@@ -2499,23 +2496,23 @@ void DbValue::Dump() const
 
     switch (GetValueType())
         {
-        case BE_SQLITE_INTEGER:
+        case DbValueType::IntegerVal:
             printf ("%" PRId64, GetValueInt64());
             break;
 
-        case BE_SQLITE_FLOAT:
+        case DbValueType::FloatVal:
             printf ("%lg", GetValueDouble());
             break;
 
-        case BE_SQLITE_TEXT:
+        case DbValueType::TextVal:
             printf ("%s", GetValueText());
             break;
 
-        case BE_SQLITE_BLOB:
+        case DbValueType::BlobVal:
             printf ("%p", GetValueBlob());
             break;
 
-        case BE_SQLITE_NULL:
+        case DbValueType::NullVal:
             printf ("NULL");
             break;
         }
@@ -2524,7 +2521,7 @@ void DbValue::Dump() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::DumpColumns (int startCol, int endCol, Changes::Change::ValueStage stage, bvector<Utf8String> const& columns) const
+void Changes::Change::DumpColumns (int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns) const
     {
     for (auto i=startCol; i <= endCol; ++i)
         {
@@ -2579,20 +2576,20 @@ void Changes::Change::Dump (Db const& db) const
 
     switch (opcode)
         {
-        case BE_SQLITEOP_DELETE:
+        case DbOpcode::Delete:
             printf ("DELETE\n\t\t");
-            DumpColumns (0, nCols-1, Changes::Change::VALUE_Old, columnNames);
+            DumpColumns (0, nCols-1, Changes::Change::Stage::Old, columnNames);
             break;
-        case BE_SQLITEOP_INSERT:
+        case DbOpcode::Insert:
             printf ("INSERT\n\t\t");
-            DumpColumns (0, nCols-1, Changes::Change::VALUE_New, columnNames);
+            DumpColumns (0, nCols-1, Changes::Change::Stage::New, columnNames);
             break;
-        case BE_SQLITEOP_UPDATE:
+        case DbOpcode::Update:
             printf ("UPDATE");
             printf ("\n\t\told: ");
-            DumpColumns (0, nCols-1, Changes::Change::VALUE_Old, columnNames);
+            DumpColumns (0, nCols-1, Changes::Change::Stage::Old, columnNames);
             printf ("\n\t\tnew: ");
-            DumpColumns (0, nCols-1, Changes::Change::VALUE_New, columnNames);
+            DumpColumns (0, nCols-1, Changes::Change::Stage::New, columnNames);
             break;
         default:
             BeAssert(false);
@@ -2620,11 +2617,11 @@ Utf8String ChangeSet::InterpretConflictCause (ChangeSet::ConflictCause cause)
     {
     switch (cause)
         {
-        case ChangeSet::CONFLICT_CAUSE_Data: return ("data");
-        case ChangeSet::CONFLICT_CAUSE_NotFound: return ("not found");
-        case ChangeSet::CONFLICT_CAUSE_Conflict: return ("conflict");
-        case ChangeSet::CONFLICT_CAUSE_Constraint: return ("constraint");
-        case ChangeSet::CONFLICT_CAUSE_ForeignKey: return ("foreign key");
+        case ChangeSet::ConflictCause::Data: return ("data");
+        case ChangeSet::ConflictCause::NotFound: return ("not found");
+        case ChangeSet::ConflictCause::Conflict: return ("conflict");
+        case ChangeSet::ConflictCause::Constraint: return ("constraint");
+        case ChangeSet::ConflictCause::ForeignKey: return ("foreign key");
         }
     BeAssert(false);
     return ("?");
@@ -3093,14 +3090,12 @@ ZipErrors SnappyFromBlob::Init (BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column
         if (BE_SQLITE_OK != m_blobIO.ReOpen(rowId))
             {
             m_blobBytesLeft = 0;
-            BeAssert (0);
             return  ZIP_ERROR_BLOB_READ_ERROR;
             }
         }
     else if (BE_SQLITE_OK != m_blobIO.Open ((BeSQLiteDbR) db, tableName, column, rowId, 0))
         {
         m_blobBytesLeft = 0;
-        BeAssert (0);
         return  ZIP_ERROR_BLOB_READ_ERROR;
         }
 
@@ -3294,7 +3289,7 @@ ZipToBlob::ZipToBlob (int bufsize, int compressionLevel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ZipToBlob::FreeMemory()
     {
-    FOR_EACH (ZippedChunk* chunk, m_chunks)
+    for (ZippedChunk* chunk : m_chunks)
         delete chunk;
 
     m_chunks.clear();
@@ -3455,7 +3450,7 @@ void SnappyToBlob::Init()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnappyToBlob::~SnappyToBlob()
     {
-    FOR_EACH (SnappyChunk* chunk, m_chunks)
+    for (SnappyChunk* chunk : m_chunks)
         delete chunk;
 
     m_chunks.clear();
@@ -3552,7 +3547,7 @@ BentleyStatus SnappyToBlob::SaveToRow (BeSQLiteDbR db, Utf8CP tableName, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeDbMutex::BeDbMutex(MutexType mutexType) {m_mux = sqlite3_mutex_alloc (mutexType);}
+BeDbMutex::BeDbMutex(MutexType mutexType) {m_mux = sqlite3_mutex_alloc ((int) mutexType);}
 BeDbMutex::~BeDbMutex()   {sqlite3_mutex_free((sqlite3_mutex*)m_mux);}
 void BeDbMutex::Enter() {sqlite3_mutex_enter((sqlite3_mutex*)m_mux);}
 void BeDbMutex::Leave() {sqlite3_mutex_leave((sqlite3_mutex*)m_mux);}
@@ -3612,7 +3607,7 @@ void StatementCache::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::Dump()
     {
-    for (bvector<CachedStatementPtr>::iterator it=m_entries.begin(); it<m_entries.end(); ++it)
+    for (auto it=m_entries.begin(); it<m_entries.end(); ++it)
         {
         printf ("%s\n", (*it)->GetSQL());
         }
@@ -3623,7 +3618,7 @@ void StatementCache::Dump()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<CachedStatementPtr>::iterator StatementCache::FindEntry(Utf8CP sql) const
     {
-    for (bvector<CachedStatementPtr>::iterator it=m_entries.begin(), end=m_entries.end(); it<end; ++it)
+    for (auto it=m_entries.begin(), end=m_entries.end(); it<end; ++it)
         {
         if (0==strcmp((*it)->GetSQL(), sql))
             {
@@ -3702,17 +3697,51 @@ StatementCache& Db::GetStatementCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::GetCachedStatement (CachedStatementPtr& stmt, Utf8CP sqlString) const
     {
-    return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile.get(), sqlString);
+    return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/13
+* @bsimethod                                    Keith.Bentley                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NamedParams::Bind(Statement& stmt) const
+void NamedParams::SetWhere(Utf8CP where)
     {
-    for (auto param : m_strParams)
-        stmt.BindText (stmt.GetParameterIndex(param.m_name.c_str()), param.m_value, Statement::MAKE_COPY_No);
+    if (NULL == where)
+        {
+        m_where.clear();
+        return;
+        }
+
+    m_where.assign(where);
+    m_where.Trim();
+    if (0 == strncmp(m_where.c_str(), "WHERE ", 6))
+        m_where.erase(0,6);
+    else if (0 == strncmp(m_where.c_str(), "AND ", 4))
+        m_where.erase(0,4);
     }
+
+struct StringParameter : NamedParams::SqlParameter
+{
+    Utf8String m_value;
+    StringParameter (Utf8CP name, Utf8CP value) : SqlParameter(name), m_value(value) {}
+    virtual void _Bind(Statement& stmt) {stmt.BindText(stmt.GetParameterIndex(m_name.c_str()), m_value, Statement::MakeCopy::No);}
+};
+struct IntegerParameter : NamedParams::SqlParameter
+{
+    uint64_t m_value;
+    IntegerParameter (Utf8CP name, uint64_t value) : SqlParameter(name), m_value(value) {}
+    virtual void _Bind(Statement& stmt) {stmt.BindInt64(stmt.GetParameterIndex(m_name.c_str()), m_value);}
+};
+struct DoubleParameter : NamedParams::SqlParameter
+{
+    double m_value;
+    DoubleParameter (Utf8CP name, double value) : SqlParameter(name), m_value(value) {}
+    virtual void _Bind(Statement& stmt) {stmt.BindDouble(stmt.GetParameterIndex(m_name.c_str()), m_value);}
+};
+
+void NamedParams::AddStringParameter (Utf8CP name, Utf8CP val) {AddSqlParameter(new StringParameter(name, val));}
+void NamedParams::AddIntegerParameter (Utf8CP name, uint64_t val) {AddSqlParameter(new IntegerParameter(name, val));}
+void NamedParams::AddDoubleParameter (Utf8CP name, double val) {AddSqlParameter(new DoubleParameter(name, val));}
+void NamedParams::Bind(Statement& stmt) const {for (auto param : m_params) param->_Bind(stmt); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      04/2012
@@ -3727,47 +3756,20 @@ void Db::DumpSqlResults (Utf8CP sql)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbTableIterator& DbTableIterator::operator=(DbTableIterator const& rhs)
-    {
-    m_stmt = 0;
-    m_whereClause = rhs.m_whereClause;
-    m_db = rhs.m_db;
-    return  *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbTableIterator::DbTableIterator(BeSQLiteDbCR db, Utf8CP whereClause) : m_db((BeSQLiteDbP)&db), m_params(NULL)
-    {
-    if (NULL == whereClause)
-        return;
-
-    m_whereClause.assign(whereClause);
-    m_whereClause.Trim();
-    if (0 == strncmp(m_whereClause.c_str(), "WHERE ", 6))
-        m_whereClause.erase(0,6);
-    else if (0 == strncmp(m_whereClause.c_str(), "AND ", 4))
-        m_whereClause.erase(0,4);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DbTableIterator::MakeSqlString(Utf8CP sql, bool hasWhere) const
     {
     Utf8String sqlString(sql);
 
-    if (!m_whereClause.empty())
+    if (!m_params.GetWhere().empty())
         {
-        if (0 == strncmp(m_whereClause.c_str(), "ORDER BY", 8))
+        if (0 == strncmp(m_params.GetWhere().c_str(), "ORDER BY", 8))
             sqlString.append (" ");
         else
             sqlString.append(hasWhere ? " AND " : " WHERE ");
 
-        sqlString.append(m_whereClause);
+        sqlString.append(m_params.GetWhere());
         }
 
     return sqlString;
@@ -3968,8 +3970,8 @@ static void removeFileBlobs (Db& db, BeRepositoryBasedId id)
     {
     Statement stmt;
     DbResult rc = stmt.Prepare (db, "DELETE FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=?");
-    stmt.BindText(1, Properties::EmbeddedFileBlob().GetNamespace(), Statement::MAKE_COPY_No);
-    stmt.BindText(2, Properties::EmbeddedFileBlob().GetName(), Statement::MAKE_COPY_No);
+    stmt.BindText(1, Properties::EmbeddedFileBlob().GetNamespace(), Statement::MakeCopy::No);
+    stmt.BindText(2, Properties::EmbeddedFileBlob().GetName(), Statement::MakeCopy::No);
     stmt.BindId (3, id);
     rc = stmt.Step();
     }
@@ -4136,9 +4138,9 @@ static DbResult addEmbedFile (Db& db, Utf8CP name, Utf8CP type, Utf8CP descripti
     stmt.Prepare (db, hasLastModifiedColumn ?
                   "INSERT INTO " BEDB_TABLE_EmbeddedFile " (Name,Descr,Type,Id,Size,Chunk,LastModified) VALUES(?,?,?,?,?,?,?)" :
                   "INSERT INTO " BEDB_TABLE_EmbeddedFile " (Name,Descr,Type,Id,Size,Chunk) VALUES(?,?,?,?,?,?)");
-    stmt.BindText (1, name, Statement::MAKE_COPY_No);
-    stmt.BindText (2, description, Statement::MAKE_COPY_No);
-    stmt.BindText (3, type, Statement::MAKE_COPY_No);
+    stmt.BindText (1, name, Statement::MakeCopy::No);
+    stmt.BindText (2, description, Statement::MakeCopy::No);
+    stmt.BindText (3, type, Statement::MakeCopy::No);
     stmt.BindId (4, id);
     stmt.BindInt64 (5, fileSize);
     stmt.BindInt (6, chunkSize);
@@ -4332,7 +4334,7 @@ DbResult DbEmbeddedFileTable::Save (void const* data, uint64_t size, Utf8CP name
         return updateEmbedFile (m_db, id, size, nullptr, chunkSize);
         }
 
-    /*DbResult rc =*/ embedFileImageWithoutCompressing(m_db, data, size, chunkSize, id);
+    embedFileImageWithoutCompressing(m_db, data, size, chunkSize, id);
     return updateEmbedFile (m_db, id, size, nullptr, chunkSize);
     }
 
@@ -4465,7 +4467,7 @@ BeRepositoryBasedId DbEmbeddedFileTable::QueryFile (Utf8CP name, uint64_t* size,
 
     Statement stmt;
     stmt.Prepare (m_db, sql);
-    stmt.BindText (1, name, Statement::MAKE_COPY_No);
+    stmt.BindText (1, name, Statement::MakeCopy::No);
 
     DbResult rc = stmt.Step();
     if (rc != BE_SQLITE_ROW)
@@ -4522,9 +4524,8 @@ DbResult DbEmbeddedFileTable::CreateTable() const
     if (m_db.TableExists (BEDB_TABLE_EmbeddedFile))
         return BE_SQLITE_OK;
 
-    auto rc = m_db.ExecuteSql ("CREATE TABLE " BEDB_TABLE_EmbeddedFile
-        " (Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE UNIQUE,"
-        "Descr CHAR, Type CHAR, Size INT, Chunk INT, LastModified TIMESTAMP)");
+    DbResult rc = m_db.CreateTable(BEDB_TABLE_EmbeddedFile, 
+            "Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Descr CHAR,Type CHAR,Size INT,Chunk INT,LastModified TIMESTAMP");
 
     if (BE_SQLITE_OK != rc)
         return rc;
@@ -4567,8 +4568,7 @@ DbEmbeddedFileTable::Iterator::Entry DbEmbeddedFileTable::Iterator::begin() cons
                                               "SELECT Name,Descr,Type,Id,Size,Chunk, NULL AS LastModified FROM " BEDB_TABLE_EmbeddedFile);
 
         m_db->GetCachedStatement (m_stmt, sqlString.c_str());
-        if (m_params)
-            m_params->Bind(*m_stmt);
+        m_params.Bind(*m_stmt);
         }
     else
         {
@@ -4605,17 +4605,15 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount () const
         return 0;
 
     Utf8String sqlString = "SELECT COUNT(*) FROM " BEDB_TABLE_EmbeddedFile;
-    if (!m_whereClause.empty())
+    if (!m_params.GetWhere().empty())
         {
         sqlString += " WHERE ";
-        sqlString += m_whereClause;
+        sqlString += m_params.GetWhere();
         }
 
     Statement statement;
     statement.Prepare (*m_db, sqlString.c_str());
-
-    if (m_params)
-        m_params->Bind(statement);
+    m_params.Bind(statement);
 
     return ((BE_SQLITE_ROW != statement.Step()) ? 0 : statement.GetValueInt (0));
     }
@@ -4735,7 +4733,7 @@ void BeSQLiteLib::SetDownloadAdmin(IDownloadAdmin& dlAdmin) {if (NULL == s_downl
 IDownloadAdmin* BeSQLiteLib::GetDownloadAdmin() {return s_downloadAdmin;}
 
 /*---------------------------------------------------------------------------------**//**
-* implementation of SQL "IsInSet" function. Returns 1 if the value is contained in the set.
+* implementation of SQL "InVirtualSet" function. Returns 1 if the value is contained in the set.
 * @bsimethod                                    Keith.Bentley                   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void isInVirtualSet (sqlite3_context* ctx, int nArgs, sqlite3_value** args)
@@ -5064,13 +5062,9 @@ static void logCallback (void *pArg, int iErrCode, Utf8CP zMsg) {LOG.infov ("SQL
 DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
     {
     static bool s_done = false;
-    if (s_done)
-        return BE_SQLITE_OK;
-    s_done = true;
+    RUNONCE_CHECK(s_done,BE_SQLITE_OK);
 
-    if (logErrors == LogErrors::Yes)
-        sqlite3_config (SQLITE_CONFIG_LOG, logCallback, NULL);
-
+    sqlite3_config (SQLITE_CONFIG_LOG, logCallback, NULL);
     sqlite3_initialize();
     sqlite3_auto_extension ((void(*)(void))&besqlite_db_init);
 
@@ -5118,7 +5112,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-BeFileLzmaInFromMemory::BeFileLzmaInFromMemory(void const*data, uint32_t size) : m_mutex(BeDbMutex::FastMutex), m_data(data), m_size(size), m_offset(0) {}
+BeFileLzmaInFromMemory::BeFileLzmaInFromMemory(void const*data, uint32_t size) : m_mutex(BeDbMutex::MutexType::Fast), m_data(data), m_size(size), m_offset(0) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
@@ -5912,6 +5906,11 @@ DbResult Db::QueryCreationDate(DateTime& creationDate) const
     return (BSISUCCESS == DateTime::FromString(creationDate, date.c_str())) ? BE_SQLITE_ROW : BE_SQLITE_MISMATCH;
     }
 
-BeSQLiteLib::ILanguageSupport* BeSQLiteLib::s_languageSupport;
+void BeSQLiteLib::Randomness(int numBytes, void* random) {sqlite3_randomness(numBytes, random);}
+void* BeSQLiteLib::MallocMem(int sz) {return sqlite3_malloc(sz);}
+void* BeSQLiteLib::ReallocMem(void* p, int sz) {return sqlite3_realloc(p,sz);}
+void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
+
+BeSQLiteLib::ILanguageSupport* s_languageSupport;
 void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
 BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() { return s_languageSupport; }

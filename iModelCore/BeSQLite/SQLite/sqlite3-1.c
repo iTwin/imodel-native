@@ -206,7 +206,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.8"
 #define SQLITE_VERSION_NUMBER 3008008
-#define SQLITE_SOURCE_ID      "2014-12-22 18:48:48 315243e49d30abd0eb31e3795ecf492aee179e4b"
+#define SQLITE_SOURCE_ID      "2014-12-31 14:27:29 86e39123c1bca457672bc63eff00a823745077e5"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1667,7 +1667,7 @@ struct sqlite3_mem_methods {
 ** 8-byte aligned
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument should be the size of the largest database page
-** (a power of two between 512 and 32768) plus some extra bytes for each
+** (a power of two between 512 and 65536) plus some extra bytes for each
 ** page header.  ^The number of extra bytes needed by the page header
 ** can be determined using the [SQLITE_CONFIG_PCACHE_HDRSZ] option 
 ** to [sqlite3_config()].
@@ -14630,7 +14630,7 @@ SQLITE_PRIVATE   void sqlite3ParserTrace(FILE*, char *);
 #ifdef SQLITE_ENABLE_IOTRACE
 # define IOTRACE(A)  if( sqlite3IoTrace ){ sqlite3IoTrace A; }
 SQLITE_PRIVATE   void sqlite3VdbeIOTraceSql(Vdbe*);
-SQLITE_PRIVATE void (*sqlite3IoTrace)(const char*,...);
+void (*sqlite3IoTrace)(const char*,...);
 #else
 # define IOTRACE(A)
 # define sqlite3VdbeIOTraceSql(X)

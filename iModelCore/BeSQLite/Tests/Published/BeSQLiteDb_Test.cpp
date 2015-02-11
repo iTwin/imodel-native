@@ -350,7 +350,7 @@ TEST_F (BeSQLiteDbTests, BlobTest)
     Statement insertStmt;
     ASSERT_EQ (BE_SQLITE_OK, insertStmt.Prepare (m_db, "INSERT INTO testtable (val) VALUES (?)"));
 
-    ASSERT_EQ (BE_SQLITE_OK, insertStmt.BindBlob (1, &expectedValue, sizeof (expectedValue), Statement::BindMakeCopy::MAKE_COPY_Yes));
+    ASSERT_EQ (BE_SQLITE_OK, insertStmt.BindBlob (1, &expectedValue, sizeof (expectedValue), Statement::MakeCopy::Yes));
     ASSERT_EQ (BE_SQLITE_DONE, insertStmt.Step ());
 
     Statement selectStmt;
@@ -748,7 +748,7 @@ TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryCa
         //now save incremented value back
         updateStmt.Reset ();
         updateStmt.ClearBindings ();
-        EXPECT_EQ (BE_SQLITE_OK, updateStmt.BindBlob (1, &lastValue, sizeof(lastValue), Statement::MAKE_COPY_No)) << L"Binding blob to update statement failed";
+        EXPECT_EQ (BE_SQLITE_OK, updateStmt.BindBlob (1, &lastValue, sizeof(lastValue), Statement::MakeCopy::No)) << L"Binding blob to update statement failed";
         EXPECT_EQ (BE_SQLITE_DONE, updateStmt.Step ()) << L"Executing update SQL failed";
         }
 
@@ -912,7 +912,7 @@ TEST(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerIte
             {
             Savepoint savepoint (dgndb, "insertblob", true);
             const int64_t val = i * 1000LL;
-            stmt.BindBlob (1, &val, sizeof (val), Statement::MAKE_COPY_No);
+            stmt.BindBlob (1, &val, sizeof (val), Statement::MakeCopy::No);
             stat = stmt.Step ();
             ASSERT_EQ (BE_SQLITE_DONE, stat) << "Executing insert statement failed";
             stmt.Reset ();

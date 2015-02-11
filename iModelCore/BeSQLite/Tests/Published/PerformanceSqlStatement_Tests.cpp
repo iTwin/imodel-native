@@ -33,7 +33,7 @@ void InsertRows (Db& db, Utf8CP tableName, int rowCount)
         }
 
     Utf8String sql;
-    sql.Sprintf ("INSERT INTO %hs (" TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ") VALUES (?, ?, ?, ?)", tableName);
+    sql.Sprintf ("INSERT INTO %s (" TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ") VALUES (?, ?, ?, ?)", tableName);
 
     Statement stmt;
     DbResult stat = stmt.Prepare (db, sql.c_str ());
@@ -43,7 +43,7 @@ void InsertRows (Db& db, Utf8CP tableName, int rowCount)
         stmt.Reset ();
         stmt.ClearBindings ();
         stmt.BindInt64 (1, static_cast<int64_t> (i));
-        stmt.BindText (2, "blabla", Statement::MAKE_COPY_Yes);
+        stmt.BindText (2, "blabla", Statement::MakeCopy::Yes);
         stmt.BindDouble (3, i * 3.1415);
         stmt.BindInt (4, i * 123);
 
@@ -75,7 +75,7 @@ bool createAdditionalIndices
         Utf8CP blobColumnExpression = addBlobColumn ? ", " TESTTABLE_BLOBCOL_COLUMNNAME " BLOB" : "";
         Utf8CP pkExpression = createPK ? "PRIMARY KEY" : "";
         Utf8String sql;
-        sql.Sprintf ("CREATE TABLE %hs (" TESTTABLE_ID_COLUMNNAME " INTEGER %hs, " TESTTABLE_STRINGCOL_COLUMNNAME " TEXT, " TESTTABLE_DOUBLECOL_COLUMNNAME " REAL, " TESTTABLE_INTCOL_COLUMNNAME " INTEGER%hs);", tableName, pkExpression, blobColumnExpression);
+        sql.Sprintf ("CREATE TABLE %s (" TESTTABLE_ID_COLUMNNAME " INTEGER %s, " TESTTABLE_STRINGCOL_COLUMNNAME " TEXT, " TESTTABLE_DOUBLECOL_COLUMNNAME " REAL, " TESTTABLE_INTCOL_COLUMNNAME " INTEGER%s);", tableName, pkExpression, blobColumnExpression);
 
         DbResult stat = db.TryExecuteSql (sql.c_str ());
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Creating test table " << tableName << " failed. Error code: DbResult::" << stat;
@@ -85,7 +85,7 @@ bool createAdditionalIndices
 
         if (createAdditionalIndices)
             {
-            sql.Sprintf ("CREATE INDEX idx_%hs ON %hs (" TESTTABLE_INTCOL_COLUMNNAME ");", tableName, tableName);
+            sql.Sprintf ("CREATE INDEX idx_%s ON %s (" TESTTABLE_INTCOL_COLUMNNAME ");", tableName, tableName);
             stat = db.TryExecuteSql (sql.c_str ());
             ASSERT_EQ (BE_SQLITE_OK, stat) << "Creating index on test table " << tableName << " failed. Error code: DbResult::" << stat;
             }
@@ -183,7 +183,7 @@ DbResult expectedResult
     timer.Stop ();
     const int64_t totalExecutionCount = repetitionsPerTable * testTableNames.size ();
     sql.Sprintf (sqlTemplate, "Foo");
-    LOG.infov ("Preparing '%hs' %lld times took %.4f secs.", sql.c_str (), totalExecutionCount, timer.GetElapsedSeconds ());
+    LOG.infov ("Preparing '%s' %lld times took %.4f secs.", sql.c_str (), totalExecutionCount, timer.GetElapsedSeconds ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -210,28 +210,28 @@ TEST(PerformanceSqlStatementTests, PrepareStatement)
     bvector<Utf8String> sqlList;
 
     //SELECT
-    sqlList.push_back ("select * from %hs");
+    sqlList.push_back ("select * from %s");
 
     //all columns explicitly
-    sqlList.push_back ("select " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs");
+    sqlList.push_back ("select " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s");
 
     //all columns ordered differently
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ", " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME " from %hs");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ", " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME " from %s");
 
     //with where clause
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%%la%%'");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%%la%%'");
 
     //with where clause and order by
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY " TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY " TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
 
     //with join
-    sqlList.push_back ("select t1." TESTTABLE_DOUBLECOL_COLUMNNAME ", t2." TESTTABLE_INTCOL_COLUMNNAME " from %hs t1, testtable15 t2 where t1." TESTTABLE_ID_COLUMNNAME " = t2." TESTTABLE_ID_COLUMNNAME " + 2 AND t1." TESTTABLE_ID_COLUMNNAME " > 20 AND t2." TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY t1." TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
+    sqlList.push_back ("select t1." TESTTABLE_DOUBLECOL_COLUMNNAME ", t2." TESTTABLE_INTCOL_COLUMNNAME " from %s t1, testtable15 t2 where t1." TESTTABLE_ID_COLUMNNAME " = t2." TESTTABLE_ID_COLUMNNAME " + 2 AND t1." TESTTABLE_ID_COLUMNNAME " > 20 AND t2." TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY t1." TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
 
     //INSERT
-    sqlList.push_back ("insert into %hs (" TESTTABLE_STRINGCOL_COLUMNNAME " ," TESTTABLE_DOUBLECOL_COLUMNNAME " ," TESTTABLE_INTCOL_COLUMNNAME ") VALUES (?, ?, ?)");
+    sqlList.push_back ("insert into %s (" TESTTABLE_STRINGCOL_COLUMNNAME " ," TESTTABLE_DOUBLECOL_COLUMNNAME " ," TESTTABLE_INTCOL_COLUMNNAME ") VALUES (?, ?, ?)");
 
     //UPDATE
-    sqlList.push_back ("update %hs set " TESTTABLE_STRINGCOL_COLUMNNAME " = ?, " TESTTABLE_DOUBLECOL_COLUMNNAME " = -4.123 WHERE " TESTTABLE_DOUBLECOL_COLUMNNAME " > 5.12345");
+    sqlList.push_back ("update %s set " TESTTABLE_STRINGCOL_COLUMNNAME " = ?, " TESTTABLE_DOUBLECOL_COLUMNNAME " = -4.123 WHERE " TESTTABLE_DOUBLECOL_COLUMNNAME " > 5.12345");
 
     FOR_EACH (Utf8StringCR sql, sqlList)
         {
@@ -264,34 +264,34 @@ TEST(PerformanceSqlStatementTests, PrepareStatementWithBlobColumns)
     bvector<Utf8String> sqlList;
 
     //SELECT
-    sqlList.push_back ("select * from %hs");
+    sqlList.push_back ("select * from %s");
 
     //without blob columns 
-    sqlList.push_back ("select " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs");
+    sqlList.push_back ("select " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s");
 
     //with blob columns 
-    sqlList.push_back ("select " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_BLOBCOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs");
+    sqlList.push_back ("select " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_BLOBCOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s");
 
     //all columns ordered differently
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ", " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME " from %hs");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ", " TESTTABLE_ID_COLUMNNAME ", " TESTTABLE_STRINGCOL_COLUMNNAME " from %s");
 
     //with where clause
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%%la%%'");
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_BLOBCOL_COLUMNNAME " IS NOT NULL");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%%la%%'");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_BLOBCOL_COLUMNNAME " IS NOT NULL");
 
     //with where clause and order by
-    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %hs where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY " TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
+    sqlList.push_back ("select " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME " from %s where " TESTTABLE_ID_COLUMNNAME " > 20 AND " TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY " TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
 
     //with join
-    sqlList.push_back ("select t1." TESTTABLE_DOUBLECOL_COLUMNNAME ", t2." TESTTABLE_INTCOL_COLUMNNAME " from %hs t1, testtable15 t2 where t1." TESTTABLE_ID_COLUMNNAME " = t2." TESTTABLE_ID_COLUMNNAME " + 2 AND t1." TESTTABLE_ID_COLUMNNAME " > 20 AND t2." TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY t1." TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
+    sqlList.push_back ("select t1." TESTTABLE_DOUBLECOL_COLUMNNAME ", t2." TESTTABLE_INTCOL_COLUMNNAME " from %s t1, testtable15 t2 where t1." TESTTABLE_ID_COLUMNNAME " = t2." TESTTABLE_ID_COLUMNNAME " + 2 AND t1." TESTTABLE_ID_COLUMNNAME " > 20 AND t2." TESTTABLE_STRINGCOL_COLUMNNAME " LIKE '%la%' ORDER BY t1." TESTTABLE_DOUBLECOL_COLUMNNAME " DESC");
 
     //INSERT
-    sqlList.push_back ("insert into %hs (" TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ") VALUES (?, ?, ?)");
-    sqlList.push_back ("insert into %hs (" TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_BLOBCOL_COLUMNNAME ") VALUES (?, ?, ?)");
+    sqlList.push_back ("insert into %s (" TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_INTCOL_COLUMNNAME ") VALUES (?, ?, ?)");
+    sqlList.push_back ("insert into %s (" TESTTABLE_STRINGCOL_COLUMNNAME ", " TESTTABLE_DOUBLECOL_COLUMNNAME ", " TESTTABLE_BLOBCOL_COLUMNNAME ") VALUES (?, ?, ?)");
 
     //UPDATE
-    sqlList.push_back ("update %hs set " TESTTABLE_STRINGCOL_COLUMNNAME " = ?, " TESTTABLE_DOUBLECOL_COLUMNNAME " = -4.123 WHERE " TESTTABLE_DOUBLECOL_COLUMNNAME " > 5.12345");
-    sqlList.push_back ("update %hs set " TESTTABLE_STRINGCOL_COLUMNNAME " = ?, " TESTTABLE_BLOBCOL_COLUMNNAME " = ? WHERE " TESTTABLE_DOUBLECOL_COLUMNNAME " > 5.12345");
+    sqlList.push_back ("update %s set " TESTTABLE_STRINGCOL_COLUMNNAME " = ?, " TESTTABLE_DOUBLECOL_COLUMNNAME " = -4.123 WHERE " TESTTABLE_DOUBLECOL_COLUMNNAME " > 5.12345");
+    sqlList.push_back ("update %s set " TESTTABLE_STRINGCOL_COLUMNNAME " = ?, " TESTTABLE_BLOBCOL_COLUMNNAME " = ? WHERE " TESTTABLE_DOUBLECOL_COLUMNNAME " > 5.12345");
 
     FOR_EACH (Utf8StringCR sql, sqlList)
         {
@@ -335,7 +335,7 @@ Utf8String& logMessageHeader
     timer.Stop ();
     Utf8String sampleSql;
     sampleSql.Sprintf (sqlTemplate, "Foo");
-    LOG.infov ("%hs%10.4f   %hs", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sampleSql.c_str ());
+    LOG.infov ("%hs%10.4f   %s", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sampleSql.c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -378,7 +378,7 @@ Utf8String& logMessageHeader
 
     Utf8String sampleSql;
     sampleSql.Sprintf (sqlTemplate, "Foo");
-    LOG.infov ("%hs%10.4f   %hs", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sampleSql.c_str ());
+    LOG.infov ("%hs%10.4f   %s", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sampleSql.c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -407,30 +407,30 @@ bool createIndex
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     bvector<Utf8String> selectCountSqls;
-    selectCountSqls.push_back ("SELECT count(*) FROM %hs;");
-    selectCountSqls.push_back ("SELECT count(rowid) FROM %hs;");
-    selectCountSqls.push_back ("SELECT count(doublecol) FROM %hs;");
-    selectCountSqls.push_back ("SELECT count(intcol) FROM %hs;");
-    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %hs);");
-    selectCountSqls.push_back ("SELECT EXISTS (select 0 FROM %hs);");
-    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %hs LIMIT 1);");
+    selectCountSqls.push_back ("SELECT count(*) FROM %s;");
+    selectCountSqls.push_back ("SELECT count(rowid) FROM %s;");
+    selectCountSqls.push_back ("SELECT count(doublecol) FROM %s;");
+    selectCountSqls.push_back ("SELECT count(intcol) FROM %s;");
+    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %s);");
+    selectCountSqls.push_back ("SELECT EXISTS (select 0 FROM %s);");
+    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %s LIMIT 1);");
     //with where clause
-    selectCountSqls.push_back ("SELECT count(*) FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000;");
-    selectCountSqls.push_back ("SELECT count(rowid) FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000;");
-    selectCountSqls.push_back ("SELECT count(intcol) FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000;");
-    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000);");
-    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1);");
+    selectCountSqls.push_back ("SELECT count(*) FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000;");
+    selectCountSqls.push_back ("SELECT count(rowid) FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000;");
+    selectCountSqls.push_back ("SELECT count(intcol) FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000;");
+    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000);");
+    selectCountSqls.push_back ("SELECT EXISTS (select null FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1);");
 
     bvector<Utf8String> selectLimit1Sqls;
-    selectLimit1Sqls.push_back ("SELECT NULL FROM %hs LIMIT 1;");
-    selectLimit1Sqls.push_back ("SELECT 0 FROM %hs LIMIT 1;");
-    selectLimit1Sqls.push_back ("SELECT rowid FROM %hs LIMIT 1;");
-    selectLimit1Sqls.push_back ("SELECT intcol FROM %hs LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT NULL FROM %s LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT 0 FROM %s LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT rowid FROM %s LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT intcol FROM %s LIMIT 1;");
     //with where clause
-    selectLimit1Sqls.push_back ("SELECT NULL FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
-    selectLimit1Sqls.push_back ("SELECT 0 FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
-    selectLimit1Sqls.push_back ("SELECT rowid FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
-    selectLimit1Sqls.push_back ("SELECT intcol FROM %hs WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT NULL FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT 0 FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT rowid FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
+    selectLimit1Sqls.push_back ("SELECT intcol FROM %s WHERE " TESTTABLE_INTCOL_COLUMNNAME " < 1000 LIMIT 1;");
 
     bvector<int> repetitionsList;
     repetitionsList.push_back (1);
@@ -572,7 +572,7 @@ bool checkForExistingTables
         FOR_EACH (Utf8String& existingTable, existingTables)
             {
             Utf8String nonExistingTable;
-            nonExistingTable.Sprintf ("%hs_notexisting", existingTable.c_str ());
+            nonExistingTable.Sprintf ("%s_notexisting", existingTable.c_str ());
             tablesToCheck.push_back (nonExistingTable);
             }
         }
@@ -605,7 +605,7 @@ Utf8String& logMessageHeader
         {
         FOR_EACH (Utf8String& tableName, tablesToCheck)
             {
-            stmt.BindText (1, tableName.c_str (), Statement::MAKE_COPY_No);
+            stmt.BindText (1, tableName.c_str (), Statement::MakeCopy::No);
             stat = stmt.Step ();
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -625,7 +625,7 @@ Utf8String& logMessageHeader
     timer.Stop ();
     const size_t tableCount = tablesToCheck.size ();
     EXPECT_EQ (tableCount * repetitions, executionCount) << "Unexpected execution count.";
-    LOG.infov ("%hs%10.4f   %hs", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sql);
+    LOG.infov ("%hs%10.4f   %s", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sql);
     }
 
 //---------------------------------------------------------------------------------------
@@ -657,7 +657,7 @@ Utf8String& logMessageHeader
         {
         FOR_EACH (Utf8String& tableName, tablesToCheck)
             {
-            stmt.BindText (1, tableName.c_str (), Statement::MAKE_COPY_No);
+            stmt.BindText (1, tableName.c_str (), Statement::MakeCopy::No);
             stat = stmt.Step ();
             ASSERT_EQ (BE_SQLITE_ROW, stat) << "Executing '" << sql << "' for table " << tableName.c_str () << " failed";
             const int actualRowCount = stmt.GetValueInt (0);
@@ -671,7 +671,7 @@ Utf8String& logMessageHeader
     timer.Stop ();
     const size_t tableCount = tablesToCheck.size ();
     EXPECT_EQ (tableCount * repetitions, executionCount) << "Unexpected execution count.";
-    LOG.infov ("%hs%10.4f   %hs", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sql);
+    LOG.infov ("%s%10.4f   %s", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sql);
     }
 
 //---------------------------------------------------------------------------------------
@@ -702,7 +702,7 @@ Utf8String& logMessageHeader
         FOR_EACH (Utf8String& tableName, tablesToCheck)
             {
             sql.Sprintf (sqlTemplate, tableName.c_str ());
-            LOG.tracev ("TryPrepare on %hs.", sql.c_str ());
+            LOG.tracev ("TryPrepare on %s.", sql.c_str ());
             Statement stmt;
             DbResult actualStat = stmt.TryPrepare (db, sql.c_str ());
             executionCount++;
@@ -718,7 +718,7 @@ Utf8String& logMessageHeader
 
     Utf8String sampleSql;
     sampleSql.Sprintf (sqlTemplate, "Foo");
-    LOG.infov ("%hs%10.4f   %hs", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sampleSql.c_str ());
+    LOG.infov ("%s%10.4f   %s", logMessageHeader.c_str (), timer.GetElapsedSeconds (), sampleSql.c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -755,8 +755,8 @@ bool checkForExistingTables
     selectLimit1Sqls.push_back ("SELECT 0 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1");
 
     bvector<Utf8String> prepareFailsSqls;
-    prepareFailsSqls.push_back ("SELECT NULL FROM %hs");
-    prepareFailsSqls.push_back ("SELECT NULL FROM %hs LIMIT 1");
+    prepareFailsSqls.push_back ("SELECT NULL FROM %s");
+    prepareFailsSqls.push_back ("SELECT NULL FROM %s LIMIT 1");
 
     bvector<int> repetitionsList;
     repetitionsList.push_back (1);

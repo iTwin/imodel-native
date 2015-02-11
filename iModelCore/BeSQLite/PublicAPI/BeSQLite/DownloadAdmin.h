@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/DownloadAdmin.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,8 +59,7 @@ private:
     uint32_t m_chunkNo;
 
 public:
-    void* operator new(size_t size) {return bentleyAllocator_allocateRefCounted (size);}
-    void operator delete(void* rawMemory, size_t size) {bentleyAllocator_deleteRefCounted (rawMemory, size);}
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
     ChunkBuffer (uint32_t chunkNo, uint32_t nBytes)
         {
