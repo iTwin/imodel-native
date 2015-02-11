@@ -372,19 +372,14 @@ void     Db::SetAllowImplictTransactions (bool val) {m_dbFile->m_allowImplicitTx
 
 static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
 
-Utf8String SchemaVersion::ToJson() const {return Utf8PrintfString (s_versionfmt, m_major, m_minor, m_sub1, m_sub2);}
+Utf8String SchemaVersion::ToJson() const {return ToString (s_versionfmt);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaVersion::FromJson(Utf8CP val)
     {
-    int major=0, minor=0, sub1=0, sub2=0;
-    BE_STRING_UTILITIES_UTF8_SSCANF (val, s_versionfmt, &major, &minor, &sub1, &sub2);
-    m_major = major;
-    m_minor = minor;
-    m_sub1  = sub1;
-    m_sub2  = sub2;
+    FromString (val, s_versionfmt);
     }
 
 /*---------------------------------------------------------------------------------**//**

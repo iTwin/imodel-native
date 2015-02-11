@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{13d7d3b1-9c48-4111-8fe3-9648e2682bbb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\BeSQLite\BeAppData.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\BeSQLite.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\DownloadAdmin.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\L10N.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\RTreeMatch.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\SQLiteAPI.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="BeSQLiteProfileManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BeSQLite.cpp" />
+    <ClCompile Include="BeSQLiteProfileManager.cpp" />
+    <ClCompile Include="L10N.cpp" />
+  </ItemGroup>
+</Project>
