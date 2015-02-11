@@ -45,10 +45,10 @@
     #endif
 
 
-    #define DECLARE_TC_SETUP    public: static void SetUpTestCase ();
-    #define DECLARE_TC_TEARDOWN public: static void TearDownTestCase ();
-    #define TC_SETUP(TC)        void TC :: SetUpTestCase ()
-    #define TC_TEARDOWN(TC)     void TC :: TearDownTestCase ()
+    #define BETEST_DECLARE_TC_SETUP    public: static void SetUpTestCase ();
+    #define BETEST_DECLARE_TC_TEARDOWN public: static void TearDownTestCase ();
+    #define BETEST_TC_SETUP(TC)        void TC :: SetUpTestCase ()
+    #define BETEST_TC_TEARDOWN(TC)     void TC :: TearDownTestCase ()
 
 
 #else
@@ -73,21 +73,21 @@
             };
         }
 
-    #define DECLARE_TC_SETUP
-    #define DECLARE_TC_TEARDOWN
+    #define BETEST_DECLARE_TC_SETUP
+    #define BETEST_DECLARE_TC_TEARDOWN
 
-    #define TEST_CLASS_NAME(testCaseName, testName) TEST_##testCaseName##_##testName
-    #define TEST_RUNNER_FUNC(testCaseName, testName) run_TEST_##testCaseName##_##testName
+    #define BETEST_TEST_CLASS_NAME(testCaseName, testName) TEST_##testCaseName##_##testName
+    #define BETEST_TEST_RUNNER_FUNC(testCaseName, testName) run_TEST_##testCaseName##_##testName
 
     #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)\
-        struct TEST_CLASS_NAME(testCaseName,testName) : superTestName                                                                   \
+        struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                                                                   \
         {                                                                                                                               \
             CharCP  GetTestCaseNameA () const { return #testCaseName; }                                                                 \
             CharCP  GetTestNameA ()     const { return #testName; }                                                                     \
             virtual void TestBody () override;                                                                                          \
         };                                                                                                                              \
-    extern "C" EXPORT_ATTRIBUTE int TEST_RUNNER_FUNC(testCaseName,testName) () { size_t e = BeTest::GetErrorCount(); if (BeTest::ShouldRunTest (#testCaseName "." #testName)) { TEST_CLASS_NAME(testCaseName,testName) t; t.Run(); } return BeTest::GetErrorCount() > e; } \
-    void TEST_CLASS_NAME(testCaseName,testName) :: TestBody ()
+    extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) () { size_t e = BeTest::GetErrorCount(); if (BeTest::ShouldRunTest (#testCaseName "." #testName)) { BETEST_TEST_CLASS_NAME(testCaseName,testName) t; t.Run(); } return BeTest::GetErrorCount() > e; } \
+    void BETEST_TEST_CLASS_NAME(testCaseName,testName) :: TestBody ()
 
 
     #if !defined(BETEST_GENERATE_UNITTESTS_LIST_H)
@@ -97,8 +97,8 @@
         #undef  TEST
         #define TEST(testCaseName, testName) DEFINE_BETEST_INTERNAL(testing::Test,testCaseName,testName)
 
-        #define TC_SETUP(TC)        extern "C" EXPORT_ATTRIBUTE void setUpTestCase_##TC ()
-        #define TC_TEARDOWN(TC)     extern "C" EXPORT_ATTRIBUTE void tearDownTestCase_##TC ()
+        #define BETEST_TC_SETUP(TC)        extern "C" EXPORT_ATTRIBUTE void setUpTestCase_##TC ()
+        #define BETEST_TC_TEARDOWN(TC)     extern "C" EXPORT_ATTRIBUTE void tearDownTestCase_##TC ()
     #endif
 
     #define RUN_ALL_TESTS BeTest::RunAllTests
