@@ -426,8 +426,15 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
     if (existingSchema->GetVersionMajor () != ecSchema.GetVersionMajor () ||
         existingSchema->GetVersionMinor () > ecSchema.GetVersionMinor ())
         {
-        ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
-        return ERROR;
+        if (ecSchema.IsStandardSchema ())
+            {
+            return BentleyStatus::SUCCESS; 
+            }
+        else
+            {
+            ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
+            return ERROR;
+            }
         }
 
     if (existingSchema->GetNamespacePrefix () != ecSchema.GetNamespacePrefix ())
