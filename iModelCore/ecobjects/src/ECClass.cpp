@@ -617,6 +617,7 @@ static const WCharCP s_schemasThatAllowOverridingArrays[] =
     {
     L"jclass.01",
     L"jclass.02",
+    L"jclass.03",
     L"ECXA_ams.01",
     L"ECXA_ams_user.01",
     L"ams.01",
