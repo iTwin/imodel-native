@@ -11,20 +11,20 @@
     
     <Part Name="Thumbnails" BMakeFile="Thumbnails\Thumbnails.mke">
       <SubPart PartName="ThumbnailsHeader" />
-      <SubPart PartName="DllsUnicode" PartFile="ImagePP" Repository="ImagePP" />
-      <SubPart PartName="PointCloudCore"  PartFile="PointCloudCore" Repository="PointCloudCore" />
+      <SubPart PartName="ImagePPDLL" PartFile="ImagePP" Repository="ImagePP" />
+      <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
       <Bindings>
           <Libs>Delivery/$(stlibprefix)Thumbnails$(stlibext)</Libs>
           <Files ProductDirectoryName="RealityModFrameworkBin">delivery/Thumbnails.dll</Files>
       </Bindings>
     </Part>
 
-    <!--<Part Name="ThumbnailsTester" BMakeFile="Thumbnails\Tests\ThumbnailsTester.mke">
+    <Part Name="ThumbnailsTester" BMakeFile="Thumbnails\Tests\ThumbnailsTester\ThumbnailsTester.mke">
         <SubPart PartName="Thumbnails"/>
         <Bindings>
-            <Files ProductDirectoryName="ImageppAppsBin">delivery/ThumbnailsTester.exe</Files>
+            <Files ProductDirectoryName="RealityModFrameworkBin">delivery/ThumbnailsTester.exe</Files>
         </Bindings>
-    </Part>-->
+    </Part>
 
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
@@ -38,6 +38,10 @@
         <ProductDirectory Name="GdalData"                   Deliver="false"/>
         <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
         <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
+
+         <!--notices/ review if notices need to be delivered--> 
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
         <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
@@ -57,20 +61,25 @@
         <ProductDirectory Name="GeomNativeAssemblies"       Path="" />
         <ProductDirectory Name="GeoCoordData"               Path="GeoCoordinateData" Deliver="false"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" Deliver="false"/>
+        <ProductDirectory Name="MrSidAssemblies"            Path="" />
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
 
         <ProductDirectory Name="GeomNativeAssemblies" Path=""/>
         <ProductDirectory Name="PointoolsAssemblies" Path=""/>
         <ProductDirectory Name="PointoolsAssemblies32Ext" Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
-        <ProductDirectory Name="PointCloudCoreAssemblies" Path=""/>
 
         <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
 
     </ProductDirectoryList>
 
+	<!-- inherit from RealityModFrameworkDirList-->
+    <!-- <ProductDirectoryList ListName="ThumbnailsDirList" >
+    </ProductDirectoryList>-->
+	
 
     <Product Name="RealityModFramework">
         <SubPart PartName="Thumbnails"/>
-        <!--<SubPart PartName="ThumbnailsTester"/>-->
+        <SubPart PartName="ThumbnailsTester"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 

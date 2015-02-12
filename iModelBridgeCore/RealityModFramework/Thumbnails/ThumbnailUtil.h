@@ -2,7 +2,7 @@
 |
 |     $Source: Thumbnails/ThumbnailUtil.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -51,6 +51,7 @@
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HRPPixelTypeV32B8G8R8X8.h>
 #include <Imagepp/all/h/HFCStat.h>
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2013

@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 appName = Thumbnails
@@ -62,7 +62,7 @@ $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointClou
 
 $(o)ThumbnailUtil$(oext) : $(baseDir)ThumbnailUtil.cpp $(baseDir)ThumbnailUtil.h ${MultiCompileDepends}
 
-$(o)RasterFileFormats$(oext) : $(baseDir)RasterFileFormats.cpp $(PublicApiDir)RasterFileFormats.h ${MultiCompileDepends}
+#$(o)RasterFileFormats$(oext) : $(baseDir)RasterFileFormats.cpp $(PublicApiDir)RasterFileFormats.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -78,12 +78,11 @@ DLM_NAME            = $(appName)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NO_SIGN	    = 1
 
-LINKER_LIBRARIES    =  $(ContextSubpartsLibs)IppGraLibs.lib \
-                       $(ContextSubpartsLibs)IppUtlLibs.lib \
-                       $(ContextSubpartsLibs)$(libprefix)Bentley.lib \
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley.lib \
                        $(ContextSubpartsLibs)$(libprefix)BentleyAllocator.lib \
-                       $(ContextSubpartsLibs)PdfLibInitializer.lib \
-                       $(ContextSubpartsLibs)PointCloudCore.lib \
+					   $(ContextSubpartsLibs)IppGraLibs.lib \
+					   $(ContextSubpartsLibs)IppUtlLibs.lib \
                        $(ContextSubpartsLibs)BentleyGeom.lib
 
 %include dlmlink.mki

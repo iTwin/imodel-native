@@ -2,12 +2,17 @@
 |
 |     $Source: Thumbnails/PointCloudVortex.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 
-USING_NAMESPACE_POINTCLOUDCORE
+#include <PointoolsVortexAPI_DLL/vortexLicense.c>
+#include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
+//#include <pointools/include/PointoolsVortexAPI_ResultCodes.h>
+
+
+bool LoadPointoolsDLL(const wchar_t* filepath);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     07/2012
@@ -19,8 +24,15 @@ void PointCloudVortex::Initialize()
     PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"In Initialize");
 #endif
 
-    PtVortex::LoadDll();
-    PtVortex::Initialize();
+    //PtVortex::LoadDll();
+#ifdef _M_X64
+    LoadPointoolsDLL (L"PointoolsVortexAPI.dll");
+#else
+    LoadPointoolsDLL (L"PointoolsVortexAPI.dll");
+#endif
+
+    //PtVortex::Initialize();
+    ptInitialize(vortexLicCode);
 
 #ifdef DEBUG_PH
     clock_t processEndTime = clock();  
@@ -34,13 +46,14 @@ void PointCloudVortex::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 HRESULT PointCloudVortex::OpenPOD(PtHandle &cloudFileHandle, PtHandle &cloudHandle, WString fileName)
     {
-	cloudFileHandle = PtVortex::OpenPOD (fileName.c_str());
-	if (cloudFileHandle == 0)
+    //cloudFileHandle = PtVortex::OpenPOD (fileName.c_str());
+    cloudFileHandle = ptOpenPOD(fileName.c_str());
+    if (cloudFileHandle == 0)
         {            
         return E_FAIL;
         }
-    cloudHandle = PtVortex::GetCloudHandleByIndex(cloudFileHandle, 0); // first cloud in the scene
-
+    //cloudHandle = PtVortex::GetCloudHandleByIndex(cloudFileHandle, 0); // first cloud in the scene
+    cloudHandle = ptGetCloudHandleByIndex(cloudFileHandle, 0); // first cloud in the scene
     return S_OK;
     }
 
@@ -49,7 +62,8 @@ HRESULT PointCloudVortex::OpenPOD(PtHandle &cloudFileHandle, PtHandle &cloudHand
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudVortex::ClosePOD(PtHandle &cloudFileHandle)
     {
-    PtVortex::RemoveScene(cloudFileHandle);
+    //PtVortex::RemoveScene(cloudFileHandle);
+    ptRemoveScene(cloudFileHandle);
     }
 
 
@@ -57,8 +71,8 @@ void PointCloudVortex::ClosePOD(PtHandle &cloudFileHandle)
 * @bsimethod                                    Eric.Paquet                     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp, 
-                                            UInt32          bitmapWidth, 
-                                            UInt32          bitmapHeight, 
+                                            uint32_t          bitmapWidth, 
+                                            uint32_t          bitmapHeight, 
                                             PtHandle        cloudHandle, 
                                             float           densityValue, 
                                             TransformCR     transform,
@@ -69,37 +83,39 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
         {
         // Get bounds for first point cloud in the scene
         float       lower [3], upper [3];
-	    PtVortex::CloudBounds (cloudHandle, lower, upper);
+        //PtVortex::CloudBounds (cloudHandle, lower, upper);
+        /*PTres result = */ptCloudBounds(cloudHandle, lower, upper);
 
         // Check if point cloud has RGB, Intensity or Classification channel
         // Priority to choose a channel: 1) RGB, 2) Classification, 3) Intensity
         wchar_t     name [256];
-        UInt32      numPoints;
-        UInt32      specification;
+        uint32_t      numPoints;
+        uint32_t      specification;
         bool      visible;
-        PtVortex::CloudInfo (cloudHandle, name, numPoints, specification, visible);
+        //PtVortex::CloudInfo (cloudHandle, name, numPoints, specification, visible);
+        /*PTres result =*/ ptCloudInfo(cloudHandle, name, numPoints, specification, visible);
         bool useRgbChannel = false;
         bool useIntensityChannel = false;
         bool useClassificationChannel = false;
-        if (specification & HAS_RGB)
+        if (specification & PT_HAS_RGB)
             {
             useRgbChannel = true;
             }
-        else if (specification & HAS_CLASSIFICATION)
+        else if (specification & PT_HAS_CLASSIFICATION)
             {
             useClassificationChannel = true;
             }
-        else if (specification & HAS_INTENSITY)
+        else if (specification & PT_HAS_INTENSITY)
             {
             useIntensityChannel = true;
             }
 
 #ifdef DEBUG_PH
-        if (specification & HAS_RGB)
+        if (specification & PT_HAS_RGB)
             PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"   Has RGB channel");
-        if (specification & HAS_INTENSITY)
+        if (specification & PT_HAS_INTENSITY)
             PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"   Has INTENSITY channel");
-        if (specification & HAS_CLASSIFICATION)
+        if (specification & PT_HAS_CLASSIFICATION)
             PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"   Has Classification channel");
 #endif
 
@@ -127,11 +143,11 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
         BYTE* pBitmapData = reinterpret_cast<BYTE *>(pDataToCopy);
 
         // Allocate buffers. The buffer size does not seem to have much influence, since we don't request a large number of points.
-        const UInt32 bufferSize = 10000;
+        const uint32_t bufferSize = 10000;
         double *pPointsBuffer = (double*) malloc (bufferSize * 3 * sizeof (double));
         BYTE   *pRgbBuffer = NULL;
-        UChar  *pClassificationBuffer = NULL;
-        Int16  *pIntensityBuffer = NULL;
+        Byte  *pClassificationBuffer = NULL;
+        int16_t  *pIntensityBuffer = NULL;
 
         RgbFactor classificationColors[256];
         if (useRgbChannel)
@@ -140,12 +156,12 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
             }
         else if (useClassificationChannel)
             {
-            pClassificationBuffer = (UChar*) malloc (bufferSize * sizeof (UChar));
+            pClassificationBuffer = (Byte*) malloc (bufferSize * sizeof (Byte));
             GetClassificationColors(classificationColors);
             }
         else if (useIntensityChannel)
             {
-            pIntensityBuffer = (Int16*) malloc (bufferSize * sizeof (Int16));
+            pIntensityBuffer = (int16_t*) malloc (bufferSize * sizeof (int16_t));
             }
 
         // If the point cloud is displayed as RGB or intensity, it's possible that most points are dark. 
@@ -167,28 +183,34 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
 	    rgba[3] = 255; // alpha
 
         // Create a bounding box query
-        PtHandle queryHandle = PtVortex::CreateBoundingBoxQuery (lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
-
-	    PtVortex::ResetQuery(queryHandle);
-	    PtVortex::SetQueryScope(queryHandle, cloudHandle);
-        PtVortex::SetQueryRGBMode (queryHandle, QUERY_RGB_MODE_ACTUAL);
+        //PtHandle queryHandle = PtVortex::CreateBoundingBoxQuery (lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+        PtHandle queryHandle = ptCreateBoundingBoxQuery(lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+	    //PtVortex::ResetQuery(queryHandle);
+		ptResetQuery(queryHandle);
+	    //PtVortex::SetQueryScope(queryHandle, cloudHandle);
+		ptSetQueryScope(queryHandle, cloudHandle);
+        //PtVortex::SetQueryRGBMode (queryHandle, QUERY_RGB_MODE_ACTUAL);
+		ptSetQueryRGBMode(queryHandle, PT_QUERY_RGB_MODE_ACTUAL);
 
         // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap
         // seem to produce generally good results.
-        PtVortex::SetQueryDensity (queryHandle, QUERY_DENSITY_LIMIT, densityValue);
-        PtVortex::SetEnabledState (RGB_SHADER, 1);
+        //PtVortex::SetQueryDensity (queryHandle, QUERY_DENSITY_LIMIT, densityValue);
+		ptSetQueryDensity(queryHandle, PT_QUERY_DENSITY_LIMIT, densityValue);
+        //PtVortex::SetEnabledState (PT_RGB_SHADER, 1);
+        ptEnable(PT_RGB_SHADER);
 
         DPoint3d pt3dOut;
-        UChar idxClassif;
+        Byte idxClassif;
 
         // Query points as long as there are available (or until we have a number equal to densityValue, which is more likely to happen)
 	    int numPointsBuffer;
-        numPointsBuffer = PtVortex::GetQueryPointsd (queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, pClassificationBuffer);
+        //numPointsBuffer = PtVortex::GetQueryPointsd (queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, pClassificationBuffer);
+		numPointsBuffer = ptGetQueryPointsd(queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, pClassificationBuffer);
 
 	    while (numPointsBuffer > 0)
 		    {
-		    Long32 row, col;
-            for (UInt32 i=0 ; i < ((UInt32)numPointsBuffer * 3); i += 3)
+		    LONG32 row, col;
+            for (uint32_t i=0 ; i < ((uint32_t)numPointsBuffer * 3); i += 3)
 	            {
                 // Transform point using transfo. matrix
                 DPoint3d pt3d;
@@ -199,13 +221,13 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
                 col = (LONG32) pt3dOut.x;
                 row = (LONG32) pt3dOut.y;
 
-                if (row < 0.0 || row >= (Long32) bitmapHeight)
+                if (row < 0.0 || row >= (LONG32) bitmapHeight)
                     continue;
-                if (col < 0.0 || col >= (Long32) bitmapWidth)
+                if (col < 0.0 || col >= (LONG32) bitmapWidth)
                     continue;
 
-                HASSERT (row >= 0 && row < (Long32) bitmapHeight);
-                HASSERT (col >= 0 && col < (Long32) bitmapWidth);
+                HASSERT (row >= 0 && row < (LONG32) bitmapHeight);
+                HASSERT (col >= 0 && col < (LONG32) bitmapWidth);
 
                 if (pRgbBuffer)
                     {
@@ -222,26 +244,27 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
                     }
                 else if (pIntensityBuffer)
                     {
-                    Int32 intens = (Int32) pIntensityBuffer[i/3];
-                    Int32 normalizedIntens = (intens + 32768) / 256;    // Intensity is between -32768 and 32767
+                    int32_t intens = (int32_t) pIntensityBuffer[i/3];
+                    int32_t normalizedIntens = (intens + 32768) / 256;    // Intensity is between -32768 and 32767
                     HASSERT (normalizedIntens >= 0 && normalizedIntens < 256);
 
-	                rgba[0] = normalizedIntens; // blue
-	                rgba[1] = normalizedIntens; // green
-	                rgba[2] = normalizedIntens;   // red
+	                rgba[0] = (BYTE)normalizedIntens; // blue
+	                rgba[1] = (BYTE)normalizedIntens; // green
+	                rgba[2] = (BYTE)normalizedIntens;   // red
                     }
 
                 int posBitmap = (DIBWidth * row) + col * 4;
 	            memcpy(pBitmapData + posBitmap, rgba, 4);
 	            }
 
-            if ((UInt32) numPointsBuffer < bufferSize)
+            if ((uint32_t) numPointsBuffer < bufferSize)
                 {
                 // Bug workaround. Sometimes, GetQueryPointsd infinitely returns the same number of points when numPointsBuffer < bufferSize
                 break;
                 }
 
-		    numPointsBuffer = PtVortex::GetQueryPointsd (queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, pClassificationBuffer);
+		    //numPointsBuffer = PtVortex::GetQueryPointsd (queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, pClassificationBuffer);
+		    numPointsBuffer = ptGetQueryPointsd(queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, pClassificationBuffer);
             }
 
         if (pPointsBuffer) free (pPointsBuffer);
@@ -279,26 +302,28 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
     bool needsWhiteBackground = false;
 
     float       lower [3], upper [3];
-	PtVortex::CloudBounds (cloudHandle, lower, upper);
+	//PtVortex::CloudBounds (cloudHandle, lower, upper);
+	ptCloudBounds(cloudHandle, lower, upper);
 
     // Check if point cloud has a RGB channel
     wchar_t     name [256];
-    UInt32      numPoints;
-    UInt32      specification;
+    uint32_t      numPoints;
+    uint32_t      specification;
     bool      visible;
-    PtVortex::CloudInfo (cloudHandle, name, numPoints, specification, visible);
+    //PtVortex::CloudInfo (cloudHandle, name, numPoints, specification, visible);
+	ptCloudInfo(cloudHandle, name, numPoints, specification, visible);
 
     double *pPointsBuffer = NULL;
     BYTE   *pRgbBuffer = NULL;
-    Int16  *pIntensityBuffer = NULL;
+    int16_t  *pIntensityBuffer = NULL;
 
     bool useRgbChannel = false;
     bool useIntensityChannel = false;
-    if (specification & HAS_RGB)
+    if (specification & PT_HAS_RGB)
         {
         useRgbChannel = true;
         }
-    else if (specification & HAS_INTENSITY)
+    else if (specification & PT_HAS_INTENSITY)
         {
         useIntensityChannel = true;
         }
@@ -310,7 +335,7 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
         }
 
     // Allocate buffers. We request 1000 points to compute an average color
-    const UInt32 bufferSize = 1000;
+    const uint32_t bufferSize = 1000;
     pPointsBuffer = (double*) malloc (bufferSize * 3 * sizeof (double));
     if (useRgbChannel)
         {
@@ -318,23 +343,29 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
         }
     else if (useIntensityChannel)
         {
-        pIntensityBuffer = (Int16*) malloc (bufferSize * sizeof (Int16));
+        pIntensityBuffer = (int16_t*) malloc (bufferSize * sizeof (int16_t));
         }
 
     // Create a bounding box query
-    PtHandle queryHandle = PtVortex::CreateBoundingBoxQuery (lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
-
-	PtVortex::ResetQuery(queryHandle);
-	PtVortex::SetQueryScope(queryHandle, cloudHandle);
-    PtVortex::SetQueryRGBMode (queryHandle, QUERY_RGB_MODE_ACTUAL);
+    //PtHandle queryHandle = PtVortex::CreateBoundingBoxQuery (lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+    PtHandle queryHandle = ptCreateBoundingBoxQuery(lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+    //PtVortex::ResetQuery(queryHandle);
+	ptResetQuery(queryHandle);
+    //PtVortex::SetQueryScope(queryHandle, cloudHandle);
+	ptSetQueryScope(queryHandle, cloudHandle);
+    //PtVortex::SetQueryRGBMode (queryHandle, QUERY_RGB_MODE_ACTUAL);
+	ptSetQueryRGBMode(queryHandle, PT_QUERY_RGB_MODE_ACTUAL);
 
     // Set density (number of points retrieved)
-    PtVortex::SetQueryDensity (queryHandle, QUERY_DENSITY_LIMIT, (float)bufferSize);
-    PtVortex::SetEnabledState (RGB_SHADER, 1);
+    //PtVortex::SetQueryDensity (queryHandle, QUERY_DENSITY_LIMIT, (float)bufferSize);
+	ptSetQueryDensity(queryHandle, PT_QUERY_DENSITY_LIMIT, (float)bufferSize);
+    //PtVortex::SetEnabledState (PT_RGB_SHADER, 1);
+    ptEnable(PT_RGB_SHADER);
 
     // Query points
 	int numPointsBuffer;
-    numPointsBuffer = PtVortex::GetQueryPointsd (queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, NULL);
+    //numPointsBuffer = PtVortex::GetQueryPointsd (queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, NULL);
+    numPointsBuffer = ptGetQueryPointsd(queryHandle, bufferSize, pPointsBuffer, pRgbBuffer, pIntensityBuffer, NULL, NULL);
     if (numPointsBuffer == 0)
         {
         needsWhiteBackground = false;
@@ -344,20 +375,20 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
     BYTE colorThreshold = 25;
     if (useRgbChannel)
         {
-        Int64 rgbTotal[3]; 
+        int64_t rgbTotal[3]; 
         rgbTotal[0] = 0;
         rgbTotal[1] = 0;
         rgbTotal[2] = 0;
-        for (UInt32 i=0 ; i < ((UInt32)numPointsBuffer * 3); i += 3)
+        for (uint32_t i=0 ; i < ((uint32_t)numPointsBuffer * 3); i += 3)
 	        {
 	        rgbTotal[0] += pRgbBuffer[i+2]; // blue
 	        rgbTotal[1] += pRgbBuffer[i+1]; // green
 	        rgbTotal[2] += pRgbBuffer[i];   // red
 	        }
 
-        Int64 bAverage = rgbTotal[0] / numPointsBuffer;
-        Int64 gAverage = rgbTotal[1] / numPointsBuffer;
-        Int64 rAverage = rgbTotal[2] / numPointsBuffer;
+        int64_t bAverage = rgbTotal[0] / numPointsBuffer;
+        int64_t gAverage = rgbTotal[1] / numPointsBuffer;
+        int64_t rAverage = rgbTotal[2] / numPointsBuffer;
 
         if (rAverage < colorThreshold && gAverage < colorThreshold && bAverage < colorThreshold)
             {
@@ -371,17 +402,17 @@ bool PointCloudVortex::PointCloudNeedsWhiteBackground(PtHandle cloudHandle)
         }
     else
         {
-        Int64 intensTotal = 0; 
-        for (UInt32 i=0 ; i < ((UInt32)numPointsBuffer); i ++)
+        int64_t intensTotal = 0; 
+        for (uint32_t i=0 ; i < ((uint32_t)numPointsBuffer); i ++)
 	        {
-            Int32 intens = (Int32) pIntensityBuffer[i];
-            Int32 normalizedIntens = (intens + 32768) / 256;    // Intensity is between -32768 and 32767
+            int32_t intens = (int32_t) pIntensityBuffer[i];
+            int32_t normalizedIntens = (intens + 32768) / 256;    // Intensity is between -32768 and 32767
             HASSERT (normalizedIntens >= 0 && normalizedIntens < 256);
 
 	        intensTotal += normalizedIntens;
             }
 
-        Int64 intensAverage = intensTotal / numPointsBuffer;
+        int64_t intensAverage = intensTotal / numPointsBuffer;
 
         if (intensAverage < colorThreshold)
             {
@@ -520,7 +551,8 @@ void PointCloudVortex::GetTransformForThumbnail(TransformR outTransform, PtHandl
     {
     Transform transform;
     float       lower [3], upper [3];
-	PtVortex::CloudBounds (cloudHandle, lower, upper);
+	//PtVortex::CloudBounds (cloudHandle, lower, upper);
+	ptCloudBounds(cloudHandle, lower, upper);
     bsiTransform_initIdentity(&transform);
 
     // Rotate according to the desired view (for Top view, nothing to do, the point cloud is already in top view)

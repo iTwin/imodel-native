@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/Thumbnails/ThumbnailsProvider.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,8 +19,8 @@ class IThumbnailsProvider
     {
     public:
         // IThumbnailProvider
-        THUMBNAILS_EXPORT virtual int GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height) = 0;
-        THUMBNAILS_EXPORT virtual int GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height, PointCloudView pointCloudView) = 0;
+        THUMBNAILS_EXPORT virtual int GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height) = 0;
+        THUMBNAILS_EXPORT virtual int GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView) = 0;
 };
 
 class ThumbnailsProvider : public IThumbnailsProvider
@@ -29,8 +29,8 @@ public:
     THUMBNAILS_EXPORT static IThumbnailsProvider* Get();
 
     // IThumbnailProvider
-    THUMBNAILS_EXPORT virtual StatusInt GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height);
-    THUMBNAILS_EXPORT virtual StatusInt GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height, PointCloudView pointCloudView);
+    THUMBNAILS_EXPORT virtual StatusInt GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height);
+    THUMBNAILS_EXPORT virtual StatusInt GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
 
 private:
     ThumbnailsProvider();
@@ -39,8 +39,8 @@ private:
     bool Initialize();
     void Terminate();
 
-    StatusInt             ExtractRasterThumbnail    (HBITMAP* pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height);
-    StatusInt             ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height, PointCloudView pointCloudView);
+    StatusInt             ExtractRasterThumbnail    (HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height);
+    StatusInt             ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
 };
 
 
@@ -50,7 +50,7 @@ public:
     THUMBNAILS_EXPORT static IThumbnailsProvider* Get();
 
     // IThumbnailProvider
-    THUMBNAILS_EXPORT virtual int GetThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, UInt32 width, UInt32 height);
+    THUMBNAILS_EXPORT virtual int GetThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, uint32_t width, uint32_t height);
 
 private:
     PointCloudThumbnailsProvider() {};
@@ -59,7 +59,7 @@ private:
     BentleyStatus Initialize();
     void Terminate();
 
-    BentleyStatus           ExtractThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height);
+    BentleyStatus           ExtractThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height);
 
     static bool s_isInitialized;
 };

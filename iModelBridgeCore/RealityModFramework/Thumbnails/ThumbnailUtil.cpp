@@ -2,7 +2,7 @@
 |
 |     $Source: Thumbnails/ThumbnailUtil.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -99,7 +99,7 @@ void RasterFacility::ConvertThePixels (size_t pi_Width, size_t pi_Height, const 
         // set the buffer to white
         memset(pDstPixels, 255, DstUncompressedDataSize);	 	
 
-        for(UInt32 LineIndex = 0; LineIndex < pi_Height; LineIndex++)
+        for(uint32_t LineIndex = 0; LineIndex < pi_Height; LineIndex++)
             {
             pConverter->Compose(pSrcBuffer, pDstBuffer, pi_Width);
             pDstBuffer += DstBytesPerRow;
@@ -108,7 +108,7 @@ void RasterFacility::ConvertThePixels (size_t pi_Width, size_t pi_Height, const 
         }
     else
         {
-        for(UInt32 LineIndex = 0; LineIndex < pi_Height; LineIndex++)
+        for(uint32_t LineIndex = 0; LineIndex < pi_Height; LineIndex++)
             {
             pConverter->Convert(pSrcBuffer, pDstBuffer, pi_Width);
             pDstBuffer += DstBytesPerRow;
@@ -139,7 +139,7 @@ void RasterFacility::ConvertThePixels (size_t pi_Width, size_t pi_Height, const 
             memcpy(po_rpDstPacket->GetBufferAddress(), pDecompressedDstPacket->GetBufferAddress(), DstUncompressedDataSize);
         }
     }   
-
+	
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -151,15 +151,15 @@ void RasterFacility::CreateHBitmapFromHRFThumbnail (HBITMAP* pThumbnailBmp, HFCP
     HArrayAutoPtr<Byte>  pSrcPixels;
     pSrcPixels = new Byte[pThumbnail->GetSizeInBytes()];
 
-    UInt32 PreferedWidth = pThumbnail->GetWidth();
-    UInt32 PreferedHeight = pThumbnail->GetHeight();
+    uint32_t PreferedWidth = pThumbnail->GetWidth();
+    uint32_t PreferedHeight = pThumbnail->GetHeight();
 
     pThumbnail->Read(pSrcPixels);
     
     // Convert the Pixel Type
-    UInt32 SrcSizeInBytes = (((pPixelType->CountPixelRawDataBits() * PreferedWidth) + 7) /8) * PreferedHeight;    
+    uint32_t SrcSizeInBytes = (((pPixelType->CountPixelRawDataBits() * PreferedWidth) + 7) /8) * PreferedHeight;    
     HFCPtr<HRPPixelType> pDstPixelType = new HRPPixelTypeV32B8G8R8X8();
-    UInt32 DstBytesPerWidth = ((pDstPixelType->CountPixelRawDataBits() * PreferedWidth) + 7) /8;
+    uint32_t DstBytesPerWidth = ((pDstPixelType->CountPixelRawDataBits() * PreferedWidth) + 7) /8;
     HFCPtr<HCDPacket>    pSourcePacket(new HCDPacket(pSrcPixels, SrcSizeInBytes, SrcSizeInBytes));
     HFCPtr<HCDPacket>    pConvertedPacket = new HCDPacket(0, 0, 0, 0);
 
@@ -191,9 +191,10 @@ void RasterFacility::CreateHBitmapFromHRFThumbnail (HBITMAP* pThumbnailBmp, HFCP
     BYTE* pBitmapData = reinterpret_cast<BYTE *>(pDataToCopy);
 
     // Convert the thumbnail data into the  buffer - due to the padding
-    for (UInt32 i=0 ; i<PreferedHeight ; i++)
+    for (uint32_t i=0 ; i<PreferedHeight ; i++)
         memcpy(pBitmapData+(DIBWidth * (PreferedHeight - i -1)), 
         pConvertedPacket->GetBufferAddress() + (DstBytesPerWidth * i), 
         DstBytesPerWidth);
 
     }   
+	

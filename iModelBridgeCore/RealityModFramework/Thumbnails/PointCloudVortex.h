@@ -2,12 +2,14 @@
 |
 |     $Source: Thumbnails/PointCloudVortex.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Geom/GeomApi.h"
-#include "PointCloudCore/PtVortex.h"
+//#include "PointCloudCore/PtVortex.h"
 #include "Thumbnails/ThumbnailsProvider.h"
+
+typedef uint32_t PtHandle;
 
 //=======================================================================================    
 //! Class that encapsulates Vortex services
@@ -37,8 +39,8 @@ public:
     //!             necessary to use a white background. If this parameter is true, a white background is used, otherwise it is black.
     //! @return NOERROR if no error occurred, or an error code otherwise.
     static HRESULT  ExtractPointCloud(  HBITMAP*        pThumbnailBmp, 
-                                        UInt32          width, 
-                                        UInt32          height, 
+                                        uint32_t          width, 
+                                        uint32_t          height, 
                                         PtHandle        cloudHandle, 
                                         float           densityValue, 
                                         TransformCR     transform, 

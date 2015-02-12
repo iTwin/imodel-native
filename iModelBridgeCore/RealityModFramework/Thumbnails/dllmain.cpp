@@ -2,17 +2,17 @@
 |
 |     $Source: Thumbnails/dllmain.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 //Will ignore non local file format (WMS; GeoRaster, etc...)
 #define PREVIEWHANDLER_FILE_FORMATS       
-#define RASTERLIB_FILE_FORMATS
+//#define RASTERLIB_FILE_FORMATS
 #include <ImagePP/all/h/HRFFileFormats.h>
 
-#include <Imagepp/all/h/ImageppLib.h>
-#include <PdfLibInitializer/PdfLibInitializer.h>
+//#include <Imagepp/all/h/ImageppLib.h>
+//#include <PdfLibInitializer/PdfLibInitializer.h>
 
 static HINSTANCE                                s_moduleHandle = 0;
 
@@ -46,43 +46,43 @@ struct MyImageppLibHost : ImagePP::ImageppLib::Host
         REGISTER_SUPPORTED_FILEFORMAT                                
         }                                                            
     };   
-
+	
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct MyPdfLibInitializerAdmin : Bentley::PdfLibInitializerAdmin
-    {
-protected:
-    virtual BentleyStatus _GetPDFDataPath
-    (
-    WStringR cMapDir,
-    WStringR unicodeDir,
-    WStringR fontDir,
-    WStringR colorDir,
-    WStringR pluginDir
-    ) const override
-        {
-        // Setup location to find PDF resource files (was created under exe location)...
-        WString baseDir;
-        GetBaseDirOfExecutingModule (baseDir);
-
-        cMapDir = baseDir + WString(L"System\\Data\\PDFL\\CMap");
-        fontDir = baseDir + WString(L"System\\Data\\PDFL\\Font");
-        unicodeDir = baseDir + WString(L"System\\Data\\PDFL\\Unicode");
-
-        return BSISUCCESS;
-        }
-    virtual bool   _IsPDFLibAvailable() const override  {return false;}
-
-    };// MyPdfLibInitializerAdmin
-
-/*=================================================================================**//**
-* @bsiclass                                     		Marc.Bedard     02/2011
-+===============+===============+===============+===============+===============+======*/
-struct MyPdfLibInitializerHost : Bentley::PdfLibInitializer::Host 
-    {
-    virtual PdfLibInitializerAdmin& _SupplyPdfLibInitializerAdmin() override { return *new MyPdfLibInitializerAdmin(); }
-    }; // MyPdfLibInitializerHost
+//struct MyPdfLibInitializerAdmin : Bentley::PdfLibInitializerAdmin
+//    {
+//protected:
+//    virtual BentleyStatus _GetPDFDataPath
+//    (
+//    WStringR cMapDir,
+//    WStringR unicodeDir,
+//    WStringR fontDir,
+//    WStringR colorDir,
+//    WStringR pluginDir
+//    ) const override
+//        {
+//        // Setup location to find PDF resource files (was created under exe location)...
+//        WString baseDir;
+//        GetBaseDirOfExecutingModule (baseDir);
+//
+//        cMapDir = baseDir + WString(L"System\\Data\\PDFL\\CMap");
+//        fontDir = baseDir + WString(L"System\\Data\\PDFL\\Font");
+//        unicodeDir = baseDir + WString(L"System\\Data\\PDFL\\Unicode");
+//
+//        return BSISUCCESS;
+//        }
+//    virtual bool   _IsPDFLibAvailable() const override  {return false;}
+//
+//    };// MyPdfLibInitializerAdmin
+//
+///*=================================================================================**//**
+//* @bsiclass                                     		Marc.Bedard     02/2011
+//+===============+===============+===============+===============+===============+======*/
+//struct MyPdfLibInitializerHost : Bentley::PdfLibInitializer::Host 
+//    {
+//    virtual PdfLibInitializerAdmin& _SupplyPdfLibInitializerAdmin() override { return *new MyPdfLibInitializerAdmin(); }
+//    }; // MyPdfLibInitializerHost
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -90,8 +90,9 @@ struct MyPdfLibInitializerHost : Bentley::PdfLibInitializer::Host
 +---------------+---------------+---------------+---------------+---------------+------*/
 IThumbnailsProvider* ThumbnailsProvider::Get()
     {
-    static ThumbnailsProvider s_thumbnailsProvider;
-    return &s_thumbnailsProvider;
+	static ThumbnailsProvider s_thumbnailsProvider;
+	return &s_thumbnailsProvider;
+	//return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,12 +119,12 @@ bool ThumbnailsProvider::Initialize()
     CriticalSectionHelper::Init ();
 
     //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-    Bentley::PdfLibInitializer::Initialize(*new MyPdfLibInitializerHost());
+    //Bentley::PdfLibInitializer::Initialize(*new MyPdfLibInitializerHost());
 
     //Initialize ImagePP host
-    ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
+	ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
 
-    PointCloudVortex::Initialize();
+    //PointCloudVortex::Initialize();
 
     return true;
     }
@@ -135,7 +136,7 @@ void ThumbnailsProvider::Terminate()
     {
     //Terminate ImagePP lib host
     ImagePP::ImageppLib::GetHost().Terminate(true);
-    Bentley::PdfLibInitializer::GetHost().Terminate(true);
+    //Bentley::PdfLibInitializer::GetHost().Terminate(true);
     }
 
 /*----------------------------------------------------------------------------+

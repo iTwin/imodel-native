@@ -2,7 +2,7 @@
 |
 |     $Source: Thumbnails/ThumbnailsProvider.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -72,11 +72,11 @@ struct FactoryScanOnOpenGuard
             HRFRasterFileFactory::GetInstance()->SetFactoryScanOnOpen(m_oldValue);
             }
     };
-
+	
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ThumbnailsProvider::GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, UInt32 width, UInt32 height)
+StatusInt ThumbnailsProvider::GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, uint32_t width, uint32_t height)
     {
     StatusInt hr = ExtractRasterThumbnail(pThumbnailBmp, filename, width, height);
 
@@ -85,7 +85,7 @@ StatusInt ThumbnailsProvider::GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP
 
     return hr;
     }
-
+	
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -179,13 +179,13 @@ static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP InputFilename)
 
     return RasterFile;
     }
-
+	
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ThumbnailsProvider::ExtractRasterThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height)
+StatusInt ThumbnailsProvider::ExtractRasterThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height)
     {
     try
         {
@@ -247,12 +247,12 @@ StatusInt ThumbnailsProvider::ExtractRasterThumbnail(HBITMAP* pThumbnailBmp, WCh
         return ERROR;
         }
     }
-
+	
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ThumbnailsProvider::GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, UInt32 width, UInt32 height, PointCloudView pointCloudView)
+int ThumbnailsProvider::GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, uint32_t width, uint32_t height, PointCloudView pointCloudView)
     {
     StatusInt hr = ExtractPointCloudThumbnail(pThumbnailBmp, filename, width, height, pointCloudView);
 
@@ -266,7 +266,7 @@ int ThumbnailsProvider::GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ThumbnailsProvider::ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, UInt32 width, UInt32 height, PointCloudView pointCloudView)
+StatusInt ThumbnailsProvider::ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView)
 {
     if (InputFilename == NULL)
         return ERROR;

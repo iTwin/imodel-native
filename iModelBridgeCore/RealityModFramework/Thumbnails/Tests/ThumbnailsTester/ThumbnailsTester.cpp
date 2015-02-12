@@ -33,7 +33,6 @@ static void ShowUsage()
 int main(array<System::String ^> ^args)
 {
     cout << "Copyright (c) Bentley Systems Inc, ThumbnailsTester " << "version 1.0 --- " << __DATE__ << endl;
-
     // Check that we have the right number of parameters.
     if (args->Length != 2 && args->Length != 3)
     {
@@ -43,13 +42,14 @@ int main(array<System::String ^> ^args)
 
     for each(String^ arg in args)
         Console::WriteLine(arg);
-
+	
     pin_ptr<const wchar_t>  pinFilename = PtrToStringChars(args[0]);
-    HBITMAP ThumbnailBmp;
-    StatusInt RetCode;
-
+    HBITMAP ThumbnailBmp = NULL;
+    StatusInt RetCode(ERROR);
+	
     String^ Ext = Path::GetExtension(args[0]);
     Ext = Ext->ToUpper();
+
     if (Ext == ".POD")
         {
         String^ PCView = "";
@@ -72,9 +72,10 @@ int main(array<System::String ^> ^args)
             pointCloudView = PointCloudView::Iso;
             }
         RetCode = ThumbnailsProvider::Get()->GetPointCloudThumbnail(&ThumbnailBmp, pinFilename, 256, 256, pointCloudView);
-        }
-    else
-        RetCode = ThumbnailsProvider::Get()->GetRasterThumbnail(&ThumbnailBmp, pinFilename, 256, 256);
+	}
+	else {
+		RetCode = ThumbnailsProvider::Get()->GetRasterThumbnail(&ThumbnailBmp, pinFilename, 256, 256);
+	}
 
     if (RetCode == SUCCESS)
     {
@@ -91,6 +92,7 @@ int main(array<System::String ^> ^args)
     }
     else
         Console::WriteLine("There was a problem input file.");
+	
     
     Console::WriteLine("Done.");
     return 0;
