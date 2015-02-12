@@ -117,7 +117,7 @@ struct CachedProperyMap : bmap<CachedPropertyKey, CachedPropertyValue>
 struct CachedRlValue
     {
 private:
-    Utf8CP m_name;
+    Utf8String m_name;
     bool m_isUnset;
     bool m_dirty;
     int64_t m_value;
@@ -130,7 +130,7 @@ public:
         Reset ();
         }
 
-    Utf8CP GetName () const { return m_name; }
+    Utf8CP GetName () const { return m_name.c_str(); }
 
     int64_t GetValue () const
         {
