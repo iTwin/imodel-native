@@ -1644,7 +1644,6 @@ SchemaReadStatus ECSchema::ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, ui
 
     if (ECOBJECTS_STATUS_DuplicateSchema == schemaContext.AddSchema (*schemaOut))
         {
-        schemaContext.RemoveSchema(*schemaOut);
         return SCHEMA_READ_STATUS_DuplicateSchema;
         }
 
