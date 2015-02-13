@@ -108,7 +108,7 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;
-    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECdbSystemColumnECId) == BentleyStatus::ERROR)
+    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECDbSystemColumnECInstanceId) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
@@ -158,9 +158,9 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
-    if (kind != ECSqlSystemProperty::ECInstanceId && kind != ECSqlSystemProperty::ECPropertyPathId && kind != ECSqlSystemProperty::ECArrayIndex&& kind != ECSqlSystemProperty::OwnerECInstanceId)
+    if (kind != ECSqlSystemProperty::ECInstanceId && kind != ECSqlSystemProperty::ECPropertyPathId && kind != ECSqlSystemProperty::ECArrayIndex&& kind != ECSqlSystemProperty::ParentECInstanceId)
         {
-        BeAssert (false && "PropertyMapSecondaryTableKey::Create must only be called with ECSqlSystemProperty::ECInstanceId, ECSqlSystemProperty::ECPropertyPathId, or ECSqlSystemProperty::ECArrayIndex or ECSqlSystemProperty::OwnerECInstanceId.");
+        BeAssert (false && "PropertyMapSecondaryTableKey::Create must only be called with ECSqlSystemProperty::ECInstanceId, ECSqlSystemProperty::ECPropertyPathId, or ECSqlSystemProperty::ECArrayIndex or ECSqlSystemProperty::ParentECInstanceId.");
         return nullptr;
         }
 
@@ -170,7 +170,7 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;  
-    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECdbSystemColumns) == BentleyStatus::ERROR)
+    if (classMap.GetTable ().GetFilteredColumnList (systemColumns, ECDbSystemColumns) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
@@ -184,28 +184,28 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
             {
                 case ECSqlSystemProperty::ECInstanceId:
                     {
-                    if (column->GetUserFlags () == ECdbSystemColumnECId)
+                    if (column->GetUserFlags () == ECDbSystemColumnECInstanceId)
                         found = true;
                        
                     break;
                     }
-                case ECSqlSystemProperty::OwnerECInstanceId:
+                case ECSqlSystemProperty::ParentECInstanceId:
                     {
-                    if (column->GetUserFlags () == ECdbSystemColumnOwnerECId)
+                    if (column->GetUserFlags () == ECDbSystemColumnParentECInstanceId)
                         found = true;
 
                     break;
                     }
                 case ECSqlSystemProperty::ECPropertyPathId:
                     {
-                    if (column->GetUserFlags () == ECdbSystemColumnECPropertyPathId)
+                    if (column->GetUserFlags () == ECDbSystemColumnECPropertyPathId)
                         found = true;
 
                     break;
                     }
                 case ECSqlSystemProperty::ECArrayIndex:
                     {
-                    if (column->GetUserFlags () == ECdbSystemColumnECArraryIndex)
+                    if (column->GetUserFlags () == ECDbSystemColumnECArraryIndex)
                         found = true;
 
                     break;
@@ -348,7 +348,7 @@ m_defaultConstraintClassId (defaultConstraintECClassId)
         {
         table->AddColumnEventHandler ([this, table] (ECDbSqlTable::ColumnEvent evt, ECDbSqlColumn& column)
             {
-            if (evt == ECDbSqlTable::ColumnEvent::Created && column.GetUserFlags() == ECdbSystemColumnECClassId)
+            if (evt == ECDbSqlTable::ColumnEvent::Created && column.GetUserFlags() == ECDbSystemColumnECClassId)
                 {
                 if (!GetColumnWeakPtr ().expired ())
                     table->DeleteColumn (GetColumnWeakPtr ().lock()->GetName ().c_str ());

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/NonPublished/ECDb/ECInstanceIdSequence_Tests.cpp $
+|  $Source: Tests/NonPublished/ECDb/ECInstanceIdSequence_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-static Utf8CP const ECINSTANCEIDSEQUENCE_BELOCAL_KEY = "ec_ecidsequence";
+static Utf8CP const ECINSTANCEIDSEQUENCE_BELOCAL_KEY = "ec_ecinstanceidsequence";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  11/12

@@ -98,7 +98,7 @@ MapStatus SecondaryTableClassMap::EmbeddedTypeClassMap::Initialize ()
     auto systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
-    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::OwnerECInstanceId, *this);
+    systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ParentECInstanceId, *this);
     m_embeddedClassViewPropMaps.AddPropertyMap (systemPropMap);
 
     systemPropMap = PropertyMapSecondaryTableKey::Create (schemaManager, ECSqlSystemProperty::ECPropertyPathId, *this);

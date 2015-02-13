@@ -306,7 +306,7 @@ public:
             return  ECSqlStatus::ProgrammerError;
             }
 
-        auto targetClassMap = ecdb.GetImplR ().GetECDbMap().GetClassMap(*targetClass);
+        auto targetClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*targetClass);
         if (targetClassMap == nullptr)
             {
             BeAssert (false && "No class map found for class.");

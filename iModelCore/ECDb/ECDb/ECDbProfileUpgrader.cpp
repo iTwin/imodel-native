@@ -285,7 +285,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadC
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDbSystem' nameSpacePrefix='ecdbsys' version='1.2'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
+        "<ECSchema schemaName='ECDbSystem' nameSpacePrefix='ecdbsys' version='2.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.06' prefix='bsca' /> "
         "    <ECCustomAttributes> "
         "         <SystemSchema xmlns='Bentley_Standard_CustomAttributes.01.06'/> "
@@ -352,7 +352,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "        <ECProperty propertyName='SourceECClassId' typeName='long' description='Represents the SourceECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECInstanceId' typeName='long' description='Represents the TargetECInstanceId system property of an ECRelationship used by the EC->DB Mapping.' />"
         "        <ECProperty propertyName='TargetECClassId' typeName='long' description='Represents the TargetECClassId system property of an ECRelationship used by the EC->DB Mapping.' />"
-        "        <ECProperty propertyName='OwnerECInstanceId' typeName='long' description='For ECClasses mapped to secondary table storage (e.g. ECStructs), this system property represents the ECInstanceId of the owning (embedding) ECInstance.' />"
+        "        <ECProperty propertyName='ParentECInstanceId' typeName='long' description='For ECClasses mapped to secondary table storage (e.g. ECStructs), this system property represents the ECInstanceId of the parent (embedding) ECInstance.' />"
         "        <ECProperty propertyName='ECPropertyPathId' typeName='long' description='For ECClasses mapped to secondary table storage, this system property represents the id of the ECProperty in the owning ECClass to which a row in the secondary table refers to.' />"
         "        <ECProperty propertyName='ECArrayIndex' typeName='int' description='For EC arrays mapped to secondary table storage, this system property represents the index of the array element which a row in the secondary table represents.' />"
         "    </ECClass> "

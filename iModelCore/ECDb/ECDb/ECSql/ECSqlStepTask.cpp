@@ -225,17 +225,17 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
     
     auto structType = GetPropertyMapR ().GetProperty ().GetAsArrayProperty ()->GetStructElementType ();
     auto& ecdb = preparedStmt->GetECDbR ();
-    auto structClassMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (*structType);
+    auto structClassMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
     auto const& structMemberPropMaps = structClassMap->GetPropertyMaps ();
     int nArrayElementIndex = 0;
    
     for (auto arrayElement : structArrayParameterValue->GetArray ())
         {       
         ECInstanceId generatedECInstanceId;
-        auto dbStat = ecdb.GetImplR ().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
+        auto dbStat = ecdb.GetECDbImplR().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
         if (dbStat != BE_SQLITE_OK)
             {
-            //GetStatusContext ().SetStatus (&ecdb, dbStat, true, "InsertStructArrayStepTask::_Execute (ECSqlStepTaskArgs& args) failed: Could not generate an OwnerECInstanceId.");
+            //GetStatusContext ().SetStatus (&ecdb, dbStat, true, "InsertStructArrayStepTask::_Execute (ECSqlStepTaskArgs& args) failed: Could not generate an ParentECInstanceId.");
             return ECSqlStepStatus::Error;
             }
        
@@ -300,7 +300,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertSt
         }
 
     auto& arrayElementType = structArrayPropertyMap->GetElementType ();
-    auto arrayElementTypeMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (arrayElementType);
+    auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (arrayElementType);
     if (!arrayElementTypeMap)
         {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
@@ -316,7 +316,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertSt
 
     //ECSQL_Todo: Change following to constants defines
     builder.AddValue (ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, "?");
-    builder.AddValue (ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME, "?");
+    builder.AddValue (ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, "?");
     builder.AddValue (ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, "?");
     builder.AddValue (ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, "?");
 
@@ -389,7 +389,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
         }
 
     auto& arrayElementType = structArrayPropertyMap->GetElementType ();
-    auto arrayElementTypeMap = ecdb.GetImplR ().GetECDbMap ().GetClassMap (arrayElementType);
+    auto arrayElementTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (arrayElementType);
     if (arrayElementTypeMap == nullptr)
         {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
@@ -405,7 +405,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
     auto persistenceECPropertyId = propertyMap->GetPropertyPathId ();
  
     Utf8String ecsql; 
-    ecsql.Sprintf ("DELETE FROM ONLY [%s].[%s] WHERE OwnerECInstanceId = ? AND ECPropertyPathId = %llu AND ECArrayIndex IS NOT NULL", schemaName.c_str (), structName.c_str (), persistenceECPropertyId);
+    ecsql.Sprintf ("DELETE FROM ONLY [%s].[%s] WHERE " ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %llu AND " ECDB_COL_ECArrayIndex " IS NOT NULL", schemaName.c_str (), structName.c_str (), persistenceECPropertyId);
 
     unique_ptr<DeleteStructArrayStepTask>  aDeleteStepTask = unique_ptr<DeleteStructArrayStepTask> (new DeleteStructArrayStepTask (preparedContext.GetECSqlStatementR ().GetStatusContextR (), *structArrayPropertyMap, classMap));
     aDeleteStepTask->GetStatement ().Initialize (preparedContext, propertyMap->GetProperty ().GetAsArrayProperty (), nullptr);
@@ -543,7 +543,7 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
     auto relationshipClass = ecClass->GetRelationshipClassCP ();
     if (relationshipClass != nullptr)
         {
-        auto classMap = ecDb.GetImplR ().GetECDbMap ().GetClassMapCP (*relationshipClass);
+        auto classMap = ecDb.GetECDbImplR().GetECDbMap ().GetClassMapCP (*relationshipClass);
         if (classMap == nullptr)
             {
             LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Cound not retrieve class map.", relationshipClass->GetFullName ());

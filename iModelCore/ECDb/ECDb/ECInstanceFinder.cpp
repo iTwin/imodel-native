@@ -388,7 +388,7 @@ int findRelatedDirections
             
             auto classP = queryableRelationship.GetRelationshipClass ();
             POSTCONDITION (classP != nullptr, ERROR)
-            auto classMapP = m_ecDb.GetImplR ().GetECDbMap ().GetClassMap (*classP);
+            auto classMapP = m_ecDb.GetECDbImplR().GetECDbMap ().GetClassMap (*classP);
             POSTCONDITION (classMapP != nullptr, ERROR)
             if (classMapP->GetMapStrategy().IsUnmapped ())
                 {

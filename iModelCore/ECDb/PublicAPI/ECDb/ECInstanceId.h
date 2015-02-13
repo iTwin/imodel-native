@@ -21,23 +21,17 @@ struct ECInstanceId : BeRepositoryBasedId
     {
 public:
     //! Constructs an empty, i.e. invalid ECInstanceId.
-    ECInstanceId ()
-        : BeRepositoryBasedId ()
-        {}
+    ECInstanceId() : BeRepositoryBasedId() {}
 
     //! Constructs an ECInstanceId from a 64 bit value.
     //! @param[in] id Numeric value of the ECInstanceId, that must be composed of the RepositoryId and the local id.
     //! (see overload ECInstanceId::ECInstanceId(BeRepositoryId,UInt32) )
-    explicit ECInstanceId (int64_t id)
-        : BeRepositoryBasedId (id)
-        {}
+    explicit ECInstanceId(int64_t id) : BeRepositoryBasedId(id) {}
     
     //! Constructs an ECInstanceId from a RepositoryId value and an id.
     //! @param[in] repositoryId RepositoryId
     //! @param[in] id Id locally unique for the given @p repositoryId
-    ECInstanceId (BeRepositoryId repositoryId, uint32_t id)
-        : BeRepositoryBasedId (repositoryId, id)
-        {}
+    ECInstanceId(BeRepositoryId repositoryId, uint32_t id) : BeRepositoryBasedId(repositoryId, id) {}
     };
 
 //=======================================================================================
@@ -53,14 +47,10 @@ private:
 
 public:
     //! Construct an empty/invalid ECInstanceKey
-    ECInstanceKey () 
-        : m_ecClassId (-1LL) 
-        {}
+    ECInstanceKey() : m_ecClassId(-1LL) {}
 
     //! Construct an ECInstanceKey
-    ECInstanceKey (ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) 
-        : m_ecClassId (ecClassId), m_ecInstanceId (ecInstanceId) 
-        {}
+    ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
 
     //! Compare this ECInstanceKey with another key for equality
     bool operator == (ECInstanceKey const& other) const 
@@ -89,14 +79,14 @@ public:
         }
 
     //! Get the ECClassId of this key
-    ECN::ECClassId GetECClassId () const { return m_ecClassId; }
+    ECN::ECClassId GetECClassId() const { return m_ecClassId; }
     //! Get the ECInstanceId of this key
-    ECInstanceId GetECInstanceId () const { return m_ecInstanceId; }
+    ECInstanceId GetECInstanceId() const { return m_ecInstanceId; }
     
     //! Test if this key is valid
-    bool IsValid () const 
+    bool IsValid() const 
         { 
-        return (m_ecClassId > 0LL && m_ecInstanceId.IsValid ()); 
+        return (m_ecClassId > 0LL && m_ecInstanceId.IsValid()); 
         }
     };
 
@@ -112,8 +102,8 @@ typedef ECInstanceKey& ECInstanceKeyR;
 struct ECInstanceIdHelper
     {
 private:
-    ECInstanceIdHelper ();
-    ~ECInstanceIdHelper ();
+    ECInstanceIdHelper();
+    ~ECInstanceIdHelper();
 
 public:
     //! Required number of characters to represent an ECInstanceId as string.
@@ -135,14 +125,14 @@ public:
     //! @param[in] stringBufferLength Number of characters allocated in @p stringBuffer
     //! @param[in] ecInstanceId ECInstanceId to convert
     //! @return true in case of success, false if @p ecInstanceId is not valid or if @p stringBuffer is too small.
-    ECDB_EXPORT static bool ToString (WCharP stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId);
+    ECDB_EXPORT static bool ToString(WCharP stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId);
 
     //! Converts the ECInstanceId string to an ECInstanceId.
     //! @remarks In order to parse correctly, the ECInstanceId string must contain an unsigned number in decimal format.
     //! @param[out] ecInstanceId resulting ECInstanceId
     //! @param[in] ecInstanceIdString ECInstanceId string to convert
     //! @return true in case of success, false otherwise
-    ECDB_EXPORT static bool FromString (ECInstanceId& ecInstanceId, WCharCP ecInstanceIdString);
+    ECDB_EXPORT static bool FromString(ECInstanceId& ecInstanceId, WCharCP ecInstanceIdString);
     };
 
 //=======================================================================================
@@ -151,7 +141,7 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECInstanceIdSet : bset<ECInstanceId>, BeSQLite::VirtualSet
     {
-    virtual bool _IsInSet (int nVals, DbValue const* vals) const override;
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
@@ -163,7 +153,7 @@ END_BENTLEY_SQLITE_EC_NAMESPACE
     struct classname : subclassname \
     {\
         classname() : subclassname() {} \
-        classname (ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : subclassname (classId, instanceId) {} \
-        static classname FromECInstanceKey (BeSQLite::EC::ECInstanceKeyCR key) {return classname (key.GetECClassId(), key.GetECInstanceId());} \
+        classname(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : subclassname(classId, instanceId) {} \
+        explicit classname (BeSQLite::EC::ECInstanceKeyCR key) : subclassname (key) {} \
     };\
     typedef classname const& classname##CR;

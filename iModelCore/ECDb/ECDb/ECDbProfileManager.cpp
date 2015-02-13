@@ -37,7 +37,7 @@ ECDbR ecdb
     // Set up the id sequences as the upgrade steps might add entries to the ec tables and therefore
     // need the sequence.
     // Setting up the sequence just means to reset them to the current repo id
-    auto stat = ecdb.GetImplR ().ResetSequences (ecdb);
+    auto stat = ecdb.GetECDbImplR().ResetSequences (ecdb);
     if (stat != BE_SQLITE_OK)
         {
         ecdb.AbandonChanges ();

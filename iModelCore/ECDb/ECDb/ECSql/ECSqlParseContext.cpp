@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParseContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -62,7 +62,7 @@ ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& 
         return ECSqlStatus::Success;
         }
 
-    auto map = m_ecdb.GetImplR ().GetECDbMap ().GetClassMap (*resolvedClass);
+    auto map = m_ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*resolvedClass);
 
     auto policy = ECDbPolicyManager::GetClassPolicy (*map, IsValidInECSqlPolicyAssertion::Get ());
     if (!policy.IsSupported ())

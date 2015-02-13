@@ -51,13 +51,13 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, 
 
     if (GetTable ().GetOwnerType () == OwnerType::ECDb)
         {
-        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECdbDataColumn,
+        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECDbDataColumn,
             addToTable ? PersistenceType::Persisted : PersistenceType::Virtual);
         }
     else
         {
         GetTable ().GetEditHandleR ().BeginEdit ();
-        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECdbDataColumn, PersistenceType::Virtual);
+        column = GetTable ().CreateColumn (columnName, ECDbSqlColumn::Type::Long, ECDbDataColumn, PersistenceType::Virtual);
         GetTable ().GetEditHandleR ().EndEdit ();
         }
     return column;
@@ -593,7 +593,7 @@ ECClassId defaultOtherEndClassId
     //Existing this end instance id and class id columns will be reused
     auto& persistenceEndTable = GetTable();
     std::vector<ECDbSqlColumn const*> systemColumns;
-    if (persistenceEndTable.GetFilteredColumnList (systemColumns, ECdbSystemColumnECId) == BentleyStatus::ERROR)
+    if (persistenceEndTable.GetFilteredColumnList (systemColumns, ECDbSystemColumnECInstanceId) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return MapStatus::Error;
@@ -1241,7 +1241,10 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName (Utf8Str
 
     if (GetMapStrategy().IsSharedTableForThisClass())
         return true;
-
+		
+    if (GetMapStrategy().IsInParentTable())
+        return true;
+		
     //Following error occure in Upgrading ECSchema but is not fatal.
     LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());
@@ -1261,7 +1264,10 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
 
     if (GetMapStrategy().IsSharedTableForThisClass())
         return true;
-
+		
+    if (GetMapStrategy().IsInParentTable())
+        return true;
+		
     //Following error occure in Upgrading ECSchema but is not fatal.
     LOG.errorv (L"Table %s already contains column named %s. ECRelationship %s has failed to map.", 
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());

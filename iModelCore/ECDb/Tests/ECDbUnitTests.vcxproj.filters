@@ -49,9 +49,6 @@
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\general\CompressionTests.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -141,9 +138,6 @@
     </ClCompile>
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp">
       <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\WriteAndVerifyGeometryInstances.cpp">
-      <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp">
       <Filter>Performance</Filter>

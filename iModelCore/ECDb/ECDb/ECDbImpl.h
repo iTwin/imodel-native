@@ -52,7 +52,7 @@ private:
     explicit Impl (ECDbR ecdb);
     static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
-    void ClearCache () const;
+    void ClearECDbCache () const;
 
     ECDbSchemaManager const& GetSchemaManager () const;
     ECN::IECSchemaLocaterR GetSchemaLocater () const;

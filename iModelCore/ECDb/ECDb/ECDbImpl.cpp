@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                02/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-Utf8CP const ECDb::Impl::ECINSTANCEIDSEQUENCE_BELOCALKEY = "ec_ecidsequence";
+Utf8CP const ECDb::Impl::ECINSTANCEIDSEQUENCE_BELOCALKEY = "ec_ecinstanceidsequence";
 //static
 Utf8CP const ECDb::Impl::ECSCHEMAIDSEQUENCE_BELOCALKEY = "ec_ecschemaidsequence";
 //static
@@ -142,7 +142,7 @@ BeRepositoryId newRepositoryId
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::OnDbChangedByOtherConnection () const
     {
-    ClearCache ();
+    ClearECDbCache ();
     }
 
 
@@ -158,7 +158,7 @@ DbResult ECDb::Impl::VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& para
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ClearCache () const
+void ECDb::Impl::ClearECDbCache () const
     {
     if (m_ecdbMap != nullptr)
         m_ecdbMap->ClearCache ();

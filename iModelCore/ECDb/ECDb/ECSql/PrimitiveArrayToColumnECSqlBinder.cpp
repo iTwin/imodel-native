@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayToColumnECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -20,7 +20,7 @@ PrimitiveArrayToColumnECSqlBinder::PrimitiveArrayToColumnECSqlBinder (ECSqlState
 : ECSqlBinder (ecsqlStatement, typeInfo, 1, true, true), m_initialCapacity (0), m_currentArrayIndex (-1), 
 m_arrayElementBinder (ecsqlStatement.GetStatusContextR (), GetTypeInfo (), ARRAY_PROPERTY_INDEX), m_sqliteIndex (-1)
     {
-    m_arrayStorageClass = &ecsqlStatement.GetPreparedStatementP ()->GetECDbR ().GetImplR ().GetECDbMap ().GetClassForPrimitiveArrayPersistence (typeInfo.GetPrimitiveType ());
+    m_arrayStorageClass = &ecsqlStatement.GetPreparedStatementP ()->GetECDbR().GetECDbImplR().GetECDbMap ().GetClassForPrimitiveArrayPersistence (typeInfo.GetPrimitiveType ());
     BeAssert (m_arrayStorageClass != nullptr);
     }
 

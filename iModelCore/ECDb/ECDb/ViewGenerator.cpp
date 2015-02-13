@@ -104,9 +104,9 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
 BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, IClassMap const& classMap)
     {
     if (classMap.IsMappedToSecondaryTable ())
-        viewSql.Append ("SELECT NULL ECClassId, NULL ECId, NULL OwnerECId, NULL ECPropertyPathId, NULL ECArrayIndex");
+        viewSql.Append ("SELECT NULL ECClassId, NULL " ECDB_COL_ECInstanceId ", NULL ParentECInstanceId, NULL ECPropertyPathId, NULL ECArrayIndex");
     else
-        viewSql.Append ("SELECT NULL ECClassId, NULL ECId");
+        viewSql.Append ("SELECT NULL ECClassId, NULL " ECDB_COL_ECInstanceId);
 
     std::vector<std::pair<PropertyMapCP, PropertyMapCP>> viewPropMaps;
     auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass (viewPropMaps, classMap, classMap, false, false);
@@ -142,7 +142,7 @@ BentleyStatus ViewGenerator::GetRootClasses (std::vector<IClassMap const*>& root
             {
             if (ecClass->GetDerivedClasses().empty())
                 {
-                auto classMap = db.GetImplR ().GetECDbMap ().GetClassMap (*ecClass);
+                auto classMap = db.GetECDbImplR().GetECDbMap ().GetClassMap (*ecClass);
                 BeAssert (classMap != nullptr);
                 if (!ECDbPolicyManager::GetClassPolicy (*classMap, IsValidInECSqlPolicyAssertion::Get ()).IsSupported ())
                     continue;
@@ -846,16 +846,6 @@ BentleyStatus ViewGenerator::CreateSystemView (NativeSqlBuilder& viewSql, System
             }
         }
 
-    //switch (systemView)
-    //    {
-    //        case SystemViewType::Class: //ECClass and ECStructs (all primary instances)
-    //            viewSql.Append ("SELECT NULL ECId , NULL ECClassId  LIMIT 0"); break;
-    //        case SystemViewType::RelationshipClass: //RelationshipOnly
-    //            viewSql.Append ("SELECT NULL ECId , NULL RK_Source  , NULL RC_Source , NULL RK_Target , NULL RC_Target  LIMIT 0"); break;
-    //        case SystemViewType::StructArray: //Structs only (all struct array instances)
-    //            viewSql.Append ("SELECT NULL OwnerECId , NULL ECClassId , NULL ECPropertyIndex  , NULL ECArrayIndex  LIMIT 0"); break;
-    //    }
-
     if (tableMap.empty ())
         return BentleyStatus::SUCCESS;
 
@@ -951,7 +941,7 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
         viewSql.Append (ecInstanceIdColumn->GetName ().c_str (), true);
         if (first)
             {
-            viewSql.Append ("ECId", true);
+            viewSql.Append (ECDB_COL_ECInstanceId, true);
             }
 
         viewSql.AppendComma (true);

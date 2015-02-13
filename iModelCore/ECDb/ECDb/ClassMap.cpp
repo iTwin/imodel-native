@@ -798,7 +798,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap, Pro
         generateColumnNameOpts, 
         requestedColumnName, 
         requestedColumnType, 
-        ECdbDataColumn, 
+        ECDbDataColumn, 
         PersistenceType::Persisted, 
         accessStringPrefix, 
         !nullable, 
@@ -1022,7 +1022,7 @@ StatusInt MappedTable::FinishTableDefinition ()
                 if (ecClassIdColumn == nullptr)
                     {
                     const size_t insertPosition = 1;
-                    ecClassIdColumn = m_table.CreateColumn (ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECdbSystemColumnECClassId, PersistenceType::Persisted);
+                    ecClassIdColumn = m_table.CreateColumn (ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbSystemColumnECClassId, PersistenceType::Persisted);
                     if (ecClassIdColumn == nullptr)
                         return ERROR;
                     }
@@ -1098,7 +1098,7 @@ ColumnFactory::Specification::Specification (
         // Shared column does not support NOT NULL constraint
         BeAssert (isNotNull == false && "Shared column cannot enforce NOT NULL constraint.");
         BeAssert (persistenceType == PersistenceType::Persisted);
-        BeAssert (columnUserData == ECdbDataColumn);
+        BeAssert (columnUserData == ECDbDataColumn);
         m_generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnPropertyNameAndPropertyId;
         m_requestedColumnName.clear ();
         m_columnType = ECDbSqlColumn::Type::Any;
@@ -1217,7 +1217,7 @@ bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn con
     {
     for (auto column : table.GetColumns ())
         {
-        if (column->GetUserFlags () == ECdbDataColumn && column->GetType () == ECDbSqlColumn::Type::Any && collate == column->GetConstraint ().GetCollate ())
+        if (column->GetUserFlags () == ECDbDataColumn && column->GetType () == ECDbSqlColumn::Type::Any && collate == column->GetConstraint ().GetCollate ())
             {
             if (IsColumnInUse (*column) == false)
                 columns.push_back (column);

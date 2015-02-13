@@ -52,7 +52,7 @@ protected:
     ECN::ECClassCR m_ecClass;
 
 private:
-    void InitializeFromSchema ();
+
     void InitializeFromClassHint ();
     void InitializeFromClassHasCurrentTimeStampProperty();
 
@@ -69,7 +69,7 @@ private:
 protected:
     ClassMapInfo (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     virtual ~ClassMapInfo() {}
-    
+    virtual void _InitializeFromSchema();
     virtual MapStatus _EvaluateMapStrategy ();
 
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
@@ -180,7 +180,7 @@ private:
     Utf8String m_targetECClassIdColumn;
     RelationshipConstraintInfo m_sourceInfo, m_targetInfo;
 
-    void InitializeFromSchema ();
+    virtual void _InitializeFromSchema () override;
     virtual MapStatus _EvaluateMapStrategy ();
 
     MapStatus DetermineRelationshipMapStrategy ();

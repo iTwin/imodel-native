@@ -194,7 +194,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindInt64 (int64_t value)
 ECSqlStatus SystemPropertyECSqlBinder::_BindText (Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     //by ECSQL design ECInstanceIds can be specified as numeric values or as string values
-    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::OwnerECInstanceId &&
+    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::ParentECInstanceId &&
         m_systemProperty != ECSqlSystemProperty::SourceECInstanceId && m_systemProperty != ECSqlSystemProperty::TargetECInstanceId)
         return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind string value to %s parameter.", SystemPropertyToString ());
 
@@ -231,7 +231,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText (Utf8CP value, IECSqlBinder::Ma
 //---------------------------------------------------------------------------------------
 ECSqlStatus SystemPropertyECSqlBinder::_BindId (BeRepositoryBasedId value)
     {
-    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::OwnerECInstanceId &&
+    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::ParentECInstanceId &&
         m_systemProperty != ECSqlSystemProperty::SourceECInstanceId && m_systemProperty != ECSqlSystemProperty::TargetECInstanceId)
         return GetStatusContext ().SetError (ECSqlStatus::UserError, "Type mismatch. Cannot bind BeRepositoryBasedId value to %s parameter.", SystemPropertyToString ());
 

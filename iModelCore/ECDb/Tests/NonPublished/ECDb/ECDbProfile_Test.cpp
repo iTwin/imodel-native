@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/NonPublished/ECDb/ECDbProfile_Test.cpp $
+|  $Source: Tests/NonPublished/ECDb/ECDbProfile_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,7 +17,7 @@ static const SchemaVersion EXPECTED_PROFILEVERSION (2, 0, 0, 0);
 static const PropertySpec PROFILEVERSION_PROPSPEC ("SchemaVersion", "ec_Db");
 
 static Utf8CP const PROFILE_TABLE = "ec_Schema";
-static Utf8CP const ECINSTANCEIDSEQUENCE_KEY = "ec_ecidsequence";
+static Utf8CP const ECINSTANCEIDSEQUENCE_KEY = "ec_ecinstanceidsequence";
 
 //helper functions (find impls at bottom)
 Utf8String CopyTestFile (Utf8CP fileName);

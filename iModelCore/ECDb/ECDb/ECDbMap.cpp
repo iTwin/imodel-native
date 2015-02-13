@@ -420,7 +420,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
-        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Long, ECdbSystemColumnECId, PersistenceType::Persisted);
+        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Long, ECDbSystemColumnECInstanceId, PersistenceType::Persisted);
         if (table->GetPersistenceType () == PersistenceType::Persisted)
             {
             column->GetConstraintR ().SetIsNotNull (true);
@@ -429,14 +429,14 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
 
         if (mapToSecondaryTable)
             {            
-            column = table->CreateColumn (ECDB_COL_OwnerECInstanceId, ECDbSqlColumn::Type::Long, ECdbSystemColumnOwnerECId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ECdbSystemColumnECPropertyPathId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECdbSystemColumnECArraryIndex, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ECDbSystemColumnParentECInstanceId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ECDbSystemColumnECPropertyPathId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECDbSystemColumnECArraryIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType () == PersistenceType::Persisted)
                 {
                 auto index = table->CreateIndex ((table->GetName() + "_StructArrayIndex").c_str());
                 index->SetIsUnique (true);
-                index->Add (ECDB_COL_OwnerECInstanceId);
+                index->Add (ECDB_COL_ParentECInstanceId);
                 index->Add (ECDB_COL_ECPropertyPathId);
                 index->Add (ECDB_COL_ECArrayIndex);
                 index->Add (primaryKeyColumnName);
@@ -463,7 +463,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
                 return nullptr;
                 }
 
-            systemColumn->SetUserFlags (ECdbSystemColumnECId);
+            systemColumn->SetUserFlags (ECDbSystemColumnECInstanceId);
             if (!editMode)
                 table->GetEditHandleR ().EndEdit ();
             }

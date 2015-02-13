@@ -357,7 +357,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECSchema (ECN::ECSchemaCR ecSchema)
 
     // GenerateId
     BeRepositoryBasedId nextId;
-    DbResult status = m_ecdb.GetImplR ().GetECSchemaIdSequence ().GetNextValue (nextId);
+    DbResult status = m_ecdb.GetECDbImplR().GetECSchemaIdSequence ().GetNextValue (nextId);
     POSTCONDITION (status == BE_SQLITE_OK, status);
     ecSchemaId = nextId.GetValue ();
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
@@ -1361,7 +1361,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECClass (ECN::ECClassCR ecClass)
 
     // GenerateId
     BeRepositoryBasedId nextId;
-    DbResult status = m_ecdb.GetImplR ().GetECClassIdSequence().GetNextValue (nextId);
+    DbResult status = m_ecdb.GetECDbImplR().GetECClassIdSequence().GetNextValue (nextId);
     POSTCONDITION (status == BE_SQLITE_OK, status);
     ECClassId ecClassId = nextId.GetValue ();
     const_cast<ECClassR>(ecClass).SetId (ecClassId);
@@ -1480,7 +1480,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECProperty (ECN::ECPropertyCR ecPrope
     
     // GenerateId
     BeRepositoryBasedId nextId;
-    r = m_ecdb.GetImplR ().GetECPropertyIdSequence().GetNextValue (nextId);
+    r = m_ecdb.GetECDbImplR().GetECPropertyIdSequence().GetNextValue (nextId);
     POSTCONDITION (r == BE_SQLITE_OK, r);
     ECPropertyId ecPropertyId = nextId.GetValue ();
     const_cast<ECPropertyR>(ecProperty).SetId (ecPropertyId);
