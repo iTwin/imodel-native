@@ -61,7 +61,7 @@ protected:
     ConstraintMap m_sourceConstraintMap;
     ConstraintMap m_targetConstraintMap;
 
-    RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
+    RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
     ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, bool addToTable = false);
     std::unique_ptr<ClassDbView> CreateClassDbView ();
@@ -84,16 +84,6 @@ public:
     PropertyMapCP GetTargetECInstanceIdPropMap () const { return m_targetConstraintMap.GetECInstanceIdPropMap (); }
     PropertyMapCP GetTargetECClassIdPropMap () const { return m_targetConstraintMap.GetECClassIdPropMap (); }
 
-
-    static bool IsMapToRelationshipLinkTableStrategy (MapStrategy mapStrategy)
-        {
-        // RelationshipClassMappingRule: not sure why all of these are mapping to link tables
-        return (mapStrategy == MapStrategy::TableForThisClass ||
-            mapStrategy == MapStrategy::TablePerHierarchy ||
-            mapStrategy == MapStrategy::InParentTable ||
-            mapStrategy == MapStrategy::TablePerClass ||
-            mapStrategy == MapStrategy::SharedTableForThisClass);
-        }
     };
 
 /*=================================================================================**//**
@@ -115,7 +105,7 @@ private:
         virtual ~NativeSqlConverterImpl () {}
         };
 
-    RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
+    RelationshipClassEndTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual Type _GetClassMapType () const override { return Type::RelationshipEndTable; };
 
     bool GetRelationshipColumnName (Utf8StringR columnName, ECDbSqlTable const& table, Utf8CP prefix, bool mappingInProgress) const;
@@ -149,7 +139,7 @@ public:
         return GetOtherEndECClassIdColumnName (columnName, table, false);
         }
 
-    static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
     };
 
 /*==========================================================================
@@ -167,7 +157,7 @@ private:
         };
 
 private:
-    RelationshipClassLinkTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
+    RelationshipClassLinkTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual Type  _GetClassMapType () const override { return Type::RelationshipLinkTable; };
 
     virtual MapStatus   _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
@@ -186,7 +176,7 @@ private:
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
 public:
     ~RelationshipClassLinkTableMap () {}
-    static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
 
     bool                GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
 };

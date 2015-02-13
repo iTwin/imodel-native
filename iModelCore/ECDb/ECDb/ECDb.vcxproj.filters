@@ -388,7 +388,6 @@
     <ClInclude Include="ECSql\SystemPropertyECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
-
     <ClInclude Include="ECDbImpl.h">
       <Filter>ECDb</Filter>
     </ClInclude>
@@ -399,9 +398,6 @@
     <ClInclude Include="ColumnInfo.h">
       <Filter>ECDbMap\Db</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\BeRepositoryBasedIdSequence.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -409,9 +405,6 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbStore.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h">
@@ -426,13 +419,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECJsonPersistence.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECJsonUtility.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECPersistence.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECRelationshipPath.h">
@@ -456,6 +443,8 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="MapStrategy.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

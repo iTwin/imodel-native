@@ -3752,7 +3752,7 @@ ECDbPropertyPath* ECDbMapStorage::CreatePropertyPath (ECN::ECPropertyId rootProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbClassMapInfo* ECDbMapStorage::CreateClassMap (ECN::ECClassId classId, MapStrategy mapStrategy, ECDbClassMapId baseClassMapId)
+ECDbClassMapInfo* ECDbMapStorage::CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId)
     {
     if (baseClassMapId != 0LL)
         {
@@ -3895,7 +3895,7 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
         stmt->BindInt64 (2, o.GetBaseClassMap ()->GetId ());
 
     stmt->BindInt64 (3, o.GetClassId ());
-    stmt->BindInt (4, static_cast<int>(o.GetMapStrategy ()));
+    stmt->BindInt (4, o.GetMapStrategy ().ToUInt32());
 
     return stmt->Step ();
     }
@@ -3997,7 +3997,7 @@ DbResult ECDbMapStorage::ReadClassMaps ()
         ECDbClassMapId id = stmt->GetValueInt64 (0);
         ECDbClassMapId parentId = stmt->IsColumnNull (1) ? 0LL : stmt->GetValueInt64 (1);
         ECN::ECClassId classId = stmt->GetValueInt64 (2);
-        MapStrategy mapStrategy = static_cast<MapStrategy>(stmt->GetValueInt (3));
+        ECDbMapStrategy mapStrategy (stmt->GetValueInt (3));
         auto classMap = Set (std::unique_ptr<ECDbClassMapInfo> (new ECDbClassMapInfo (*this, id, classId, mapStrategy, parentId)));
         if (classMap == nullptr)
             {
@@ -4162,7 +4162,7 @@ ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId root
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbClassMapInfo* ECDbClassMapInfo::CreateDerivedClassMap (ECClassId classId, MapStrategy mapStrategy)
+ECDbClassMapInfo* ECDbClassMapInfo::CreateDerivedClassMap (ECClassId classId, ECDbMapStrategy mapStrategy)
     {    
     auto subMap = m_map.CreateClassMap (classId, mapStrategy, GetId ());
     if (subMap)

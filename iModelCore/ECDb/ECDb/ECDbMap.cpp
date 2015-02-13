@@ -300,8 +300,9 @@ void ECDbMap::RemoveClassMap (IClassMap const& classMap)
     {
     BeMutexHolder lock (m_criticalSection);
     ECClassCR ecClass = classMap.GetClass();
-    if (!classMap.IsUnmapped ())
+    if (classMap.GetMapStrategy().IsMapped())
         m_clustersByTable.erase (&classMap.GetTable());
+
     m_classMapDictionary.erase(ecClass.GetId());
     }
 
@@ -389,7 +390,7 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable, bool allowReplacingEmptyTableWithView) 
+ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable) 
     {
     BeMutexHolder lock (m_criticalSection);
     auto table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
@@ -560,7 +561,7 @@ CreateTableStatus ECDbMap::FinishTableDefinition (ECN::ECClassCR ecClass) const
         return CREATE_ECTABLE_MapNotFound;
         }
 
-    if (classMap->IsUnmapped ())
+    if (classMap->GetMapStrategy().IsUnmapped())
         return CREATE_ECTABLE_IsEmpty;
 
     CreateTableStatus createStatus = FinishTableDefinition (classMap->GetTable());
@@ -788,9 +789,10 @@ size_t ECDbMap::GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECRel
             }
 
         auto classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy() == MapStrategy::DoNotMap)
+        if (classMap->GetMapStrategy().IsDoNotMap())
             continue;
-        BeAssert (!classMap->IsUnmapped());
+
+        BeAssert (classMap->GetMapStrategy().IsMapped());
         ECDbSqlTable&  table = classMap->GetTable();
         outTables->insert(&table);
         }
@@ -811,7 +813,7 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
             }
 
         auto endClassMap = GetClassMap (*endClass, loadIfNotFound);
-        if (endClassMap->IsUnmapped())
+        if (endClassMap->GetMapStrategy().IsUnmapped())
             continue;
 
         endClassMaps.insert (endClassMap);

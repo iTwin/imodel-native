@@ -90,7 +90,7 @@ private:
     virtual ECN::ECClassId _GetParentMapClassId () const = 0;
     virtual PropertyMapCollection const& _GetPropertyMaps () const = 0;
     virtual ECDbSqlTable& _GetTable () const = 0;
-    virtual MapStrategy _GetMapStrategy () const = 0;
+    virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const = 0;
     virtual ClassDbView const& _GetDbView () const = 0;
@@ -121,13 +121,12 @@ public:
     ECN::ECClassCR GetClass () const;
     ECN::ECClassId GetParentMapClassId () const;
 
-    MapStrategy GetMapStrategy () const;
+    ECDbMapStrategy const& GetMapStrategy () const;
     ECDbMapCR GetECDbMap () const;
     NativeSqlConverter const& GetNativeSqlConverter () const;
     ClassDbView const& GetDbView () const;
     Type GetClassMapType () const;
 
-    bool IsUnmapped () const;
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
     bool IsAbstractECClass () const;
@@ -135,7 +134,6 @@ public:
     Utf8String ToString () const;
 
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
-    static bool IsDoNotMapStrategy (MapStrategy mapStrategy);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
     };
@@ -267,7 +265,7 @@ private:
     ECDbMapCR                   m_ecDbMap;
     PropertyMapCollection       m_propertyMaps;
     ECDbSqlTable*               m_table;
-    MapStrategy                 m_mapStrategy;
+    ECDbMapStrategy             m_mapStrategy;
     bool                        m_isDirty;
     bvector<ClassIndexInfoPtr>  m_indexes;
     bool                        m_useSharedColumnStrategy;
@@ -293,7 +291,7 @@ private:
     virtual Type _GetClassMapType () const override;
 
 protected:
-    ClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
+    ClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
     virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
@@ -306,7 +304,7 @@ protected:
     virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
     virtual ECN::ECClassCR _GetClass () const override { return m_ecClass; }
-    virtual MapStrategy _GetMapStrategy () const override { return m_mapStrategy; }
+    virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_mapStrategy; }
     virtual ECDbMapCR _GetECDbMap () const override { return m_ecDbMap; }
     virtual ECN::ECClassId _GetParentMapClassId () const override { return m_parentMapClassId; }
     virtual IClassMap const& _GetView (View classView) const override { return *this; };
@@ -317,7 +315,7 @@ protected:
     
     ECDbSchemaManagerCR GetSchemaManager () const;
 public:
-    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
     //! Builds the list of PropertyMaps for this ClassMap
     //! @param  classMapInfo This will contain information cleaned from ECDbClassHint
     MapStatus Initialize (ClassMapInfoCR classMapInfo);

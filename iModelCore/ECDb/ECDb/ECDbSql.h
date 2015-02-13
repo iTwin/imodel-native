@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "BeRepositoryBasedIdSequence.h"
-
+#include "MapStrategy.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
@@ -671,7 +671,7 @@ struct ECDbSqlTable : NonCopyableClass
         ECDbTableId m_id;
     private:
         ECDbSqlTable (Utf8CP name, ECDbSqlDb& sqlDbDef, ECDbTableId id, PersistenceType type, OwnerType ownerType)
-            : m_name (name), m_id (id), m_dbDef (sqlDbDef), m_nameGeneratorForColumn ("c%d"), m_type (type), m_ownerType (ownerType), m_persistenceManager (*this)
+            : m_name (name), m_id (id), m_dbDef (sqlDbDef), m_nameGeneratorForColumn ("x%02x"), m_type (type), m_ownerType (ownerType), m_persistenceManager (*this)
             {
             }
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
@@ -967,7 +967,7 @@ struct ECDbClassMapInfo : NonCopyableClass
         mutable ECDbClassMapInfo const* m_ecBaseClassMap;
         ECDbClassMapId m_ecBaseClassMapId;
 
-        MapStrategy m_mapStrategy;
+        ECDbMapStrategy m_mapStrategy;
         std::vector<std::unique_ptr<ECDbPropertyMapInfo>> m_localPropertyMaps;
         std::vector<ECDbClassMapInfo*> m_childClassMaps;
         ECDbMapStorage& m_map;
@@ -977,7 +977,7 @@ struct ECDbClassMapInfo : NonCopyableClass
         void GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>& propertyMaps, bool onlyLocal) const;
 
     public:
-        ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, MapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
+        ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
             {
             }
@@ -987,13 +987,13 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECN::ECClassId GetClassId () const { return m_ecClassId; }
         const std::vector<ECDbPropertyMapInfo const*>  GetPropertyMaps (bool onlyLocal) const;
         ECDbClassMapInfo const*  GetBaseClassMap () const;
-        MapStrategy GetMapStrategy () const { return m_mapStrategy; }
+        ECDbMapStrategy const& GetMapStrategy () const { return m_mapStrategy; }
         std::vector<ECDbClassMapInfo*> const& GetChildren () const { return m_childClassMaps; }
         ECDbPropertyMapInfo const * FindPropertyMap (Utf8CP columnName) const;
         ECDbPropertyMapInfo const* FindPropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
         ECDbPropertyMapInfo* CreatePropertyMap (ECDbPropertyPath const& propertyPath, ECDbSqlColumn const& column);
         ECDbPropertyMapInfo* CreatePropertyMap (ECN::ECPropertyId rootPropertyId, Utf8CP accessString, ECDbSqlColumn const& column);
-        ECDbClassMapInfo* CreateDerivedClassMap (ECN::ECClassId classId, MapStrategy mapStrategy);
+        ECDbClassMapInfo* CreateDerivedClassMap (ECN::ECClassId classId, ECDbMapStrategy mapStrategy);
     };
 //template <typename KEY>
 //struct StatementCache
@@ -1067,7 +1067,7 @@ struct ECDbMapStorage
         std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId (ECN::ECClassId id) const;
 
         ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
-        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, MapStrategy mapStrategy, ECDbClassMapId baseClassMapId = 0LL);
+        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL);
 
         BentleyStatus Load ()
             {

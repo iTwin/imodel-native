@@ -76,18 +76,15 @@ IECInstancePtr ClassHintReader::ReadClassHasCurrentTimeStampProperty(ECClassCR e
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ClassHintReader::TryReadMapStrategy (MapStrategy& mapStrategy, IECInstanceCR classHint)
+bool ClassHintReader::TryReadMapStrategy (ECDbMapStrategy& mapStrategy, IECInstanceCR classHint)
     {
     BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
+    mapStrategy.Reset ();
 
-    mapStrategy = MapStrategy::DoNotMap;
-
-    WString hintMapStrategyName;
     ECValue v;
     if (classHint.GetValue (v, BSCAP_MapStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
         {
-        hintMapStrategyName = v.GetString ();
-        if (TryConvertToMapStrategy (mapStrategy, hintMapStrategyName.c_str ()))
+        if (ECDbMapStrategy::Parse (mapStrategy, v.GetUtf8CP ()) == BentleyStatus::SUCCESS)
             return true;
         }
 
@@ -261,37 +258,6 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
         }
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bool ClassHintReader::TryConvertToMapStrategy (MapStrategy& mapStrategy, WCharCP mapStrategyName)
-    {
-    bool success = true;
-    if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TablePerHierarchy))
-        mapStrategy = MapStrategy::TablePerHierarchy;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_DoNotMapHierarchy))
-        mapStrategy = MapStrategy::DoNotMapHierarchy;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_DoNotMap))
-        mapStrategy = MapStrategy::DoNotMap;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TablePerClass))
-        mapStrategy = MapStrategy::TablePerClass;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TableForThisClass))
-        mapStrategy = MapStrategy::TableForThisClass;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_NoHint))
-        mapStrategy = MapStrategy::NoHint;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_RelationshipSourceTable))
-        mapStrategy = MapStrategy::RelationshipSourceTable;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_RelationshipTargetTable))
-        mapStrategy = MapStrategy::RelationshipTargetTable;
-    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_SharedTableForThisClass))
-        mapStrategy = MapStrategy::SharedTableForThisClass;
-    else
-        success = false;
-
-    return success;
     }
 
 

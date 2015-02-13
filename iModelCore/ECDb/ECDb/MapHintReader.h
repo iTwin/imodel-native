@@ -35,10 +35,9 @@ private:
     ClassHintReader ();
     ~ClassHintReader ();
 
-    static bool TryConvertToMapStrategy (MapStrategy& mapStrategy, WCharCP mapStrategyName);
 public:
     static ECN::IECInstancePtr ReadHint (ECN::ECClassCR ecClass);
-    static bool TryReadMapStrategy (MapStrategy& mapStrategy, ECN::IECInstanceCR classHint);
+    static bool TryReadMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR classHint);
     static bool TryReadTableName (Utf8String& tableName, ECN::IECInstanceCR classHint);
     static bool TryReadECInstanceIdColumnName (Utf8String& ecInstanceIdColumnName, ECN::IECInstanceCR classHint);
     static bool TryReadMapToExistingTable (bool& mapToExistingTable, ECN::IECInstanceCR classHint);

@@ -233,6 +233,7 @@
     <ClInclude Include="ECSql\WhereExp.h" />
     <ClInclude Include="MapGenerator.h" />
     <ClInclude Include="MapHintReader.h" />
+    <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />

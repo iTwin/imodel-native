@@ -28,7 +28,7 @@ Utf8CP const RelationshipClassMap::DEFAULT_TARGETECCLASSID_COLUMNNAME = "RC_Targ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
     : ClassMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty), 
     m_sourceConstraintMap (ecDbMap.GetECDbR ().GetSchemaManager (), ecRelClass.GetSource ()),
     m_targetConstraintMap (ecDbMap.GetECDbR ().GetSchemaManager (), ecRelClass.GetTarget ())
@@ -40,7 +40,7 @@ RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, EC
 ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn (Utf8CP columnName, bool addToTable)
     {
     ECDbSqlColumn* column = nullptr;
-    if (GetMapStrategy() == MapStrategy::SharedTableForThisClass && (column = GetTable ().FindColumnP(columnName)) != nullptr)
+    if (GetMapStrategy().IsSharedTableForThisClass() && (column = GetTable ().FindColumnP(columnName)) != nullptr)
         return column;
 
     column = GetTable ().FindColumnP (columnName);
@@ -90,7 +90,7 @@ void RelationshipClassMap::DetermineConstraintClassIdColumnHandling (bool& addCo
     //So we first determine whether a constraint class id column is needed
     auto const& constraintClasses = constraint.GetClasses ();
     //TODO: Need to check other multi-table strategies too?
-    addConstraintClassIdColumnNeeded = GetMapStrategy () == MapStrategy::SharedTableForThisClass || 
+    addConstraintClassIdColumnNeeded = GetMapStrategy ().IsSharedTableForThisClass() || 
                                 constraintClasses.size () > 1 || ConstraintIncludesAnyClass (constraintClasses);
     //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
     //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
@@ -302,7 +302,7 @@ Utf8CP tableAlias
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : RelationshipClassMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty)
     {
     }
@@ -313,12 +313,11 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
     {
     //Don't call base class method as end table map requires its own handling
-    BeAssert (GetMapStrategy () == MapStrategy::RelationshipSourceTable || GetMapStrategy () == MapStrategy::RelationshipTargetTable);
+    BeAssert (GetMapStrategy ().IsEndTableMapping());
     m_dbView = CreateClassDbView ();
 
     auto const& relationshipClassMapInfo = dynamic_cast<RelationshipClassMapInfoCR> (classMapInfo);
-    BeAssert (m_ecClass.GetRelationshipClassCP () != nullptr &&
-        (classMapInfo.GetMapStrategy () == MapStrategy::RelationshipSourceTable || classMapInfo.GetMapStrategy () == MapStrategy::RelationshipTargetTable));
+    BeAssert (m_ecClass.GetRelationshipClassCP () != nullptr && classMapInfo.GetMapStrategy ().IsEndTableMapping());
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass ();
     auto const& sourceConstraint = relationshipClass.GetSource ();
@@ -692,11 +691,11 @@ void RelationshipClassEndTableMap::AddIndices (ClassMapInfoCR mapInfo)
     {
     BeAssert (dynamic_cast<RelationshipClassMapInfoCP> (&mapInfo) != nullptr);
 
-    if (mapInfo.GetMapStrategy () == MapStrategy::RelationshipSourceTable)
+    if (mapInfo.GetMapStrategy ().IsRelationshipSourceTable())
     if (!static_cast<RelationshipClassMapInfoCR> (mapInfo).GetSourceInfo ().GenerateDefaultIndex ())
         return;
 
-    if (mapInfo.GetMapStrategy () == MapStrategy::RelationshipTargetTable)
+    if (mapInfo.GetMapStrategy ().IsRelationshipTargetTable())
     if (!static_cast<RelationshipClassMapInfoCR> (mapInfo).GetTargetInfo ().GenerateDefaultIndex ())
         return;
 
@@ -732,7 +731,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
 
     // Setup name of the index
     Utf8String name = "idx_ECRel_";
-    if (MapStrategy::RelationshipSourceTable == GetMapStrategy ())
+    if (GetMapStrategy ().IsRelationshipSourceTable())
         name.append("Source_");
     else
         name.append("Target_");
@@ -867,7 +866,7 @@ PropertyMapCP RelationshipClassEndTableMap::GetOtherEndECClassIdPropMap () const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetThisEnd() const
     {
-    return GetMapStrategy () == MapStrategy::RelationshipSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
+    return GetMapStrategy ().IsRelationshipSourceTable() ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
 
 //---------------------------------------------------------------------------------------
@@ -894,7 +893,7 @@ ClassMap::NativeSqlConverter const& RelationshipClassEndTableMap::_GetNativeSqlC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty)
+RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : RelationshipClassMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty) 
     {}
 
@@ -903,11 +902,7 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClas
 //---------------------------------------------------------------------------------------
 MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
     {
-    BeAssert (GetMapStrategy () == MapStrategy::TablePerHierarchy ||
-        GetMapStrategy () == MapStrategy::TableForThisClass ||
-        GetMapStrategy () == MapStrategy::TablePerClass ||
-        GetMapStrategy () == MapStrategy::SharedTableForThisClass ||
-        GetMapStrategy () == MapStrategy::InParentTable &&
+    BeAssert (GetMapStrategy ().IsLinkTableStrategy() &&
         "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
 
     auto stat = RelationshipClassMap::_InitializePart1 (classMapInfo, parentClassMap);
@@ -1244,8 +1239,9 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName (Utf8Str
     if (table.FindColumnCP (columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy() == MapStrategy::SharedTableForThisClass)
+    if (GetMapStrategy().IsSharedTableForThisClass())
         return true;
+
     //Following error occure in Upgrading ECSchema but is not fatal.
     LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());
@@ -1263,7 +1259,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
     if (table.FindColumnCP (columnName.c_str ()) == nullptr)
         return true;
 
-    if (GetMapStrategy() == MapStrategy::SharedTableForThisClass)
+    if (GetMapStrategy().IsSharedTableForThisClass())
         return true;
 
     //Following error occure in Upgrading ECSchema but is not fatal.
@@ -1271,6 +1267,10 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());
     return false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                   01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelationshipClassLinkTableMap::_Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     if (ClassMap::_Load (loadGraph, mapInfo, parentClassMap) != BentleyStatus::SUCCESS)

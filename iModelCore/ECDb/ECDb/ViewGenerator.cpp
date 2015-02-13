@@ -561,7 +561,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
     auto& db = map.GetECDbR();
     BentleyStatus status = BentleyStatus::SUCCESS;
 
-    if (relationMap.IsUnmapped ())
+    if (relationMap.GetMapStrategy().IsUnmapped ())
         return BentleyStatus::ERROR;
 
     auto& table = relationMap.GetTable ();
@@ -783,7 +783,7 @@ BentleyStatus ViewGenerator::CreateSystemView (NativeSqlBuilder& viewSql, System
                 }
 
             IClassMap const* classMap = map.GetClassMap (*ecClass);
-            if (classMap == nullptr || classMap->IsUnmapped ())
+            if (classMap == nullptr || classMap->GetMapStrategy ().IsUnmapped ())
                 {
                 continue;
                 }
@@ -906,7 +906,7 @@ void ViewGenerator::LoadDerivedClassMaps (std::map<ECClassId, IClassMap const *>
             continue;
 
         IClassMap const* classMap = map.GetClassMap (*ecClass);
-        if (classMap == nullptr || classMap->IsUnmapped ())
+        if (classMap == nullptr || classMap->GetMapStrategy ().IsUnmapped ())
             {
             continue;
             }

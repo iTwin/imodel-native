@@ -47,14 +47,14 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     bool setIsDirty = false;
     auto mapStrategy = classMapInfo.GetMapStrategy ();
     ClassMapPtr classMap = nullptr;
-    if (IClassMap::IsDoNotMapStrategy (mapStrategy))
+    if (mapStrategy.IsUnmapped())
         classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
     else
         {
         auto ecRelationshipClass = ecClass.GetRelationshipClassCP ();
         if (ecRelationshipClass != nullptr)
             {
-            if (RelationshipClassMap::IsMapToRelationshipLinkTableStrategy (mapStrategy))
+            if (mapStrategy.IsLinkTableStrategy())
                 classMap = RelationshipClassLinkTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             else
                 classMap = RelationshipClassEndTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
@@ -115,17 +115,17 @@ ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfoC
     auto const& ecClass = mapInfo.GetECClass ();
     auto const& ecdbMap = mapInfo.GetECDbMap ();
     const auto mapStrategy = mapInfo.GetMapStrategy ();
-    BeAssert (mapStrategy != MapStrategy::NoHint);
+    BeAssert (mapStrategy.IsNoHint() == false);
 
     ClassMapPtr classMap = nullptr;
-    if (IClassMap::IsDoNotMapStrategy (mapStrategy))
+    if (mapStrategy.IsUnmapped())
         classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
     else
         {
         auto ecRelationshipClass = ecClass.GetRelationshipClassCP ();
         if (ecRelationshipClass != nullptr)
             {
-            if (RelationshipClassMap::IsMapToRelationshipLinkTableStrategy (mapStrategy))
+            if (mapStrategy.IsLinkTableStrategy())
                 classMap = RelationshipClassLinkTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             else
                 classMap = RelationshipClassEndTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);

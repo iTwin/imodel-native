@@ -42,6 +42,7 @@ ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
+				$(baseDir)MapStrategy.h \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeRepositoryBasedIdSequence.h \

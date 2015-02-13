@@ -1631,32 +1631,6 @@ DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>&
     }    
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetClassesMappedToParent (std::vector<ECClassId>& classIds, ECClassId baseClassId, BeSQLite::Db& db)
-    {
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT ECClassId FROM ec_ClassMap WHERE MapParentECClassId = ? AND MapStrategy = ?");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stmt->BindInt64 (1, baseClassId);
-    stmt->BindInt (2, (int) MapStrategy::InParentTable);
-
-    while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
-        {
-        auto ecClassId = stmt->GetValueInt64 (0);
-        classIds.push_back (ecClassId);
-        stat = GetClassesMappedToParent (classIds, ecClassId, db);
-        if (stat != BE_SQLITE_DONE)
-            return stat;
-        }
-
-    return stat;
-    }
-
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaPersistence::IsECSchemaMapped (bool* schemaNotFound, ECN::ECSchemaCR ecSchema, BeSQLite::Db& db)

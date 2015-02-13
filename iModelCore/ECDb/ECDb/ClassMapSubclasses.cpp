@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-SecondaryTableClassMap::SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty)
+SecondaryTableClassMap::SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : ClassMap (ecClass, ecDbMap, mapStrategy, setIsDirty), m_embeddedTypeClassView (nullptr)
     {
     m_embeddedTypeClassView = std::unique_ptr<EmbeddedTypeClassMap> (new EmbeddedTypeClassMap (*this));
@@ -125,7 +125,7 @@ MapStatus SecondaryTableClassMap::EmbeddedTypeClassMap::Initialize ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-UnmappedClassMap::UnmappedClassMap (ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty)
+UnmappedClassMap::UnmappedClassMap (ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty)
     {}
 

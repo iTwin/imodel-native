@@ -8,7 +8,7 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "SchemaImportContext.h"
-
+#include "MapStrategy.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
@@ -21,7 +21,7 @@ private:
     ~ClassMapInfoFactory ();
 
 public:
-    static ClassMapInfoPtr CreateInstance (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy);
+    static ClassMapInfoPtr CreateInstance (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     static ClassMapInfoPtr CreateFromHint (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap);
     };
 
@@ -42,13 +42,12 @@ private:
     bvector<StandardKeySpecificationPtr> m_standardKeys;
     bvector<ClassIndexInfoPtr> m_hintIndexes; 
     IClassMap const* m_parentClassMap;
-    bool m_mapToExistingTable;
-    bool m_replaceEmptyTableWithEmptyView;
+
     bool m_isMapToVirtualTable;
-    bool m_useSharedColumnStrategy;
     ECN::ECPropertyP m_ClassHasCurrentTimeStampProperty;
+    ECDbMapStrategy m_strategy;
 protected:
-    MapStrategy m_mapStrategy;
+
     ECDbMapCR m_ecDbMap;
     ECN::ECClassCR m_ecClass;
 
@@ -68,7 +67,7 @@ private:
     MapStatus ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (ECN::ECClassCR ecClass, bvector<IClassMap const*> tphMaps) const;
 
 protected:
-    ClassMapInfo (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy);
+    ClassMapInfo (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     virtual ~ClassMapInfo() {}
     
     virtual MapStatus _EvaluateMapStrategy ();
@@ -77,7 +76,9 @@ protected:
 
 public:
     ECN::ECPropertyP GetClassHasCurrentTimeStampProperty() const { return m_ClassHasCurrentTimeStampProperty; }
-    static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy);
+    static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
+    ECDbMapStrategy const& GetMapStrategy () const{ return m_strategy; }
+    ECDbMapStrategy& GetMapStrategyR (){ return m_strategy; }
 
     //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ECDbClassHint ECCustomAttribute and
     //! default mapping rules. The results are stored in ClassMapInfo
@@ -89,18 +90,14 @@ public:
     bvector<ClassIndexInfoPtr> const& GetIndexInfo() const { return m_hintIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
-    MapStrategy GetMapStrategy() const { return m_mapStrategy; }
     IClassMap const* GetParentClassMap () const { return m_parentClassMap; }
     void SetParentClassMap (IClassMap const* parentClassMap) { m_parentClassMap = parentClassMap; }
-    bool IsAllowedToReplaceEmptyTableWithEmptyView() const { return m_replaceEmptyTableWithEmptyView; }
-    bool IsMappedToExistingTable() const { return m_mapToExistingTable; }
-    bool UseSharedColumnStrategy () const { return m_useSharedColumnStrategy; }
     bvector<StandardKeySpecificationPtr>const& GetStandardKeys() const {return m_standardKeys;}
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
 
-    static MapStrategy GetDefaultMapStrategy () { return MapStrategy::TableForThisClass; }
+  
     };
 
 /*=================================================================================**//**
@@ -190,18 +187,18 @@ private:
     void DetermineCardinality ();
     bool ValidateRelatedClasses () const;
 
-    MapStrategy Get11RelationshipMapStrategy (ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    MapStrategy Get1MRelationshipMapStrategy (ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    Strategy Get11RelationshipMapStrategy (ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    Strategy Get1MRelationshipMapStrategy (ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
     static CardinalityType CalculateRelationshipCardinality (ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
     static bool ContainsRelationshipClass (std::vector<ECN::ECClassCP> const& endClasses);
 
 protected:
-    RelationshipClassMapInfo (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy);
+    RelationshipClassMapInfo (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     ~RelationshipClassMapInfo () {} // RefCounted pattern
 
 
 public:
-    static ClassMapInfoPtr Create (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, MapStrategy mapStrategy);
+    static ClassMapInfoPtr Create (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     PreferredDirection GetUserPreferredDirection () const {return m_userPreferredDirection;}
     TriState GetAllowDuplicateRelationships() const {return m_allowDuplicateRelationships;}
     Utf8StringCR GetSourceECInstanceIdColumn() const {return m_sourceECInstanceIdColumn;}

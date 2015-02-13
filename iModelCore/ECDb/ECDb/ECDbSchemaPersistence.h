@@ -51,7 +51,6 @@ private:
     static int ToInt (ECN::ECRelatedInstanceDirection direction);
     static ECRelatedInstanceDirection ToECRelatedInstanceDirection (int relatedInstanceDirection);
 
-    static DbResult GetClassesMappedToParent (std::vector<ECClassId>& classIds, ECClassId baseClassId, BeSQLite::Db& db);
 
 public:
     typedef bvector<ECClassId>        ECClassIdList;

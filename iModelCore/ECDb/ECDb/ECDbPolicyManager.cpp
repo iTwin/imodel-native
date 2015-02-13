@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPolicyManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -139,7 +139,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy (IClassMap const& classMap, IsVal
     auto const& ecClass = classMap.GetClass ();
     auto const& className = ecClass.GetName ();
     //generally not supported - regardless of ECSqlType
-    if (classMap.IsUnmapped ())
+    if (classMap.GetMapStrategy().IsUnmapped ())
         {
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf ("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."

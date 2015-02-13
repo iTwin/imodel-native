@@ -255,16 +255,6 @@ enum ECContainerType
 #define BSCAP_Name                      L"Name"
 #define BSCAP_Properties                L"Properties"
 #define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
-#define BSCAV_NoHint                    L"NoHint"
-#define BSCAV_DoNotMap                  L"DoNotMap"
-#define BSCAV_DoNotMapHierarchy         L"DoNotMapHierarchy"
-#define BSCAV_InParentTable             L"InParentTable"
-#define BSCAV_TablePerHierarchy         L"TablePerHierarchy"
-#define BSCAV_TableForThisClass         L"TableForThisClass"
-#define BSCAV_TablePerClass             L"TablePerClass"
-#define BSCAV_RelationshipSourceTable   L"RelationshipSourceTable"
-#define BSCAV_RelationshipTargetTable   L"RelationshipTargetTable"
-#define BSCAV_SharedTableForThisClass   L"SharedTableForThisClass"
 
 #define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"
 #define BSCAP_TargetECInstanceIdColumn  L"TargetECIdColumn"
@@ -338,25 +328,25 @@ struct CompareIWChar
 // @remarks See @ref ECDbSchemaPersistence to find how these enum values map to actual 
 // persisted values in the Db. 
 //+===============+===============+===============+===============+===============+======
-enum class MapStrategy
-    {
-    // This first group of strategies no ramifications for subclasses
-    NoHint = 0,         // Use default rules, which may include inheriting strategy of parent
-    DoNotMap,           // Skip this one, but child ECClasses may still be mapped
-    TableForThisClass,  // Put this class in a table, but do not pass the strategy along to child ECClasses 
-    // Only DoNotMap and TableForThisClass are valid default strategies
-
-    // These strategies are directly inherited, except for TablePerHierarchy, which causes its children to use InParentTable
-    // They are listed in order of priority (when it comes to conflicts with/among base ECClasses)
-    TablePerHierarchy,  // This class and all child ECClasses stored in one table
-    InParentTable,      // Assigned by system for subclasses of ECClasses using TablePerHierarchy
-    TablePerClass,      // Put each class in its own table (including child ECClasses
-    DoNotMapHierarchy,  // Also don't map children (unless they are reached by a different inheritance pathway) 
-    SharedTableForThisClass, // TableName must be provided. 
-    // These strategies are applicable only to relationships
-    RelationshipSourceTable,     // Store the relationship in the table in which the source class(es) are stored 
-    RelationshipTargetTable,     // Store the relationship in the table in which the target class(es) are stored 
-    };
+//enum class MapStrategy
+//    {
+//    // This first group of strategies no ramifications for subclasses
+//    NoHint = 0,         // Use default rules, which may include inheriting strategy of parent
+//    DoNotMap,           // Skip this one, but child ECClasses may still be mapped
+//    TableForThisClass,  // Put this class in a table, but do not pass the strategy along to child ECClasses 
+//    // Only DoNotMap and TableForThisClass are valid default strategies
+//
+//    // These strategies are directly inherited, except for TablePerHierarchy, which causes its children to use InParentTable
+//    // They are listed in order of priority (when it comes to conflicts with/among base ECClasses)
+//    TablePerHierarchy,  // This class and all child ECClasses stored in one table
+//    InParentTable,      // Assigned by system for subclasses of ECClasses using TablePerHierarchy
+//    TablePerClass,      // Put each class in its own table (including child ECClasses
+//    DoNotMapHierarchy,  // Also don't map children (unless they are reached by a different inheritance pathway) 
+//    SharedTableForThisClass, // TableName must be provided. 
+//    // These strategies are applicable only to relationships
+//    RelationshipSourceTable,     // Store the relationship in the table in which the source class(es) are stored 
+//    RelationshipTargetTable,     // Store the relationship in the table in which the target class(es) are stored 
+//    };
 
 
 #define ECdbDataColumn  0x0U

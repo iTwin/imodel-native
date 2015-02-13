@@ -46,7 +46,7 @@ private:
         virtual ECDbSqlTable& _GetTable () const override { return m_secondaryTableClassMap.GetTable (); }
         virtual NativeSqlConverter const& _GetNativeSqlConverter () const override { return m_secondaryTableClassMap.GetNativeSqlConverter (); }
         virtual ECN::ECClassCR _GetClass () const override { return m_secondaryTableClassMap.GetClass (); }
-        virtual MapStrategy _GetMapStrategy () const override { return m_secondaryTableClassMap.GetMapStrategy (); }
+        virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_secondaryTableClassMap.GetMapStrategy (); }
         virtual ECDbMapCR _GetECDbMap () const override { return m_secondaryTableClassMap.GetECDbMap (); }
         virtual Type _GetClassMapType () const override { return Type::EmbeddedType; };
         virtual ECN::ECClassId _GetParentMapClassId () const override { return m_secondaryTableClassMap.GetParentMapClassId (); }
@@ -64,7 +64,7 @@ private:
 
     std::unique_ptr<EmbeddedTypeClassMap> m_embeddedTypeClassView;
 
-    SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, MapStrategy mapStrategy, bool setIsDirty);
+    SecondaryTableClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
     virtual MapStatus _OnInitialized () override;
     virtual Type _GetClassMapType () const override;
@@ -80,7 +80,7 @@ private:
 public:
     ~SecondaryTableClassMap () {}
 
-    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty) { return new SecondaryTableClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new SecondaryTableClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
     };
 
 //=======================================================================================
@@ -107,7 +107,7 @@ private:
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual Type _GetClassMapType () const override { return IClassMap::Type::Unmapped; }
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;
-    UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty);
+    UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
         {
         auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
@@ -118,7 +118,7 @@ private:
 public:
     ~UnmappedClassMap () {}
 
-    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, MapStrategy mapStrategy, bool setIsDirty) { return new UnmappedClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
+    static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new UnmappedClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
