@@ -12,6 +12,7 @@
 #include <ptengine/RenderSettings.h>
 #include <ptengine/PointsExchanger.h>
 #include <ptengine/VisibilityEngine.h>
+#include <ptengine/PointLayers.h>
 #include <ptengine/engine.h>
 
 #include <ptcloud2/pod.h>
@@ -21,6 +22,7 @@
 #include <ptds/DataSourceMemBlock.h>
 
 #include <ptgl/gltext.h>
+#include <ptgl/Color.h>
 
 #include <ptedit/EditManager.h>
 
@@ -290,6 +292,11 @@ PTvoid	PTAPI ptUnhideAll()
 PTvoid	PTAPI ptUnselectAll()
 {
 	PointEditManager::instance()->deselectAll();
+}
+//-----------------------------------------------------------------------------
+PTvoid	PTAPI ptResetSelection()
+{
+	PointEditManager::instance()->resetSelection();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSelectAll()
@@ -581,4 +588,48 @@ PTres	PTAPI ptDeselectScene( PThandle scene )
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
 	return 	setLastErrorCode( PTV_INVALID_HANDLE );
+}
+//-----------------------------------------------------------------------------
+PTbool   PTAPI ptSetLayerColor( PTuint layer, PTfloat *rgb3, PTfloat blend )
+{
+	if (!rgb3)
+	{
+		setLastErrorCode(PTV_VOID_POINTER);
+		return false;
+	}
+	ptgl::Color c(rgb3[0], rgb3[1], rgb3[2], blend);
+
+	if ( layer < thePointLayersState().numLayers() )
+	{
+		thePointLayersState().setLayerColor( 1 << layer, c );
+		thePointLayersState().setLayerColorAlpha( 1 << layer, blend );
+
+		return true;
+	}
+	return false;
+}
+//-----------------------------------------------------------------------------
+PTfloat *PTAPI ptGetLayerColor( PTuint layer )
+{
+	if ( layer < thePointLayersState().numLayers() )
+	{
+		static ptgl::Color c = thePointLayersState().getLayerColor( layer );
+		return (PTfloat*)&c.r;
+	}
+	return 0;
+}
+//-----------------------------------------------------------------------------
+PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer )
+{
+	if ( layer < thePointLayersState().numLayers() )
+	{
+		static ptgl::Color c = thePointLayersState().getLayerColor( layer );
+		return c.a;
+	}
+	return 0;
+}
+//-----------------------------------------------------------------------------
+PTvoid   PTAPI ptResetLayerColors( void )
+{
+	thePointLayersState().resetLayerColors();
 }

@@ -1,7 +1,7 @@
 #include <ptengine/userchannels.h>
 #include <ptengine/pointsScene.h>
 #include <ptengine/engine.h>
-
+#include <ptedit/pointVisitors.h>
 #include <pt/datatreeIO.h>
 
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
@@ -419,5 +419,132 @@ int UserChannelManager::loadChannelsFromFile( const pt::String &filename, std::v
 	delete root;
 
 	return err;
+}
+
+
+UserChannel *UserChannelManager::createChannelFromLayers( const pt::String &name, const pcloud::Scene *scene )	// copies the edit layers into a user channel
+{
+	bool allscenes = scene ? false : true;
+
+	// stop all paging first - no locking on a voxel level
+	try
+	{
+		UserChannel *channel = new UserChannel( name, 8, 1, 0, 0 );
+		g_channels.insert( MapChannels::value_type( name, channel ) );
+
+		for (int s=0; s<thePointsScene().size();s++)
+		{
+			if (allscenes) 
+			{
+				scene = thePointsScene()[s];
+			}
+			else if (s) break;
+		
+			channel->addToChannel(scene);
+
+			// populate channel with scene  
+			for (int i=0; i<scene->size(); i++)
+			{
+				const pcloud::PointCloud *cloud = scene->cloud(i);
+
+				// populate this cloud channel
+				for (int v=0;v<cloud->voxels().size();v++)
+				{
+					pcloud::Voxel *vx = cloud->voxels()[v];
+					VoxelChannelData *vdata = channel->voxelChannel( vx );
+
+
+					if (vdata)
+					{
+						pcloud::DataChannel *dc = vx->channel(pcloud::PCloud_Filter);
+						
+						// if no channel just set user0 / user1
+						if (dc && vx->layers(1))	// we only want layer data, not selection
+						{
+							ubyte layerval=0;
+
+							for (int p=0;p<dc->size(); p++)
+							{
+								dc->getval(layerval, p);		// get value from channel
+								vdata->setVal(p, &layerval);		// write to user channel
+							}
+						}
+						// write flags / layers
+						vdata->setUser0( vx->layers(0) );
+						vdata->setUser1( vx->layers(1) );
+					}	
+				}
+			}
+		}
+		return channel;
+		// 
+	}
+	catch (...) { return 0; }
+}
+//-------------------------------------------------------------------------------------------------
+bool		UserChannelManager::applyChannelToLayers( const UserChannel *channel, pcloud::Scene *scene )		// reverse opp, applies the channel data to layers
+{
+	//read the data from the channel, then propogate flags upwards
+	bool retval = false;
+	bool allscenes = scene ? false : true;
+
+	for (int s=0; s<thePointsScene().size();s++)
+	{
+		if (allscenes)
+		{
+			scene = thePointsScene()[s];
+		}
+		else if (s) break;
+		
+		// populate channel with scene  
+		for (int i=0; i<scene->size(); i++)
+		{
+			pcloud::PointCloud *cloud = scene->cloud(i);
+
+			// populate this cloud channel
+			for (int v=0;v<cloud->voxels().size();v++)
+			{
+				pcloud::Voxel *vx = cloud->voxels()[v];
+				const VoxelChannelData *vdata = channel->voxelChannel( vx );
+
+				if (vdata)
+				{
+					retval = true;
+					
+					vx->layers(0) = vdata->getUser0();
+					vx->layers(1) = vdata->getUser1();
+
+					if (vx->layers(1) && vdata->getData() )
+					{
+						pcloud::DataChannel *dc = vx->channel(pcloud::PCloud_Filter);
+
+						if (!dc)
+						{
+							vx->buildEditChannel();
+							dc = vx->channel(pcloud::PCloud_Filter);
+
+							if (!dc) continue;	
+						}
+
+						dc->allocate(vdata->getNumPoints());
+						ubyte layerval=0;
+
+						for (int p=0;p<vdata->getNumPoints(); p++)
+						{
+							vdata->getVal(p, &layerval);
+							dc->set(p, &layerval);
+						}
+						vx->numPointsEdited( vdata->getNumPoints() );	// set the points edited to max
+					}
+
+				}	
+			}
+		}
+	}
+	// propogate flags
+	ptedit::TraverseScene::consolidateFlags();
+	ptedit::TraverseScene::consolidateLayers();
+
+	return retval;
 }
 

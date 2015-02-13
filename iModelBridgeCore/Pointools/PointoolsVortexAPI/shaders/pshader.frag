@@ -13,6 +13,8 @@ uniform 	sampler1D 	Ti;
 	
 varying 	vec4 		pC;
 varying		vec4		Csl;
+uniform		vec4		Cl;
+uniform		float		Ca;
 
 #ifdef PT_C
 varying		vec4		pA;
@@ -124,6 +126,8 @@ void main(void)
 			#endif	
 		#endif
 			
+		frag = mix( frag, Cl, Cl.a );
+		frag.a = 1.0;
 		#ifdef PT_F
 			float fogFactor = 0.0;
 			float z = gl_FragCoord.z / gl_FragCoord.w;
@@ -148,6 +152,13 @@ void main(void)
 			
 		#else
 			gl_FragColor = frag;
+		#endif
+		#ifdef PT_E				
+			vec2 pLC = pL;
+			pLC.y = 0.005859375;
+			   vec4 lyr_col = texture2D ( Tl, pLC );			
+			   gl_FragColor = mix(gl_FragColor, lyr_col, lyr_col.a);
+			gl_FragColor.a = 1.0;
 		#endif
 		}
 	}

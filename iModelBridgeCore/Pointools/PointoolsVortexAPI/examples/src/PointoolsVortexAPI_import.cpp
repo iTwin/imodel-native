@@ -223,6 +223,7 @@ PTHIDESELECTED		ptHideSelected = 0;
 PTISOLATESELECTED	ptIsolateSelected = 0;
 PTUNHIDEALL			ptUnhideAll = 0;
 PTUNSELECTALL		ptUnselectAll = 0;
+PTRESETSELECTION	ptResetSelection = 0;
 PTSELECTALL			ptSelectAll = 0;
 
 PTSETSELECTIONSCOPE ptSetSelectionScope = 0;
@@ -312,6 +313,11 @@ PTDOESLAYERHAVEPOINTS ptDoesLayerHavePoints = 0;
 PTCLEARPOINTSFROMLAYER ptClearPointsFromLayer = 0;
 PTRESETLAYERS ptResetLayers = 0;
 
+PTSETLAYERCOLOR ptSetLayerColor = 0;
+PTGETLAYERCOLOR ptGetLayerColor = 0;
+PTGETLAYERCOLORBLEND ptGetLayerColorBlend = 0;
+PTRESETLAYERCOLORS ptResetLayerColors = 0;
+
 PTCOPYSELTOCURRENTLAYER ptCopySelToCurrentLayer = 0;
 PTMOVESELTOCURRENTLAYER ptMoveSelToCurrentLayer = 0;
 
@@ -333,6 +339,8 @@ PTREADCHANNELSFILEFROMBUFFER ptReadChannelsFileFromBuffer = 0;
 PTSETCHANNELOOCFOLDER ptSetChannelOOCFolder = 0;
 PTDELETEALLCHANNELS ptDeleteAllChannels = 0;
 PTGETCHANNELBYNAME ptGetChannelByName = 0;
+PTCREATEPOINTCHANNELFROMLAYERS ptCreatePointChannelFromLayers = 0;
+PTLAYERSFROMPOINTCHANNEL ptLayersFromPointChannel = 0;
 
 PTSETCLOUDTRANSFORM ptSetCloudTransform =0;
 PTSETSCENETRANSFORM ptSetSceneTransform =0;
@@ -570,6 +578,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptIsolateSelected = (PTISOLATESELECTED) GetAPIFunc("ptIsolateSelected");
 		ptUnhideAll = (PTUNHIDEALL) GetAPIFunc("ptUnhideAll");
 		ptUnselectAll = (PTUNSELECTALL) GetAPIFunc("ptUnselectAll");
+		ptResetSelection = (PTRESETSELECTION) GetAPIFunc("ptResetSelection");
 		ptSelectAll = (PTSELECTALL) GetAPIFunc("ptSelectAll");
 		ptSetSelectionScope = (PTSETSELECTIONSCOPE) GetAPIFunc("ptSetSelectionScope");
 		ptRefreshEdit = (PTREFRESHEDIT) GetAPIFunc("ptRefreshEdit");
@@ -613,6 +622,11 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDoesLayerHavePoints = (PTDOESLAYERHAVEPOINTS) GetAPIFunc("ptDoesLayerHavePoints");
 		ptClearPointsFromLayer = (PTCLEARPOINTSFROMLAYER) GetAPIFunc("ptClearPointsFromLayer");
 		ptResetLayers = (PTRESETLAYERS) GetAPIFunc("ptResetLayers");
+
+		ptSetLayerColor = (PTSETLAYERCOLOR)GetAPIFunc("ptSetLayerColor");
+		ptGetLayerColor = (PTGETLAYERCOLOR)GetAPIFunc("ptGetLayerColor");
+		ptGetLayerColorBlend = (PTGETLAYERCOLORBLEND)GetAPIFunc("ptGetLayerColorBlend");
+		ptResetLayerColors = (PTRESETLAYERCOLORS)GetAPIFunc("ptResetLayerColors");
 
 		ptCopySelToCurrentLayer = (PTCOPYSELTOCURRENTLAYER) GetAPIFunc("ptCopySelToCurrentLayer");
 		ptMoveSelToCurrentLayer = (PTMOVESELTOCURRENTLAYER) GetAPIFunc("ptMoveSelToCurrentLayer");
@@ -685,6 +699,9 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDeleteAllChannels = (PTDELETEALLCHANNELS) GetAPIFunc("ptDeleteAllChannels");
 		ptGetChannelInfo = (PTGETCHANNELINFO) GetAPIFunc("ptGetChannelInfo");
 		ptGetChannelByName = (PTGETCHANNELBYNAME) GetAPIFunc("ptGetChannelByName");
+
+		ptCreatePointChannelFromLayers = (PTCREATEPOINTCHANNELFROMLAYERS) GetAPIFunc("ptCreatePointChannelFromLayers");
+		ptLayersFromPointChannel = (PTLAYERSFROMPOINTCHANNEL) GetAPIFunc("ptLayersFromPointChannel");
 
 		/* instance */ 
 		ptCreateSceneInstance = (PTCREATESCENEINSTANCE) GetAPIFunc("ptCreateSceneInstance");

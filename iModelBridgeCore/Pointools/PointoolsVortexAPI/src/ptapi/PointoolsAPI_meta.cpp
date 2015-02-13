@@ -22,8 +22,6 @@
 #include <pt/registry.h>
 #include <pt/timestamp.h>
 
-#include <encryption/tea.h>
-
 using namespace pcloud;
 using namespace pointsengine;
 

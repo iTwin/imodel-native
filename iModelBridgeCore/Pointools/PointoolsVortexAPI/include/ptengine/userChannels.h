@@ -171,7 +171,10 @@ public:
 	uint getFlags() const					{ return flags; }
 	uint getNumPoints() const				{ return numPoints; }
 	uint getFullNumPoints() const			{ return fullNumPoints; }
-	
+	uint getUser0() const					{ return user0; }
+	uint getUser1() const					{ return user1; }
+	void setUser0( ubyte u )				{ user0 = u; }
+	void setUser1( ubyte u )				{ user1 = u; }
 	ptds::DataPointer getFilePos() const	{ return filepos; }
 
 	void operator = ( const VoxelChannelData &vc ) { memcpy( this, &vc, sizeof(VoxelChannelData) ); }
@@ -196,8 +199,8 @@ private:
 	
 	ubyte	bytesPerPoint;
 	ubyte	flags;
-	ubyte	res0;
-	ubyte	res1;			
+	ubyte	user0;				// typically unused, but for layers used for full occ
+	ubyte	user1;				// typically unused, but for layers used for part occ
 	uint	numPoints;			// num points in this
 	uint	fullNumPoints;		// full num points for leaf
 
@@ -224,14 +227,14 @@ struct CloudChannelData
 class UserChannel
 {
 	UserChannel( const pt::String &name, uint bitsize, uint multiple, void* defaultVal, ubyte flags=0 );
-	UserChannel(UserChannel *sourceChannel, const pt::String &destName, UserChannelFlags destFlags);
+	UserChannel( UserChannel *sourceChannel, const pt::String &destName, UserChannelFlags destFlags );
 	UserChannel();
 
 	~UserChannel();
 	friend class UserChannelManager;
 
 	bool		writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhandle );
-	bool		writeToBranch( pt::datatree::Branch *branch );
+	bool		writeToBranch( pt::datatree::Branch *branch, bool copy=true );
 
 	pt::String	m_name;
 	uint		m_bitsize;
@@ -252,8 +255,8 @@ public:
 	const void*			defaultValue() const	{ return m_defaultValue; }
 	const uint			flags() const			{ return m_flags; }
 
-	void				remFromChannel( pcloud::Scene *scene );
-	void				addToChannel( pcloud::Scene *scene );
+	void				remFromChannel( const pcloud::Scene *scene );
+	void				addToChannel( const pcloud::Scene *scene );
 
 	inline VoxelChannelData *voxelChannel( VoxelID id ) 
 	{ 
@@ -320,6 +323,9 @@ public:
 	UserChannel *createChannel( const pt::String &name, uint bitsize, uint multiple, void* defaultVal, uint flags=0 );
 	UserChannel *copyChannel(UserChannel *channel, const pt::String &destName, UserChannelFlags destFlags);
 	UserChannel *channelByName( const pt::String &name );
+
+	UserChannel *createChannelFromLayers( const pt::String &name, const pcloud::Scene *scene = 0 );	// copies the edit layers into a user channel
+	bool		applyChannelToLayers( const UserChannel *ch, pcloud::Scene *scene = 0 );		// reverse opp, applies the channel data to layers
 
 	/* erase */ 
 	bool eraseChannel( UserChannel *channel );

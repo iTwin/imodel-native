@@ -238,6 +238,7 @@ EXPORTS
 	ptIsolateSelected
 	ptUnhideAll
 	ptUnselectAll
+	ptResetSelection
 	ptSelectAll
 
 	ptSelectPointsInLayer
@@ -303,6 +304,11 @@ EXPORTS
 	ptClearPointsFromLayer
 	ptResetLayers
 
+	ptSetLayerColor
+	ptGetLayerColor
+	ptGetLayerColorBlend
+	ptResetLayerColors
+	
 	ptCopySelToCurrentLayer
 	ptMoveSelToCurrentLayer
 	
@@ -323,6 +329,9 @@ EXPORTS
 	ptDeleteAllChannels
 	ptGetChannelInfo
 	ptGetChannelByName
+
+	ptCreatePointChannelFromLayers
+	ptLayersFromPointChannel
 
 	ptGetDetailedQueryPointsf
 	ptGetDetailedQueryPointsd

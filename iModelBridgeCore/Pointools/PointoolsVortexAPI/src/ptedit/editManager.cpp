@@ -44,6 +44,7 @@ namespace ptedit
 		FilterOpClearAll				clearAll;
 		FilterOpSelectAll				selectAll;
 		FilterOpDeselectAll				deselectAll;
+		FilterResetSelection			resetSelection;
 		FilterOpHideSelected			hideSelected;
 		FilterOpShowAll					showAll;
 		FilterOpCopyToLayer				copyToLayer;
@@ -753,6 +754,16 @@ void PointEditManager::selectAll()
 void PointEditManager::deselectAll()
 {
 	m_currentEdit.addOperation( "DeselectAll" );
+}
+/*****************************************************************************/
+/**
+* @brief
+* @return void
+*/
+/*****************************************************************************/
+void PointEditManager::resetSelection()
+{
+	m_currentEdit.addOperation( "ResetSelection" );
 }
 /*****************************************************************************/
 /**

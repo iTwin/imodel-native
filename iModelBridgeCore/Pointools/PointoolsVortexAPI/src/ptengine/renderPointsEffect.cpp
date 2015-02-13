@@ -2,6 +2,9 @@
 #include <ptengine/renderPointsEffect.h>
 #include <ptengine/renderFrameData.h>
 #include <ptengine/renderContext.h>
+#include <ptengine/renderShaderUniforms.h>
+#include <ptengine/pointLayers.h>
+#include <ptgl/glShader.h>
 
 using namespace pointsengine;
 
@@ -22,7 +25,7 @@ void	RenderPointsEffectGL::startFixedFuncFrame( const RenderContext *context )
 	glColor3ubv( context->renderer()->activeBuffer()->baseColor() );
 
 	float density = 1.0f;
-	float pointSize = settings->pointSize();
+	float pointSize = settings->pointSize(); 
 
 	if (frame.isDynamic() && settings->dynamicAdaptivePntSize())
 	{
@@ -67,6 +70,8 @@ uint RenderPointsEffectGL::requiredBuffers() const
 void	RenderPointsEffectGL::startShaderFrame( const RenderContext *context, ShaderObj *shader )
 {
 	startFixedFuncFrame( context );	
+
+	ptgl::Shader *shaderGL = reinterpret_cast<ptgl::Shader*>(shader);
 }
 void	RenderPointsEffectGL::endShaderFrame( const RenderContext *context, ShaderObj *shader )
 {

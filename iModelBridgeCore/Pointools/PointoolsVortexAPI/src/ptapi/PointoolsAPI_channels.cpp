@@ -16,6 +16,8 @@
 #include <ptengine/userChannels.h>
 #include <ptengine/engine.h>
 
+#include <ptedit/editmanager.h>
+
 #include <ptcloud2/pod.h>
 #include <pt/project.h>
 
@@ -27,9 +29,10 @@
 using namespace pt;
 using namespace pcloud;
 using namespace pointsengine;
+using namespace ptedit;
 
 extern int setLastErrorCode( int );
-
+extern Scene *		sceneFromHandle(PThandle handle);
 
 namespace
 {
@@ -362,4 +365,64 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 PTvoid	PTAPI ptDeleteAllChannels()
 {
 	UserChannelManager::instance()->eraseAllChannels();
+
+	g_channels.clear();
+}
+
+//-----------------------------------------------------------------------------
+// Special functions for persistence of layer state
+//-----------------------------------------------------------------------------
+PThandle	PTAPI ptCreatePointChannelFromLayers( PTstr name, PThandle sceneHandle )
+{
+	pauseEngine();
+
+	pcloud::Scene * scene = sceneFromHandle(sceneHandle);
+	
+	// if scene is null all scenes are used
+
+	// run a complete edit
+	PointEditManager::instance()->regenOOCComplete();
+	UserChannel *channel = UserChannelManager::instance()->createChannelFromLayers( String(name), scene ); 
+
+	if (!channel)
+	{
+		setLastErrorCode( PTV_OUT_OF_MEMORY );
+		return PT_NULL;
+	}
+
+	g_channels.insert( ChannelMap::value_type(++_lastHandle, channel ) );
+
+	unpauseEngine();
+
+	return _lastHandle;
+}
+//-----------------------------------------------------------------------------
+// Special functions for persistence of layer state
+//-----------------------------------------------------------------------------
+bool	PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle )
+{
+	bool result = false;
+
+	pauseEngine();
+
+	UserChannel *channel = 0;
+
+	ChannelMap::iterator i = g_channels.find( userChannel );
+
+	if (i != g_channels.end())
+	{
+		channel = i->second;
+	}
+
+	if (!channel)
+	{
+		setLastErrorCode( PTV_INVALID_PARAMETER );
+	}
+	else
+	{
+		result = UserChannelManager::instance()->applyChannelToLayers( channel );
+
+		unpauseEngine();
+	}
+	return result;
 }

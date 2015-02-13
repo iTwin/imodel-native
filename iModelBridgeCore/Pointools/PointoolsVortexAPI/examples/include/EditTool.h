@@ -30,6 +30,7 @@ public:
 		CmdRefreshEdit		= 308,
 		CmdDeselect			= 309,
 		CmdSelectMode		= 310,
+		CmdResetSel			= 311,
 		
 		CmdLayer1			= 321,
 		CmdLayer2			= 322,
@@ -90,7 +91,10 @@ public:
 		CmdSelCloud			= 391,
 		CmdSelScene			= 392,
 
-		CmdEvalMode			 = 399
+		CmdEvalMode			 = 399,
+
+		CmdLayersToChannel   = 365,
+		CmdChannelToLayers	 = 366
 	};
 
 	EditTool(bool simple);	// simple = true, for no layers or scope 
@@ -130,6 +134,8 @@ private:
 	PTdouble			m_boxPosition[3];
 	PTdouble			m_boxRotation[3];
 
+	PThandle			m_layersChannel;
+
 	void	setCurrentLayer(int layer);
 	void	toggleLayerVisibility(int layer);
 	void	toggleLayerLock(int layer);
@@ -137,6 +143,9 @@ private:
 	void	setCloudScope();
 	void	selectCloudTest();
 	void	selectSceneTest();
+
+	void	layersToChannel();
+	void	channelToLayers();
 
 };
 

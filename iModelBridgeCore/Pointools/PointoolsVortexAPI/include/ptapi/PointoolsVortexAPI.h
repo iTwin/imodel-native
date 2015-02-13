@@ -408,6 +408,7 @@ PTvoid	PTAPI ptHideSelected( void );
 PTvoid	PTAPI ptIsolateSelected( void );
 PTvoid	PTAPI ptUnhideAll( void );
 PTvoid	PTAPI ptUnselectAll( void );
+PTvoid	PTAPI ptResetSelection( void );
 PTvoid	PTAPI ptSelectAll( void );
 PTvoid	PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle );
 PTvoid	PTAPI ptSetSelectionDrawColor( const PTubyte *col3 );
@@ -442,6 +443,12 @@ PTbool PTAPI ptDoesLayerHavePoints( PTuint layer );
 PTvoid PTAPI ptClearPointsFromLayer( PTuint layer );
 PTvoid PTAPI ptSelectPointsInLayer( PTuint layer );
 PTvoid PTAPI ptDeselectPointsInLayer( PTuint layer );
+
+PTbool   PTAPI ptSetLayerColor( PTuint layer, PTfloat *rgb3, PTfloat blend );
+PTfloat *PTAPI ptGetLayerColor( PTuint layer );
+PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer );
+PTvoid   PTAPI ptResetLayerColors( void );
+
 PTvoid PTAPI ptResetLayers();
 
 PTbool PTAPI ptCopySelToCurrentLayer( PTbool deselect );
@@ -559,6 +566,9 @@ PTres		PTAPI ptDrawPointChannelAs( PThandle channel, PTenum method, PTfloat para
 PTres		PTAPI ptSetChannelOOCFolder( const PTstr foldername );
 PThandle	PTAPI ptGetChannelByName( const PTstr channelname );
 PTvoid		PTAPI ptDeleteAllChannels( void );
+
+PThandle	PTAPI ptCreatePointChannelFromLayers( PTstr name, PThandle sceneHandle );
+PTbool		PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle );
 
 /* Clipping planes */
 PTvoid		PTAPI ptEnableClipping( void );

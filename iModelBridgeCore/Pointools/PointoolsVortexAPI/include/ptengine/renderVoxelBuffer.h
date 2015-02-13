@@ -41,6 +41,7 @@ public:
 	const pcloud::Voxel *voxel() const							{ return m_voxel; }
 
 	const ubyte			*baseColor() const;
+	float				baseColorAlpha() const;
 
 private:
 	bool				tryLock();

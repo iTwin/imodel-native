@@ -14,7 +14,7 @@ using namespace pointsengine;
 VoxelChannelData::VoxelChannelData( uint num_points, uint bytesPerPnt, uint full_num_points, ubyte setup_flags ) : 
 		data(0), uniform_value(0), min_value(0), max_value(0), numPoints( num_points ), 
 			bytesPerPoint( (ubyte)bytesPerPnt ), filepos(PT_NULL_FILE_POS), flags(setup_flags),
-			fullNumPoints(full_num_points)
+			fullNumPoints(full_num_points), user0(0), user1(0)
 		{
 		}
 // if OOC
@@ -408,7 +408,7 @@ bool UserChannel::writeToFile( ptds::Tracker *tracker, ptds::DataSourcePtr fhand
 	return true;
 }	
 //-----------------------------------------------------------------------------
-bool UserChannel::writeToBranch( pt::datatree::Branch *branch )
+bool UserChannel::writeToBranch( pt::datatree::Branch *branch, bool copy )
 {
 	int version = 1;
 	int bytesPerPoint = (m_bitsize / 8) * m_multiple;
@@ -453,7 +453,9 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch )
 			leaf->addNode( "full_num_points", chd.fullNumPoints );
 			leaf->addNode( "num_points", chd.numPoints );
 			leaf->addNode( "flags", (uint)chd.flags );
-			
+			leaf->addNode( "user0", (uint)chd.getUser0() );
+			leaf->addNode( "user1", (uint)chd.getUser1() );
+
 			if (chd.uniform_value)
 				leaf->addBlob( "uniform", bytesPerPoint, chd.uniform_value, true, true );
 
@@ -464,7 +466,7 @@ bool UserChannel::writeToBranch( pt::datatree::Branch *branch )
 				leaf->addBlob( "max", bytesPerPoint, chd.max_value, true, true );			
 			
 			if (chd.data)	// write the per-point channel data
-				leaf->addBlob( "data", chd.fullNumPoints * chd.bytesPerPoint, chd.data, true, true, false/*compress*/);
+				leaf->addBlob( "data", chd.fullNumPoints * chd.bytesPerPoint, chd.data, copy, true, false/*compress*/);
 				
 			lock( &chd );				// relock
 		}
@@ -690,11 +692,11 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 }
 
 //-----------------------------------------------------------------------------
-void UserChannel::remFromChannel( pcloud::Scene *scene )
+void UserChannel::remFromChannel( const pcloud::Scene *scene )
 {
 	for (int i=0; i<scene->size(); i++)
 	{
-		pcloud::PointCloud *pc = scene->cloud(i);
+		const pcloud::PointCloud *pc = scene->cloud(i);
 
 		MapByCloud::iterator f = m_data.find( pc->guid() );
 
@@ -710,11 +712,11 @@ void UserChannel::remFromChannel( pcloud::Scene *scene )
 	}
 }
 //-----------------------------------------------------------------------------
-void UserChannel::addToChannel( pcloud::Scene *scene )
+void UserChannel::addToChannel( const pcloud::Scene *scene )
 {
 	for (int i=0; i<scene->size(); i++)
 	{
-		pcloud::PointCloud *cloud = scene->cloud(i);
+		const pcloud::PointCloud *cloud = scene->cloud(i);
 
 		m_data.insert( 	UserChannel::MapByCloud::value_type(
 				cloud->guid(), new CloudChannelData( cloud, m_bitsize, m_multiple, m_defaultValue, (ubyte)m_flags )));

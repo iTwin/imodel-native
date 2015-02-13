@@ -527,3 +527,8 @@ const ubyte *PointsBuffer::baseColor( ) const
 	static ubyte col[] = { 255,255,255, 255 };
 	return col;
 }
+
+float	PointsBuffer::baseColorAlpha( ) const
+{
+	return 1.0f;
+}

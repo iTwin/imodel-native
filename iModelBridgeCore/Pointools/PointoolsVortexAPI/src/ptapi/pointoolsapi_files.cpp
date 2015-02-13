@@ -2,7 +2,10 @@
 #include <commdlg.h>
 #define POINTOOLS_API_BUILD_DLL
 
+//#define INLCUDE_SELECT_LICENSING
+#ifdef INLCUDE_SELECT_LICENSING
 #include <ptlic/PointoolsBentleyLicenseAPI.h>
+#endif // INLCUDE_SELECT_LICENSING
 
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
@@ -278,7 +281,7 @@ int setLastErrorCode( int code )
 //-------------------------------------------------------------------------------
 const PTstr PTAPI ptGetVersionString()
 {
-	return L"Pointools Vortex 2.0.0.203";
+	return L"Pointools Vortex 2.0.0.204";
 }
 
 void PTAPI ptGetVersionNum(PTubyte *version)
@@ -286,7 +289,7 @@ void PTAPI ptGetVersionNum(PTubyte *version)
 	version[0] = 2;
 	version[1] = 0;
 	version[2] = 0;
-	version[3] = 203;
+	version[3] = 204;
 }
 //-------------------------------------------------------------------------------
 // demo license code and some global stuff
@@ -501,8 +504,19 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 
 	if (!_initialized)
 	{
-		if(startLicenseBentley() == false)
-			return PT_FALSE;
+#ifdef INLCUDE_SELECT_LICENSING
+		try
+		{
+			if(startLicenseBentley() == false) 
+				return PT_FALSE;
+		}
+		catch (...)
+		{
+			// if any error at all is thrown from startLicenseBentley() we must return PT_FALSE
+			// note that this could be an error due to the delay loading mechanism not finding Bentley.liclib.dll
+			return false;
+		}
+#endif // INLCUDE_SELECT_LICENSING
 
 		PTRMI::initialize();
 															// Initialize server data sources with PTRMI

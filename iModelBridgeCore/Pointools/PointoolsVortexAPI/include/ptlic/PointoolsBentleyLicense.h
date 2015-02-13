@@ -58,11 +58,6 @@ public:
 		Architecture_Unknown
 	};
 
-	enum LicenseIsDesktopOrIware
-	{
-		License_Is_Deskop,
-		License_Is_IWare
-	};
 
 protected:
 
@@ -81,7 +76,6 @@ protected:
 
 	LicenseStatus			licenseStatus;
 
-	LicenseIsDesktopOrIware	licenseIsDesktopOrIware;
 
 protected:
 
@@ -94,14 +88,13 @@ protected:
 
 	void					setToolsPath							(const ProductPath &path);
 
-	void					setLicenseIsDesktopOrIWare				(LicenseIsDesktopOrIware desktopOrIWare);
-
 	Status					runExternalExe							(const pt::String &pathEXE, bool wait = true);
 	Status					runActivationWizard						(void);
 
 	const std::wstring &	getActivationWizardExe					(void);
 
-	void					displayDailyMessage						(const wchar_t *message);
+	// don't show any messages when licensing the Vortex DLL
+//	void					displayDailyMessage						(const wchar_t *message);
 
 	void					setInitialized							(bool init);
 
@@ -111,7 +104,7 @@ public:
 							PointoolsBentleyLicense					(void);
 						   ~PointoolsBentleyLicense					(void);
 
-	Status					initialize								(const ProductName &name, ProductID product, const ProductVersion &version, const ProductFeatures &features, const ProductPath &toolPath, LicenseIsDesktopOrIware desktopOrIWare);
+	Status					initialize								(const ProductName &name, ProductID product, const ProductVersion &version, const ProductFeatures &features, const ProductPath &toolPath);
 	Status					shutDown								(void);
 
 	bool					getInitalized							(void);
@@ -139,9 +132,7 @@ public:
 	const ProductFeatures & getProductFeatures						(void);
 	const wchar_t		  *	getProductFeaturesStr					(void);
 
-	const ProductPath	  &	getToolsPath							(void);
-
-	LicenseIsDesktopOrIware getLicenseIsDesktopOrIWare				(void);
+	const ProductPath	  &	getToolsPath							(void);	
 
 	unsigned int			getLicenseDescription					(LicenseDescriptionSet &description);
 

@@ -43,6 +43,30 @@ EditTool::EditTool(bool simple) : Tool(CmdRectangleSelect, CmdEvalMode)
 
 	m_scope = 0;
 	m_evalMode = 0;
+
+	m_layersChannel = 0;
+
+	// set up the layer colours as a test
+	float col[] = {0,0,0};
+	ptSetLayerColor( 0, col, 0 ); // no colour
+	
+	float col1[] = { 1.0f, 0, 0 };
+	ptSetLayerColor( 1, col1, 0.2f );
+
+	float col2[] = { 1.0f, 1.0f, 0 };
+	ptSetLayerColor( 2, col2, 0.4f );
+
+	float col3[] = { 0, 1.0f, 0.5f };
+	ptSetLayerColor( 3, col3, 0.6f );
+
+	float col4[] = { 1.0f, 0, 1.0f };
+	ptSetLayerColor( 4, col4, 0.8f );
+
+	float col5[] = { 0.75f, 0.5f, 0.0f };
+	ptSetLayerColor( 5, col5, 0.5f );
+
+	float col6[] = { 0.5f, 0.25f, 1.0f };
+	ptSetLayerColor( 5, col6, 0.5f );
 }
 //-----------------------------------------------------------------------------
 void EditTool::command( int cmdId )
@@ -342,6 +366,23 @@ void EditTool::command( int cmdId )
 			case 1: ptSetEditWorkingMode(PT_EDIT_WORK_ON_ALL); break;
 			}
 			break;
+
+		case CmdLayersToChannel:
+			layersToChannel();
+			ptClearEdit();
+			viewRedraw();
+			break;
+
+		case CmdChannelToLayers:
+			channelToLayers();
+			viewRedraw();
+			break;
+
+		case CmdResetSel:
+			ptResetSelection();
+			viewRedraw();
+			break;
+
 	}
 }
 //-----------------------------------------------------------------------------
@@ -753,6 +794,26 @@ void	EditTool::selectSceneTest()
 		std::cout << "Can't select scene, nothing loaded" << std::endl;
 	}
 }
+
+//-----------------------------------------------------------------------------
+void	EditTool::layersToChannel()
+//-----------------------------------------------------------------------------
+{
+	m_layersChannel = ptCreatePointChannelFromLayers( L"layers", 0 );
+}
+//-----------------------------------------------------------------------------
+void	EditTool::channelToLayers()
+//-----------------------------------------------------------------------------
+{
+	if (m_layersChannel) 
+	{
+		ptLayersFromPointChannel( m_layersChannel, 0 );
+		ptDeletePointChannel( m_layersChannel );
+
+		m_layersChannel = 0;
+	}
+	viewRedraw();
+}
 //-----------------------------------------------------------------------------
 void	EditTool::drawPostDisplay()
 //-----------------------------------------------------------------------------
@@ -840,6 +901,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		spacer = new GLUI_StaticText( selectTools, "" );
 		new GLUI_Button( selectTools, "Reset", CmdResetEdit, &Tool::dispatchCmd );
 		spacer = new GLUI_StaticText( selectTools, "" );
+		new GLUI_Button( selectTools, "Reset Sel", CmdResetSel, &Tool::dispatchCmd );
 
 		GLUI_Column* col = new GLUI_Column( selectTools, false );
 		col->set_w(1);
@@ -988,5 +1050,21 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		btn = new GLUI_Button( selectTests, "ptSelectCloud", CmdSelCloud, &Tool::dispatchCmd );
 		btn->set_w(90);
 		btn->set_back_col( &layerButtonCol );
+
+		/* Persitent tests */ 
+		new GLUI_StaticText( rolloutSelect, " " );
+		GLUI_StaticText *lbl4 = new GLUI_StaticText( rolloutSelect, "Persistence Tests" );
+		lbl4->set_col( labelCol );
+	
+		GLUI_Panel *persistenceTests = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
+
+		btn = new GLUI_Button( persistenceTests, "to Channel", CmdLayersToChannel, &Tool::dispatchCmd );
+		btn->set_back_col( &layerButtonCol );	
+		btn->set_w(90);
+		col = new GLUI_Column( persistenceTests, false );
+
+		btn = new GLUI_Button( persistenceTests, "from Channel", CmdChannelToLayers, &Tool::dispatchCmd );
+		btn->set_w(90);
+		btn->set_back_col( &layerButtonCol );	
 	}
 }

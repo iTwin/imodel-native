@@ -91,6 +91,7 @@ public:
 	void	selectAll();
 	void	clearAll();
 	void	deselectAll();
+	void	resetSelection();
 	void	showAll();
 	void	invertSelection();
 	void	invertVisibility();

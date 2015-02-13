@@ -1,20 +1,27 @@
 #ifndef POINTOOLS_GLCOLOR
 #define POINTOOLS_GLCOLOR
 
+#include <pt/os.h>
+
 namespace ptgl
 {
 class Color
 {
 public:
 	Color() {};
-	Color(float _r, float _g, float _b)
+	Color(float _r, float _g, float _b, float _a=1.0f)
+	{
+		set(_r,_g,_b,_a);
+	}
+	Color(unsigned int rgb) { fromUINT(rgb); }
+
+	void set(float _r, float _g, float _b, float _a=1.0f)
 	{
 		r = _r;
 		b = _b;
 		g = _g;
+		a = _a;
 	}
-	Color(unsigned int rgb) { fromUINT(rgb); }
-
 	inline void fromUINT(unsigned int rgb)
 	{
 		r = 0.00392156862745098  * GetRValue(rgb);// ((unsigned char)(rgb));
@@ -25,10 +32,14 @@ public:
 	{
 		return (unsigned int)(((unsigned char)(r*255)|((unsigned short)((unsigned char)(g*255))<<8))|(((unsigned int)(unsigned char)(b*255))<<16));
 	}
-	void setGL() const { glColor3f(r,g,b); }
+	void setGL() const 
+	{ 
+	//	glColor3f(r,g,b); 
+	}
 	float r;
 	float g;
 	float b;
+	float a;
 };
 }
 #endif

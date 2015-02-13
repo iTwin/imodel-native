@@ -35,7 +35,7 @@ namespace pointsengine
 		virtual bool			compatibleEnvironment( RenderEnvironment e ) const =0;
 		virtual bool			isEnabled( const RenderSettings *settings ) const = 0;
 		virtual uint			requiredBuffers( ) const=0;
-		
+
 		/* fixed pipeline implementation */ 
 		virtual void			startFixedFuncFrame( const RenderContext *context )=0;
 		virtual void			endFixedFuncFrame( const RenderContext *context )=0;

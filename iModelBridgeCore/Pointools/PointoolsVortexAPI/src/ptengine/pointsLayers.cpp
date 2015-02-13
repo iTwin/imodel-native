@@ -26,7 +26,26 @@ bool PointLayersState::initialize()
 	_names[14] = "Layer 15";
 	_names[15] = "Layer 16";
 
+	//this is just a test
+	/*
+	for (int i=0;i<256;i++) 
+	{
+		float r = 0.5 + (float)0.5*rand()/ RAND_MAX;
+		float g = 0.5 + (float)0.5*rand()/ RAND_MAX;
+		float b = 0.5 + (float)0.5*rand()/ RAND_MAX;
+		
+		_colors[i].set(r,g,b,0.5f);	// zero alpha as default
+	}*/
+	resetLayerColors();
+
 	return true;
+}
+void PointLayersState::resetLayerColors()
+{
+	for (int i=0;i<256;i++) 
+	{		
+		_colors[i].set(1.0,1.0,1.0, 0);
+	}
 }
 void PointLayersState::setLayerName( int lyr, const pt::String &name )
 {

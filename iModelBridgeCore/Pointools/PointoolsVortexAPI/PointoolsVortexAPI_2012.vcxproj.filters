@@ -795,7 +795,7 @@
       <Filter>Source Files\ptlic</Filter>
     </ClCompile>
     <ClCompile Include="src\ptlic\PointoolsBentleyLicenseAPI.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\ptlic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1508,7 +1508,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ptlic\PointoolsBentleyLicense.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\ptlic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -41,6 +41,22 @@ namespace ptedit
 		}
 	};
 
+	struct FilterResetSelection : public EditNodeDef
+	{
+		FilterResetSelection() : EditNodeDef("ResetSelection"){}
+
+		DECLARE_EDIT_NODE("ResetSelection", "Reset Selection", 6, 
+			(EditNodeMultithread | EditNodePostConsolidateSel) );
+
+		bool apply()
+		{
+			DeselectAnyPointsVisitor v;
+			TraverseScene::withVisitor(&v, false);
+
+			return true;						
+		}
+	};
+
 	struct FilterOpSelectAll : public EditNodeDef
 	{
 		FilterOpSelectAll() : EditNodeDef("SelectAll") {}

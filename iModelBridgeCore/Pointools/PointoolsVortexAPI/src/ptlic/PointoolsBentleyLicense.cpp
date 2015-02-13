@@ -77,96 +77,85 @@ PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::startLicenseDesk
 	
 																	// Check if product is activated
 	licenseConfigured	= getLicenseConfigured();
-																	// If iWare licensing is to be used
-	if (licenseIsDesktopOrIware == License_Is_IWare)
-	{
-		LicenseClient_SetOverrideServerInformation(getProductID(), L"SELECTServer-View.bentley.com", L"1VSXX74TV21G9BW", false);
-	}
 																	// Attempt to start license
 	licenseStatus		= LicenseClient_StartDesktopLicense3(getProductID(), getProductVersionStr(), LICCLIENT_DURATION_Desktop, getProductFeaturesStr(), NULL);
 
 																	// Is this is an iWare license don't check the status returned from LicenseClient_StartDesktopLicense3()
-																	// (See http://inside/bsw/Community/selectlicensingsdk/SELECT%20Licensing%20SDK/Recording%20Usage%20For%20Free%20Products.aspx)
-	if (licenseIsDesktopOrIware != License_Is_IWare)
+																	// (See http://inside/bsw/Community/selectlicensingsdk/SELECT%20Licensing%20SDK/Recording%20Usage%20For%20Free%20Products.aspx)	
+// Don't show any messages when licensing the Vortex DLL																	
+/*	if(licenseConfigured == 0 && licenseStatus != LICENSE_STATUS_Trial)
 	{
+																	// If not, run activation wizard
+		if(runActivationWizard() != Status_OK)
+		{
+																	// If an error occurred, return error
+			return LICENSE_STATUS_Error;
+		}
+
+																	// Check if product is activated
+		licenseConfigured	= getLicenseConfigured();
+																	// Attempt to start license
+		licenseStatus		= LicenseClient_StartDesktopLicense3(getProductID(), getProductVersionStr(), LICCLIENT_DURATION_Desktop, getProductFeaturesStr(), NULL);
+																	// If not in trial mode, exit
 		if(licenseConfigured == 0 && licenseStatus != LICENSE_STATUS_Trial)
 		{
-																		// If not, run activation wizard
-			if(runActivationWizard() != Status_OK)
-			{
-																		// If an error occurred, return error
-				return LICENSE_STATUS_Error;
-			}
-
-																		// Check if product is activated
-			licenseConfigured	= getLicenseConfigured();
-																		// Attempt to start license
-			licenseStatus		= LicenseClient_StartDesktopLicense3(getProductID(), getProductVersionStr(), LICCLIENT_DURATION_Desktop, getProductFeaturesStr(), NULL);
-																		// If not in trial mode, exit
-			if(licenseConfigured == 0 && licenseStatus != LICENSE_STATUS_Trial)
-			{
-				exit(0);
-			}
+			exit(0);
 		}
-
-
-		switch(licenseStatus)
-		{
-																		// If in 'Trial' mode (not activated)
-		case LICENSE_STATUS_Trial:
-																		//  OR 'Disconnected' (activated but disconnected from license server)
-		case LICENSE_STATUS_Offline:
-		{
-			UINT32		daysLeft = 0;
-			wchar_t		message[POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH];
-
-																		// Get days until disabled in either trial or offline status
-			int status = LicenseClient_GetDaysUntilDisabled3(&daysLeft, getProductID(), getProductFeaturesStr());
-
-			swprintf_s(message, POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH, L"Days Left: %d", daysLeft);
-																		// Show daily message. Note that a message can only display once per day
-			displayDailyMessage(message);
-																		// If in Trial mode and Trial has expired, return Expired. This is just a safety net for the internal XM logic
-			if(licenseStatus == LICENSE_STATUS_Trial && daysLeft == 0)
-			{
-				return LICENSE_STATUS_Expired;
-			}
-
-			break;
-		}      
-																		// If activated and license has been obtained, return OK
-		case LICENSE_STATUS_Ok:
-																		// If product has fully expired, return expired
-		case LICENSE_STATUS_Expired:
-		{
-			wchar_t		message[POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH];
-
-			swprintf_s(message, POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH, L"License Expired.");
-																		// Show daily message. Note that a message can only display once per day
-			displayDailyMessage(message);
-
-			break;
-		}
-																		// If beyond 30 day expiry, run in limited mode
-		case LICENSE_STATUS_Crippled:
-		case LICENSE_STATUS_Error:
-		default:
-																		// Show daily message. Note that a message can only display once per day
-			displayDailyMessage(L"Running Limited Mode");
-
-			break;
-		}
-																		// Return the license status
-		return licenseStatus;
 	}
-	else
-	{																	// This is an iWare license
-		return LICENSE_STATUS_Ok;
+
+
+	switch(licenseStatus)
+	{
+																	// If in 'Trial' mode (not activated)
+	case LICENSE_STATUS_Trial:
+																	//  OR 'Disconnected' (activated but disconnected from license server)
+	case LICENSE_STATUS_Offline:
+	{
+		UINT32		daysLeft = 0;
+		wchar_t		message[POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH];
+
+																	// Get days until disabled in either trial or offline status
+		int status = LicenseClient_GetDaysUntilDisabled3(&daysLeft, getProductID(), getProductFeaturesStr());
+
+		swprintf_s(message, POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH, L"Days Left: %d", daysLeft);
+																	// Show daily message. Note that a message can only display once per day
+		displayDailyMessage(message);
+																	// If in Trial mode and Trial has expired, return Expired. This is just a safety net for the internal XM logic
+		if(licenseStatus == LICENSE_STATUS_Trial && daysLeft == 0)
+		{
+			return LICENSE_STATUS_Expired;
+		}
+
+		break;
+	}      
+																	// If activated and license has been obtained, return OK
+	case LICENSE_STATUS_Ok:
+																	// If product has fully expired, return expired
+	case LICENSE_STATUS_Expired:
+	{
+		wchar_t		message[POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH];
+
+		swprintf_s(message, POINTOOLSBENTLEYLICENSE_MAX_MESSAGE_LENGTH, L"License Expired.");
+																	// Show daily message. Note that a message can only display once per day
+		displayDailyMessage(message);
+
+		break;
 	}
+																	// If beyond 30 day expiry, run in limited mode
+	case LICENSE_STATUS_Crippled:
+	case LICENSE_STATUS_Error:
+	default:
+																	// Show daily message. Note that a message can only display once per day
+		displayDailyMessage(L"Running Limited Mode");
+
+		break;
+	}
+*/																	// Return the license status
+	return licenseStatus;	
 }
 
 
-PointoolsBentleyLicense::Status PointoolsBentleyLicense::initialize(const ProductName &name, ProductID id, const ProductVersion &version, const ProductFeatures &features, const ProductPath &toolsPath, LicenseIsDesktopOrIware desktopOrIWare)
+PointoolsBentleyLicense::Status PointoolsBentleyLicense::initialize(const ProductName &name, ProductID id, const ProductVersion &version, const ProductFeatures &features, const ProductPath &toolsPath)
 {
 	if(getInitalized())
 	{
@@ -193,9 +182,7 @@ PointoolsBentleyLicense::Status PointoolsBentleyLicense::initialize(const Produc
 																	// Set product version string in xx.xx.xx.xx format
 	setProductVersion(version);
 																	// Set feature string
-	setProductFeatures(features);
-																	// Set desktop or iWare flag
-	setLicenseIsDesktopOrIWare(desktopOrIWare);						
+	setProductFeatures(features);					
 																	// Set initialized
 	setInitialized(true);
 																	// Return OK
@@ -224,9 +211,7 @@ void PointoolsBentleyLicense::clear(void)
 
 	setProductVersion(pt::String(DEFAULT_PRODUCT_VERSION));
 
-	setProductFeatures(pt::String(DEFAULT_PRODUCT_FEATURES));
-
-	setLicenseIsDesktopOrIWare(License_Is_Deskop);
+	setProductFeatures(pt::String(DEFAULT_PRODUCT_FEATURES));	
 }
 
 
@@ -269,16 +254,6 @@ void PointoolsBentleyLicense::setProductFeatures(const ProductFeatures &features
 const PointoolsBentleyLicense::ProductFeatures &PointoolsBentleyLicense::getProductFeatures(void)
 {
 	return productFeatures;
-}
-
-void PointoolsBentleyLicense::setLicenseIsDesktopOrIWare(LicenseIsDesktopOrIware desktopOrIWare)
-{
-	licenseIsDesktopOrIware = desktopOrIWare;
-}
-
-PointoolsBentleyLicense::LicenseIsDesktopOrIware PointoolsBentleyLicense::getLicenseIsDesktopOrIWare(void)
-{
-	return licenseIsDesktopOrIware;
 }
 
 const wchar_t *PointoolsBentleyLicense::getProductFeaturesStr(void)
@@ -550,7 +525,7 @@ const wchar_t *PointoolsBentleyLicense::getProductNameStr(void)
 	return productName.c_wstr();
 }
 
-
+/*
 void PointoolsBentleyLicense::displayDailyMessage(const wchar_t *message)
 {
 	StatusInt s;
@@ -564,7 +539,7 @@ void PointoolsBentleyLicense::displayDailyMessage(const wchar_t *message)
 		s = LicenseClient_DisplayStatusMessage(NULL, getProductID(), getProductFeaturesStr(), getProductNameStr(), message, MSG_LANGUAGE_English);
 	}
 }
-
+*/
 unsigned int PointoolsBentleyLicense::getLicenseDescription(LicenseDescriptionSet &description)
 {
 	pt::String				value;

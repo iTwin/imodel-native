@@ -435,6 +435,7 @@ typedef PTvoid	(__stdcall * PTHIDESELECTED)(void);
 typedef PTvoid	(__stdcall * PTISOLATESELECTED)(void);
 typedef PTvoid	(__stdcall * PTUNHIDEALL)(void);
 typedef PTvoid	(__stdcall * PTUNSELECTALL)(void);
+typedef PTvoid  (__stdcall * PTRESETSELECTION)(void);
 typedef PTvoid	(__stdcall * PTSELECTALL)(void);
 
 typedef PTvoid  (__stdcall * PTINVERTSELECTION)(void);
@@ -523,6 +524,11 @@ typedef PTbool (__stdcall *PTDOESLAYERHAVEPOINTS)( PTuint layer );
 typedef PTvoid (__stdcall *PTCLEARPOINTSFROMLAYER)( PTuint layer );
 typedef PTvoid (__stdcall *PTRESETLAYERS)( void );
 
+typedef PTbool		(__stdcall *PTSETLAYERCOLOR)( PTuint layer, PTfloat *rgb, PTfloat blend );
+typedef PTfloat *	(__stdcall *PTGETLAYERCOLOR)( PTuint layer );
+typedef PTfloat		(__stdcall *PTGETLAYERCOLORBLEND)( PTuint layer );
+typedef PTvoid		(__stdcall *PTRESETLAYERCOLORS)( void );
+
 typedef PTbool (__stdcall *PTCOPYSELTOCURRENTLAYER)( PTbool deselect );
 typedef PTbool (__stdcall *PTMOVESELTOCURRENTLAYER)( PTbool deselect );
 
@@ -592,6 +598,9 @@ typedef PTvoid	 (__stdcall * PTDELETEALLCHANNELS)( void );
 typedef PTres	 (__stdcall * PTGETCHANNELINFO)(PThandle handle, PTstr name, PTenum& typesize, PTuint& multiple, void *defaultValue, PTuint& flags);
 typedef PThandle (__stdcall * PTGETCHANNELBYNAME)( const PTstr channelname );
 
+typedef PThandle (__stdcall * PTCREATEPOINTCHANNELFROMLAYERS)( PTstr name, PThandle sceneHandle );	
+typedef PTbool	 (__stdcall * PTLAYERSFROMPOINTCHANNEL)( PThandle userChannel, PThandle sceneHandle );
+
 /* Clipping planes */
 typedef PTvoid	(__stdcall * PTENABLECLIPPING)( void );
 typedef PTvoid	(__stdcall * PTDISABLECLIPPING)( void );
@@ -630,7 +639,7 @@ extern PTSERVERCLIENTLOST						ptServerClientLost;
 extern PTGETSESSIONID							ptGetSessionID;
 
 
-/* Client Server Caching */
+/* Client Server Caching */ 
 extern PTSETCLIENTCACHEFOLDER					ptSetClientCacheFolder;	
 extern PTGETCLIENTCACHEFOLDER					ptGetClientCacheFolder;			
 extern PTENABLECLIENTSERVERCACHING				ptEnableClientServerCaching;			
@@ -837,6 +846,7 @@ extern PTHIDESELECTED ptHideSelected;
 extern PTISOLATESELECTED ptIsolateSelected;
 extern PTUNHIDEALL ptUnhideAll;
 extern PTUNSELECTALL ptUnselectAll;
+extern PTRESETSELECTION ptResetSelection;
 extern PTSELECTALL ptSelectAll;
 
 extern PTSETSELECTIONSCOPE ptSetSelectionScope;
@@ -938,6 +948,11 @@ extern PTDOESLAYERHAVEPOINTS ptDoesLayerHavePoints;
 extern PTCLEARPOINTSFROMLAYER ptClearPointsFromLayer;
 extern PTRESETLAYERS ptResetLayers;
 
+extern PTSETLAYERCOLOR ptSetLayerColor;
+extern PTGETLAYERCOLOR ptGetLayerColor;
+extern PTGETLAYERCOLORBLEND ptGetLayerColorBlend;
+extern PTRESETLAYERCOLORS ptResetLayerColors;
+
 extern PTCOPYSELTOCURRENTLAYER ptCopySelToCurrentLayer;
 extern PTMOVESELTOCURRENTLAYER ptMoveSelToCurrentLayer;
 
@@ -965,6 +980,9 @@ extern PTSETCHANNELOOCFOLDER ptSetChannelOOCFolder;
 extern PTDELETEALLCHANNELS ptDeleteAllChannels;
 extern PTGETCHANNELINFO ptGetChannelInfo;
 extern PTGETCHANNELBYNAME ptGetChannelByName;
+extern PTCREATEPOINTCHANNELFROMLAYERS ptCreatePointChannelFromLayers;	
+extern PTLAYERSFROMPOINTCHANNEL ptLayersFromPointChannel;
+
 
 /* Clipping planes */
 extern PTENABLECLIPPING ptEnableClipping;

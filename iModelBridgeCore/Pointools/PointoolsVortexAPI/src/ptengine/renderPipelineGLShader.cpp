@@ -6,6 +6,7 @@
 #include <ptengine/renderVoxelBuffer.h>
 #include <ptengine/visibilityEngine.h>
 #include <ptengine/engine.h>
+#include <ptengine/pointLayers.h>
 #include <ptengine/clipManager.h>
 using namespace pointsengine;
 
@@ -100,6 +101,15 @@ void RenderPipeline_GLShader::setUpShaderForBuffer( const PointsBufferI *buffer,
 		// FULLY SELECTED FLAG
 		shader->setUniform1f( UNIFORM_FULL_SEL, 
 			voxel->flag( pcloud::WholeSelected ) ? 1.0 : 0 );
+
+		// layer color when edit channel not available
+		if (!voxel->channel(pcloud::PCloud_Filter))
+		{
+			ptgl::Color c = thePointLayersState().getLayerColor( voxel->layers(0) );
+
+			shader->setUniform4fv( UNIFORM_LAYER_COL, 1, &c.r );
+			shader->setUniform1f( UNIFORM_LAYER_ALPHA, c.a );
+		}
 	}
 }
 /*****************************************************************************/

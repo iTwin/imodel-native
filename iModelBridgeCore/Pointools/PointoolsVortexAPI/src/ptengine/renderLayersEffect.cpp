@@ -68,6 +68,12 @@ void	RenderLayersEffectGL::startShaderFrame( const RenderContext *context, Shade
 	// bind attrib array then get actual bound index, not guaranteed to be as requested
 	glBindAttribLocationARB( shaderGL->GetProgramObject(), 1, "pE" );
 	m_attribPos = glGetAttribLocation( shaderGL->GetProgramObject(), "pE");
+
+	// if we have a layer channel we need zero blend
+	float layer_col_gl [] = { 1.0,1.0,1.0,0 };
+	
+	shaderGL->setUniform4fv( UNIFORM_LAYER_COL, 1, layer_col_gl );
+	shaderGL->setUniform1f( UNIFORM_LAYER_ALPHA, 0 );
 }
 //-----------------------------------------------------------------------------
 void	RenderLayersEffectGL::endShaderFrame( const RenderContext *context, ShaderObj *shader )
@@ -135,10 +141,11 @@ GLuint	RenderLayersEffectGL::generateLayerTexture( const RenderContext *context,
 	uint i, j;
 	for ( i=1; i<256; i++)
 	{
+		uint i4 = i * 4;
+
 		for ( j=0; j<256; j++)	//set whole column to 255, in future rows could be used for attributes
 		{
 			uint j4 = j * 4;
-			uint i4 = i * 4;
 
 			if (i & visLayers)
 			{
@@ -148,6 +155,16 @@ GLuint	RenderLayersEffectGL::generateLayerTexture( const RenderContext *context,
 			}
 			layerTexture[j4 * 256 + i4 +3] = 255;		//selected point
 				
+		}
+		ptgl::Color c = thePointLayersState().getLayerColor(i);
+
+		// set up the layer colour
+		if (i & visLayers)
+		{
+			layerTexture[4 * 256 + i4] = c.r*255;		//r
+			layerTexture[4 * 256 + i4 +1] = c.g*255;	//g
+			layerTexture[4 * 256 + i4 +2] = c.b*255;	//b
+			layerTexture[4 * 256 + i4 +3] = c.a*255;
 		}
 	}
 
@@ -176,6 +193,8 @@ GLuint	RenderLayersEffectGL::generateLayerTexture( const RenderContext *context,
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);	
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 256, 0, GL_RGBA, GL_UNSIGNED_BYTE, layerTexture);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return texID;
 }

@@ -52,6 +52,7 @@ namespace pointsengine
 		virtual const double		*getBufferTransform4x4(BufferValueType bufferType) const=0;	
 
 		virtual const ubyte			*baseColor() const=0;
+		virtual float				baseColorAlpha() const=0;
 
 	private:
 		friend	class				BufferScopedTryLock;
@@ -89,6 +90,7 @@ namespace pointsengine
 
 		void				setBaseColour( const ubyte * selCol );
 		const ubyte			*baseColor() const;
+		float				baseColorAlpha() const;
 
 		const void			*getBufferPtr(BufferValueType bufferType) const;
 		pcloud::DataType	getBufferType(BufferValueType bufferType) const;	
@@ -137,6 +139,7 @@ namespace pointsengine
 		const double		*getBufferTransform4x4(BufferValueType bufferType) const;	
 
 		const ubyte			*baseColor() const;
+		float				baseColorAlpha() const;
 
 	private:
 		bool				allocateBufferChannel( BufferValueType buffer );

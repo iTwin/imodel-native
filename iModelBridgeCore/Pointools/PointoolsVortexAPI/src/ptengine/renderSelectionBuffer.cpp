@@ -254,3 +254,7 @@ const ubyte *SelectedPointsBuffer::baseColor() const
 {
 	return m_selectionCol;
 }
+float	SelectedPointsBuffer::baseColorAlpha() const
+{
+	return 1.0f;
+}

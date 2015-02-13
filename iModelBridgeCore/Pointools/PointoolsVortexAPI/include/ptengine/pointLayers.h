@@ -5,6 +5,8 @@
 #include <ptcloud2/node.h>
 #include <pt/typedefs.h>
 #include <pt/ptstring.h>
+#include <ptgl/color.h>
+
 // Holds the current layer state - used only in Edit
 // does not do anything other than hold the layer state and allow this to be shared
 // is not concerned with layer locking
@@ -19,6 +21,7 @@ enum InLayer
 class PTENGINE_API PointLayersState
 {
 public:
+
 	inline const uint &visibleBitMask() const { return _visibleLayersBitMask; }
 	inline const uint &currentBitMask() const { return _currentLayerBitMask; }
 
@@ -52,9 +55,26 @@ public:
 		return _visibleLayersBitMask & ~SELECTED_PNT_BIT;
 	}
 	int numLayers() const { return 7; }
+
+	void	setLayerColorAlpha( uint layerMask, float a )
+	{
+		_colors[layerMask % 256].a = a;
+	}
+	void	setLayerColor( uint layerMask, ptgl::Color &col )
+	{
+		_colors[layerMask % 256] = col;
+	}	
+	const ptgl::Color &getLayerColor( uint layerMask ) const
+	{
+		return _colors[layerMask%256];
+	}
+	void	resetLayerColors( void );
+
 private:
-	uint _visibleLayersBitMask;
-	uint _currentLayerBitMask;
-	pt::String _names[32];
+	uint		_visibleLayersBitMask;
+	uint		_currentLayerBitMask;
+
+	ptgl::Color	_colors[256];
+	pt::String	_names[32];
 };
 }

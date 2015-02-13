@@ -322,8 +322,12 @@ void	VoxelInPlaceBuffer::unlock()
 }
 const ubyte *VoxelInPlaceBuffer::baseColor() const
 {
-	static ubyte col[] = { 255,255,255, 255 };
+	static ubyte col[] = { 255, 255, 255, 255 };	// use the voxels layer colour
 	return col;
+}
+float VoxelInPlaceBuffer::baseColorAlpha() const
+{
+	return 1.0f;								// use the layers alpha blend value
 }
 SelectedVoxelPointsBuffer::SelectedVoxelPointsBuffer( const ubyte *selCol ) : m_selectionCol( selCol )
 {
