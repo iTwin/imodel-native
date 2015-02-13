@@ -32,7 +32,7 @@ enum class Strategy : uint32_t //0xffffffff
     //Private Strategies used by ECDb Internally
     //===========================================================================================
     NoHint = 0x0,
-    Default = TablePerClass,
+    Default = TableForThisClass,
     InParentTable = 0x1000,
     RelationshipTargetTable = 0x2000,
     RelationshipSourceTable = 0x4000,

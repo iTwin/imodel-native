@@ -491,7 +491,7 @@ void RelationshipClassMapInfo::_InitializeFromSchema ()
         if (RelationshipClassHintReader::TryReadAllowDuplicateRelationships (allowDuplicateRelationships, *relClassHint))
             m_allowDuplicateRelationships = allowDuplicateRelationships;
 
-        if (GetMapStrategy().IsSharedTableForThisClass())
+        if (!GetMapStrategy().IsSharedTableForThisClass())
             {
             RelationshipClassHintReader::TryReadSourceECInstanceIdColumnName (m_sourceECInstanceIdColumn, *relClassHint);
             RelationshipClassHintReader::TryReadSourceECClassIdColumnName (m_sourceECClassIdColumn, *relClassHint);
