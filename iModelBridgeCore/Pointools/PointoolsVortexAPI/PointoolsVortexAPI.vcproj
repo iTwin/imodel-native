@@ -70,13 +70,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				UseUnicodeResponseFiles="false"
-				AdditionalDependencies="opengl32.lib glew32s.lib glu32.lib shlwapi.lib Wm4Foundation80.lib libboost_thread-vc80-mt-1_43.lib libboost_system-vc80-mt-1_43.lib Ws2_32.lib"
+				AdditionalDependencies="Bentley.liclib.lib opengl32.lib glew32s.lib glu32.lib shlwapi.lib Wm4Foundation80.lib libboost_thread-vc80-mt-1_43.lib libboost_system-vc80-mt-1_43.lib Ws2_32.lib"
 				OutputFile="bin\vc8\PointoolsVortexAPId.dll"
 				Version="1.6.0.3"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(PointoolsVortexBase)\out\Winx86\BuildContexts\PointoolsLibs_VS2005\Delivery&quot;"
 				IgnoreDefaultLibraryNames="libc.lib"
 				ModuleDefinitionFile="apid.def"
+				DelayLoadDLLs="Bentley.liclib.dll"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/PointoolsAPI.pdb"
 				SubSystem="1"
@@ -263,13 +264,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opengl32.lib glu32.lib shlwapi.lib wsock32.lib Wm4Foundation80.lib libboost_thread-vc80-mt-1_43.lib libboost_system-vc80-mt-1_43.lib glew32s.lib Ws2_32.lib"
+				AdditionalDependencies="Bentley.liclib.lib  opengl32.lib glu32.lib shlwapi.lib wsock32.lib Wm4Foundation80.lib libboost_thread-vc80-mt-1_43.lib libboost_system-vc80-mt-1_43.lib glew32s.lib Ws2_32.lib"
 				OutputFile="bin\vc8\PointoolsVortexAPI.dll"
 				Version="1.6.0.3"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(PointoolsVortexBase)\out\Winx86\BuildContexts\PointoolsLibs_VS2005\Delivery&quot;"
 				IgnoreDefaultLibraryNames="libc.lib"
 				ModuleDefinitionFile="api.def"
+				DelayLoadDLLs="Bentley.liclib.dll"
 				GenerateDebugInformation="true"
 				StripPrivateSymbols="$(TargetDir)$(TargetName)-distrib.pdb"
 				GenerateMapFile="true"
@@ -4914,6 +4916,18 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="plic"
+				>
+				<File
+					RelativePath=".\src\ptlic\PointoolsBentleyLicense.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ptlic\PointoolsBentleyLicenseAPI.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -5918,6 +5932,18 @@
 				</File>
 				<File
 					RelativePath=".\include\vortexobjects\VortexObjects_import.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="ptlic"
+				>
+				<File
+					RelativePath=".\include\ptlic\PointoolsBentleyLicense.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\ptlic\PointoolsBentleyLicenseAPI.h"
 					>
 				</File>
 			</Filter>

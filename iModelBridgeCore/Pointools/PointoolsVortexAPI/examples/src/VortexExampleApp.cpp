@@ -296,6 +296,7 @@ bool VortexExampleApp::initializeVortexAPI(bool debugVortexDll)
 		{
 			std::cout << "Failed to initialize Vortex API" << std::endl;
 			std::cout << wcToAscii(ptGetLastErrorString()) << std::endl;
+			return false;
 		}
 	
 		ptSetWorkingFolder( folder );

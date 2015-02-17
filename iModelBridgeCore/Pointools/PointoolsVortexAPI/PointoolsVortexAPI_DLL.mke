@@ -151,11 +151,12 @@ DLM_SPECIAL_LINKOPT        + $(dlmLibs)
 DLM_NO_DLS                 = 1
 DLM_NO_DEF                 = 1
 DLM_SPECIAL_LINKOPT        + -def:$(baseDir)api.def
-#DLM_SPECIAL_LINKOPT		   + /DELAYLOAD:"$(BuildContextSubpartAssemblyPath)\Bentley.liclib.dll"
 
 DLM_NOMSBUILTINS           = 1
 
 DLM_NOENTRY				   = 1
+
+LINKER_LIBRARIES_DELAYLOADED	= Bentley.liclib.lib
 
 ASSEMBLY_NAME              = $(appName)
 ASSEMBLY_TITLE             = $(appName)

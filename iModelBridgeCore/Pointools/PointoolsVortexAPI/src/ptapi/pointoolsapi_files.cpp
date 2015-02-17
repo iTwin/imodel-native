@@ -2,10 +2,7 @@
 #include <commdlg.h>
 #define POINTOOLS_API_BUILD_DLL
 
-//#define INLCUDE_SELECT_LICENSING
-#ifdef INLCUDE_SELECT_LICENSING
 #include <ptlic/PointoolsBentleyLicenseAPI.h>
-#endif // INLCUDE_SELECT_LICENSING
 
 #include <gl/glew.h>
 #include <ptapi/PointoolsVortexAPI.h>
@@ -281,7 +278,7 @@ int setLastErrorCode( int code )
 //-------------------------------------------------------------------------------
 const PTstr PTAPI ptGetVersionString()
 {
-	return L"Pointools Vortex 2.0.0.204";
+	return L"Pointools Vortex 2.0.0.205";
 }
 
 void PTAPI ptGetVersionNum(PTubyte *version)
@@ -289,7 +286,7 @@ void PTAPI ptGetVersionNum(PTubyte *version)
 	version[0] = 2;
 	version[1] = 0;
 	version[2] = 0;
-	version[3] = 204;
+	version[3] = 205;
 }
 //-------------------------------------------------------------------------------
 // demo license code and some global stuff
@@ -477,6 +474,25 @@ PTbool ptInitializeEnvVariables(void)
 }
 
 //-------------------------------------------------------------------------------
+// Check the key passed to ptInitialize to see if SELECT licensing should be
+// used. For now the only company that does not use SELECT licensing is Siemens.
+//-------------------------------------------------------------------------------
+bool useSELECTLicense(std::string& company, std::string& module, std::string& type, const char* ex, std::string& expires)
+{
+	// Hide "Siemens" so it's not visible in plain text in the DLL
+	PTubyte start[] = { 183, 198, 187, 188, 173, 175, 173, 51 };
+	int a = 100;
+	char name[64] = {0};
+	for (int i = 0; i < 8; i++)
+		name[i] = start[i]-100+(i*7);	
+
+	if (strcmp(company.c_str(), name) == 0)
+		return false; // no SELECT license needed
+
+	// return true; // SELECT license needed
+}
+
+//-------------------------------------------------------------------------------
 // Inititalize API
 // intialises engine and loads ramps
 //-------------------------------------------------------------------------------
@@ -504,30 +520,6 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 
 	if (!_initialized)
 	{
-#ifdef INLCUDE_SELECT_LICENSING
-		try
-		{
-			if(startLicenseBentley() == false) 
-				return PT_FALSE;
-		}
-		catch (...)
-		{
-			// if any error at all is thrown from startLicenseBentley() we must return PT_FALSE
-			// note that this could be an error due to the delay loading mechanism not finding Bentley.liclib.dll
-			return false;
-		}
-#endif // INLCUDE_SELECT_LICENSING
-
-		PTRMI::initialize();
-															// Initialize server data sources with PTRMI
-		PTRMI::getManager().newMetaInterface<ptds::DataSourceServer>(L"DataSourceServer");
-
-		pointsengine::initializeEngine();
-		extern PTvoid _ptInitialiseShaders();
-		_ptInitialiseShaders();
-
-		clearLastError();
-
 		char plaintxt[255];
 		char cyphertxt[255];
 		{
@@ -629,6 +621,29 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 			_failed = !checkPreSessionTimeOut();
 		}
 		else g_timeOut = -1;
+
+		// Check for special users that do not require a SELECT license and allow these to skip the SELECT license check in startLicenseBentley().
+		// Note that any ditribution of Vortex that uses SELECT licensing now requires the bentley licensing DLLs to be distributed with it
+		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL. 
+		if (useSELECTLicense(company, module, type, ex, expires))
+		{
+			if(startLicenseBentley() == false) 
+			{
+				setLastErrorCode( PTV_NO_LICENSE_FOR_FEATURE );	
+				return PT_FALSE;		
+			}
+		}
+
+		PTRMI::initialize();
+															// Initialize server data sources with PTRMI
+		PTRMI::getManager().newMetaInterface<ptds::DataSourceServer>(L"DataSourceServer");
+
+		pointsengine::initializeEngine();
+		extern PTvoid _ptInitialiseShaders();
+		_ptInitialiseShaders();
+
+		clearLastError();
+
 		pod::s_ptlHandler = new ptl::BranchHandler("Point Clouds", _extractPODfromPTL, 0 );
 	}
 	_initialized = true;

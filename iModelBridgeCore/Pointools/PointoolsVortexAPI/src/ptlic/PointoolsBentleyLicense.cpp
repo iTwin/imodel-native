@@ -77,9 +77,17 @@ PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::startLicenseDesk
 	
 																	// Check if product is activated
 	licenseConfigured	= getLicenseConfigured();
-																	// Attempt to start license
-	licenseStatus		= LicenseClient_StartDesktopLicense3(getProductID(), getProductVersionStr(), LICCLIENT_DURATION_Desktop, getProductFeaturesStr(), NULL);
 
+	__try 
+	{
+																	// Attempt to start license
+		licenseStatus	= LicenseClient_StartDesktopLicense3(getProductID(), getProductVersionStr(), LICCLIENT_DURATION_Desktop, getProductFeaturesStr(), NULL);
+	}	
+	__except (EXCEPTION_EXECUTE_HANDLER) 
+	{
+																	// the Bentley licensing DLLs were not able to be loaded therefore licensing cannot be checked 
+		return LICENSE_STATUS_Error;
+	}
 																	// Is this is an iWare license don't check the status returned from LicenseClient_StartDesktopLicense3()
 																	// (See http://inside/bsw/Community/selectlicensingsdk/SELECT%20Licensing%20SDK/Recording%20Usage%20For%20Free%20Products.aspx)	
 // Don't show any messages when licensing the Vortex DLL																	
@@ -269,19 +277,40 @@ const wchar_t *PointoolsBentleyLicense::getProductFeaturesStr(void)
 
 UINT32 PointoolsBentleyLicense::getLicenseConfigured(void)
 {
-	return LicenseClient_IsConfigured(getProductID(), getProductVersionStr(), getProductFeaturesStr());
+	__try 
+	{
+		return LicenseClient_IsConfigured(getProductID(), getProductVersionStr(), getProductFeaturesStr());
+	}	
+	__except (EXCEPTION_EXECUTE_HANDLER) 
+	{
+		return 0;
+	}
 }
 
 
 PointoolsBentleyLicense::LicenseStatus PointoolsBentleyLicense::getLicenseStatus(void)
 {
-	return LicenseClient_GetStatus3(getProductID(), getProductFeaturesStr());
+	__try 
+	{
+		return LicenseClient_GetStatus3(getProductID(), getProductFeaturesStr());
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) 
+	{
+		return LICENSE_STATUS_Error;
+	}
 }
 
 
 PointoolsBentleyLicense::LicenseType PointoolsBentleyLicense::getLicenseType(void)
 {
-	return LicenseClient_GetLicenseType(getProductID(), getProductVersionStr(), getProductFeaturesStr());
+	__try 
+	{
+		return LicenseClient_GetLicenseType(getProductID(), getProductVersionStr(), getProductFeaturesStr());
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) 
+	{
+		return LICENSE_TYPE_Error;
+	}
 }
 
 
@@ -289,7 +318,14 @@ int PointoolsBentleyLicense::getDaysUntilDisabled(void)
 {
 	UINT32	days;
 
-	if(LicenseClient_GetDaysUntilDisabled3(&days, getProductID(), getProductFeaturesStr()) != BENTLEY_LICENSE_SUCCESS)
+	__try 
+	{
+		if(LicenseClient_GetDaysUntilDisabled3(&days, getProductID(), getProductFeaturesStr()) != BENTLEY_LICENSE_SUCCESS)
+		{
+			days = -1;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) 
 	{
 		days = -1;
 	}
@@ -304,16 +340,21 @@ bool PointoolsBentleyLicense::getUserName(pt::String &value)
 
 	StatusInt result;
 
-	if((result = LicenseClient_GetUserName(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
+		if((result = LicenseClient_GetUserName(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
 
-		return true;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	value = L"";
 
-	return false;}
+	return false;
+}
 
 
 bool PointoolsBentleyLicense::getOrganizationName(pt::String &value)
@@ -322,12 +363,16 @@ bool PointoolsBentleyLicense::getOrganizationName(pt::String &value)
 
 	StatusInt result;
 
-	if((result = LicenseClient_GetOrganizationName(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
+		if((result = LicenseClient_GetOrganizationName(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
 
-		return true;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	value = L"";
 
@@ -340,12 +385,16 @@ bool PointoolsBentleyLicense::getActivatedCountry(pt::String &value)
 
 	StatusInt result;
 
-	if((result = LicenseClient_GetActivatedCountry(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID())) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
+		if((result = LicenseClient_GetActivatedCountry(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID())) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
 
-		return true;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	value = L"";
 
@@ -359,12 +408,16 @@ bool PointoolsBentleyLicense::getSiteID(pt::String &value)
 
 	StatusInt result;
 
-	if((result = LicenseClient_GetSiteID(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
+		if((result = LicenseClient_GetSiteID(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
 
-		return true;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	value = L"";
 
@@ -378,12 +431,16 @@ bool PointoolsBentleyLicense::getServerName(pt::String &value)
 
 	StatusInt result;
 
-	if((result = LicenseClient_GetServerName(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
+		if((result = LicenseClient_GetServerName(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID(), getProductVersionStr(), getProductFeaturesStr())) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
 
-		return true;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	value = L"";
 
@@ -397,12 +454,16 @@ bool PointoolsBentleyLicense::getServerSerialNumber(pt::String &value)
 
 	StatusInt result;
 	
-	if((result = LicenseClient_GetServerSerialNumber(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID())) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
+		if((result = LicenseClient_GetServerSerialNumber(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE, getProductID())) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
 
-		return true;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	value = L"";
 
@@ -412,16 +473,23 @@ bool PointoolsBentleyLicense::getServerSerialNumber(pt::String &value)
 
 PointoolsBentleyLicense::Architecture PointoolsBentleyLicense::getComputerArchitecture(void)
 {
-	switch(LicenseClient_GetComputerArchitecture())
+	__try 
 	{
-	case ARCH_X86:
-		return Architecture_X86;
+		switch(LicenseClient_GetComputerArchitecture())
+		{
+		case ARCH_X86:
+			return Architecture_X86;
 
-	case ARCH_X64:
-		return Architecture_X64;
+		case ARCH_X64:
+			return Architecture_X64;
 
-	default:
+		default:
 
+			return Architecture_Unknown;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) 
+	{
 		return Architecture_Unknown;
 	}
 }
@@ -431,11 +499,15 @@ bool PointoolsBentleyLicense::getOSVersion(pt::String &value)
 {
 	wchar_t	buffer[POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE];
 
-	if(LicenseClient_GetOSVersion(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE) == BENTLEY_LICENSE_SUCCESS)
+	__try 
 	{
-		value = buffer;
-		return true;
+		if(LicenseClient_GetOSVersion(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	return false;
 }
@@ -694,11 +766,15 @@ bool PointoolsBentleyLicense::getLicenseDescActivationKey(pt::String &value)
 
 	value = L"";
 
-	if(LicenseClient_GetDefaultActivationKey(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE) == BENTLEY_LICENSE_SUCCESS)
+	__try
 	{
-		value = buffer;
-		return true;
+		if(LicenseClient_GetDefaultActivationKey(buffer, POINTOOLS_BENTLEY_DEFAULT_BUFFER_SIZE) == BENTLEY_LICENSE_SUCCESS)
+		{
+			value = buffer;
+			return true;
+		}
 	}
+	__except (EXCEPTION_EXECUTE_HANDLER) { }
 
 	return false;
 }
