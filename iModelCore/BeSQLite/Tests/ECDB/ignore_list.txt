@@ -17,4 +17,5 @@ ECDbRelationships.JoinTests
 # TFS Defect 170652 and 170717
 InstanceCRUDTests.InsertUpdateDeleteTest
 
-
+ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds # Notified Muhammad Hassan
+ECDbFileInfo.ReplaceExistingEmbeddedFile # Notified Muhammad Hassan
