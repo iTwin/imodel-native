@@ -123,21 +123,9 @@ private:
     int64_t m_value;
 
 public:
-    explicit CachedRlValue(Utf8CP name)
-        : m_name (name)
-        {
-        BeAssert (!Utf8String::IsNullOrEmpty (name));
-        Reset ();
-        }
-
-    Utf8CP GetName () const { return m_name.c_str(); }
-
-    int64_t GetValue () const
-        {
-        BeAssert (!m_isUnset);
-        return m_value;
-        }
-
+    explicit CachedRlValue(Utf8CP name) : m_name (name) {BeAssert(!Utf8String::IsNullOrEmpty (name)); Reset();}
+    Utf8CP GetName () const { return m_name; }
+    int64_t GetValue () const {BeAssert (!m_isUnset); return m_value;}
     void ChangeValue (int64_t value, bool initializing = false)
         {
         m_isUnset = false;
@@ -145,7 +133,7 @@ public:
         m_value = value;
         }
 
-    int64_t Increment ()
+    int64_t Increment()
         {
         BeAssert (!m_isUnset);
         m_dirty = true;
@@ -153,19 +141,11 @@ public:
         return m_value;
         }
 
-    bool IsUnset () const { return m_isUnset; }
+    bool IsUnset() const { return m_isUnset; }
+    bool IsDirty() const {BeAssert (!m_isUnset); return m_dirty;}
+    void SetIsNotDirty() {BeAssert (!m_isUnset); m_dirty = false;}
 
-    bool IsDirty () const {
-        BeAssert (!m_isUnset);
-        return m_dirty;
-        }
-
-    void SetIsNotDirty () {
-        BeAssert (!m_isUnset);
-        m_dirty = false;
-        }
-
-    void Reset ()
+    void Reset()
         {
         m_isUnset = true;
         m_dirty = false;
