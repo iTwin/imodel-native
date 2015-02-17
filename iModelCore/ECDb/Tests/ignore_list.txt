@@ -17,7 +17,7 @@ ECDbRelationships.JoinTests
 InstanceCRUDTests.InsertUpdateDeleteTest
 
 ECDbSchemas.IntegrityCheck
-
+ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds # Notified Muhammad Hassan
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
@@ -26,6 +26,7 @@ ECDbSchemas.IntegrityCheck
 ECSqlQueryAdapter.VerifyECSqlQueries
 # Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
+ECDbFileInfo.ReplaceExistingEmbeddedFile # Notified Muhammad Hassan
 ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 
 ECDbSchemas.UpdatingExistingECSchema

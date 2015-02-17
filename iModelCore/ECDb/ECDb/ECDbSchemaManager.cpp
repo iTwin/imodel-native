@@ -347,7 +347,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
             else
                 stat = UpdateECSchema (context, diff, *schema);
 
-            if (SUCCESS == stat && diff->GetStatus () == DIFFSTATUS_Success && !diff->IsEmpty ())
+            if (SUCCESS == stat && diff != nullptr && diff->GetStatus () == DIFFSTATUS_Success && !diff->IsEmpty ())
                 diffs.push_back (diff);
             }
         else
