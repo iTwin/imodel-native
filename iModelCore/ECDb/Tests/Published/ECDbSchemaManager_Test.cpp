@@ -1156,7 +1156,7 @@ TEST(ECDbSchemaManager, ECDbImportSchema_WSG2eBPluginSchemas_Succeeds)
 
     ECDb db;
     ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
-    EXPECT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true)));
+    EXPECT_EQ(SUCCESS, db.GetSchemaManager().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true)));
     }
     
 //---------------------------------------------------------------------------------------

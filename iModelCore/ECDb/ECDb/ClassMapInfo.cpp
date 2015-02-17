@@ -54,7 +54,7 @@ ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, Schem
                             //Relationship classes for which the name only differs by case are not supported by ECDb (in contrast to regular ECClasses)
                             if (ecClass.GetRelationshipClassCP () != nullptr && classMap->IsRelationshipClassMap ())
                                 {
-                                info->m_mapStrategy = MapStrategy::DoNotMap;
+                                info->GetMapStrategyR ().SetDoNotMap ();
                                 schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Warning,
                                                                                 "Did not map ECRelationshipClass '%s': ECRelationshipClasses for which names only differ by case are not supported by ECDb.", Utf8String (ecClass.GetFullName ()).c_str ());
                                 }
