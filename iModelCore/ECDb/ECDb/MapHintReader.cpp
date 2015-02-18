@@ -204,7 +204,16 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
         //optional
         if (ecDbIndex->GetValue (v, BSCAP_Name) == ECOBJECTS_STATUS_Success && !v.IsNull ())
             info->SetName (Utf8String (v.GetString ()).c_str ());
-
+        //optional
+        if (ecDbIndex->GetValue(v, BSCAP_Where) == ECOBJECTS_STATUS_Success && !v.IsNull())
+            {
+            Utf8String whereFlag =  Utf8String(v.GetString());
+            whereFlag.Trim();
+            if (whereFlag.EqualsI(BSCAP_ECBDNOTNULL))
+                {
+                info->SetWhere(EC::ClassIndexInfo::WhereConstraint::NotNull);
+                }
+            }
         //optional
         if (ecDbIndex->GetValue (v, BSCAP_IsUnique) == ECOBJECTS_STATUS_Success && !v.IsNull ())
             info->SetIsUnique (v.GetBoolean ());
