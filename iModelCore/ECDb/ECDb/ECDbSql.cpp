@@ -1163,7 +1163,7 @@ bool ECDbSqlDb::HasObject (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlIndex* ECDbSqlDb::CreateIndex (Utf8CP tableName, Utf8CP indexName)
+ECDbSqlIndex* ECDbSqlDb::CreateIndex(Utf8CP tableName, Utf8CP indexName)
     {
     auto table = FindTableP (tableName);
     if (table == nullptr)
@@ -1180,7 +1180,7 @@ ECDbSqlIndex* ECDbSqlDb::CreateIndex (Utf8CP tableName, Utf8CP indexName)
             m_nameGenerator.Generate (generatedName);
             } while (HasObject (generatedName.c_str ()));
 
-            auto index = new ECDbSqlIndex (*table, generatedName.c_str (), GetManagerR ().GetIdGenerator ().NextIndexId ());
+            auto index = new ECDbSqlIndex(*table, generatedName.c_str(),GetManagerR().GetIdGenerator().NextIndexId());
             m_index[index->GetName ().c_str ()] = std::unique_ptr<ECDbSqlIndex> (index);
             return index;
         }
@@ -1191,7 +1191,7 @@ ECDbSqlIndex* ECDbSqlDb::CreateIndex (Utf8CP tableName, Utf8CP indexName)
         return nullptr;
         }
 
-    auto index = new ECDbSqlIndex (*table, indexName, GetManagerR ().GetIdGenerator ().NextIndexId ());
+    auto index = new ECDbSqlIndex(*table, indexName,GetManagerR().GetIdGenerator().NextIndexId());
     m_index[index->GetName ().c_str ()] = std::unique_ptr<ECDbSqlIndex> (index);
     return index;
     }
