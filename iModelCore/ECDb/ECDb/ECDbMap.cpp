@@ -615,7 +615,7 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
 CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
     {
     if (AssertIfNotMapping ())
-        return nullptr;
+        return CreateTableStatus::CREATE_ECTABLE_Error;
 
     BeMutexHolder aGurad (m_criticalSection);
 
@@ -638,7 +638,7 @@ CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
 CreateTableStatus ECDbMap::FinishTableDefinition (ECN::ECClassCR ecClass) const
     {
     if (AssertIfNotMapping ())
-        return nullptr;
+        return CREATE_ECTABLE_Error;
 
     auto classMap = GetClassMap (ecClass, false);
     if (classMap == nullptr)
