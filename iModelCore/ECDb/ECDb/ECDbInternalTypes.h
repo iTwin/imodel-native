@@ -255,6 +255,7 @@ enum ECContainerType
 #define BSCAP_Name                      L"Name"
 #define BSCAP_Where                     L"Where"
 #define BSCAP_Properties                L"Properties"
+#define BSCAP_ECBDNOTNULL               "ECBD_NOTNULL"
 #define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
 
 #define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"

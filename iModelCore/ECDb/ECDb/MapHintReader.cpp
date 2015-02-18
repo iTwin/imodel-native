@@ -209,7 +209,7 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
             {
             Utf8String whereFlag =  Utf8String(v.GetString());
             whereFlag.Trim();
-            if (whereFlag.EqualsI("ECBD_NOTNULL"))
+            if (whereFlag.EqualsI(BSCAP_ECBDNOTNULL))
                 {
                 info->SetWhere(EC::ClassIndexInfo::WhereConstraint::NotNull);
                 }
