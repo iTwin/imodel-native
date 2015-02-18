@@ -228,7 +228,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         order_PropertyOrderTest.append (stmt1.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_PropertyOrderTest == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex x h i d.X d.Y d.Z u.X u.Y f e p o.a o.g o.c o.z.X o.z.Y o.z.Z o.y.X o.y.Y o.t o.u o.k o.r z ");
+    ASSERT_TRUE (order_PropertyOrderTest == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex x h i d_X d_Y d_Z u_X u_Y f e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ");
     
     Statement stmt2;
     stmt2.Prepare (db, "PRAGMA table_info('os_ArrayOfOrderedStruct')");
@@ -238,7 +238,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
         order_OrderedStruct.append (stmt2.GetValueText (1)).append (" ");
         }
 
-    ASSERT_TRUE (order_OrderedStruct == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex a g c z.X z.Y z.Z y.X y.Y t u k r "); 
+    ASSERT_TRUE (order_OrderedStruct == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex a g c z_X z_Y z_Z y_X y_Y t u k r "); 
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
@@ -622,12 +622,12 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_binaryProp"));
     EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_booleanProp"));
     //point2Prop is stored as x,y 2 columns
-    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point2dProp.X"));
-    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point2dProp.Y"));
+    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point2dProp_X"));
+    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point2dProp_Y"));
     //point3Prop is stored as x,y,z 3 columns
-    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point3dProp.X"));
-    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point3dProp.Y"));
-    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point3dProp.Z"));
+    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point3dProp_X"));
+    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point3dProp_Y"));
+    EXPECT_TRUE (ColumnExist (db, tblClassWithPrimitiveProperties, L"myColumn_point3dProp_Z"));
 
     //========================[sc_StructWithPrimitiveProperties==================================
     WCharCP tblStructWithPrimitiveProperties = L"sc_ArrayOfStructWithPrimitiveProperties";
@@ -647,12 +647,12 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"binaryProp"));
     EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"booleanProp"));
     //point2Prop is stored as x,y 2 columns
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point2dProp.X"));
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point2dProp.Y"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point2dProp_X"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point2dProp_Y"));
     //point3Prop is stored as x,y,z 3 columns
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point3dProp.X"));
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point3dProp.Y"));
-    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point3dProp.Z"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point3dProp_X"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point3dProp_Y"));
+    EXPECT_TRUE (ColumnExist (db, tblStructWithPrimitiveProperties, L"point3dProp_Z"));
 
     //========================[sc_ClassWithPrimitiveArrayProperties==============================
     //Array properties doesnt take any column currently it will take in case of embeded senario but
@@ -1050,9 +1050,9 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //It must not have ECClassId to differentiate each row to see which class it belong to.
     EXPECT_FALSE(ColumnExist (db, tblLocation, L"ECClassId")); 
 
-    EXPECT_TRUE (ColumnExist (db, tblLocation, L"Coordinate.X")); 
-    EXPECT_TRUE (ColumnExist (db, tblLocation, L"Coordinate.Y")); 
-    EXPECT_TRUE (ColumnExist (db, tblLocation, L"Coordinate.Z")); 
+    EXPECT_TRUE (ColumnExist (db, tblLocation, L"Coordinate_X")); 
+    EXPECT_TRUE (ColumnExist (db, tblLocation, L"Coordinate_Y")); 
+    EXPECT_TRUE (ColumnExist (db, tblLocation, L"Coordinate_Z")); 
     EXPECT_TRUE (ColumnExist (db, tblLocation, L"Street")); 
     EXPECT_TRUE (ColumnExist (db, tblLocation, L"City")); 
     EXPECT_TRUE (ColumnExist (db, tblLocation, L"State")); 
@@ -1148,11 +1148,11 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"datetimeAAFoo"));
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"binaryAAFoo"));
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"booleanAAFoo"));
-    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point2dAAFoo.X"));
-    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point2dAAFoo.Y"));
-    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point3dAAFoo.X"));
-    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point3dAAFoo.Y"));
-    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point3dAAFoo.Z"));
+    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point2dAAFoo_X"));
+    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point2dAAFoo_Y"));
+    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point3dAAFoo_X"));
+    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point3dAAFoo_Y"));
+    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"point3dAAFoo_Z"));
     //EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"anglesAAFoo")); // we are no longer stuffing structs into blobs
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"commonGeometryAAFoo"));
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"colorAAFoo"));
@@ -1198,11 +1198,11 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblFoo, L"datetimeFoo"));
     EXPECT_TRUE (ColumnExist (db, tblFoo, L"binaryFoo"));
     EXPECT_TRUE (ColumnExist (db, tblFoo, L"booleanFoo"));
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point2dFoo.X"));
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point2dFoo.Y"));
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point3dFoo.X"));
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point3dFoo.Y"));
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point3dFoo.Z"));
+    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point2dFoo_X"));
+    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point2dFoo_Y"));
+    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point3dFoo_X"));
+    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point3dFoo_Y"));
+    EXPECT_TRUE (ColumnExist (db, tblFoo, L"point3dFoo_Z"));
     EXPECT_TRUE (ColumnExist (db, tblFoo, L"commonGeometryFoo"));
     
     // arrays/struct
