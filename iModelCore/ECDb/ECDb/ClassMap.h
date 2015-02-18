@@ -270,6 +270,7 @@ private:
     bvector<ClassIndexInfoPtr>  m_indexes;
     bool                        m_useSharedColumnStrategy;
     ECDbClassMapId              m_id;
+    std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> m_exclusivelyStoredClassMaps
 protected:
     ECN::ECClassCR              m_ecClass;
     ECN::ECClassId              m_parentMapClassId;
@@ -310,6 +311,45 @@ protected:
     virtual IClassMap const& _GetView (View classView) const override { return *this; };
     virtual ClassDbView const& _GetDbView () const override { return *m_dbView; }
 
+    static void GetBaseHierarchy (ECN::ECClassCR current, std::set<ECClassCP>& baseHierarchy)
+        {
+        for (auto baseClass : current.GetBaseClasses ())
+            {
+            if (baseClass == nullptr)
+                continue;
+
+            if (baseHierarchy.find (baseClass) == baseHierarchy.end ())
+                {
+                baseHierarchy.insert (baseClass);
+                if (!current.GetBaseClasses ().empty ())
+                    GetBaseHierarchy (*baseClass, baseHierarchy);
+                }
+            }      
+        }
+
+    static std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> GetExclusivelyStoredClassMaps (ECN::ECClassCR current, ECDbMapCR map)
+        {
+        auto exclusivelyStoredClassMaps = std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> (new std::map<ECN::ECClassCP, IClassMap const*> ());
+        std::set<ECClassCP> baseHierarchy;
+        GetBaseHierarchy (current, baseHierarchy);
+        if (baseHierarchy.empty ())
+            return exclusivelyStoredClassMaps;
+        
+        for (auto dependentClass : baseHierarchy)
+            {
+            if (map.IsExclusivelyStored (dependentClass->GetId ()))
+                {
+                auto classMap = map.GetClassMap (*dependentClass);
+                if (classMap != nullptr)
+                    {
+                    BeAssert (classMap->GetMapStrategy ().IsMapped ());
+                    exclusivelyStoredClassMaps->insert(std::make_pair(&classMap->GetClass (), classMap));
+                    }
+                }
+            }
+
+        return exclusivelyStoredClassMaps;
+        }
 
     PropertyMapCollection& GetPropertyMapsR ();
     
