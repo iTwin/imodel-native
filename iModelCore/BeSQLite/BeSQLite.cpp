@@ -1462,7 +1462,7 @@ DbResult Db::CreateNewDb (Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& pa
         if (rc != BE_SQLITE_OK)
             return rc;
 
-        if (params.m_expirationDate != DateTime())
+        if (params.m_expirationDate.IsValid ())
             SetExpirationDate (params.m_expirationDate);
 
         rc = BeSQLiteProfileManager::AssignProfileVersion (*this);
