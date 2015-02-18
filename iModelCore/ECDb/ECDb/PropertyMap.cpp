@@ -1012,10 +1012,10 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
 WString PropertyMapPoint::_ToString() const
     {
     if (m_is3d)
-        return WPrintfString(L"PropertyMapPoint (3d): ecProperty=%ls.%ls, columnName=%ls.X, .Y, .Z", GetProperty().GetClass().GetFullName(), 
+        return WPrintfString(L"PropertyMapPoint (3d): ecProperty=%ls.%ls, columnName=%ls_X, _Y, _Z", GetProperty().GetClass().GetFullName(), 
             GetProperty().GetName().c_str(), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
     else
-        return WPrintfString(L"PropertyMapPoint (2d): ecProperty=%ls.%ls, columnName=%ls.X, .Y", GetProperty().GetClass().GetFullName(), 
+        return WPrintfString(L"PropertyMapPoint (2d): ecProperty=%ls.%ls, columnName=%ls_X, _Y", GetProperty().GetClass().GetFullName(), 
             GetProperty().GetName().c_str(), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
     }
 
@@ -1032,17 +1032,17 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
     ECDbSqlColumn::Constraint::Collate       collate       = m_columnInfo.GetCollate();
 
     Utf8String xColumnName(columnName);
-    xColumnName.append(".X");
+    xColumnName.append("_X");
     m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, *this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
 
     Utf8String yColumnName(columnName);
-    yColumnName.append(".Y");
+    yColumnName.append("_Y");
     m_yColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, yColumnName.c_str (), primitiveType, nullable, unique, collate, "Y");
     if (!m_is3d)
         return MapStatus::Success;
 
     Utf8String zColumnName(columnName);
-    zColumnName.append(".Z");
+    zColumnName.append("_Z");
     m_zColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, zColumnName.c_str (), primitiveType, nullable, unique, collate, "Z");
     return MapStatus::Success;
     }

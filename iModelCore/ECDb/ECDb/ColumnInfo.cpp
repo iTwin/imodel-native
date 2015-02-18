@@ -25,17 +25,14 @@ ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessStri
 
     InitializeFromHint(hint, ecProperty);
 
-    // PropertyMappingRule: if ECDbPropertyHint does not supply a column name for an ECProperty, we use the ECProperty's propertyAccessString
+    // PropertyMappingRule: if ECDbPropertyHint does not supply a column name for an ECProperty, 
+    // we use the ECProperty's propertyAccessString (and replace . by _)
     if (Utf8String::IsNullOrEmpty (m_columnName.c_str ()))
-        BeStringUtilities::WCharToUtf8(m_columnName, propertyAccessString);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Casey.Mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColumnInfo::ColumnInfo (Utf8CP columnName, PrimitiveType primitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate)
-: m_columnName (columnName), m_columnType (primitiveType), m_nullable (nullable), m_unique (unique), m_collate (collate), m_virtual (false), m_priority (0)
-    {
+        {
+        m_columnName = Utf8String (propertyAccessString);
+        m_columnName.ReplaceAll (".", "_");
+        BeAssert (m_columnName.find (".") == Utf8String::npos);
+        }
     }
 
 /*---------------------------------------------------------------------------------------
