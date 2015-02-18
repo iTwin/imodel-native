@@ -218,10 +218,17 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ClassIndexInfo : RefCountedBase
     {
+    public:
+        enum class WhereConstraint
+            {
+            Null,
+            NotNull
+            };
 private:
     Utf8String m_name;
     bool m_isUnique;
     bvector<Utf8String> m_properties;
+    WhereConstraint m_where;
 private:
     ClassIndexInfo()
         : m_isUnique(false)
@@ -233,6 +240,8 @@ public:
     bool GetIsUnique() const { return m_isUnique;}
     void SetIsUnique(bool isUnique) {m_isUnique = isUnique;}
     bvector<Utf8String>& GetProperties(){ return m_properties;}
+    WhereConstraint GetWhere() const { return m_where; }
+    void SetWhere(WhereConstraint whereCondition) { m_where = whereCondition; }
     static ClassIndexInfoPtr Create()
         {
         return new ClassIndexInfo();
@@ -245,50 +254,50 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct StandardKeySpecification : RefCountedBase
     {
-public:
-    enum class Type
-        {
-        None = 0,
-        SyncIDSpecification,
-        GlobalIdSpecification,
-        BusinessKeySpecification
-        };
-private:
-    bvector<Utf8String> m_keyProperties;
-    Type m_type;
+    public:
+        enum class Type
+            {
+            None = 0,
+            SyncIDSpecification,
+            GlobalIdSpecification,
+            BusinessKeySpecification
+            };
+    private:
+        bvector<Utf8String> m_keyProperties;
+        Type m_type;
 
-    StandardKeySpecification (Type type) : m_type (type){}
+        StandardKeySpecification(Type type) : m_type(type){}
 
-public:
-    bvector<Utf8String>& GetKeyProperties () {return m_keyProperties;}
-    Type GetType () const { return m_type; }
-    static StandardKeySpecificationPtr Create (Type type)
-        { 
-        return new StandardKeySpecification(type);
-        }
-    static Type GetTypeFromString (WCharCP customAttributeName)
-        {
-        Type keyType = Type::None;
-        if (BeStringUtilities::Wcsicmp(customAttributeName, L"SyncIDSpecification") == 0)
-            keyType = Type::SyncIDSpecification;
-        else if (BeStringUtilities::Wcsicmp(customAttributeName, L"GlobalIdSpecification") == 0)
-            keyType = Type::GlobalIdSpecification;
-        else if (BeStringUtilities::Wcsicmp(customAttributeName, L"BusinessKeySpecification") == 0)
-            keyType = Type::BusinessKeySpecification;
+    public:
+        bvector<Utf8String>& GetKeyProperties() { return m_keyProperties; }
+        Type GetType() const { return m_type; }
+        static StandardKeySpecificationPtr Create(Type type)
+            {
+            return new StandardKeySpecification(type);
+            }
+        static Type GetTypeFromString(WCharCP customAttributeName)
+            {
+            Type keyType = Type::None;
+            if (BeStringUtilities::Wcsicmp(customAttributeName, L"SyncIDSpecification") == 0)
+                keyType = Type::SyncIDSpecification;
+            else if (BeStringUtilities::Wcsicmp(customAttributeName, L"GlobalIdSpecification") == 0)
+                keyType = Type::GlobalIdSpecification;
+            else if (BeStringUtilities::Wcsicmp(customAttributeName, L"BusinessKeySpecification") == 0)
+                keyType = Type::BusinessKeySpecification;
 
-        return keyType;
-        }
-    static WString TypeToString (Type keyType)
-        {
-        if (keyType == Type::SyncIDSpecification)
-            return L"SyncIDSpecification";
-        if (keyType == Type::GlobalIdSpecification)
-            return L"GlobalIdSpecification";
-        if (keyType == Type::BusinessKeySpecification)
-            return L"BusinessKeySpecification";
+            return keyType;
+            }
+        static WString TypeToString(Type keyType)
+            {
+            if (keyType == Type::SyncIDSpecification)
+                return L"SyncIDSpecification";
+            if (keyType == Type::GlobalIdSpecification)
+                return L"GlobalIdSpecification";
+            if (keyType == Type::BusinessKeySpecification)
+                return L"BusinessKeySpecification";
 
-        return L"";
-        }
+            return L"";
+            }
     };
 
 
