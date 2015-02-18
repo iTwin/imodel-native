@@ -279,7 +279,7 @@ void InstanceCRUDTests::setUpECDbForClass()
     static const size_t JOURNAL_SUFFIX_LENGTH = 8;
     if (dbName3.size() + 6 + JOURNAL_SUFFIX_LENGTH > MAX_PATH)
     {
-        LOG1.infov("Db file path is exceeding the limit(260): %ls", dbName3);
+        LOG1.infov("Db file path is exceeding the limit(260): %ls", dbName3.c_str());
         size_t exceededSize = dbName3.size() + 6 + JOURNAL_SUFFIX_LENGTH - MAX_PATH;
         dbName3.resize(dbName3.size() - exceededSize);
     }
@@ -309,7 +309,7 @@ bool InstanceCRUDTests::setUpECdbSingleClass()
     static const size_t JOURNAL_SUFFIX_LENGTH = 8;
     if (dbName1.size() + 6 + JOURNAL_SUFFIX_LENGTH > MAX_PATH)
     {
-        LOG1.infov("Db file path is exceeding the limit(260): %ls", dbName1);
+        LOG1.infov("Db file path is exceeding the limit(260): %ls", dbName1.c_str());
         size_t exceededSize = dbName1.size() + 6 + JOURNAL_SUFFIX_LENGTH - MAX_PATH;
         dbName1.resize(dbName1.size() - exceededSize);
     }
