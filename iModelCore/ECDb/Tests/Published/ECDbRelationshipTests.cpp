@@ -309,12 +309,12 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     // EmployeePhone
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase
     //   Relates:  Employee (1) -> Phone (1)
-    //   Should write to RK_EmployeePhone column in sc_Employee table
+    //   Should write to sc_Phone table
     relInstance = CreateRelationship (test, L"Employee", L"Phone", L"EmployeePhone");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
-    ValidatePersistingRelationship (db, "sc_Employee", InstanceToId (*relInstance->GetSource()), 
-        "Phone__trg_01_id", InstanceToId (*relInstance->GetTarget()).GetValue ());
+    ValidatePersistingRelationship (db, "sc_Phone", InstanceToId (*relInstance->GetTarget()), 
+        "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
     ValidateReadingRelationship (test, L"EmployeePhone", *relInstance);
     ValidateReadingRelated (test, L"EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
 

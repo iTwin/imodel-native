@@ -834,7 +834,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //Related to Furniture. Employee can have one or more furniture
     WCharCP tblEmployee = L"sc_Employee";
     EXPECT_TRUE (TableExist  (db, tblEmployee));    
-    EXPECT_EQ   (32, GetColumnCount(db, tblEmployee));
+    EXPECT_EQ   (31, GetColumnCount(db, tblEmployee));
     EXPECT_TRUE (ColumnExist (db, tblEmployee, L"ECInstanceId"));
     
     EXPECT_TRUE (ColumnExist (db, tblEmployee, L"EmployeeID"));
@@ -848,7 +848,6 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblEmployee, L"FullName")); 
     EXPECT_TRUE (ColumnExist (db, tblEmployee, L"EmployeeType")); 
     EXPECT_TRUE (ColumnExist (db, tblEmployee, L"EmployeeRecordKey")); 
-    EXPECT_TRUE (ColumnExist (db, tblEmployee, L"Phone__trg_01_id")); 
     EXPECT_TRUE (ColumnExist (db, tblEmployee, L"Company__trg_11_id")); 
     EXPECT_FALSE(ColumnExist (db, tblEmployee, L"EmployeeCertification")); //struct array property
 
@@ -967,7 +966,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //TablePerClass
     WCharCP tblPhone = L"sc_Phone"; //Drived from Asset
     EXPECT_TRUE (TableExist  (db, tblPhone));
-    EXPECT_EQ   (11, GetColumnCount(db, tblPhone));            
+    EXPECT_EQ   (12, GetColumnCount(db, tblPhone));            
     
     EXPECT_TRUE (ColumnExist (db, tblPhone, L"ECInstanceId"));
     //It must not have ECClassId to differentiate each row to see which class it belong to.
@@ -989,7 +988,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Widget]========================================================
     WCharCP tblWidget = L"sc_Widget"; 
     EXPECT_TRUE (TableExist  (db, tblWidget));
-    EXPECT_EQ   (2, GetColumnCount(db, tblWidget));            
+    EXPECT_EQ   (4, GetColumnCount(db, tblWidget));            
     
     EXPECT_TRUE (ColumnExist (db, tblWidget, L"ECInstanceId"));
     //It must not have ECClassId to differentiate each row to see which class it belong to.
@@ -1135,7 +1134,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     WCharCP tblAAFoo = L"sc_AAFoo"; 
     EXPECT_TRUE (TableExist  (db, tblAAFoo));
     EXPECT_FALSE(TableExist  (db, L"AFooChild")); //This child class of AAFoo which have TablePerHierarchy so table for its child classes should not be created
-    EXPECT_EQ   (26, GetColumnCount(db, tblAAFoo));
+    EXPECT_EQ   (25, GetColumnCount(db, tblAAFoo));
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"ECInstanceId"));
     //This a TablePerHieracrchy
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"ECClassId")); 
@@ -1157,8 +1156,6 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"anglesAAFoo")); // we are no longer stuffing structs into blobs
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"commonGeometryAAFoo"));
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"colorAAFoo"));
-
-    EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"RK_AAFoo_references_Widget_11"));
 
     // arrays
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"arrayOfIntsAAFoo"));

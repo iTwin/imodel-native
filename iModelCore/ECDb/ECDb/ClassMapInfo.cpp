@@ -711,17 +711,18 @@ ECRelationshipClassCR relationshipClass
         if (GetMapStrategy().IsEndTableMapping())
             return GetMapStrategy().GetStrategy();
       
-        // PreferredDirection hint, indicates optimal traversal efficiency. 
+        // PreferredDirection hint, indicates optimal traversal efficiency when querying rows from other end for a given row on this end.
+        // Querying target instances for a given source instance needs to be fast -> persist relation in target table (like a foreign key)
         if (m_userPreferredDirection == PreferredDirection::SourceToTarget)
-            return Strategy::RelationshipSourceTable;
+            return Strategy::RelationshipTargetTable;
         else if (m_userPreferredDirection == PreferredDirection::TargetToSource)
-            return Strategy::RelationshipTargetTable;
-
-        // Pick the End at the start of the strength direction
-        if (relationshipClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
             return Strategy::RelationshipSourceTable;
-        else
+
+        // Pick the End at the start of the strength direction (same logic as for preferred direction)
+        if (relationshipClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
             return Strategy::RelationshipTargetTable;
+        else
+            return Strategy::RelationshipSourceTable;
         }
 
     // Persist at the end that has 1 table
