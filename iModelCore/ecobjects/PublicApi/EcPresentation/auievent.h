@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auievent.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,15 +18,18 @@ struct ECSelectionEvent: public ECEvent
     private:
         IAUIDataContextP                m_dataContext;
         void*                           m_selectionSource;
+        WCharCP                         m_selectionSourceName;
+
     public:
     ECSelectionEvent (void* eventhub, IAUIDataContextR dataContext)
-        :ECEvent(eventhub), m_dataContext(&dataContext), m_selectionSource(NULL)
+        :ECEvent(eventhub), m_dataContext(&dataContext), m_selectionSource(NULL), m_selectionSourceName(NULL)
         {}
     
     IAUIDataContextP GetContext () const {return m_dataContext;}
 
-    void    SetSelectionSource (void* src) {m_selectionSource = src;}
+    void    SetSelectionSource (void* src, WCharCP name = NULL) { m_selectionSource = src; m_selectionSourceName = name; }
     void*   GetSelectionSource () const {return m_selectionSource;}
+    WCharCP GetSelectionSourceName () const { return m_selectionSourceName; }
 
     };
 
