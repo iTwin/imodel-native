@@ -1103,6 +1103,7 @@ struct DbValue
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
     BE_SQLITE_EXPORT BeLuid      GetValueLuid() const;      //!< get the value as a Locally unique id
     BE_SQLITE_EXPORT void        GetValueGuid(BeGuidR) const; //!< get the value as a GUID
+    template <class T_Id> T_Id   GetValueId() const {return T_Id (GetValueInt64());}
 
 //__PUBLISH_SECTION_END__
     BE_SQLITE_EXPORT void        Dump() const; //!< Dump to stdout for debugging purposes.
