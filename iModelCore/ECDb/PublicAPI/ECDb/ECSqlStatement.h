@@ -574,6 +574,97 @@ typedef ECSqlStatement const& ECSqlStatementCR;
 //__PUBLISH_SECTION_END__
 
 //=======================================================================================
+//! A reference-counted ECSqlStatement. ECSqlStatement is freed when last reference is released.
+// @bsiclass                                                    Krischan.Eberle   02/15
+//=======================================================================================
+struct CachedECSqlStatement : ECSqlStatement
+    {
+private:
+    mutable uint32_t m_refCount;
+
+public:
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+    CachedECSqlStatement ();
+    ~CachedECSqlStatement () {}
+
+    uint32_t AddRef () const {return ++m_refCount;}
+    uint32_t GetRefCount () const {return m_refCount;}
+    ECDB_EXPORT uint32_t Release ();
+    };
+
+typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
+
+//=======================================================================================
+//! A cache of shared ECSqlStatements that can be reused without re-preparing. 
+//! It can be very expensive to prepare an ECSQL statement,
+//! so this class provides a way to save previously prepared statements for reuse (note, a prepared ECSqlStatement is specific to a
+//! particular ECDb file)
+//! The size of the cache is determined by the caller. The cache releases the 
+//! oldest statement when a new entry is added to a full cache.
+//! @note Clients must make sure to release any cached statement and the cache itself
+//! before the corresponding ECDb file is closed.
+//!
+//! ### Cache usage diagnostics
+//! As clients can only indirectly control the lifetime of statements in the cache, diagnostics can help
+//! applications analyze how often statements get popped out of the cache and later readded again. To enable 
+//! ECSqlStatement cache diagnostics:
+//! - turn on the log4cxx based @ref Bentley::NativeLogging "Bentley logging"
+//! - in the <b>log4cxx configuration< / b> define a @b logger or a <b>logging category< / b> with the
+//!   name <b>Diagnostics.ECSqlStatement.Cache< / b> and assign it the log severity @c @b TRACE.
+//! With that enabled, %ECDb logs when a new statement was added to the cache and an existing one was removed from it.
+// @bsiclass                                                    Krischan.Eberle   02/15
+//=======================================================================================
+struct ECSqlStatementCache : NonCopyableClass
+    {
+private:
+    mutable BeDbMutex m_mutex;
+    Utf8String m_name;
+    mutable bvector<CachedECSqlStatementPtr> m_entries;
+    size_t m_maxSize;
+
+    CachedECSqlStatement* FindEntry (Utf8CP ecsql) const;
+    CachedECSqlStatement* AddStatement (ECDbR ecdb, Utf8CP ecsql) const;
+
+public:
+    //! Initializes a new ECSqlStatementCache of the specified size.
+    //! @param [in] maxSize Maximum number of statements the cache can hold. If a new statement is added
+    //! to a full cache, the oldest statement is removed.
+    //! @param [in] name Name for the cache in case apps use multiple caches and need to tell between them
+    ECDB_EXPORT explicit ECSqlStatementCache (size_t maxSize, Utf8CP name = nullptr);
+    ~ECSqlStatementCache () {Empty ();}
+    
+    //! Gets a cached and prepared statement for the specified ECSQL.
+    //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
+    //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
+    //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
+    //! @in ecdb ECDb file
+    //! @in ecsql ECSQL string for which to return a prepared statement
+    //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
+    ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement (ECDbR ecdb, Utf8CP ecsql) const;
+
+    //! Returns whether the cache is currently empty or not.
+    //! @return true if cache is empty, false otherwise
+    bool IsEmpty () const {return m_entries.empty ();}
+    //! Returns number of currently cached statements
+    //! @return Number of currently cached statements
+    size_t Size () const {return m_entries.size ();}
+    //! Empties the cache, thus releasing any cached statements
+    ECDB_EXPORT void Empty ();
+
+    //! Gets the name of the cache
+    //! @return Cache's name or nullptr if not set
+    Utf8CP GetName () const { return m_name.c_str (); }
+
+    //! Logs the ECSQL strings of the currently cached ECSqlStatements.
+    ECDB_EXPORT void Log () const;
+    };
+
+//__PUBLISH_SECTION_START__
+
+//__PUBLISH_SECTION_END__
+
+//=======================================================================================
 //! Unpublished helper that parses an ECSQL and formats the result to a string.
 //=======================================================================================
 struct ECSqlParseTreeFormatter

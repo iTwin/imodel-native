@@ -15,31 +15,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//======================================================================================
-// @bsiclass                                             Ramanujam.Raman      01 / 2014
-//===============+===============+===============+===============+===============+======
-struct ECSqlStatementCache : NonCopyableClass
-    {
-private:
-    mutable BeDbMutex m_mutex;
-    ECDbR m_ecDb;
-
-    mutable bvector<Utf8String> m_cachedSqlStrings;
-    mutable bvector<std::shared_ptr<ECSqlStatement>> m_cachedStatements;
-
-    std::shared_ptr<ECSqlStatement> FindStatement (Utf8CP key) const;
-
-    void AddStatement (Utf8CP ecSql, std::shared_ptr<ECSqlStatement>& statement) const;
-
-    void PrepareStatement (std::shared_ptr<ECSqlStatement>& stmt, Utf8CP ecSql);
-
-public:
-    ECSqlStatementCache (ECDbR ecDb);
-
-    virtual ~ECSqlStatementCache () {}
-
-    std::shared_ptr<ECSqlStatement> GetPreparedStatement (Utf8CP sql);
-    };
     
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -57,10 +32,10 @@ private:
 
     bool m_isValid;
 
-    BentleyStatus PrepareECSql (std::shared_ptr<ECSqlStatement>& statement, Utf8StringCR ecSql);
+    BentleyStatus PrepareECSql (CachedECSqlStatementPtr& statement, Utf8StringCR ecSql);
     BentleyStatus PrepareECSql 
         (
-        std::shared_ptr<ECSqlStatement>& statement, 
+        CachedECSqlStatementPtr& statement,
         const ECRelationshipPath& pathFromRelatedClass, 
         const ECInstanceId& ecInstanceId, 
         bool selectInstanceKeyOnly,

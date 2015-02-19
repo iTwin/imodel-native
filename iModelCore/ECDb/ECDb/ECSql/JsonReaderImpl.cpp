@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonReaderImpl.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //@bsimethod                                    Ramanujam.Raman                 9 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
 JsonReader::Impl::Impl (ECDbR ecdb, ECN::ECClassId ecClassId)
-: m_ecDb (ecdb), m_statementCache (ecdb)
+: m_ecDb (ecdb), m_statementCache (50)
     {
     m_ecClass = m_ecDb.GetSchemaManager ().GetECClass (ecClassId);
     BeAssert (m_ecClass != nullptr && "Could not retrieve class with specified id");
@@ -76,7 +76,7 @@ JsonECSqlSelectAdapter::FormatOptions formatOptions
     if (SUCCESS != GetTrivialPathToSelf (emptyPath, *m_ecClass))
         return ERROR;
 
-    shared_ptr<ECSqlStatement> statement;
+    CachedECSqlStatementPtr statement = nullptr;
     if (SUCCESS != PrepareECSql (statement, emptyPath, ecInstanceId, false/*selectInstanceKeyOnly*/, false/*isPolymorphic*/))
         return ERROR;
 
@@ -92,9 +92,9 @@ JsonECSqlSelectAdapter::FormatOptions formatOptions
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonReader::Impl::PrepareECSql (shared_ptr<ECSqlStatement>& statement, Utf8StringCR ecSql)
+BentleyStatus JsonReader::Impl::PrepareECSql (CachedECSqlStatementPtr& statement, Utf8StringCR ecSql)
     {
-    statement = m_statementCache.GetPreparedStatement (ecSql.c_str ());
+    statement = m_statementCache.GetPreparedStatement (m_ecDb, ecSql.c_str ());
     POSTCONDITION (statement != nullptr, ERROR);
     return SUCCESS;
     }
@@ -105,7 +105,7 @@ BentleyStatus JsonReader::Impl::PrepareECSql (shared_ptr<ECSqlStatement>& statem
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus JsonReader::Impl::PrepareECSql 
 (
-shared_ptr<ECSqlStatement>& statement, 
+CachedECSqlStatementPtr& statement,
 const ECRelationshipPath& pathFromRelatedClass, 
 const ECInstanceId& ecInstanceId, 
 bool selectInstanceKeyOnly,
@@ -141,7 +141,7 @@ BentleyStatus JsonReader::Impl::GetRelatedInstanceKeys (ECInstanceKeyMultiMap& i
     {
     instanceKeys.clear ();
 
-    shared_ptr<ECSqlStatement> statement;
+    CachedECSqlStatementPtr statement = nullptr;
     if (SUCCESS != PrepareECSql (statement, pathFromRelatedClass, ecInstanceId, true /* selectInstanceKeyOnly*/,false/*isPolymorphic*/))
         return ERROR;
 
@@ -345,7 +345,7 @@ const JsonECSqlSelectAdapter::FormatOptions& formatOptions
 
         ECSqlSelectBuilder builder;
         builder.From (*ecRelatedClass).SelectAll ().Where ("ECInstanceId = ?");
-        shared_ptr<ECSqlStatement> statement;
+        CachedECSqlStatementPtr statement = nullptr;
         if (SUCCESS != PrepareECSql (statement, builder.ToString ()))
             return ERROR;
 
@@ -445,7 +445,7 @@ const JsonECSqlSelectAdapter::FormatOptions& formatOptions
     {
     BeAssert (!pathFromRelatedClass.IsAnyClassAtEnd (ECRelationshipPath::End::Root));
 
-    shared_ptr<ECSqlStatement> statement;
+    CachedECSqlStatementPtr statement = nullptr;
     if (SUCCESS != PrepareECSql (statement, pathFromRelatedClass, ecInstanceId, false /* selectInstanceKeyOnly*/,false/*isPolymorphic*/))
         return ERROR;
 
@@ -467,93 +467,6 @@ BentleyStatus JsonReader::Impl::GetTrivialPathToSelf (ECRelationshipPathR emptyP
 
     return SUCCESS;
     }
-
-///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
-
-#define MAX_CACHE_SIZE 50
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatementCache::ECSqlStatementCache (ECDbR ecDb)
-: m_ecDb (ecDb)
-    {
-    m_cachedSqlStrings.reserve (MAX_CACHE_SIZE);
-    m_cachedStatements.reserve (MAX_CACHE_SIZE);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-shared_ptr<ECSqlStatement> ECSqlStatementCache::FindStatement (Utf8CP key) const
-    {
-    BeDbMutexHolder _v_v (m_mutex);
-    for (int ii = 0; ii< (int) m_cachedSqlStrings.size (); ii++)
-        {
-        if (0 == strcmp (m_cachedSqlStrings[ii].c_str (), key))
-            {
-            shared_ptr<ECSqlStatement>& statement = m_cachedStatements[ii];
-            if (statement.use_count () > 1) // this statement is currently in use, we can't share it
-                continue;
-
-            statement->Reset ();
-            statement->ClearBindings ();
-            return statement;
-            }
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementCache::AddStatement (Utf8CP sql, shared_ptr<ECSqlStatement>& statement) const
-    {
-    BeDbMutexHolder _v_v (m_mutex);
-
-    if (m_cachedSqlStrings.size () >= m_cachedSqlStrings.capacity ()) // if cache is full, remove oldest entry
-        {
-        m_cachedSqlStrings.erase (m_cachedSqlStrings.begin ());
-        m_cachedStatements.erase (m_cachedStatements.begin ());
-        }
-
-    m_cachedSqlStrings.push_back (sql);
-    m_cachedStatements.push_back (statement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlStatementCache::PrepareStatement (shared_ptr<ECSqlStatement>& stmt, Utf8CP ecSql)
-    {
-    stmt = std::make_shared<ECSqlStatement> ();
-    ECSqlStatus status = stmt->Prepare (m_ecDb, ecSql);
-    if (!EXPECTED_CONDITION (status == ECSqlStatus::Success))
-        stmt = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 05 / 2014
-//+---------------+---------------+---------------+---------------+---------------+------
-shared_ptr<ECSqlStatement> ECSqlStatementCache::GetPreparedStatement (Utf8CP sql)
-    {
-    if (nullptr == sql)
-        return nullptr;
-
-    shared_ptr<ECSqlStatement> stmt = FindStatement (sql);
-    if (nullptr != stmt)
-        return stmt;
-
-    PrepareStatement (stmt, sql);
-    if (nullptr == stmt)
-        return nullptr;
-
-    AddStatement (sql, stmt);
-    return stmt;
-    }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////

@@ -293,6 +293,8 @@ $(o)ECSqlStatementBase$(oext):								$(baseDir)ECSql/ECSqlStatementBase.cpp    
 
 $(o)ECSqlStatementImpl$(oext):								$(baseDir)ECSql/ECSqlStatementImpl.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECSqlStatementCache$(oext):						        $(baseDir)ECSql/ECSqlStatementCache.cpp     $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ECInstanceECSqlSelectAdapter$(oext):					$(baseDir)ECSql/ECInstanceECSqlSelectAdapter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECInstanceAdapterHelper$(oext):                         $(baseDir)ECSql/ECInstanceAdapterHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
