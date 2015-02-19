@@ -16,8 +16,6 @@ ECDbRelationships.JoinTests
 # TFS Defect 170652 and 170717
 InstanceCRUDTests.InsertUpdateDeleteTest
 
-ECDbSchemas.IntegrityCheck
-ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds # Notified Muhammad Hassan
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
@@ -33,6 +31,5 @@ ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
-ECInstanceInserterTests.InsertSingleRuleInstance
 ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
 ECSqlQueryAdapter.VerifyECSqlQueries
