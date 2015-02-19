@@ -161,7 +161,7 @@ ECDbSchemaManagerCR ECSqlParseContext::GetSchemaManager () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     02/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECDbR EC::ECSqlParseContext::GetECDb () const
+ECDbCR ECSqlParseContext::GetECDb () const
     {
     return m_ecdb;
     }

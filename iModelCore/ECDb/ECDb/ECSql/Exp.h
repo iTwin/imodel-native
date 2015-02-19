@@ -279,7 +279,7 @@ public:
         return ECSqlStatus::Success;
         }
 
-    static ECSqlStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbR ecdb)
+    static ECSqlStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbCR ecdb)
         {
         resolvedPropertyPath.Clear();
         bvector<Utf8String> subParts;

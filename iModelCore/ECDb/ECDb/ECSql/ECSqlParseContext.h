@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParseContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,7 +22,7 @@ struct ECSqlParseContext
     typedef bmap<ECN::ECClassId,ECN::ECClassCP> ClassListById;
 
 private:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     std::vector<void const*> m_finalizeParseArgs;
     bmap<WString, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
@@ -33,11 +33,11 @@ private:
 public:
     //! @param[in] classMapViewMode indicates what class map view to use for a given class in the ECSQL to parse.
     //!            ClassMap views differ for ECClasses that are domain classes and structs at the same time.
-    ECSqlParseContext (ECDbR ecdb, IClassMap::View classMapViewMode, ECSqlStatusContext& status)
+    ECSqlParseContext (ECDbCR ecdb, IClassMap::View classMapViewMode, ECSqlStatusContext& status)
         : m_ecdb (ecdb), m_currentECSqlParameterIndex (0), m_classMapViewMode (classMapViewMode), m_status (status)
         {}
 
-    ECDbR GetECDb() const;
+    ECDbCR GetECDb() const;
     ECDbSchemaManagerCR GetSchemaManager() const;
 
     void PushFinalizeParseArg (void const* const arg);

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DynamicSelectClauseECClass.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -102,7 +102,7 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize ()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbR ecdb)
+ECSqlStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR ecdb)
     {
     auto defMetaDataInst = generatedProperty.GetCustomAttribute (L"DefinitionMetaData");
     if (defMetaDataInst == nullptr)
@@ -120,7 +120,7 @@ ECSqlStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(Propert
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbR ecdb)
+ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb)
     {
     if (selectClauseItemExp.GetExpression ()->GetType() != Exp::Type::PropertyName)
         {
@@ -170,7 +170,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbR ecdb)
+ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb)
     {
     auto stat = Initialize ();
     if (stat != ECSqlStatus::Success)

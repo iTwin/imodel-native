@@ -180,7 +180,7 @@ public:
     //! @param[in] ecdb ECDb context
     //! @param[in] ecsql ECSQL
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus Prepare (ECDbR ecdb, Utf8CP ecsql);
+    ECDB_EXPORT ECSqlStatus Prepare (ECDbCR ecdb, Utf8CP ecsql);
 
     //! Indicates whether this statement is already prepared or not.
     //! @return true, if it is prepared. false otherwise
@@ -565,7 +565,7 @@ public:
     //! Gets the ECDb handle which was used to prepare this statement.
     //! @remarks Only call this for a prepared statement!
     //! @return ECDb handle used to prepare this statement or nullptr if statement is not prepared.
-    ECDbP GetECDb () const;
+    ECDbCP GetECDb () const;
 //__PUBLISH_SECTION_START__
     };
 
@@ -624,7 +624,7 @@ private:
     size_t m_maxSize;
 
     CachedECSqlStatement* FindEntry (Utf8CP ecsql) const;
-    CachedECSqlStatement* AddStatement (ECDbR ecdb, Utf8CP ecsql) const;
+    CachedECSqlStatement* AddStatement (ECDbCR ecdb, Utf8CP ecsql) const;
 
 public:
     //! Initializes a new ECSqlStatementCache of the specified size.
@@ -641,7 +641,7 @@ public:
     //! @in ecdb ECDb file
     //! @in ecsql ECSQL string for which to return a prepared statement
     //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-    ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement (ECDbR ecdb, Utf8CP ecsql) const;
+    ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement (ECDbCR ecdb, Utf8CP ecsql) const;
 
     //! Returns whether the cache is currently empty or not.
     //! @return true if cache is empty, false otherwise

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -90,7 +90,7 @@ ECSqlStatusContext& ECSqlBinder::GetStatusContext () const
 ECSqlStatus ECSqlBinder::SetError (DbResult sqliteStat, Utf8CP errorMessageHeader) const
     {
     BeAssert (m_ecsqlStatement.IsPrepared ());
-    return GetStatusContext ().SetError (&m_ecsqlStatement.GetPreparedStatementP ()->GetECDbR (), sqliteStat, errorMessageHeader);
+    return GetStatusContext ().SetError (&m_ecsqlStatement.GetPreparedStatementP ()->GetECDb (), sqliteStat, errorMessageHeader);
     }
 
 //---------------------------------------------------------------------------------------

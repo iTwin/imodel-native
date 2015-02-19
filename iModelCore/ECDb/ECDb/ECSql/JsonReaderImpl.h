@@ -26,7 +26,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct JsonReader::Impl
     {
 private:
-    ECDbR m_ecDb;
+    ECDbCR m_ecDb;
     ECN::ECClassCP m_ecClass;
     ECSqlStatementCache m_statementCache;
 
@@ -62,7 +62,7 @@ private:
 
     bool IsValid () const { return m_isValid; }
 public:
-    Impl (ECDbR ecdb, ECN::ECClassId ecClassId);
+    Impl (ECDbCR ecdb, ECN::ECClassId ecClassId);
 
     BentleyStatus Read (JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECInstanceId const& ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions);
     BentleyStatus ReadInstance (JsonValueR jsonInstance, ECInstanceId const& ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions);
@@ -86,8 +86,8 @@ private:
 
 public:
     //! @param schemaName [in] Can be nullptr, in which case the class is resolved in the default schema (assuming that's supplied). 
-    static ECN::ECClassCP ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbR ecDb, ECN::ECSchemaCP defaultSchema);
-    static ECN::ECClassCP ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbR ecDb, ECN::ECSchemaCP defaultSchema);
+    static ECN::ECClassCP ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
+    static ECN::ECClassCP ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
     static Utf8String GetName (ECN::ECClassCR ecClass);
     static Utf8String GetQualifiedECObjectsName (ECN::ECClassCR ecClass);

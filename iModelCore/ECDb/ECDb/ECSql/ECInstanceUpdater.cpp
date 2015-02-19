@@ -45,7 +45,7 @@ public:
 struct ClassUpdaterImpl : ECInstanceUpdater::Impl
     {
 private:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     mutable ECSqlStatement m_statement;
     ECValueBindingInfoCollection m_ecValueBindingInfos;
     int m_ecinstanceIdParameterIndex;
@@ -60,9 +60,9 @@ private:
     virtual bool _IsValid () const override { return m_isValid; }
 
 public:
-    ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass);
-    ClassUpdaterImpl (ECDbR ecdb, IECInstanceCR instance);
-    ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
+    ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass);
+    ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance);
+    ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
 
     ~ClassUpdaterImpl ()
         {}
@@ -81,7 +81,7 @@ private:
     virtual bool _IsValid () const override;
 
 public:
-    RelationshipUpdaterImpl (ECDbR ecdb, ECClassCR ecClass);
+    RelationshipUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass);
     ~RelationshipUpdaterImpl ()
         {}
     };
@@ -97,7 +97,7 @@ public:
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::ECInstanceUpdater
 (
-ECDbR ecdb, 
+ECDbCR ecdb, 
 ECN::ECClassCR ecClass
 )
     {
@@ -112,7 +112,7 @@ ECN::ECClassCR ecClass
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::ECInstanceUpdater
 (
-ECDbR ecdb, 
+ECDbCR ecdb, 
 ECN::IECInstanceCR instance
 )
     {
@@ -127,7 +127,7 @@ ECN::IECInstanceCR instance
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceUpdater::ECInstanceUpdater
 (
-ECDbR ecdb,
+ECDbCR ecdb,
 ECN::ECClassCR ecClass,
 bvector<uint32_t>& propertiesToBind
 )
@@ -226,7 +226,7 @@ void ECInstanceUpdater::Impl::LogFailure (ECN::IECInstanceCR instance, Utf8CP er
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass)
+ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass)
 : Impl (ecClass), m_ecdb (ecdb), m_needsCalculatedPropertyEvaluation (false)
     {
     bvector<ECPropertyCP> propertiesToBind;
@@ -242,7 +242,7 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, IECInstanceCR instance)
+ClassUpdaterImpl::ClassUpdaterImpl (ECDbCR ecdb, IECInstanceCR instance)
     : Impl (instance.GetClass()), m_ecdb (ecdb), m_needsCalculatedPropertyEvaluation (false)
     {
     bvector<ECPropertyCP> propertiesToBind;
@@ -260,7 +260,7 @@ ClassUpdaterImpl::ClassUpdaterImpl (ECDbR ecdb, IECInstanceCR instance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassUpdaterImpl::ClassUpdaterImpl(ECDbR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
+ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint32_t>& propertiesToBind)
     : Impl (ecClass), m_ecdb(ecdb), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(propertiesToBind);
@@ -459,7 +459,7 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-RelationshipUpdaterImpl::RelationshipUpdaterImpl (ECDbR ecdb, ECClassCR ecClass)
+RelationshipUpdaterImpl::RelationshipUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass)
 : Impl (ecClass), m_relationshipDeleter (ecdb, ecClass), m_relationshipInserter (ecdb, ecClass)
     {
     }

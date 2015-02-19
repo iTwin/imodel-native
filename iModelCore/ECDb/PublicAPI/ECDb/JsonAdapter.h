@@ -408,7 +408,7 @@ public:
     //! @param ecClassId [in] ECClassId indicating the class of the instance that needs to be retrieved. 
     //! @remarks Holds some cached state to speed up future lookups of the same class. Keep the 
     //! reader around when retrieving many instances of the same class. 
-    ECDB_EXPORT JsonReader (ECDbR ecdb, ECN::ECClassId ecClassId);
+    ECDB_EXPORT JsonReader (ECDbCR ecdb, ECN::ECClassId ecClassId);
 
     ECDB_EXPORT ~JsonReader ();
 
@@ -467,7 +467,7 @@ public:
     //! @param ecClass [in] ECClass of the instance that needs to be inserted. 
     //! @remarks Holds some cached state to speed up future inserts of the same class. Keep the 
     //! inserter around when inserting many instances of the same class. 
-    ECDB_EXPORT JsonInserter (ECDbR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT JsonInserter (ECDbCR ecdb, ECN::ECClassCR ecClass);
 
     //! Indicates whether this JsonInserter is valid and can be used to insert JSON instances.
     //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
@@ -508,7 +508,7 @@ public:
     //! @param ecClass [in] ECClass of the instance that needs to be updated. 
     //! @remarks Holds some cached state to speed up future updates of the same class. Keep the 
     //! inserter around when updating many instances of the same class. 
-    ECDB_EXPORT JsonUpdater (ECDbR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT JsonUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass);
 
     //! Indicates whether this JsonUpdater is valid and can be used to update JSON instances.
     //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
@@ -544,7 +544,7 @@ public:
     //! @param ecClass [in] ECClass of the instance that needs to be deleted. 
     //! @remarks Holds some cached state to speed up future deletes of the same class. Keep the 
     //! deleter around when deleting many instances of the same class. 
-    ECDB_EXPORT JsonDeleter (ECDbR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT JsonDeleter (ECDbCR ecdb, ECN::ECClassCR ecClass);
 
     //! Indicates whether this JsonDeleter is valid and can be used to delete instances.
     //! It is not valid, if @p ecClass is not mapped for example.

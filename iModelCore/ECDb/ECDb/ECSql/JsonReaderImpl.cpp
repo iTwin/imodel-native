@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Ramanujam.Raman                 9 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::Impl::Impl (ECDbR ecdb, ECN::ECClassId ecClassId)
+JsonReader::Impl::Impl (ECDbCR ecdb, ECN::ECClassId ecClassId)
 : m_ecDb (ecdb), m_statementCache (50, "JsonReader ECSqlStatement Cache")
     {
     m_ecClass = m_ecDb.GetSchemaManager ().GetECClass (ecClassId);
@@ -498,7 +498,7 @@ void ECClassHelper::ParseQualifiedName (Utf8StringR schemaPrefixOrName, Utf8Stri
 //@bsimethod                                    Ramanujam.Raman                 01 / 2014
 // @param schemaName [in] Can be nullptr, in which case the class is resolved in the default schema (assuming that's supplied).
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP ECClassHelper::ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbR ecDb, ECSchemaCP defaultSchema)
+ECClassCP ECClassHelper::ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbCR ecDb, ECSchemaCP defaultSchema)
     {
     ECClassCP ecClass = nullptr;
     if (schemaName != nullptr)
@@ -517,7 +517,7 @@ ECClassCP ECClassHelper::ResolveClass (Utf8CP schemaName, Utf8StringCR className
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP ECClassHelper::ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbR ecDb, ECSchemaCP defaultSchema)
+ECClassCP ECClassHelper::ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbCR ecDb, ECSchemaCP defaultSchema)
     {
     Utf8String schemaName, className;
     ECClassHelper::ParseQualifiedECObjectsName (schemaName, className, possiblyQualifiedClassName);

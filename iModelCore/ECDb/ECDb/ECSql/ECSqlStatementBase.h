@@ -29,9 +29,9 @@ private:
 
     virtual ECSqlPrepareContext _InitializePrepare (Utf8CP ecsql) = 0;
 
-    ECSqlParseTreePtr ParseECSql (ECDbR ecdb, Utf8CP ecsql, IClassMap::View classView);
+    ECSqlParseTreePtr ParseECSql (ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView);
 
-    ECSqlPreparedStatement& CreatePreparedStatement (ECDbR ecdb, ECSqlParseTreeCR parseTree);
+    ECSqlPreparedStatement& CreatePreparedStatement (ECDbCR ecdb, ECSqlParseTreeCR parseTree);
 
     ECSqlStatus FailIfNotPrepared (Utf8CP errorMessage) const;
     ECSqlStatus FailIfWrongType (ECSqlType expectedType, Utf8CP errorMessage) const;
@@ -42,12 +42,12 @@ protected:
     ECSqlStatementBase ();
     void Initialize (ECSqlStatusContext& statusContext);
 
-    virtual ECSqlStatus _Prepare (ECDbR ecdb, Utf8CP ecsql);
+    virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql);
 
 public:
     virtual ~ECSqlStatementBase ();
     //Public API mirrors
-    ECSqlStatus Prepare (ECDbR ecdb, Utf8CP ecsql);
+    ECSqlStatus Prepare (ECDbCR ecdb, Utf8CP ecsql);
     bool IsPrepared () const;
 
     IECSqlBinder& GetBinder (int parameterIndex) const;
@@ -66,7 +66,7 @@ public:
 
     Utf8CP GetECSql () const;
     Utf8CP GetNativeSql () const;
-    ECDbP GetECDb () const;
+    ECDbCP GetECDb () const;
 
     void Finalize ();
 

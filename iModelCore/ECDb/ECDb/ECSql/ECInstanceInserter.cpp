@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECInstanceInserter::Impl : NonCopyableClass
     {
 protected:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
     mutable ECSqlStatement m_statement;
     ECValueBindingInfoCollection m_ecValueBindingInfos;
@@ -31,7 +31,7 @@ protected:
     static void LogFailure (ECN::IECInstanceCR instance, Utf8CP errorMessage);
 
 public:
-    Impl (ECDbR ecdb, ECClassCR ecClass);
+    Impl (ECDbCR ecdb, ECClassCR ecClass);
 
     BentleyStatus Insert (ECInstanceKey& newInstanceKey, IECInstanceCR instance, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
     BentleyStatus Insert (ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
@@ -46,7 +46,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::ECInstanceInserter (ECDbR ecdb, ECN::ECClassCR ecClass)
+ECInstanceInserter::ECInstanceInserter (ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
     m_impl = new ECInstanceInserter::Impl (ecdb, ecClass);
     }
@@ -93,7 +93,7 @@ BentleyStatus ECInstanceInserter::Insert (ECN::IECInstanceR instance, bool autog
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::Impl::Impl (ECDbR ecdb, ECClassCR ecClass)
+ECInstanceInserter::Impl::Impl (ECDbCR ecdb, ECClassCR ecClass)
     : m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceIdBindingInfo (nullptr), m_needsCalculatedPropertyEvaluation (false), m_isValid (false)
     {
     Initialize ();

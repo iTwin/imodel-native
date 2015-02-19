@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementBase.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -59,7 +59,7 @@ void ECSqlStatementBase::Finalize (bool resetStatus)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        01/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::Prepare (ECDbR ecdb, Utf8CP ecsql)
+ECSqlStatus ECSqlStatementBase::Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     return _Prepare (ecdb, ecsql);
     }
@@ -67,7 +67,7 @@ ECSqlStatus ECSqlStatementBase::Prepare (ECDbR ecdb, Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::_Prepare (ECDbR ecdb, Utf8CP ecsql)
+ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     auto& statusContext = GetStatusContextR ();
 
@@ -100,7 +100,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbR ecdb, Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlParseTreePtr ECSqlStatementBase::ParseECSql (ECDbR ecdb, Utf8CP ecsql, IClassMap::View classView)
+ECSqlParseTreePtr ECSqlStatementBase::ParseECSql (ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView)
     {
     ECSqlParseTreePtr ecsqlParseTree = nullptr;
     ECSqlParser::Parse (ecsqlParseTree, GetStatusContextR (), ecdb, ecsql, classView);
@@ -279,13 +279,13 @@ Utf8CP ECSqlStatementBase::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        02/14
 //---------------------------------------------------------------------------------------
-ECDbP ECSqlStatementBase::GetECDb () const
+ECDbCP ECSqlStatementBase::GetECDb () const
     {
     auto stat = FailIfNotPrepared ("Cannot call GetECDb on an unprepared ECSqlStatement.");
     if (stat != ECSqlStatus::Success)
         return nullptr;
 
-    return &GetPreparedStatementP ()->GetECDbR ();
+    return &GetPreparedStatementP ()->GetECDb ();
     }
 
 
@@ -366,7 +366,7 @@ ECSqlStatusContext& ECSqlStatementBase::GetStatusContextR () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement (ECDbR ecdb, ECSqlParseTreeCR parseTree)
+ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement (ECDbCR ecdb, ECSqlParseTreeCR parseTree)
     {
     switch (parseTree.GetType ())
         {

@@ -49,7 +49,7 @@ public:
     //! @param [in] defaultSchema The schema containing the partly qualified classes in the path. Can be set to nullptr if all the class names 
     //! in relationship path are guaranteed to be fully qualified by the schema name.
     //! @see ToString()
-    StatusInt InitFromString (Utf8StringCR relatedClassString, ECDbR ecDb, ECN::ECSchemaCP defaultSchema);
+    StatusInt InitFromString (Utf8StringCR relatedClassString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
 
     Utf8String ToString () const;
 
@@ -146,7 +146,7 @@ public:
     //!      string needs to include the root class at the beginning of the path. 
     //! </ul>
     //! @see ToString()
-    ECDB_EXPORT StatusInt InitFromString (Utf8StringCR relationshipPathString, ECDbR ecDb, ECN::ECSchemaCP defaultSchema);
+    ECDB_EXPORT StatusInt InitFromString (Utf8StringCR relationshipPathString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
 
     //! Checks if the relationship path is empty
     //! @return true if empty. false otherwise. 
@@ -279,16 +279,16 @@ typedef bpair<ECN::ECClassCP, ECRelationshipPathVector> ECRelationshipPathVector
 struct ECRelatedItemsDisplaySpecificationsCache : public BeSQLite::DbAppData
 {
 private:
-    ECDbR m_ecDb;
+    ECDbCR m_ecDb;
     ECRelationshipPathVectorByClass m_pathsByClass;
 
-    ECRelatedItemsDisplaySpecificationsCache (ECDbR ecDb) : m_ecDb (ecDb) {}
+    ECRelatedItemsDisplaySpecificationsCache (ECDbCR ecDb) : m_ecDb (ecDb) {}
 
     virtual void _OnCleanup (BeSQLiteDbR host) override {delete this;}
 
     static BeSQLite::DbAppData::Key const& GetKey() {static BeSQLite::DbAppData::Key s_key; return s_key;}
 
-    static ECN::ECClassCP GetRelatedSpecificationsClass (ECDbR ecDb);
+    static ECN::ECClassCP GetRelatedSpecificationsClass (ECDbCR ecDb);
 
     BentleyStatus ExtractFromCustomAttribute
         (
@@ -302,7 +302,7 @@ private:
 public:
     virtual ~ECRelatedItemsDisplaySpecificationsCache () {}
 
-    static ECRelatedItemsDisplaySpecificationsCache* GetCache (ECDbR host);
+    static ECRelatedItemsDisplaySpecificationsCache* GetCache (ECDbCR host);
 
     bool TryGetRelatedPathsFromClass (ECRelationshipPathVectorR relationshipPathVec, ECN::ECClassCR ecClass) const;
 };

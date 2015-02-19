@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceDeleter::ECInstanceDeleter
 (
-ECDbR ecdb, 
+ECDbCR ecdb, 
 ECClassCR ecClass
 ) : m_ecdb (ecdb), m_ecClass (ecClass)
     {
@@ -26,7 +26,7 @@ ECClassCR ecClass
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceDeleter::ECInstanceDeleter
 (
-ECDbR ecdb,
+ECDbCR ecdb,
 ECClassCR ecClass,
 ECSqlEventHandler& eventHandler
 ) : m_ecdb (ecdb), m_ecClass (ecClass)
