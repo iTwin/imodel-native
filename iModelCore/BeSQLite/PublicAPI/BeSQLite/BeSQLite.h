@@ -184,7 +184,6 @@ typedef struct _CLzmaEncProps CLzmaEncProps;
 
 BEGIN_BENTLEY_API_NAMESPACE
 typedef struct BeGuid BeDbGuid;
-typedef struct BeGuid BeProjectGuid;
 typedef Byte const* ByteCP;
 
 //=======================================================================================
@@ -1930,16 +1929,13 @@ struct PackageProperty
 {
     struct Spec : PropertySpec
         {
-        Spec(Utf8CP name, PropertySpec::ProperyTxnMode setting) : PropertySpec(name, PROPERTY_APPNAME_Package, setting) {}
+        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Package, PropertySpec::TXN_MODE_Normal) {}
         };
 
-    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, PropertySpec::TXN_MODE_Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, PropertySpec::TXN_MODE_Setting){}};
-
-    static ProjectProperty SchemaVersion()   {return ProjectProperty("SchemaVersion");}
-    static ProjectProperty Name()            {return ProjectProperty("Name");}
-    static ProjectProperty Description()     {return ProjectProperty("Description");}
-    static ProjectProperty Client()          {return ProjectProperty("Client");}
+    static Spec SchemaVersion()   {return Spec("SchemaVersion");}
+    static Spec Name()            {return Spec("Name");}
+    static Spec Description()     {return Spec("Description");}
+    static Spec Client()          {return Spec("Client");}
 };
 
 //=======================================================================================
@@ -1994,7 +1990,7 @@ protected:
     bool            m_allowImplicitTxns;
     bool            m_inCommit;
     SqlDbP          m_sqlDb;
-    uint64_t          m_dataVersion; // for detecting changes from another process
+    uint64_t        m_dataVersion; // for detecting changes from another process
     RefCountedPtr<BusyRetry> m_retry;
     mutable void*   m_cachedProps;
     struct RlvCache* m_rlvCache;
@@ -2419,13 +2415,6 @@ public:
 
     //! @return The name of the physical file associated with this Db. NULL if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
-
-    //! Save a BeProjectGuid for this Db.
-    BE_SQLITE_EXPORT void SaveMyProjectGuid(BeProjectGuid);
-
-    //! Query the BeProjectGuid for this Db.
-    //! @see SaveMyProjectGuid
-    BE_SQLITE_EXPORT BeProjectGuid QueryMyProjectGuid() const;
 
     //! Saves the current date and time as the CreationDate property of this database.
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
@@ -2876,7 +2865,7 @@ public:
     //! @param[in] size number of bytes in data.
     BE_SQLITE_EXPORT void Write(ByteCP data, uint32_t size);
 
-    //! Finish the compression. After this call, no additional data may be written to this project until #Init is called.
+    //! Finish the compression. After this call, no additional data may be written to this blob until #Init is called.
     BE_SQLITE_EXPORT void Finish();
 
     void DoSnappy(ByteCP data, uint32_t size) {Init(); Write(data,size); Finish();}
@@ -3244,7 +3233,6 @@ struct Properties
     {
     static PropSpec DbGuid()            {return PropSpec("DbGuid");}
     static PropSpec SchemaVersion()     {return PropSpec("SchemaVersion");}
-    static PropSpec GuidOfMyProject()   {return PropSpec("ProjectGuid");}
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
     //! The date and time when the Db was created.
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
