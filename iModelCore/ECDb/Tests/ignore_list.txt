@@ -16,8 +16,6 @@ ECDbRelationships.JoinTests
 # TFS Defect 170652 and 170717
 InstanceCRUDTests.InsertUpdateDeleteTest
 
-ECDbSchemas.IntegrityCheck
-
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***

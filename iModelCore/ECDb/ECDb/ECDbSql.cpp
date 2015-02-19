@@ -1583,8 +1583,8 @@ ECDbSqlForiegnKeyConstraint::ActionType ECDbSqlForiegnKeyConstraint::ParseAction
 BentleyStatus ECDbSqlForiegnKeyConstraint::Remove (Utf8CP sourceColumn, Utf8CP targetColumn)
     {
     bool cont;
-    bool hasSouceColumn = Utf8String::IsNullOrEmpty (sourceColumn);
-    bool hasTargetColumn = Utf8String::IsNullOrEmpty (targetColumn);
+    bool hasSouceColumn = !Utf8String::IsNullOrEmpty (sourceColumn);
+    bool hasTargetColumn = !Utf8String::IsNullOrEmpty (targetColumn);
     auto size = m_sourceColumns.size ();
     do{
         cont = false;
@@ -3504,7 +3504,7 @@ DbResult ECDbSqlPersistence::InsertConstraint (ECDbSqlConstraint const& o)
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::InsertForiegnKey (ECDbSqlForiegnKeyConstraint const& o)
     {
-    if (!o.Count () == 0)
+    if (o.Count () == 0)
         {
         BeAssert (false && "ForiegnKey constraint does not have any columns");
         return BE_SQLITE_ERROR;
