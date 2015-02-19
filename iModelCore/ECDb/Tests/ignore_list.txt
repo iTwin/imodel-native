@@ -21,14 +21,16 @@ InstanceCRUDTests.InsertUpdateDeleteTest
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
 
-ECSqlQueryAdapter.VerifyECSqlQueries
 # Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
+ECDbFileInfo.ReplaceExistingEmbeddedFile # Notified Muhammad Hassan
 ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 
-ECDbSchemas.UpdatingExistingECSchema
-ECDbSchemas.UpdateExistingECSchemaWithNewProperties
-ECDbSchemas.Verify_TFS_14829_A
+ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
+ECDbSchemas.UpdateExistingECSchemaWithNewProperties
+ECDbSchemas.UpdatingExistingECSchema
+ECDbSchemas.Verify_TFS_14829_A
 ECInstanceInserterTests.InsertSingleRuleInstance
 ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
+ECSqlQueryAdapter.VerifyECSqlQueries
