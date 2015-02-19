@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //@bsimethod                                    Ramanujam.Raman                 9 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
 JsonReader::Impl::Impl (ECDbR ecdb, ECN::ECClassId ecClassId)
-: m_ecDb (ecdb), m_statementCache (50)
+: m_ecDb (ecdb), m_statementCache (50, "JsonReader ECSqlStatement Cache")
     {
     m_ecClass = m_ecDb.GetSchemaManager ().GetECClass (ecClassId);
     BeAssert (m_ecClass != nullptr && "Could not retrieve class with specified id");

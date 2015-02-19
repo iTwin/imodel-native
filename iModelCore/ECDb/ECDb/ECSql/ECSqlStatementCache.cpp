@@ -81,9 +81,9 @@ void ECSqlStatementCacheDiagnostics::Log (Utf8CP cacheName, size_t maxCacheSize,
     {
     if (GetLogger ().isSeverityEnabled (LOG_SEVERITY))
         {
-        Utf8CP message = "[%s (max size: %d)] %s: %s";
-        cacheName = cacheName != nullptr ? cacheName : "unnamed cache";
-        Utf8CP eventStr = eventType == EventType::AddedToCache ? "Added" : "Removed";
+        Utf8CP message = "[%s (max size: %d)] %s | %s";
+        cacheName = !Utf8String::IsNullOrEmpty (cacheName) ? cacheName : "unnamed cache";
+        Utf8CP eventStr = eventType == EventType::AddedToCache ? "  Added" : "Removed";
         GetLogger ().messagev (LOG_SEVERITY, message, cacheName, maxCacheSize, eventStr, ecsql);
         }
     }
@@ -148,7 +148,7 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry (Utf8CP ecsql) const
 //---------------------------------------------------------------------------------------
 CachedECSqlStatement* ECSqlStatementCache::AddStatement (ECDbR ecdb, Utf8CP ecsql) const
     {
-    if (m_entries.size () > m_maxSize) // if cache is full, remove oldest entry
+    if (m_entries.size () >= m_maxSize) // if cache is full, remove oldest entry
         {
         auto first = m_entries.begin ();
         ECSqlStatementCacheDiagnostics::Log (GetName (), m_maxSize,  ECSqlStatementCacheDiagnostics::EventType::RemovedFromCache, (*first)->GetECSql ());
@@ -178,7 +178,7 @@ void ECSqlStatementCache::Empty ()
 //---------------------------------------------------------------------------------------
 void ECSqlStatementCache::Log () const
     {
-    LOG.debug ("ECSqlStatementCache:");
+    LOG.debugv ("%s (max size: %d)", GetName (), m_maxSize);
     for (auto& stmt : m_entries)
         LOG.debugv ("\t%s", stmt->GetECSql ());
     }

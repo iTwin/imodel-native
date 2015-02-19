@@ -136,7 +136,7 @@ TEST (ECSqlStatementCacheTests, CacheExcess)
 
     //populate cache
     CachedECSqlStatement* stmt1A = cache.GetPreparedStatement (ecdb, ecsql1).get ();
-    cache.GetPreparedStatement (ecdb, ecsql2).get ();
+    cache.GetPreparedStatement (ecdb, ecsql2);
     ASSERT_EQ (2, cache.Size ());
 
     //this should not add a new statement to the cache
@@ -144,7 +144,7 @@ TEST (ECSqlStatementCacheTests, CacheExcess)
     ASSERT_TRUE (stmt1A == stmt1B.get ()) << "Statement is expected to still be in cache";
 
     //now first statement should be removed from cache
-    cache.GetPreparedStatement (ecdb, ecsql3).get ();
+    cache.GetPreparedStatement (ecdb, ecsql3);
     ASSERT_EQ (2, cache.Size ());
 
     ASSERT_EQ (1, stmt1B->GetRefCount ()) << "Statement was removed from cache, so only holder is expected to be stmt1B";
