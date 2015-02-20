@@ -764,7 +764,7 @@ public:
 //__PUBLISH_SECTION_START__
 
     //! Determine whether this Statement has already been prepared.
-    bool IsPrepared() {return NULL != m_stmt;}
+    bool IsPrepared() const {return NULL != m_stmt;}
 
     //! Destroy this Statement. If the Statement was Prepared, releases all memory associated it.
     BE_SQLITE_EXPORT void Finalize();
