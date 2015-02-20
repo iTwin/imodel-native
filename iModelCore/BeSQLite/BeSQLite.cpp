@@ -124,9 +124,9 @@ private:
 
 public:
     explicit CachedRlValue(Utf8CP name) : m_name (name) {BeAssert(!Utf8String::IsNullOrEmpty (name)); Reset();}
-    Utf8CP GetName () const { return m_name; }
-    int64_t GetValue () const {BeAssert (!m_isUnset); return m_value;}
-    void ChangeValue (int64_t value, bool initializing = false)
+    Utf8CP GetName() const {return m_name.c_str();}
+    int64_t GetValue() const {BeAssert (!m_isUnset); return m_value;}
+    void ChangeValue(int64_t value, bool initializing = false)
         {
         m_isUnset = false;
         m_dirty = !initializing;
@@ -144,13 +144,7 @@ public:
     bool IsUnset() const { return m_isUnset; }
     bool IsDirty() const {BeAssert (!m_isUnset); return m_dirty;}
     void SetIsNotDirty() {BeAssert (!m_isUnset); m_dirty = false;}
-
-    void Reset()
-        {
-        m_isUnset = true;
-        m_dirty = false;
-        m_value = -1LL;
-        }
+    void Reset() {m_isUnset=true; m_dirty=false; m_value=-1LL;}
     };
 
 //=======================================================================================
@@ -1328,27 +1322,6 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
         value = ((currMax < firstId.GetValue()) ? firstId : BeRepositoryBasedId (currMax+1));
         }
     return  BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Db::SaveMyProjectGuid (BeProjectGuid projectGuid)
-    {
-    if (!projectGuid.IsValid())
-        projectGuid.Create();
-
-    SaveProperty (Properties::GuidOfMyProject(), (void*) &projectGuid, sizeof(projectGuid));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeProjectGuid Db::QueryMyProjectGuid() const
-    {
-    BeProjectGuid projectGuid(false);
-    QueryProperty (&projectGuid, sizeof(projectGuid), Properties::GuidOfMyProject());
-    return  projectGuid;
     }
 
 /*---------------------------------------------------------------------------------**//**
