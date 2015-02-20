@@ -20,6 +20,24 @@ HttpResponse StubHttpResponse (HttpStatus httpStatus, HttpBodyPtr body, const st
 HttpResponse StubJsonHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());
 HttpResponse StubHttpResponseWithUrl (HttpStatus httpStatus, Utf8StringCR url);
 
+WSInfo StubWSInfoWebApi (BeVersion webApiVersion = BeVersion (1, 3), WSInfo::Type type = WSInfo::Type::BentleyWSG);
+//! Stub WebApi 1.1 and BentleyConnect server
+HttpResponse StubWSInfoHttpResponseBentleyConnectV1 ();
+//! Stub WebApi 1.1 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi11 ();
+//! Stub WebApi 1.2 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi12 ();
+//! Stub WebApi 1.3 and BWSG server. Default for testing WSG 1.x client code
+HttpResponse StubWSInfoHttpResponseWebApi13 ();
+//! Stub WebApi 2.0 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi20 ();
+//! Stub WebApi 2.1 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi21 ();
+//! Stub WebApi 2.2 and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi22 ();
+//! Stub WebApi version and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi (BeVersion webApiVersion);
+
 void WriteStringToHttpBody (Utf8StringCR string, HttpBodyPtr body);
 Utf8String ReadHttpBody (HttpBodyPtr body);
 

@@ -9,6 +9,7 @@
 
 #define INFO_ServerVersion              "serverVersion"
 #define INFO_Serialized_ServerVersion   "version"
+#define INFO_Serialized_WebApiVersion   "webApi"
 #define INFO_Serialized_ServerType      "type"
 
 const BeVersion WSInfo::s_serverR1From ("01.00.00.00");
@@ -27,8 +28,9 @@ m_type (Type::Unknown)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSInfo::WSInfo (BeVersion serverVersion, Type serverType) :
-m_version (serverVersion),
+WSInfo::WSInfo (BeVersion serverVersion, BeVersion webApiVersion, Type serverType) :
+m_serverVersion (serverVersion),
+m_webApiVersion (webApiVersion),
 m_type (serverType)
     {
     }
@@ -43,29 +45,27 @@ WSInfo::WSInfo (HttpResponseCR response) : WSInfo ()
         return;
         }
 
-    Utf8String serverHeader = Utf8String (response.GetHeaders ().GetValue ("Server"));
-    if (serverHeader.find (Utf8String ("Bentley-WebAPI/2.0")) != Utf8String::npos)
+    ParseHeaders (response.GetHeaders (), m_type, m_serverVersion, m_webApiVersion);
+    if (IsValid ())
         {
-        m_type = Type::BentleyWSG;
-        m_version = BeVersion (2, 0, 0, 0);
         return;
         }
 
-    Utf8String contentType = response.GetHeaders ().GetContentType ();
-
-    if (contentType.find ("text/html") != Utf8String::npos)
+    ParseInfoPage (response, m_type, m_serverVersion, m_webApiVersion);
+    if (IsValid ())
         {
-        ExtractTypeAndVersionFromAboutPage (response.GetBody ().AsString (), m_type, m_version);
         return;
         }
 
-    Json::Value infoJson = response.GetBody ().AsJson ();
-    JsonValueCR serverVersionJson = infoJson[INFO_ServerVersion];
-    if (serverVersionJson.isString ())
+    ParseAboutPage (response, m_type, m_serverVersion, m_webApiVersion);
+    if (IsValid ())
         {
-        m_type = Type::BentleyWSG;
-        m_version = BeVersion (serverVersionJson.asCString ());
+        return;
         }
+
+    m_type = Type::Unknown;
+    m_serverVersion = BeVersion ();
+    m_webApiVersion = BeVersion ();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -79,7 +79,8 @@ WSInfo::WSInfo (Utf8StringCR serialized) : WSInfo ()
         return;
         }
 
-    m_version = BeVersion (json[INFO_Serialized_ServerVersion].asString ().c_str ());
+    m_serverVersion = BeVersion (json[INFO_Serialized_ServerVersion].asString ().c_str ());
+    m_webApiVersion = BeVersion (json[INFO_Serialized_WebApiVersion].asString ().c_str ());
     m_type = static_cast<Type>(json[INFO_Serialized_ServerType].asInt ());
     }
 
@@ -90,45 +91,122 @@ Utf8String WSInfo::ToString () const
     {
     Json::Value json;
 
-    json[INFO_Serialized_ServerVersion] = m_version.ToString ();
+    json[INFO_Serialized_ServerVersion] = m_serverVersion.ToString ();
+    json[INFO_Serialized_WebApiVersion] = m_webApiVersion.ToString ();
     json[INFO_Serialized_ServerType] = static_cast<int>(m_type);
 
     return Json::FastWriter::ToString (json);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
+* @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSInfo::ExtractTypeAndVersionFromAboutPage (Utf8StringCR body, Type& typeOut, BeVersion& versionOut)
+void WSInfo::ParseHeaders (HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
+    Utf8CP serverHeader = headers.GetServer ();
+    if (nullptr == serverHeader)
+        {
+        return;
+        }
+
+    bvector<Utf8String> servers;
+    BeStringUtilities::Split (serverHeader, ",", servers);
+
+    serverVersionOut = BeVersion ();
+    webApiVersionOut = BeVersion ();
+
+    for (Utf8String& server : servers)
+        {
+        server.Trim ();
+
+        if (serverVersionOut.IsEmpty ())
+            {
+            serverVersionOut = BeVersion (server.c_str (), "Bentley-WSG/%d.%d.%d.%d");
+            }
+            
+        if (webApiVersionOut.IsEmpty ())
+            {
+            webApiVersionOut = BeVersion (server.c_str (), "Bentley-WebAPI/%d.%d");
+            }
+        }
+
+    if (!serverVersionOut.IsEmpty () && !webApiVersionOut.IsEmpty ())
+        {
+        typeOut = Type::BentleyWSG;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSInfo::ParseInfoPage (HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
+    {
+    Utf8String contentType = response.GetHeaders ().GetContentType ();
+    if (Utf8String::npos == contentType.find ("application/json"))
+        {
+        return;
+        }
+
+    Json::Value infoJson = response.GetBody ().AsJson ();
+    JsonValueCR serverVersionJson = infoJson[INFO_ServerVersion];
+    if (!serverVersionJson.isString ())
+        {
+        return;
+        }
+
+    typeOut = Type::BentleyWSG;
+    serverVersionOut = BeVersion (serverVersionJson.asCString ());
+    webApiVersionOut = DeduceWebApiVersion (serverVersionOut);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSInfo::ParseAboutPage (HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
+    {
+    Utf8String contentType = response.GetHeaders ().GetContentType ();
+    if (Utf8String::npos == contentType.find ("text/html"))
+        {
+        return;
+        }
+
+    Utf8String body = response.GetBody ().AsString ();
     if (body.find (R"(<span id="productNameLabel">Bentley Web Services Gateway 01.00</span>)") != Utf8String::npos)
         {
         typeOut = Type::BentleyWSG;
-        versionOut = BeVersion (1, 0);
-        return SUCCESS;
+        serverVersionOut = BeVersion (1, 0);
+        webApiVersionOut = BeVersion (1, 1);
+        return;
         }
 
     if (body.find (R"(Web Service Gateway for BentleyCONNECT)") != Utf8String::npos &&
         body.find (R"(<span id="versionLabel">1.1.0.0</span>)") != Utf8String::npos)
         {
         typeOut = Type::BentleyConnect;
-        versionOut = BeVersion (1, 0);
-        return SUCCESS;
+        serverVersionOut = BeVersion (1, 0);
+        webApiVersionOut = BeVersion (1, 1);
+        return;
         }
+    }
 
-    if (body.find (R"(<span id="productNameLabel">Bentley Web Services Gateway 02.00</span>)") != Utf8String::npos)
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BeVersion WSInfo::DeduceWebApiVersion (BeVersionCR serverVersion)
+    {
+    if (serverVersion >= s_serverR4From)
         {
-        // TODO: This is temporary workarround.
-        // WSG 2.0 does not yet have a way to get server info.
-        typeOut = Type::BentleyWSG;
-        versionOut = BeVersion (2, 0);
-        return SUCCESS;
+        return BeVersion ();
         }
-
-    // Unknown server
-    typeOut = Type::Unknown;
-    versionOut = BeVersion ();
-    return ERROR;
+    if (serverVersion >= s_serverR3From)
+        {
+        return BeVersion (1, 3);
+        }
+    if (serverVersion >= s_serverR2From)
+        {
+        return BeVersion (1, 2);
+        }
+    return BeVersion (1, 1);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -136,7 +214,10 @@ BentleyStatus WSInfo::ExtractTypeAndVersionFromAboutPage (Utf8StringCR body, Typ
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSInfo::IsValid () const
     {
-    return m_version.GetMajor () != 0 && m_type != Type::Unknown;
+    return
+        !m_serverVersion.IsEmpty () &&
+        !m_webApiVersion.IsEmpty () &&
+        m_type != Type::Unknown;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -152,7 +233,7 @@ WSInfo::Type WSInfo::GetType () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeVersionCR WSInfo::GetVersion () const
     {
-    return m_version;
+    return m_serverVersion;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -160,7 +241,7 @@ BeVersionCR WSInfo::GetVersion () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  WSInfo::IsR2OrGreater () const
     {
-    return m_version >= s_serverR2From;
+    return m_serverVersion >= s_serverR2From;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -168,35 +249,15 @@ bool  WSInfo::IsR2OrGreater () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool  WSInfo::IsR3OrGreater () const
     {
-    return m_version >= s_serverR3From;
+    return m_serverVersion >= s_serverR3From;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2014
+* @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  WSInfo::IsR4OrGreater () const
+BeVersionCR WSInfo::GetWebApiVersion () const
     {
-    return m_version >= s_serverR4From;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeVersion WSInfo::GetWebApiVersion () const
-    {
-    if (m_version >= s_serverR4From)
-        {
-        return BeVersion (2, 0);
-        }
-    if (m_version >= s_serverR3From)
-        {
-        return BeVersion (1, 3);
-        }
-    if (m_version >= s_serverR2From)
-        {
-        return BeVersion (1, 2);
-        }
-    return BeVersion (1, 1);
+    return m_webApiVersion;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -204,7 +265,7 @@ BeVersion WSInfo::GetWebApiVersion () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSInfo::IsWebApiSupported (BeVersionCR version) const
     {
-    return GetWebApiVersion () >= version;
+    return m_webApiVersion >= version;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -221,5 +282,5 @@ bool WSInfo::IsNavigationPropertySelectForAllClassesSupported () const
 bool WSInfo::IsSchemaDownloadFullySupported () const
     {
     // R2 supports schema download but schemas are not properly configured for display
-    return m_version >= s_serverR3From;
+    return m_serverVersion >= s_serverR3From;
     }

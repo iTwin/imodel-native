@@ -50,6 +50,88 @@ HttpResponse StubHttpResponseWithUrl (HttpStatus httpStatus, Utf8StringCR url)
     return HttpResponse (content, url.c_str (), ConnectionStatus::OK, httpStatus);
     }
 
+HttpResponse StubWSErrorHttpResponse (HttpStatus status, Utf8StringCR errorId, Utf8StringCR message, Utf8StringCR description)
+    {
+    Json::Value errorJson;
+
+    errorJson["errorId"] = errorId;
+    errorJson["errorMessage"] = message;
+    errorJson["errorDescription"] = description;
+
+    return StubHttpResponse (status, errorJson.toStyledString (), {{"Content-Type", "application/json"}});
+    }
+
+WSInfo StubWSInfoWebApi (BeVersion webApiVersion, WSInfo::Type type)
+    {
+    BeVersion serverVersion;
+    if (webApiVersion >= BeVersion (2, 0))
+        {
+        serverVersion = BeVersion (2, 0);
+        }
+    else if (webApiVersion >= BeVersion (1, 3))
+        {
+        serverVersion = BeVersion (1, 2);
+        }
+    else if (webApiVersion >= BeVersion (1, 2))
+        {
+        serverVersion = BeVersion (1, 1);
+        }
+    else if (webApiVersion >= BeVersion (1, 1))
+        {
+        serverVersion = BeVersion (1, 0);
+        }
+    return WSInfo (serverVersion, webApiVersion, type);
+    }
+
+HttpResponse StubWSInfoHttpResponseBentleyConnectV1 ()
+    {
+    auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";
+    return StubHttpResponse (HttpStatus::OK, bodyStub, {{"Content-Type", "text/html"}});
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi11 ()
+    {
+    return StubWSInfoHttpResponseWebApi (BeVersion (1, 1));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi12 ()
+    {
+    return StubWSInfoHttpResponseWebApi (BeVersion (1, 2));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi13 ()
+    {
+    return StubWSInfoHttpResponseWebApi (BeVersion (1, 3));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi20 ()
+    {
+    return StubWSInfoHttpResponseWebApi (BeVersion (2, 0));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi21 ()
+    {
+    return StubWSInfoHttpResponseWebApi (BeVersion (2, 1));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi22 ()
+    {
+    return StubWSInfoHttpResponseWebApi (BeVersion (2, 2));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi (BeVersion webApiVersion)
+    {
+    auto info = StubWSInfoWebApi (webApiVersion);
+    Utf8PrintfString serverHeader
+        (
+        "Bentley-WSG/%s, Bentley-WebAPI/%d.%d",
+        info.GetVersion ().ToString ().c_str (),
+        info.GetWebApiVersion ().GetMajor(),
+        info.GetWebApiVersion ().GetMinor()
+        );
+    return StubHttpResponse (HttpStatus::OK, "", {{"Server", serverHeader}});
+    }
+
 void WriteStringToHttpBody (Utf8StringCR string, HttpBodyPtr body)
     {
     size_t bytesToWrite = string.length ();
@@ -88,44 +170,6 @@ Utf8String ReadHttpBody (HttpBodyPtr body)
     body->Close ();
 
     return bodyStr;
-    }
-
-HttpResponse StubWSErrorHttpResponse (HttpStatus status, Utf8StringCR errorId, Utf8StringCR message, Utf8StringCR description)
-    {
-    Json::Value errorJson;
-
-    errorJson["errorId"] = errorId;
-    errorJson["errorMessage"] = message;
-    errorJson["errorDescription"] = description;
-
-    return StubHttpResponse (status, errorJson.toStyledString (), {{"Content-Type", "application/json"}});
-    }
-
-WSInfo StubWSInfo (BeVersion version, WSInfo::Type type)
-    {
-    return WSInfo (version, type);
-    }
-
-HttpResponse StubWSInfoHttpResponseV1 ()
-    {
-    return StubWSInfoHttpResponse (BeVersion (1, 3));
-    }
-
-HttpResponse StubWSInfoHttpResponseV1BentleyConnect ()
-    {
-    auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";
-    return StubHttpResponse (HttpStatus::OK, bodyStub, {{"Content-Type", "text/html"}});
-    }
-
-HttpResponse StubWSInfoHttpResponseV2 ()
-    {
-    return StubWSInfoHttpResponse (BeVersion (2, 0));
-    }
-
-HttpResponse StubWSInfoHttpResponse (BeVersion serverVersion)
-    {
-    Utf8PrintfString body (R"({ "serverVersion" : "%s"  })", serverVersion.ToString ().c_str ());
-    return StubHttpResponse (HttpStatus::OK, body, {{"Content-Type", "application/json"}});
     }
 
 WSError StubWSConnectionError ()

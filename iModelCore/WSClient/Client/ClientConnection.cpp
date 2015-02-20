@@ -112,8 +112,7 @@ ICancellationTokenPtr cancellationToken
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<WebApi> ClientConnection::GetWebApi (WSInfoCR info) const
     {
-    if (BeVersion (1, 3) >= info.GetWebApiVersion () &&
-        WSInfo::Type::BentleyWSG == info.GetType ())
+    if (WebApiV1::IsSupported (info))
         {
         if (nullptr != std::dynamic_pointer_cast<WebApiV1> (m_webApi))
             {
@@ -122,8 +121,7 @@ std::shared_ptr<WebApi> ClientConnection::GetWebApi (WSInfoCR info) const
         return std::make_shared<WebApiV1> (m_configuration, info);
         }
 
-    if (BeVersion (1, 1) == info.GetWebApiVersion () &&
-        WSInfo::Type::BentleyConnect == info.GetType ())
+    if (WebApiV1BentleyConect::IsSupported (info))
         {
         if (nullptr != std::dynamic_pointer_cast<WebApiV1BentleyConect> (m_webApi))
             {
@@ -132,14 +130,13 @@ std::shared_ptr<WebApi> ClientConnection::GetWebApi (WSInfoCR info) const
         return std::make_shared<WebApiV1BentleyConect> (m_configuration, info);
         }
 
-    if (BeVersion (2, 0) == info.GetWebApiVersion () &&
-        WSInfo::Type::BentleyWSG == info.GetType ())
+    if (WebApiV2::IsSupported (info))
         {
         if (nullptr != std::dynamic_pointer_cast<WebApiV2> (m_webApi))
             {
             return m_webApi;
             }
-        return std::make_shared<WebApiV2> (m_configuration);
+        return std::make_shared<WebApiV2> (m_configuration, info);
         }
 
     return nullptr;

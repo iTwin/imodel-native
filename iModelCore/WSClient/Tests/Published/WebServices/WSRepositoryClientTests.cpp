@@ -43,7 +43,7 @@ TEST_F (WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredent
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2)
-        .ForRequest (1, StubWSInfoHttpResponseV1 ())
+        .ForRequest (1, StubWSInfoHttpResponseWebApi13 ())
         .ForRequest (2, [] (HttpRequestCR request)
         {
         EXPECT_EQ (Credentials ("TestUser", "TestPassword"), request.GetCredentials ());
@@ -59,7 +59,7 @@ TEST_F (WSRepositoryClientTests, VerifyAccess_ResponseWithClassNotFound_ReturnsS
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2)
-        .ForRequest (1, StubWSInfoHttpResponseV1 ())
+        .ForRequest (1, StubWSInfoHttpResponseWebApi13 ())
         .ForRequest (2, StubWSErrorHttpResponse (HttpStatus::NotFound, "ClassNotFound"));
 
     auto result = client->VerifyAccess ()->GetResult ();
@@ -71,7 +71,7 @@ TEST_F (WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_Returns
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2)
-        .ForRequest (1, StubWSInfoHttpResponseV1 ())
+        .ForRequest (1, StubWSInfoHttpResponseWebApi13 ())
         .ForRequest (2, StubWSErrorHttpResponse (HttpStatus::NotFound, "SchemaNotFound"));
 
     auto result = client->VerifyAccess ()->GetResult ();
@@ -83,7 +83,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11_SendsUrlWithou
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 0))); // WebApi 1.1
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/DataSources/foo/Navigation", request.GetUrl ().c_str ());
@@ -98,7 +98,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndPropertiesToS
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 2))); // WebApi 1.3
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v1.3/DataSources/foo/Navigation?properties=Boo,Foo", request.GetUrl ().c_str ());
@@ -117,7 +117,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV12AndPropertiesTo
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 1))); // WebApi 1.2
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi12 ());
 
     bset<Utf8String> propertiesToSelect;
     propertiesToSelect.insert ("TestProperty");
@@ -133,7 +133,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithoutDefaultS
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), defaultSchemaPath, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 0))); // WebApi 1.1
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, R"({"TestClass" : [ { "$id" : "TestId" } ]})"));
 
     BeTest::SetFailOnAssert (false);
@@ -152,7 +152,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11WithDefaultSche
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 0))); // WebApi 1.1
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
     GetHandler ().ForRequest (2, StubJsonHttpResponse (HttpStatus::OK, R"({"TestClass" : [ { "$id" : "TestId" } ]})"));
 
     auto response = client->SendGetChildrenRequest (ObjectId ())->GetResult ();
@@ -174,7 +174,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithDefaultSchem
     instances.Add ({"TestSchema.TestClass", "TestId"});
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0))); // WebApi 1.1
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, instances.ToJsonWebApiV2 ()));
 
     auto response = client->SendGetChildrenRequest (ObjectId ())->GetResult ();
@@ -190,7 +190,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRoo
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (3);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v1.1/DataSources/foo/Navigation", request.GetUrl ().c_str ());
@@ -220,7 +220,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV1AndNavigationRoo
     HttpResponse childrenResponse = StubJsonHttpResponse (HttpStatus::OK, R"({"TestClass" : [ { "$id" : "TestId" } ]})");
 
     GetHandler ().ExpectRequests (4);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, childrenResponse);
     GetHandler ().ForRequest (3, [=] (HttpRequestCR request)
         {
@@ -244,7 +244,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndNavigationRoo
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/Navigation/NavNode", request.GetUrl ().c_str ());
@@ -259,7 +259,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndPropertiesSpe
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/Navigation/NavNode?$select=Boo,Foo", request.GetUrl ().c_str ());
@@ -278,7 +278,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndSpecificNavNo
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/Navigation/NavNode/Foo/NavNode", request.GetUrl ().c_str ());
@@ -298,7 +298,7 @@ TEST_F (WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseConta
     instances.Add ({"TestSchema.TestClass", "A"});
     HttpResponse response = StubHttpResponse (HttpStatus::OK, instances.ToJsonWebApiV2 ());
 
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, response);
 
     auto result = client->SendGetChildrenRequest (ObjectId ())->GetResult ();
@@ -315,7 +315,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWith
     BeFileName fileName = BeFileName ("testFile");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v1.1/DataSources/foo/Files/TestClass/TestId", request.GetUrl ().c_str ());
@@ -334,7 +334,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetRequ
     BeFileName fileName = BeFileName ("testFile");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1BentleyConnect ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseBentleyConnectV1 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_FALSE (request.GetFollowRedirects ());
@@ -354,7 +354,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFo
     BeFileName fileName = BeFileName ("testFile");
 
     GetHandler ().ExpectRequests (3);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1BentleyConnect ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseBentleyConnectV1 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::Found, "", {{"Location", "http://file.location/"}}));
     GetHandler ().ForRequest (3, [=] (HttpRequestCR request)
         {
@@ -375,7 +375,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseOK
     BeFileName fileName = BeFileName ("testFile");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1BentleyConnect ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseBentleyConnectV1 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK));
 
     auto result = client->SendGetFileRequest ({"TestSchema", "TestClass", "TestId"}, fileName)->GetResult ();
@@ -389,7 +389,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
     BeFileName fileName = BeFileName ("testFile");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl ().c_str ());
@@ -409,7 +409,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
 //    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders(), GetHandlerPtr ());
 //
 //    GetHandler ().ExpectRequests (1);
-//    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));    
+//    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());    
 //
 //    auto response = client->SendGetFileRequest ({ "TestClass", "TestId" }, BeFileName ("testFile"))->GetResult ();
 //    EXPECT_FALSE (response.IsSuccess ());
@@ -420,7 +420,7 @@ TEST_F (WSRepositoryClientTests, SendGetObjectRequest_WebApiV2_SendsCorrectUrl)
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/testSchema/testClass/testId", request.GetUrl ().c_str ());
@@ -435,7 +435,7 @@ TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1_SendsCorrectUrl)
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 2)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v1.1/DataSources/foo/Objects/class1,class2?$select=testSelect", request.GetUrl ().c_str ());
@@ -453,7 +453,7 @@ TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV2_SendsCorrectUrl)
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("https://srv.com/ws/v2.0/Repositories/foo/testSchema/class1,class2?$select=testSelect", request.GetUrl ().c_str ());
@@ -464,6 +464,90 @@ TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV2_SendsCorrectUrl)
     query.SetSelect ("testSelect");
 
     client->SendQueryRequest (query)->Wait ();
+    }
+
+TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV21_ParsesInstanceETagAndAddsQuotes)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi21 ());
+    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
+        {
+        auto json = R"({"instances" : 
+                [{
+                "instanceId" : "Foo",
+                "className" : "Foo",
+                "schemaName" : "Foo",
+                "eTag" : "TestEtagA",
+                "properties" : {},
+                "relationshipInstances": [{
+                    "instanceId" : "Foo",
+                    "className" : "Foo",
+                    "schemaName" : "Foo",
+                    "eTag" : "TestEtagB",
+                    "direction" : "forward",
+                    "relatedInstance": 
+                        {
+                        "instanceId" : "Foo",
+                        "className" : "Foo",
+                        "schemaName" : "Foo",
+                        "properties" : {}
+                        }
+                    }]
+                }]
+            })";
+        return StubHttpResponse (HttpStatus::OK, json);
+        });
+
+    auto result = client->SendQueryRequest (WSQuery ("Foo", "Foo"))->GetResult ();
+    ASSERT_TRUE (result.IsSuccess ());
+
+    auto& instances = result.GetValue ().GetInstances ();
+    EXPECT_EQ ("\"TestEtagA\"", (*instances.begin ()).GetETag ());
+    EXPECT_EQ ("\"TestEtagB\"", (*(*instances.begin ()).GetRelationshipInstances ().begin ()).GetETag ());
+    }
+
+TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV22_ParsesInstanceETagDirectly)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi22 ());
+    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
+        {
+        auto json = R"({"instances" : 
+                [{
+                "instanceId" : "Foo",
+                "className" : "Foo",
+                "schemaName" : "Foo",
+                "eTag" : "TestEtagA",
+                "properties" : {},
+                "relationshipInstances": [{
+                    "instanceId" : "Foo",
+                    "className" : "Foo",
+                    "schemaName" : "Foo",
+                    "eTag" : "TestEtagB",
+                    "direction" : "forward",
+                    "relatedInstance": 
+                        {
+                        "instanceId" : "Foo",
+                        "className" : "Foo",
+                        "schemaName" : "Foo",
+                        "properties" : {}
+                        }
+                    }]
+                }]
+            })";
+        return StubHttpResponse (HttpStatus::OK, json);
+        });
+
+    auto result = client->SendQueryRequest (WSQuery ("Foo", "Foo"))->GetResult ();
+    ASSERT_TRUE (result.IsSuccess ());
+
+    auto& instances = result.GetValue ().GetInstances ();
+    EXPECT_EQ ("TestEtagA", (*instances.begin ()).GetETag ());
+    EXPECT_EQ ("TestEtagB", (*(*instances.begin ()).GetRelationshipInstances ().begin ()).GetETag ());
     }
 
 TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSupported)
@@ -480,7 +564,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSuppo
             })");
 
     GetHandler ().ExpectRequests (1);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 0))); // WebApi 1.1
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
 
     auto result = client->SendCreateObjectRequest (objectCreationJson)->GetResult ();
     EXPECT_EQ (WSError::Id::NotSupported, result.GetError ().GetId ());
@@ -500,7 +584,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithCorrectJson
             })");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
@@ -534,7 +618,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithOneRelation
             })");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
@@ -576,7 +660,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithNestedRelat
             })");
 
     GetHandler ().ExpectRequests (1);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
 
     auto result = client->SendCreateObjectRequest (objectCreationJson)->GetResult ();
     ASSERT_FALSE (result.IsSuccess ());
@@ -599,7 +683,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithMoreThanOne
             })");
 
     GetHandler ().ExpectRequests (1);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
 
     auto result = client->SendCreateObjectRequest (objectCreationJson)->GetResult ();
     ASSERT_FALSE (result.IsSuccess ());
@@ -622,7 +706,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson
             })");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
@@ -639,7 +723,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1_ConstructsWSG2
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 2)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::Created, R"({ "id" : "NewId" })"));
 
     Json::Value creationJson = ToJson (
@@ -677,7 +761,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2_PassesResponse
 
     Json::Value responseObject = ToJson (R"({ "testMember" : "testValue" })");
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::Created, responseObject.toStyledString ()));
 
     Json::Value creationJson = ToJson (
@@ -704,7 +788,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV1WithFilePath_Ad
     auto fileName = Utf8String (filePath.GetFileNameAndExtension ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_THAT (request.GetHeaders ().GetContentDisposition (), HasSubstr (fileName.c_str ()));
@@ -722,7 +806,7 @@ TEST_F (WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithFilePath_Ad
     auto fileName = Utf8String (filePath.GetFileNameAndExtension ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV2 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_THAT (request.GetHeaders ().GetContentDisposition (), HasSubstr (fileName.c_str ()));
@@ -740,7 +824,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostReque
     Json::Value propertiesJson = ToJson (R"({"TestProperty" : "TestValue" })");
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
@@ -757,7 +841,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1ResponseIsOK_Su
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK));
 
     auto result = client->SendUpdateObjectRequest ({"TestSchema.TestClass", "TestId"}, Json::objectValue)->GetResult ();
@@ -769,7 +853,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2_SendsPostReque
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("POST", request.GetMethod ().c_str ());
@@ -799,7 +883,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2ResponseIsOK_Su
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK));
 
     auto result = client->SendUpdateObjectRequest ({"TestSchema.TestClass", "TestId"}, Json::objectValue)->GetResult ();
@@ -811,7 +895,7 @@ TEST_F (WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteReq
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("DELETE", request.GetMethod ().c_str ());
@@ -827,7 +911,7 @@ TEST_F (WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1ResponseIsOK_Su
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (1, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi11 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK));
 
     auto result = client->SendDeleteObjectRequest ({"TestSchema.TestClass", "TestId"})->GetResult ();
@@ -839,7 +923,7 @@ TEST_F (WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2_SendsDeleteReq
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("DELETE", request.GetMethod ().c_str ());
@@ -855,7 +939,7 @@ TEST_F (WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV2ResponseIsOK_Su
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK));
 
     auto result = client->SendDeleteObjectRequest ({"TestSchema.TestClass", "TestId"})->GetResult ();
@@ -867,7 +951,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateFileRequest_WebApiV1_SendsPutRequest)
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (3);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("PUT", request.GetMethod ().c_str ());
@@ -888,7 +972,7 @@ TEST_F (WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (3);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("PUT", request.GetMethod ().c_str ());
@@ -908,7 +992,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11AndNoDefaultSche
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
-    GetHandler ().ForFirstRequest (StubWSInfoHttpResponse (BeVersion (1, 0))); // WebApi 1.1
+    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi11 ());
     auto result = client->SendGetSchemasRequest ()->GetResult ();
 
     EXPECT_EQ (WSError::Id::NotSupported, result.GetError ().GetId ());
@@ -922,7 +1006,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
     BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
-    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi13 ());
 
     auto result = client->SendGetSchemasRequest ()->GetResult ();
 
@@ -943,7 +1027,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
     BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
-    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi13 ());
 
     auto result = client->SendGetSchemasRequest ()->GetResult ();
 
@@ -960,7 +1044,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1WithDefaultSchema
     BeFileName defaultSchemaPath = FSTest::StubFile (schemaXml);
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
-    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForFirstRequest (StubWSInfoHttpResponseWebApi13 ());
 
     auto result = client->SendGetSchemasRequest ("DUMMY_SCHEMA_OBJECT-DefaultSchema.04.02")->GetResult ();
 
@@ -973,7 +1057,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1_SendsGetSchemaRe
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("TestETag", request.GetHeaders ().GetIfNoneMatch ());
@@ -989,7 +1073,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV11Connect_SendsGet
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1BentleyConnect ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseBentleyConnectV1 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("TestETag", request.GetHeaders ().GetIfNoneMatch ());
@@ -1005,7 +1089,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseNotModifi
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotModified));
 
     auto result = client->SendGetSchemasRequest ()->GetResult ();
@@ -1019,7 +1103,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchem
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         Utf8String schemaXml =
@@ -1046,7 +1130,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV1ResponseWithSchem
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         Utf8String schemaXml =
@@ -1069,7 +1153,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("TestETag", request.GetHeaders ().GetIfNoneMatch ());
@@ -1085,7 +1169,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1BentleyConnectAndDum
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1BentleyConnect ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseBentleyConnectV1 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STREQ ("TestETag", request.GetHeaders ().GetIfNoneMatch ());
@@ -1104,7 +1188,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
 
     auto result = client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), "Foo")->GetResult ();
 
@@ -1122,7 +1206,7 @@ TEST_F (WSRepositoryClientTests, SendGetFileRequest_WebApiV1AndDummySchemaObject
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), &defaultSchemaPath, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (1);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponseV1 ());
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
 
     auto eTag = "DUMMY_SCHEMA_OBJECT-DefaultSchema.04.02";
     auto result = client->SendGetFileRequest ({"MetaSchema.ECSchemaDef", "DUMMY_SCHEMA_OBJECT..."}, FSTest::StubFilePath (), eTag)->GetResult ();
@@ -1136,7 +1220,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2_SendsGetSchemasR
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", HttpRequestHeaders (), nullptr, GetHandlerPtr ());
 
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
         EXPECT_STRCASEEQ ("https://srv.com/ws/v2.0/Repositories/foo/MetaSchema/ECSchemaDef", request.GetUrl ().c_str ());
@@ -1154,7 +1238,7 @@ TEST_F (WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsO
     StubInstances instances;
     instances.Add ({"TestSchema.TestClass", "A"});
     GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubWSInfoHttpResponse (BeVersion (2, 0)));
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
     GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, instances.ToJsonWebApiV2 ()));
 
     auto result = client->SendGetSchemasRequest ()->GetResult ();
