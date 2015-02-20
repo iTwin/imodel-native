@@ -24,6 +24,14 @@ WebApiV1BentleyConect::~WebApiV1BentleyConect ()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WebApiV1BentleyConect::IsSupported (WSInfoCR info)
+    {
+    return info.GetWebApiVersion () == BeVersion (1, 1) && info.GetType () == WSInfo::Type::BentleyConnect;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String WebApiV1BentleyConect::GetSchemaUrl () const

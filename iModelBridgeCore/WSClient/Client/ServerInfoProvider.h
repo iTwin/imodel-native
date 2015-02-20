@@ -17,6 +17,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+typedef MobileDgn::Utils::AsyncResult<WSInfo, MobileDgn::Utils::HttpResponse> WSInfoHttpResult;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -33,16 +35,10 @@ struct ServerInfoProvider
     private:
         bool CanUseCachedInfo () const;
         void UpdateInfo (WSInfoCR info) const;
-
-        MobileDgn::Utils::HttpRequest CreateGetInfoRequest () const;
-        MobileDgn::Utils::HttpRequest CreateGetAboutPageRequest () const;
-        MobileDgn::Utils::HttpRequest CreateGetPluginsRequest () const;
-
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequest (MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequestFromAboutPage (MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
-        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> SendGetInfoRequestFromPlugins (MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
-
         void NotifyServerInfoUpdated (WSInfoCR info) const;
+
+        MobileDgn::Utils::AsyncTaskPtr<WSInfoResult> GetInfo (MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
+        MobileDgn::Utils::AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage (Utf8StringCR page, MobileDgn::Utils::ICancellationTokenPtr cancellationToken) const;
 
     public:
         ServerInfoProvider (std::shared_ptr<const ClientConfiguration> configuration);

@@ -118,7 +118,14 @@ WSObjectsReader::Instance WSObjectsReaderV1::ReadInstance (const rapidjson::Valu
 
     Utf8String remoteId ((*instanceProperties)["$id"].GetString ());
 
-    return Instance (shared_from_this (), ObjectId (m_schemaName, className, remoteId), nullptr, instanceProperties, &s_emptyArrayJsonObject);
+    return Instance
+        (
+        shared_from_this (),
+        ObjectId (m_schemaName, className, remoteId),
+        instanceProperties,
+        instanceProperties,
+        &s_emptyArrayJsonObject
+        );
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -180,4 +187,12 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV1::GetRelationshipInstance
     {
     BeAssert (false && "Stub");
     return RelationshipInstance (shared_from_this ());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WSObjectsReaderV1::GetInstanceETag (const rapidjson::Value* instance) const
+    {
+    return nullptr;
     }

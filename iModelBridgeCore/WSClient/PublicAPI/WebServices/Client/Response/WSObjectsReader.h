@@ -52,6 +52,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WSObjectsReader : public std::enable_shared_from_
         virtual Instance GetInstance (rapidjson::SizeType index) const = 0;
         virtual Instance GetRelatedInstance (const rapidjson::Value* relatedInstance) const = 0;
         virtual RelationshipInstance GetRelationshipInstance (const rapidjson::Value* relationshipInstance) const = 0;
+        virtual Utf8String GetInstanceETag (const rapidjson::Value* instance) const = 0;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -79,7 +80,7 @@ struct WSObjectsReader::Instance
     private:
         std::shared_ptr<const WSObjectsReader> m_reader;
         ObjectId m_objectId;
-        Utf8String m_eTag;
+        const rapidjson::Value* m_instance;
         const rapidjson::Value* m_instanceProperties;
         const rapidjson::Value* m_relationshipInstances;
 
@@ -89,14 +90,14 @@ struct WSObjectsReader::Instance
             (
             std::shared_ptr<const WSObjectsReader> adapter,
             ObjectId objectId,
-            Utf8StringCR eTag,
+            const rapidjson::Value* instance,
             const rapidjson::Value* instanceProperties,
             const rapidjson::Value* relationshipInstances
             );
 
         WSCLIENT_EXPORT bool IsValid () const;
         WSCLIENT_EXPORT ObjectIdCR GetObjectId () const;
-        WSCLIENT_EXPORT Utf8CP GetETag () const;
+        WSCLIENT_EXPORT Utf8String GetETag () const;
         WSCLIENT_EXPORT RapidJsonValueCR GetProperties () const;
         WSCLIENT_EXPORT RelationshipInstances GetRelationshipInstances () const;
     };
@@ -131,7 +132,7 @@ struct WSObjectsReader::RelationshipInstance
     private:
         std::shared_ptr<const WSObjectsReader> m_reader;
         ObjectId m_objectId;
-        Utf8String m_eTag;
+        const rapidjson::Value* m_instance;
         const rapidjson::Value* m_relationshipInstanceProperties;
         const rapidjson::Value* m_relatedInstance;
         BentleyApi::ECN::ECRelatedInstanceDirection m_direction;
@@ -142,7 +143,7 @@ struct WSObjectsReader::RelationshipInstance
             (
             std::shared_ptr<const WSObjectsReader> adapter,
             ObjectId objectId,
-            Utf8StringCR eTag,
+            const rapidjson::Value* instance,
             const rapidjson::Value* relationshipInstanceProperties,
             const rapidjson::Value* relatedInstance,
             BentleyApi::ECN::ECRelatedInstanceDirection direction
@@ -150,7 +151,7 @@ struct WSObjectsReader::RelationshipInstance
 
         WSCLIENT_EXPORT bool IsValid () const;
         WSCLIENT_EXPORT ObjectIdCR GetObjectId () const;
-        WSCLIENT_EXPORT Utf8CP GetETag () const;
+        WSCLIENT_EXPORT Utf8String GetETag () const;
         WSCLIENT_EXPORT RapidJsonValueCR GetProperties () const;
         WSCLIENT_EXPORT BentleyApi::ECN::ECRelatedInstanceDirection GetDirection () const;
         WSCLIENT_EXPORT Instance GetRelatedInstance () const;

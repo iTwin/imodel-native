@@ -14,8 +14,9 @@ static rapidjson::Value s_emptyArrayJsonObject (rapidjson::Type::kArrayType);
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReaderV2::WSObjectsReaderV2 () :
-m_instanceCount (0)
+WSObjectsReaderV2::WSObjectsReaderV2 (bool quoteInstanceETags) :
+m_instanceCount (0),
+m_quoteInstanceETags (quoteInstanceETags)
     {
     }
 
@@ -29,9 +30,9 @@ WSObjectsReaderV2::~WSObjectsReaderV2 ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<WSObjectsReaderV2> WSObjectsReaderV2::Create ()
+std::shared_ptr<WSObjectsReaderV2> WSObjectsReaderV2::Create (bool quoteInstanceETags)
     {
-    return std::shared_ptr<WSObjectsReaderV2> (new WSObjectsReaderV2 ());
+    return std::shared_ptr<WSObjectsReaderV2> (new WSObjectsReaderV2 (quoteInstanceETags));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -104,17 +105,6 @@ WSObjectsReader::Instance WSObjectsReaderV2::ReadInstance (const rapidjson::Valu
         return Instance (shared_from_this ());
         }
 
-    Utf8String eTag;
-    if (!instanceData["eTag"].IsNull ())
-        {
-        // HACK: temporary workaround to eTags not having quotes
-        eTag.Sprintf ("\"%s\"", instanceData["eTag"].GetString ());
-        }
-    else
-        {
-        eTag = nullptr;
-        }
-
     const rapidjson::Value* instanceProperties = &instanceData["properties"];
     if (!instanceProperties->IsObject ())
         {
@@ -137,7 +127,7 @@ WSObjectsReader::Instance WSObjectsReaderV2::ReadInstance (const rapidjson::Valu
         relationshipInstancesData = &s_emptyArrayJsonObject;
         }
 
-    return Instance (shared_from_this (), objectId, eTag, instanceProperties, relationshipInstancesData);
+    return Instance (shared_from_this (), objectId, &instanceData, instanceProperties, relationshipInstancesData);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -183,17 +173,6 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV2::GetRelationshipInstance
         return RelationshipInstance (shared_from_this ());
         }
 
-    Utf8String eTag;
-    if (!(*relationshipInstance)["eTag"].IsNull ())
-        {
-        // HACK: temporary workaround to eTags not having quotes
-        eTag.Sprintf ("\"%s\"", (*relationshipInstance)["eTag"].GetString ());
-        }
-    else
-        {
-        eTag = nullptr;
-        }
-
     const rapidjson::Value* instanceProperties = &(*relationshipInstance)["properties"];
     if (instanceProperties->IsNull ())
         {
@@ -228,5 +207,30 @@ WSObjectsReader::RelationshipInstance WSObjectsReaderV2::GetRelationshipInstance
         return RelationshipInstance (shared_from_this ());
         }
 
-    return RelationshipInstance (shared_from_this (), objectId, eTag, instanceProperties, relatedInstance, direction);
+    return RelationshipInstance (shared_from_this (), objectId, relationshipInstance, instanceProperties, relatedInstance, direction);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WSObjectsReaderV2::GetInstanceETag (const rapidjson::Value* instance) const
+    {
+    Utf8String eTag;
+    if (!(*instance)["eTag"].IsString ())
+        {
+        return eTag;
+        }
+
+    Utf8CP eTagStr = (*instance)["eTag"].GetString ();
+
+    if (m_quoteInstanceETags)
+        {
+        eTag.Sprintf ("\"%s\"", eTagStr);
+        }
+    else
+        {
+        eTag = eTagStr;
+        }
+
+    return eTag;
     }

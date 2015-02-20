@@ -109,6 +109,8 @@ struct WebApiV1 : public WebApi
         WebApiV1 (std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);
         virtual ~WebApiV1 ();
 
+        static bool IsSupported (WSInfoCR info);
+
         virtual MobileDgn::Utils::AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,
