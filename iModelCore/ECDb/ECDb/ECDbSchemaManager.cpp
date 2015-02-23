@@ -42,7 +42,7 @@ BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaList& schemas, bool ensur
         return stat;
 
     schemas.clear();
-    for (ECSchemaKey schemaKey : schemaKeys)
+    for (ECSchemaKey const& schemaKey : schemaKeys)
         {
         ECSchemaCP out = GetECSchema (schemaKey.GetECSchemaId (), ensureAllClassesLoaded);
         if (out == nullptr)
