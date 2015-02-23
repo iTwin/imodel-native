@@ -2070,7 +2070,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
     EXPECT_EQ (BE_SQLITE_OK, stat);
 
-    DbECSchemaKeys schemasInDb;
+    ECSchemaKeys schemasInDb;
     //Get DbECSchemaKeys
     ECSchemaList ecDbSchemaList;
 
@@ -2104,7 +2104,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
 
     //////////////////////////////////////////////////////////////////////
     db.ClearECDbCache();
-    DbECClassKeys inSchemaClassKeys;
+    ECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov(L"No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
     EXPECT_EQ (57, inSchemaClassKeys.size());
@@ -2114,7 +2114,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     double totalTime = 0;
     for(int i=0; i < maxClassesToLoad; i++)
         {
-        DbECClassKey key = inSchemaClassKeys[(int)(((float)rand()/RAND_MAX)*(inSchemaClassKeys.size()-1))];
+        ECClassKey key = inSchemaClassKeys[(int)(((float)rand()/RAND_MAX)*(inSchemaClassKeys.size()-1))];
         randomClassSW.Init(true);
         EXPECT_TRUE (nullptr != schemaManager.GetECClass (key.GetECClassId ()));
         randomClassSW.Stop();
@@ -2128,28 +2128,20 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     EXPECT_EQ (SUCCESS, schemaManager.GetECSchemaKeys (schemasInDb));
 
     LOG.infov (L"Testing SchemaManager APIs");
-    for (DbECSchemaKey schemaKey : schemasInDb)
+    for (ECSchemaKey const& schemaKey : schemasInDb)
         {
-         //Check ContainsECSchema() and all overloads
-         EXPECT_TRUE ( schemaManager.ContainsECSchema(schemaKey.GetName()) == true); // Schema normal name without version
-         //Check GetECCSchema() and all overloads. Full ecschema are loaded in this case
          ECSchemaCP outSchema = schemaManager.GetECSchema (schemaKey.GetName ());
          EXPECT_TRUE(outSchema != nullptr);
          EXPECT_TRUE(outSchema->HasId());
          ECSchemaId ecSchemaId = outSchema->GetId();
          EXPECT_TRUE(ecSchemaId != 0);
 
-         outSchema = schemaManager.GetECSchema(schemaKey.GetFullName().c_str());
-         EXPECT_TRUE(outSchema == nullptr);
-
-         DbECClassKeys classKeys;
-         EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys(classKeys, schemaKey));
+         ECClassKeys classKeys;
+         EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys(classKeys, schemaKey.GetName ()));
          //verify GetECClass() class API
-         for (DbECClassKey classKey : classKeys)
+         for (ECClassKey const& classKey : classKeys)
              {
-             ECClassCP outClass = schemaManager.GetECClass (classKey);
-             EXPECT_TRUE(outClass != nullptr);
-             outClass = schemaManager.GetECClass (classKey.GetECClassId ());
+             auto outClass = schemaManager.GetECClass (classKey.GetECClassId ());
              EXPECT_TRUE(outClass != nullptr);
              outClass = schemaManager.GetECClass (schemaKey.GetName (), classKey.GetName ());
              EXPECT_TRUE(outClass != nullptr);

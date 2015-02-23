@@ -1373,7 +1373,7 @@ DbResult ECDbSchemaPersistence::ResolveECSchemaId (Utf8StringR schemaName, uint3
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetECSchemaKeys (DbECSchemaKeysR keys, BeSQLite::Db& db)
+DbResult ECDbSchemaPersistence::GetECSchemaKeys (ECSchemaKeys& keys, BeSQLite::Db& db)
     {
     keys.clear ();
     BeSQLite::CachedStatementPtr stmt = nullptr;
@@ -1384,7 +1384,7 @@ DbResult ECDbSchemaPersistence::GetECSchemaKeys (DbECSchemaKeysR keys, BeSQLite:
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
         {
         keys.push_back (
-            DbECSchemaKey (
+            ECSchemaKey (
             stmt->GetValueInt64 (0),
             stmt->GetValueText (1),
             (uint32_t) stmt->GetValueInt (2),
@@ -1549,7 +1549,7 @@ DbResult ECDbSchemaPersistence::GetBaseECClasses (ECClassIdListR baseClassIds, E
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetECClassKeys (DbECClassKeysR keys, ECSchemaId schemaId, BeSQLite::Db& db) // WIP_FNV: take a name, instead... and modify the where clause
+DbResult ECDbSchemaPersistence::GetECClassKeys (ECClassKeys& keys, ECSchemaId schemaId, BeSQLite::Db& db) // WIP_FNV: take a name, instead... and modify the where clause
     {
     keys.clear ();
     BeSQLite::CachedStatementPtr stmt = nullptr;
@@ -1561,7 +1561,7 @@ DbResult ECDbSchemaPersistence::GetECClassKeys (DbECClassKeysR keys, ECSchemaId 
     while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
         {
         keys.push_back (
-            DbECClassKey (
+            ECClassKey (
             stmt->GetValueInt64 (0),
             stmt->GetValueText (1),
             (stmt->IsColumnNull (2) ? (Utf8CP)nullptr : stmt->GetValueText (2))));

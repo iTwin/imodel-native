@@ -444,8 +444,11 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="MapStrategy.h">
+      <Filter>ECDbMap\Map</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

@@ -16,64 +16,49 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE DbECSchemaKey
+struct ECSchemaKey
     {
-    private:
-        ECN::ECSchemaId  m_ecSchemaId;
-        Utf8String  m_schemaName;
-        Utf8String  m_displayLabel;
-        uint32_t    m_versionMajor;
-        uint32_t    m_versionMinor;
-    public:
-        ECDB_EXPORT         uint32_t            GetVersionMajor     () const;
-        ECDB_EXPORT         uint32_t            GetVersionMinor     () const;
-        ECDB_EXPORT         Utf8CP              GetName             () const;
-        ECDB_EXPORT         Utf8String          GetFullName         () const;
-        ECDB_EXPORT         Utf8CP              GetDisplayLabel     () const;
-                            ECN::ECSchemaId     GetECSchemaId       () const ;
-                            bool                HasECSchemaId       () const { return m_ecSchemaId != 0; };
-                            void                SetECSchemaId       (ECN::ECSchemaId ecSchemaId) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = ecSchemaId; };
-        ECDB_EXPORT                             DbECSchemaKey       (ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel=nullptr);
-        ECDB_EXPORT                             DbECSchemaKey       (); // WIP_FNV: stop exporting these
-        ECDB_EXPORT virtual                     ~DbECSchemaKey      ();
-        ECDB_EXPORT static  ECN::ECObjectsStatus ParseSchemaFullName (DbECSchemaKey& key, Utf8CP schemaFullName);
+private:
+    ECN::ECSchemaId m_ecSchemaId;
+    Utf8String m_name;
+    Utf8String m_displayLabel;
+    uint32_t m_versionMajor;
+    uint32_t m_versionMinor;
+public:
+    ECSchemaKey (ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel = nullptr)
+        : m_ecSchemaId (ecSchemaId), m_name (name), m_versionMajor (versionMajor), m_versionMinor (versionMinor), m_displayLabel (displayLabel) {}
+
+    ECN::ECSchemaId GetECSchemaId () const {BeAssert (m_ecSchemaId != 0ULL); return m_ecSchemaId;}
+    uint32_t GetVersionMajor () const {return m_versionMajor;}
+    uint32_t GetVersionMinor () const {return m_versionMinor; }
+    Utf8CP GetName () const {return m_name.c_str ();}
+    Utf8CP GetDisplayLabel () const {return m_displayLabel.empty () ? GetName () : m_displayLabel.c_str ();}
     };
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct EXPORT_VTABLE_ATTRIBUTE DbECClassKey
+struct ECClassKey
     {
-    private:
-        Utf8String        m_name;
-        Utf8String        m_displayLabel;
-        ECN::ECClassId         m_ecClassId;
-    public:
-        ECDB_EXPORT                    DbECClassKey    (ECN::ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel = nullptr);
-        ECDB_EXPORT          Utf8CP    GetName         () const;
-        ECDB_EXPORT          Utf8CP    GetDisplayLabel () const;
-        ECDB_EXPORT          ECN::ECClassId GetECClassId    () const;
-
-        ECDB_EXPORT virtual            ~DbECClassKey ();
+private:
+    ECN::ECClassId m_ecClassId;
+    Utf8String m_name;
+    Utf8String m_displayLabel;
+public:
+    ECClassKey (ECN::ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel = nullptr) : m_ecClassId (ecClassId), m_name (name), m_displayLabel (displayLabel) {}
+    ECN::ECClassId GetECClassId () const {return m_ecClassId;}
+    Utf8CP GetName () const {return m_name.c_str ();}
+    Utf8CP GetDisplayLabel () const {return m_displayLabel.empty () ? GetName () : m_displayLabel.c_str ();}
     };
 
-//__PUBLISH_SECTION_END__
-typedef DbECSchemaKey const& DbECSchemaKeyCR;
-typedef bvector<DbECSchemaKey> DbECSchemaKeys;
-typedef DbECSchemaKeys& DbECSchemaKeysR;
-
-typedef DbECClassKey const& DbECClassKeyCR;
-
-typedef bvector<DbECClassKey> DbECClassKeys;
-typedef DbECClassKeys& DbECClassKeysR;
+typedef bvector<ECSchemaKey> ECSchemaKeys;
+typedef bvector<ECClassKey> ECClassKeys;
 
 struct SchemaImportContext;
 
 //__PUBLISH_SECTION_START__
 
 typedef bvector<ECN::ECSchemaCP> ECSchemaList;
-typedef ECSchemaList& ECSchemaListR;
-
 
 //=======================================================================================
 //! The ECDbSchemaManager manages @ref ECN::ECSchema "ECSchemas" in the @ref ECDbFile "ECDb file". 
@@ -228,6 +213,8 @@ private:
     void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
     static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
     static bool AssertOnDuplicateCopyOfSchema(const bvector<ECN::ECSchemaP>& schema);
+    
+    bool ContainsECSchema (Utf8CP schemaName) const;
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
     //! @param[in] ecClass ECClass whose direct subclasses should be loaded
@@ -274,21 +261,17 @@ public:
     //! @param[in] ensureAllClassesLoaded true, if all classes in the ECSchema should be proactively loaded into memory. false,
     //!                                   if they are loaded on-demand.
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR
-    ECDB_EXPORT BentleyStatus GetECSchemas (ECSchemaListR schemas, bool ensureAllClassesLoaded = true) const;
+    ECDB_EXPORT BentleyStatus GetECSchemas (ECSchemaList& schemas, bool ensureAllClassesLoaded = true) const;
 
 //__PUBLISH_SECTION_END__
 
     //replace following and it should return DbECSchemaKeys
     // Keys base functions
-    ECDB_EXPORT BentleyStatus GetECSchemaKeys (DbECSchemaKeysR keys) const;
-    ECDB_EXPORT BentleyStatus GetECClassKeys (DbECClassKeysR keys, DbECSchemaKeyCR schemaKey) const;
-    ECDB_EXPORT BentleyStatus GetECClassKeys (DbECClassKeysR keys, ECN::ECSchemaId schemaId) const;
-    ECDB_EXPORT BentleyStatus GetECClassKeys (DbECClassKeysR keys, Utf8CP schemaName) const;
+    ECDB_EXPORT BentleyStatus GetECSchemaKeys (ECSchemaKeys& keys) const;
+    ECDB_EXPORT BentleyStatus GetECClassKeys (ECClassKeys& keys, Utf8CP schemaName) const;
 
 
     //! The function accepts normal or full schema name. But it only considers ECSchema name without version.
-    ECDB_EXPORT bool ContainsECSchema (Utf8CP schemaName) const;
-    ECDB_EXPORT bool ContainsECSchema (ECN::ECSchemaId ecSchemaId) const;
 
 //__PUBLISH_SECTION_START__
     //! Gets the ECClass for the specified name.
@@ -327,9 +310,11 @@ public:
     ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses (ECN::ECClassCR baseECClass) const;
 
 //__PUBLISH_SECTION_END__
-    ECDB_EXPORT ECN::ECClassCP GetECClass (DbECClassKeyCR key) const;
-
     
+    //! Return true if the given @p ecPropertyId is a key property in an ECN::ECRelationshipConstraint 
+    //! @param[in] ecPropertyId The Id of the ECProperty to check
+    bool IsRelationshipConstraintKeyProperty (ECN::ECPropertyId ecPropertyId) const;
+
     //! For cases where we are working with an ECClass in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECClassId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
@@ -354,10 +339,6 @@ public:
     void ClearCache () const;
     ECDbCR GetECDb () const;
     //__PUBLISH_SECTION_START__
-    //! 
-    //! Return true of the given @ecproprtyId is in Relationship Constraing Class 
-    //! @param ecPropertyId. the property id of ECProperty
-    ECDB_EXPORT bool IsRelationshipConstraintKeyProperty (ECN::ECPropertyId ecPropertyId)const;
     };
 
 typedef ECDbSchemaManager const& ECDbSchemaManagerCR;

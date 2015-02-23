@@ -12,95 +12,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DbECSchemaKey::GetVersionMajor () const { return m_versionMajor;}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DbECSchemaKey::GetVersionMinor () const { return m_versionMinor;}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DbECSchemaKey::GetName () const { return m_schemaName.c_str();}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DbECSchemaKey::GetDisplayLabel () const { return m_displayLabel.empty() ? GetName() : m_displayLabel.c_str();}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DbECSchemaKey::GetFullName () const
-    {
-    return SqlPrintfString("%s.%02d.%02d",  m_schemaName.c_str(), m_versionMajor, m_versionMinor).GetUtf8CP();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaId  DbECSchemaKey::GetECSchemaId   () const { BeAssert (0 != m_ecSchemaId); return m_ecSchemaId; }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbECSchemaKey::~DbECSchemaKey ()
-    {
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbECSchemaKey::DbECSchemaKey (ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel)
-    :m_ecSchemaId (ecSchemaId), m_schemaName (name), m_versionMajor (versionMajor), m_versionMinor (versionMinor)
-    {
-    if (displayLabel)
-        m_displayLabel = displayLabel;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbECSchemaKey::DbECSchemaKey ()
-    :m_ecSchemaId (0), m_schemaName (L""), m_versionMajor (0), m_versionMinor (0)
-    {
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP  DbECClassKey::GetName () const { return m_name.c_str();}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP  DbECClassKey::GetDisplayLabel () const { return  m_displayLabel.empty() ? GetName() : m_displayLabel.c_str(); }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId DbECClassKey::GetECClassId () const { return m_ecClassId; }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbECClassKey::~DbECClassKey ()
-    {
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbECClassKey::DbECClassKey (ECClassId ecClassId, Utf8CP name, Utf8CP displayLabel)
-    : m_ecClassId(ecClassId), m_name(name)
-    {
-    if (displayLabel)
-        m_displayLabel = displayLabel;
-    }
 
 //******************************** ECDbSchemaManager ****************************************
 /*---------------------------------------------------------------------------------------
@@ -123,15 +34,15 @@ ECDbSchemaManager::~ECDbSchemaManager ()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaListR schemas, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaManager::GetECSchemas (ECSchemaList& schemas, bool ensureAllClassesLoaded) const
     {
-    DbECSchemaKeys schemaKeys;
+    ECSchemaKeys schemaKeys;
     auto stat = GetECSchemaKeys(schemaKeys);
     if (stat != SUCCESS)
         return stat;
 
     schemas.clear();
-    for (DbECSchemaKey schemaKey : schemaKeys)
+    for (ECSchemaKey schemaKey : schemaKeys)
         {
         ECSchemaCP out = GetECSchema (schemaKey.GetECSchemaId (), ensureAllClassesLoaded);
         if (out == nullptr)
@@ -509,15 +420,6 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllCl
         return nullptr;
     }
 
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaManager::ContainsECSchema (ECSchemaId ecSchemaId) const
-    {
-    return ECDbSchemaPersistence::ContainsECSchemaWithId (m_ecdb, ecSchemaId);
-    }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -525,14 +427,6 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
     {
     PRECONDITION(schemaName != nullptr && "Schema name should not be null", false);
     return 0 != ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (DbECClassKeyCR key) const
-    {
-    return GetECClass(key.GetECClassId());
     }
 
 /*---------------------------------------------------------------------------------------
@@ -604,7 +498,7 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR ba
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECSchemaKeys (DbECSchemaKeysR keys) const
+BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
     {
     return (ECDbSchemaPersistence::GetECSchemaKeys(keys, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
     }
@@ -612,30 +506,11 @@ BentleyStatus ECDbSchemaManager::GetECSchemaKeys (DbECSchemaKeysR keys) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECClassKeys (DbECClassKeysR  keys, DbECSchemaKeyCR schemaKey) const
-    {
-    if (schemaKey.HasECSchemaId())
-        return GetECClassKeys (keys, schemaKey.GetECSchemaId());
-    else
-        return GetECClassKeys (keys, schemaKey.GetName());
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECClassKeys (DbECClassKeysR  keys, ECSchemaId schemaId) const
-    {
-    return (ECDbSchemaPersistence::GetECClassKeys(keys, schemaId, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::GetECClassKeys (DbECClassKeysR  keys, Utf8CP schemaName) const
+BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schemaName) const
     {
     PRECONDITION(schemaName != nullptr && "schemaName parameter cannot be null", ERROR);
     ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName);
-    return GetECClassKeys(keys, schemaId);
+    return (ECDbSchemaPersistence::GetECClassKeys (keys, schemaId, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
