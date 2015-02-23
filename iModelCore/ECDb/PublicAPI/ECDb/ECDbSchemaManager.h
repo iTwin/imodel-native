@@ -25,7 +25,7 @@ private:
     uint32_t m_versionMajor;
     uint32_t m_versionMinor;
 public:
-    ECSchemaKey (ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel = nullptr)
+    ECSchemaKey (ECN::ECSchemaId ecSchemaId, Utf8CP name, uint32_t versionMajor, uint32_t versionMinor, Utf8CP displayLabel)
         : m_ecSchemaId (ecSchemaId), m_name (name), m_versionMajor (versionMajor), m_versionMinor (versionMinor), m_displayLabel (displayLabel) {}
 
     ECN::ECSchemaId GetECSchemaId () const {BeAssert (m_ecSchemaId != 0ULL); return m_ecSchemaId;}
