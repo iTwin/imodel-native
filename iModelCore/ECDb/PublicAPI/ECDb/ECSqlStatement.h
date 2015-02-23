@@ -571,8 +571,6 @@ public:
 
 typedef ECSqlStatement const& ECSqlStatementCR;
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //! A reference-counted ECSqlStatement. ECSqlStatement is freed when last reference is released.
 // @bsiclass                                                    Krischan.Eberle   02/15
@@ -594,6 +592,8 @@ public:
     };
 
 typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
+
+//__PUBLISH_SECTION_END__
 
 //=======================================================================================
 //! A cache of shared ECSqlStatements that can be reused without re-preparing. 
