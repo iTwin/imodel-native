@@ -2417,6 +2417,13 @@ public:
     //! @return The name of the physical file associated with this Db. NULL if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
 
+    //! Save a BeProjectGuid for this Db.
+    BE_SQLITE_EXPORT void SaveProjectGuid(BeGuid);
+
+    //! Query the BeProjectGuid for this Db.
+    //! @see SaveMyProjectGuid
+    BE_SQLITE_EXPORT BeGuid QueryProjectGuid() const;
+
     //! Saves the current date and time as the CreationDate property of this database.
     //! @return BE_SQLITE_OK if property was successfully saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveCreationDate();
@@ -3234,6 +3241,7 @@ struct Properties
     {
     static PropSpec DbGuid()            {return PropSpec("DbGuid");}
     static PropSpec SchemaVersion()     {return PropSpec("SchemaVersion");}
+    static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
     //! The date and time when the Db was created.
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}

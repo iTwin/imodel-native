@@ -1325,6 +1325,27 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void Db::SaveProjectGuid(BeGuid projectGuid)
+    {
+    if (!projectGuid.IsValid())
+        projectGuid.Create();
+
+    SaveProperty (Properties::ProjectGuid(), (void*) &projectGuid, sizeof(projectGuid));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/11
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid Db::QueryProjectGuid() const
+    {
+    BeGuid projectGuid(false);
+    QueryProperty (&projectGuid, sizeof(projectGuid), Properties::ProjectGuid());
+    return  projectGuid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 Db::OpenParams::OpenParams (OpenMode openMode, StartDefaultTransaction defaultTxn, BusyRetry* retry)
