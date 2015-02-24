@@ -51,7 +51,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WSClientUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
+    <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
         <!-- Get the tested API -->
         <SubPart    PartName="WebServicesClient" />
         <!-- Needed for published unit tests -->
