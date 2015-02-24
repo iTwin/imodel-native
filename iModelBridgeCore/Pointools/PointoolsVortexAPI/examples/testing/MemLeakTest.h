@@ -6,7 +6,7 @@ MemLeakTest.h
 
 Test specific mem leak issue - not for distribution
 
-(c) Copyright 2008-12 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_INTERNAL_MEM_LEAK

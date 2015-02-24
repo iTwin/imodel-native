@@ -4,7 +4,7 @@ Pointools Vortex API Examples
 
 TuningTool.cpp
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "TuningTool.h"

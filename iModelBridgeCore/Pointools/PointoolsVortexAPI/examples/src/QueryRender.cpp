@@ -7,7 +7,9 @@ QueryRender.cpp
 Provides query based rendering - demonstrates query capability and rendering
 values from user channels
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+
+//----------------------------------------------------------------------------
 
 *******************************************************************************/
 #include "QueryRender.h"

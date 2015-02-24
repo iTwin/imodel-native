@@ -9,7 +9,7 @@ Demonstrates the use of layers as point cloud sub objects.
 Note that this class is both a Tool and a Renderer since 
 per point cloud layers requires a different rendering approach
 
-(c) Copyright 2014-15 Bentley Systems 
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_APP_SUBOBJECTS_TOOL_H_

@@ -1,7 +1,11 @@
 //----------------------------------------------------------------------------------------
-// POD Writer class
+//
+// PodWriterWrapper.h
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
 //----------------------------------------------------------------------------------------
-// (c) Copyright Pointools Ltd 2010. All Rights Reserved
+// POD Writer class
 //----------------------------------------------------------------------------------------
 #ifndef POINTOOOLS_POD_WRITER_WRAPPER
 #define POINTOOOLS_POD_WRITER_WRAPPER

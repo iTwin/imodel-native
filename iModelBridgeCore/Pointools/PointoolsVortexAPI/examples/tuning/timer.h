@@ -1,3 +1,10 @@
+//----------------------------------------------------------------------------
+//
+// timer.h
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 #ifndef POINTOOLS_PEFORMANCE_TIMER_INCLUDE
 #define POINTOOLS_PEFORMANCE_TIMER_INCLUDE
 

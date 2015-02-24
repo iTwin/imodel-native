@@ -6,7 +6,7 @@ EditTool.h
 
 Demonstrates layer based point editing capabilities of Vortex
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_APP_EDIT_TOOL_H_
@@ -94,7 +94,9 @@ public:
 		CmdEvalMode			 = 399,
 
 		CmdLayersToChannel   = 365,
-		CmdChannelToLayers	 = 366
+		CmdChannelToLayers	 = 366,
+		CmdSaveLayersFile	 = 367,
+		CmdLoadLayersFile	 = 368
 	};
 
 	EditTool(bool simple);	// simple = true, for no layers or scope 
@@ -143,6 +145,9 @@ private:
 	void	setCloudScope();
 	void	selectCloudTest();
 	void	selectSceneTest();
+
+	void	saveLayerChannels();
+	void	loadLayerChannels();
 
 	void	layersToChannel();
 	void	channelToLayers();

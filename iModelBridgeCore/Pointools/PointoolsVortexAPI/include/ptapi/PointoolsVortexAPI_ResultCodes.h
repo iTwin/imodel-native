@@ -1,3 +1,10 @@
+//----------------------------------------------------------------------------
+//
+// PointoolsVortexAPI_ResultCodes.h
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 #ifndef POINTOOLSVORTEXAPI_RESULT_CODES_HEADER
 #define POINTOOLSVORTEXAPI_RESULT_CODES_HEADER	1
 

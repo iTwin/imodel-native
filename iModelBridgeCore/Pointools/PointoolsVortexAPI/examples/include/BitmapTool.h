@@ -6,7 +6,7 @@ BitmapTool.h
 
 Demonstrates creating a Bitmap Viewport and saving a screenshot
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_APP_BITMAP_TOOL_H_

@@ -8,36 +8,32 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_APP_CLOUD_VISIBILITY_TOOL_H_
-#define POINTOOLS_EXAMPLE_APP_CLOUD_VISIBILITY_TOOL_H_
+#define POINTOOLS_EXAMPLE_APP_CLOUD_TRANSFORM_TOOL_H_
 
 #include "VortexExampleApp.h"
 
-/** Simple tool that shows a list of currently loaded clouds IDs and lets you
- show/hide them using ptShowScene()
+/** Simple tool that enables the transformation of the first scene loaded
  */
-class CloudVisibilityTool : public Tool
+class TransformTool : public Tool
 {
 public:
 	enum
 	{
-		CmdShowCloud = 4500,
-		CmdHideCloud = 4501
+		CmdMoveLeft		= 8500,
+		CmdMoveRight	= 8501,
+		CmdMoveForward	= 8502,
+		CmdMoveBack		= 8503,
+		CmdMoveUp		= 8504,
+		CmdMoveDown		= 8505,
+		CmdMoveReset	= 8506
 	};
 
-	CloudVisibilityTool();
+	TransformTool();
 
 	void buildUserInterface(GLUI_Node *parent);
 	void command( int cmdId );
 	
 private:
-	PThandle getSelectedCloudHandle();
-	void updateCloudList();
-
-	std::string		m_cloudInfo;
-	GLUI_List*		m_cloudTextBox;
-	
-	typedef std::vector<PThandle> CloudList;
-	CloudList m_cloudList;
 
 };
 

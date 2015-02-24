@@ -1,3 +1,10 @@
+//----------------------------------------------------------------------------
+//
+// leak-test.cpp
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 void  testMemoryLeak()
 {
     int             vectorSize = 5000;

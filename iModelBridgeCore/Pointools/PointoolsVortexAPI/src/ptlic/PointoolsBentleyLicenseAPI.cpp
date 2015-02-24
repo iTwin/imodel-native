@@ -23,15 +23,19 @@ bool getLicenseStatusDescription(PointoolsBentleyLicense::LicenseDescriptionSet 
 	return pointoolsBentleyLicense.getLicenseDescription(description);
 }
 
-bool startLicenseBentley(void)
+bool startLicenseBentley(const PointoolsBentleyLicense::ProductVersion& productVersion)
 {
 	PointoolsBentleyLicense::Status			status;
 	PointoolsBentleyLicense::LicenseStatus	licenseStatus;
 	bool success = false;
+							
 
 	PointoolsBentleyLicense &pointoolsBentleyLicense = thePointoolsBentleyLicense();
+
 															// Initialize licensing system, use the Bentley Pointools product ID even though we are licensing Vortex
-	if((status = pointoolsBentleyLicense.initialize(pt::String(BENTLEY_POINTOOLS_PRODUCT_NAME), BENTLEY_POINTOOLS_PRODUCT_ID , pt::String("00.00.00.00"), pt::String(L""), pt::String(L".\\"))) != PointoolsBentleyLicense::Status_OK)
+															// Note that sending a "feature" param here returns a "Trial" license which is not what we want, also
+															// a version number not in the form xx.xx.xx.xx is not accepted (e.g. 02.00.00.205 will not work).
+	if((status = pointoolsBentleyLicense.initialize(pt::String(BENTLEY_POINTOOLS_PRODUCT_NAME), BENTLEY_POINTOOLS_PRODUCT_ID , productVersion, pt::String(L""), pt::String(L".\\"))) != PointoolsBentleyLicense::Status_OK)
 	{
 		return false;
 	}

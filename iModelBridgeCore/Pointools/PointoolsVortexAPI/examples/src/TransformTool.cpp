@@ -4,7 +4,7 @@ Pointools Vortex API Examples
 
 TransformTOol.cpp
 
-(c) Copyright 2015 Bentley
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "TransformTool.h"

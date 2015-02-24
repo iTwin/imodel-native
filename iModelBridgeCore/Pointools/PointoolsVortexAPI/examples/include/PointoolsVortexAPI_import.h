@@ -4,7 +4,7 @@
 //  Header file for Pointools Vortex API
 //  For API Import only
 //  -------------------------------------------------------------
-//  Copyright (C) Pointools Ltd 2007-09 - All Rights Reserved
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 // ***************************************************************
 // 
 // ***************************************************************

@@ -4,7 +4,7 @@ Pointools Vortex API usage example
 
 * CLIENT SERVER EXAMPLE *
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 These example uses GLUT and GLUI to set up a simple UI and demonstrate
 the use of the Pointools Vortex API those a series of examples

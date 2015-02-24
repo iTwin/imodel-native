@@ -2,12 +2,13 @@
 Pointools Vortex / PointoolsIO PODFormats API Release Notes
 
 
-Version: 2.0.0.205 : Release Date 18 February 2015
+Version: 2.0.0.205 : Release Date 19 February 2015
 ====================================================================================================
 
 Vortex API
 ----------
-+ Added SELECT licensing to Vortex
++ Fixed: layer persistence 
++ Added: SELECT licensing to Vortex
 
 Pointools IO
 ------------

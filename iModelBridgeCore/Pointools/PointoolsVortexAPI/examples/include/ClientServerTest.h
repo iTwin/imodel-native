@@ -6,7 +6,7 @@ ClientServer.h
 
 Demonstrates basic client server operation
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_APP_CLIENT_SERVER_TOOL_H_

@@ -280,7 +280,6 @@ const PTstr PTAPI ptGetVersionString()
 {
 	return L"Pointools Vortex 2.0.0.205";
 }
-
 void PTAPI ptGetVersionNum(PTubyte *version)
 {
 	version[0] = 2;
@@ -288,6 +287,18 @@ void PTAPI ptGetVersionNum(PTubyte *version)
 	version[2] = 0;
 	version[3] = 205;
 }
+
+//-------------------------------------------------------------------------------
+// (not a published API, for internal use only)
+//-------------------------------------------------------------------------------
+const PTstr getShortVersionString()
+{
+	// this string is used with SELECT and must be of the form xx.xx.xx.xx
+	// Note that versions of the for xx.xx.xx.xxx are not accepted by the 
+	// Bentley licensing lib.
+	return L"02.00.00.20";
+}
+
 //-------------------------------------------------------------------------------
 // demo license code and some global stuff
 //-------------------------------------------------------------------------------
@@ -626,8 +637,9 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 		// Note that any ditribution of Vortex that uses SELECT licensing now requires the bentley licensing DLLs to be distributed with it
 		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL. 
 		if (useSELECTLicense(company, module, type, ex, expires))
-		{
-			if(startLicenseBentley() == false) 
+		{					
+			const PointoolsBentleyLicense::ProductVersion productVersion(getShortVersionString());			
+			if(startLicenseBentley(productVersion) == false) 
 			{
 				setLastErrorCode( PTV_NO_LICENSE_FOR_FEATURE );	
 				return PT_FALSE;		

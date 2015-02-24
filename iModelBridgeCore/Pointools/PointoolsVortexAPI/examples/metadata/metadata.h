@@ -1,3 +1,8 @@
+//----------------------------------------------------------------------------
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 // metadata.h : main header file for the PROJECT_NAME application
 //
 

@@ -6,7 +6,9 @@ QueryBuffer.cpp
 
 Encapsulates query based point extraction from Vortex into buffers
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+
+//----------------------------------------------------------------------------
 
 *******************************************************************************/
 #include "QueryBuffer.h"

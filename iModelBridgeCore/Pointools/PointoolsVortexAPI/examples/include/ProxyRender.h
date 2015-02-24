@@ -6,7 +6,7 @@ ProxyRender.h
 
 Renders results from ptGetSceneProxyPoints
 
-(c) Copyright 2008-12 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_PROXY_RENDERER_H_

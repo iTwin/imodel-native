@@ -1,0 +1,610 @@
+EULA version 2010-09-15-en
+
+END USER LICENSE AGREEMENT FOR BENTLEY 
+SOFTWARE
+
+IMPORTANT - READ CAREFULLY:  This End-User 
+License Agreement ("EULA") is a legal agreement between 
+you (either an individual or a single entity) and Bentley 
+Systems International Limited, if you are located outside of 
+the geographic boundaries of the United States or Canada, or 
+Bentley Systems, Incorporated if you are located within the 
+geographic boundaries of the United States or Canada 
+("Bentley"), for the Bentley software and associated 
+documentation that accompanies this EULA, which includes 
+the associated media and Bentley internet-based services 
+("Software"). 
+
+YOU AGREE TO BE BOUND BY THE TERMS OF 
+THIS EULA BY DOWNLOADING, INSTALLING, 
+COPYING, OR OTHERWISE ACCESSING OR 
+USING THE SOFTWARE.  YOUR ACCEPTANCE OF 
+ALL OF THE TERMS AND CONDITIONS OF THIS 
+EULA IS A CONDITION TO THE GRANT OF 
+LICENSE BELOW.  THIS EULA, AS MAY BE 
+MODIFIED BY ANY APPLICABLE SIGNED 
+WRITTEN AGREEMENT BETWEEN YOU AND 
+BENTLEY, REPRESENTS THE ENTIRE SET OF 
+TERMS AND CONDITIONS GOVERNING YOUR 
+USE OF THE SOFTWARE AND SUPERSEDES ALL 
+PRIOR OR CONTEMPORANEOUS ORAL OR 
+WRITTEN COMMUNICATIONS, PROPOSALS AND 
+PRESENTATIONS WITH RESPECT TO THE 
+SOFTWARE OR THE SUBJECT MATTER OF THE 
+EULA.
+
+If this agreement is translated into a language other than 
+English and there is a conflict of terms between the English 
+and the other language, the English version will control. You 
+should keep a copy of this EULA for your records. The latest 
+version of this EULA appears in its entirety on 
+http://www.bentley.com/legal/eula_en.txt.  Bentley may 
+update or amend the EULA at any time without notice to 
+you; however, the form of EULA in effect at the time of the 
+Software acquisition will apply.  
+
+Section 1:  Terms and Conditions
+
+1.	CERTAIN DEFINITIONS.
+1.1.	"Academic Related Use" means the use of 
+designated Software in object code form solely for 
+internal classroom instruction or research of your 
+teaching staff and/or students matriculated in a 
+degree program and not to include student use in a 
+paid employment setting or any other use 
+prohibited under this EULA.
+1.2.	"Academic Software" means Software that is 
+identified as "Academic Edition" or "Academic 
+License" (or words of similar meaning).
+1.3.	"CAL" means client access license.
+1.4.	"Device" means a single personal computer, 
+workstation, terminal, hand held computer, pager, 
+telephone, personal digital assistant, Server or 
+other electronic device used by a User.
+1.5.	"External User" means any individual (not an 
+organization) who is not: (i) one of your full-time, 
+part-time or temporary employees; or (ii) agency 
+temporary personnel or an independent contractor 
+on assignment at your place of business or work-
+site.
+1.6.	"License Key" means the document furnished to 
+you by Bentley in electronic or such other format, 
+as determined in Bentley's sole discretion, that 
+identifies the Software licensed and authorizes use 
+of the Software.
+1.7.	"Production Use" means use of the Software in 
+object code form by a single User or a Device, as 
+applicable, solely for internal production purposes 
+in support of one Site. 
+1.8.	"Site" means the discrete geographic location 
+where you first install or use the Software.
+1.9.	"Time Clocks" means any time clocks, copy-
+protection mechanisms, or other security devices 
+embedded in the Software which may deactivate 
+the Software after expiration of any applicable 
+subscription or termed license period.
+1.10.	"User" means any individual or entity that is not 
+an External User.
+2.	GRANT OF LICENSE.  As and for so long as you 
+comply with all of the terms of this EULA, Bentley 
+grants you the non-exclusive right to (a) install and use 
+one copy of the Software for Production Use in the 
+country where the Software is first obtained and (b) use 
+the documentation that accompanies the Software for 
+internal, non-commercial reference purposes only.
+3.	RESERVED RIGHTS.   You acknowledge and agree 
+that the Software is a proprietary product of Bentley or 
+its suppliers, distributors and unrelated third parties 
+("Suppliers") protected by copyright and other applicable 
+intellectual property laws and treaty provisions. You 
+further acknowledge and agree that the entire right, title 
+and interest in and to the Software including associated 
+intellectual property rights, shall remain with Bentley or 
+its Suppliers. This license grant may be made by Bentley 
+on behalf of Suppliers as third party beneficiaries of the 
+license rights provided herein. Bentley retains all rights 
+not expressly granted to you in this EULA.  THE 
+SOFTWARE IS LICENSED NOT SOLD.
+4.	REGISTRATION.  You acknowledge that registration 
+or activation may be required in order for you to utilize 
+the full benefits of the Software.  
+5.	NO RENTAL OR COMMERCIAL HOSTING.   
+Software is licensed for Production Use only.  You may 
+not rent, lease, lend or provide commercial hosting 
+services with the Software.  You may also not use the 
+Software to provide fee or transaction based services.  
+Contact Bentley for the availability of alternate pricing if 
+you desire to use the Software in such fashion.
+6.	NO "MULTIPLEXING" OR POOLING.  Use of 
+software or hardware that reduces the number of 
+electronic devices directly monitored or managed by the 
+Software or directly accessing or utilizing the Software 
+(sometimes called "multiplexing" or "pooling" software or 
+hardware) does not reduce the number of licenses 
+required; the number of licenses required would equal the 
+number of distinct inputs to the multiplexing or pooling 
+hardware/software "front end."
+7.	LIMITATIONS ON REVERSE ENGINEERING.  
+You may not decode, reverse engineer, reverse assemble, 
+reverse compile, or otherwise translate the Software 
+except and only to the extent that such activity is 
+expressly permitted by applicable law notwithstanding 
+this limitation.  To the extent that you are expressly 
+permitted by law to undertake any of the activities listed 
+in the previous sentence, you will not exercise those rights 
+until you have provided Bentley with thirty (30) days 
+prior written notice of your intent to exercise such rights.  
+8.	DATA CAPTURE AND USE.  You agree that Bentley 
+may collect and utilize technical information gathered as 
+part of Software support services that may be provided to 
+you.  Data capture in this form will only be used to 
+improve Bentley's products and/or provide customized 
+services to you and will not be disclosed or disseminated 
+to third parties except in an aggregated form.
+9.	ARCHIVAL OR BACKUP COPY.  You may make a 
+reasonable number of backup copies of the Software , 
+provided your backup copies are not installed or used for 
+other than archival purposes..
+10.	RESTRICTIONS ON CERTAIN SOFTWARE.  
+Software identified as demo, evaluation, BDN, Beta or 
+"NFR" (or "Not for Resale" or with words of similar 
+meaning) may not be sold, bartered or otherwise 
+transferred.  Such Software may not be used for any 
+purpose other than your testing or evaluation unless 
+specified otherwise pursuant to a separate agreement 
+signed by both you and Bentley.
+11.	ACADEMIC SOFTWARE.  For Academic Software, 
+Bentley hereby grants you a non-exclusive right and 
+license to use in object code form such Academic 
+Software for Academic Related Use only. You may not 
+sell, barter or otherwise transfer Academic Software. 
+Special Note Applicable to Academic Software:  If you 
+have covered the Academic Software subject to this 
+EULA pursuant to a valid BEN SELECT Agreement (or 
+successor agreement) with Bentley then you may be 
+entitled to additional and incremental licensing benefits 
+to those set forth in this EULA by virtue of that 
+relationship.  In the event that Academic Software is no 
+longer covered by a valid BEN SELECT agreement due 
+to termination of the BEN SELECT agreement or any 
+other reason, then you will lose those incremental 
+benefits, and your license rights will only be as set forth 
+in this EULA.
+12.	TIME CLOCKS. Bentley's default licensing term is 
+perpetual unless otherwise specifically identified for the 
+Software licensed. If you have licensed the Software 
+subject to this EULA for a term shorter than a perpetual 
+license, you acknowledge that the Software may be 
+delivered to you with embedded Time Clocks. You agree 
+that Time Clocks are not considered a defect of the 
+Software and you release Bentley from any and all 
+claims, however characterized, arising from or related to 
+Time Clocks or their operation.
+13.	TRANSFER.  Internal. You may transfer the Software 
+and the EULA to a different Device at the same Site, 
+provided you completely remove the Software from all 
+prior Devices. You may also make a one-time transfer of 
+a CAL to another of your Users or Devices located at the 
+same Site.  In order to accomplish these transfers you 
+may need to contact Bentley. External.  You may not 
+transfer the Software and license granted under this 
+EULA, or a CAL, to a third party without Bentley's prior 
+written consent. If such consent is obtained, you may 
+permanently transfer the Software and the license granted 
+under this EULA, or the CAL, provided you transfer the 
+Software and all and media to such third party, and you 
+do not retain any copies. The recipient of such transfer 
+must agree to all terms and conditions of the EULA. Any 
+purported sublicense, assignment, transfer or 
+encumbrance is void without Bentley's prior consent.
+14.	UPGRADES.  You may not use any Software identified 
+as an upgrade unless you are properly licensed to use 
+Software which Bentley has identified as being eligible 
+for an upgrade.  After installing an upgrade, you may use 
+the original Software product that was eligible for an 
+upgrade provided that at any one time you use only the 
+upgraded Software or the prior Software version subject 
+to the upgrade.  
+15.	NO EXTENSION OF CAPABILITIES.  You may 
+develop your own applications that interoperate or 
+integrate with the Software.  Bentley prices its Software, 
+among other factors, based on capabilities that we expose 
+to you.  You may not extend the Software to enable or 
+unlock capabilities of the Software not specifically 
+identified by Bentley as forming part of the specified end 
+user functionality.   
+16.	SEPARATION OF COMPONENTS.  The Software is 
+licensed as a single product. Component parts of the 
+Software may not be separated and installed or used on 
+multiple Devices.
+17.	TERMINATION.  If you breach the terms and 
+conditions of this EULA, Bentley may terminate this 
+EULA without prejudicing any of its other rights.  In 
+such event you must destroy and remove all copies of the 
+Software from your Device(s).  Sections 1, 3, 13, 20, 21, 
+23, 25, 26, 27, 28 and 29 specifically survive termination.
+18.	NO AUTOMATED USE.  A license for the Software 
+may not be shared or used concurrently on different 
+Devices, nor to support multiple User or operational 
+requests as indicated above.  As a result, you may not use 
+the Software in an automated, unattended, non-
+interactive server application or component (including 
+ASP) where:  (i) multiple User requests from different 
+Users are queued for processing; or (ii) multiple requests 
+from one User are queued for processing but acting 
+against content created or edited by other Users.  
+Examples which would violate this Section 18 include 
+but are not limited to use as a plot server, file translator, 
+print server or other applications using or employing 
+similar methods.  
+19.	LIMITED WARRANTY.   Except for Software which 
+is identified as no-charge, free, demo, evaluation, BDN, 
+Beta or NFR, which is provided to you "AS-IS" and 
+specifically without warranty of any kind, for sixty (60) 
+days from the date of first installation (the "Warranty 
+Period"), Bentley warrants that (i) the Software will 
+perform substantially in accordance with the functional 
+specifications in the documentation which accompanies 
+the Software; and (ii) the media on which the Software is 
+distributed meets generally accepted industry standards. 
+It is understood that neither Bentley nor its Suppliers are 
+responsible for your use of the Software or the results 
+from such use. It is further understood that there may be 
+errors or omissions in the information contained in the 
+Software, that the information contained in the Software 
+may not be current or complete and that defects in 
+hardware or software may prevent you from gaining 
+access to the Software. This limited warranty is offered 
+by Bentley alone, and is not extended to any software 
+code that may be contributed to the Software by our 
+Suppliers. Any supplements or updates to the Software 
+(including but not limited to fixes, work in progress 
+builds, or subsequent updates) provided to you after the 
+expiration of the Limited Warranty period above are not 
+covered by any warranty or condition, express, implied or 
+statutory.
+20.	DISCLAIMER.  THE FOREGOING LIMITED 
+WARRANTY STATES THE SOLE AND 
+EXCLUSIVE REMEDIES FOR BENTLEY'S OR ITS 
+SUPPLIER'S BREACH OF WARRANTY.  EXCEPT 
+FOR THE LIMITED WARRANTY AND TO THE 
+MAXIMUM EXTENT PERMITTED BY 
+APPLICABLE LAW, BENTLEY AND ITS 
+SUPPLIERS PROVIDE THE SOFTWARE AS IS AND 
+WITH ALL FAULTS, AND TO THE MAXIMUM 
+EXTENT PERMITTED BY APPLICABLE LAW IN 
+YOUR JURISDICTION, BENTLEY AND ITS 
+SUPPLIERS DISCLAIM ANY AND ALL OTHER 
+WARRANTIES, FOR ITSELF AND FOR ALL 
+SUPPLIERS, EITHER STATUTORY, EXPRESSED 
+OR IMPLIED, INCLUDING, WITHOUT 
+LIMITATION, WARRANTIES OF GOOD TITLE, 
+WARRANTIES AGAINST INFRINGEMENT, AND 
+THE IMPLIED WARRANTIES OF 
+MERCHANTABILITY AND FITNESS FOR A 
+PARTICULAR PURPOSE.  THIS LIMITED 
+WARRANTY GIVES YOU SPECIFIC RIGHTS; YOU 
+MAY HAVE OTHER RIGHTS, WHICH VARY 
+AMONG JURISDICTIONS.
+21.	HIGH RISK ACTIVITIES. The Software is not fault 
+tolerant and is not designed, manufactured or intended 
+for use or resale as control equipment in hazardous 
+environments requiring fail-safe performance, such as in 
+the operation of nuclear facilities, aircraft navigation or 
+communication systems, air traffic control, direct life 
+support machines, or weapons systems, in which the 
+failure of the Software could lead directly to death, 
+personal injury, or severe physical or environmental 
+damage ("High Risk Activities"). Accordingly, Bentley 
+and its Suppliers specifically disclaim any express or 
+implied warranty of fitness for High Risk Activities. 
+22.	END USER REMEDIES.  If a defect in the Software 
+appears that constitutes a breach of the above Limited 
+Warranty, Bentley shall, at its sole option, repair the 
+Software, refund the price you paid for the Software or 
+replace the defective item(s), provided that: (i) you notify 
+Bentley of the defect during the Warranty Period; (ii) the 
+Software is not modified, changed, or altered by anyone 
+other than Bentley, unless authorized by Bentley in 
+writing; (iii) your computer equipment is in good 
+operating order and the Software is installed in an 
+officially supported environment; and (iv) the non-
+conformity is not caused by a third party or by you, your 
+agents, employees or contractors. Repaired, corrected, or 
+replaced Software shall be covered by this limited 
+warranty for the period remaining under the warranty 
+covered by the original Software, or if longer, for thirty 
+(30) days after the date: (a) of installation by you of the 
+repaired or replaced Software, or (b) Bentley advised you 
+how to operate the Software so as to achieve the 
+functionality described in the documentation. YOU 
+AGREE THAT THE FOREGOING CONSTITUTES 
+YOUR SOLE AND EXCLUSIVE REMEDY FOR 
+BREACH BY BENTLEY OF THE LIMITED 
+WARRANTY MADE IN THIS EULA. 
+23.	LIMITATION OF LIABILITY. Regardless of whether 
+any remedy set forth herein fails of its essential purpose 
+by law, in no event will Bentley or its Suppliers be liable 
+for indirect, special, incidental, economic or consequential 
+damages, regardless of the nature of the claim, including 
+without limitation lost profits, costs of delay, interruption 
+of business, loss of use, costs of lost or damaged data or 
+documentation or liabilities to third parties arising from 
+any source, even if Bentley has been advised of the 
+possibility of such damages. In no event shall the liability 
+of Bentley or its Suppliers exceed the amount paid by 
+you (in the currency used to purchase) for the Software. 
+Some jurisdictions do not allow the exclusion or 
+limitation of implied warranties or limitation of liability 
+for incidental or consequential damages, so the above 
+limitation or exclusion may not apply to you.  THE 
+PROVISIONS OF THIS EULA ALLOCATE THE 
+RISKS BETWEEN BENTLEY AND YOU. 
+BENTLEY'S PRICING REFLECTS THIS 
+ALLOCATION OF RISK AND THE LIMITATION 
+OF LIABILITY SPECIFIED HEREIN.  
+24.	STATUTORY CONSUMER RIGHTS.  Nothing in 
+this EULA is meant to contravene statutory rights that 
+consumers may have pursuant to local law.  
+25.	EXPORT CONTROLS.  The Software is subject to 
+U.S. export control laws, regulations and requirements, in 
+addition to export control laws, regulations and 
+requirements of other agencies or authorities based 
+outside of the United States (collectively referred to as 
+"Export Controls"). Regardless of any disclosure made 
+by you to Bentley of an ultimate destination of the 
+Software, you must not export, re-export or transfer, 
+whether directly or indirectly, the Software, or any 
+portion thereof, or any system containing such Software 
+or portion thereof, to anyone without first complying 
+strictly and fully with all Export Controls that may be 
+imposed on the Software. The countries subject to 
+restriction by action of the United States Government, or 
+any other governmental agency or authority outside of 
+the United States, are subject to change, and it is your 
+responsibility to comply with applicable Export Controls  
+as they may be amended from time to time. You shall 
+indemnify, defend and hold Bentley harmless for any 
+breach of your obligations pursuant to this Section.
+26.	U.S. GOVERNMENT RESTRICTED RIGHTS.   If 
+the Software is acquired for or on behalf of the United 
+States of America, its agencies and/or instrumentalities 
+("U.S. Government"), it is provided with restricted 
+rights. The Software and accompanying documentation 
+are "commercial computer software" and "commercial 
+computer software documentation," respectively, 
+pursuant to 48 C.F.R. 12.212 and 227.7202, and 
+"restricted computer software" pursuant to 48 C.F.R. 
+52.227-19(a), as applicable. Use, modification, 
+reproduction, release, performance, display or disclosure 
+of the Software and accompanying documentation by the 
+U.S. Government are subject to restrictions as set forth in 
+this Agreement and pursuant to 48 C.F.R. 12.212, 
+52.227-19, 227.7202, and 1852.227-86, as applicable.  
+Contractor/Manufacturer is Bentley Systems, 
+Incorporated, 685 Stockton Drive, Exton, PA 19341-
+0678.
+27.	GOVERNING LAW.  If you are located outside the 
+geographic boundaries of the United States or Canada, 
+this EULA will be governed by and construed in 
+accordance with the substantive laws in force in Ireland, 
+and the courts located in Ireland shall have exclusive 
+jurisdiction over all disputes relating to this Agreement. If 
+you are located within the geographic boundaries of the 
+United States or Canada, this EULA will be governed by 
+and construed in accordance with the substantive laws in 
+force in the Commonwealth of Pennsylvania, and the 
+state courts located in Chester County, Pennsylvania and 
+the federal courts located in Philadelphia, Pennsylvania 
+shall have exclusive jurisdiction over all disputes relating 
+to this Agreement. To the maximum extent permitted by 
+applicable law, the parties agree that the provisions of the 
+United Nations Convention on Contracts for the 
+International Sale of Goods, as amended, and of the 
+Uniform Computer Information Transactions Act, as it 
+may have been or hereafter may be in effect in any 
+jurisdiction shall not apply to this Agreement.
+28.	SEVERABILITY.  The provisions of this EULA shall 
+be deemed to be separable and the invalidity of any 
+provision hereof shall not affect the validity of the 
+remainder of this Agreement. 
+29.	NOTICES. If you are located outside the geographic 
+boundaries of the United States or Canada please send all 
+notices under this EULA to Bentley Systems 
+International Limited Attn: Legal Department, Second 
+Floor, Block 2, Park Place, Upper Hatch Street, Dublin 2, 
+Ireland.    If you are located within the geographic 
+boundaries of the United States or Canada, please send 
+all notices under this EULA to Bentley Systems, 
+Incorporated, Attn: Legal Department, 685 Stockton 
+Drive, Exton, PA 19341-0678. 
+30.	QUESTIONS.  Should you have any questions regarding 
+this EULA, please contact the Bentley subsidiary serving 
+your country, or write to: Bentley Systems, Incorporated, 
+Legal Department, 685 Stockton Drive, Exton, PA 
+19341-0678.
+31.	RE-DISTRIBUTION OF BENTLEY(r) VIEW(tm).  If 
+you are interested in re-distributing Bentley View either 
+internally or externally to your organization, please 
+complete the online Bentley View Distribution 
+Agreement found at: 
+http://www.bentley.com/bentleyview/redistribute.html.
+Section 2: Terms Applicable to Server Software
+
+This section details the installation, use and licensing of 
+Server Software and associated CALs as well as External 
+Connector licenses.
+1.	CERTAIN ADDITIONAL DEFINITIONS.
+1.1.	"Client Software" means software that allows a 
+Device to access or utilize Server Software (and, also 
+where applicable to utilize certain aspects of the 
+Software when disconnected from the Server).
+1.2.	"External Connector" means a separately licensable 
+module for specific Server Software which 
+authorizes use of the Server Software by External 
+Users.
+1.3.	"Per Processor" is a Server Software licensing 
+mode where you are licensed to utilize the Server 
+Software on one or more physical or virtual 
+processors within a designated Server.
+1.4.	"Per Server" is a Server Software licensing mode 
+where you are licensed to utilize the Server Software 
+on all processors physically contained within the 
+designated Server.
+1.5.	"Per User" or "Per Device" are licensing modes 
+that require you to license a separate CAL for each 
+unique User or Device respectively that accesses or 
+utilizes the Server Software.
+1.6.	"Server" means any one of your computers that can 
+run Server Software.
+1.7.	"Server Software" means Software that provides 
+services or functionality to your Server(s).
+1.8.	"Server/CAL" is a licensing mode where the 
+maximum number of Users (or Devices, if applicable) 
+which may access or utilize the Server Software at a 
+given interval is less than or equal to the number of 
+CALs that you have acquired and designated for use 
+exclusively with that Server Software.
+2.	LICENSING MODES.  
+2.1.	Servers.  Bentley licenses Server Software on a 
+Server/CAL basis with either Device or User CALs 
+and/or on a Per Processor basis.  Some Server 
+Software may be eligible for External Connector 
+licensing.  Server Software may be limited, even in 
+Server/CAL licensing mode, as to the total number 
+of Devices and/or Users that may access a 
+designated Server Product.  Unless explicitly 
+specified in the documentation accompanying the 
+Server Software, the default licensing mode for all 
+Server Software is Server/CAL with User CALs.  
+2.2.	CALs.  CALs are licensed by Bentley on a per 
+Server, per Device or per User basis.  A User CAL 
+permits one User (using any Device) to access or use 
+the Server Software.  A Device CAL permits one 
+Device to access or use the Server Software.  Special 
+Note Applicable to CAL Licensing:  If you have 
+covered the CALs and Server Software subject to 
+this EULA pursuant to a valid SELECT Agreement 
+with Bentley then you may be entitled to additional 
+and incremental licensing benefits to those set forth 
+in this EULA by virtue of that relationship.  In the 
+event your SELECT Agreement with Bentley 
+terminates or you otherwise elect to remove CALs 
+and/or their associated Server Software from 
+coverage pursuant to a SELECT Agreement with 
+Bentley then you will lose those incremental benefits, 
+and your license rights will only be as set forth in this 
+EULA. 
+2.3.	External Connectors.  Certain Server Products may 
+be licensed to support External Users by virtue of an 
+External Connector license.
+3.	GRANT OF LICENSE FOR SOFTWARE IN 
+SERVER/CAL MODE.  As and for so long as you 
+comply with all of the terms of this EULA, Bentley 
+grants you the following rights:
+3.1.	Installation and Use.  
+(a)	Server Software.  You may install and use one 
+copy of the Server Software for Production Use 
+on a single Server in the country where the 
+Server Software was first obtained. You may 
+also use the documentation that accompanies the 
+Server Software for internal, non-commercial 
+reference purposes only.
+(b)	Client Software. You may install and use the 
+Client Software on the aggregate total number 
+of Devices to which you have dedicated a CAL 
+for such usage.  
+(c)	CALs.  A separate CAL is required for each 
+User or Device that accesses or uses Server 
+Software on any of your Servers.  A CAL grants 
+a User (using any Device) or a Device the right 
+to access or otherwise utilize the Server 
+Software you have deployed on your Server.  
+The maximum number of Users or Devices that 
+may access or use Server Software installed on a 
+particular Server at a given interval equals the 
+number of CALs (of either type) that you 
+acquire and designate for use exclusively with 
+that Server.  CALs cannot be pooled among 
+internal Users or Devices and are tied to one 
+Server Software installation.  
+(d)	Passive Fail-Over Server.  If the Server 
+Software is used in a clustered environment, you 
+may use the Server Software on a temporary 
+basis on a Server that is employed only and 
+exclusively for fail-over support.
+4.	GRANT OF LICENSE FOR SERVER SOFTWARE 
+IN PER SERVER MODE.  As and for so long as you 
+comply with all of the terms of this EULA, Bentley 
+grants you the following rights:
+4.1.	Installation and Use
+(a)	Server Software.  You may install and use one 
+copy of the Server Software for Production Use 
+on a single Server in the country where the 
+Server Software was first obtained.  You may 
+also use the documentation that accompanies the 
+Server Software for internal, non-commercial 
+reference purposes only.  In Per Server licensing 
+mode, the Bentley default is that you may use 
+the Server Software on all processors physically 
+contained within that one Server.  If the Server 
+Software is licensed in Per Processor mode, you 
+may only use the Software on the authorized 
+and licensed number of processors (physical or 
+virtual) within that Server. 
+(b)	Client Software.  In Per Server licensing mode, 
+unless Bentley licenses the Server Software with 
+a limitation on the maximum number of Devices 
+or Users that may access it, you may install the 
+Client Software on any Device in support of any 
+number of Users so long as the Client Software 
+is being used only in conjunction with the Server 
+Software.
+(c)	CALs.  In Per Server licensing mode, unless 
+Bentley licenses the Server Software with a 
+limitation on the maximum number of Users or 
+Devices that may access it, an unlimited number 
+of Users or Devices may access and use the 
+Server Software.  CALs are not required for 
+individual Users or Devices in the Per Server 
+licensing mode.
+(d)	Passive Fail-Over Server.  If the Server 
+Software is used in a clustered environment, you 
+may use the Server Software on a temporary 
+basis on a Server that is employed only and 
+exclusively for fail-over support.
+5.	GRANT OF LICENSE FOR EXTERNAL 
+CONNECTOR LICENSES.  As and for so long as you 
+comply with all of the terms of this EULA, Bentley 
+grants you the following rights:
+5.1.	Installation and Use
+(a)	External Connector License.  You may install 
+and use one copy of the External Connector on 
+one Device and connect that Device to the 
+designated Server Software whether or not 
+located at the same Site, but always within the 
+same country as the Server Software installation. 
+(b)	External Users.  The default licensing mode for 
+an External Connector authorizes you, for each 
+External Connector license that you acquire, to 
+permit any number of External Users to access 
+or use a single copy of the designated Server 
+Software for which the External Connector 
+License has been obtained without the need for 
+you to acquire a CAL for each External User.  If 
+any User does not clearly qualify as an External 
+User then you will need to properly license such 
+use and access by the User of the Server 
+Software by a method other than via the 
+External Connector.  Certain External Connector 
+licenses only authorize a limited number of 
+External Users to connect via that External 
+Connector, please check your Product 
+documentation and License Key for specific 
+details, limitations and qualifications.
+(c)	Passive Fail-Over External Connector.  If the 
+External Connector is installed on a Device used 
+in a clustered environment, you may use the 
+External Connector on a temporary basis on a 
+Server or Device that is employed only and 
+exclusively for fail-over support.

@@ -6,7 +6,7 @@ FeatureExtractTool.cpp
 
 Demonstrates plane and cylinder extraction capabilities of VortexFeatures library
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "FeatureExtractTest.h"

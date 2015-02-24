@@ -1,3 +1,10 @@
+//----------------------------------------------------------------------------
+//
+// VortexFeatureExtract.h
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 #ifndef POINTOOLS_VORTEX_FEATURE_FIT_API_H
 #define POINTOOLS_VORTEX_FEATURE_FIT_API_H
 

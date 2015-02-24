@@ -6,10 +6,13 @@ EditTool.cpp
 
 Demonstrates layer based point editing capabilities of Vortex
 
-(c) Copyright 2008-11 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+
+//----------------------------------------------------------------------------
 
 *******************************************************************************/
 #include "EditTool.h"
+#include "../include/PointoolsVortexAPI_resultCodes.h"
 #include <math.h>
 
 static RGBc layerButtonCol(96,96,96);
@@ -383,6 +386,13 @@ void EditTool::command( int cmdId )
 			viewRedraw();
 			break;
 
+		case CmdLoadLayersFile:
+			loadLayerChannels();
+			break;
+
+		case CmdSaveLayersFile:
+			saveLayerChannels();
+			break;
 	}
 }
 //-----------------------------------------------------------------------------
@@ -799,8 +809,71 @@ void	EditTool::selectSceneTest()
 void	EditTool::layersToChannel()
 //-----------------------------------------------------------------------------
 {
+	std::cout << "Creating channels from layers...";
 	m_layersChannel = ptCreatePointChannelFromLayers( L"layers", 0 );
+	std::cout << "Done\n";
 }
+//-----------------------------------------------------------------------------
+void	EditTool::saveLayerChannels()
+//-----------------------------------------------------------------------------
+{
+	UI &ui = VortexExampleApp::instance()->getUI();
+
+	if (!m_layersChannel)
+	{
+		layersToChannel();
+	}
+
+	// save file picker
+	const wchar_t *filename = ui.getSaveFilePath( L"Layer channels File", L"layers" );
+
+	if (filename)
+	{
+		//PTuint64	PTAPI ptWriteChannelsFileToBuffer(PTint numChannels, const PThandle *channels, PTubyte *&buffer, PTuint64 &bufferSize);
+		//( const PTstr filename, PTint numChannels, const PThandle *channels );
+		if (ptWriteChannelsFile( filename, 1, &m_layersChannel) == PTV_SUCCESS)
+		{
+			std::cout << "Channels file written\n";
+		}
+		else 
+		{
+			std::cout << "Channels file failed to write\n";
+		}
+	}
+}
+//-----------------------------------------------------------------------------
+void	EditTool::loadLayerChannels()
+//-----------------------------------------------------------------------------
+{
+	UI &ui = VortexExampleApp::instance()->getUI();
+
+	const PThandle *channels;
+	PTint	 num_channels;
+
+	//PTres		PTAPI ptReadChannelsFile( const PTstr filename, PTint &numChannels, const PThandle **channels );
+	if (m_layersChannel)
+	{
+		ptDeletePointChannel( m_layersChannel );
+	}
+	// load file picker
+	const wchar_t *filename = ui.getLoadFilePath( L"Layer channels File", L"layers" );
+
+	if (filename)
+	{	
+		// load the channel file
+		if (ptReadChannelsFile( filename, num_channels, &channels ) == PTV_SUCCESS && num_channels ==1 )
+		{
+			m_layersChannel = channels[0];
+			channelToLayers();
+			std::cout << "Channels file loaded and applied to layers\n";
+		}
+		else
+		{
+			std::cout << "Channels file failed to load\n";
+		}	
+	}
+}
+
 //-----------------------------------------------------------------------------
 void	EditTool::channelToLayers()
 //-----------------------------------------------------------------------------
@@ -1066,5 +1139,16 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		btn = new GLUI_Button( persistenceTests, "from Channel", CmdChannelToLayers, &Tool::dispatchCmd );
 		btn->set_w(90);
 		btn->set_back_col( &layerButtonCol );	
+
+		btn = new GLUI_Button( persistenceTests, "to File", CmdSaveLayersFile, &Tool::dispatchCmd );
+		btn->set_back_col( &layerButtonCol );	
+		btn->set_w(90);
+		col = new GLUI_Column( persistenceTests, false );
+
+		btn = new GLUI_Button( persistenceTests, "from File", CmdLoadLayersFile, &Tool::dispatchCmd );
+		btn->set_w(90);
+		btn->set_back_col( &layerButtonCol );
+
+
 	}
 }

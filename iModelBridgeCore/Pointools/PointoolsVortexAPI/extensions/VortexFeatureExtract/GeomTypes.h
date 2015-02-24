@@ -1,3 +1,10 @@
+//----------------------------------------------------------------------------
+//
+// VortexFeatureExtract.h
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 #ifndef POINTOOLS_VORTEX_GEOM_TYPES_API_H
 #define POINTOOLS_VORTEX_GEOM_TYPES_API_H
 

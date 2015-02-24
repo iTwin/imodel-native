@@ -4,7 +4,7 @@ Pointools Vortex API Examples
 
 CloudVisibilityTool.cpp
 
-(c) Copyright 2014 Bentley
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "CloudVisibilityTool.h"

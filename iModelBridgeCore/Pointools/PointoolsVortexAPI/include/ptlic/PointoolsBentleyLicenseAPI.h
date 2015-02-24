@@ -9,5 +9,5 @@
 PT_POINTOOLS_BENTLEY_LICENSE_API*/ 
 
 
-bool startLicenseBentley			(void);
+bool startLicenseBentley			(const PointoolsBentleyLicense::ProductVersion& productVersion);
 bool getLicenseStatusDescription	(PointoolsBentleyLicense::LicenseDescriptionSet &description);

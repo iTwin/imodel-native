@@ -1,0 +1,32 @@
+BMGLib
+A collection of projects that allow developers to read and write several graphics file formats. 
+See http://members.cox.net/scottheiman/bmglib.htm 
+BMGLib is Copyright 2000-2002 M. Scott Heiman All Rights Reserved. 
+libTIFF is Copyright Sam Leffler and Silicon Graphics International. 
+libJPEG is Copyright © 1991-1998, Thomas G. Lane and is part of the Independent JPEG Group's software. 
+libPNG is Copyright © 1995, 1996 Guy Eric Schalnat, Group 42, Inc. 
+zLib Copyright © 1995-1998 Jean-loup Gailly. 
+libUnGif is Copyright © 1997, Eric S. Raymond
+
+Developers Image Library (DevIL)
+A cross-platform image library. This is used under the LGPL license. 
+See http://sourceforge.net/projects/openil/ 
+
+Wild Magic 
+Geometry and computational geometry library used under the GNU Lesser General Public License (LGPL)
+
+LibXML
+XML parsing and creation toolkit. See http://www.xmlsoft.org/ 
+
+GLFont2
+OpenGL Font/Text helper.
+Copyright © 1998-2002 Brad Fish. 
+E-mail: bhf5@email.byu.edu 
+Web: http://students.cs.byu.edu/~Ebfish/ 
+
+The OpenGL Extension Wrangler Library
+Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
+Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
+Copyright (C) 2002, Lev Povalahev
+All rights reserved.
+ 

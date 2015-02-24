@@ -1,3 +1,8 @@
+//----------------------------------------------------------------------------
+//
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by metadata.rc

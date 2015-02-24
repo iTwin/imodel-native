@@ -642,14 +642,19 @@ UserChannel * UserChannel::createFromBranch( pt::datatree::Branch *branch )
 			// get meta for voxel channel data
 			uint flags;
 			uint numPoints, fullNumPoints;
+			uint u0=0, u1=0;
 
 			leaf->getNode( "full_num_points", fullNumPoints );
 			leaf->getNode( "num_points", numPoints );
 			leaf->getNode( "flags", flags );
-
+			leaf->getNode( "user0", u0 );
+			leaf->getNode( "user1", u1 );
+			
 			// add this to the cloud channel
 			ccd->data.push_back( VoxelChannelData(numPoints, bytesPerPoint, fullNumPoints, flags) );
 			VoxelChannelData &chd = ccd->data.back();
+			chd.setUser0( u0 );
+			chd.setUser1( u1 );
 
 			// read uniforms, min and max
 			const pt::datatree::Blob *uniform_val = leaf->getBlob("uniform");

@@ -2,7 +2,7 @@
 
 Pointools Vortex API example application framework
 
-(c) Copyright 2008-09 Pointools Ltd
+Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 This example uses GLUT and GLUI to set up a simple UI and demonstrate
 the use of the Pointools Vortex API

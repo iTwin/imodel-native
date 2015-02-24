@@ -1,11 +1,10 @@
 /*--------------------------------------------------------------------------*/ 
 /*  geomTypes.h																*/ 
 /*	basic geometry types definition + implementation						*/ 
-/*  (C) 2003 Copyright Pointools Ltd, UK | All Rights Reserved				*/ 
+/*  Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.  */
 /*																			*/ 
 /*  Last Updated 12 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
-
 #ifndef COMMONCLASSES_GEOMTYPES
 #define COMMONCLASSES_GEOMTYPES
 

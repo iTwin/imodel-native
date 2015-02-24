@@ -1,5 +1,10 @@
+//----------------------------------------------------------------------------
+//
 // metadata.cpp : Defines the class behaviors for the application.
 //
+// Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
+//
+//----------------------------------------------------------------------------
 
 #include "stdafx.h"
 #include "metadata.h"
