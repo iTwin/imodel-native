@@ -34,10 +34,14 @@ struct WSInfo
         static const BeVersion s_serverR4From;
 
         Type m_type;
-        BeVersion m_version;
+        BeVersion m_serverVersion;
+        BeVersion m_webApiVersion;
 
     private:
-        static BentleyStatus ExtractTypeAndVersionFromAboutPage (Utf8StringCR body, Type& typeOut, BeVersion& versionOut);
+        static void ParseHeaders (MobileDgn::Utils::HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseInfoPage (MobileDgn::Utils::HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseAboutPage (MobileDgn::Utils::HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static BeVersion DeduceWebApiVersion (BeVersionCR serverVersion);
 
     public:
         struct WebApiVersion;
@@ -45,7 +49,7 @@ struct WSInfo
         //! Create invalid info
         WSCLIENT_EXPORT WSInfo ();
         //! Construct info with values
-        WSCLIENT_EXPORT WSInfo (BeVersion serverVersion, Type serverType);
+        WSCLIENT_EXPORT WSInfo (BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
         //! Create info from server response
         WSCLIENT_EXPORT WSInfo (MobileDgn::Utils::HttpResponseCR response);
         //! Deserialize string info
@@ -62,9 +66,8 @@ struct WSInfo
 
         WSCLIENT_EXPORT bool IsR2OrGreater () const;
         WSCLIENT_EXPORT bool IsR3OrGreater () const;
-        WSCLIENT_EXPORT bool IsR4OrGreater () const;
 
-        WSCLIENT_EXPORT BeVersion GetWebApiVersion () const;
+        WSCLIENT_EXPORT BeVersionCR GetWebApiVersion () const;
         WSCLIENT_EXPORT bool IsWebApiSupported (BeVersionCR version) const;
 
         WSCLIENT_EXPORT bool IsNavigationPropertySelectForAllClassesSupported () const;

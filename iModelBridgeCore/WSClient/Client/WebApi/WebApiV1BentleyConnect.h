@@ -24,6 +24,8 @@ struct WebApiV1BentleyConect : public WebApiV1
         WebApiV1BentleyConect (std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);
         virtual ~WebApiV1BentleyConect ();
 
+        static bool IsSupported (WSInfoCR info);
+
         virtual MobileDgn::Utils::AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
