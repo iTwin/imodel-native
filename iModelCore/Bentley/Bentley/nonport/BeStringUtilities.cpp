@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeStringUtilities.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -1018,27 +1018,45 @@ BentleyStatus WString::Sprintf (WCharCP format, ...)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WPrintfString::WPrintfString (WCharCP format, ...) : WString() 
+WPrintfString::WPrintfString(WCharCP format, ...) : WString()
     {
-    va_list args; 
-    va_start (args, format); 
-    auto result = BeWStringSprintf (*this, format, args);
-    va_end (args);
+    va_list args;
+    va_start(args, format);
+    auto result = BeWStringSprintf(*this, format, args);
+    va_end(args);
 
     if (result < 0)
         return;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        va_start (args, format); 
-        result = BeWStringSprintf (*this, format, args, result);
-        va_end (args);
+        va_start(args, format);
+        result = BeWStringSprintf(*this, format, args, result);
+        va_end(args);
 
         if (result < 0)
             return;
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+VWPrintfString::VWPrintfString(WCharCP format, va_list args) : WString()
+    {
+    auto result = BeWStringSprintf(*this, format, args);
+
+    if (result < 0)
+        return;
+
+    if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
+        {                // Note that we have to re-create 'args' in order make a second attempt.
+        result = BeWStringSprintf(*this, format, args, result);
+
+        if (result < 0)
+            return;
+        }
+    }
 
 #if defined (__unix__)
 //---------------------------------------------------------------------------------------

@@ -273,6 +273,21 @@ struct WPrintfString : WString
 {
     //! Construct a WString by creating a formatted string.
     BENTLEYDLL_EXPORT WPrintfString (WCharCP format, ...);
+    //! Construct a WString by creating a formatted string.
+    BENTLEYDLL_EXPORT WPrintfString(WCharCP format, va_list);
+    //! WCharCP type-conversion operator.
+    operator WCharCP(){return c_str();}
+};
+
+//=======================================================================================
+//! Construct a WString by creating a formatted string from a va_list.
+//! @ingroup BeStringGroup
+//  @bsiclass                                                   Keith.Bentley   11/11
+//=======================================================================================
+struct VWPrintfString : WString
+{
+    //! Construct a WString by creating a formatted string.
+    BENTLEYDLL_EXPORT VWPrintfString(WCharCP format, va_list);
     //! WCharCP type-conversion operator.
     operator WCharCP(){return c_str();}
 };
