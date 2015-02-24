@@ -64,7 +64,7 @@ void ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
     csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword ();
     csSetup[CS_MESSAGE_FIELD_token] = token;
 
-    MobileDgnUi::SendMessageToWorkThread (CS_MESSAGE_SetCredentials, csSetup);
+    MobileDgnUi::SendMessageToWorkThread (CS_MESSAGE_SetCredentials, std::move(csSetup));
     }
 
 bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred)

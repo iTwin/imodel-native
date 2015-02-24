@@ -91,127 +91,80 @@ void ServerInfoProvider::UpdateInfo (WSInfoCR info) const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Benediktas.Lipnickas   09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest ServerInfoProvider::CreateGetInfoRequest () const
-    {
-    Utf8PrintfString url ("%s/v1.2/Info", m_configuration->GetServerUrl ().c_str ());
-    return m_configuration->GetHttpClient ().CreateGetRequest (url);
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest ServerInfoProvider::CreateGetAboutPageRequest () const
+AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo (ICancellationTokenPtr cancellationToken) const
     {
-    Utf8PrintfString url ("%s/Pages/About.aspx", m_configuration->GetServerUrl ().c_str ());
-    return m_configuration->GetHttpClient ().CreateGetRequest (url);
-    }
+    auto finalResult = std::make_shared<WSInfoResult> ();
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dalius.Dobravolskas             09/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest ServerInfoProvider::CreateGetPluginsRequest () const
-    {
-    Utf8PrintfString url ("%s/v2.0/Plugins", m_configuration->GetServerUrl ().c_str ());
-    return m_configuration->GetHttpClient ().CreateGetRequest (url);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoResult> ServerInfoProvider::SendGetInfoRequest
-(
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    auto result = std::make_shared<WSInfoResult> ();
-
-    HttpRequest request = CreateGetInfoRequest ();
-    request.SetCancellationToken (cancellationToken);
-
-    return request.PerformAsync ()
-    ->Then ([=] (HttpResponse& response)
+    // WSG 2.0 +
+    return GetInfoFromPage ("/v2.0/Plugins", cancellationToken)->Then ([=] (WSInfoHttpResult& result)
         {
-        if (response.GetHttpStatus () == HttpStatus::NotFound)
+        if (result.IsSuccess ())
             {
-            // Compatibility to WSG R1
-            SendGetInfoRequestFromAboutPage (cancellationToken)
-            ->Then ([=] (WSInfoResult& infoResult)
-                {
-                if (!infoResult.IsSuccess ())
-                    {
-                    SendGetInfoRequestFromPlugins (cancellationToken)
-                    ->Then ([=] (WSInfoResult& infoResult)
-                        {
-                        *result = infoResult;
-                        });
-                    }
-
-                *result = infoResult;
-                });
+            finalResult->SetSuccess (result.GetValue ());
+            return;
+            }
+        else if (result.GetError ().GetConnectionStatus () != ConnectionStatus::OK)
+            {
+            finalResult->SetError (result.GetError ());
             return;
             }
 
-        WSInfo info (response);
-        if (info.IsValid ())
+        // WSG R2 - R3.5
+        GetInfoFromPage ("/v1.2/Info", cancellationToken)->Then ([=] (WSInfoHttpResult& result)
             {
-            result->SetSuccess (info);
-            }
-        else
-            {
-            result->SetError (response);
-            }
+            if (result.IsSuccess ())
+                {
+                finalResult->SetSuccess (result.GetValue ());
+                return;
+                }
+            else if (result.GetError ().GetConnectionStatus () != ConnectionStatus::OK)
+                {
+                finalResult->SetError (result.GetError ());
+                return;
+                }
+
+            // WSG R1
+            if (result.GetError ().GetHttpStatus () != HttpStatus::NotFound)
+                {
+                return;
+                }
+
+            GetInfoFromPage ("/Pages/About.aspx", cancellationToken)->Then ([=] (WSInfoHttpResult& result)
+                {
+                if (result.IsSuccess ())
+                    {
+                    finalResult->SetSuccess (result.GetValue ());
+                    return;
+                    }
+
+                finalResult->SetError (result.GetError ());
+                });
+            });
         })
     ->Then<WSInfoResult> ([=]
         {
-        return *result;
+        return *finalResult;
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoResult> ServerInfoProvider::SendGetInfoRequestFromAboutPage
-(
-ICancellationTokenPtr cancellationToken
-) const
+AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage (Utf8StringCR page, ICancellationTokenPtr cancellationToken) const
     {
-    HttpRequest request = CreateGetAboutPageRequest ();
+    HttpRequest request = m_configuration->GetHttpClient ().CreateGetRequest (m_configuration->GetServerUrl () + page);
     request.SetCancellationToken (cancellationToken);
 
-    return request.PerformAsync ()
-    ->Then<WSInfoResult> ([=] (HttpResponse& response)
+    return request.PerformAsync ()->Then<WSInfoHttpResult> ([=] (HttpResponse& response)
         {
         WSInfo info (response);
         if (info.IsValid ())
             {
-            return WSInfoResult::Success (info);
+            return WSInfoHttpResult::Success (info);
             }
-        return WSInfoResult::Error (response);
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dalius.Dobravolskas             09/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSInfoResult> ServerInfoProvider::SendGetInfoRequestFromPlugins
-(
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    HttpRequest request = CreateGetPluginsRequest ();
-    request.SetCancellationToken (cancellationToken);
-
-    return request.PerformAsync ()
-    ->Then<WSInfoResult> ([=] (HttpResponse& response)
-        {
-        WSInfo info (response);
-        if (info.IsValid ())
-            {
-            return WSInfoResult::Success (info);
-            }
-        return WSInfoResult::Error (response);
+        return WSInfoHttpResult::Error (response);
         });
     }
 
@@ -232,15 +185,15 @@ ICancellationTokenPtr cancellationToken
             }
 
         // Block so additional GetServerInfo tasks would queue to m_thread
-        WSInfoResult infoResult = SendGetInfoRequest (cancellationToken)->GetResult ();
+        WSInfoResult result = GetInfo (cancellationToken)->GetResult ();
 
-        if (!infoResult.IsSuccess ())
+        if (!result.IsSuccess ())
             {
-            return WSInfoResult::Error (infoResult.GetError ());
+            return WSInfoResult::Error (result.GetError ());
             }
 
-        UpdateInfo (infoResult.GetValue ());
-        NotifyServerInfoUpdated (infoResult.GetValue ());
+        UpdateInfo (result.GetValue ());
+        NotifyServerInfoUpdated (result.GetValue ());
 
         return WSInfoResult::Success (m_serverInfo);
         });

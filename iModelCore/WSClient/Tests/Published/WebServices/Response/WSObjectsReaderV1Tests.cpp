@@ -94,7 +94,7 @@ TEST_F (WSObjectsReaderV1Tests, ReadInstances_JsonInstanceWithoutETag_ReturnsEmp
     auto instances = reader->ReadInstances (json);
 
     EXPECT_FALSE (instances.IsEmpty ());
-    EXPECT_STREQ ("", (*instances.begin ()).GetETag ());
+    EXPECT_STREQ ("", (*instances.begin ()).GetETag ().c_str ());
     BeTest::SetFailOnAssert (true);
     }
 

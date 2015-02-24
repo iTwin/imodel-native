@@ -12,9 +12,10 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-WSInfo CreateWSInfoWithVersion (Utf8CP versionString)
+WSInfo CreateWSInfoWithInfoPage (Utf8CP versionString)
     {
-    return WSInfo (StubHttpResponse (HttpStatus::OK, Utf8PrintfString (R"({"serverVersion" : "%s"})", versionString)));
+    Utf8PrintfString body (R"({"serverVersion" : "%s"})", versionString);
+    return WSInfo (StubHttpResponse (HttpStatus::OK, body, {{"Content-Type", "application/json"}}));
     }
 
 TEST_F (WSInfoTests, IsValid_DefaultCtor_False)
@@ -30,8 +31,14 @@ TEST_F (WSInfoTests, IsValid_NotExecutedResponse_False)
 
 TEST_F (WSInfoTests, IsValid_ServerInfoWithVersion_True)
     {
-    HttpResponse response = StubHttpResponse (HttpStatus::OK, R"({"serverVersion" : "01.02.09.10"})");
+    HttpResponse response = StubHttpResponse (HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})", {{"Content-Type", "application/json"}});
     EXPECT_TRUE (WSInfo (response).IsValid ());
+    }
+
+TEST_F (WSInfoTests, IsValid_ServerInfoWithVersionButWithoutContentTypeJson_False)
+    {
+    HttpResponse response = StubHttpResponse (HttpStatus::OK, R"({"serverVersion" : "01.02.03.04"})");
+    EXPECT_FALSE (WSInfo (response).IsValid ());
     }
 
 TEST_F (WSInfoTests, IsValid_ServerInfoWithVersionZero_False)
@@ -79,7 +86,7 @@ TEST_F (WSInfoTests, Ctor_EmptyResponseBody_InvalidWithZeroVersionAndUnknownType
 
 TEST_F (WSInfoTests, Ctor_ValidServerVersionInBody_ValidWithSameVersionAndWSGType)
     {
-    WSInfo info (StubHttpResponse (HttpStatus::OK, R"({"serverVersion" : "01.02.09.10"})"));
+    WSInfo info (StubHttpResponse (HttpStatus::OK, R"({"serverVersion" : "01.02.09.10"})", {{"Content-Type", "application/json"}}));
     EXPECT_TRUE (info.IsValid ());
     EXPECT_EQ (BeVersion (1, 2, 9, 10), info.GetVersion ());
     EXPECT_EQ (WSInfo::Type::BentleyWSG, info.GetType ());
@@ -95,17 +102,19 @@ TEST_F (WSInfoTests, Ctor_EmptyString_InvalidWithZeroVersionAndUnknownType)
 
 TEST_F (WSInfoTests, Ctor_FromSerialized_SameVersion)
     {
-    WSInfo info (WSInfo (BeVersion (1, 2), WSInfo::Type::BentleyWSG).ToString ());
+    WSInfo info (WSInfo (BeVersion (2, 3), BeVersion (4, 5), WSInfo::Type::BentleyWSG).ToString ());
 
     EXPECT_TRUE (info.IsValid ());
-    EXPECT_EQ (BeVersion (1, 2), info.GetVersion ());
+    EXPECT_EQ (WSInfo::Type::BentleyWSG, info.GetType ());
+    EXPECT_EQ (BeVersion (2, 3), info.GetVersion ());
+    EXPECT_EQ (BeVersion (4, 5), info.GetWebApiVersion ());
     }
 
 TEST_F (WSInfoTests, Ctor_FromSerialized_SameType)
     {
-    EXPECT_EQ (WSInfo::Type::BentleyConnect, WSInfo (WSInfo (BeVersion (1, 0), WSInfo::Type::BentleyConnect).ToString ()).GetType ());
-    EXPECT_EQ (WSInfo::Type::BentleyWSG, WSInfo (WSInfo (BeVersion (1, 0), WSInfo::Type::BentleyWSG).ToString ()).GetType ());
-    EXPECT_EQ (WSInfo::Type::Unknown, WSInfo (WSInfo (BeVersion (1, 0), WSInfo::Type::Unknown).ToString ()).GetType ());
+    EXPECT_EQ (WSInfo::Type::BentleyConnect, WSInfo (WSInfo (BeVersion (1, 0), BeVersion (1, 0), WSInfo::Type::BentleyConnect).ToString ()).GetType ());
+    EXPECT_EQ (WSInfo::Type::BentleyWSG, WSInfo (WSInfo (BeVersion (1, 0), BeVersion (1, 0), WSInfo::Type::BentleyWSG).ToString ()).GetType ());
+    EXPECT_EQ (WSInfo::Type::Unknown, WSInfo (WSInfo (BeVersion (1, 0), BeVersion (1, 0), WSInfo::Type::Unknown).ToString ()).GetType ());
     }
 
 TEST_F (WSInfoTests, GetVersion_ButHttpStatusNotFound_ReturnsZero)
@@ -129,6 +138,7 @@ TEST_F (WSInfoTests, GetVersion_SuccessResponseWithR1AboutPageHtml_TreatsAsR1And
 
     EXPECT_TRUE (info.IsValid ());
     EXPECT_EQ (BeVersion (1, 0), info.GetVersion ());
+    EXPECT_EQ (BeVersion (1, 1), info.GetWebApiVersion ());
     EXPECT_EQ (WSInfo::Type::BentleyWSG, info.GetType ());
     }
 
@@ -139,6 +149,7 @@ TEST_F (WSInfoTests, GetVersion_SuccessResponseWithR1BentleyConnectAboutPageHtml
 
     EXPECT_TRUE (info.IsValid ());
     EXPECT_EQ (BeVersion (1, 0), info.GetVersion ());
+    EXPECT_EQ (BeVersion (1, 1), info.GetWebApiVersion ());
     EXPECT_EQ (WSInfo::Type::BentleyConnect, info.GetType ());
     }
 
@@ -148,130 +159,90 @@ TEST_F (WSInfoTests, GetVersion_ValidServerVersionInBodyButHttpStatusNonOk_Retur
     EXPECT_EQ (BeVersion (0, 0), WSInfo (response).GetVersion ());
     }
 
-TEST_F (WSInfoTests, GetVersion_SuccessResponseWithWSGServerHeader_TreatsAsWSG2AndReturnsOneAsWellAsBentleyWSGType)
+TEST_F (WSInfoTests, GetVersion_SuccessResponseWithWSGServerHeader_ReadsVersionsFromheaderAndSetsBentleyWSGType)
     {
-    auto bodyStub = R"({json: "whatever"})";
-    WSInfo info (StubHttpResponse (HttpStatus::OK, bodyStub, {{"Server", "Bentley-WebAPI/2.0"}}));
+    WSInfo info (StubHttpResponse (HttpStatus::OK, "{}", {{"Server", "Bentley-WSG/02.03.04.05, Bentley-WebAPI/06.07"}}));
 
     EXPECT_TRUE (info.IsValid ());
-    EXPECT_EQ (BeVersion (2, 0), info.GetVersion ());
+    EXPECT_EQ (BeVersion (2, 3, 4, 5), info.GetVersion ());
+    EXPECT_EQ (BeVersion (6, 7), info.GetWebApiVersion ());
     EXPECT_EQ (WSInfo::Type::BentleyWSG, info.GetType ());
     }
 
-TEST_F (WSInfoTests, GetVersion_SuccessResponseWithMultipleWSGServerHeader_TreatsAsWSG2AndReturnsOneAsWellAsBentleyWSGType)
+TEST_F (WSInfoTests, GetVersion_SuccessResponseWithoutWebAPIVersion_Invalid)
     {
-    auto bodyStub = R"({json: "whatever"})";
-    WSInfo info (StubHttpResponse (HttpStatus::OK, bodyStub, {{"Server", "Bentley-WebAPI/2.0, Microsoft-IIS/8.5"}}));
-
-    EXPECT_TRUE (info.IsValid ());
-    EXPECT_EQ (BeVersion (2, 0), info.GetVersion ());
-    EXPECT_EQ (WSInfo::Type::BentleyWSG, info.GetType ());
-    }
-
-TEST_F (WSInfoTests, GetWebApiVersion_ZeroVersion_Returns1_1)
-    {
-    WSInfo info = CreateWSInfoWithVersion ("");
-    EXPECT_EQ (BeVersion (1, 1), info.GetWebApiVersion ());
+    WSInfo info (StubHttpResponse (HttpStatus::OK, "{}", {{"Server", "Bentley-WebAPI/2.0, Microsoft-IIS/8.5"}}));
+    EXPECT_FALSE (info.IsValid ());
     }
 
 TEST_F (WSInfoTests, GetWebApiVersion_ServerR1_Returns1_1)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.00.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.00.00.00");
     EXPECT_EQ (BeVersion (1, 1), info.GetWebApiVersion ());
     }
 
 TEST_F (WSInfoTests, GetWebApiVersion_ServerR2_Returns1_2)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.01.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.01.00.00");
     EXPECT_EQ (BeVersion (1, 2), info.GetWebApiVersion ());
     }
 
 TEST_F (WSInfoTests, GetWebApiVersion_ServerR3_Returns1_3)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.02.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.02.00.00");
     EXPECT_EQ (BeVersion (1, 3), info.GetWebApiVersion ());
     }
 
-TEST_F (WSInfoTests, GetWebApiVersion_ServerR4_Returns2_0)
+TEST_F (WSInfoTests, GetWebApiVersion_ServerVersion2_InvalidAsServerShouldProvideVersion)
     {
-    WSInfo info = CreateWSInfoWithVersion ("02.00.00.00");
-    EXPECT_EQ (BeVersion (2, 0), info.GetWebApiVersion ());
-    }
-
-TEST_F (WSInfoTests, GetWebApiVersion_ArgumentGreaterThanWebApiVersion_False)
-    {
-    WSInfo info = CreateWSInfoWithVersion ("02.00.00.00");
-    EXPECT_FALSE (info.IsWebApiSupported (BeVersion (2, 1)));
-    }
-
-TEST_F (WSInfoTests, GetWebApiVersion_ArgumentEqualToWebApiVersion_True)
-    {
-    WSInfo info = CreateWSInfoWithVersion ("02.00.00.00");
-    EXPECT_TRUE (info.IsWebApiSupported (BeVersion (2, 0)));
-    }
-
-TEST_F (WSInfoTests, GetWebApiVersion_ArgumentLessThanWebApiVersion_True)
-    {
-    WSInfo info = CreateWSInfoWithVersion ("02.00.00.00");
-    EXPECT_TRUE (info.IsWebApiSupported (BeVersion (1, 9)));
+    WSInfo info = CreateWSInfoWithInfoPage ("02.00.00.00");
+    EXPECT_FALSE (info.IsValid ());
     }
 
 TEST_F (WSInfoTests, IsNavigationPropertySelectForAllClassesSupported_ServerR2_False)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.01.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.01.00.00");
     EXPECT_FALSE (info.IsNavigationPropertySelectForAllClassesSupported ());
     }
 
 TEST_F (WSInfoTests, IsNavigationPropertySelectForAllClassesSupported_ServerR3_True)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.02.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.02.00.00");
     EXPECT_TRUE (info.IsNavigationPropertySelectForAllClassesSupported ());
     }
 
 TEST_F (WSInfoTests, IsSchemaDownloadFullySupported_ServerR2_False)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.01.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.01.00.00");
     EXPECT_FALSE (info.IsSchemaDownloadFullySupported ());
     }
 
 TEST_F (WSInfoTests, IsSchemaDownloadFullySupported_ServerR3_True)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.02.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.02.00.00");
     EXPECT_TRUE (info.IsSchemaDownloadFullySupported ());
     }
 
 TEST_F (WSInfoTests, IsR2OrGreater_ServerR1_False)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.00.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.00.00.00");
     EXPECT_FALSE (info.IsR2OrGreater ());
     }
 
 TEST_F (WSInfoTests, IsR2OrGreater_ServerR2_True)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.01.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.01.00.00");
     EXPECT_TRUE (info.IsR2OrGreater ());
     }
 
 TEST_F (WSInfoTests, IsR3OrGreater_ServerR2_False)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.01.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.01.00.00");
     EXPECT_FALSE (info.IsR3OrGreater ());
     }
 
 TEST_F (WSInfoTests, IsR3OrGreater_ServerR3_True)
     {
-    WSInfo info = CreateWSInfoWithVersion ("01.02.00.00");
+    WSInfo info = CreateWSInfoWithInfoPage ("01.02.00.00");
     EXPECT_TRUE (info.IsR3OrGreater ());
-    }
-
-TEST_F (WSInfoTests, IsR4OrGreater_ServerR3_False)
-    {
-    WSInfo info = CreateWSInfoWithVersion ("01.02.00.00");
-    EXPECT_FALSE (info.IsR4OrGreater ());
-    }
-
-TEST_F (WSInfoTests, IsR4OrGreater_ServerR4_True)
-    {
-    WSInfo info = CreateWSInfoWithVersion ("02.00.00.00");
-    EXPECT_TRUE (info.IsR4OrGreater ());
     }

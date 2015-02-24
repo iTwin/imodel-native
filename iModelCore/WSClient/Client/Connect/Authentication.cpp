@@ -37,7 +37,7 @@ void Authenticate(JsonValueCR messageDataObj)
         {
         Json::Value setupData(Json::objectValue);
         setupData[AuthenticationData::USERNAME] = username;
-        MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, setupData);
+        MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move (setupData));
 
         if (isSignOut)
             {
@@ -72,5 +72,5 @@ void Authenticate(JsonValueCR messageDataObj)
 
     Json::Value setupData(messageDataObj);
     setupData[AuthenticationData::TOKEN] = token.AsString();
-    MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, setupData);
+    MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move(setupData));
     }

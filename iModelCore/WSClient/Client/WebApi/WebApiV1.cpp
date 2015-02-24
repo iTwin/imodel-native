@@ -31,6 +31,14 @@ WebApiV1::~WebApiV1 ()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WebApiV1::IsSupported (WSInfoCR info)
+    {
+    return info.GetWebApiVersion () <= BeVersion (1, 3) && info.GetType () == WSInfo::Type::BentleyWSG;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpRequest WebApiV1::CreateGetRepositoriesRequest (const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const

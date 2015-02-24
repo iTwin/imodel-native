@@ -9,11 +9,15 @@
 #include "WebApiV2.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
+const BeVersion WebApiV2::s_minWebApi (2, 0);
+const BeVersion WebApiV2::s_maxWebApi (2, 2);
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WebApiV2::WebApiV2 (std::shared_ptr<const ClientConfiguration> configuration) :
-WebApi (configuration)
+WebApiV2::WebApiV2 (std::shared_ptr<const ClientConfiguration> configuration, WSInfo info) :
+WebApi (configuration),
+m_info (info)
     {
     }
 
@@ -25,21 +29,56 @@ WebApiV2::~WebApiV2 ()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WebApiV2::IsSupported (WSInfoCR info)
+    {
+    return
+        info.GetWebApiVersion () >= s_minWebApi &&
+        info.GetWebApiVersion () <= s_maxWebApi &&
+        info.GetType () == WSInfo::Type::BentleyWSG;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetUrl (Utf8StringCR params, Utf8StringCR queryString, Utf8StringCR webApiVersion) const
+Utf8String WebApiV2::GetWebApiUrl () const
     {
+    BeVersion webApiVersionToUse = m_info.GetWebApiVersion ();
+    if (webApiVersionToUse > s_maxWebApi)
+        {
+        webApiVersionToUse = s_maxWebApi; // Limit to tested version
+        }
+
     Utf8PrintfString url
         (
-        "%s/%s/Repositories/%s",
+        "%s/v%d.%d/",
         m_configuration->GetServerUrl ().c_str (),
-        webApiVersion.c_str (),
-        HttpClient::EscapeString (m_configuration->GetRepositoryId ()).c_str ()
+        webApiVersionToUse.GetMajor(),
+        webApiVersionToUse.GetMinor()
         );
 
-    if (!params.empty ())
+    return url;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+Utf8String WebApiV2::GetRepositoryUrl (Utf8StringCR repositoryId) const
+    {
+    return GetWebApiUrl () + "Repositories/" + HttpClient::EscapeString (repositoryId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+Utf8String WebApiV2::GetUrl (Utf8StringCR path, Utf8StringCR queryString) const
+    {
+    Utf8String url = GetRepositoryUrl (m_configuration->GetRepositoryId ());
+
+    if (!path.empty ())
         {
-        url += "/" + params;
+        url += "/" + path;
         }
 
     if (!queryString.empty ())
@@ -109,6 +148,18 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery (const bset<Utf8String>& proper
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader () const
+    {
+    bool quoteInstanceETags = 
+        m_info.GetWebApiVersion () == BeVersion (2, 0) || 
+        m_info.GetWebApiVersion () == BeVersion (2, 1);
+
+    return WSObjectsReaderV2::Create (quoteInstanceETags);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 Utf8String WebApiV2::GetNullableString (RapidJsonValueCR jsonValue)
     {
     if (jsonValue.IsString ())
@@ -122,7 +173,7 @@ Utf8String WebApiV2::GetNullableString (RapidJsonValueCR jsonValue)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse (HttpResponse& response)
+WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse (HttpResponse& response) const
     {
     if (HttpStatus::OK != response.GetHttpStatus ())
         {
@@ -132,7 +183,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse (HttpResponse& res
     auto repositoriesJson = std::make_shared<rapidjson::Document> ();
     response.GetBody ().AsRapidJson (*repositoriesJson);
 
-    auto reader = WSObjectsReaderV2::Create ();
+    auto reader = CreateJsonInstancesReader ();
     WSObjectsReader::Instances instances = reader->ReadInstances (repositoriesJson);
     if (!instances.IsValid ())
         {
@@ -166,7 +217,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse (HttpResponse& res
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse (HttpResponse& response)
+WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse (HttpResponse& response) const
     {
     if (HttpStatus::Created == response.GetHttpStatus ())
         {
@@ -179,7 +230,7 @@ WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse (HttpResponse& respon
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse (HttpResponse& response)
+WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse (HttpResponse& response) const
     {
     if (HttpStatus::OK == response.GetHttpStatus ())
         {
@@ -191,13 +242,13 @@ WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse (HttpResponse& respon
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSObjectsResult WebApiV2::ResolveObjectsResponse (HttpResponse& response, const ObjectId* objectId)
+WSObjectsResult WebApiV2::ResolveObjectsResponse (HttpResponse& response, const ObjectId* objectId) const
     {
     HttpStatus status = response.GetHttpStatus ();
     if (HttpStatus::OK == status ||
         HttpStatus::NotModified == status)
         {
-        auto reader = WSObjectsReaderV2::Create ();
+        auto reader = CreateJsonInstancesReader ();
 
         auto body = response.GetContent ()->GetBody ();
         auto eTag = response.GetHeaders ().GetETag ();
@@ -210,7 +261,7 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse (HttpResponse& response, const 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSFileResult WebApiV2::ResolveFileResponse (HttpResponse& response, BeFileName filePath)
+WSFileResult WebApiV2::ResolveFileResponse (HttpResponse& response, BeFileName filePath) const
     {
     HttpStatus status = response.GetHttpStatus ();
     if (HttpStatus::OK == status ||
@@ -232,11 +283,11 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     // TODO: implement filtering query by PluginId if needed
-    Utf8PrintfString url ("%s/v2.0/Repositories/", m_configuration->GetServerUrl ().c_str ());
+    Utf8String url = GetRepositoryUrl ("");
     HttpRequest request = m_configuration->GetHttpClient ().CreateGetJsonRequest (url);
 
     request.SetCancellationToken (cancellationToken);
-    return request.PerformAsync ()->Then<WSRepositoriesResult> ([] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSRepositoriesResult> ([this] (HttpResponse& httpResponse)
         {
         return ResolveGetRepositoriesResponse (httpResponse);
         });
@@ -260,7 +311,7 @@ ICancellationTokenPtr cancellationToken
     request.SetTransferTimeoutSeconds (WSRepositoryClient::Timeout::Transfer::GetObject);
     request.SetCancellationToken (cancellationToken);
 
-    return request.PerformAsync ()->Then<WSObjectsResult> ([objectId] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSObjectsResult> ([this, objectId] (HttpResponse& httpResponse)
         {
         return ResolveObjectsResponse (httpResponse, &objectId);
         });
@@ -282,7 +333,7 @@ ICancellationTokenPtr cancellationToken
 
     request.SetCancellationToken (cancellationToken);
 
-    return request.PerformAsync ()->Then<WSObjectsResult> ([] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSObjectsResult> ([this] (HttpResponse& httpResponse)
         {
         return ResolveObjectsResponse (httpResponse);
         });
@@ -310,7 +361,7 @@ ICancellationTokenPtr cancellationToken
     request.SetDownloadProgressCallback (downloadProgressCallback);
     request.SetCancellationToken (cancellationToken);
 
-    return request.PerformAsync ()->Then<WSFileResult> ([filePath] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSFileResult> ([this, filePath] (HttpResponse& httpResponse)
         {
         return  ResolveFileResponse (httpResponse, filePath);
         });
@@ -333,7 +384,7 @@ ICancellationTokenPtr cancellationToken
     request.SetTransferTimeoutSeconds (WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken (cancellationToken);
 
-    return request.PerformAsync ()->Then<WSObjectsResult> ([] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSObjectsResult> ([this] (HttpResponse& httpResponse)
         {
         return ResolveObjectsResponse (httpResponse);
         });
@@ -358,7 +409,7 @@ ICancellationTokenPtr cancellationToken
     request.SetTransferTimeoutSeconds (WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken (cancellationToken);
 
-    return request.PerformAsync ()->Then<WSObjectsResult> ([] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSObjectsResult> ([this] (HttpResponse& httpResponse)
         {
         return ResolveObjectsResponse (httpResponse);
         });
@@ -389,7 +440,7 @@ ICancellationTokenPtr cancellationToken
     request.SetCancellationToken (cancellationToken);
     request.SetUploadProgressCallback (uploadProgressCallback);
 
-    return request.PerformAsync ()->Then<WSCreateObjectResult> ([] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSCreateObjectResult> ([this] (HttpResponse& httpResponse)
         {
         return ResolveCreateObjectResponse (httpResponse);
         });
@@ -428,7 +479,7 @@ ICancellationTokenPtr cancellationToken
     request.SetCancellationToken (cancellationToken);
     request.SetUploadProgressCallback (uploadProgressCallback);
 
-    return request.PerformAsync ()->Then<WSUpdateObjectResult> ([] (HttpResponse& httpResponse)
+    return request.PerformAsync ()->Then<WSUpdateObjectResult> ([this] (HttpResponse& httpResponse)
         {
         return ResolveUpdateObjectResponse (httpResponse);
         });
