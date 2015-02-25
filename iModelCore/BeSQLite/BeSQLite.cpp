@@ -123,29 +123,17 @@ private:
     int64_t m_value;
 
 public:
-    explicit CachedRlValue(Utf8CP name)
-        : m_name (name)
-        {
-        BeAssert (!Utf8String::IsNullOrEmpty (name));
-        Reset ();
-        }
-
-    Utf8CP GetName () const { return m_name.c_str(); }
-
-    int64_t GetValue () const
-        {
-        BeAssert (!m_isUnset);
-        return m_value;
-        }
-
-    void ChangeValue (int64_t value, bool initializing = false)
+    explicit CachedRlValue(Utf8CP name) : m_name (name) {BeAssert(!Utf8String::IsNullOrEmpty (name)); Reset();}
+    Utf8CP GetName() const {return m_name.c_str();}
+    int64_t GetValue() const {BeAssert (!m_isUnset); return m_value;}
+    void ChangeValue(int64_t value, bool initializing = false)
         {
         m_isUnset = false;
         m_dirty = !initializing;
         m_value = value;
         }
 
-    int64_t Increment ()
+    int64_t Increment()
         {
         BeAssert (!m_isUnset);
         m_dirty = true;
@@ -153,24 +141,10 @@ public:
         return m_value;
         }
 
-    bool IsUnset () const { return m_isUnset; }
-
-    bool IsDirty () const {
-        BeAssert (!m_isUnset);
-        return m_dirty;
-        }
-
-    void SetIsNotDirty () {
-        BeAssert (!m_isUnset);
-        m_dirty = false;
-        }
-
-    void Reset ()
-        {
-        m_isUnset = true;
-        m_dirty = false;
-        m_value = -1LL;
-        }
+    bool IsUnset() const { return m_isUnset; }
+    bool IsDirty() const {BeAssert (!m_isUnset); return m_dirty;}
+    void SetIsNotDirty() {BeAssert (!m_isUnset); m_dirty = false;}
+    void Reset() {m_isUnset=true; m_dirty=false; m_value=-1LL;}
     };
 
 //=======================================================================================
@@ -1353,21 +1327,21 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::SaveMyProjectGuid (BeProjectGuid projectGuid)
+void Db::SaveProjectGuid(BeGuid projectGuid)
     {
     if (!projectGuid.IsValid())
         projectGuid.Create();
 
-    SaveProperty (Properties::GuidOfMyProject(), (void*) &projectGuid, sizeof(projectGuid));
+    SaveProperty (Properties::ProjectGuid(), (void*) &projectGuid, sizeof(projectGuid));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeProjectGuid Db::QueryMyProjectGuid() const
+BeGuid Db::QueryProjectGuid() const
     {
-    BeProjectGuid projectGuid(false);
-    QueryProperty (&projectGuid, sizeof(projectGuid), Properties::GuidOfMyProject());
+    BeGuid projectGuid(false);
+    QueryProperty (&projectGuid, sizeof(projectGuid), Properties::ProjectGuid());
     return  projectGuid;
     }
 

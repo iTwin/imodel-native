@@ -247,10 +247,10 @@ TEST_F(BeSQLiteDbTests, SetGuids)
     {
     SetupDb (L"SetGuids.db");
 
-    EXPECT_FALSE (m_db.QueryMyProjectGuid().IsValid());
-    BeProjectGuid projGuid;
-    m_db.SaveMyProjectGuid(projGuid);
-    BeProjectGuid projGuidOut = m_db.QueryMyProjectGuid();
+    EXPECT_FALSE (m_db.QueryProjectGuid().IsValid());
+    BeGuid projGuid;
+    m_db.SaveProjectGuid(projGuid);
+    BeGuid projGuidOut = m_db.QueryProjectGuid();
 
     EXPECT_TRUE (projGuidOut.IsValid());
     EXPECT_TRUE (projGuidOut==projGuid);
