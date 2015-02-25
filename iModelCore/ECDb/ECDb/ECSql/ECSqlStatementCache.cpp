@@ -50,7 +50,9 @@ public:
     enum class EventType
         {
         AddedToCache,
-        RemovedFromCache
+        RetrievedFromCache,
+        RemovedFromCache,
+        ClearedCache
         };
 
 private:
@@ -81,10 +83,32 @@ void ECSqlStatementCacheDiagnostics::Log (Utf8CP cacheName, size_t maxCacheSize,
     {
     if (GetLogger ().isSeverityEnabled (LOG_SEVERITY))
         {
-        Utf8CP message = "[%s (max size: %d)] %s | %s";
         cacheName = !Utf8String::IsNullOrEmpty (cacheName) ? cacheName : "unnamed cache";
-        Utf8CP eventStr = eventType == EventType::AddedToCache ? "  Added" : "Removed";
-        GetLogger ().messagev (LOG_SEVERITY, message, cacheName, maxCacheSize, eventStr, ecsql);
+        Utf8CP eventStr = nullptr;
+        switch (eventType)
+            {
+                case EventType::AddedToCache: 
+                    eventStr = "Added";
+                    break;
+                case EventType::RemovedFromCache:
+                    eventStr = "Removed";
+                    break;
+                case EventType::RetrievedFromCache:
+                    eventStr = "Retrieved";
+                    break;
+                case EventType::ClearedCache:
+                    eventStr = "Cleared cache";
+                    break;
+                default:
+                    BeAssert (false && "Programmer error: Adjust ECSqlStatementCacheDiagnostics::Log to new value in EventType enum.");
+                    break;
+            }
+
+        Utf8String message ("[%s (max size: %d)] %s");
+        if (!Utf8String::IsNullOrEmpty (ecsql))
+            message.append (" | ").append (ecsql);
+
+        GetLogger ().messagev (LOG_SEVERITY, message.c_str (), cacheName, maxCacheSize, eventStr);
         }
     }
 
@@ -135,8 +159,11 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry (Utf8CP ecsql) const
         if (0 == strcmp (stmt->GetECSql (), ecsql))
             {
             // if statement > 1, the statement is currently in use, we can't share it
-            if (stmt->GetRefCount () <= 1) 
+            if (stmt->GetRefCount () <= 1)
+                {
+                ECSqlStatementCacheDiagnostics::Log (GetName (), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::RetrievedFromCache, ecsql);
                 return stmt.get ();
+                }
             }
         }
 
@@ -171,6 +198,7 @@ void ECSqlStatementCache::Empty ()
     {
     BeDbMutexHolder _v_v (m_mutex);
     m_entries.clear ();
+    ECSqlStatementCacheDiagnostics::Log (GetName (), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::ClearedCache, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
