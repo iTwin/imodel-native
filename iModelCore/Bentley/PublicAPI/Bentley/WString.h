@@ -265,30 +265,17 @@ public:
     };
 
 //=======================================================================================
-//! Construct a WString by creating a formatted string.
 //! @ingroup BeStringGroup
 //  @bsiclass                                                   Keith.Bentley   11/11
 //=======================================================================================
 struct WPrintfString : WString
 {
-    //! Construct a WString by creating a formatted string.
-    BENTLEYDLL_EXPORT WPrintfString (WCharCP format, ...);
-    //! Construct a WString by creating a formatted string.
-    BENTLEYDLL_EXPORT WPrintfString(WCharCP format, va_list);
-    //! WCharCP type-conversion operator.
-    operator WCharCP(){return c_str();}
-};
+    //! Construct a WString from a format string and optional arguments
+    BENTLEYDLL_EXPORT WPrintfString(WCharCP format, ...);
 
-//=======================================================================================
-//! Construct a WString by creating a formatted string from a va_list.
-//! @ingroup BeStringGroup
-//  @bsiclass                                                   Keith.Bentley   11/11
-//=======================================================================================
-struct VWPrintfString : WString
-{
-    //! Construct a WString by creating a formatted string.
-    BENTLEYDLL_EXPORT VWPrintfString(WCharCP format, va_list);
-    //! WCharCP type-conversion operator.
+    //! Construct a WString from a format string and a va_list 
+    BENTLEYDLL_EXPORT WPrintfString(WCharCP format, va_list);
+
     operator WCharCP(){return c_str();}
 };
 
@@ -452,6 +439,7 @@ struct Utf8String : public bastring
 struct Utf8PrintfString : Utf8String
 {
     BENTLEYDLL_EXPORT explicit Utf8PrintfString (Utf8CP format, ...);
+    BENTLEYDLL_EXPORT Utf8PrintfString(Utf8CP format, va_list);
     operator Utf8CP(){return c_str();}
 };
 

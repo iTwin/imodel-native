@@ -952,7 +952,7 @@ BentleyStatus Utf8String::Sprintf (Utf8CP format, ...)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8PrintfString::Utf8PrintfString (Utf8CP format, ...) 
+Utf8PrintfString::Utf8PrintfString (Utf8CP format, ...) : Utf8String()
     {
     va_list args; 
     va_start (args, format); 
@@ -963,11 +963,21 @@ Utf8PrintfString::Utf8PrintfString (Utf8CP format, ...)
         return;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
-        {                // Note that we have to re-create 'args' in order make a second attempt.
-        va_start (args, format); 
-        result = BeUtf8StringSprintf (*this, format, args, result);
-        va_end (args);
+        BeUtf8StringSprintf (*this, format, args, result);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8PrintfString::Utf8PrintfString (Utf8CP format, va_list args) : Utf8String()
+    {
+    auto result = BeUtf8StringSprintf (*this, format, args);
+    if (result < 0)
+        return;
+
+    if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
+        {                // Note that we have to re-create 'args' in order make a second attempt.
+        result = BeUtf8StringSprintf (*this, format, args, result);
         if (result < 0)
             return;
         }
@@ -1033,16 +1043,13 @@ WPrintfString::WPrintfString(WCharCP format, ...) : WString()
         va_start(args, format);
         result = BeWStringSprintf(*this, format, args, result);
         va_end(args);
-
-        if (result < 0)
-            return;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-VWPrintfString::VWPrintfString(WCharCP format, va_list args) : WString()
+WPrintfString::WPrintfString(WCharCP format, va_list args) : WString()
     {
     auto result = BeWStringSprintf(*this, format, args);
 
@@ -1050,12 +1057,7 @@ VWPrintfString::VWPrintfString(WCharCP format, va_list args) : WString()
         return;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
-        {                // Note that we have to re-create 'args' in order make a second attempt.
-        result = BeWStringSprintf(*this, format, args, result);
-
-        if (result < 0)
-            return;
-        }
+        BeWStringSprintf(*this, format, args, result);
     }
 
 #if defined (__unix__)
