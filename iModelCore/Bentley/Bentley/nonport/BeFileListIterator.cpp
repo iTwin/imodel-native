@@ -156,10 +156,8 @@ public:
         {
         Clear ();
 
-        long name_max = pathconf (dirpath, _PC_NAME_MAX);
-        if (name_max == -1)         /* Limit not defined, or error */
-            name_max = 255;         /* Take a guess */
-        size_t len = offsetof(struct dirent, d_name) + name_max + 1;
+        // pathconf(..._PC_NAME_MAX) lies on iOS (255 vs. 1024)... since we use MAX_PATH for other fixed-size buffers, that seems like a safe enough bet here.
+        size_t len = offsetof(struct dirent, d_name) + MAX_PATH + 1;
 
         m__dp = (struct dirent*) malloc(len);
 

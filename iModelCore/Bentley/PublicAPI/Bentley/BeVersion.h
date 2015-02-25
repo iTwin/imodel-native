@@ -70,6 +70,8 @@ public:
     bool operator <= (BeVersionCR rhs) const {return CompareTo (rhs) <= 0;}
     bool operator > (BeVersionCR rhs) const  {return CompareTo (rhs) > 0;}
     bool operator >= (BeVersionCR rhs) const {return CompareTo (rhs) >= 0;}
+    
+    bool IsEmpty() const {return 0 == GetInt64(VERSION_All);}
 
     Utf8String ToString (Utf8CP format = VERSION_FORMAT) const
         {
