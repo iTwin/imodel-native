@@ -50,8 +50,9 @@ public:
     enum class EventType
         {
         AddedToCache,
-        RetrievedFromCache,
+        GotFromCache,
         RemovedFromCache,
+        CreatedCache,
         ClearedCache
         };
 
@@ -93,8 +94,11 @@ void ECSqlStatementCacheDiagnostics::Log (Utf8CP cacheName, size_t maxCacheSize,
                 case EventType::RemovedFromCache:
                     eventStr = "Removed";
                     break;
-                case EventType::RetrievedFromCache:
-                    eventStr = "Retrieved";
+                case EventType::GotFromCache:
+                    eventStr = "Got";
+                    break;
+                case EventType::CreatedCache:
+                    eventStr = "Created cache";
                     break;
                 case EventType::ClearedCache:
                     eventStr = "Cleared cache";
@@ -135,7 +139,9 @@ ECSqlStatementCache::ECSqlStatementCache (size_t maxSize, Utf8CP name)
   m_name (name)
     {
     BeAssert (m_maxSize > 0); m_entries.reserve (m_maxSize);
+    ECSqlStatementCacheDiagnostics::Log (GetName (), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::CreatedCache, nullptr);
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
@@ -161,7 +167,7 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry (Utf8CP ecsql) const
             // if statement > 1, the statement is currently in use, we can't share it
             if (stmt->GetRefCount () <= 1)
                 {
-                ECSqlStatementCacheDiagnostics::Log (GetName (), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::RetrievedFromCache, ecsql);
+                ECSqlStatementCacheDiagnostics::Log (GetName (), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::GotFromCache, ecsql);
                 return stmt.get ();
                 }
             }
