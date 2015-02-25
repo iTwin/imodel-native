@@ -5,7 +5,7 @@
 ECDbBrownBagDemo*       # Sample code for an ECDb BrownBag session which does not need to be run during a build.
 Performance*            # Performance tests are always excluded from being run during a build.
 ECSqlTestFixture.Debug  # This test only serves for debugging the ECSqlStatement API.
-InstanceCRUDTests.* # test data is not available yet, run by testing after buid. Majd.Uddin
+InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -15,7 +15,6 @@ ECDbRelationships.JoinTests
 
 # TFS Defect 170652 and 170717
 InstanceCRUDTests.InsertUpdateDeleteTest
-
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
