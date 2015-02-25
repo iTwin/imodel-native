@@ -591,7 +591,7 @@ private:
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    CachedECSqlStatement () : m_refCount (0) {}
+    CachedECSqlStatement () : ECSqlStatement (), m_refCount (0) {}
     ~CachedECSqlStatement () {}
 
     uint32_t AddRef () const {return ++m_refCount;}
