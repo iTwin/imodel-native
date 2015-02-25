@@ -573,6 +573,14 @@ typedef ECSqlStatement const& ECSqlStatementCR;
 
 //=======================================================================================
 //! A reference-counted ECSqlStatement. ECSqlStatement is freed when last reference is released.
+//! @remarks Its main purpose is to be used in a statement cache. Caching a statement allows to reuse an already prepared
+//! statement and therefore avoids the cost of preparing the statement multiple times.
+//! However be aware that holding on to a statement also comes at a cost (higher memory footprint), so applications
+//! must consciously decide which statements need to be cached and which not, i.e. optimize
+//! between the preparation cost and the memory cost.
+//! Implementing a cache that holds CachedECSqlStatements is left to applications as
+//! there are a lot of different ways how a cache should work - with an important criterion
+//! being the desired lifetime of a statement in the cache.
 // @bsiclass                                                    Krischan.Eberle   02/15
 //=======================================================================================
 struct CachedECSqlStatement : ECSqlStatement
@@ -583,7 +591,7 @@ private:
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    CachedECSqlStatement ();
+    CachedECSqlStatement () : m_refCount (0) {}
     ~CachedECSqlStatement () {}
 
     uint32_t AddRef () const {return ++m_refCount;}
