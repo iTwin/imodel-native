@@ -2606,8 +2606,6 @@ public:
     //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
     //! @param[out] newValue Incremented value
     //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
-    //! @param[in] initialValue if not nullptr, and if the specified RepositoryLocalValue does not exist yet,
-    //!            a RepositoryLocalValue with the @p initialValue will be saved and then incremented.
     //! @return BE_SQLITE_OK in case of success. Error code otherwise. If @initialValue is nullptr and
     //!         the RepositoryLocalValue does not exist, and error code is returned.
     //! @see RegisterRepositoryLocalValue
