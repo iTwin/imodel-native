@@ -117,8 +117,8 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
         // --
         // -1
         // 2
-        // -1
-        // -1
+        // -3
+        // -4
 
         ASSERT_EQ((int) ECSqlEventHandler::EventType::Update, (int) stmt.GetDefaultEventHandler()->GetEventType());
         ASSERT_EQ(2, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
@@ -129,16 +129,16 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
         ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
         ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() == nullptr);
 
-        stmt.BindInt(1, -2);
+        stmt.BindInt(1, -10);
         stmt.BindInt(2, 10);
         ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
         //test table now:
         // I
         // --
         // -1
-        // -1
-        // -1
-        // -1
+        // -2
+        // -3
+        // -4
         ASSERT_EQ((int) ECSqlEventHandler::EventType::Update, (int) stmt.GetDefaultEventHandler()->GetEventType());
         ASSERT_EQ(4, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
         ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() != nullptr);
