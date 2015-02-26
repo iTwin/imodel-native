@@ -252,7 +252,7 @@ struct ECDbSqlDb : NonCopyableClass
         ECDbSqlTable* FindTableP (Utf8CP name) const;
         ECDbSqlIndex const* FindIndex (Utf8CP name) const;
         ECDbSqlIndex* FindIndexP (Utf8CP name) ;
-        ECDbSqlIndex* CreateIndex (Utf8CP tableName, Utf8CP indexName);
+        ECDbSqlIndex* CreateIndex(Utf8CP tableName, Utf8CP indexName);
         const std::vector<ECDbSqlIndex const*> GetIndexes () const;
         std::vector<ECDbSqlIndex*> GetIndexesR ();
         const std::vector<ECDbSqlTable const*> GetTables () const;
@@ -274,7 +274,7 @@ struct ECDbSqlDb : NonCopyableClass
 //======================================================================================
 struct ECDbSqlIndex : NonCopyableClass
     {
-    friend ECDbSqlIndex* ECDbSqlDb::CreateIndex (Utf8CP tableName, Utf8CP indexName);
+    friend ECDbSqlIndex* ECDbSqlDb::CreateIndex(Utf8CP tableName, Utf8CP indexName);
     struct PersistenceManager : NonCopyableClass
         {
         private:
@@ -299,8 +299,8 @@ struct ECDbSqlIndex : NonCopyableClass
         PersistenceManager m_persistenceManager;
         ECDbIndexId m_id;
     private:
-        ECDbSqlIndex (ECDbSqlTable& table, Utf8CP name, ECDbIndexId id)
-            :m_isUnique (false), m_table (table), m_name (name), m_id (id), m_persistenceManager (*this)
+        ECDbSqlIndex(ECDbSqlTable& table, Utf8CP name, ECDbIndexId id)
+            :m_isUnique(false), m_table(table), m_name(name),  m_id(id), m_persistenceManager(*this)
             {}
 
     public:

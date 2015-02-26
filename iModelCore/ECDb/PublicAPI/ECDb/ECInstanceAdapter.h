@@ -100,7 +100,7 @@ public:
     //! Instantiates a new ECInstanceInserter.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this inserter can insert
-    ECDB_EXPORT ECInstanceInserter (ECDbR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT ECInstanceInserter (ECDbCR ecdb, ECN::ECClassCR ecClass);
     ECDB_EXPORT ~ECInstanceInserter ();
 
     //! Indicates whether this ECInstanceInserter is valid and can be used to insert ECInstances.
@@ -156,20 +156,20 @@ public:
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this updater can update
-    ECDB_EXPORT ECInstanceUpdater (ECDbR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT ECInstanceUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] instance The property values that are set on this IECInstance will be used to create column bindings.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater (ECDbR ecdb, ECN::IECInstanceCR instance);
+    ECDB_EXPORT ECInstanceUpdater (ECDbCR ecdb, ECN::IECInstanceCR instance);
 
     //! Instantiates a new ECInstanceUpdater.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass if ECInstances this updater can update
     //! @param[in] propertiesToBind A list of property indices that should be used to create the column bindings.  Properties are assumed to all come from the same class.
     //! @remarks All instances that subsequently use this Updater are presumed to have the same property values set.
-    ECDB_EXPORT ECInstanceUpdater (ECDbR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
+    ECDB_EXPORT ECInstanceUpdater (ECDbCR ecdb, ECN::ECClassCR ecClass, bvector<uint32_t>& propertiesToBind);
 
     ECDB_EXPORT ~ECInstanceUpdater ();
 
@@ -200,7 +200,7 @@ public:
      struct EventHandler;
 
 private:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
     mutable ECSqlStatement m_statement;
     InstancesAffectedECSqlEventHandler m_internalEventHandler;
@@ -214,12 +214,12 @@ public:
     //! Instantiates a new ECInstanceDeleter.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this deleter can delete
-    ECDB_EXPORT ECInstanceDeleter (ECDbR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT ECInstanceDeleter (ECDbCR ecdb, ECN::ECClassCR ecClass);
     //! Instantiates a new ECInstanceDeleter.
     //! @param[in] ecdb ECDb file handler
     //! @param[in] ecClass ECClass of ECInstances this deleter can delete
     //! @param[in] eventHandler Handler that gets notified when delete events are fired.
-    ECDB_EXPORT ECInstanceDeleter (ECDbR ecdb, ECN::ECClassCR ecClass, ECSqlEventHandler& eventHandler);
+    ECDB_EXPORT ECInstanceDeleter (ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlEventHandler& eventHandler);
 
     ECDB_EXPORT ~ECInstanceDeleter ();
 

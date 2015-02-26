@@ -15,31 +15,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//======================================================================================
-// @bsiclass                                             Ramanujam.Raman      01 / 2014
-//===============+===============+===============+===============+===============+======
-struct ECSqlStatementCache : NonCopyableClass
-    {
-private:
-    mutable BeDbMutex m_mutex;
-    ECDbR m_ecDb;
-
-    mutable bvector<Utf8String> m_cachedSqlStrings;
-    mutable bvector<std::shared_ptr<ECSqlStatement>> m_cachedStatements;
-
-    std::shared_ptr<ECSqlStatement> FindStatement (Utf8CP key) const;
-
-    void AddStatement (Utf8CP ecSql, std::shared_ptr<ECSqlStatement>& statement) const;
-
-    void PrepareStatement (std::shared_ptr<ECSqlStatement>& stmt, Utf8CP ecSql);
-
-public:
-    ECSqlStatementCache (ECDbR ecDb);
-
-    virtual ~ECSqlStatementCache () {}
-
-    std::shared_ptr<ECSqlStatement> GetPreparedStatement (Utf8CP sql);
-    };
     
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -51,16 +26,16 @@ public:
 struct JsonReader::Impl
     {
 private:
-    ECDbR m_ecDb;
+    ECDbCR m_ecDb;
     ECN::ECClassCP m_ecClass;
     ECSqlStatementCache m_statementCache;
 
     bool m_isValid;
 
-    BentleyStatus PrepareECSql (std::shared_ptr<ECSqlStatement>& statement, Utf8StringCR ecSql);
+    BentleyStatus PrepareECSql (CachedECSqlStatementPtr& statement, Utf8StringCR ecSql);
     BentleyStatus PrepareECSql 
         (
-        std::shared_ptr<ECSqlStatement>& statement, 
+        CachedECSqlStatementPtr& statement,
         const ECRelationshipPath& pathFromRelatedClass, 
         const ECInstanceId& ecInstanceId, 
         bool selectInstanceKeyOnly,
@@ -87,7 +62,7 @@ private:
 
     bool IsValid () const { return m_isValid; }
 public:
-    Impl (ECDbR ecdb, ECN::ECClassId ecClassId);
+    Impl (ECDbCR ecdb, ECN::ECClassId ecClassId);
 
     BentleyStatus Read (JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, ECInstanceId const& ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions);
     BentleyStatus ReadInstance (JsonValueR jsonInstance, ECInstanceId const& ecInstanceId, JsonECSqlSelectAdapter::FormatOptions formatOptions);
@@ -111,8 +86,8 @@ private:
 
 public:
     //! @param schemaName [in] Can be nullptr, in which case the class is resolved in the default schema (assuming that's supplied). 
-    static ECN::ECClassCP ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbR ecDb, ECN::ECSchemaCP defaultSchema);
-    static ECN::ECClassCP ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbR ecDb, ECN::ECSchemaCP defaultSchema);
+    static ECN::ECClassCP ResolveClass (Utf8CP schemaName, Utf8StringCR className, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
+    static ECN::ECClassCP ResolveClass (Utf8StringCR possiblyQualifiedClassName, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
     static Utf8String GetName (ECN::ECClassCR ecClass);
     static Utf8String GetQualifiedECObjectsName (ECN::ECClassCR ecClass);

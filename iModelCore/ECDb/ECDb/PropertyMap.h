@@ -170,7 +170,7 @@ public:
     ECDbSqlColumn const* GetFirstColumn() const;
 
     //! For properties that map to columns, the name of the column... or 'base' name in case of a multi-column DPoint2d, 
-    //! e.g. "origin", when the actual columns are origin.X and origin.Y
+    //! e.g. "origin", when the actual columns are origin_X and origin_Y
     //! @return nullptr if there is no relevant column, or column names does not differ from the default
     Utf8CP GetColumnBaseName() const;
 

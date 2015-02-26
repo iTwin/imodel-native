@@ -129,8 +129,8 @@ public:
     static  BeSQLite::DbResult DeleteECSchema                           (ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteCustomAttribute                    (ECContainerId containerId, ECContainerType containerType, ECClassId customAttributeClassId, BeSQLite::Db& db);
 
-    static  BeSQLite::DbResult GetECSchemaKeys                          (DbECSchemaKeysR keys, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetECClassKeys                           (DbECClassKeysR keys, ECSchemaId schemaId, BeSQLite::Db& db);
+    static  BeSQLite::DbResult GetECSchemaKeys                          (ECSchemaKeys& keys, BeSQLite::Db& db);
+    static  BeSQLite::DbResult GetECClassKeys                           (ECClassKeys& keys, ECSchemaId schemaId, BeSQLite::Db& db);
     static                bool IsECSchemaMapped                         (bool* schemaNotFound, ECN::ECSchemaCR ecSchema, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetClassesMappedToTable                  (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db);
     static                bool IsCustomAttributeDefined                 (BeSQLite::Db& db, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);

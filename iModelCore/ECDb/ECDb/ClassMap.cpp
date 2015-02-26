@@ -659,6 +659,7 @@ void ClassMap::CreateIndices ()
 
         auto index = m_table->CreateIndex (indexInfo->GetName ());
         index->SetIsUnique (indexInfo->GetIsUnique ());
+        Utf8String whereExpression;
         bool error = false;
 
         for (Utf8String classQualifiedPropertyName : indexInfo->GetProperties ())
@@ -802,10 +803,25 @@ void ClassMap::CreateIndices ()
                     error = true;
                     break;
                     }
-                index->Add (column->GetName ().c_str ());
+                if (index->Add(column->GetName().c_str()) == BentleyStatus::SUCCESS)
+                    {
+                    switch (indexInfo->GetWhere())
+                        {
+                        case EC::ClassIndexInfo::WhereConstraint::NotNull:
+                            if (whereExpression.length() != 0)
+                                whereExpression.append(" AND");
+                            whereExpression.append(" [");
+                            whereExpression.append(column->GetName().c_str());
+                            whereExpression.append("]");
+                            whereExpression.append(" IS NOT NULL");
+                            
+                        default:
+                            break;
+                        }
+                    }
                 }
             }
-
+            index->SetWhereExpression(whereExpression.c_str());
         if (error || !index->IsValid ())
             {
             index->Drop ();

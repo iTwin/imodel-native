@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -138,7 +138,7 @@ private:
     static bool                                        isPredicate                     (connectivity::OSQLParseNode const* parseNode);
 
 public:
-    static void Parse (ECSqlParseTreePtr& ecsqlParseTree, ECSqlStatusContext& statusContext, ECDbR db, Utf8CP ecsql, IClassMap::View classView);
+    static void Parse (ECSqlParseTreePtr& ecsqlParseTree, ECSqlStatusContext& statusContext, ECDbCR db, Utf8CP ecsql, IClassMap::View classView);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

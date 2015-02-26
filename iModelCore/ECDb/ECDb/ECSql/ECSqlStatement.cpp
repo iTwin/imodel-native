@@ -69,7 +69,7 @@ void ECSqlStatement::Finalize ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare (ECDbR ecdb, Utf8CP ecsql)
+ECSqlStatus ECSqlStatement::Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     return m_pimpl->Prepare (ecdb, ecsql);
     }
@@ -445,7 +445,7 @@ Utf8CP ECSqlStatement::GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2014
 //---------------------------------------------------------------------------------------
-ECDbP ECSqlStatement::GetECDb () const
+ECDbCP ECSqlStatement::GetECDb () const
     {
     return m_pimpl->GetECDb ();
     }

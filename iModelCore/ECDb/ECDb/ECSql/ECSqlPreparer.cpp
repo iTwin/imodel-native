@@ -1551,7 +1551,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
             auto propertyCP = arrayField->GetColumnInfo ().GetProperty();
             BeAssert(propertyCP != nullptr);
             PropertyPath backReferencePath;
-            auto status = DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath (backReferencePath, *propertyCP, preparedStatement->GetECDbR ());
+            auto status = DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath (backReferencePath, *propertyCP, preparedStatement->GetECDb ());
             if (status != ECSqlStatus::Success)
                 {
                 BeAssert(false && "Failed to resolved back reference for a dynamic property");
@@ -1584,7 +1584,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
             }
         else
             {
-            auto structRootMap = preparedStatement->GetECDbR ().GetECDbImplR().GetECDbMap ().GetClassMap (*structRoot);
+            auto structRootMap = preparedStatement->GetECDb ().GetECDbImplR().GetECDbMap ().GetClassMap (*structRoot);
             auto sourcePropertyMap = structRootMap->GetPropertyMap(sourcePropertyPath.c_str());
 
             auto nativeSqlSnippets = sourcePropertyMap->ToNativeSql (classAlias, ctx.GetCurrentScope ().GetECSqlType ());

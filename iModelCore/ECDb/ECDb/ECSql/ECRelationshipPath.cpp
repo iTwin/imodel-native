@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECRelationshipPath.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,7 +34,7 @@ ECRelatedClassSpecifier::ECRelatedClassSpecifier (ECN::ECRelationshipClassCR rel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelatedClassSpecifier::InitFromString (Utf8StringCR relatedSpecifierString, ECDbR ecDb, ECN::ECSchemaCP defaultSchema)
+StatusInt ECRelatedClassSpecifier::InitFromString (Utf8StringCR relatedSpecifierString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema)
     {
     // [SchemaName:]RelationshipClassName:ForwardOrBackwardInt:[[SchemaName:]RelatedClassName]
     // TODO: Need to work with schema version numbers eventually. Hopefully regular expressions will be available on all platforms by then. 
@@ -416,7 +416,7 @@ void ECRelationshipPath::Reverse (ECRelationshipPath& reversedPath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelationshipPath::InitFromString (Utf8StringCR relationshipPath, ECDbR ecDb, ECSchemaCP defaultSchema)
+StatusInt ECRelationshipPath::InitFromString (Utf8StringCR relationshipPath, ECDbCR ecDb, ECSchemaCP defaultSchema)
     {
     Clear();
 
@@ -589,7 +589,7 @@ StatusInt ECRelationshipPath::Combine (ECRelationshipPath const& pathToCombine)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelatedItemsDisplaySpecificationsCache* ECRelatedItemsDisplaySpecificationsCache::GetCache (ECDbR ecDb)
+ECRelatedItemsDisplaySpecificationsCache* ECRelatedItemsDisplaySpecificationsCache::GetCache (ECDbCR ecDb)
     {
     ECRelatedItemsDisplaySpecificationsCache* cache = 
         reinterpret_cast <ECRelatedItemsDisplaySpecificationsCache *> 
@@ -608,7 +608,7 @@ ECRelatedItemsDisplaySpecificationsCache* ECRelatedItemsDisplaySpecificationsCac
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECClassCP ECRelatedItemsDisplaySpecificationsCache::GetRelatedSpecificationsClass (ECDbR ecDb)
+ECClassCP ECRelatedItemsDisplaySpecificationsCache::GetRelatedSpecificationsClass (ECDbCR ecDb)
     {
     ECClassCP customAttributeClass = ecDb.GetSchemaManager ().GetECClass ("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
     POSTCONDITION (customAttributeClass != nullptr && "Unable to locate RelatedItemsDisplaySpecifications in standard schema", nullptr);

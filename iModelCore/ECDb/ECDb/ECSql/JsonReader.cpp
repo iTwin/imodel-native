@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonReader.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonReader::JsonReader (ECDbR ecdb, ECN::ECClassId ecClassId)
+JsonReader::JsonReader (ECDbCR ecdb, ECN::ECClassId ecClassId)
 : m_pimpl (new Impl (ecdb, ecClassId))
     {
     }

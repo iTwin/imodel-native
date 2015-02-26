@@ -73,6 +73,7 @@
     <ClCompile Include="ECSql\ECSqlPrepareContext.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparer.cpp" />
     <ClCompile Include="ECSql\ECSqlPreparedStatement.cpp" />
+    <ClCompile Include="ECSql\ECSqlStatementCache.cpp" />
     <ClCompile Include="ECSql\ECSqlStatusContext.cpp" />
     <ClCompile Include="ECSql\ECSqlStepTask.cpp" />
     <ClCompile Include="ECSql\ECSqlTypeInfo.cpp" />

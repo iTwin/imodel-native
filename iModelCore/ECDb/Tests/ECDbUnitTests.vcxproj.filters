@@ -160,6 +160,9 @@
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECSqlStatementCache_Test.cpp">
+      <Filter>NonPublished\ECDb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">

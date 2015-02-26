@@ -12,7 +12,6 @@
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
 
-ECDB_TYPEDEFS(ClassMapInfo);
 ECDB_TYPEDEFS(RelationshipClassMapInfo);
 ECDB_TYPEDEFS_PTR (ClassMap);
 ECDB_TYPEDEFS_PTR (PropertyMap);
@@ -25,8 +24,6 @@ ECDB_TYPEDEFS_PTR(MappedTable);
 ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
-ECDB_TYPEDEFS_PTR(RelevantRelationship);
-ECDB_TYPEDEFS_PTR(DbForignKeyConstraint);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
 
@@ -53,7 +50,6 @@ ECDB_TYPEDEFS(DbECSchemaReferenceInfo);
 ECDB_TYPEDEFS(DbBuffer);
 ECDB_TYPEDEFS(DbECClassEntry);
 ECDB_TYPEDEFS(DbECSchemaEntry);
-ECDB_TYPEDEFS(ECInstanceSerializer);
 ECDB_TYPEDEFS(ClassClause);
 ECDB_TYPEDEFS(WhereClause);
 
@@ -253,7 +249,9 @@ enum ECContainerType
 #define BSCAP_Collate_RTrim             L"RTrim"
 
 #define BSCAP_Name                      L"Name"
+#define BSCAP_Where                     L"Where"
 #define BSCAP_Properties                L"Properties"
+#define BSCAP_ECBDNOTNULL               "ECBD_NOTNULL"
 #define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
 
 #define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"

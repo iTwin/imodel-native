@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonInserter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonInserter::JsonInserter (ECDbR ecdb, ECN::ECClassCR ecClass)
+JsonInserter::JsonInserter (ECDbCR ecdb, ECN::ECClassCR ecClass)
 : m_ecClass (ecClass), m_ecinstanceInserter (ecdb, ecClass)
     {
     }

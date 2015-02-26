@@ -444,7 +444,11 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="MapStrategy.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="MapStrategy.h">
+      <Filter>ECDbMap\Map</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -810,6 +814,9 @@
     </ClCompile>
     <ClCompile Include="ColumnInfo.cpp">
       <Filter>ECDbMap\Db</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\ECSqlStatementCache.cpp">
+      <Filter>ECSql\ECSqlStatement</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

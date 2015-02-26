@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/NonPublished/ECDb/ECDbInstances_Test.cpp $
+|  $Source: Tests/NonPublished/ECDb/ECDbInstances_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/NonPublished/ECDb/ECDbTestProject.h>
@@ -748,9 +748,9 @@ TEST(ECDbInstances, FindECInstances)
     ECValue          v;
     int              rows;
 
-    DbECClassKeys    classKeys;
+    ECClassKeys    classKeys;
     db.GetSchemaManager().GetECClassKeys (classKeys, "StartupCompany");
-    for (DbECClassKey ecClassKey : classKeys)
+    for (ECClassKey ecClassKey : classKeys)
         {
         ECClassCP ecClass = db.GetSchemaManager().GetECClass (ecClassKey.GetECClassId());  // WIP_FNV: start taking ECSchemaName, ECClassName, instead
         ASSERT_TRUE (ecClass != nullptr);

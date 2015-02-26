@@ -29,9 +29,6 @@ private:
     int               m_priority;
     void InitializeFromHint(ECN::IECInstanceCP ecdbPropertyHint, ECN::ECPropertyCR ecProperty);
 
-protected:
-    ColumnInfo (Utf8CP columnName, ECN::PrimitiveType primitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate);
-
 public:
     ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECN::IECInstanceCP ecdbPropertyHint);
     virtual ~ColumnInfo() {}

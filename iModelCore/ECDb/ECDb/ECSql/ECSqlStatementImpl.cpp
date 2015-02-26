@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementImpl.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -38,7 +38,7 @@ ECSqlStatement::Impl::~Impl ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbR ecdb, Utf8CP ecsql)
+ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     Diagnostics diag (ecsql, GetPrepareDiagnosticsLogger (), true);
     return ECSqlStatementBase::_Prepare (ecdb, ecsql);

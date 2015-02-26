@@ -48,7 +48,7 @@ int startColumnIndex
     else
         {
         ECPropertyCP generatedProperty = nullptr;
-        auto stat = selectPreparedState->GetDynamicSelectClauseECClassR ().AddProperty (generatedProperty, *derivedProperty, selectPreparedState->GetECDbR ());
+        auto stat = selectPreparedState->GetDynamicSelectClauseECClassR ().AddProperty (generatedProperty, *derivedProperty, selectPreparedState->GetECDb ());
         if (stat != ECSqlStatus::Success)
             {
             BeAssert (false && "");
@@ -193,7 +193,7 @@ PropertyNameExp const* propertyName, //NOT USED
 PrimitiveType primitiveType
 )
     {
-    auto const& primArraySystemClass = ctx.GetECSqlStatementR().GetPreparedStatementP ()->GetECDbR ().GetECDbImplR().GetECDbMap ().GetClassForPrimitiveArrayPersistence(primitiveType);
+    auto const& primArraySystemClass = ctx.GetECSqlStatementR().GetPreparedStatementP ()->GetECDb ().GetECDbImplR().GetECDbMap ().GetClassForPrimitiveArrayPersistence(primitiveType);
     field = unique_ptr<ECSqlField> (
         new PrimitiveArrayMappedToSingleColumnECSqlField (ctx.GetECSqlStatementR (), move (ecsqlColumnInfo), sqlColumnIndex++, primArraySystemClass));  
     return ECSqlStatus::Success;
@@ -211,7 +211,7 @@ ECSqlColumnInfo&& ecsqlColumnInfo,
 PropertyMapCR propertyMap
 )
     {
-    auto& ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDbR ();
+    auto const& ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
     auto arrayProperty = propertyMap.GetProperty().GetAsArrayProperty();
     if (!arrayProperty)
         {

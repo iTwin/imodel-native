@@ -21,6 +21,7 @@
     <ClCompile Include="NonPublished\ECDb\ECDbSchemas_Test.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECDbTestProject.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECInstanceIdSequence_Tests.cpp" />
+    <ClCompile Include="NonPublished\ECDb\ECSqlStatementCache_Test.cpp" />
     <ClCompile Include="NonPublished\ECDb\FSRTests.cpp" />
     <ClCompile Include="Performance\DbLogHelper.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />

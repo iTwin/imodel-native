@@ -90,7 +90,7 @@ struct ECInstanceFinder
 //__PUBLISH_SECTION_END__
             void CopyFrom (const QueryableRelationship& copyFrom);
             void InitializeRelatedDirection();
-            ECSqlStatus PrepareECSqlStatement (ECDbR ecDb);
+            ECSqlStatus PrepareECSqlStatement (ECDbCR ecDb);
 //__PUBLISH_SECTION_START__
         public:
             QueryableRelationship 
@@ -104,7 +104,7 @@ struct ECInstanceFinder
 
             QueryableRelationship& operator= (const QueryableRelationship& copyFrom);
 
-            ECSqlStatus GetPreparedECSqlStatement (std::shared_ptr<ECSqlStatement>& cachedStatement, ECDbR ecDb);
+            ECSqlStatus GetPreparedECSqlStatement (std::shared_ptr<ECSqlStatement>& cachedStatement, ECDbCR ecDb);
 
             Utf8String ToString();
 
@@ -123,8 +123,8 @@ private:
     QueryableRelationshipsByClass m_queryableRelationshipsByClass;
 
 //__PUBLISH_SECTION_END__
-    static void FindEndClasses (bset<ECN::ECClassId>& endClassIds, ECN::ECClassId relationshipClassId, ECN::ECRelationshipEnd relationshipEnd, ECDbR ecDb);
-    static DbResult FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECN::ECClassId thisEndClassId, ECDbR ecDb);
+    static void FindEndClasses (bset<ECN::ECClassId>& endClassIds, ECN::ECClassId relationshipClassId, ECN::ECRelationshipEnd relationshipEnd, ECDbCR ecDb);
+    static DbResult FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECN::ECClassId thisEndClassId, ECDbCR ecDb);
     DbResult GetRelationshipsOnEnd (QueryableRelationshipVectorP &queryableRelationships, ECN::ECClassId thisEndClassId);
 
     BentleyStatus FindInstancesRecursive 
@@ -134,12 +134,12 @@ private:
         ECInstanceFinder::FindOptions findOptions,
         uint8_t& currentDepth
         );
-    static void DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instanceKeyMultiMap, ECDbR ecDb);
+    static void DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instanceKeyMultiMap, ECDbCR ecDb);
 
 //__PUBLISH_SECTION_START__
 
 private:
-    ECDbR m_ecDb;
+    ECDbCR m_ecDb;
     ECInstanceFinder (ECInstanceFinder const& other) : m_ecDb (other.m_ecDb) {}
     ECInstanceFinder& operator= (ECInstanceFinder const&) {return *this;}
 
@@ -148,7 +148,7 @@ public:
     //! @remarks Holds some cached state to speed up future queries, including prepared statements to traverse
     //! relationships. 
     //! @see Finalize
-    ECDB_EXPORT ECInstanceFinder (ECDbR ecDb);
+    ECDB_EXPORT explicit ECInstanceFinder (ECDbCR ecDb);
 
     //! Gathers instances starting with the seed instances, recursively traversing any specified relationships
     //! @param[out] instanceKeyMap All instances found organized as a multi-map of ECClassId-s & ECInstanceId-s. 

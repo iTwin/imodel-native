@@ -98,7 +98,7 @@ ECInstanceFinder::QueryableRelationship& ECInstanceFinder::QueryableRelationship
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatus ECInstanceFinder::QueryableRelationship::GetPreparedECSqlStatement (std::shared_ptr<ECSqlStatement>& cachedStatement, ECDbR ecDb)
+ECSqlStatus ECInstanceFinder::QueryableRelationship::GetPreparedECSqlStatement (std::shared_ptr<ECSqlStatement>& cachedStatement, ECDbCR ecDb)
     {
     if (!m_cachedStatement /* Statement has not been created before - uses shared_ptr<>.operator bool */  ||
         m_cachedStatement.use_count() > 1 /* Statement is currently in use */)
@@ -129,7 +129,7 @@ ECSqlStatus ECInstanceFinder::QueryableRelationship::GetPreparedECSqlStatement (
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatus ECInstanceFinder::QueryableRelationship::PrepareECSqlStatement (ECDbR ecDb)
+ECSqlStatus ECInstanceFinder::QueryableRelationship::PrepareECSqlStatement (ECDbCR ecDb)
     {
     Utf8String relSchemaName (m_relationshipClass->GetSchema().GetName());
     Utf8String relClassName (m_relationshipClass->GetName());
@@ -171,7 +171,7 @@ Utf8String ECInstanceFinder::QueryableRelationship::ToString()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceFinder::ECInstanceFinder (ECDbR ecDb) : m_ecDb (ecDb), m_queryableRelationshipsByClass()
+ECInstanceFinder::ECInstanceFinder (ECDbCR ecDb) : m_ecDb (ecDb), m_queryableRelationshipsByClass()
     {
     }
 
@@ -188,7 +188,7 @@ void ECInstanceFinder::Finalize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceFinder::FindEndClasses (bset<ECClassId>& endClassIds, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd, ECDbR ecDb)
+void ECInstanceFinder::FindEndClasses (bset<ECClassId>& endClassIds, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd, ECDbCR ecDb)
     {
     Utf8CP sql = 
         "SELECT EndConstraintClass.RelationECClassId "
@@ -220,7 +220,7 @@ void ECInstanceFinder::FindEndClasses (bset<ECClassId>& endClassIds, ECClassId r
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                 Ramanujam.Raman     08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECClassId thisEndClassId, ECDbR ecDb)
+DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& queryableRelationships, ECClassId thisEndClassId, ECDbCR ecDb)
     {
     queryableRelationships.clear();
 
@@ -298,7 +298,7 @@ DbResult ECInstanceFinder::GetRelationshipsOnEnd (QueryableRelationshipVectorP &
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceFinder::DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instanceKeyMultiMap, ECDbR ecDb)
+void ECInstanceFinder::DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instanceKeyMultiMap, ECDbCR ecDb)
     {
     if (instanceKeyMultiMap.size() == 0)
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -18,7 +18,7 @@ using namespace connectivity;
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECSqlStatusContext& statusContext, ECDbR ecdb, Utf8CP ecsql, IClassMap::View classView)
+void ECSqlParser::Parse (ECSqlParseTreePtr& ecsqlParseTree, ECSqlStatusContext& statusContext, ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView)
     {
     BeAssert (!Utf8String::IsNullOrEmpty (ecsql));
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DynamicSelectClauseECClass.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,7 +31,7 @@ private:
     ECSqlStatus AddReferenceToStructSchema (ECN::ECSchemaCR structSchema) const;
     ECN::ECClassR GetClassR () const;
     ECN::ECSchemaR GetSchemaR () const;
-    ECSqlStatus SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbR ecdb);
+    ECSqlStatus SetBackReferenceToPropertyPath(ECPropertyR generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
 
 public:
     DynamicSelectClauseECClass ();
@@ -40,9 +40,9 @@ public:
     DynamicSelectClauseECClass (DynamicSelectClauseECClass&& rhs);
     DynamicSelectClauseECClass& operator= (DynamicSelectClauseECClass&& rhs);
 
-    ECSqlStatus AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbR ecdb);
+    ECSqlStatus AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
     bool IsGeneratedProperty (ECN::ECPropertyCR selectClauseProperty) const;
-    static ECSqlStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbR edb);
+    static ECSqlStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR edb);
 
     };
 

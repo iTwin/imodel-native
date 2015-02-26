@@ -224,7 +224,7 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
         }
     
     auto structType = GetPropertyMapR ().GetProperty ().GetAsArrayProperty ()->GetStructElementType ();
-    auto& ecdb = preparedStmt->GetECDbR ();
+    auto const& ecdb = preparedStmt->GetECDb ();
     auto structClassMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
     auto const& structMemberPropMaps = structClassMap->GetPropertyMaps ();
     int nArrayElementIndex = 0;

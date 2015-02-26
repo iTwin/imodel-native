@@ -31,7 +31,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
 private:
     ECSqlType m_type;
     ECSqlEventManager& m_eventManager;
-    ECDbP m_ecdb;
+    ECDbCP m_ecdb;
     Utf8String m_ecsql;
     mutable BeSQLite::Statement m_sqliteStatement;
     bool m_isNoopInSqlite;
@@ -43,7 +43,7 @@ private:
     virtual ECSqlStatus _Reset () = 0;
 
 protected:
-    ECSqlPreparedStatement (ECSqlType statementType, ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
 
 
     ECSqlStepStatus DoStep ();
@@ -78,7 +78,7 @@ public:
     Utf8CP GetECSql () const;
     Utf8CP GetNativeSql () const;
 
-    ECDbR GetECDbR () const { return *m_ecdb; }
+    ECDbCR GetECDb () const { return *m_ecdb; }
     BeSQLite::Statement& GetSqliteStatementR () const { return m_sqliteStatement; }
 
     ECSqlParameterMap& GetParameterMapR () { return m_parameterMap; }
@@ -103,7 +103,7 @@ private:
     ECSqlStatus InitFields () const;
 
 public:
-    ECSqlSelectPreparedStatement (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
+    ECSqlSelectPreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
         : ECSqlPreparedStatement (ECSqlType::Select, ecdb, eventManager, statusContext)
         {}
 
@@ -131,7 +131,7 @@ private:
     ECSqlStepTask::Collection m_stepTasks;
 
 protected:
-    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
+    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
         :ECSqlPreparedStatement (statementType, ecdb, eventManager, statusContext), m_stepTasks (eventManager)
         {}
 
@@ -194,7 +194,7 @@ private:
     virtual ECSqlEventHandler::EventType _GetEventType () const override { return ECSqlEventHandler::EventType::Insert; }
 
 public:
-    ECSqlInsertPreparedStatement (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
 
     ~ECSqlInsertPreparedStatement () {}
 
@@ -217,7 +217,7 @@ private:
     virtual ECSqlEventHandler::EventType _GetEventType () const override { return ECSqlEventHandler::EventType::Update; }
 
 public:
-    ECSqlUpdatePreparedStatement (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
     ~ECSqlUpdatePreparedStatement () {}
 
     ECSqlStepStatus Step ();
@@ -235,11 +235,10 @@ private:
     virtual ECSqlEventHandler::EventType _GetEventType () const override { return ECSqlEventHandler::EventType::Delete; }
 
 public:
-    ECSqlDeletePreparedStatement (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
     ~ECSqlDeletePreparedStatement () {}
 
     ECSqlStepStatus Step ();
-
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementImpl.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ private:
     static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
     mutable ECSqlStatusContext m_currentStatusContext;
 
-    virtual ECSqlStatus _Prepare (ECDbR ecdb, Utf8CP ecsql) override;
+    virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
     virtual ECSqlPrepareContext _InitializePrepare (Utf8CP ecsql) override;
 
     static NativeLogging::ILogger& GetPrepareDiagnosticsLogger ();
