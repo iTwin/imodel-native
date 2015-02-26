@@ -60,6 +60,7 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
                 <MapStrategy>MapToExistingTable</MapStrategy>
                 <TableName>be_EmbedFile</TableName>
                 <ECIdColumn>Id</ECIdColumn>
+                <ReplaceEmptyTableWithEmptyView>False</ReplaceEmptyTableWithEmptyView>
             </ECDbClassHint>
         </ECCustomAttributes>
         

@@ -680,12 +680,12 @@ RelationshipClassMapInfo::CardinalityType RelationshipClassMapInfo::CalculateRel
 +---------------+---------------+---------------+---------------+---------------+------*/
 Strategy RelationshipClassMapInfo::Get11RelationshipMapStrategy
 (
-ECRelationshipConstraintR source, 
-ECRelationshipConstraintR target, 
+ECRelationshipConstraintR source,
+ECRelationshipConstraintR target,
 ECRelationshipClassCR relationshipClass
 ) const
     {
-    /* Note: At this point of the algorithm, map strategy can only be MapStrategy::RelationshipSourceTable, 
+    /* Note: At this point of the algorithm, map strategy can only be MapStrategy::RelationshipSourceTable,
      * or MapStrategy::RelationshipTargetTable */
 
     // Check if we need a link table to persist the relationship
@@ -695,45 +695,39 @@ ECRelationshipClassCR relationshipClass
     BeAssert (0 != nSourceTables && "Condition should have been caught earlier, and strategy set to DoNotMap");
     BeAssert (0 != nTargetTables && "Condition should have been caught earlier, and strategy set to DoNotMap");
 
-    if ((nSourceTables > 1 && GetMapStrategy().IsRelationshipSourceTable()) ||
-        (nTargetTables > 1 && GetMapStrategy ().IsRelationshipTargetTable()))
+    if ((nSourceTables > 1 && GetMapStrategy ().IsRelationshipSourceTable ()) ||
+        (nTargetTables > 1 && GetMapStrategy ().IsRelationshipTargetTable ()))
         {
         // We don't persist at an end that has more than one table
-        LOG.warningv (L"Cannot map ECRelationshipClass %ls to end table as more than one end table exists on either end. Mapping to link table instead.", 
-                relationshipClass.GetFullName());
+        LOG.warningv (L"Cannot map ECRelationshipClass %ls to end table as more than one end table exists on either end. Mapping to link table instead.",
+            relationshipClass.GetFullName ());
         return Strategy::TableForThisClass;
         }
 
     // Don't persist at an end that has more than one table
-    if (nSourceTables > 1 && nTargetTables > 1)
+    if (!(nSourceTables == 1 && nTargetTables == 1))
         {
         return Strategy::TableForThisClass;
         }
 
-    if (nSourceTables == 1 && nTargetTables == 1)
-        {
-        /* Can persist in either end - use some heuristics */
+    /* Can persist in either end - use some heuristics */
 
-        // Allow user his choice if he made one
-        if (GetMapStrategy().IsEndTableMapping())
-            return GetMapStrategy().GetStrategy();
-      
-        // PreferredDirection hint, indicates optimal traversal efficiency when querying rows from other end for a given row on this end.
-        // Querying target instances for a given source instance needs to be fast -> persist relation in target table (like a foreign key)
-        if (m_userPreferredDirection == PreferredDirection::SourceToTarget)
-            return Strategy::RelationshipTargetTable;
-        else if (m_userPreferredDirection == PreferredDirection::TargetToSource)
-            return Strategy::RelationshipSourceTable;
+    // Allow user his choice if he made one
+    if (GetMapStrategy ().IsEndTableMapping ())
+        return GetMapStrategy ().GetStrategy ();
 
-        // Pick the End at the start of the strength direction (same logic as for preferred direction)
-        if (relationshipClass.GetStrengthDirection() == ECRelatedInstanceDirection::Forward)
-            return Strategy::RelationshipTargetTable;
-        else
-            return Strategy::RelationshipSourceTable;
-        }
+    // PreferredDirection hint, indicates optimal traversal efficiency when querying rows from other end for a given row on this end.
+    // Querying target instances for a given source instance needs to be fast -> persist relation in target table (like a foreign key)
+    if (m_userPreferredDirection == PreferredDirection::SourceToTarget)
+        return Strategy::RelationshipTargetTable;
+    else if (m_userPreferredDirection == PreferredDirection::TargetToSource)
+        return Strategy::RelationshipSourceTable;
 
-    // Persist at the end that has 1 table
-    return (nSourceTables == 1) ? Strategy::RelationshipSourceTable : Strategy::RelationshipTargetTable;
+    // Pick the End at the start of the strength direction (same logic as for preferred direction)
+    if (relationshipClass.GetStrengthDirection () == ECRelatedInstanceDirection::Forward)
+        return Strategy::RelationshipTargetTable;
+    else
+        return Strategy::RelationshipSourceTable;
     }
 
 /*---------------------------------------------------------------------------------**//**

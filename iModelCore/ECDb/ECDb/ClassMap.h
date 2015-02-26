@@ -132,7 +132,27 @@ public:
     bool IsAbstractECClass () const;
 
     Utf8String ToString () const;
+    const std::set<ECDbSqlTable const*> GetSecondaryTables () const
+        {
+        std::set<ECDbSqlTable const*> secondaryTables;
+        GetPropertyMaps ().Traverse ([&secondaryTables,this] (TraversalFeedback& feedback, PropertyMapCP propMap)
+            {
+            if (!propMap->IsVirtual ())
+                {
+                if (auto column = propMap->GetFirstColumn ())
+                    {
+                    if (&column->GetTable () != &GetTable ())
+                        {
+                        if (secondaryTables.find (&column->GetTable ()) == secondaryTables.end ())
+                            secondaryTables.insert (&column->GetTable ());
+                        }
+                    }
+                }
+            feedback = TraversalFeedback::Next;
+            }, true);
 
+        return secondaryTables;
+        }
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
@@ -270,6 +290,8 @@ private:
     bvector<ClassIndexInfoPtr>  m_indexes;
     bool                        m_useSharedColumnStrategy;
     ECDbClassMapId              m_id;
+    //std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> m_exclusivelyStoredClassMaps;
+
 protected:
     ECN::ECClassCR              m_ecClass;
     ECN::ECClassId              m_parentMapClassId;
@@ -309,8 +331,6 @@ protected:
     virtual ECN::ECClassId _GetParentMapClassId () const override { return m_parentMapClassId; }
     virtual IClassMap const& _GetView (View classView) const override { return *this; };
     virtual ClassDbView const& _GetDbView () const override { return *m_dbView; }
-
-
     PropertyMapCollection& GetPropertyMapsR ();
     
     ECDbSchemaManagerCR GetSchemaManager () const;

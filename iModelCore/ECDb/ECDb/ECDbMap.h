@@ -25,13 +25,11 @@ private:
     ECDbR                       m_ecdb;
     ECDbSQLManager              m_ecdbSqlManager;
     ClassMapDictionary          m_classMapDictionary;
-
-    mutable bmap<Utf8CP, ECDbSqlTable*, CompareIUtf8>  m_tableCache; //table names must be case insenstive
-
     ClustersByTable             m_clustersByTable;
+    bset<ECN::ECClassId>        m_exclusivelyStoredClasses;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
-
+    bool m_mapping;
     bool                        TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const;
     ClassMapPtr                 DoGetClassMap (ECN::ECClassCR ecClass) const;
     ClassMapPtr                 LoadAddClassMap (ECN::ECClassCR ecClass);
@@ -45,8 +43,9 @@ private:
     DbResult                    Save ();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     CreateTableStatus           CreateOrUpdateRequiredTables ();
-    void                        LoadAllMetadata () const;
-
+    void BeginMapping ();
+    void EndMapping ();
+   
 public:                        
                                 explicit ECDbMap (ECDbR ecdb);
                                 ~ECDbMap ();
@@ -54,6 +53,9 @@ public:
     ECDbSQLManager const&        GetSQLManager () const { return m_ecdbSqlManager; }
     ECDbSQLManager&              GetSQLManagerR () { return m_ecdbSqlManager; }
 
+    bool IsMapping () const;
+    bool AssertIfNotMapping () const;
+    bool AssertIfMapping () const;
 
     ECN::ECClassCR              GetClassForPrimitiveArrayPersistence (ECN::PrimitiveType primitiveType) const;
     bool                        ContainsMappingsForSchema (ECN::ECSchemaCR ecSchema);
@@ -91,6 +93,9 @@ public:
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR relationshipEnd) const;
     size_t                      GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECN::ECRelationshipConstraintCR relationshipEnd) const;
     void                        ClearCache();
+    bool IsExclusivelyStored (ECN::ECClassId ecClassId) const;
+
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

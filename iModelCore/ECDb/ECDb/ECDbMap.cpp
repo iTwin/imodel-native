@@ -16,8 +16,70 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap (ECDbR ecdb) 
-: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb)
+: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_mapping (false)
     {}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+void ECDbMap::BeginMapping ()
+    {
+    BeAssert (m_mapping == false);
+    m_mapping = true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+void ECDbMap::EndMapping ()
+    {
+    BeAssert (m_mapping == true);
+    m_mapping = false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+bool ECDbMap::IsMapping () const
+    {
+    return m_mapping;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+bool ECDbMap::AssertIfNotMapping () const
+    {
+    if (IsMapping () == false)
+        {
+        BeAssert (false && "ECDb is in currently is not in mapping mode. Which was not expected");
+        return true;
+        }
+
+    return false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+bool ECDbMap::AssertIfMapping () const
+    {
+    if (IsMapping () == true)
+        {
+        BeAssert (false && "ECDb is in currently in mapping mode. Which was not expected");
+        return true;
+        }
+
+    return false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      02/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+bool ECDbMap::IsExclusivelyStored (ECN::ECClassId ecClassId) const
+    {
+    return m_exclusivelyStoredClasses.find (ecClassId) != m_exclusivelyStoredClasses.end ();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
@@ -78,9 +140,16 @@ ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType prim
 //+---------------+---------------+---------------+---------------+---------------+------
 MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
     {
+    if (AssertIfMapping ())
+        return MapStatus::Error;
+
+    BeginMapping ();
     auto stat = DoMapSchemas (schemaImportContext, mapSchemas, forceMapStrategyReevaluation);
     if (stat != MapStatus::Success)
+        {
+        EndMapping ();
         return stat;
+        }
 
     if (CreateOrUpdateRequiredTables () != CREATE_ECTABLE_Success)
         {
@@ -88,6 +157,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
             "Failed to import ECSchemas. Data tables could not be created or updated. Please see log for details.");
 
         ClearCache ();
+        EndMapping ();
         return MapStatus::Error;
         }
 
@@ -96,9 +166,12 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
         ClearCache ();
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
             "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
+
+        EndMapping ();
         return MapStatus::Error;
         }
 
+    EndMapping ();
     return MapStatus::Success;
     }
 
@@ -108,6 +181,8 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
 MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
     {
     StopWatch timer (L"", true);
+    if (AssertIfNotMapping ())
+        return MapStatus::Error;
 
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
@@ -149,6 +224,9 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
         if (status == MapStatus::Error)
             return status;
         }
+    
+    if (!FinishTableDefinition ())
+        return MapStatus::Error;
 
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
@@ -181,10 +259,8 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
 ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
     {
     BeMutexHolder lock (m_criticalSection);
-
     BeAssert (GetClassMap (ecClass, false) == nullptr);
 
-    //m_classMapLoadAccessCounter++;
     MapStatus mapStatus;
     if (!GetSQLManagerR ().IsLoaded ())
         {
@@ -206,20 +282,9 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
             }
 
         m_classMapLoadTable.push_back (&ecClass);
-        //Also load associated .
-        //WIP_ECDB: Bad style because easy to misinterpret. Do decrement and comparison in two steps
-        //if (--m_classMapLoadAccessCounter == 0)
-        //    {
-        //    for (ECClassCP classToFinish : m_classMapLoadTable)
-        //        if (classToFinish->GetId () == 0LL)
-        //            FinishTableDefinition (*classToFinish);
-
-        //    m_classMapLoadTable.clear ();
-        //    }
         return classMapPtr;
         }
 
-    //m_classMapLoadAccessCounter--;
     return nullptr;
     }
 
@@ -229,6 +294,9 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
     {
+    if (AssertIfNotMapping ())
+        return MapStatus::Error;
+
     if (!ecClass.HasId())
         {
         if (0 == ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass))
@@ -287,6 +355,17 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
         BeAssert(false && "Attempted to add a second ClassMap for the same ECClass");
         return MapStatus::Error;
         }
+    if (classMap->GetMapStrategy ().IsExclusiveyStoreInThisTable ())
+        {
+        if (classMap->GetMapStrategy ().IsMapped () && classMap->GetTable ().GetPersistenceType () == PersistenceType::Persisted)
+            m_exclusivelyStoredClasses.insert (classMap->GetClass ().GetId ());
+        else
+            {
+            LOG.warningv (L"Exclusively stored class (ECClass %ls) is either not mapped or is mapped to a virtual table", ecClass.GetFullName ());
+            BeAssert (false && "Exclusively stored class is either not mapped or is mapped to a virtual table");
+            }
+        }
+
     m_classMapDictionary[ecClass.GetId()]= classMap;
     MappedTableP mappedTable = GetMappedTable (*classMap);
     BeAssert (nullptr != mappedTable);
@@ -392,6 +471,9 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable) 
     {
+    if (AssertIfNotMapping ())
+        return nullptr;
+
     BeMutexHolder lock (m_criticalSection);
     auto table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
     auto ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
@@ -535,7 +617,11 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
     {
+    if (AssertIfNotMapping ())
+        return CreateTableStatus::CREATE_ECTABLE_Error;
+
     BeMutexHolder aGurad (m_criticalSection);
+
     ClustersByTable::const_iterator cit = m_clustersByTable.find (&table);
     if (m_clustersByTable.end() == cit)
         {
@@ -554,6 +640,9 @@ CreateTableStatus ECDbMap::FinishTableDefinition (ECDbSqlTable& table) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CreateTableStatus ECDbMap::FinishTableDefinition (ECN::ECClassCR ecClass) const
     {
+    if (AssertIfNotMapping ())
+        return CREATE_ECTABLE_Error;
+
     auto classMap = GetClassMap (ecClass, false);
     if (classMap == nullptr)
         {
@@ -591,31 +680,13 @@ CreateTableStatus ECDbMap::FinishTableDefinition (ECN::ECClassCR ecClass) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Affan.Khan      03/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbMap::LoadAllMetadata () const
-    {
-    Statement stmt;
-    stmt.Prepare (GetECDbR (), "SELECT C.ECClassId FROM ec_Class C  ORDER BY C.ECClassId");
-
-    auto& schemaManager = GetECDbR ().GetSchemaManager ();
-    while (stmt.Step () == BE_SQLITE_ROW)
-        {
-        auto ecClass = schemaManager.GetECClass ((ECClassId)stmt.GetValueInt64 (0));
-        if (ecClass != nullptr)
-            GetClassMap (*ecClass);
-        }
-
-    for (auto& key : m_classMapDictionary)
-        {
-        key.second->CreateIndices ();
-        }
-    }
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
     {
+    if (AssertIfNotMapping ())
+        return CreateTableStatus::CREATE_ECTABLE_Error;
+
     BeMutexHolder lock (m_criticalSection);
     m_ecdb.GetStatementCache ().Empty ();
     StopWatch timer(L"", true);
@@ -640,14 +711,6 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
         
         if (GetECDbR().TableExists(table->GetName().c_str()))
             {
-            //if (table->HasPendingModifications (GetECDbR ()))
-            //    {
-            //    auto r = table->SyncWithDb (GetECDbR ());
-            //    if (r != BE_SQLITE_OK)
-            //        return CREATE_ECTABLE_Error;
-
-            //    nUpdated++;
-            //    }
             //*****************************************
             //Schema Upgrate is not supported - affan
             if (GetSQLManager ().IsTableChanged (*table))
@@ -723,6 +786,9 @@ bool ECDbMap::IsMappedToExistingTable (ECDbSqlTable& table) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbMap::FinishTableDefinition () const
     {
+    if (AssertIfNotMapping ())
+        return false;
+
     BeMutexHolder aGurad (m_criticalSection);
     auto it = m_clustersByTable.begin();
     for (; it != m_clustersByTable.end(); ++it)
@@ -823,12 +889,12 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbMap::ClearCache()
+void ECDbMap::ClearCache ()
     {
     BeMutexHolder aGurad (m_criticalSection);
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
-    m_tableCache.clear ();
+    m_exclusivelyStoredClasses.clear ();
     GetSQLManagerR ().Reset ();
     }
 

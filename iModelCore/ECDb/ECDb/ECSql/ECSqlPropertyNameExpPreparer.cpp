@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -31,6 +31,13 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
 
     //in SQLite table aliases are only allowed for SELECT statements
     auto classIdentifier = currentScopeECSqlType == ECSqlType::Select ? exp->GetClassRefExp ()->GetId ().c_str () : nullptr;
+    //auto classNameExpr =  dynamic_cast<ClassNameExp const*>(exp->GetClassRefExp ());
+
+    //if (classNameExpr == nullptr)
+    //    {
+    //    BeAssert (false && "Case is only handled for ClassRefExpr of type ClassNameExpr ");
+    //    return ECSqlStatus::NotYetSupported;
+    //    }
 
     auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType);
 
@@ -48,7 +55,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation (ECSqlPrepareContext::ExpSco
     const auto currentScopeECSqlType = currentScope.GetECSqlType ();
 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    if (propertyMap.IsVirtual ())
+    if (propertyMap.IsVirtual () || !propertyMap.IsMappedToPrimaryTable())
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)

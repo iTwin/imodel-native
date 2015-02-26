@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,7 +62,7 @@ private:
 
     static BentleyStatus AppendSystemPropMaps (NativeSqlBuilder& viewQuery, ECDbMapCR ecdbMap, RelationshipClassMapCR relationMap);
     static BentleyStatus AppendSystemPropMapsToNullView (NativeSqlBuilder& viewQuery, RelationshipClassMapCR relationMap, bool endWithComma);
-    static BentleyStatus AppendConstraintClassIdPropMap (NativeSqlBuilder& viewQuery, PropertyMapRelationshipConstraint const& propMap, ECDbMapCR ecdbMap, ECN::ECRelationshipConstraintCR constraint);
+    static BentleyStatus AppendConstraintClassIdPropMap (NativeSqlBuilder& viewQuery, PropertyMapRelationshipConstraint const& propMap, ECDbMapCR ecdbMap, ECN::ECRelationshipConstraintCR constraint, RelationshipClassMapCR relationMap);
 
     //! Return prop maps of child base on parent map. So only prop maps that make up baseClass properties are selected.
     static BentleyStatus GetPropertyMapsOfDerivedClassCastAsBaseClass (std::vector<std::pair<PropertyMapCP, PropertyMapCP>>& propMaps, IClassMap const& baseClassMap, IClassMap const& childClassMap, bool skipSystemProperties, bool embededStatement);
