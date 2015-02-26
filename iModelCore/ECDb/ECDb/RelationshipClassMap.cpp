@@ -407,7 +407,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
 MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
     {
     //add non-system property maps
-    AddPropertyMaps (parentClassMap, nullptr);
+    AddPropertyMaps (parentClassMap, nullptr,&classMapInfo);
 
     //**** Add indices
     AddIndices (classMapInfo);
@@ -971,7 +971,7 @@ ECClassId defaultTargetECClassId
     auto sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str (), true);
     auto sourceECInstanceIdPropMap = PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd_Source, GetSchemaManager (), sourceECInstanceIdColumn, *this);
     PRECONDITION(sourceECInstanceIdPropMap.IsValid(), MapStatus::Error);
-    sourceECInstanceIdPropMap->FindOrCreateColumnsInTable (*this);
+    sourceECInstanceIdPropMap->FindOrCreateColumnsInTable(*this, &mapInfo);
     GetPropertyMapsR ().AddPropertyMap(sourceECInstanceIdPropMap);
     m_sourceConstraintMap.SetECInstanceIdPropMap (sourceECInstanceIdPropMap.get ());
 
@@ -986,7 +986,7 @@ ECClassId defaultTargetECClassId
     auto sourceECClassIdColumn = CreateConstraintColumn (columnName.c_str (), addSourceECClassIdColumnToTable);
     auto sourceECClassIdPropMap = PropertyMapRelationshipConstraintClassId::Create (ECRelationshipEnd_Source, GetSchemaManager (), sourceECClassIdColumn, defaultSourceECClassId, *this);
     PRECONDITION(sourceECClassIdPropMap.IsValid(), MapStatus::Error);
-    sourceECClassIdPropMap->FindOrCreateColumnsInTable (*this);
+    sourceECClassIdPropMap->FindOrCreateColumnsInTable(*this, &mapInfo);
     GetPropertyMapsR ().AddPropertyMap(sourceECClassIdPropMap);
     m_sourceConstraintMap.SetECClassIdPropMap (sourceECClassIdPropMap.get ());
 
@@ -1003,7 +1003,7 @@ ECClassId defaultTargetECClassId
 
     auto targetECInstanceIdPropMap = PropertyMapRelationshipConstraintECInstanceId::Create (ECRelationshipEnd_Target, GetSchemaManager (), targetECInstanceIdColumn, *this);
     PRECONDITION(targetECInstanceIdPropMap.IsValid(), MapStatus::Error);
-    targetECInstanceIdPropMap->FindOrCreateColumnsInTable (*this);
+    targetECInstanceIdPropMap->FindOrCreateColumnsInTable(*this, &mapInfo);
     GetPropertyMapsR ().AddPropertyMap(targetECInstanceIdPropMap);
     m_targetConstraintMap.SetECInstanceIdPropMap (targetECInstanceIdPropMap.get ());
 
@@ -1024,7 +1024,7 @@ ECClassId defaultTargetECClassId
         return MapStatus::Error;
         }
 
-    targetECClassIdPropMap->FindOrCreateColumnsInTable (*this);
+    targetECClassIdPropMap->FindOrCreateColumnsInTable(*this, &mapInfo);
     GetPropertyMapsR ().AddPropertyMap(targetECClassIdPropMap);
     m_targetConstraintMap.SetECClassIdPropMap (targetECClassIdPropMap.get ());
 

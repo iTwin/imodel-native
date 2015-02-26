@@ -425,7 +425,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* p
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* parentClassMap)
     {
-    auto stat = AddPropertyMaps (parentClassMap, nullptr);
+    auto stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
         return stat;
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
@@ -469,7 +469,7 @@ MapStatus ClassMap::_OnInitialized ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo)
+MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfoCP classMapInfo)
     {
     std::vector<ECPropertyP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
@@ -506,7 +506,7 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 
         if (loadInfo == nullptr)
             {
-            if (propMap->FindOrCreateColumnsInTable (*this) == MapStatus::Success)
+            if (propMap->FindOrCreateColumnsInTable(*this, classMapInfo) == MapStatus::Success)
                 GetPropertyMapsR ().AddPropertyMap (propMap);
             }
         else
@@ -794,13 +794,13 @@ void ClassMap::CreateIndices ()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfoCP classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collate collate, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType (columnType);
   
-    if (!classMap.GetMapStrategy ().IsTablePerHierarchy () && classMap.GetMapStrategy ().IsReuseColumns ())
+    if (!classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetMapStrategy().IsReuseColumns() && !classMapInfo->GetMapStrategy().IsWithDisableReuseColumnsForThisClass())
         {
         strategy = ColumnFactory::Specification::Strategy::CreateOrReuseSharedColumn;
         requestedColumnType = ECDbSqlColumn::Type::Any; //If not set it will get set anyway
@@ -959,7 +959,7 @@ BentleyStatus ClassMap::_Load (std::set<ClassMap const*>& loadGraph, ECDbClassMa
 
     GetPropertyMapsR ().AddPropertyMap (ecInstanceIdPropertyMap);
 
-    return AddPropertyMaps (parentClassMap, &mapInfo)  == MapStatus::Success ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    return AddPropertyMaps (parentClassMap, &mapInfo,nullptr)  == MapStatus::Success ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }
 
 //---------------------------------------------------------------------------------------

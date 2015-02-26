@@ -27,7 +27,7 @@ enum class Strategy : uint32_t //0xffffffff
     WithReuseColumns = 0x100,             //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass
     WithExclusivelyStoredInThisTable = 0x200, //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass, MapToExistingTable, TablePerClass
     WithReadonly = 0x400, //Applied to : MapToExistingTable
-
+    WithDisableReuseColumnsForThisClass = 0x800,
     //For Relationship valid values are TablePerHierarchy, TableForThisClass, SharedTableForThisClass, DoNotMap
     //Private Strategies used by ECDb Internally
     //===========================================================================================
@@ -36,7 +36,7 @@ enum class Strategy : uint32_t //0xffffffff
     InParentTable = 0x1000,
     RelationshipTargetTable = 0x2000,
     RelationshipSourceTable = 0x4000,
-    Options = WithReuseColumns | WithExclusivelyStoredInThisTable | WithReadonly
+    Options = WithReuseColumns | WithExclusivelyStoredInThisTable | WithReadonly | WithDisableReuseColumnsForThisClass
     };
 
 #define STRATEGY_DO_NOT_MAP                                     "DoNotMap"
@@ -55,7 +55,7 @@ enum class Strategy : uint32_t //0xffffffff
 #define STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE   "WithExclusivelyStoredInThisTable"
 #define STRATEGY_DEIMITER                                       "|"
 #define DEIMITER                                                " " STRATEGY_DEIMITER " "
-
+#define STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS "WithDisableReuseColumnsForThisClass"
 static inline Strategy operator | (Strategy a, Strategy b)
     {
     return static_cast<Strategy>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
@@ -71,6 +71,7 @@ struct ECDbMapStrategy
     {
     private:
         Strategy m_strategy;
+        Utf8String m_strategyStr;
         static Utf8CP ConvertToString (Strategy strategy)
             {
             static std::map<Strategy, Utf8CP> s_validStratgies
@@ -109,6 +110,9 @@ struct ECDbMapStrategy
                         STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE },
                     { Strategy::InParentTable | Strategy::WithReuseColumns, 
                         STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
+                        { Strategy::InParentTable | Strategy::WithReuseColumns | Strategy::WithDisableReuseColumnsForThisClass,
+                        STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS DEIMITER STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS },
+
                     { Strategy::InParentTable | Strategy::WithExclusivelyStoredInThisTable | Strategy::WithReuseColumns, 
                         STRATEGY_IN_PARENT_TABLE DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
                     { Strategy::SharedTableForThisClass, 
@@ -119,6 +123,9 @@ struct ECDbMapStrategy
                         STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
                     { Strategy::SharedTableForThisClass | Strategy::WithExclusivelyStoredInThisTable | Strategy::WithReuseColumns, 
                         STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DEIMITER STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE DEIMITER STRATEGY_OPTION_WITH_REUSE_COLUMNS },
+                    { Strategy::WithDisableReuseColumnsForThisClass ,
+                    STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS },
+
             };
 
             auto itor = s_validStratgies.find (strategy);
@@ -127,17 +134,17 @@ struct ECDbMapStrategy
 
             return itor->second;
             }
-        static bool IsValid (Strategy strategy)
+         bool IsValid (Strategy strategy)
             {
             auto isValid = ConvertToString (strategy) != nullptr;
             if (isValid == false)
                 {
                 BeAssert (false && "Invalid Strategy specified. See documentation for correct permutation of strategy flags.");
                 }
-
+            m_strategyStr = ConvertToString(strategy);
             return isValid;
             }
-        static BentleyStatus Parse (Strategy& out, Utf8CP mapStrategyHint)
+        BentleyStatus Parse (Strategy& out, Utf8CP mapStrategyHint)
             {
             static std::map<Utf8CP, Strategy, CompareIUtf8> s_type
                 {
@@ -150,7 +157,8 @@ struct ECDbMapStrategy
                     { STRATEGY_MAP_TO_EXISTING_TABLE, Strategy::MapToExistingTable },
                     { STRATEGY_OPTION_WITH_REUSE_COLUMNS, Strategy::WithReuseColumns },
                     { STRATEGY_OPTION_WITH_EXCLUSIVELY_STORED_IN_THIS_TABLE, Strategy::WithExclusivelyStoredInThisTable },
-                    { STRATEGY_OPTION_WITH_READONLY, Strategy::WithReadonly }
+                    { STRATEGY_OPTION_WITH_READONLY, Strategy::WithReadonly },
+                    { STRATEGY_OPTION_WITH_DISABLE_REUSE_COLUMS_FOR_THIS_CLASS, Strategy::WithDisableReuseColumnsForThisClass }
 
             };
 
@@ -230,7 +238,7 @@ struct ECDbMapStrategy
                 return BentleyStatus::ERROR;
 
             m_strategy = m_strategy | withOption;
-            return BentleyStatus::ERROR;
+            return BentleyStatus::SUCCESS;
             }
 
         ECDbMapStrategy ()
@@ -331,7 +339,7 @@ struct ECDbMapStrategy
         bool IsExclusiveyStoreInThisTable () const { return (GetStrategy () & Strategy::WithExclusivelyStoredInThisTable) == Strategy::WithExclusivelyStoredInThisTable; }
         bool IsReadonly () const { return (GetStrategy () & Strategy::WithReadonly) == Strategy::WithReadonly; }
         bool IsDoNotMap () const { return GetStrategy (true) == Strategy::DoNotMap; }
-        bool IsNoHint () const { return GetStrategy (true) == Strategy::NoHint; }
+        bool IsNoHint () const { return GetStrategy (false) == Strategy::NoHint; }
 
         bool IsTableForThisClass () const { return GetStrategy (true) == Strategy::TableForThisClass; }
 
@@ -347,7 +355,7 @@ struct ECDbMapStrategy
         bool IsMapped () const { return !(IsDoNotMap () || IsDoNotMapHierarchy ()); }
         bool IsUnmapped () const { return IsDoNotMap () || IsDoNotMapHierarchy (); }
         bool IsEndTableMapping () const{ return IsRelationshipSourceTable () || IsRelationshipTargetTable (); }
-
+        bool IsWithDisableReuseColumnsForThisClass()const { return (GetStrategy() & Strategy::WithDisableReuseColumnsForThisClass) == Strategy::WithDisableReuseColumnsForThisClass; }
         bool IsLinkTableStrategy () const
             {
             auto mapStrategy = GetStrategy (true);
@@ -370,7 +378,7 @@ struct ECDbMapStrategy
             {
             Assign (Strategy::NoHint);
             }
-        static BentleyStatus Parse (ECDbMapStrategy& out, Utf8CP mapStrategyHint)
+         BentleyStatus Parse (ECDbMapStrategy& out, Utf8CP mapStrategyHint)
             {
             Strategy strategy;
             if (Parse (strategy, mapStrategyHint) != BentleyStatus::SUCCESS)

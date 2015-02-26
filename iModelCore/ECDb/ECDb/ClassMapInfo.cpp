@@ -103,7 +103,7 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
-: m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_ClassHasCurrentTimeStampProperty(NULL),m_parentClassMap(nullptr)
+    : m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_ecInstanceIdColumnName(primaryKeyColumnName), m_tableName(tableName), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_ClassHasCurrentTimeStampProperty(NULL), m_parentClassMap(nullptr)
     {
     if (Utf8String::IsNullOrEmpty (tableName))
         _InitializeFromSchema ();
@@ -192,11 +192,16 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
         return ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (m_ecClass, tphMaps);
 
     // ClassMappingRule: If exactly 1 ancestor ECClass is using TablePerHierarchy, use InParentTable mapping
-    if (tphMaps.size () == 1)
+    if (tphMaps.size() == 1)
         {
         m_parentClassMap = tphMaps[0];
-        auto enableColumnReuse = m_parentClassMap->GetMapStrategy ().IsReuseColumns ();
-        GetMapStrategyR ().SetInParentTable (enableColumnReuse);
+        auto enableColumnReuse = m_parentClassMap->GetMapStrategy().IsReuseColumns();
+        auto excludeFromColumnsReuse = GetMapStrategyR().IsWithDisableReuseColumnsForThisClass();
+        GetMapStrategyR().SetInParentTable(enableColumnReuse);
+        if (excludeFromColumnsReuse && enableColumnReuse)
+            {
+            GetMapStrategyR().AddOption(Strategy::WithDisableReuseColumnsForThisClass);
+            }
         }
     // ClassMappingRule: If one or more parent is using TablePerClass, use TablePerClass mapping
     else if (tpcMaps.size () > 0)

@@ -266,7 +266,7 @@ enum ECContainerType
 #define BSCAV_TargetToSource            L"TargetToSource"
 #define BSCAP_MapToExistingTable        L"MapToExistingTable"
 #define BSCAP_ReplaceEmptyTableWithEmptyView        L"ReplaceEmptyTableWithEmptyView"
-#define BSCAP_UseSharedColumnStrategy L"UseSharedColumnStrategy"
+#define BSCAP_ExcludeFromColumnsReuse L"ExcludeFromColumnsReuse"
 #define BSCAC_ECDbPropertyHint          L"ECDbPropertyHint"
 #define BSCAP_ColumnName                L"ColumnName"
 #define BSCAP_Blob                      L"Blob"

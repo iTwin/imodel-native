@@ -84,7 +84,7 @@ bool ClassHintReader::TryReadMapStrategy (ECDbMapStrategy& mapStrategy, IECInsta
     ECValue v;
     if (classHint.GetValue (v, BSCAP_MapStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
         {
-        if (ECDbMapStrategy::Parse (mapStrategy, v.GetUtf8CP ()) == BentleyStatus::SUCCESS)
+        if (mapStrategy.Parse(mapStrategy, v.GetUtf8CP()) == BentleyStatus::SUCCESS)
             return true;
         }
 
@@ -149,23 +149,6 @@ bool ClassHintReader::TryReadReplaceEmptyTableWithEmptyView (bool& replaceEmptyT
     return false;
     }
 
-//---------------------------------------------------------------------------------
-//@bsimethod                                                    affan.khan      01 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ClassHintReader::TryReadUseSharedColumnStrategy (bool& useSharedColumnStrategy, IECInstanceCR classHint)
-    {
-    BeAssert (classHint.GetClass ().GetName ().Equals (BSCAC_ECDbClassHint));
-
-    ECValue v;
-    if (classHint.GetValue (v, BSCAP_UseSharedColumnStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
-        {
-        useSharedColumnStrategy = v.GetBoolean ();
-        return true;
-        }
-
-    return false;
-    }
 //---------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------

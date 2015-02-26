@@ -298,7 +298,7 @@ protected:
     virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
-    MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo);
+    MapStatus AddPropertyMaps(IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfoCP classMapInfo);
     void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
     virtual PropertyMapCollection const& _GetPropertyMaps () const;
     virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
@@ -325,6 +325,7 @@ public:
     ECDbSqlColumn* FindOrCreateColumnForProperty
         (
         ClassMapCR classMap,
+        ClassMapInfoCP classMapInfo,
         PropertyMapR propertyMap, 
         Utf8CP requestedColumnName, 
         ECN::PrimitiveType primitiveType, 

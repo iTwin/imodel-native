@@ -42,7 +42,6 @@ private:
     bvector<StandardKeySpecificationPtr> m_standardKeys;
     bvector<ClassIndexInfoPtr> m_hintIndexes; 
     IClassMap const* m_parentClassMap;
-
     bool m_isMapToVirtualTable;
     ECN::ECPropertyP m_ClassHasCurrentTimeStampProperty;
     ECDbMapStrategy m_strategy;
@@ -79,7 +78,6 @@ public:
     static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     ECDbMapStrategy const& GetMapStrategy () const{ return m_strategy; }
     ECDbMapStrategy& GetMapStrategyR (){ return m_strategy; }
-
     //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ECDbClassHint ECCustomAttribute and
     //! default mapping rules. The results are stored in ClassMapInfo
     //! @remarks Assumes all base classes have been mapped already. 

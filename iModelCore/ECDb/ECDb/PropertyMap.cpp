@@ -305,9 +305,9 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql (ECDbR ecdb, ECDbSqlTable const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMap::FindOrCreateColumnsInTable (ClassMap& classMap)
+MapStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfoCP classMapInfo)
     {
-    return _FindOrCreateColumnsInTable (classMap);
+    return _FindOrCreateColumnsInTable(classMap, classMapInfo);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -321,7 +321,7 @@ WString PropertyMap::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap)
+MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfoCP classMapInfo)
     {
     // Base implementation does nothing, but is implemented so PropertyMap can serve as a placeholder
     return MapStatus::Success;
@@ -684,11 +684,11 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable (ClassMap& classMap)
+MapStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfoCP classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
-        auto status = const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap);
+        auto status = const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo);
         if (status != MapStatus::Success)
             return status;
         }
@@ -815,7 +815,7 @@ void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap )
+MapStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfoCP classMapInfo)
     {
     return MapStatus::Success; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
     }
@@ -852,14 +852,14 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap)
+MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfoCP classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
     bool          nullable = m_columnInfo.GetNullable ();
     bool          unique = m_columnInfo.GetUnique ();
     ECDbSqlColumn::Constraint::Collate collate = m_columnInfo.GetCollate ();
-    m_column = classMap.FindOrCreateColumnForProperty (classMap, *this, columnName, primitiveType, nullable, unique, collate, nullptr);
+    m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collate, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
     return MapStatus::Success;
     }
@@ -1022,7 +1022,7 @@ WString PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
+MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfoCP classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 
@@ -1033,17 +1033,17 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable (ClassMap& classMap)
 
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, *this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
+    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collate, "X");
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, yColumnName.c_str (), primitiveType, nullable, unique, collate, "Y");
+    m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collate, "Y");
     if (!m_is3d)
         return MapStatus::Success;
 
     Utf8String zColumnName(columnName);
     zColumnName.append("_Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty (classMap, *this, zColumnName.c_str (), primitiveType, nullable, unique, collate, "Z");
+    m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collate, "Z");
     return MapStatus::Success;
     }
 
