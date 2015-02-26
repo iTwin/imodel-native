@@ -907,15 +907,9 @@ BentleyStatus ECDb_ECSqlInstancesAffected ()
         return ERROR;
         }
 
-    // Register event handler that reports the number of instances deleted
-    // (Registration can be done before the call to Prepare, too)
-    InstancesAffectedECSqlEventHandler eventHandler;
-    stat = statement.RegisterEventHandler (eventHandler);
-    if (stat != ECSqlStatus::Success)
-        {
-        // do error handling here...
-        return ERROR;
-        }
+    // Enable the default event handler which reports the instances deleted
+    // (Could be done before the call to Prepare, too)
+    statement.EnableDefaultEventHandler ();
 
     // Execute statement which calls the handler
     ECSqlStepStatus stepStat = statement.Step ();
@@ -926,7 +920,7 @@ BentleyStatus ECDb_ECSqlInstancesAffected ()
         }
 
     //now do something with the count
-    printf ("%d computers which no longer have warranty were deleted from the inventory system.", eventHandler.GetInstancesAffectedCount ());
+    printf("%d computers which no longer have warranty were deleted from the inventory system.", statement.GetDefaultEventHandler ()->GetInstancesAffectedCount());
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;

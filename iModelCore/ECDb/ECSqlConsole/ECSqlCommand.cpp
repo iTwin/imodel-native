@@ -123,15 +123,8 @@ void ECSqlCommand::ExecuteInsert (ECSqlStatement& statement) const
 //---------------------------------------------------------------------------------------
 void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
     {
-    InstancesAffectedECSqlEventHandler handler;
-    auto stat = statement.RegisterEventHandler (handler);
-    if (stat != ECSqlStatus::Success)
-        {
-        Console::WriteErrorLine ("Programmer error: Could not register instances affected event handler in ECSQL Console.");
-        return;
-        }
-
-    auto stepStat = statement.Step ();
+    statement.EnableDefaultEventHandler ();
+    ECSqlStepStatus stepStat = statement.Step ();
 
     if (stepStat != ECSqlStepStatus::Done)
         {
@@ -139,7 +132,7 @@ void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
         return;
         }
 
-    Console::WriteLine ("%d instances affected.", handler.GetInstancesAffectedCount ());
+    Console::WriteLine ("%d instances affected.", statement.GetDefaultEventHandler ()->GetInstancesAffectedCount ());
     }
 
 //---------------------------------------------------------------------------------------

@@ -150,4 +150,27 @@ TEST (ECSqlStatementCacheTests, CacheExcess)
     ASSERT_EQ (1, stmt1B->GetRefCount ()) << "Statement was removed from cache, so only holder is expected to be stmt1B";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  02/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECSqlStatementCacheTests, DefaultEventHandlerAndCachedECSqlStatement)
+    {
+    const int rowsPerInstances = 3;
+    ECDbTestProject test;
+    auto& ecdb = test.Create("ecsqlstatementcachetest.ecdb", L"ECSqlTest.01.00.ecschema.xml", rowsPerInstances);
+
+    ECSqlStatementCache cache(2);
+
+    for (int i = 0; i < 10; i++)
+        {
+        CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, "UPDATE ONLY ecsql.PSA SET I=123");
+        ASSERT_TRUE(stmt != nullptr);
+
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt->EnableDefaultEventHandler());
+        ASSERT_TRUE(stmt->GetDefaultEventHandler() != nullptr);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt->Step ());
+        ASSERT_EQ(rowsPerInstances, stmt->GetDefaultEventHandler ()->GetInstancesAffectedCount());
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

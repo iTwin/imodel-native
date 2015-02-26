@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan        06/14
 //---------------------------------------------------------------------------------------
-ECSqlEventManager::ECSqlEventManager ()
+ECSqlEventManager::ECSqlEventManager() : m_defaultHandler(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -27,14 +27,11 @@ ECSqlEventManager::~ECSqlEventManager ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan        06/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlEventManager::RegisterEventHandler (ECSqlEventHandler& eventHandler)
+void ECSqlEventManager::RegisterEventHandler (ECSqlEventHandler& eventHandler)
     {
-    auto it = std::find (m_eventHandlers.begin (), m_eventHandlers.end (), &eventHandler);
-    if (it != m_eventHandlers.end ())
-        return ECSqlStatus::UserError;
-
-    m_eventHandlers.push_back (&eventHandler);
-    return ECSqlStatus::Success;
+    auto it = std::find(m_eventHandlers.begin(), m_eventHandlers.end(), &eventHandler);
+    if (it == m_eventHandlers.end())
+        m_eventHandlers.push_back (&eventHandler);
     }
 
 //---------------------------------------------------------------------------------------
@@ -45,6 +42,9 @@ ECSqlStatus ECSqlEventManager::UnregisterEventHandler (ECSqlEventHandler& eventH
     auto it = std::find (m_eventHandlers.begin (), m_eventHandlers.end (), &eventHandler);
     if (it != m_eventHandlers.end ())
         {
+        if (m_defaultHandler != nullptr && m_defaultHandler.get() == *it)
+            m_defaultHandler = nullptr;
+
         m_eventHandlers.erase (it);
         return ECSqlStatus::Success;
         }
@@ -55,10 +55,41 @@ ECSqlStatus ECSqlEventManager::UnregisterEventHandler (ECSqlEventHandler& eventH
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan        06/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlEventManager::UnregisterAllEventHandlers ()
+void ECSqlEventManager::UnregisterAllEventHandlers ()
     {
     m_eventHandlers.clear ();
-    return ECSqlStatus::Success;
+    m_defaultHandler = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        02/15
+//---------------------------------------------------------------------------------------
+void ECSqlEventManager::ToggleDefaultEventHandler(bool enable)
+    {
+    if (enable)
+        {
+        if (m_defaultHandler == nullptr)
+            {
+            m_defaultHandler = std::unique_ptr<DefaultECSqlEventHandler>(new DefaultECSqlEventHandler());
+            RegisterEventHandler(*m_defaultHandler);
+            }
+        }
+    else
+        {
+        if (m_defaultHandler != nullptr)
+            {
+            UnregisterEventHandler(*m_defaultHandler);
+            BeAssert(m_defaultHandler == nullptr && "If UnregisterEventHandler is called with the default handler, the method is expected to null out m_defaultHandler.");
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        02/15
+//---------------------------------------------------------------------------------------
+DefaultECSqlEventHandler const* ECSqlEventManager::GetDefaultEventHandler() const
+    {
+    return m_defaultHandler.get();
     }
 
 //---------------------------------------------------------------------------------------
@@ -141,32 +172,31 @@ void ECSqlEventHandler::OnEvent (EventType eventType, ECSqlEventArgs const& args
 
 
 //*************************************************************************************
-// InstancesAffectedECSqlEventHandler
+// DefaultECSqlEventHandler
 //*************************************************************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 01/2015
+// @bsimethod                                    Krischan.Eberle                 02/2015
 //---------------------------------------------------------------------------------------
-InstancesAffectedECSqlEventHandler::InstancesAffectedECSqlEventHandler ()
-    : ECSqlEventHandler ()
-    {
-    Reset ();
-    }
-
+DefaultECSqlEventHandler::DefaultECSqlEventHandler() : ECSqlEventHandler(), m_args (nullptr) {}
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 01/2015
+// @bsimethod                                    Krischan.Eberle                 02/2015
 //---------------------------------------------------------------------------------------
-void InstancesAffectedECSqlEventHandler::_OnEvent (EventType eventType, ECSqlEventArgs const& args)
+void DefaultECSqlEventHandler::_OnEvent(EventType eventType, ECSqlEventArgs const& args)
     {
-    m_instancesAffectedCount = (int) args.GetInstanceKeys ().size ();
+    m_eventType = eventType;
+    m_args = &args;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 01/2015
+// @bsimethod                                    Krischan.Eberle                 02/2015
 //---------------------------------------------------------------------------------------
-void InstancesAffectedECSqlEventHandler::Reset () const
+int DefaultECSqlEventHandler::GetInstancesAffectedCount() const
     {
-    m_instancesAffectedCount = -1;
+    if (m_args == nullptr)
+        return -1;
+
+    return (int) m_args->GetInstanceKeys().size();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

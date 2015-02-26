@@ -203,7 +203,6 @@ private:
     ECDbCR m_ecdb;
     ECN::ECClassCR m_ecClass;
     mutable ECSqlStatement m_statement;
-    InstancesAffectedECSqlEventHandler m_internalEventHandler;
     bool m_isValid;
 
     //__PUBLISH_SECTION_END__

@@ -20,9 +20,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSqlEventManager : NonCopyableClass
     {
 private:
-    std::vector<ECSqlEventHandler*> m_eventHandlers;
-
+    mutable std::vector<ECSqlEventHandler*> m_eventHandlers;
+    mutable std::unique_ptr<DefaultECSqlEventHandler> m_defaultHandler;
     ECSqlEventArgs m_eventArgs;
+
+    DefaultECSqlEventHandler& GetDefaultEventHandlerR() const;
 
 public:
     ECSqlEventManager ();
@@ -35,10 +37,13 @@ public:
     ECSqlEventArgs& GetEventArgsR () { return m_eventArgs; }
 
 
-    ECSqlStatus RegisterEventHandler (ECSqlEventHandler& eventHandler);
+    void RegisterEventHandler (ECSqlEventHandler& eventHandler);
     ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& eventHandler);
-    ECSqlStatus UnregisterAllEventHandlers ();
-    
+    void UnregisterAllEventHandlers ();
+
+    void ToggleDefaultEventHandler(bool enable);
+    DefaultECSqlEventHandler const* GetDefaultEventHandler() const;
     };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

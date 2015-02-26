@@ -70,9 +70,13 @@ public:
 
     void Finalize ();
 
-    ECSqlStatus RegisterEventHandler (ECSqlEventHandler& handler);
+    void RegisterEventHandler (ECSqlEventHandler& handler);
     ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& handler);
-    ECSqlStatus UnregisterAllEventHandlers ();
+    void UnregisterAllEventHandlers();
+    void EnableDefaultEventHandler();
+    void DisableDefaultEventHandler();
+    DefaultECSqlEventHandler const* GetDefaultEventHandler() const;
+
     ECSqlEventManager& GetEventManagerR ();
     ECSqlEventManager const& GetEventManager () const;
 

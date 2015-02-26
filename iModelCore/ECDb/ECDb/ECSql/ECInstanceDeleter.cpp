@@ -54,12 +54,7 @@ bool ECInstanceDeleter::IsValid () const
 void ECInstanceDeleter::Initialize (ECSqlEventHandler* listener)
     {
     //register internal event handler
-    auto stat = m_statement.RegisterEventHandler (m_internalEventHandler);
-    if (stat != ECSqlStatus::Success)
-        {
-        m_isValid = false;
-        return;
-        }
+    m_statement.EnableDefaultEventHandler ();
 
     //register user-provided event handler
     if (listener != nullptr)
@@ -101,9 +96,8 @@ ECInstanceId const& ecInstanceId
     m_statement.ClearBindings();
     m_statement.BindId (1, ecInstanceId);
 
-    m_internalEventHandler.Reset ();
     const ECSqlStepStatus stepStatus = m_statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done && m_internalEventHandler.AreInstancesAffected ()) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done && m_statement.GetDefaultEventHandler ()->GetInstancesAffectedCount () > 0) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

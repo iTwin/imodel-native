@@ -50,7 +50,6 @@ private:
     ECValueBindingInfoCollection m_ecValueBindingInfos;
     int m_ecinstanceIdParameterIndex;
     bool m_needsCalculatedPropertyEvaluation;
-    InstancesAffectedECSqlEventHandler m_internalEventHandler;
     bool m_isValid;
 
     void Initialize(bvector<ECPropertyCP>& propertiesToBind);
@@ -272,12 +271,7 @@ ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint3
 void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     {
     //register internal event handler
-    auto stat = m_statement.RegisterEventHandler (m_internalEventHandler);
-    if (stat != ECSqlStatus::Success)
-        {
-        m_isValid = false;
-        return;
-        }
+    m_statement.EnableDefaultEventHandler ();
 
     if (propertiesToBind.size() < 1)
         {
@@ -349,12 +343,7 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
 void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     {
     //register internal event handler
-    auto stat = m_statement.RegisterEventHandler (m_internalEventHandler);
-    if (stat != ECSqlStatus::Success)
-        {
-        m_isValid = false;
-        return;
-        }
+    m_statement.EnableDefaultEventHandler ();
 
     if (propertiesToBind.size() < 1)
         {
@@ -448,9 +437,8 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
         return ERROR;
 
     //now execute statement
-    m_internalEventHandler.Reset ();
     ECSqlStepStatus stepStatus = m_statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done && m_internalEventHandler.AreInstancesAffected ()) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done && m_statement.GetDefaultEventHandler ()->GetInstancesAffectedCount () > 0) ? SUCCESS : ERROR;
     }
 
 //*************************************************************************************

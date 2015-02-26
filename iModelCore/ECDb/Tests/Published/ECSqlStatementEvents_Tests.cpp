@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECSqlStatementEvents_Tests.cpp $
+|  $Source: Tests/Published/ECSqlStatementEvents_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
@@ -10,6 +10,36 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 02/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
+    {
+    ECSqlStatement stmt;
+    // Enable/Disable
+    ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr if it isn't enabled.";
+
+    stmt.EnableDefaultEventHandler();
+    ASSERT_TRUE(stmt.GetDefaultEventHandler() != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+
+    stmt.DisableDefaultEventHandler();
+    ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr if it was disabled.";
+
+    //Call UnregisterEventHandler with default handler
+    stmt.EnableDefaultEventHandler();
+    DefaultECSqlEventHandler const* defaultEh = stmt.GetDefaultEventHandler();
+    ASSERT_TRUE(defaultEh != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+
+    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.UnregisterEventHandler(const_cast<DefaultECSqlEventHandler&> (*defaultEh));
+    ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr if it was unregistered via UnregisterEventHandler.";
+
+    //Call UnregisterAllEventHandlers
+    stmt.EnableDefaultEventHandler();
+    ASSERT_TRUE(stmt.GetDefaultEventHandler() != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+    stmt.UnregisterAllEventHandlers();
+    ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr after a call to UnregisterAllEventHandlers.";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14

@@ -318,9 +318,9 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType (ECSqlType expectedType, Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        07/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::RegisterEventHandler (ECSqlEventHandler& eventHandler)
+void ECSqlStatementBase::RegisterEventHandler (ECSqlEventHandler& eventHandler)
     {
-    return GetEventManagerR ().RegisterEventHandler (eventHandler);
+    GetEventManagerR ().RegisterEventHandler (eventHandler);
     }
 
 //---------------------------------------------------------------------------------------
@@ -334,10 +334,35 @@ ECSqlStatus ECSqlStatementBase::UnregisterEventHandler (ECSqlEventHandler& event
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        07/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::UnregisterAllEventHandlers ()
+void ECSqlStatementBase::UnregisterAllEventHandlers ()
     {
-    return GetEventManagerR ().UnregisterAllEventHandlers ();
+    GetEventManagerR ().UnregisterAllEventHandlers ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        02/15
+//---------------------------------------------------------------------------------------
+void ECSqlStatementBase::EnableDefaultEventHandler()
+    {
+    GetEventManagerR().ToggleDefaultEventHandler(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        02/15
+//---------------------------------------------------------------------------------------
+void ECSqlStatementBase::DisableDefaultEventHandler()
+    {
+    GetEventManagerR().ToggleDefaultEventHandler(false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        02/15
+//---------------------------------------------------------------------------------------
+DefaultECSqlEventHandler const* ECSqlStatementBase::GetDefaultEventHandler() const
+    {
+    return GetEventManager().GetDefaultEventHandler();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan           06/14
 //---------------------------------------------------------------------------------------

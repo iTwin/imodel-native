@@ -405,9 +405,9 @@ Utf8String ECSqlStatement::GetLastStatusMessage () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::RegisterEventHandler (ECSqlEventHandler& eventHandler)
+void ECSqlStatement::RegisterEventHandler (ECSqlEventHandler& eventHandler)
     {
-    return m_pimpl->RegisterEventHandler (eventHandler);
+    m_pimpl->RegisterEventHandler (eventHandler);
     }
 
 //---------------------------------------------------------------------------------------
@@ -421,9 +421,33 @@ ECSqlStatus ECSqlStatement::UnregisterEventHandler (ECSqlEventHandler& eventHand
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::UnregisterAllEventHandlers ()
+void ECSqlStatement::UnregisterAllEventHandlers ()
     {
-    return m_pimpl->UnregisterAllEventHandlers ();
+    m_pimpl->UnregisterAllEventHandlers ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      02/2015
+//---------------------------------------------------------------------------------------
+void ECSqlStatement::EnableDefaultEventHandler()
+    {
+    m_pimpl->EnableDefaultEventHandler();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      02/2015
+//---------------------------------------------------------------------------------------
+void ECSqlStatement::DisableDefaultEventHandler()
+    {
+    m_pimpl->DisableDefaultEventHandler();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      02/2015
+//---------------------------------------------------------------------------------------
+DefaultECSqlEventHandler const* ECSqlStatement::GetDefaultEventHandler() const
+    {
+    return m_pimpl->GetDefaultEventHandler();
     }
 
 //---------------------------------------------------------------------------------------
