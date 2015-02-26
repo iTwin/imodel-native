@@ -166,7 +166,7 @@ TEST(ECSqlStatementCacheTests, DefaultEventHandlerAndCachedECSqlStatement)
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, "UPDATE ONLY ecsql.PSA SET I=123");
         ASSERT_TRUE(stmt != nullptr);
 
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt->EnableDefaultEventHandler());
+        stmt->EnableDefaultEventHandler();
         ASSERT_TRUE(stmt->GetDefaultEventHandler() != nullptr);
         ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt->Step ());
         ASSERT_EQ(rowsPerInstances, stmt->GetDefaultEventHandler ()->GetInstancesAffectedCount());

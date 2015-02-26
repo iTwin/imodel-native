@@ -206,14 +206,14 @@ private:
     bool m_isValid;
 
     //__PUBLISH_SECTION_END__
-    void Initialize (ECSqlEventHandler* listener);
+    void Initialize(ECSqlEventHandler* listener);
     //__PUBLISH_SECTION_START__
 
 public:
     //! Instantiates a new ECInstanceDeleter.
     //! @param[in] ecdb ECDb file handle
     //! @param[in] ecClass ECClass of ECInstances this deleter can delete
-    ECDB_EXPORT ECInstanceDeleter (ECDbCR ecdb, ECN::ECClassCR ecClass);
+    ECDB_EXPORT ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass);
     //! Instantiates a new ECInstanceDeleter.
     //! @param[in] ecdb ECDb file handler
     //! @param[in] ecClass ECClass of ECInstances this deleter can delete
@@ -238,5 +238,10 @@ public:
     //! @return SUCCESS in case of successful deletion. ERROR if no ECInstance existed for
     //! the specified @p ecInstance or in case of other errors.
     ECDB_EXPORT BentleyStatus Delete (ECN::IECInstanceCR ecInstance) const;
+
+    //! Gets the DefaultEventHandler that reports about instances affected by a delete operation.
+    //! @see ECSqlStatement::EnableDefaultECSqlEventHandler, ECSqlStatement::GetDefaultECSqlEventHandler
+    //! @return DefaultEventHandler.
+    ECDB_EXPORT DefaultECSqlEventHandler const& GetDefaultEventHandler() const;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

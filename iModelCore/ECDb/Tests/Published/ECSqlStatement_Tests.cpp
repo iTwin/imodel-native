@@ -923,12 +923,11 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
         BentleyStatus bindStatus = SUCCESS;
         BindFromJson (bindStatus, statement, expectedStructValue, binder);
 
-        InstancesAffectedECSqlEventHandler eh;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.RegisterEventHandler (eh));
+        statement.EnableDefaultEventHandler ();
         auto stepStat = statement.Step ();
 
         ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat);
-        ASSERT_EQ (1, eh.GetInstancesAffectedCount ());
+        ASSERT_EQ(1, statement.GetDefaultEventHandler ()->GetInstancesAffectedCount());
 
         statement.Finalize ();
         stat = statement.Prepare (ecdb, verifySelectECSql);

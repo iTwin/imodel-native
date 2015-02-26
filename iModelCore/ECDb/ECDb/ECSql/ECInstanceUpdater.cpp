@@ -332,9 +332,8 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     builder.Where (whereClause.c_str ());
     m_ecinstanceIdParameterIndex = parameterIndex;
 
-    stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
+    ECSqlStatus stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
     m_isValid = (stat == ECSqlStatus::Success);
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -385,9 +384,8 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     builder.Where (whereClause.c_str ());
     m_ecinstanceIdParameterIndex = parameterIndex;
 
-    stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
+    ECSqlStatus stat = m_statement.Prepare(m_ecdb, builder.ToString().c_str());
     m_isValid = (stat == ECSqlStatus::Success);
-
     }
 
 //---------------------------------------------------------------------------------------

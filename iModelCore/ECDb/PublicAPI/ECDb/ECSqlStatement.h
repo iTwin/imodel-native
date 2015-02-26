@@ -106,7 +106,9 @@ public:
     };
 
 //=======================================================================================
-//! DefaultECSqlEventHandler is a default implementation of an ECSqlEventHandler
+//! DefaultECSqlEventHandler is a default implementation of an ECSqlEventHandler that
+//! is built into the ECSqlStatement.
+//! @see ECSqlStatement::EnableDefaultEventHandler
 //! @ingroup ECDbGroup
 // @bsiclass                                                     Krischan.Eberle  02/2015
 //+===============+===============+===============+===============+===============+======
@@ -117,11 +119,18 @@ private:
     mutable ECSqlEventArgs const* m_args;
 
     ECDB_EXPORT virtual void _OnEvent(EventType eventType, ECSqlEventArgs const& args) override;
-
+    
+    //__PUBLISH_SECTION_END__
 public:
     //! Instantiates a new DefaultECSqlEventHandler
-    ECDB_EXPORT DefaultECSqlEventHandler();
-    virtual ~DefaultECSqlEventHandler() {}
+    DefaultECSqlEventHandler();
+
+    void Reset() const;
+
+    //__PUBLISH_CLASS_VIRTUAL__
+    //__PUBLISH_SECTION_START__
+public:
+    ~DefaultECSqlEventHandler() {}
 
     //! Gets the ECSQL type of the last event caught by this handler.
     //! @return ECSQL type of last event
@@ -170,6 +179,7 @@ public:
     //! @remarks Before calling ECDb::CloseDb explicitly make sure that all prepared ECSqlStatements
     //! are finalized.
     //! After having called Finalize, the ECSqlStatement can be re-prepared.
+    //! Any ECSqlEventHandler currently being registered with this ECSqlStatement stay registered.
     ECDB_EXPORT void Finalize ();
 
     //! Prepares the statement with the specified ECSQL
@@ -537,11 +547,11 @@ public:
     //! @return ECSqlStatus::Success if unregistration was successful. Error codes otherwise
     ECDB_EXPORT ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& handler);
 
-
     //! Unregisters all event handlers, including the DefaultECSqlEventHandler if it was enabled.
     ECDB_EXPORT void UnregisterAllEventHandlers ();
 
     //! Enables the default ECSqlEventHandler so that it starts listening to ECSqlStatement events.
+    //! @see ECSqlStatement::GetDefaultEventHandler
     ECDB_EXPORT void EnableDefaultEventHandler();
     
     //! Disables the default ECSqlEventHandler.

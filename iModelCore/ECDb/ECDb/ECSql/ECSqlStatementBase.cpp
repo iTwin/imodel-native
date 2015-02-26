@@ -48,7 +48,7 @@ void ECSqlStatementBase::Finalize ()
 void ECSqlStatementBase::Finalize (bool resetStatus)
     {
     m_preparedStatement = nullptr;
-    m_eventManager.ResetEventArgs ();
+    m_eventManager.Reset ();
 
     if (resetStatus)
         GetStatusContextR ().Reset ();

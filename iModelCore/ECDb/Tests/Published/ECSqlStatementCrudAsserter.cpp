@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlStatementCrudAsserter.cpp $
+|     $Source: Tests/Published/ECSqlStatementCrudAsserter.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -650,14 +650,14 @@ void ECSqlNonSelectStatementCrudAsserter::_Assert (Utf8StringR statementErrorMes
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testItem, ECSqlStatement& statement, AffectedRowsECSqlExpectedResult const& expectedResult) const
     {
-    const auto expectedToSucceed = expectedResult.IsExpectedToSucceed ();
+    const bool expectedToSucceed = expectedResult.IsExpectedToSucceed ();
 
-    auto ecsql = testItem.GetECSql().c_str ();
+    Utf8CP ecsql = testItem.GetECSql().c_str ();
     //if this is an insert statement test the ECInstanceId overload, too
     if (BeStringUtilities::Strnicmp ("INSERT INTO", ecsql, 11) == 0)
         {
         ECInstanceKey ecInstanceKey;
-        auto stat = Step (ecInstanceKey, statement, !expectedToSucceed);
+        ECSqlStepStatus stat = Step (ecInstanceKey, statement, !expectedToSucceed);
 
         if (expectedToSucceed)
             {
@@ -674,21 +674,18 @@ void ECSqlNonSelectStatementCrudAsserter::AssertStep (ECSqlTestItem const& testI
         }
 
     //rows affected test can be performed for update and delete
-    InstancesAffectedECSqlEventHandler eh;
-    auto stat = statement.RegisterEventHandler (eh);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
-    auto stepStat = Step (statement, !expectedToSucceed);
+    statement.EnableDefaultEventHandler ();
+    ECSqlStepStatus stepStat = Step(statement, !expectedToSucceed);
     if (expectedToSucceed)
         {
-        ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << statement.GetLastStatusMessage ().c_str ();
-        auto expectedRowsAffected = expectedResult.GetExpectedAffectedRowCount ();
-        auto actualRowsAffected = eh.GetInstancesAffectedCount ();
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stepStat) << "Step should have succeeded for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << statement.GetLastStatusMessage().c_str();
+        int expectedRowsAffected = expectedResult.GetExpectedAffectedRowCount ();
+        int actualRowsAffected = statement.GetDefaultEventHandler()->GetInstancesAffectedCount();
         ASSERT_EQ (expectedRowsAffected, actualRowsAffected) << "Step returned Unexpected number of rows affected for ECSQL '" << ecsql << "'.";
-        
         }
     else
         {
-        ASSERT_EQ ((int) ECSqlStepStatus::Error, (int) stepStat) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << static_cast<int> (stat) << " Error message: " << statement.GetLastStatusMessage ().c_str ();
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stepStat) << "Step should have failed for ECSQL '" << ecsql << "'. Actual return code was: " << (int) stepStat << " Error message: " << statement.GetLastStatusMessage().c_str();
         ASSERT_NE ((int) ECSqlStatus::Success, (int) statement.GetLastStatus());
         }
     }

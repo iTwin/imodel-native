@@ -33,9 +33,10 @@ public:
     bool HasEventHandlers () const { return !m_eventHandlers.empty (); }
 
     void FireEvent (ECSqlEventHandler::EventType eventType) const;
-    void ResetEventArgs ();
     ECSqlEventArgs& GetEventArgsR () { return m_eventArgs; }
 
+    //! Resets the event args, but doesn't unregister any handlers
+    void Reset();
 
     void RegisterEventHandler (ECSqlEventHandler& eventHandler);
     ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& eventHandler);
