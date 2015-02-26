@@ -224,6 +224,9 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
         if (status == MapStatus::Error)
             return status;
         }
+    
+    if (!FinishTableDefinition ())
+        return MapStatus::Error;
 
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
@@ -886,7 +889,7 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbMap::ClearCache()
+void ECDbMap::ClearCache ()
     {
     BeMutexHolder aGurad (m_criticalSection);
     m_classMapDictionary.clear();

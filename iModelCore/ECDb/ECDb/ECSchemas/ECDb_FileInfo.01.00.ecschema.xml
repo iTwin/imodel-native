@@ -57,9 +57,11 @@ displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML
         <ECCustomAttributes>
             <!-- EmbeddedFileInfo is mapped to existing table owned by BeSQLite profile -->
             <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.10">
-                <MapStrategy>MapToExistingTable</MapStrategy>
+                <MapStrategy>TablePerClass</MapStrategy>
                 <TableName>be_EmbedFile</TableName>
                 <ECIdColumn>Id</ECIdColumn>
+                <MapToExistingTable>True</MapToExistingTable>
+                <ReplaceEmptyTableWithEmptyView>False</ReplaceEmptyTableWithEmptyView>
             </ECDbClassHint>
         </ECCustomAttributes>
         
