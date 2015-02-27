@@ -11,7 +11,46 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define ENABLE_REF 1
+//static void GetBaseHierarchy (ECN::ECClassCR current, std::set<ECN::ECClassCP>& baseHierarchy)
+//    {
+//    for (auto baseClass : current.GetBaseClasses ())
+//        {
+//        if (baseClass == nullptr)
+//            continue;
+//
+//        if (baseHierarchy.find (baseClass) == baseHierarchy.end ())
+//            {
+//            baseHierarchy.insert (baseClass);
+//            if (!current.GetBaseClasses ().empty ())
+//                GetBaseHierarchy (*baseClass, baseHierarchy);
+//            }
+//        }
+//    }
+//
+//static std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> GetExclusivelyStoredClassMaps (ECN::ECClassCR current, ECDbMapCR map)
+//    {
+//    auto exclusivelyStoredClassMaps = std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> (new std::map<ECN::ECClassCP, IClassMap const*> ());
+//    std::set<ECClassCP> baseHierarchy;
+//    GetBaseHierarchy (current, baseHierarchy);
+//    if (baseHierarchy.empty ())
+//        return exclusivelyStoredClassMaps;
+//
+//    for (auto dependentClass : baseHierarchy)
+//        {
+//        if (map.IsExclusivelyStored (dependentClass->GetId ()))
+//            {
+//            auto classMap = map.GetClassMap (*dependentClass);
+//            if (classMap != nullptr)
+//                {
+//                BeAssert (classMap->GetMapStrategy ().IsMapped ());
+//                exclusivelyStoredClassMaps->insert (std::make_pair (&classMap->GetClass (), classMap));
+//                }
+//            }
+//        }
+//
+//    return exclusivelyStoredClassMaps;
+//    }
+
 //********************* ClassDbView ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2013
@@ -493,7 +532,7 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
     for (auto property : propertiesToMap)
         {
         WCharCP propertyAccessString = property->GetName ().c_str ();
-        propMap = PropertyMap::CreateAndEvaluateMapping (*property, m_ecDbMap, m_ecClass, propertyAccessString, nullptr);
+        propMap = PropertyMap::CreateAndEvaluateMapping (*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetTable(), nullptr);
         BeAssert (propMap != nullptr);
         if (propMap == nullptr)
             continue;

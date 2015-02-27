@@ -117,9 +117,9 @@ private:
     virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap) override;
     bool IsKeyPropertyMappable(const ECN::ECRelationshipConstraintClassList & constraintclasses);
-    MapStatus CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, ECDbSqlColumn*& otherEndECClassIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, bool addOtherEndClassIdColumnToTable, const ECN::ECRelationshipConstraintClassList &);
+    MapStatus CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipEnd thisEnd, const ECN::ECRelationshipConstraintClassList &);
     MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
-
+    ECDbSqlColumn* Configure_RCKey (RelationshipClassMapInfoCR mapInfo, ECN::ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount);
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
     virtual NativeSqlConverter const& _GetNativeSqlConverter () const override;

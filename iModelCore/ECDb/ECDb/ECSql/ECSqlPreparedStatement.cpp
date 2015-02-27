@@ -154,6 +154,8 @@ ECSqlStatus ECSqlPreparedStatement::DoReset ()
     if (nativeSqlStat != BE_SQLITE_OK)
         return GetStatusContextR ().SetError (&GetECDb (), nativeSqlStat);
 
+    m_eventManager.Reset();
+
     return ResetStatus ();
     }
 
@@ -315,7 +317,6 @@ DynamicSelectClauseECClass& ECSqlSelectPreparedStatement::GetDynamicSelectClause
     }
 
 
-
 //***************************************************************************************
 //    ECSqlInsertStatement
 //***************************************************************************************
@@ -332,10 +333,6 @@ ECSqlInsertPreparedStatement::ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlEv
 ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
     {
     auto& eventManager = GetEventManagerR ();
-    const auto hasEventHandlers = eventManager.HasEventHandlers ();
-    if (hasEventHandlers)
-        eventManager.ResetEventArgs ();
-
     if (IsNoopInSqlite ())
         {
         eventManager.FireEvent (GetEventType ());
@@ -376,6 +373,7 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
             return ECSqlStepStatus::Error;
             }
 
+        const auto hasEventHandlers = eventManager.HasEventHandlers();
         instanceKey = ECInstanceKey (m_ecInstanceKeyInfo.GetECClassId (), ecinstanceidOfInsert);
         if (hasEventHandlers)
             eventManager.GetEventArgsR ().GetInstanceKeysR ().push_back (instanceKey);
@@ -392,7 +390,6 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
 
         if (hasEventHandlers)
             eventManager.FireEvent (GetEventType ());
-
 
         return ECSqlStepStatus::Done;
         }
@@ -446,8 +443,6 @@ ECSqlUpdatePreparedStatement::ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlEv
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlUpdatePreparedStatement::Step ()
     {
-    GetEventManagerR ().ResetEventArgs ();
-
     ECSqlStepStatus status = ECSqlStepStatus::Done;
     if (!IsNoopInSqlite ())
         {
@@ -494,8 +489,6 @@ ECSqlDeletePreparedStatement::ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlEv
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlDeletePreparedStatement::Step ()
     {
-    GetEventManagerR ().ResetEventArgs ();
-
     ECSqlStepStatus status = ECSqlStepStatus::Done;
     if (!IsNoopInSqlite ())
         {

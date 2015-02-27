@@ -106,39 +106,44 @@ public:
     };
 
 //=======================================================================================
-//! InstancesAffectedECSqlEventHandler allows clients to capture the number of ECInstances affected
-//! when executing a non-SELECT ECSqlStatement.
-//! @remarks This is a convenience implementation of ECSqlEventHandler for the common
-//! case where only the number of instances affected of a non-SELECT ECSQL is required. For
-//! more sophisticated cases, clients can implement their own ECSqlEventHandler in a hand-tailored way.
+//! DefaultECSqlEventHandler is a default implementation of an ECSqlEventHandler that
+//! is built into the ECSqlStatement.
+//! @see ECSqlStatement::EnableDefaultEventHandler
 //! @ingroup ECDbGroup
-// @bsiclass                                                     Krischan.Eberle  01/2015
+// @bsiclass                                                     Krischan.Eberle  02/2015
 //+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE InstancesAffectedECSqlEventHandler : ECSqlEventHandler
+struct EXPORT_VTABLE_ATTRIBUTE DefaultECSqlEventHandler : ECSqlEventHandler
     {
 private:
-    mutable int m_instancesAffectedCount;
+    EventType m_eventType;
+    mutable ECSqlEventArgs const* m_args;
 
-    ECDB_EXPORT virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override;
-
+    ECDB_EXPORT virtual void _OnEvent(EventType eventType, ECSqlEventArgs const& args) override;
+    
+    //__PUBLISH_SECTION_END__
 public:
-    //! Instantiates a new InstancesAffectedECSqlEventHandler
-    ECDB_EXPORT InstancesAffectedECSqlEventHandler ();
-    virtual ~InstancesAffectedECSqlEventHandler () {}
+    //! Instantiates a new DefaultECSqlEventHandler
+    DefaultECSqlEventHandler();
 
+    void Reset() const;
+
+    //__PUBLISH_CLASS_VIRTUAL__
+    //__PUBLISH_SECTION_START__
+public:
+    ~DefaultECSqlEventHandler() {}
+
+    //! Gets the ECSQL type of the last event caught by this handler.
+    //! @return ECSQL type of last event
+    EventType GetEventType() const { return m_eventType; }
+
+    //! Gets the event args of the last event caught by this handler.
+    //! @return Event args of last even or nullptr if no even has been caught by this handler yet.
+    ECSqlEventArgs const* GetArgs() const { return m_args; }
+    
     //! Gets the number of instances affected by the last ECSQL event caught by this handler.
     //! @remarks Returns a negative number if no ECSQL event has been caught by this handler yet.
     //! @return number of instances affected
-    int GetInstancesAffectedCount () const {return m_instancesAffectedCount;}
-
-    //! Gets a value indicating whether any instances were affected by the last ECSQL event caught by this handler.
-    //! @return true if the last ECSQL event affected instances, false if it didn't affect any instances.
-    bool AreInstancesAffected () const { return m_instancesAffectedCount > 0; }
-
-    //! Resets the count.
-    //! @remarks This can be useful when the handler is used for subsequent executions of the statement and you
-    //! need to make sure that the handler doesn't return a count from a previous execution.
-    void Reset () const;
+    ECDB_EXPORT int GetInstancesAffectedCount() const;
     };
 
 //=======================================================================================
@@ -174,6 +179,7 @@ public:
     //! @remarks Before calling ECDb::CloseDb explicitly make sure that all prepared ECSqlStatements
     //! are finalized.
     //! After having called Finalize, the ECSqlStatement can be re-prepared.
+    //! Any ECSqlEventHandler currently being registered with this ECSqlStatement stay registered.
     ECDB_EXPORT void Finalize ();
 
     //! Prepares the statement with the specified ECSQL
@@ -534,18 +540,29 @@ public:
     //! @note ECSqlStatement does not take over ownership of the handler. Callers are responsible for ensuring
     //! that the handler remains valid as long as it is registered with the ECSqlStatement.
     //! @param[in] handler EventHandler to register
-    //! @return ECSqlStatus::Success if registration was successful. Error codes otherwise
-    ECDB_EXPORT ECSqlStatus RegisterEventHandler (ECSqlEventHandler& handler);
+    ECDB_EXPORT void RegisterEventHandler (ECSqlEventHandler& handler);
 
     //! Unregisters a ECSqlEventHandler.
     //! @param[in] handler Removes the given handler from the statement.
     //! @return ECSqlStatus::Success if unregistration was successful. Error codes otherwise
     ECDB_EXPORT ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& handler);
 
+    //! Unregisters all event handlers, including the DefaultECSqlEventHandler if it was enabled.
+    ECDB_EXPORT void UnregisterAllEventHandlers ();
 
-    //! Unregisters all event handlers.
-    //! @return ECSqlStatus::Success if unregistration was successful. Error codes otherwise
-    ECDB_EXPORT ECSqlStatus UnregisterAllEventHandlers ();
+    //! Enables the default ECSqlEventHandler so that it starts listening to ECSqlStatement events.
+    //! @see ECSqlStatement::GetDefaultEventHandler
+    ECDB_EXPORT void EnableDefaultEventHandler();
+    
+    //! Disables the default ECSqlEventHandler.
+    ECDB_EXPORT void DisableDefaultEventHandler();
+
+    //! Gets the default ECSqlEventHandler.
+    //! @remarks Only call this if you enabled it before via ECSqlStatement::EnableDefaultEventHandler. Otherwise
+    //! this method will return nullptr.
+    //! @return default ECSqlEventHandler or nullptr if the default event handler hasn't been enabled.
+    ECDB_EXPORT DefaultECSqlEventHandler const* GetDefaultEventHandler () const;
+
     //! @}
 
 //__PUBLISH_SECTION_END__

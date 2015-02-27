@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECDbRelationshipStrength_Test.cpp $
+|  $Source: Tests/Published/ECDbRelationshipStrength_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -23,8 +23,7 @@ int DeleteInstance (IECInstanceCR instance, ECDbR ecDb)
     {
     ECClassCR ecClass = instance.GetClass();
 
-    InstancesAffectedECSqlEventHandler handler;
-    ECInstanceDeleter deleter (ecDb, ecClass, handler);
+    ECInstanceDeleter deleter (ecDb, ecClass);
 
     if (!deleter.IsValid ())
         return -1;
@@ -33,7 +32,7 @@ int DeleteInstance (IECInstanceCR instance, ECDbR ecDb)
     if (status != SUCCESS)
         return -1;
 
-    return handler.GetInstancesAffectedCount ();
+    return deleter.GetDefaultEventHandler().GetInstancesAffectedCount ();
     }
     
 /*---------------------------------------------------------------------------------**//**

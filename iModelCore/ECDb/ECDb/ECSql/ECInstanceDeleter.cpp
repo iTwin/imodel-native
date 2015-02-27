@@ -18,7 +18,7 @@ ECDbCR ecdb,
 ECClassCR ecClass
 ) : m_ecdb (ecdb), m_ecClass (ecClass)
     {
-    Initialize (nullptr);
+    Initialize(nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -51,32 +51,21 @@ bool ECInstanceDeleter::IsValid () const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceDeleter::Initialize (ECSqlEventHandler* listener)
+void ECInstanceDeleter::Initialize(ECSqlEventHandler* listener)
     {
-    //register internal event handler
-    auto stat = m_statement.RegisterEventHandler (m_internalEventHandler);
-    if (stat != ECSqlStatus::Success)
-        {
-        m_isValid = false;
-        return;
-        }
+    //register default event handler as we need the affects row count to determine whether 
+    //execution was successful or not.
+    m_statement.EnableDefaultEventHandler ();
 
     //register user-provided event handler
     if (listener != nullptr)
-        {
-        stat = m_statement.RegisterEventHandler (*listener);
-        if (stat != ECSqlStatus::Success)
-            {
-            m_isValid = false;
-            return;
-            }
-        }
+        m_statement.RegisterEventHandler (*listener);
 
     Utf8String ecsql ("DELETE FROM ONLY ");
     ecsql.append (ECSqlBuilder::ToECSqlSnippet (m_ecClass));
     ecsql.append (" WHERE ").append (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY).append (" = ?");
 
-    stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
+    ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
     m_isValid = (stat == ECSqlStatus::Success);
     }
 
@@ -101,9 +90,8 @@ ECInstanceId const& ecInstanceId
     m_statement.ClearBindings();
     m_statement.BindId (1, ecInstanceId);
 
-    m_internalEventHandler.Reset ();
     const ECSqlStepStatus stepStatus = m_statement.Step ();
-    return (stepStatus == ECSqlStepStatus::Done && m_internalEventHandler.AreInstancesAffected ()) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done && GetDefaultEventHandler().GetInstancesAffectedCount() > 0) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -128,4 +116,13 @@ IECInstanceCR ecInstance
     return Delete (ecInstanceId);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  02/15
+//+---------------+---------------+---------------+---------------+---------------+------
+DefaultECSqlEventHandler const& ECInstanceDeleter::GetDefaultEventHandler() const
+    {
+    //default handler is always enabled by the deleter, so should never return nullptr
+    BeAssert(m_statement.GetDefaultEventHandler() != nullptr);
+    return *m_statement.GetDefaultEventHandler();
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

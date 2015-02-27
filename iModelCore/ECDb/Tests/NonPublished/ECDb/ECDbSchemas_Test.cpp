@@ -988,11 +988,9 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Widget]========================================================
     WCharCP tblWidget = L"sc_Widget"; 
     EXPECT_TRUE (TableExist  (db, tblWidget));
-    EXPECT_EQ   (4, GetColumnCount(db, tblWidget));            
+    EXPECT_EQ   (3, GetColumnCount(db, tblWidget));            
     
     EXPECT_TRUE (ColumnExist (db, tblWidget, L"ECInstanceId"));
-    //It must not have ECClassId to differentiate each row to see which class it belong to.
-    EXPECT_FALSE(ColumnExist (db, tblWidget, L"ECClassId")); 
     EXPECT_TRUE (ColumnExist (db, tblWidget, L"stringOfWidget")); 
     
     //========================[sc_Project]=======================================================
@@ -1184,7 +1182,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Foo]===========================================================
     WCharCP tblFoo = L"FOO_FIGHTERS"; //this table has be renamed from tblFoo=>FOO_FIGHTERS
     EXPECT_TRUE (TableExist  (db, tblFoo));
-    EXPECT_EQ   (21, GetColumnCount(db, tblFoo));
+    EXPECT_EQ   (19, GetColumnCount(db, tblFoo));
     
     EXPECT_TRUE (ColumnExist (db, tblFoo, L"ECInstanceId"));
     //This a TablePerHieracrchy
@@ -1210,8 +1208,8 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_FALSE (ColumnExist (db, tblFoo, L"arrayOfAnglesStructsFoo"));
     EXPECT_FALSE (ColumnExist (db, tblFoo, L"anglesFoo"));
     //relations
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"RK_Foo_has_SomethingInOneOfManyTables"));
-    EXPECT_TRUE (ColumnExist (db, tblFoo, L"RC_Foo_has_SomethingInOneOfManyTables"));
+    //EXPECT_TRUE (ColumnExist (db, tblFoo, L"RK_Foo_has_SomethingInOneOfManyTables"));
+    //EXPECT_TRUE (ColumnExist (db, tblFoo, L"RC_Foo_has_SomethingInOneOfManyTables"));
 
     //========================[sc_ArrayOfStructDomainClass]===========================================================
     WCharCP tbl = L"sc_ArrayOfStructDomainClass"; 
@@ -2845,7 +2843,7 @@ TEST(ECDbSchemas, IntegrityCheck)
     ECDbR db = saveTestProject.Create("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
     Statement stmt;
     std::map<Utf8String, Utf8String> expected;
-    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER, [SourceEClassId] INTEGER, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) MATCH FULL ON DELETE CASCADE ON UPDATE NO ACTION)";
+    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) MATCH FULL ON DELETE CASCADE ON UPDATE NO ACTION)";
     //expected["IDX_ic_TargetBase_ECClassId"] = "CREATE INDEX IDX_ic_TargetBase_ECClassId ON ic_TargetBase ([ECClassId])";
 
     stmt.Prepare(db, "select name, sql from sqlite_master Where tbl_name = 'ic_TargetBase'");

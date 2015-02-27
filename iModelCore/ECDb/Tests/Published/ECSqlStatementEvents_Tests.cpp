@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECSqlStatementEvents_Tests.cpp $
+|  $Source: Tests/Published/ECSqlStatementEvents_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
@@ -10,6 +10,140 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 02/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
+    {
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), false);
+
+        {
+        ECSqlStatement stmt;
+        // Enable/Disable
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr if it isn't enabled.";
+
+        stmt.EnableDefaultEventHandler();
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+
+        ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs () == nullptr);
+
+        stmt.DisableDefaultEventHandler();
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr if it was disabled.";
+
+        //Call UnregisterEventHandler with default handler
+        stmt.EnableDefaultEventHandler();
+        DefaultECSqlEventHandler const* defaultEh = stmt.GetDefaultEventHandler();
+        ASSERT_TRUE(defaultEh != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.UnregisterEventHandler(const_cast<DefaultECSqlEventHandler&> (*defaultEh)));
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr if it was unregistered via UnregisterEventHandler.";
+
+        //Call UnregisterAllEventHandlers
+        stmt.EnableDefaultEventHandler();
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+        stmt.UnregisterAllEventHandlers();
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() == nullptr) << "GetDefaultEventHandler is expected to return nullptr after a call to UnregisterAllEventHandlers.";
+
+        //Across finalize
+        stmt.EnableDefaultEventHandler();
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() != nullptr) << "GetDefaultEventHandler is expected to not return nullptr if it is enabled.";
+        stmt.Finalize();
+        ASSERT_TRUE(stmt.GetDefaultEventHandler() != nullptr) << "GetDefaultEventHandler is expected to not return nullptr after a call to Finalize.";
+        }
+
+    //now test that handler state gets cleared after two subsequent executions
+
+        {
+        //set up test data
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA (I) VALUES (?)"));
+        stmt.BindInt(1, 1);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        stmt.Reset();
+        stmt.BindInt(1, 2);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        stmt.Reset();
+        stmt.BindInt(1, 3);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        stmt.Reset();
+        stmt.BindInt(1, 4);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        ecdb.SaveChanges();
+        //test table:
+        // I
+        // --
+        // 1
+        // 2
+        // 3
+        // 4
+        }
+
+        {
+        ECSqlStatement stmt;
+        stmt.EnableDefaultEventHandler();
+        ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() == nullptr);
+
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "UPDATE ONLY ecsql.PSA SET I = (-1)*I WHERE I BETWEEN ? AND ?"));
+        stmt.BindInt(1, 1);
+        stmt.BindInt(2, 1);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+
+        //test table now:
+        // I
+        // --
+        // -1
+        // 2
+        // 3
+        // 4
+
+        ASSERT_EQ((int) ECSqlEventHandler::EventType::Update, (int) stmt.GetDefaultEventHandler()->GetEventType());
+        ASSERT_EQ(1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() != nullptr);
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE (stmt.GetDefaultEventHandler()->GetArgs () == nullptr);
+
+        stmt.BindInt(1, 3);
+        stmt.BindInt(2, 4);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        //test table now:
+        // I
+        // --
+        // -1
+        // 2
+        // -3
+        // -4
+
+        ASSERT_EQ((int) ECSqlEventHandler::EventType::Update, (int) stmt.GetDefaultEventHandler()->GetEventType());
+        ASSERT_EQ(2, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() != nullptr);
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(-1, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() == nullptr);
+
+        stmt.BindInt(1, -10);
+        stmt.BindInt(2, 10);
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        //test table now:
+        // I
+        // --
+        // -1
+        // -2
+        // -3
+        // -4
+        ASSERT_EQ((int) ECSqlEventHandler::EventType::Update, (int) stmt.GetDefaultEventHandler()->GetEventType());
+        ASSERT_EQ(4, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount());
+        ASSERT_TRUE(stmt.GetDefaultEventHandler()->GetArgs() != nullptr);
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
@@ -58,37 +192,32 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_RegisterUnregisterEventHandler)
 
     ECSqlStatement statement;
     TestEventHandler eventHandler;
-    auto stat = statement.RegisterEventHandler (eventHandler);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Registering an event handler before preparing the statement is expected to succeed.";
-
-    stat = statement.RegisterEventHandler (eventHandler);
-    ASSERT_EQ ((int) ECSqlStatus::UserError, (int) stat) << "Registering the same event handler twice is expected to fail.";
+    statement.RegisterEventHandler (eventHandler);
+    //Registering event handler twice should succeed (and not register it again)
+    statement.RegisterEventHandler(eventHandler);
 
     TestEventHandler eventHandler2;
-    stat = statement.RegisterEventHandler (eventHandler2);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Registering another handler must succeed.";
+    statement.RegisterEventHandler (eventHandler2);
 
-    stat = statement.UnregisterEventHandler (eventHandler);
+    ECSqlStatus stat = statement.UnregisterEventHandler (eventHandler);
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Unregistering a registered event handler is expected to work.";
 
     //prepare somewhere in the middle to test that this does not affect event handler management
     stat = statement.Prepare (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (9999, 'Event handler test')");
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation failed unexpectedly";
 
-    stat = statement.RegisterEventHandler (eventHandler);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Re-registering an unregistered event handler is expected to work.";
-
+    statement.RegisterEventHandler (eventHandler);
     stat = statement.UnregisterEventHandler (eventHandler2);
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Unregistering a registered event handler is expected to work.";
 
-    stat = statement.RegisterEventHandler (eventHandler2);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Re-registering an unregistered event handler is expected to work.";
+    statement.UnregisterAllEventHandlers ();
+    //calling UnregisterAllEventHandlers twice is expected to work
+    statement.UnregisterAllEventHandlers ();
 
-    stat = statement.UnregisterAllEventHandlers ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Unregistering all event handlers is expected to work.";
-
-    stat = statement.UnregisterAllEventHandlers ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Calling UnregisterAllEventHandlers twice is expected to work.";
+    //unregister a handler which is not registered should fail
+    TestEventHandler eventHandler3;
+    stat = statement.UnregisterEventHandler(eventHandler3);
+    ASSERT_EQ((int) ECSqlStatus::UserError, (int) stat) << "Unregistering an event handler which is not registered is expected to fail.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -102,17 +231,12 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_EventHandlingAcrossFinalize)
 
     ECSqlStatement statement;
     TestEventHandler eventHandler;
-    auto stat = statement.RegisterEventHandler (eventHandler);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Registering an event handler before preparing the statement is expected to succeed.";
-
-    stat = statement.RegisterEventHandler (eventHandler);
-    ASSERT_EQ ((int) ECSqlStatus::UserError, (int) stat) << "Registering the same event handler twice is expected to fail.";
+    statement.RegisterEventHandler (eventHandler);
 
     TestEventHandler eventHandler2;
-    stat = statement.RegisterEventHandler (eventHandler2);
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Registering another handler must succeed.";
+    statement.RegisterEventHandler (eventHandler2);
 
-    stat = statement.Prepare (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (9999, 'Event handler test')");
+    ECSqlStatus stat = statement.Prepare (ecdb, "INSERT INTO ecsql.P (I, S) VALUES (9999, 'Event handler test')");
     ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Preparation failed unexpectedly";
 
     ECInstanceKey newInstanceKey;
@@ -181,6 +305,8 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteEvent)
 
     ECSqlStatement statement;
 
+    statement.EnableDefaultEventHandler();
+
     TestEventHandler deleteEventHandler;
     statement.RegisterEventHandler (deleteEventHandler);
 
@@ -193,8 +319,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteEvent)
     ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
 
     ASSERT_EQ ((int) ECSqlEventHandler::EventType::Delete, (int) deleteEventHandler.GetEventType ());
-    ASSERT_EQ (deleteEventHandler.GetTimesEventOccurred (), 1);
-    ASSERT_EQ (deleteEventHandler.GetRowsAffected (), 2);
+    ASSERT_EQ (1, deleteEventHandler.GetTimesEventOccurred ());
+    ASSERT_EQ (2, deleteEventHandler.GetRowsAffected ());
+
 
     ECClassCP psaClass = ecdb. GetSchemaManager ().GetECClass ("ECSqlTest", "PSA");
     ASSERT_TRUE (psaClass != nullptr);
@@ -202,6 +329,16 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteEvent)
         {
         ASSERT_EQ (psaClass->GetId (), instanceKey.GetECClassId ()) << "Unexpected ECClassIds in event args.";
         }
+
+    //default event handler should report the same
+    ASSERT_TRUE(statement.GetDefaultEventHandler() != nullptr);
+    ASSERT_EQ((int) deleteEventHandler.GetEventType(), (int) statement.GetDefaultEventHandler()->GetEventType());
+    ASSERT_EQ(deleteEventHandler.GetRowsAffected(), statement.GetDefaultEventHandler()->GetInstancesAffectedCount());
+    for (auto const& instanceKey : statement.GetDefaultEventHandler()->GetArgs ()->GetInstanceKeys())
+        {
+        ASSERT_EQ(psaClass->GetId(), instanceKey.GetECClassId()) << "Unexpected ECClassIds in event args of default event handler";
+        }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -269,6 +406,5 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateEvent)
         ASSERT_EQ (pClass->GetId (), instanceKey.GetECClassId ()) << "Unexpected ECClassIds in event args.";
         }
     }
-
 
 END_ECDBUNITTESTS_NAMESPACE

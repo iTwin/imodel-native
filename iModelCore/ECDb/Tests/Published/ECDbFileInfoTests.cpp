@@ -167,15 +167,13 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     stmt.Finalize();
 
     //DELETE scenario
-    InstancesAffectedECSqlEventHandler handler;
-    ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.RegisterEventHandler(handler));
+    stmt.EnableDefaultEventHandler();
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId = ?"));
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindId(1, fooKey.GetECInstanceId()));
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
-    stmt.Finalize();
-
     //check referential integrity
-    ASSERT_EQ (3, handler.GetInstancesAffectedCount ()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
+    ASSERT_EQ(3, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
+    stmt.Finalize();
 
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());

@@ -64,7 +64,6 @@ public:
     const_iterator end () const;
     };
 
-
 /*---------------------------------------------------------------------------------------
 * Abstract class for property mapping
 * @bsimethod                                                    affan.khan        03/2012
@@ -79,8 +78,12 @@ protected:
     PropertyMapCP           m_parentPropertyMap;
     WString                 m_propertyAccessString; // We need to own this for nested property in embedded struct as they are dynamically generated
     PropertyMapCollection   m_children;
+    ECDbSqlTable const*     m_primaryTable;
+
+
+
     mutable ECDbPropertyPathId      m_propertyPathId;
-    PropertyMap (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    PropertyMap (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
     virtual bool _IsVirtual () const;
     virtual bool _IsUnmapped () const;
@@ -93,8 +96,6 @@ protected:
 
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfoCP classMapInfo);
-
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const;
 
 
     virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const { return nullptr; }
@@ -130,9 +131,26 @@ public:
 
         return *current;
         }
+    ECDbSqlTable const* GetPrimaryTable () const { if (m_primaryTable) return m_primaryTable; return GetRoot ().GetPrimaryTable (); }
+    ECDbSqlTable const* GetTable () const 
+        { 
+        auto column = GetFirstColumn(); 
+        if (column)
+            return &(column->GetTable ());
 
-    static uint32_t GetPropertyIndex (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class
-    
+        return nullptr;
+        }
+
+    bool IsMappedToPrimaryTable () const
+        {
+        auto primaryTable = GetPrimaryTable ();
+        auto thisTable = GetTable ();
+        BeAssert (primaryTable != nullptr);
+
+        return (primaryTable != nullptr && thisTable != nullptr && primaryTable == thisTable);
+        }
+
+    static uint32_t GetPropertyIndex (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty); //needs to take an enabler, not a class    
     PropertyMapCollection const& GetChildren () const { return m_children; }
 
     //! Gets a value indicating whether this property map is a virtual mapping, i.e. maps
@@ -166,7 +184,6 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const;
 
-    NativeSqlBuilder::List ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const;
 
     //! Saves the base column name, if it differs from the property name
     BeSQLite::DbResult Save (ECDbClassMapInfo & classMapInfo) const;
@@ -189,7 +206,7 @@ public:
     WString ToString() const;
 
     //! An abstract factory method that constructs a subtype of PropertyMap, based on the ecProperty, hints, and mapping rules
-    static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     };
 
 
@@ -202,14 +219,14 @@ public:
 struct UnmappedPropertyMap : PropertyMap
     {
 private:
-    UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
     virtual bool _IsUnmapped () const override { return true; }
     virtual WString _ToString () const override;
     virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override { return BE_SQLITE_DONE; }
     virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override {return BE_SQLITE_DONE;}
 public:
-    static PropertyMapPtr Create (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    static PropertyMapPtr Create (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
     ~UnmappedPropertyMap () {}
     };
@@ -221,12 +238,11 @@ public:
 //=======================================================================================
 struct PropertyMapToColumn : PropertyMap
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 private:
     ECN::PrimitiveECPropertyCP m_primitiveProperty;
 
     virtual bool _IsVirtual () const override;
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
     /*---------------------------------------------------------------------------------------
     * @bsimethod                                                    affan.khan      01/2015
@@ -253,7 +269,7 @@ protected:
     ECDbSqlColumn*     m_column;
 
     //! basic constructor
-    PropertyMapToColumn (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
+    PropertyMapToColumn (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     
     virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const override { return this; }
 
@@ -279,13 +295,12 @@ struct PropertyMapToInLineStruct : PropertyMap
 friend struct PropertyMap;
 private:
 
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
 
     //! For debugging and logging
     virtual WString _ToString() const override;
 
 protected:
-    PropertyMapToInLineStruct (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    PropertyMapToInLineStruct (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
     BentleyStatus Initialize(ECDbMapCR map);
 
@@ -293,7 +308,7 @@ protected:
     virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;
 
 public:
-    static PropertyMapToInLineStructPtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    static PropertyMapToInLineStructPtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
     PropertyMapCP GetPropertyMap (WCharCP propertyName) const;
 };
@@ -313,14 +328,14 @@ private:
     virtual WString _ToString() const override;
 
 protected:
-    PropertyMapToTable (ECN::ECPropertyCR ecProperty, ECN::ECClassCR elementType, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    PropertyMapToTable (ECN::ECPropertyCR ecProperty, ECN::ECClassCR elementType, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override;
     virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override;
 public:
-    static PropertyMapToTablePtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+    static PropertyMapToTablePtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     ECN::ECPropertyId GetPropertyId ();
     ECN::ECClassCR GetElementType() const {return m_structElementType;}
 };
@@ -331,15 +346,14 @@ public:
 //=======================================================================================
 struct PropertyMapArrayOfPrimitives : PropertyMapToColumn
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
 private:
     ECN::StandaloneECEnablerP       m_primitiveArrayEnabler;
 
     //! basic constructor
-    PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
+    PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
     
-    virtual NativeSqlBuilder::List _ToNativeSql (ECDbR ecdb, ECDbSqlTable const& table) const override;
     
     //! For debugging and logging
     WString _ToString() const override;
@@ -352,7 +366,7 @@ private:
 //=======================================================================================
 struct PropertyMapPoint : PropertyMap
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, PropertyMapCP parentPropertyMap);
+friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
 private:
     //! true if 3d, false if 2d
@@ -367,7 +381,7 @@ private:
     ECDbSqlColumn*     m_zColumn;
 
     //! basic constructor
-    PropertyMapPoint (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
+    PropertyMapPoint (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     
     //! Make sure our table has the necessary columns, if any
     MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;

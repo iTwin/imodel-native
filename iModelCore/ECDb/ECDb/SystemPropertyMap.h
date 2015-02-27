@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include "ClassMap.h"
 #include "PropertyMap.h"
 #include "ClassMap.h"
 
@@ -29,7 +30,7 @@ private:
     virtual Utf8CP _GetColumnBaseName () const override;
 
 protected:
-    PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind);
+    PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind, ECDbSqlTable const* primaryTable);
 
     ECDbSqlColumn const& GetColumn () const;
 
@@ -87,7 +88,7 @@ private:
     Utf8String m_viewColumnAlias;
 
 protected:
-    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
+    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECDbSqlTable const* primaryTable, Utf8CP columnAliasInView);
 
     bool HasViewColumnAlias () const { return !m_viewColumnAlias.empty (); }
     //! In the view generated for select statements, the constraint columns cannot be used directly for end-table mappings
@@ -131,7 +132,7 @@ struct PropertyMapRelationshipConstraintClassId : PropertyMapRelationshipConstra
 private:
     ECN::ECClassId m_defaultConstraintClassId;
 
-    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECN::ECClassId defaultClassId, Utf8CP columnAliasInView, ECDbSqlTable* table);
+    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECN::ECClassId defaultClassId, ECDbSqlTable const* primaryTable, Utf8CP columnAliasInView, ECDbSqlTable* table);
 
     virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType) const override;
 

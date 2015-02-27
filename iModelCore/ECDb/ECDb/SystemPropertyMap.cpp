@@ -12,8 +12,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapSystem::PropertyMapSystem (ECPropertyCR ecProperty, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind)
-: PropertyMap (ecProperty, ecProperty.GetName ().c_str (), nullptr), m_kind (kind), m_column (column)
+PropertyMapSystem::PropertyMapSystem (ECPropertyCR ecProperty, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind, ECDbSqlTable const* primaryTable)
+: PropertyMap (ecProperty, ecProperty.GetName ().c_str (), primaryTable, nullptr), m_kind (kind), m_column (column)
     {
     }
 
@@ -94,7 +94,7 @@ WCharCP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = L"ECInstanceId";
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn* column)
-: PropertyMapSystem (ecInstanceIdProperty, (column != nullptr ? column->GetWeakPtr () : std::weak_ptr<ECDbSqlColumn>()), ECSqlSystemProperty::ECInstanceId)
+: PropertyMapSystem (ecInstanceIdProperty, (column != nullptr ? column->GetWeakPtr () : std::weak_ptr<ECDbSqlColumn> ()), ECSqlSystemProperty::ECInstanceId, &(column->GetTable()))
     {}
 
 //----------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ WString PropertyMapECInstanceId::_ToString () const
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapSecondaryTableKey::PropertyMapSecondaryTableKey (ECPropertyCR ecProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind)
- : PropertyMapSystem (ecProperty, column->GetWeakPtr(), kind)
+: PropertyMapSystem (ecProperty, column->GetWeakPtr (), kind, &(column->GetTable ()))
  {}
 
 //----------------------------------------------------------------------------------
@@ -252,9 +252,10 @@ PropertyMapRelationshipConstraint::PropertyMapRelationshipConstraint
 ECN::ECPropertyCR constraintProperty,
 ECDbSqlColumn* column,
 ECSqlSystemProperty kind,
+ECDbSqlTable const* primaryTable,
 Utf8CP viewColumnAlias
 )
-: PropertyMapSystem (constraintProperty, column->GetWeakPtr(), kind), m_viewColumnAlias (viewColumnAlias)
+: PropertyMapSystem (constraintProperty, column->GetWeakPtr (), kind, primaryTable), m_viewColumnAlias (viewColumnAlias)
     { 
     }
 
@@ -281,7 +282,7 @@ ECDbSqlColumn* column,
 ECSqlSystemProperty kind,
 Utf8CP viewColumnAlias
 )
-: PropertyMapRelationshipConstraint (constraintProperty, column, kind, viewColumnAlias)
+: PropertyMapRelationshipConstraint (constraintProperty, column, kind, &column->GetTable(), viewColumnAlias)
     {  
     }
 
@@ -338,10 +339,11 @@ ECN::ECPropertyCR constraintProperty,
 ECDbSqlColumn* column,
 ECSqlSystemProperty kind,
 ECClassId defaultConstraintECClassId,
+ECDbSqlTable const* primaryTable,
 Utf8CP viewColumnAlias,
 ECDbSqlTable* table
 )
-: PropertyMapRelationshipConstraint (constraintProperty, column, kind, viewColumnAlias),
+: PropertyMapRelationshipConstraint (constraintProperty, column, kind, primaryTable, viewColumnAlias),
 m_defaultConstraintClassId (defaultConstraintECClassId)
     {
     if (table != nullptr)
@@ -353,7 +355,6 @@ m_defaultConstraintClassId (defaultConstraintECClassId)
                 if (!GetColumnWeakPtr ().expired ())
                     table->DeleteColumn (GetColumnWeakPtr ().lock()->GetName ().c_str ());
 
-                column.GetDependentPropertiesR ().Add (m_defaultConstraintClassId, GetPropertyAccessString ());
                 ReplaceColumn (column.GetWeakPtr());
                 }
             });
@@ -381,7 +382,7 @@ ECDbSqlTable* table
     if (column->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), prop->GetName ().c_str ()) != BentleyStatus::SUCCESS)
         return nullptr;
 
-    return new PropertyMapRelationshipConstraintClassId (*prop, column, kind, defaultSourceECClassId, viewColumnAlias, table);
+    return new PropertyMapRelationshipConstraintClassId (*prop, column, kind, defaultSourceECClassId, &classMap.GetTable(), viewColumnAlias, table);
     }
 
 //---------------------------------------------------------------------------------------

@@ -702,6 +702,17 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, uint32_t userFlag) const;
+        ECDbSqlColumn const* GetFilteredColumnFirst (uint32_t userFlag) const
+            {
+            for (auto column : m_orderedColumns)
+                {
+                if (column->GetUserFlags () == userFlag)
+                    return column;
+                }
+
+            return nullptr;
+            }
+
         bool DeleteColumn (Utf8CP name);
         BentleyStatus FinishEditing ();
         virtual ~ECDbSqlTable (){}
