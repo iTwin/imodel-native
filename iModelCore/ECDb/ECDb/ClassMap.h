@@ -288,7 +288,7 @@ private:
     ECDbMapStrategy             m_mapStrategy;
     bool                        m_isDirty;
     bvector<ClassIndexInfoPtr>  m_indexes;
-    bool                        m_useSharedColumnStrategy;
+    // clang says not used - bool m_useSharedColumnStrategy;
     ECDbClassMapId              m_id;
     //std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> m_exclusivelyStoredClassMaps;
 

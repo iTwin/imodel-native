@@ -391,7 +391,7 @@ ECSqlStatus ClassMap::NativeSqlConverterImpl::_GetWhereClause (NativeSqlBuilder&
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap (ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : IClassMap (), m_ecDbMap (ecDbMap), m_table (nullptr), m_ecClass (ecClass), m_mapStrategy (mapStrategy),
-m_parentMapClassId (0LL), m_nativeSqlConverter (nullptr), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), m_useSharedColumnStrategy (false), m_id(0LL)
+m_parentMapClassId (0LL), m_nativeSqlConverter (nullptr), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), /*clang says not used - m_useSharedColumnStrategy (false)*/, m_id(0LL)
     {
     }
 
