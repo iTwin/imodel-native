@@ -226,7 +226,7 @@ struct ECDbSqlDb : NonCopyableClass
         std::map<Utf8CP, std::unique_ptr<ECDbSqlIndex>, CompareIUtf8> m_index;
 
         bool HasObject (Utf8CP name);
-        bool m_enableIdGeneration;
+        // clang says not used - bool m_enableIdGeneration;
         Utf8String m_name;
         ECDbVersion m_version;
         StringPool m_stringPool;
@@ -234,7 +234,7 @@ struct ECDbSqlDb : NonCopyableClass
 
     public:
         ECDbSqlDb (ECDbSQLManager& manager)
-            : m_nameGenerator ("ECDbObj_%03d"), m_name ("ECDb"), m_version (ECDbVersion (1, 0)), m_enableIdGeneration (true), m_sqlManager (manager)
+            : m_nameGenerator ("ECDbObj_%03d"), m_name ("ECDb"), m_version (ECDbVersion (1, 0)), /*clang says not used - m_enableIdGeneration (true),*/ m_sqlManager (manager)
             {
             }
  

@@ -1107,16 +1107,20 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
             * An example of an unlikely case where the user would want duplicate relationships is a
             * a "queue of tasks". The same task can figure in a queue more than once!
             */
+            auto addUniqueIndex = true;
+            if (relationshipClassMapInfo.GetAllowDuplicateRelationships () == RelationshipClassMapInfo::TriState::True)
+                addUniqueIndex = false;
+
             RelationshipClassMapInfo::PreferredDirection preferredDirection = relationshipClassMapInfo.GetUserPreferredDirection ();
-            if (preferredDirection == RelationshipClassMapInfo::PreferredDirection::TargetToSource && relationshipClassMapInfo.GetAllowDuplicateRelationships () != RelationshipClassMapInfo::TriState::True)
+            if (preferredDirection == RelationshipClassMapInfo::PreferredDirection::TargetToSource)
                 {
                 if (createOnSource)
-                    AddIndicesToRelationshipEnds (RIDX_TargetToSource, true); // unique index starting with target
+                    AddIndicesToRelationshipEnds (RIDX_TargetToSource, addUniqueIndex); // unique index starting with target
                 }
             else
                 {
                 if (createOnTarget)
-                    AddIndicesToRelationshipEnds (RIDX_SourceToTarget, true); // unique index starting with target
+                    AddIndicesToRelationshipEnds (RIDX_SourceToTarget, addUniqueIndex); // unique index starting with target
                 }
 
             break;
