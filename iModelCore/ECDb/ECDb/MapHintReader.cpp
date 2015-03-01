@@ -192,9 +192,14 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
             {
             Utf8String whereFlag =  Utf8String(v.GetString());
             whereFlag.Trim();
-            if (whereFlag.EqualsI(BSCAP_ECBDNOTNULL))
+            if (whereFlag.EqualsI(BSCAP_ECDBNOTNULL))
                 {
                 info->SetWhere(EC::ClassIndexInfo::WhereConstraint::NotNull);
+                }
+            else
+                {
+                LOG.errorv("Invalid where flag in ECDbClassHint.Indexes.");
+                return false;
                 }
             }
         //optional
