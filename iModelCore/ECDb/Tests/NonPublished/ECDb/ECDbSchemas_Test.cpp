@@ -181,6 +181,7 @@ static ECSchemaPtr importECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile)
     return ecSchema;
     }
 
+
 TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
     {
     ECDbTestProject saveTestProject;

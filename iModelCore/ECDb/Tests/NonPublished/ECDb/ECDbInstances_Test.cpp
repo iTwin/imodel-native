@@ -1388,6 +1388,82 @@ TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
     EXPECT_EQ(SUCCESS, sms);
 
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                   02/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (ECDbInstances, VerifyAbstractClassWith_TablePerHierarchyAndSharedTableForThisClass)
+    {
+    auto const schema =
+        L"<?xml version='1.0' encoding='utf-8'?>"
+        L"<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECClass typeName='AbstractBaseClass' isDomainClass='False'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P1' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
+        L"        <BaseClass>AbstractBaseClass</BaseClass>"
+        L"        <ECProperty propertyName='P2' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
+        L"        <BaseClass>AbstractBaseClass</BaseClass>"
+        L"        <ECProperty propertyName='P3' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='S1' isDomainClass='False'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <Indexes />"
+        L"                <MapStrategy>SharedTableForThisClass</MapStrategy>"
+        L"                <TableName>SharedTable</TableName>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P1' typeName='string' />"
+        L"    </ECClass>"
+        L"    <ECClass typeName='S2' isDomainClass='True'>"
+        L"        <ECCustomAttributes>"
+        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"                <MapStrategy>SharedTableForThisClass</MapStrategy>"
+        L"                <TableName>SharedTable</TableName>"
+        L"            </ECDbClassHint>"
+        L"        </ECCustomAttributes>"
+        L"        <ECProperty propertyName='P2' typeName='string' />"
+        L"    </ECClass>"
+        L"</ECSchema>";
 
-    
+    ECDbTestProject saveTestProject;
+    ECDbR db = saveTestProject.Create ("abstractClassTest.ecdb");
+    ECSchemaPtr testSchema;
+    auto readContext = ECSchemaReadContext::CreateContext ();
+    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ASSERT_TRUE (testSchema != nullptr);
+    auto importStatus = db.GetSchemaManager ().ImportECSchemas (readContext->GetCache ());
+    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
+
+    //verify tables
+    ASSERT_TRUE (db.TableExists ("SharedTable"));
+    ASSERT_TRUE (db.TableExists ("tac_AbstractBaseClass"));
+    ASSERT_FALSE (db.TableExists ("tac_ChildDomainClassA"));
+    ASSERT_FALSE (db.TableExists ("tac_ChildDomainClassB"));
+    ASSERT_FALSE (db.TableExists ("tac_S1"));
+    ASSERT_FALSE (db.TableExists ("tac_S2"));
+
+
+    //verify ECSqlStatement
+    ECSqlStatement s1, s2, s3, s4, s5;
+    ASSERT_EQ (s1.Prepare (db, "INSERT INTO tac.AbstractBaseClass (P1) VALUES('Hello')"), ECSqlStatus::InvalidECSql);
+    ASSERT_EQ (s4.Prepare (db, "INSERT INTO tac.S1 (P1) VALUES('Hello')"), ECSqlStatus::InvalidECSql);
+    //Noabstract classes
+    ASSERT_EQ (s2.Prepare (db, "INSERT INTO tac.ChildDomainClassA (P1, P2) VALUES('Hello', 'World')"), ECSqlStatus::Success);
+    ASSERT_EQ (s2.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s3.Prepare (db, "INSERT INTO tac.ChildDomainClassB (P1, P3) VALUES('Hello', 'World')"), ECSqlStatus::Success);
+    ASSERT_EQ (s3.Step (), ECSqlStepStatus::Done);
+    ASSERT_EQ (s5.Prepare (db, "INSERT INTO tac.S2 (P2) VALUES('Hello')"), ECSqlStatus::Success);
+    ASSERT_EQ (s5.Step (), ECSqlStepStatus::Done);
+
+    }
 END_ECDBUNITTESTS_NAMESPACE

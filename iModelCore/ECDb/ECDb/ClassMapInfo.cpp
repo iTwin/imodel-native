@@ -103,7 +103,7 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
-    : m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_ecInstanceIdColumnName(primaryKeyColumnName), m_tableName(tableName), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_ClassHasCurrentTimeStampProperty(NULL), m_parentClassMap(nullptr)
+: m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)), m_ClassHasCurrentTimeStampProperty (NULL), m_parentClassMap (nullptr), m_strategy (mapStrategy)
     {
     if (Utf8String::IsNullOrEmpty (tableName))
         _InitializeFromSchema ();
@@ -126,6 +126,7 @@ ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableNa
         // ClassMappingRule: if hint does not supply an ECInstanceId (primary key) column name, use ECDB_COL_ECInstanceId
         m_ecInstanceIdColumnName =  ECDB_COL_ECInstanceId;
         }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,6 +169,12 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy ()
         {
         GetMapStrategyR ().SetDoNotMap ();
         return MapStatus::Success;
+        }
+
+    //! We override m_isMapToVirtualTable if tablePerHierarchy Or shareTableStrategy was used.
+    if (m_isMapToVirtualTable)
+        {
+        m_isMapToVirtualTable = !(GetMapStrategy ().IsTablePerHierarchy () || GetMapStrategy ().IsSharedTableForThisClass ());
         }
 
     return EvaluateInheritedMapStrategy ();
