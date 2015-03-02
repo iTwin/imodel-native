@@ -124,7 +124,6 @@ public:
     static  BeSQLite::DbResult GetBaseECClasses                         (ECClassIdListR baseClassIds, ECClassId ecClassId, BeSQLite::Db& db);
     static  BeSQLite::DbResult ResolveECSchemaId                        (Utf8StringR schemaName, uint32_t& versionMajor,uint32_t& versionMinor, ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult ResolveECSchemaId                        (DbECSchemaEntryR key, ECSchemaId ecSchemaId, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetPrimaryECSchemas                      (ECSchemaKeyListR schemaKeys, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteECClass                            (ECClassId ecClassId, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteECSchema                           (ECSchemaId ecSchemaId, BeSQLite::Db& db);
     static  BeSQLite::DbResult DeleteCustomAttribute                    (ECContainerId containerId, ECContainerType containerType, ECClassId customAttributeClassId, BeSQLite::Db& db);
@@ -195,7 +194,6 @@ public:
         COL_VersionMajor    = 0x010,
         COL_VersionMinor    = 0x020,
         COL_DisplayLabel    = 0x100,
-        COL_SchemaType      = 0x400,
         COL_ALL             = 0xffffffff
         };
     ECSchemaId          m_ecSchemaId;
@@ -205,7 +203,6 @@ public:
     Utf8String          m_namespacePrefix;
     int32_t             m_versionMajor;
     int32_t             m_versionMinor;
-    PersistedSchemaType m_schemaType;
     };
 
 /*---------------------------------------------------------------------------------------

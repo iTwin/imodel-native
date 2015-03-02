@@ -204,15 +204,6 @@ enum SqlInsertActions
      RTrim,  // The same as binary, except that trailing space characters are ignored.
      };
 
-enum PersistedSchemaType
-    {
-    PERSISTEDSCHEMATYPE_Primary = 1,
-    PERSISTEDSCHEMATYPE_Supplemented = 2,
-    PERSISTEDSCHEMATYPE_Supplemental= 4,
-    PERSISTEDSCHEMATYPE_Standard= 8,
-    };
-
-
 enum ECContainerType
     {
     ECONTAINERTYPE_Schema = 1,

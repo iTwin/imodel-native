@@ -54,7 +54,7 @@ public:
 DbResult ECDbSchemaPersistence::InsertECSchemaInfo (BeSQLite::Db& db, DbECSchemaInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_Schema (ECSchemaId, Name, DisplayLabel, Description, NamespacePrefix, VersionMajor, VersionMinor, SchemaType) VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_Schema (ECSchemaId, Name, DisplayLabel, Description, NamespacePrefix, VersionMajor, VersionMinor) VALUES(?, ?, ?, ?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -65,7 +65,6 @@ DbResult ECDbSchemaPersistence::InsertECSchemaInfo (BeSQLite::Db& db, DbECSchema
     if (info.ColsInsert & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (5,  info.m_namespacePrefix, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECSchemaInfo::COL_VersionMajor   ) stmt->BindInt (6,  info.m_versionMajor);
     if (info.ColsInsert & DbECSchemaInfo::COL_VersionMinor   ) stmt->BindInt (7,  info.m_versionMinor);
-    if (info.ColsInsert & DbECSchemaInfo::COL_SchemaType     ) stmt->BindInt (10, info.m_schemaType);
 
     return stmt->Step();
     }
@@ -85,7 +84,6 @@ DbResult ECDbSchemaPersistence::FindECSchemaInfo (BeSQLite::CachedStatementPtr& 
     if (spec.ColsSelect & DbECSchemaInfo::COL_NamespacePrefix) selectClause.AddItem ("NamespacePrefix");
     if (spec.ColsSelect & DbECSchemaInfo::COL_VersionMajor) selectClause.AddItem ("VersionMajor");
     if (spec.ColsSelect & DbECSchemaInfo::COL_VersionMinor) selectClause.AddItem ("VersionMinor");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_SchemaType) selectClause.AddItem ("SchemaType");
     BeAssert (!selectClause.IsEmpty ());
 
     Utf8String sql ("SELECT ");
@@ -98,7 +96,6 @@ DbResult ECDbSchemaPersistence::FindECSchemaInfo (BeSQLite::CachedStatementPtr& 
     if (spec.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) whereClause.AddItem ("NamespacePrefix=?");
     if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMajor) whereClause.AddItem ("VersionMajor=?");
     if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMinor) whereClause.AddItem ("VersionMinor=?");
-    if (spec.ColsWhere & DbECSchemaInfo::COL_SchemaType) whereClause.AddItem ("SchemaType=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -113,7 +110,6 @@ DbResult ECDbSchemaPersistence::FindECSchemaInfo (BeSQLite::CachedStatementPtr& 
     if (spec.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (nCol++, spec.m_namespacePrefix, Statement::MakeCopy::No);    
     if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMajor   ) stmt->BindInt (nCol++, spec.m_versionMajor);
     if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMinor   ) stmt->BindInt (nCol++, spec.m_versionMinor);
-    if (spec.ColsWhere & DbECSchemaInfo::COL_SchemaType     ) stmt->BindInt (nCol++, spec.m_schemaType);
 
     return stat;
     }
@@ -142,8 +138,6 @@ DbResult ECDbSchemaPersistence::Step (DbECSchemaInfoR info,  BeSQLite::Statement
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_VersionMajor;    nCol++; } else info.m_versionMajor = stmt.GetValueInt  (nCol++);
         if (info.ColsSelect & DbECSchemaInfo::COL_VersionMinor)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_VersionMinor;    nCol++; } else info.m_versionMinor = stmt.GetValueInt  (nCol++);
-        if (info.ColsSelect & DbECSchemaInfo::COL_SchemaType  )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_SchemaType;       nCol++; } else info.m_schemaType =  (PersistedSchemaType)stmt.GetValueInt  (nCol++) ;
         }
     return r;
     }
@@ -276,7 +270,6 @@ DbResult ECDbSchemaPersistence::UpdateECSchemaInfo (BeSQLite::Db& db, DbECSchema
     if (info.ColsUpdate & DbECSchemaInfo::COL_NamespacePrefix) setClause.AddItem ("NamespacePrefix=?");
     if (info.ColsUpdate & DbECSchemaInfo::COL_VersionMajor) setClause.AddItem ("VersionMajor=?");
     if (info.ColsUpdate & DbECSchemaInfo::COL_VersionMinor) setClause.AddItem ("VersionMinor=?");
-    if (info.ColsUpdate & DbECSchemaInfo::COL_SchemaType) setClause.AddItem ("SchemaType=?");
 
     BeAssert (!setClause.IsEmpty ());
     sql.append (setClause.ToString ());
@@ -287,7 +280,6 @@ DbResult ECDbSchemaPersistence::UpdateECSchemaInfo (BeSQLite::Db& db, DbECSchema
     if (info.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) whereClause.AddItem ("NamespacePrefix=?");
     if (info.ColsWhere & DbECSchemaInfo::COL_VersionMajor) whereClause.AddItem ("VersionMajor=?");
     if (info.ColsWhere & DbECSchemaInfo::COL_VersionMinor) whereClause.AddItem ("VersionMinor=?");
-    if (info.ColsWhere & DbECSchemaInfo::COL_SchemaType) whereClause.AddItem ("SchemaType=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -313,15 +305,12 @@ DbResult ECDbSchemaPersistence::UpdateECSchemaInfo (BeSQLite::Db& db, DbECSchema
         if (info.ColsNull & DbECSchemaInfo::COL_VersionMajor) nCol++; else stmt->BindInt (nCol++, info.m_versionMajor);
     if (info.ColsUpdate & DbECSchemaInfo::COL_VersionMinor)
         if (info.ColsNull & DbECSchemaInfo::COL_VersionMinor) nCol++; else stmt->BindInt (nCol++, info.m_versionMinor);
-    if (info.ColsUpdate & DbECSchemaInfo::COL_SchemaType)
-        if (info.ColsNull & DbECSchemaInfo::COL_SchemaType) nCol++; else stmt->BindInt (nCol++, info.m_schemaType);
  
     if (info.ColsWhere & DbECSchemaInfo::COL_ECSchemaId) stmt->BindInt64 (nCol++, info.m_ecSchemaId);
     if (info.ColsWhere & DbECSchemaInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);        
     if (info.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText (nCol++, info.m_namespacePrefix, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECSchemaInfo::COL_VersionMajor) stmt->BindInt (nCol++, info.m_versionMajor);
     if (info.ColsWhere & DbECSchemaInfo::COL_VersionMinor) stmt->BindInt (nCol++, info.m_versionMinor);
-    if (info.ColsWhere & DbECSchemaInfo::COL_SchemaType) stmt->BindInt (nCol++, info.m_schemaType);
     
     stat = stmt->Step();
     BeAssert (stat != BE_SQLITE_DONE || db.GetModifiedRowCount () > 0);
@@ -1318,34 +1307,6 @@ DbResult ECDbSchemaPersistence::ResolveECSchemaId (DbECSchemaEntryR key, ECSchem
     key.m_nClassesInSchema = (uint32_t) stmt->GetValueInt (4);
     key.m_nClassesLoaded = 0;
     key.m_resolvedECSchema = nullptr;
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetPrimaryECSchemas (ECSchemaKeyListR schemaKeys, BeSQLite::Db& db)
-    {
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT S.ECSchemaId, S.Name, S.VersionMajor, S.VersionMinor, COUNT(*) FROM ec_Schema S INNER JOIN ec_Class C ON S.ECSchemaId = C.ECSchemaID WHERE S.SchemaType=? GROUP BY S.ECSchemaId, S.Name, S.VersionMajor, S.VersionMinor");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stmt->BindInt (1, PERSISTEDSCHEMATYPE_Primary);
-
-    while ((stat = stmt->Step ()) == BE_SQLITE_ROW)
-        {
-        DbECSchemaEntry key;
-        key.m_ecSchemaId = stmt->GetValueInt64 (0);
-        key.m_schemaName = stmt->GetValueText (1);
-        key.m_versionMajor = (uint32_t) stmt->GetValueInt (2);
-        key.m_versionMinor = (uint32_t) stmt->GetValueInt (3);
-        key.m_nClassesInSchema = (uint32_t) stmt->GetValueInt (4);
-        key.m_nClassesLoaded = 0;
-        key.m_resolvedECSchema = nullptr;
-        schemaKeys.push_back (key);
-        }
-
     return stat;
     }
 
