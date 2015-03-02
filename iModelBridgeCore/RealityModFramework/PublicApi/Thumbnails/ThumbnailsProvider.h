@@ -21,6 +21,9 @@ class IThumbnailsProvider
         // IThumbnailProvider
         THUMBNAILS_EXPORT virtual int GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height) = 0;
         THUMBNAILS_EXPORT virtual int GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView) = 0;
+        
+        THUMBNAILS_EXPORT virtual double*   GetRasterFootprint(uint32_t& nbPts, WCharCP inputFilename) = 0;
+        THUMBNAILS_EXPORT virtual double*   GetPointCloudFootprint(uint32_t& nbPts, WCharCP inputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView) = 0;
 };
 
 class ThumbnailsProvider : public IThumbnailsProvider
@@ -32,6 +35,9 @@ public:
     THUMBNAILS_EXPORT virtual StatusInt GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height);
     THUMBNAILS_EXPORT virtual StatusInt GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
 
+    THUMBNAILS_EXPORT virtual double*   GetRasterFootprint(uint32_t& nbPts, WCharCP inputFilename);
+    THUMBNAILS_EXPORT virtual double*   GetPointCloudFootprint(uint32_t& nbPts, WCharCP inputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
+
 private:
     ThumbnailsProvider();
     virtual ~ThumbnailsProvider();
@@ -39,8 +45,11 @@ private:
     bool Initialize();
     void Terminate();
 
-    StatusInt             ExtractRasterThumbnail    (HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height);
-    StatusInt             ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
+    StatusInt   ExtractRasterThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height);
+    StatusInt   ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
+    
+    double*     ExtractRasterFootprint(uint32_t& nbPts, WCharCP inputFilename);
+    double*     ExtractPointCloudFootprint(uint32_t& nbPts, WCharCP inputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView);
 };
 
 

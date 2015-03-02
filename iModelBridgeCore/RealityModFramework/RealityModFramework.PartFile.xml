@@ -59,8 +59,8 @@
         <ProductDirectory Name="PPNativeAssemblies"         Path="" />
         <ProductDirectory Name="PdfLibInitNativeAssemblies" Path="" />
         <ProductDirectory Name="GeomNativeAssemblies"       Path="" />
-        <ProductDirectory Name="GeoCoordData"               Path="GeoCoordinateData" Deliver="false"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" Deliver="false"/>
+        <ProductDirectory Name="GeoCoordData"               Path="GeoCoordinateData" />
+        <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" />
         <ProductDirectory Name="MrSidAssemblies"            Path="" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
 

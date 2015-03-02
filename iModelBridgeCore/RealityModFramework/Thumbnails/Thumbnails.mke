@@ -83,7 +83,9 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley.lib \
                        $(ContextSubpartsLibs)$(libprefix)BentleyAllocator.lib \
 					   $(ContextSubpartsLibs)IppGraLibs.lib \
 					   $(ContextSubpartsLibs)IppUtlLibs.lib \
-                       $(ContextSubpartsLibs)BentleyGeom.lib
+                       $(ContextSubpartsLibs)BentleyGeom.lib \
+                       $(ContextSubpartsLibs)BaseGeoCoord.lib
+                       
 
 %include dlmlink.mki
 

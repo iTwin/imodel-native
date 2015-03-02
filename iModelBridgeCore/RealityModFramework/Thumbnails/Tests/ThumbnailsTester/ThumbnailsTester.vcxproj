@@ -43,7 +43,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>C:\Graphite6\out\Debug\Winx64\</OutDir>
+    <OutDir>D:\BSI\RMF_Graph06\out\Winx64\</OutDir>
     <IntDir>$(OutDir)\build\RealityModFramework\ThumbnailTester\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

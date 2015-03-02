@@ -760,3 +760,27 @@ void PointCloudVortex::GetPointCloudBounds(DPoint3dR lowerBound, DPoint3dR upper
             upperBound.z = boxPoints[i].z;
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PointCloudVortex::GetPointCloudBounds(PtHandle cloudHandle, double* lower, double* upper)
+{
+    ptCloudBoundsd(cloudHandle, lower, upper);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+PtHandle PointCloudVortex::GetMetaDataHandle(PtHandle cloudHandle)
+{
+    return ptGetMetaDataHandle(cloudHandle);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PointCloudVortex::GetMetaTag(PtHandle metadataHandle, WCharCP tagName, WCharP value)
+{
+    return ptGetMetaTag(metadataHandle, tagName, value);
+}

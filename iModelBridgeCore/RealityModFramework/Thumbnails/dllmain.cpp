@@ -11,6 +11,9 @@
 //#define RASTERLIB_FILE_FORMATS
 #include <ImagePP/all/h/HRFFileFormats.h>
 
+#include <GeoCoord/BaseGeoCoord.h>
+#include <GeoCoord/basegeocoordapi.h>
+
 //#include <Imagepp/all/h/ImageppLib.h>
 //#include <PdfLibInitializer/PdfLibInitializer.h>
 
@@ -34,12 +37,38 @@ static void callHostOnAssert (WCharCP _Message, WCharCP _File, unsigned _Line, B
     }
 
 
+struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
+{
+    DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
+
+    virtual ImagePP::IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const override
+    {
+        //WIP
+        //if (GeoCoordinationManager::GetServices() != NULL)
+            return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
+
+        //return NULL;
+    }
+    
+    virtual ~MyImageppLibAdmin()
+    {
+    }
+};
+
+
 struct MyImageppLibHost : ImagePP::ImageppLib::Host     
     {   
     MyImageppLibHost()
         {
         BeAssertFunctions::SetBeAssertHandler (callHostOnAssert);
         }
+
+    
+    virtual ImagePP::ImageppLibAdmin& _SupplyImageppLibAdmin() override
+        {
+        return *new MyImageppLibAdmin();
+        }
+       
 
     virtual void _RegisterFileFormat() override                  
         {            
@@ -84,15 +113,40 @@ struct MyImageppLibHost : ImagePP::ImageppLib::Host
 //    virtual PdfLibInitializerAdmin& _SupplyPdfLibInitializerAdmin() override { return *new MyPdfLibInitializerAdmin(); }
 //    }; // MyPdfLibInitializerHost
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InitBaseGCS()
+    {
+    //WIP
+    //BeFileName dllFileName;
+    //Bentley::BeGetModuleFileName(dllFileName, NULL);
+
+    TCHAR exePath[MAX_PATH];
+    GetModuleFileName(NULL, exePath, MAX_PATH);
+
+    WString geoCoordDir = exePath;
+    size_t pos = geoCoordDir.find_last_of(L"/\\");
+    geoCoordDir = geoCoordDir.substr(0, pos + 1);
+    geoCoordDir.append(L"GeoCoordinateData");
+
+    // Make sure directory exist.
+    BeFileName dir(geoCoordDir);
+    if (!dir.IsDirectory())
+        return false;
+
+    GeoCoordinates::BaseGCS::Initialize(geoCoordDir.c_str());
+
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 IThumbnailsProvider* ThumbnailsProvider::Get()
     {
-	static ThumbnailsProvider s_thumbnailsProvider;
-	return &s_thumbnailsProvider;
-	//return 0;
+    static ThumbnailsProvider s_thumbnailsProvider;
+    return &s_thumbnailsProvider;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -124,7 +178,10 @@ bool ThumbnailsProvider::Initialize()
     //Initialize ImagePP host
 	ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
 
-    //PointCloudVortex::Initialize();
+    PointCloudVortex::Initialize();
+
+    if (!InitBaseGCS())
+        return false;
 
     return true;
     }

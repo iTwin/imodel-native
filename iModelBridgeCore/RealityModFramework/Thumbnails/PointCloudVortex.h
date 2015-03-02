@@ -72,6 +72,10 @@ public:
     //! @param[in]  cloudHandle Handle to the point cloud.
     //! @return true if the point cloud should be displayed on a white background, false otherwise
     static bool     PointCloudNeedsWhiteBackground(PtHandle cloudHandle);
+
+    static void GetPointCloudBounds(PtHandle cloudHandle, double* lower, double* upper);
+    static PtHandle GetMetaDataHandle(PtHandle cloudHandle);
+    static bool GetMetaTag(PtHandle metaHandle, WCharCP tagName, WCharP value);
 };
 
 
