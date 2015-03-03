@@ -1850,7 +1850,7 @@ protected:
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
-                ECObjectsStatus DropAllReferencesOfSchema(SchemaKeyCR key);
+    ECObjectsStatus DropAllReferencesOfSchema(ECSchemaR schema);
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
