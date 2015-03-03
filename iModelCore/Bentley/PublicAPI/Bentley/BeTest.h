@@ -96,7 +96,8 @@
 
         #undef  TEST
         #define TEST(testCaseName, testName) DEFINE_BETEST_INTERNAL(testing::Test,testCaseName,testName)
-
+    
+        // note: the below macros are used by $(SrcRoot)bsicommon/build/DetectUnitTests.py
         #define BETEST_TC_SETUP(TC)        extern "C" EXPORT_ATTRIBUTE void setUpTestCase_##TC ()
         #define BETEST_TC_TEARDOWN(TC)     extern "C" EXPORT_ATTRIBUTE void tearDownTestCase_##TC ()
     #endif
