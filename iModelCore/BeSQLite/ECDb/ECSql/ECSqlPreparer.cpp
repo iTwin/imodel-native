@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1253,7 +1253,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, 
         }
 
     ctx.GetSqlBuilderR ().Append (selectClauseNativeSqlSnippets);
-
+   
     return ResolveChildStatementsBinding(ctx);
     }
 

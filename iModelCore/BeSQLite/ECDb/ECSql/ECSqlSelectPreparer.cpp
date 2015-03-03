@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlSelectPreparer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -12,6 +12,22 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+void ExtractPropertyRefs (ECSqlPrepareContext& ctx, Exp const* exp)
+    {
+    if (exp == nullptr)
+        return;
+
+    if (exp->GetType () == Exp::Type::PropertyName)
+        {
+        auto propertyName = static_cast<PropertyNameExp const*>(exp);
+        ctx.GetSelectionOptionsR ().AddProperty (propertyName->GetPropertyMap ().GetProperty ());
+        }
+
+    for (auto child : exp->GetChildren ())
+        {
+        ExtractPropertyRefs (ctx, child);
+        }
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -31,6 +47,8 @@ ECSqlStatus ECSqlSelectPreparer::Prepare (ECSqlPrepareContext& ctx, SelectStatem
     auto status = ECSqlExpPreparer::PrepareSelectClauseExp (ctx, exp.GetSelection ());
     if (status != ECSqlStatus::Success)
         return status;
+
+    ExtractPropertyRefs (ctx, &exp);
 
     sqlGenerator.AppendSpace ();
     //3. Append FROM

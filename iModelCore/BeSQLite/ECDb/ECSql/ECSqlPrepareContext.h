@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,57 @@ struct ECSqlStatementBase;
 struct ECSqlPrepareContext
     {
 public:
+    //=======================================================================================
+    // @bsiclass                                                 Affan.Khan    02/2015
+    //+===============+===============+===============+===============+===============+======
+    struct SelectionOptions : NonCopyableClass
+        {
+        private:            
+            static bool IsSystemProperty (ECPropertyCR ecProperty)
+                {
+                static std::set<WCharCP, CompareIWChar> s_systemProperties
+                    {
+                    ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W,
+                    ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W
+                };
+                return s_systemProperties.find (ecProperty.GetName().c_str()) != s_systemProperties.end ();
+                }
+
+        private:
+            bool m_onlyInlcudeSystemProperties;
+            std::set<ECPropertyCP> m_selection;
+        public:
+            explicit SelectionOptions (bool onlyIncludeSystemProperties)
+                :m_onlyInlcudeSystemProperties (onlyIncludeSystemProperties)
+                {
+                }
+            SelectionOptions ()
+                :m_onlyInlcudeSystemProperties (false)
+                {
+                }
+            ~SelectionOptions ()
+                {}
+            void AddProperty (ECPropertyCR ecProperty)
+                {
+                m_selection.insert (&ecProperty);
+                }
+            bool IsSelected (ECPropertyCR ecProperty) const
+                {
+                if (m_onlyInlcudeSystemProperties == false)
+                    {
+                    if (m_selection.find (&ecProperty) != m_selection.end ())
+                        return true;
+                    }
+
+                return SelectionOptions::IsSystemProperty (ecProperty);
+                }
+        };
     //=======================================================================================
     // @bsiclass                                                 Affan.Khan    06/2013
     //+===============+===============+===============+===============+===============+======
@@ -62,7 +113,7 @@ public:
         size_t Depth () const;
         ExpScope const& Current () const;
         };
-   
+ 
 private:
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlPrepareContext const* m_parentCtx;
@@ -72,7 +123,7 @@ private:
     bool m_nativeStatementIsNoop;
     bool m_nativeNothingToUpdate;
     ExpScopeStack m_scopes;
-
+    SelectionOptions m_selectionOptions;
     //SELECT only
     int m_nativeSqlSelectClauseColumnCount;
     static bool FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp);
@@ -90,6 +141,8 @@ public:
     ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx;}
     ArrayECPropertyCP GetParentArrayProperty () const { return m_parentArrayProperty;}
     ECSqlColumnInfo const* GetParentColumnInfo () const { return m_parentColumnInfo;}
+    SelectionOptions const& GetSelectionOptions () const { return m_selectionOptions; }
+    SelectionOptions& GetSelectionOptionsR () { return m_selectionOptions; }
 
     ECSqlStatementBase& GetECSqlStatementR () const;
 

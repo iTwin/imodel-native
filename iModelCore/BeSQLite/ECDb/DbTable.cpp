@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbTable.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -668,7 +668,7 @@ bool DbTable::IsEmpty (BeSQLiteDbR db, bool treatAsEmptyOnError) const
     Utf8CP tableName = GetName ();
 
     Utf8String sql;
-    sql.Sprintf ("SELECT count(*) FROM [%s]", tableName);
+    sql.Sprintf ("SELECT EXISTS(SELECT * FROM [%s])", tableName);
 
     Statement statement;
     DbResult stat = statement.TryPrepare (db, sql.c_str ());
