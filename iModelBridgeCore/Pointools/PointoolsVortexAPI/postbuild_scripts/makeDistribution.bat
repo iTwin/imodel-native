@@ -12,8 +12,10 @@ SET customDistrib=0
 
 @REM path for copying PRG LKG Vortex and PODFormats/PODwriter DLLS/libs from if required
 @REM (currently used when making the Siemens or FME distribution)
+@REM an example command line for building a custom build using the LKG is:
+@REM makeDistribution.bat -distrib fme -uselkg 2-1-0-1
 SET useLKG=0
-SET PRG_LKG_Path="\\builds\prgbuilds-readonly\LKGOutput\PointoolsVortexAPI\2-1-0-1"
+SET lkgVersion="0-0-0-0"
 
 @REM Vortex Paths - override environment variable settings
 SET Pointools=D:\PointoolsSiemens\src\Pointools
@@ -22,7 +24,6 @@ SET PointoolsVortex=%Pointools%\PointoolsVortexAPI
 echo overriding PointoolsVortex environment var to be %Pointools%\PointoolsVortexAPI
 SET BuildOutDir=D:\PointoolsSiemens\out
 echo setting BuildOutDir var to be %BuildOutDir%
-
 
 if "%1"=="-distrib" (
 	if "%2"=="siemens" (	
@@ -43,11 +44,16 @@ if "%1"=="-distrib" (
 			echo "siemens" or "fme"			
 			goto END_ERROR
 		)
-	)
-	if "%3%"=="uselkg" (		
+	)	
+	if "%3%"=="-uselkg" (		
 		SET useLKG=1
-	)				
+		@REM the lkg version should be the fourth param, e.g. 2-1-0-1, this refers to the folder name
+		@REM of the build at \\builds\prgbuilds-readonly\LKGOutput\PointoolsVortexAPI\
+		SET lkgVersion=%4%
+		)				
 )
+
+SET PRG_LKG_Path=\\builds\prgbuilds-readonly\LKGOutput\PointoolsVortexAPI\%lkgVersion%
 
 @REM setup dll/lib paths depending on if we're copying the from a local build or LKG
 SET vortexDLL86Path=%BuildOutDir%\Winx86\Build\Pointools\PointoolsVortexAPI_VS2012
@@ -95,7 +101,7 @@ cd %thisdir%
 @REM get date in YYMMDD format, WARNING: might be local dependent
 set compile_date=%date:~8,2%%date:~3,2%%date:~0,2%
 
-SET version=2.0.0.205
+SET version=2.0.0.206
 SET topfolder=%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%
 SET folder=%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%\VortexAPI
 SET releasenotes=%PointoolsVortex%\ReleaseNotes\PointoolsVortexAPI-ReleaseNotes-%version%.txt
@@ -344,6 +350,8 @@ copy %PointoolsVortex%\EULA.txt 	"%topfolder%\EULA.txt"
 @REM --------------------------------------------------------------------------------------
 @REM Remove clash and clientserver if this is a distribution for Siemens or FME and copy
 @REM built DLLs from the PRG LKG rather than useing locally built ones
+@REM Remove metadata examples as well from all external distributions as the Smart Property 
+@REM Grid is not licensed for distribution externally
 cd %PointoolsVortex%\postbuild_scripts
 SET removeClashAndCS=0
 if %customDistrib%==1 (
@@ -352,12 +360,14 @@ if %customDistrib%==1 (
 if %customDistrib%==2 (
 	SET removeClashAndCS=1
 )	
-if %removeClashAndCS%==1 (				
+if NOT %customDistrib%==0 (
 	echo ******************************************************************
-	echo removing Clash and ClientServer examples
+	echo removing Clash, ClientServer and MetaData examples
 	echo ******************************************************************
 
-	perl removeFromDistribution.plx distribDir="%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%" removeClash=1 removeClientServer=1 removePDBs=1
+	echo ON
+	perl removeFromDistribution.plx distribDir="%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%" removeClash=%removeClashAndCS% removeClientServer=%removeClashAndCS% removeMetaData=1 removePDBs=1
+	@echo OFF
 	
 	if ERRORLEVEL 1 goto END_ERROR
 

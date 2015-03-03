@@ -29,4 +29,12 @@ Copyright (C) 2002-2008, Milan Ikits <milan ikits[]ieee org>
 Copyright (C) 2002-2008, Marcelo E. Magallon <mmagallo[]debian org>
 Copyright (C) 2002, Lev Povalahev
 All rights reserved.
- 
+
+VMath
+Generic 2-dimensional NxM matrix/vector mathematics class specialized for 3D usage.
+Originally created on 12/06/2000 by Paul Nettle.
+Copyright 2000, Fluid Studios, Inc., all rights reserved.
+
+GLUI User Interface Toolkit
+Copyright (c) 1998 Paul Rademacher
+http://sourceforge.net/projects/glui/

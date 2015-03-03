@@ -8,6 +8,7 @@ my $distribDir = getArgValue("distribDir");
 my $vortexAPIDir = $distribDir."\\VortexAPI";
 my $removeClash = getArgValue("removeClash");
 my $removeClientServer = getArgValue("removeClientServer");
+my $removeMetaData = getArgValue("removeMetaData");
 my $removeClipping = getArgValue("removeClipping");
 my $removePDBs = getArgValue("removePDBs");
 
@@ -31,8 +32,8 @@ if ($removeClash eq 1)
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples.sln", "Clash");
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples_2012.sln", "Clash");
 	
-	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.205.txt", "clash");
-	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.205.txt", "IClashTree");
+	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.206.txt", "clash");
+	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.206.txt", "IClashTree");
 	
 	unlink($vortexAPIDir."\\include\\IClashNode.h") or die "\nFailed to remove file IClashNode.h\n\n";
 	unlink($vortexAPIDir."\\include\\IClashObject.h") or die "\nFailed to remove file IClashObject.h\n\n";
@@ -57,7 +58,7 @@ if ($removeClientServer eq 1)
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples.sln", "ClientServer");
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples_2012.sln", "ClientServer");
 	
-	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.205.txt", "streaming");
+	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.206.txt", "streaming");
 		
 	removeStringFromFile($vortexAPIDir."\\include\\PointoolsVortexAPI_import.h", "ptProcessServerRequestClientID2");		
 	removeStringFromFile($vortexAPIDir."\\include\\PointoolsVortexAPI_import.h", "ptSetViewportPointsBudget");
@@ -85,7 +86,15 @@ if ($removeClipping eq 1)
 	
 	unlink($vortexAPIDir."\\examples\\src\\ClippingTool.cpp") or die "\nFailed to remove file ClippingTool.cpp\n\n";
 }
-
+if ($removeMetaData)
+{
+	printf "*** Removing meta data example\n";
+	
+	removeExampleFolder("metadata");
+	
+	removeFromSolutionFile($vortexAPIDir."\\examples\\examples.sln", "MetaData ");
+	removeFromSolutionFile($vortexAPIDir."\\examples\\examples_2012.sln", "MetaData ");
+}
 
 
 # Removes a folder from the "examples" area of the distribition, first arg passed should be the name of the folder to remove
@@ -106,7 +115,7 @@ sub removeFromSolutionFile
 	my $searchingForEnd = 0;
 	
 	
-	printf "Removing ".$projectName." from solution: ".$solutionFile."\n";
+	printf "Removing \"".$projectName."\" from solution: ".$solutionFile."\n";
 	
 	if (open(INPUT,"< $solutionFile") != 1)
 	{
@@ -121,7 +130,7 @@ sub removeFromSolutionFile
 	{
 		$writeLine = 1;
 		
-		# while searching for the EndProject tag do not write any lines, go bac to writing lines after the
+		# while searching for the EndProject tag do not write any lines, go back to writing lines after the
 		# lines it is found on
 		if ($searchingForEnd eq 1)
 		{
@@ -133,7 +142,7 @@ sub removeFromSolutionFile
 		}
 		
 		# find the project name in the solution file
-		if(m/"$projectName"/) 
+		if(m/"$projectName/) 
 		{		
 			# if the first string on this line is "Project" then remove the whole line and the next lines
 			# including the first one found that contains "EndProject"
@@ -142,7 +151,7 @@ sub removeFromSolutionFile
 				$writeLine = 0;
 				$searchingForEnd = 1;
 			}		
-		}		
+		}				
 		if ($writeLine eq 1)
 		{
 			print TMP $_;

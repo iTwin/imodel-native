@@ -475,6 +475,7 @@ bool PointEditManager::showLayer( int layer, bool show )
 	else		g_visibleLayers &= ~layerMask;
 
 	updateActiveLayers();
+	updateLayerVisibility();
 
 	return true;
 }
