@@ -38,6 +38,7 @@
         <SubPart PartName="ECDbLibrary" />
         <SubPart PartName="ECDbExtractCodeSamples" />
         <SubPart PartName="ECDbBuildCodeSamples" />
+        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Directory SourceName="Docs/Source/ECDb" SubPartDirectory="Docs/Source/ECDb"/>
             <Directory SourceName="Docs/Images/ECDb" SubPartDirectory="Docs/Images/ECDb"/>

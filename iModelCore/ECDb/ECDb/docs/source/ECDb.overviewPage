@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECDb.overviewPage $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,6 +77,14 @@
     @ref BentleyApi::ECN::ECProperty "ECProperties" of non-primitive type (e.g. arrays, structs)
     do not simply map to a single column, but can map to multiple columns or even to another table.
     <b>Clients just author an ECSQL statement against the ECSchema of the repository.</b>
+
+    @section ECDbMappingCustomization Customizing the database mapping
+    %ECDb applies a default mapping when importing an BentleyApi::ECN::ECSchema into the @ref ECDbFile "ECDb file". 
+    %ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema 
+    with dedicated <b>%ECDb hint custom attributes</b>, e.g. @b ECDbClassHint or @b ECDbPropertyHint. 
+    Please see 
+    <a href="files/ecdb/Bentley_Standard_CustomAttributes.ecschema.xml" target="_blank">Bentley_Standard_CustomAttributes.ecschema.xml</a>
+    for a detailed description of all available <b>%ECDb hint custom attributes</b>.    
 
     @section ECDbApiEntryPoints ECDb API entry points
     The main entry points of the %ECDb API are:
