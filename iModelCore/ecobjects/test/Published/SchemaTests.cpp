@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsTestPCH.h"
@@ -1074,6 +1074,99 @@ TEST_F(SchemaReferenceTest, ExpectSchemaGraphInCorrectOrder)
         EXPECT_EQ(0, wcscmp(prefix.c_str(), expectedPrefixes[counter])) << "Expected " << expectedPrefix << " Actual " << prefix.c_str();
         counter++;
         }
+    }
+
+TEST_F(SchemaReferenceTest, EnsureSchemaContextIntegrity)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schemaA;
+    ECSchemaPtr schemaB;
+    ECSchemaPtr r1;
+    ECSchemaPtr r2;
+    ECSchemaPtr r3;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (r1, 
+        L"<?xml version='1.0' encoding='UTF-8'?>"
+        L"<ECSchema schemaName='R1' version='01.00' nameSpacePrefix='r1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECClass typeName='R1C1'>"
+        L"       <ECProperty propertyName='s1' typeName='string'  />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read R1 from string";
+
+    status = ECSchema::ReadFromXmlString (r2, 
+        L"<?xml version='1.0' encoding='UTF-8'?>"
+        L"<ECSchema schemaName='R2' version='01.00' nameSpacePrefix='r2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECClass typeName='R2C1'>"
+        L"       <ECProperty propertyName='s2' typeName='string'  />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read R2 from string";
+
+    status = ECSchema::ReadFromXmlString (r3, 
+        L"<?xml version='1.0' encoding='UTF-8'?>"
+        L"<ECSchema schemaName='R3' version='01.00' nameSpacePrefix='r3' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"    <ECClass typeName='R3C1'>"
+        L"       <ECProperty propertyName='s3' typeName='string'  />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read R3 from string";
+
+    status = ECSchema::ReadFromXmlString (schemaA, 
+        L"<?xml version='1.0' encoding='UTF-8'?>"
+        L"<ECSchema schemaName='SchemaA' version='01.00' nameSpacePrefix='a' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"<ECSchemaReference name='R1' version='01.00' prefix='r1' />"
+        L"<ECSchemaReference name='R2' version='01.00' prefix='r2' />"
+        L"    <ECClass typeName='c'>"
+        L"       <ECProperty      propertyName='p1' typeName='int'  />"
+        L"       <ECArrayProperty propertyName='q1' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read SchemaA from string";
+
+    status = ECSchema::ReadFromXmlString (schemaB, 
+        L"<?xml version='1.0' encoding='UTF-8'?>"
+        L"<ECSchema schemaName='SchemaB' version='01.00' nameSpacePrefix='b' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"<ECSchemaReference name='R2' version='01.00' prefix='r2' />"
+        L"<ECSchemaReference name='R3' version='01.00' prefix='r3' />"
+        L"    <ECClass typeName='c2'>"
+        L"       <ECProperty      propertyName='p2' typeName='int'  />"
+        L"    </ECClass>"
+        L"</ECSchema>", *schemaContext);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read SchemaB from string";
+
+    SchemaWriteStatus status2 = r1->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"r1.01.00.ecschema.xml").c_str());
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2) << L"Failed to write r1 to file";
+
+    status2 = r2->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"r2.01.00.ecschema.xml").c_str());
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2) << L"Failed to write r2 to file";
+
+    status2 = r3->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"r3.01.00.ecschema.xml").c_str());
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2) << L"Failed to write r3 to file";
+
+    status2 = schemaA->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"SchemaA.01.00.ecschema.xml").c_str());
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2) << L"Failed to write SchemaA to file";
+
+    status2 = schemaB->WriteToXmlFile(ECTestFixture::GetTempDataPath( L"SchemaB.01.00.ecschema.xml").c_str());
+    EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2) << L"Failed to write SchemaB to file";
+
+    ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schemaA2;
+    ECSchemaPtr schemaB2;
+    ECSchemaPtr ref1;
+    ECSchemaPtr ref2;
+    ECSchemaPtr ref3;
+
+    status = ECSchema::ReadFromXmlFile (schemaA2, ECTestFixture::GetTempDataPath( L"SchemaA.01.00.ecschema.xml").c_str(), *schemaContext2);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read SchemaA from file";
+
+    status = ECSchema::ReadFromXmlFile (schemaB2, ECTestFixture::GetTempDataPath( L"SchemaB.01.00.ecschema.xml").c_str(), *schemaContext2);
+    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status) << L"Failed to read SchemaB from file";
+
+    status = ECSchema::ReadFromXmlFile (ref3, ECTestFixture::GetTempDataPath( L"r3.01.00.ecschema.xml").c_str(), *schemaContext2);
+    EXPECT_EQ (SCHEMA_READ_STATUS_DuplicateSchema, status) << L"Failed to read r3 from file";
+
     }
 
 TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
