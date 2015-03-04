@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "Geom/GeomApi.h"
 //#include "PointCloudCore/PtVortex.h"
-#include "Thumbnails/ThumbnailsProvider.h"
+#include "Properties/PropertiesProvider.h"
 
 typedef uint32_t PtHandle;
 

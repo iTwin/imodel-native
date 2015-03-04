@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/Thumbnails/ThumbnailsProvider.h $
+|     $Source: PublicApi/Properties/PropertiesProvider.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -29,10 +29,10 @@ enum class PointCloudView
 class IPropertiesProvider
 {
 public:
-    THUMBNAILS_EXPORT virtual double*    GetFootprint() = 0;
-    THUMBNAILS_EXPORT virtual StatusInt  GetThumbnail(HBITMAP *pThumbnailBmp) = 0;
+    PROPERTIES_EXPORT virtual double*    GetFootprint() = 0;
+    PROPERTIES_EXPORT virtual StatusInt  GetThumbnail(HBITMAP *pThumbnailBmp) = 0;
 
-    THUMBNAILS_EXPORT static IPropertiesProvider* Create(WCharCP inFilename, WCharCP view);
+    PROPERTIES_EXPORT static IPropertiesProvider* Create(WCharCP inFilename, WCharCP view);
 };
 
 
@@ -42,8 +42,8 @@ public:
 class RasterProperties : public RefCounted<IPropertiesProvider>
 {
 public:
-    THUMBNAILS_EXPORT virtual double*     GetFootprint();
-    THUMBNAILS_EXPORT virtual StatusInt   GetThumbnail(HBITMAP *pThumbnailBmp);
+    PROPERTIES_EXPORT virtual double*     GetFootprint();
+    PROPERTIES_EXPORT virtual StatusInt   GetThumbnail(HBITMAP *pThumbnailBmp);
 
     RasterProperties(WCharCP filename);
     virtual ~RasterProperties();
@@ -66,8 +66,8 @@ private:
 class PointCloudProperties : public RefCounted<IPropertiesProvider>
 {
 public:
-    THUMBNAILS_EXPORT virtual double*     GetFootprint();
-    THUMBNAILS_EXPORT virtual StatusInt   GetThumbnail(HBITMAP *pThumbnailBmp);
+    PROPERTIES_EXPORT virtual double*     GetFootprint();
+    PROPERTIES_EXPORT virtual StatusInt   GetThumbnail(HBITMAP *pThumbnailBmp);
 
     PointCloudProperties(WCharCP filename, WCharCP view);
     virtual ~PointCloudProperties();

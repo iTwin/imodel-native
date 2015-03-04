@@ -48,8 +48,8 @@
 #error File type handlers must be built Unicode.  Set the Character Set option to Unicode in project properties.
 #endif
 
-#include <Thumbnails/ThumbnailsApi.h>
-#include <Thumbnails/RasterFileFormats.h>
-#include "ThumbnailUtil.h"
+#include <Properties/PropertiesApi.h>
+#include <Properties/RasterFileFormats.h>
+#include "PropertiesUtil.h"
 #include "PointCloudVortex.h"
 

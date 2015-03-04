@@ -9,13 +9,13 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName = Thumbnails
+appName = Properties
 baseDir	= $(_MakeFilePath)
 
 policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
 
-PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/Thumbnails/
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/Properties/
 
 
 #----------------------------------------------------------------------
@@ -37,7 +37,7 @@ nameToDefine=_UNICODE
 #           know to specify dllexport, rather than dllimport (the default)
 #               !No other makefile should define this symbol!
 #----------------------------------------------------------------------
-nameToDefine=__THUMBNAILS_BUILD__
+nameToDefine=__PROPERTIES_BUILD__
 %include cdefapnd.mki
 
 
@@ -56,11 +56,11 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)dllmain$(oext) : $(baseDir)dllmain.cpp ${MultiCompileDepends}
 
-$(o)ThumbnailsProvider$(oext) : $(baseDir)ThumbnailsProvider.cpp $(PublicApiDir)ThumbnailsProvider.h ${MultiCompileDepends}
+$(o)PropertiesProvider$(oext) : $(baseDir)PropertiesProvider.cpp $(PublicApiDir)PropertiesProvider.h ${MultiCompileDepends}
 
 $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
 
-$(o)ThumbnailUtil$(oext) : $(baseDir)ThumbnailUtil.cpp $(baseDir)ThumbnailUtil.h ${MultiCompileDepends}
+$(o)PropertiesUtil$(oext) : $(baseDir)PropertiesUtil.cpp $(baseDir)PropertiesUtil.h ${MultiCompileDepends}
 
 #$(o)RasterFileFormats$(oext) : $(baseDir)RasterFileFormats.cpp $(PublicApiDir)RasterFileFormats.h ${MultiCompileDepends}
 

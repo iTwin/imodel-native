@@ -9,7 +9,7 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName = Thumbnails
+appName = Properties
 baseDir		= $(_MakeFilePath)
 
 policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
@@ -26,5 +26,5 @@ always:
 
 # Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(PublicApiDir)Thumbnails=$(SrcRoot)RealityModFramework\PublicAPI\Thumbnails" 
+   @CreateSymLinks.py -d"$(PublicApiDir)Properties=$(SrcRoot)RealityModFramework\PublicAPI\Properties" 
     

@@ -1,1 +1,1 @@
-Thumbnail dll for Raster, PointCloud and STM.
+Properties dll for Raster, PointCloud and STM.

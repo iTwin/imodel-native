@@ -6,12 +6,12 @@
 #
 #--------------------------------------------------------------------------------------
 
-appName = ThumbnailsTester
+appName = PropertiesTester
 
 policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
 
-ThumbnailsTesterDir = $(_MakeFilePath)
+PropertiesTesterDir = $(_MakeFilePath)
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -24,17 +24,17 @@ always:
 #----------------------------------------------------------------------
 # Create PCH
 CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
-$(o)StdAfx$(oext) $(o)$(appName).pch : $(ThumbnailsTesterDir)StdAfx.cpp $(ThumbnailsTesterDir)StdAfx.h
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(PropertiesTesterDir)StdAfx.cpp $(PropertiesTesterDir)StdAfx.h
 
 # Use PCH
 CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
 
-MultiCompileDepends=$(_MakeFileSpec) $(ThumbnailsTesterDir)StdAfx.h
+MultiCompileDepends=$(_MakeFileSpec) $(PropertiesTesterDir)StdAfx.h
 %include MultiCppCompileRule.mki
 
 %include compileForCLRStart.mki
 
-$(o)ThumbnailsTester$(oext) : $(ThumbnailsTesterDir)ThumbnailsTester.cpp ${MultiCompileDepends}
+$(o)PropertiesTester$(oext) : $(PropertiesTesterDir)PropertiesTester.cpp ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -46,7 +46,7 @@ $(o)ThumbnailsTester$(oext) : $(ThumbnailsTesterDir)ThumbnailsTester.cpp ${Multi
 %include compileForCLRStop.mki
 
 # Is this required? Build goes well without it...
-#ProductRcIncludes + -i${ThumbnailsTesterDir}
+#ProductRcIncludes + -i${PropertiesTesterDir}
 
 
 #----------------------------------------------------------------------
@@ -64,7 +64,7 @@ EXE_OBJS = $(o)StdAfx$(oext) $(MultiCompileObjectList)
 
 LINKER_LIBRARIES = $(ContextSubpartsLibs)Bentley.lib \
                    $(ContextSubpartsLibs)BentleyAllocator.lib  \
-				   $(ContextDeliveryDir)Thumbnails.lib \
+				   $(ContextDeliveryDir)Properties.lib \
 				   Gdi32.lib
 
 # remove console options; let the system determine the entry point

@@ -56,7 +56,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-THUMBNAILS_EXPORT void GetBaseDirOfExecutingModule(WStringR baseDir);
+PROPERTIES_EXPORT void GetBaseDirOfExecutingModule(WStringR baseDir);
 
 
 
@@ -68,9 +68,9 @@ class CriticalSectionHelper
     static CRITICAL_SECTION s_criticalSection;
     
     public:
-        THUMBNAILS_EXPORT CriticalSectionHelper();
-        THUMBNAILS_EXPORT ~CriticalSectionHelper();
-        THUMBNAILS_EXPORT static void Init();
+        PROPERTIES_EXPORT CriticalSectionHelper();
+        PROPERTIES_EXPORT ~CriticalSectionHelper();
+        PROPERTIES_EXPORT static void Init();
     };
 
 struct RasterFacility

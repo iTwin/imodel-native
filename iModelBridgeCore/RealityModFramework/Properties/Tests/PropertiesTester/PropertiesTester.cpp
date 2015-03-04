@@ -19,7 +19,7 @@ using namespace std;
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
-#include <Thumbnails/ThumbnailsAPI.h>
+#include <Properties/PropertiesAPI.h>
 
 // For now we are only dealing with bounding boxes (5 points, first = last) and points are stored in an array of doubles (coordX, coordY).
 #define FOOTPRINT_SIZE 10
@@ -30,9 +30,9 @@ using namespace std;
 static void ShowUsage()
 {
     // Check that we have the right number of parameters.
-    cout << "ThumbnailTests --- " << __DATE__ << endl
+    cout << "PropertiesTests --- " << __DATE__ << endl
         << endl
-        << "Usage:  ThumbnailTests <drive:\\SourceFile[all raster or .pod]>  <drive:\\DestFile.[jpg, Png]>  <[Top|Front|Right|Iso]>" << endl
+        << "Usage:  PropertiesTests <drive:\\SourceFile[all raster or .pod]>  <drive:\\DestFile.[jpg, Png]>  <[Top|Front|Right|Iso]>" << endl
         << "Note:   <[Top|Front|Right|Iso]> option is relevant only for a point cloud" << endl
         << endl;
 }
@@ -43,7 +43,7 @@ static void ShowUsage()
 
 int main(array<System::String ^> ^args)
 {
-    cout << "Copyright (c) Bentley Systems Inc, ThumbnailsTester " << "version 1.0 --- " << __DATE__ << endl;
+    cout << "Copyright (c) Bentley Systems Inc, PropertiesTester " << "version 1.0 --- " << __DATE__ << endl;
 
     // Check that we have the right number of parameters.
     if (args->Length != 2 && args->Length != 3)
