@@ -125,10 +125,9 @@ IPropertiesProvider* IPropertiesProvider::Create(WCharCP inFilename, WCharCP vie
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 RasterProperties::RasterProperties(WCharCP inFilename)
+    : mFilename(inFilename)
     {
     Initialize();
-
-    mRasterFile = GetFile(inFilename);
     }
 
 /*---------------------------------------------------------------------------------**//**

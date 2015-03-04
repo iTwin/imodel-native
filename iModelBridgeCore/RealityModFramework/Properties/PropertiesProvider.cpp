@@ -175,7 +175,7 @@ GeoCoordinates::BaseGCS::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-HFCPtr<HRFRasterFile> RasterProperties::GetFile(WCharCP inFilename)
+static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
 {
     HFCPtr<HRFRasterFile> rasterFile;
 
@@ -271,14 +271,17 @@ double* RasterProperties::GetFootprint()
 +---------------+---------------+---------------+---------------+---------------+------*/
 double* RasterProperties::ExtractFootprint()
 {
-    if (mRasterFile == 0 || mRasterFile->CountPages() <= 0)
+    // Get the rasterFile 
+    HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(mFilename);
+
+    if (rasterFile == 0 || rasterFile->CountPages() <= 0)
         return 0;
 
     try
     {
         HGFHMRStdWorldCluster worldCluster;
 
-        HFCPtr<HRFPageDescriptor> pPageDescriptor = mRasterFile->GetPageDescriptor(0);
+        HFCPtr<HRFPageDescriptor> pPageDescriptor = rasterFile->GetPageDescriptor(0);
         IRasterBaseGcsCP pSrcFileGeocoding = pPageDescriptor->GetGeocodingCP();
 
 
@@ -308,20 +311,18 @@ double* RasterProperties::ExtractFootprint()
             if (pPageDescriptor->HasTransfoModel())
             {
                 pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(),
-                    worldCluster.GetCoordSysReference(mRasterFile->GetWorldIdentificator()));
+                    worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
             }
             else
             {
                 pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
-                    worldCluster.GetCoordSysReference(mRasterFile->GetWorldIdentificator()));
+                    worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
             }
 
             // Create the reprojection transfo model (non adapted)
-            HCPGCoordModel bob1(*pDestCoordSys, *(pSrcFileGeocoding->Clone()));
             HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
 
             // Create the reprojected coordSys
-            HGF2DCoordSys bob2(*pDstToSrcTransfoModel, pSrcUnitCoordSys);
             HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
 
             CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetWidth())
@@ -385,15 +386,17 @@ StatusInt RasterProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t wi
 {
     try
     {
-        if (NULL == mRasterFile)
+        // Get the rasterFile 
+        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(mFilename);
+        if (NULL == rasterFile)
             return ERROR;
 
         // Generate the thumbnail
-        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(mRasterFile, 0, &width, &height, false);
+        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(rasterFile, 0, &width, &height, false);
         if (NULL == pThumbnail)
             return ERROR;
 
-        HFCPtr<HRPPixelType> pPixelType = mRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
+        HFCPtr<HRPPixelType> pPixelType = rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
         RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
 
         return SUCCESS;

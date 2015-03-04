@@ -11,9 +11,10 @@
     * CreateFootprint method should return a status and the double pointer should be pass in parameters.
     * Saving footprint and thumbnails to file should be done here instead of the caller (?).
     * Add possibility to run on more than one file at a time.
+    * Initialize/GetFile/etc only one time.
 */
 
-typedef uint32_t PtHandle;
+typedef uint32_t                PtHandle;
 
 enum class PointCloudView
 {
@@ -49,14 +50,13 @@ public:
     virtual ~RasterProperties();
 
 private:
-    double*                 ExtractFootprint();
-    StatusInt               ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height);
+    double*         ExtractFootprint();
+    StatusInt       ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height);
 
-    HFCPtr<HRFRasterFile>   GetFile(WCharCP inFilename);
-    bool                    Initialize();
-    void                    Terminate();
+    bool            Initialize();
+    void            Terminate();
 
-    HFCPtr<HRFRasterFile> mRasterFile;
+    WCharCP mFilename;
 };
 
 
