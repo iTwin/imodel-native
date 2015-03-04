@@ -8,14 +8,11 @@
 #include "stdafx.h"
 //Will ignore non local file format (WMS; GeoRaster, etc...)
 #define PREVIEWHANDLER_FILE_FORMATS       
-//#define RASTERLIB_FILE_FORMATS
+
 #include <ImagePP/all/h/HRFFileFormats.h>
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/basegeocoordapi.h>
-
-//#include <Imagepp/all/h/ImageppLib.h>
-//#include <PdfLibInitializer/PdfLibInitializer.h>
 
 static HINSTANCE                                s_moduleHandle = 0;
 
@@ -36,88 +33,11 @@ static void callHostOnAssert (WCharCP _Message, WCharCP _File, unsigned _Line, B
     {
     }
 
-
-struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
-{
-    DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
-
-    virtual ImagePP::IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const override
-    {
-        //WIP
-        //if (GeoCoordinationManager::GetServices() != NULL)
-            return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
-
-        //return NULL;
-    }
-    
-    virtual ~MyImageppLibAdmin()
-    {
-    }
-};
-
-
-struct MyImageppLibHost : ImagePP::ImageppLib::Host     
-    {   
-    MyImageppLibHost()
-        {
-        BeAssertFunctions::SetBeAssertHandler (callHostOnAssert);
-        }
-
-    
-    virtual ImagePP::ImageppLibAdmin& _SupplyImageppLibAdmin() override
-        {
-        return *new MyImageppLibAdmin();
-        }
-       
-
-    virtual void _RegisterFileFormat() override                  
-        {            
-        REGISTER_SUPPORTED_FILEFORMAT                                
-        }                                                            
-    };   
-	
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-//struct MyPdfLibInitializerAdmin : Bentley::PdfLibInitializerAdmin
-//    {
-//protected:
-//    virtual BentleyStatus _GetPDFDataPath
-//    (
-//    WStringR cMapDir,
-//    WStringR unicodeDir,
-//    WStringR fontDir,
-//    WStringR colorDir,
-//    WStringR pluginDir
-//    ) const override
-//        {
-//        // Setup location to find PDF resource files (was created under exe location)...
-//        WString baseDir;
-//        GetBaseDirOfExecutingModule (baseDir);
-//
-//        cMapDir = baseDir + WString(L"System\\Data\\PDFL\\CMap");
-//        fontDir = baseDir + WString(L"System\\Data\\PDFL\\Font");
-//        unicodeDir = baseDir + WString(L"System\\Data\\PDFL\\Unicode");
-//
-//        return BSISUCCESS;
-//        }
-//    virtual bool   _IsPDFLibAvailable() const override  {return false;}
-//
-//    };// MyPdfLibInitializerAdmin
-//
-///*=================================================================================**//**
-//* @bsiclass                                     		Marc.Bedard     02/2011
-//+===============+===============+===============+===============+===============+======*/
-//struct MyPdfLibInitializerHost : Bentley::PdfLibInitializer::Host 
-//    {
-//    virtual PdfLibInitializerAdmin& _SupplyPdfLibInitializerAdmin() override { return *new MyPdfLibInitializerAdmin(); }
-//    }; // MyPdfLibInitializerHost
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InitBaseGCS()
-    {
+{
     //WIP
     //BeFileName dllFileName;
     //Bentley::BeGetModuleFileName(dllFileName, NULL);
@@ -138,29 +58,83 @@ bool InitBaseGCS()
     GeoCoordinates::BaseGCS::Initialize(geoCoordDir.c_str());
 
     return true;
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-IThumbnailsProvider* ThumbnailsProvider::Get()
+struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
+{
+    DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
+
+    virtual ImagePP::IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const override
     {
-    static ThumbnailsProvider s_thumbnailsProvider;
-    return &s_thumbnailsProvider;
+        //WIP
+        //if (GeoCoordinationManager::GetServices() != NULL)
+            return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
+
+        //return NULL;
     }
+    
+    virtual ~MyImageppLibAdmin()
+    {
+    }
+};
+
+struct MyImageppLibHost : ImagePP::ImageppLib::Host     
+{
+    MyImageppLibHost()
+    {
+        BeAssertFunctions::SetBeAssertHandler(callHostOnAssert);
+    }
+
+
+    virtual ImagePP::ImageppLibAdmin& _SupplyImageppLibAdmin() override
+    {
+        return *new MyImageppLibAdmin();
+    }
+
+
+    virtual void _RegisterFileFormat() override
+    {
+        REGISTER_SUPPORTED_FILEFORMAT
+    }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+IPropertiesProvider* IPropertiesProvider::Create(WCharCP inFilename, WCharCP view)
+{
+    WString filename = inFilename;
+    size_t pos = filename.find_last_of(L".");
+
+    WString ext = filename.substr(pos, filename.length());
+    ext.ToUpper();
+
+    if (ext.Equals(L".POD"))
+    {
+        static PointCloudProperties s_pointCloudProperties(inFilename, view);
+        return &s_pointCloudProperties;
+    }
+    else
+    {
+        static RasterProperties s_rasterProperties(inFilename);
+        return &s_rasterProperties;
+    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThumbnailsProvider::ThumbnailsProvider()
+RasterProperties::RasterProperties(WCharCP inFilename)
     {
     Initialize();
+
+    mRasterFile = GetFile(inFilename);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThumbnailsProvider::~ThumbnailsProvider()
+RasterProperties::~RasterProperties()
     {
     Terminate();
     }
@@ -168,17 +142,12 @@ ThumbnailsProvider::~ThumbnailsProvider()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ThumbnailsProvider::Initialize()
+bool RasterProperties::Initialize()
     {
     CriticalSectionHelper::Init ();
 
-    //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-    //Bentley::PdfLibInitializer::Initialize(*new MyPdfLibInitializerHost());
-
     //Initialize ImagePP host
 	ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
-
-    PointCloudVortex::Initialize();
 
     if (!InitBaseGCS())
         return false;
@@ -189,12 +158,73 @@ bool ThumbnailsProvider::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThumbnailsProvider::Terminate()
+void RasterProperties::Terminate()
     {
     //Terminate ImagePP lib host
     ImagePP::ImageppLib::GetHost().Terminate(true);
-    //Bentley::PdfLibInitializer::GetHost().Terminate(true);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+PointCloudProperties::PointCloudProperties(WCharCP inFilename, WCharCP view)
+{
+    Initialize();
+
+    WString viewTmp = view;
+    viewTmp.ToUpper();
+    if (viewTmp.Equals(L"RIGHT"))
+    {
+        mView = PointCloudView::Right;
+    }
+    else if (viewTmp.Equals(L"FRONT"))
+    {
+        mView = PointCloudView::Front;
+    }
+    else if (viewTmp.Equals(L"ISO"))
+    {
+        mView = PointCloudView::Iso;
+    }
+    else
+    {
+        mView = PointCloudView::Top;
+    }
+
+    GetFile(inFilename);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+PointCloudProperties::~PointCloudProperties()
+{
+    //CloseFile();
+    Terminate();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PointCloudProperties::Initialize()
+{
+    CriticalSectionHelper::Init();
+
+    PointCloudVortex::Initialize();
+
+    if (!InitBaseGCS())
+        return false;
+
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void PointCloudProperties::Terminate()
+{
+
+}
+
 
 /*----------------------------------------------------------------------------+
 |

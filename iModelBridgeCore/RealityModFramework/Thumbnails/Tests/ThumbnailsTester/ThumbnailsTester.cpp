@@ -21,6 +21,9 @@ using namespace std;
 #include <Bentley/RefCounted.h>
 #include <Thumbnails/ThumbnailsAPI.h>
 
+// For now we are only dealing with bounding boxes (5 points, first = last) and points are stored in an array of doubles (coordX, coordY).
+#define FOOTPRINT_SIZE 10
+
 //-----------------------------------------------------------------------------
 // This function print out the usage for the current program.
 //-----------------------------------------------------------------------------
@@ -52,54 +55,31 @@ int main(array<System::String ^> ^args)
     for each(String^ arg in args)
         Console::WriteLine(arg);
 
-    pin_ptr<const wchar_t>  pinFilename = PtrToStringChars(args[0]);
-    HBITMAP ThumbnailBmp = NULL;
-    StatusInt retCode(ERROR);
+    // Parse parameters.
+    pin_ptr<const wchar_t> inFilename   = PtrToStringChars(args[0]);    // Required
+    String^                outFilename  = args[1];                      // Required
+    pin_ptr<const wchar_t> view         = nullptr;                      // Optional
+    if (args->Length == 3)
+    {
+        view = PtrToStringChars(args[2]);
+    }
 
-    uint32_t nbPts = 0;
-    pin_ptr<double> pShape = nullptr;
-	
-    String^ Ext = Path::GetExtension(args[0]);
-    Ext = Ext->ToUpper();
-    if (Ext == ".POD")
-    {
-        String^ PCView = "";
-        if (args->Length == 3)
-        {
-            PCView = args[2];
-        }
-        PCView = PCView->ToUpper();
-        PointCloudView pointCloudView = PointCloudView::Top;    // Default
-        if (PCView == "RIGHT")
-        {
-            pointCloudView = PointCloudView::Right;
-        }
-        else if (PCView == "FRONT")
-        {
-            pointCloudView = PointCloudView::Front;
-        }
-        else if (PCView == "ISO")
-        {
-            pointCloudView = PointCloudView::Iso;
-        }
-        retCode = ThumbnailsProvider::Get()->GetPointCloudThumbnail(&ThumbnailBmp, pinFilename, 256, 256, pointCloudView);
-        pShape = ThumbnailsProvider::Get()->GetPointCloudFootprint(nbPts, pinFilename, 256, 256, pointCloudView);
-    }
-    else
-    {
-        retCode = ThumbnailsProvider::Get()->GetRasterThumbnail(&ThumbnailBmp, pinFilename, 256, 256);
-        pShape = ThumbnailsProvider::Get()->GetRasterFootprint(nbPts, pinFilename);
-    }
-       
+    // Create properties. 
+    StatusInt       retCode         = ERROR;
+    HBITMAP         thumbnailBmp    = NULL;
+    pin_ptr<double> pShape          = nullptr;
+
+    retCode = IPropertiesProvider::Create(inFilename, view)->GetThumbnail(&thumbnailBmp);
+    pShape  = IPropertiesProvider::Create(inFilename, view)->GetFootprint();
 
     // Save results.
     if (retCode == SUCCESS)
     {
-        Bitmap^ bmp = Bitmap::FromHbitmap((IntPtr)ThumbnailBmp);
-        DeleteObject(ThumbnailBmp);
+        Bitmap^ bmp = Bitmap::FromHbitmap((IntPtr)thumbnailBmp);
+        DeleteObject(thumbnailBmp);
         try
         {
-            bmp->Save(args[1]);
+            bmp->Save(outFilename);
         }
         catch (Exception^)
         {
@@ -113,10 +93,10 @@ int main(array<System::String ^> ^args)
     {
         try
         {
-            String^ footprintFilename = args[1]->Substring(0, args[1]->LastIndexOf('.')) + ".txt";
+            String^ footprintFilename = outFilename->Substring(0, outFilename->LastIndexOf('.')) + ".txt";
             StreamWriter^ footprintFile = gcnew StreamWriter(footprintFilename);
 
-            for (size_t i = 0; i < (nbPts * 2); i += 2)
+            for (size_t i = 0; i < FOOTPRINT_SIZE; i += 2)
                 footprintFile->WriteLine("{0} {1}", pShape[i], pShape[i + 1]);
 
             footprintFile->Close();

@@ -2,7 +2,7 @@
 |
 |     $Source: Thumbnails/StdAfx.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -10,6 +10,7 @@
 #include <Imagepp/h/hstdcpp.h>
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP/all/h/HUTClassIDDescriptor.h>
+#include <Imagepp/all/h/HRFRasterFile.h>
 // Supported codecs
 #include <ImagePP\all\h\HCDCodecBMPRLE4.h>
 #include <ImagePP\all\h\HCDCodecBMPRLE8.h>

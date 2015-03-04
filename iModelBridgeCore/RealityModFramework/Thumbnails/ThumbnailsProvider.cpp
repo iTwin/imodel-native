@@ -56,11 +56,26 @@
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/basegeocoordapi.h>
 
+// For now we are only dealing with bounding boxes (5 points, first = last) and points are stored in an array of doubles (coordX, coordY).
+#define FOOTPRINT_SIZE      10
+#define FOOTPRINT_PTS_NBR   5
+
+#define THUMBNAIL_WIDTH     256
+#define THUMBNAIL_HEIGHT    256
+
 USING_NAMESPACE_IMAGEPP
 
-/*----------------------------------------------------------------------------+
-* @bsiclass
-+----------------------------------------------------------------------------*/
+enum WktFlavor
+{
+    WktFlavor_Oracle9 = 1,
+    WktFlavor_Autodesk,
+    WktFlavor_OGC,
+    WktFlavor_End,
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Marc.Bedard                     11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 struct FactoryScanOnOpenGuard
     {
     private:
@@ -83,237 +98,8 @@ struct FactoryScanOnOpenGuard
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     11/2014
+* @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ThumbnailsProvider::GetRasterThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, uint32_t width, uint32_t height)
-    {
-    StatusInt hr = ExtractRasterThumbnail(pThumbnailBmp, filename, width, height);
-
-    if (*pThumbnailBmp == NULL)
-        return ERROR;
-
-    return hr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP InputFilename)
-    {
-    HFCPtr<HRFRasterFile> RasterFile;
-
-    try
-        {
-        WString filename(InputFilename);
-
-        if (filename.empty())
-            return NULL;
-
-        // Create URL
-        HFCPtr<HFCURL>  SrcFileName(HFCURL::Instanciate(filename));
-        if (SrcFileName == 0)
-            {
-            // Open the raster file as a file
-            SrcFileName = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
-            }
-
-        // Open Raster file
-        {
-//        HFCMonitor __keyMonitor(m_KeyByMethod);
-        FactoryScanOnOpenGuard __wantScan(false);
-
-        // Create URL
-        HFCPtr<HFCURL>  SrcFileName(HFCURL::Instanciate(filename));
-        if (SrcFileName == 0)
-            {
-            // Open the raster file as a file
-            SrcFileName = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
-            }
-
-        // Open Raster file without checking "isKindOfFile"
-        RasterFile = HRFRasterFileFactory::GetInstance()->OpenFile((HFCPtr<HFCURL>)SrcFileName, true);
-        }
-
-        if (RasterFile == 0)
-            return RasterFile;
-
-        // Check if we have an internet imaging file
-        // DISABLED: We do not support HRFInternetImagingFile
-        //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
-        //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
-
-        // Adapt Scan Line Orientation (1 bit images)
-        bool CreateSLOAdapter = false;
-
-        if ((RasterFile->IsCompatibleWith(HRFIntergraphFile::CLASS_ID)) ||
-            (RasterFile->IsCompatibleWith(HRFCalsFile::CLASS_ID)))
-            {
-            if (HRFSLOStripAdapter::NeedSLOAdapterFor(RasterFile))
-                {
-                // Adapt only when the raster file has not a standard scan line orientation
-                // i.e. with an upper left origin, horizontal scan line.
-                //pi_rpRasterFile = HRFSLOStripAdapter::CreateBestAdapterFor(pi_rpRasterFile);
-                CreateSLOAdapter = true;
-                }
-            }
-        }
-    catch (HFCException&)
-        {
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"Exception!-%ls", e.GetExceptionMessage().c_str());
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"LoadRasterFile %ls FAILED!", m_fileName.c_str());
-
-        return NULL;
-        }
-
-    catch (exception &e)
-        {
-        //C++ exception
-        ostringstream errorStr;
-
-        errorStr << "Caught " << e.what() << endl;
-        errorStr << "Type " << typeid(e).name() << endl;
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"Exception!-%s", errorStr.str().c_str());
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"LoadRasterFile %ls FAILED!", m_fileName.c_str());
-
-        return NULL;
-        }
-
-    catch (...)
-        {
-//         RasterFileHandlerLogger::GetLogger()->message(LOG_FATAL, L"Unknown Exception!");
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"LoadRasterFile %ls FAILED!", m_fileName.c_str());
-
-        return NULL;
-        }
-
-    return RasterFile;
-    }
-	
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Chantal.Poulin                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ThumbnailsProvider::ExtractRasterThumbnail(HBITMAP* pThumbnailBmp, WCharCP inputFilename, uint32_t width, uint32_t height)
-    {
-    try
-        {
-        // Get the rasterFile 
-        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(inputFilename);
-        
-        if (rasterFile == NULL)
-            return ERROR;
-
-        // Generate the thumbnail
-        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(rasterFile, 0, &width, &height, false);
-
-        bool isAborted((pThumbnail == NULL));
-
-//         if (pThumbnail == NULL)
-//             RasterFileHandlerLogger::GetLogger()->messagev(LOG_ERROR, L"End extract thumbnail:%ls-%ls", m_fileName.c_str(), L" thumbnail is null.");
-//         else if (m_wasAborted)
-//             RasterFileHandlerLogger::GetLogger()->messagev(LOG_ERROR, L"End extract thumbnail:%ls-%ls", m_fileName.c_str(), L" TIMEOUT; abort operation!");
-
-
-        if (isAborted)
-            return ERROR;
-
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_TRACE, L"End extract thumbnail:%ls-SUCCESS!", m_fileName.c_str());
-
-        HFCPtr<HRPPixelType> pPixelType = rasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
-        RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
-
-//         RasterFileHandlerLogger::GetLogger()->message(LOG_TRACE, L"SUCCESS!");
-
-        return SUCCESS;
-        }
-    catch (HFCException& )
-        {
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"Exception!-%ls", e.GetExceptionMessage().c_str());
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"%ls-FAILED!", m_fileName.c_str());
-
-        return ERROR;
-        }
-
-    catch (exception &e)
-        {
-        //C++ exception
-        ostringstream errorStr;
-
-        errorStr << "Caught " << e.what() << endl;
-        errorStr << "Type " << typeid(e).name() << endl;
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"Exception!-%s", errorStr.str().c_str());
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"%ls-FAILED!", m_fileName.c_str());
-
-        return ERROR;
-        }
-
-    catch (...)
-        {
-//         RasterFileHandlerLogger::GetLogger()->message(LOG_FATAL, L"Unknown Exception!");
-//         RasterFileHandlerLogger::GetLogger()->messagev(LOG_FATAL, L"%ls-FAILED!", m_fileName.c_str());
-
-        return ERROR;
-        }
-    }
-	
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eric.Paquet                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ThumbnailsProvider::GetPointCloudThumbnail(HBITMAP *pThumbnailBmp, WCharCP filename, uint32_t width, uint32_t height, PointCloudView pointCloudView)
-    {
-    StatusInt hr = ExtractPointCloudThumbnail(pThumbnailBmp, filename, width, height, pointCloudView);
-
-    if (*pThumbnailBmp == NULL)
-        return ERROR;
-
-    return hr;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eric.Paquet                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ThumbnailsProvider::ExtractPointCloudThumbnail(HBITMAP* pThumbnailBmp, WCharCP InputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView)
-{
-    if (InputFilename == NULL)
-        return ERROR;
-
-    PtHandle cloudFileHandle;
-    PtHandle cloudHandle;
-    if (PointCloudVortex::OpenPOD(cloudFileHandle, cloudHandle, InputFilename) != S_OK)
-        {
-        return ERROR;
-        }
-
-    // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap * 4
-    // seems to produce generally good results.
-    float densityValue = (float) (width * height * 4);
-
-    // Get transfo matrix to fit the point cloud in the thumbnail
-    Transform transform;
-    PointCloudVortex::GetTransformForThumbnail(transform, cloudHandle, width, height, pointCloudView);
-
-    bool needsWhiteBackground = PointCloudVortex::PointCloudNeedsWhiteBackground(cloudHandle);
-
-	HRESULT hr = PointCloudVortex::ExtractPointCloud(pThumbnailBmp, width, height, cloudHandle, densityValue, transform, needsWhiteBackground);
-    if (*pThumbnailBmp == NULL)
-        return ERROR;
-
-    // Close point cloud file
-    PointCloudVortex::ClosePOD(cloudFileHandle);
-
-    if (hr != NOERROR)
-        return ERROR;
-    return SUCCESS;
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// GetTransfoModelToMeters
-//-----------------------------------------------------------------------------
 HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsCR projection)
 {
     double toMeters = 1.0 / projection.GetUnitsFromMeters();
@@ -322,190 +108,6 @@ HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsCR projection)
 
     return pUnitConvertion;
 }
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double* GetBoundingBox(HFCPtr<HRFRasterFile>& pRasterFile, uint32_t& nbPts)
-{
-    if (pRasterFile == 0 || pRasterFile->CountPages() <= 0)
-        return 0;
-
-    try
-    {
-        HGFHMRStdWorldCluster worldCluster;
-
-        HFCPtr<HRFPageDescriptor> pPageDescriptor = pRasterFile->GetPageDescriptor(0);
-        IRasterBaseGcsCP pSrcFileGeocoding = pPageDescriptor->GetGeocodingCP();
-
-        
-        IRasterGeoCoordinateServices* geoCoordServices = ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
-        
-        GeoCoordinates::BaseGCSPtr initialGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-        if (!initialGCS->IsValid())
-            return 0;
-
-        IRasterBaseGcsPtr pDestGeoCoding = geoCoordServices->_CreateRasterBaseGcsFromBaseGcs(initialGCS.get());
-        
-        // Georeference
-        if ((pSrcFileGeocoding != 0) &&
-            (pSrcFileGeocoding->IsValid()) &&
-            (pDestGeoCoding->IsValid()))
-        {
-            IRasterBaseGcsPtr     pDestCoordSys(pDestGeoCoding->Clone());
-
-            // Compute the image extent expressed in the src projection units
-            HFCPtr<HGF2DCoordSys> pSrcWorldMeters(worldCluster.GetCoordSysReference(HGF2DWorld_HMRWORLD));
-
-            HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*(pSrcFileGeocoding->Clone())), pSrcWorldMeters);
-            HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
-
-            HFCPtr<HRFResolutionDescriptor> pRes(pPageDescriptor->GetResolutionDescriptor(0));
-
-            if (pPageDescriptor->HasTransfoModel())
-            {
-                pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(),
-                                                      worldCluster.GetCoordSysReference(pRasterFile->GetWorldIdentificator()));
-            }
-            else
-            {
-                pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
-                                                      worldCluster.GetCoordSysReference(pRasterFile->GetWorldIdentificator()));
-            }
-
-            // Create the reprojection transfo model (non adapted)
-            HCPGCoordModel bob1(*pDestCoordSys, *(pSrcFileGeocoding->Clone()));
-            HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
-
-            // Create the reprojected coordSys
-            HGF2DCoordSys bob2(*pDstToSrcTransfoModel, pSrcUnitCoordSys);
-            HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
-
-            CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetWidth())
-                CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetHeight())
-
-                double ImageWidth = (double)pRes->GetWidth();
-            double ImageHeight = (double)pRes->GetHeight();
-
-            HFCPtr<HVEShape> pImageRectangle(new HVEShape(HVE2DRectangle(0.0, 0.0, ImageWidth, ImageHeight, pPhysicalCoordSys)));
-            pImageRectangle->ChangeCoordSys(pSrcUnitCoordSys);
-            HGF2DExtent ImageExtent(pImageRectangle->GetExtent());
-            HGF2DLiteExtent ImageLiteExtent(ImageExtent.GetXMin(), ImageExtent.GetYMin(), ImageExtent.GetXMax(), ImageExtent.GetYMax());
-
-            // Compute the expected mean error
-            double ImageCenter_x(ImageWidth / 2.0);
-            double ImageCenter_y(ImageHeight / 2.0);
-
-            HFCPtr<HVEShape> pPixelShape(new HVEShape(HVE2DRectangle(ImageCenter_x - 0.5*ImageWidth, ImageCenter_y - 0.5*ImageHeight, ImageCenter_x + 0.5*ImageWidth, ImageCenter_y + 0.5*ImageHeight, pPhysicalCoordSys)));
-            pPixelShape->ChangeCoordSys(pDstCoordSys);
-
-            // Get shape and list of points.
-            HGF2DLocationCollection pointCollection;
-            pPixelShape->GetShapePtr()->Drop(&pointCollection, 0);
-            
-            assert(pointCollection.size() != 0);
-            nbPts = (uint32_t)pointCollection.size();
-           
-            double* pPts = new double[nbPts*2];
-
-            size_t j = -1;
-            for (size_t i = 0; i < nbPts; ++i)
-            {
-                pPts[++j] = pointCollection[i].GetX();
-                pPts[++j] = pointCollection[i].GetY();
-            }
-            
-            return pPts;
-        }
-        return 0;
-    }
-    catch (...)
-    {
-        return 0;
-    }
-
-
-        /*
-        HFCPtr<HRFPageDescriptor> pPageDescriptor = pRasterFile->GetPageDescriptor(0);
-
-        // Create logical and physical CoordSys
-        HGFHMRStdWorldCluster MyWorldCluster;
-        HFCPtr<HGF2DCoordSys> pLogicalCoordSys(MyWorldCluster.GetCoordSysReference(pRasterFile->GetWorldIdentificator()));
-        HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
-
-        if ((pRasterFile->GetCapabilities()->GetCapabilityOfType(HRFTransfoModelCapability::CLASS_ID, HFC_READ_ONLY) != 0) &&
-            (pPageDescriptor->HasTransfoModel()))
-        {
-            pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(), pLogicalCoordSys);
-        }
-        else
-        {
-            pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(), pLogicalCoordSys);
-        }
-
-        // Get the shape in logical CS
-        HFCPtr<HVEShape> pShape;
-        if (pPageDescriptor->HasClipShape())
-        {
-            pShape = new HVEShape(*pPageDescriptor->GetClipShape());
-
-            if (pPageDescriptor->GetClipShape()->GetCoordinateType() == HRFCoordinateType::PHYSICAL)
-                pShape->SetCoordSys(pPhysicalCoordSys);
-            else
-                pShape->SetCoordSys(pLogicalCoordSys);
-
-            pShape->ChangeCoordSys(pLogicalCoordSys);
-        }
-        else
-        {
-            if (pPageDescriptor->CountResolutions() <= 0)
-                return ERROR;
-
-            HFCPtr<HRFResolutionDescriptor> pResDescriptor(pPageDescriptor->GetResolutionDescriptor(0));
-
-            pShape = new HVEShape(0.0, 0.0,
-                                  (double)pResDescriptor->GetWidth(), (double)pResDescriptor->GetHeight(),
-                                  pPhysicalCoordSys);
-            pShape->ChangeCoordSys(pLogicalCoordSys);
-        }
-
-        if (pShape == 0)
-        {
-            status = ERROR;
-        }
-        else
-        {
-            // Make sure the shape is always in "HMR" world, with Y axis pointing upwards.
-            HFCPtr<HGF2DCoordSys> coordSys = MyWorldCluster.GetWorldReference(HGF2DWorld_HMRWORLD);
-            pShape->ChangeCoordSys(coordSys);
-
-            // Extract the extent
-            HGF2DExtent ShapeExtent(pShape->GetExtent());
-
-            *pXMin = ShapeExtent.GetOrigin().GetX();
-            *pYMin = ShapeExtent.GetOrigin().GetY();
-            *pXMax = ShapeExtent.GetCorner().GetX();
-            *pYMax = ShapeExtent.GetCorner().GetY();
-        }
-    }
-    catch (...)
-    {
-        status = ERROR;
-    }
-
-    return status;
-    */
-}
-
-enum WktFlavor
-{
-    WktFlavor_Oracle9 = 1,
-    WktFlavor_Autodesk,
-    WktFlavor_OGC,
-    WktFlavor_End,
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
@@ -570,18 +172,291 @@ GeoCoordinates::BaseGCS::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, co
     return baseGcsWktFlavor;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+HFCPtr<HRFRasterFile> RasterProperties::GetFile(WCharCP inFilename)
+{
+    HFCPtr<HRFRasterFile> rasterFile;
 
+    try
+    {
+        WString filename(inFilename);
+
+        if (filename.empty())
+            return NULL;
+
+        // Create URL
+        HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
+        if (srcFilename == 0)
+        {
+            // Open the raster file as a file
+            srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+        }
+
+        // Open Raster file
+        {
+            // HFCMonitor __keyMonitor(m_KeyByMethod);
+            FactoryScanOnOpenGuard __wantScan(false);
+
+            // Create URL
+            HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
+            if (srcFilename == 0)
+            {
+                // Open the raster file as a file
+                srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
+            }
+
+            // Open Raster file without checking "isKindOfFile"
+            rasterFile = HRFRasterFileFactory::GetInstance()->OpenFile((HFCPtr<HFCURL>)srcFilename, true);
+        }
+
+        if (rasterFile == 0)
+            return rasterFile;
+
+        // Check if we have an internet imaging file
+        // DISABLED: We do not support HRFInternetImagingFile
+        //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
+        //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
+
+        // Adapt Scan Line Orientation (1 bit images)
+        bool CreateSLOAdapter = false;
+
+        if ((rasterFile->IsCompatibleWith(HRFIntergraphFile::CLASS_ID)) ||
+            (rasterFile->IsCompatibleWith(HRFCalsFile::CLASS_ID)))
+        {
+            if (HRFSLOStripAdapter::NeedSLOAdapterFor(rasterFile))
+            {
+                // Adapt only when the raster file has not a standard scan line orientation
+                // i.e. with an upper left origin, horizontal scan line.
+                //pi_rpRasterFile = HRFSLOStripAdapter::CreateBestAdapterFor(pi_rpRasterFile);
+                CreateSLOAdapter = true;
+            }
+        }
+    }
+    catch (HFCException&)
+    {
+        return NULL;
+    }
+    catch (exception &e)
+    {
+        //C++ exception
+        ostringstream errorStr;
+
+        errorStr << "Caught " << e.what() << endl;
+        errorStr << "Type " << typeid(e).name() << endl;
+
+        return NULL;
+    }
+    catch (...)
+    {
+        return NULL;
+    }
+
+    return rasterFile;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-double* GetBoundingBox(uint32_t& nbPts, PtHandle cloudHandle, PointCloudView  pointCloudView)
+double* RasterProperties::GetFootprint()
 {
+    cout << "RasterProperties - Footprint" << endl;
+
+    return ExtractFootprint();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double* RasterProperties::ExtractFootprint()
+{
+    if (mRasterFile == 0 || mRasterFile->CountPages() <= 0)
+        return 0;
+
+    try
+    {
+        HGFHMRStdWorldCluster worldCluster;
+
+        HFCPtr<HRFPageDescriptor> pPageDescriptor = mRasterFile->GetPageDescriptor(0);
+        IRasterBaseGcsCP pSrcFileGeocoding = pPageDescriptor->GetGeocodingCP();
+
+
+        IRasterGeoCoordinateServices* geoCoordServices = ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
+
+        GeoCoordinates::BaseGCSPtr initialGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+        if (!initialGCS->IsValid())
+            return 0;
+
+        IRasterBaseGcsPtr pDestGeoCoding = geoCoordServices->_CreateRasterBaseGcsFromBaseGcs(initialGCS.get());
+
+        // Georeference
+        if ((pSrcFileGeocoding != 0) &&
+            (pSrcFileGeocoding->IsValid()) &&
+            (pDestGeoCoding->IsValid()))
+        {
+            IRasterBaseGcsPtr     pDestCoordSys(pDestGeoCoding->Clone());
+
+            // Compute the image extent expressed in the src projection units
+            HFCPtr<HGF2DCoordSys> pSrcWorldMeters(worldCluster.GetCoordSysReference(HGF2DWorld_HMRWORLD));
+
+            HFCPtr<HGF2DCoordSys> pSrcUnitCoordSys = new HGF2DCoordSys(*GetTransfoModelToMeters(*(pSrcFileGeocoding->Clone())), pSrcWorldMeters);
+            HFCPtr<HGF2DCoordSys> pPhysicalCoordSys;
+
+            HFCPtr<HRFResolutionDescriptor> pRes(pPageDescriptor->GetResolutionDescriptor(0));
+
+            if (pPageDescriptor->HasTransfoModel())
+            {
+                pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(),
+                    worldCluster.GetCoordSysReference(mRasterFile->GetWorldIdentificator()));
+            }
+            else
+            {
+                pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
+                    worldCluster.GetCoordSysReference(mRasterFile->GetWorldIdentificator()));
+            }
+
+            // Create the reprojection transfo model (non adapted)
+            HCPGCoordModel bob1(*pDestCoordSys, *(pSrcFileGeocoding->Clone()));
+            HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
+
+            // Create the reprojected coordSys
+            HGF2DCoordSys bob2(*pDstToSrcTransfoModel, pSrcUnitCoordSys);
+            HFCPtr<HGF2DCoordSys> pDstCoordSys(new HGF2DCoordSys(*pDstToSrcTransfoModel, pSrcUnitCoordSys));
+
+            CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetWidth())
+                CHECK_HUINT64_TO_HDOUBLE_CONV(pRes->GetHeight())
+
+                double ImageWidth = (double)pRes->GetWidth();
+            double ImageHeight = (double)pRes->GetHeight();
+
+            HFCPtr<HVEShape> pImageRectangle(new HVEShape(HVE2DRectangle(0.0, 0.0, ImageWidth, ImageHeight, pPhysicalCoordSys)));
+            pImageRectangle->ChangeCoordSys(pSrcUnitCoordSys);
+            HGF2DExtent ImageExtent(pImageRectangle->GetExtent());
+            HGF2DLiteExtent ImageLiteExtent(ImageExtent.GetXMin(), ImageExtent.GetYMin(), ImageExtent.GetXMax(), ImageExtent.GetYMax());
+
+            // Compute the expected mean error
+            double ImageCenter_x(ImageWidth / 2.0);
+            double ImageCenter_y(ImageHeight / 2.0);
+
+            HFCPtr<HVEShape> pPixelShape(new HVEShape(HVE2DRectangle(ImageCenter_x - 0.5*ImageWidth, ImageCenter_y - 0.5*ImageHeight, ImageCenter_x + 0.5*ImageWidth, ImageCenter_y + 0.5*ImageHeight, pPhysicalCoordSys)));
+            pPixelShape->ChangeCoordSys(pDstCoordSys);
+
+            // Get shape and list of points.
+            HGF2DLocationCollection pointCollection;
+            pPixelShape->GetShapePtr()->Drop(&pointCollection, 0);
+
+            assert(pointCollection.size() != 0);
+
+            // *2 for storing coordX and coordY independently.
+            double* pPts = new double[pointCollection.size() * 2];
+
+            size_t j = -1;
+            for (size_t i = 0; i < pointCollection.size(); ++i)
+            {
+                pPts[++j] = pointCollection[i].GetX();
+                pPts[++j] = pointCollection[i].GetY();
+            }
+
+            return pPts;
+        }
+        return 0;
+    }
+    catch (...)
+    {
+        return 0;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt RasterProperties::GetThumbnail(HBITMAP *pThumbnailBmp)
+{
+    cout << "RasterProperties - Thumbnail" << endl;
+
+    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                  04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt RasterProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height)
+{
+    try
+    {
+        if (NULL == mRasterFile)
+            return ERROR;
+
+        // Generate the thumbnail
+        HFCPtr<HRFThumbnail>  pThumbnail = HRFThumbnailMaker(mRasterFile, 0, &width, &height, false);
+        if (NULL == pThumbnail)
+            return ERROR;
+
+        HFCPtr<HRPPixelType> pPixelType = mRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
+        RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
+
+        return SUCCESS;
+    }
+    catch (HFCException&)
+    {
+        return ERROR;
+    }
+    catch (exception &e)
+    {
+        //C++ exception
+        ostringstream errorStr;
+
+        errorStr << "Caught " << e.what() << endl;
+        errorStr << "Type " << typeid(e).name() << endl;
+
+        return ERROR;
+    }
+    catch (...)
+    {
+        return ERROR;
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PointCloudProperties::GetFile(WCharCP inFilename)
+{
+    PointCloudVortex::OpenPOD(mCloudFileHandle, mCloudHandle, inFilename);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PointCloudProperties::CloseFile()
+{
+    PointCloudVortex::ClosePOD(mCloudFileHandle);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double* PointCloudProperties::GetFootprint()
+{
+    cout << "PointCloudProperties - Footprint" << endl;
+
+    return ExtractFootprint();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+double* PointCloudProperties::ExtractFootprint()
+{
+    if (NULL == mCloudFileHandle || NULL == mCloudHandle)
+        return 0;
+
     // Get bounds for first point cloud in the scene
     double   lower[3], upper[3];
-    PointCloudVortex::GetPointCloudBounds(cloudHandle, lower, upper);
+    PointCloudVortex::GetPointCloudBounds(mCloudHandle, lower, upper);
 
-    PtHandle metadataHandle = PointCloudVortex::GetMetaDataHandle(cloudHandle);
+    PtHandle metadataHandle = PointCloudVortex::GetMetaDataHandle(mCloudHandle);
     if (0 == metadataHandle)
         return 0;
 
@@ -612,7 +487,6 @@ double* GetBoundingBox(uint32_t& nbPts, PtHandle cloudHandle, PointCloudView  po
     if (!pDestGcs->IsValid())
         return 0;
 
-
     double lowerX = 0.;
     double lowerY = 0.;
     double upperX = 0.;
@@ -622,8 +496,7 @@ double* GetBoundingBox(uint32_t& nbPts, PtHandle cloudHandle, PointCloudView  po
     baseGeoCoord_reproject(&upperX, &upperY, upper[0], upper[1], &*pSrcGcs, &*pDestGcs);
 
     // Create the bounding rectangle.
-    nbPts = 5;
-    DPoint2d rectPts[5];
+    DPoint2d rectPts[FOOTPRINT_PTS_NBR];
     rectPts[0].x = lowerX;
     rectPts[0].y = lowerY;
 
@@ -639,10 +512,10 @@ double* GetBoundingBox(uint32_t& nbPts, PtHandle cloudHandle, PointCloudView  po
     rectPts[4].x = lowerX;
     rectPts[4].y = lowerY;
 
-    double* pPts = new double[nbPts * 2];
+    double* pPts = new double[FOOTPRINT_SIZE];
 
     size_t j = -1;
-    for (size_t i = 0; i < nbPts; ++i)
+    for (size_t i = 0; i < FOOTPRINT_PTS_NBR; ++i)
     {
         pPts[++j] = rectPts[i].x;
         pPts[++j] = rectPts[i].y;
@@ -652,58 +525,40 @@ double* GetBoundingBox(uint32_t& nbPts, PtHandle cloudHandle, PointCloudView  po
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              02/2015
+* @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-double* ThumbnailsProvider::GetRasterFootprint(uint32_t& nbPts, WCharCP inputFilename)
-{  
-    return ExtractRasterFootprint(nbPts, inputFilename);
+StatusInt PointCloudProperties::GetThumbnail(HBITMAP *pThumbnailBmp)
+{
+    cout << "PointCloudProperties - Thumbnail" << endl;
+
+    return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              02/2015
+* @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-double* ThumbnailsProvider::GetPointCloudFootprint(uint32_t& nbPts, WCharCP inputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView)
+StatusInt PointCloudProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height)
 {
-    return ExtractPointCloudFootprint(nbPts, inputFilename, width, height, pointCloudView);
-}
+    if (NULL == mCloudFileHandle || NULL == mCloudHandle)
+        return ERROR;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double* ThumbnailsProvider::ExtractRasterFootprint(uint32_t& nbPts, WCharCP inputFilename)
-{
-    try
-    {
-        // Get raster.
-        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(inputFilename);
+    // Set density (number of points retrieved) according to number of pixels in bitmap. Using the total number of pixels in the bitmap * 4
+    // seems to produce generally good results.
+    float densityValue = (float)(width * height * 4);
 
-        if (rasterFile == NULL)
-            return 0;
-        
-        // Get bounding box.
-        return GetBoundingBox(rasterFile, nbPts);      
-    }
-    catch (...)
-    {
-        return 0;
-    }
-}
+    // Get transfo matrix to fit the point cloud in the thumbnail
+    Transform transform;
+    PointCloudVortex::GetTransformForThumbnail(transform, mCloudHandle, width, height, mView);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-double* ThumbnailsProvider::ExtractPointCloudFootprint(uint32_t& nbPts, WCharCP inputFilename, uint32_t width, uint32_t height, PointCloudView pointCloudView)
-{
-    if (inputFilename == NULL)
-        return 0;
+    bool needsWhiteBackground = PointCloudVortex::PointCloudNeedsWhiteBackground(mCloudHandle);
 
-    PtHandle cloudFileHandle;
-    PtHandle cloudHandle;
-    if (PointCloudVortex::OpenPOD(cloudFileHandle, cloudHandle, inputFilename) != S_OK)
-    {
-        return 0;
-    }
+    HRESULT hr = PointCloudVortex::ExtractPointCloud(pThumbnailBmp, width, height, mCloudHandle, densityValue, transform, needsWhiteBackground);
+    if (*pThumbnailBmp == NULL)
+        return ERROR;
 
-    return GetBoundingBox(nbPts, cloudHandle, pointCloudView);
+    if (hr != NOERROR)
+        return ERROR;
+
+    return SUCCESS;
 }
 
