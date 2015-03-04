@@ -25,7 +25,7 @@ public:
     //=======================================================================================
     // @bsiclass                                                 Affan.Khan    02/2015
     //+===============+===============+===============+===============+===============+======
-    struct SelectionOptions /*: NonCopyableClass -- cannot do this in clang/iOS because it is used by-value in ECSqlPrepareContext, which is not NonCopyableClass */
+    struct SelectionOptions
         {
         private:            
             static bool IsSystemProperty (WCharCP accessString)
