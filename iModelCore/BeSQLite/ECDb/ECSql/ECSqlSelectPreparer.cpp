@@ -20,7 +20,7 @@ void ExtractPropertyRefs (ECSqlPrepareContext& ctx, Exp const* exp)
     if (exp->GetType () == Exp::Type::PropertyName)
         {
         auto propertyName = static_cast<PropertyNameExp const*>(exp);
-        ctx.GetSelectionOptionsR ().AddProperty (propertyName->GetPropertyMap ().GetProperty ());
+        ctx.GetSelectionOptionsR ().AddProperty (propertyName->GetPropertyMap ().GetPropertyAccessString());
         }
 
     for (auto child : exp->GetChildren ())

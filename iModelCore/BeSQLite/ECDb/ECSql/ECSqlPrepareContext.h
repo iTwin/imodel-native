@@ -28,7 +28,7 @@ public:
     struct SelectionOptions : NonCopyableClass
         {
         private:            
-            static bool IsSystemProperty (ECPropertyCR ecProperty)
+            static bool IsSystemProperty (WCharCP accessString)
                 {
                 static std::set<WCharCP, CompareIWChar> s_systemProperties
                     {
@@ -41,36 +41,53 @@ public:
                     ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME_W,
                     ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W
                 };
-                return s_systemProperties.find (ecProperty.GetName().c_str()) != s_systemProperties.end ();
+                return s_systemProperties.find (accessString) != s_systemProperties.end ();
                 }
-
-        private:
-            bool m_onlyInlcudeSystemProperties;
-            std::set<ECPropertyCP> m_selection;
-        public:
-            explicit SelectionOptions (bool onlyIncludeSystemProperties)
-                :m_onlyInlcudeSystemProperties (onlyIncludeSystemProperties)
+            static const std::vector<WString> Split (WCharCP accessString, WChar seperator)
                 {
-                }
-            SelectionOptions ()
-                :m_onlyInlcudeSystemProperties (false)
-                {
-                }
-            ~SelectionOptions ()
-                {}
-            void AddProperty (ECPropertyCR ecProperty)
-                {
-                m_selection.insert (&ecProperty);
-                }
-            bool IsSelected (ECPropertyCR ecProperty) const
-                {
-                if (m_onlyInlcudeSystemProperties == false)
+                WString s = accessString;
+                std::vector<WString> output;
+                std::string::size_type prev_pos = 0, pos = 0;
+                while ((pos = s.find (seperator, pos)) != WString::npos)
                     {
-                    if (m_selection.find (&ecProperty) != m_selection.end ())
-                        return true;
+                    output.push_back (s.substr (prev_pos, pos - prev_pos));
+                    prev_pos = ++pos;
                     }
 
-                return SelectionOptions::IsSystemProperty (ecProperty);
+                output.push_back (s.substr (prev_pos, pos - prev_pos)); // Last word
+                return output;
+                }
+        private:
+            std::set<WString> m_selection;
+        public:
+             SelectionOptions ()
+                {
+                }
+
+            ~SelectionOptions ()
+                {}
+
+
+            void AddProperty (WCharCP accessString)
+                {
+                WString path;
+                for (auto const& subPath : Split (accessString, L'.'))
+                    {
+                    if (path.empty ())
+                        path.assign (subPath);
+                    else
+                        path.append (L".").append (subPath);
+
+                    m_selection.insert (path);
+                    }
+                }
+            bool IsSelected (WCharCP accessString) const
+                {
+
+                if (m_selection.find (accessString) != m_selection.end ())
+                        return true;
+
+                return SelectionOptions::IsSystemProperty (accessString);
                 }
         };
     //=======================================================================================

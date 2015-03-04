@@ -63,16 +63,25 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
         status = ComputeViewMembers (viewMembers,  map, classMap.GetClass(), isPolymorphicQuery, optimizeByIncludingOnlyRealTables, /*ensureDerivedClassesAreLoaded=*/ true);
         }
 
+    static std::set<Utf8CP, CompareIUtf8> donotSkipViews {"dgnEC_ElementData", "dgnEC_ElementHasSecondaryInstances"};
     if (status == BentleyStatus::SUCCESS)
         {
         int queriesAddedToUnion = 0;
         for (auto& pvm : viewMembers)
             {
             if (optimizeByIncludingOnlyRealTables)
-                if (pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::None || pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::View)
+                if (pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::None)
                     continue;
 
-            if (!pvm.first->IsEmpty (map.GetECDbR (), true))
+            if (pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::View)
+                {
+                if (donotSkipViews.find (pvm.first->GetName ()) == donotSkipViews.end ())
+                    {
+                    continue;
+                    }
+                }
+
+            if (pvm.first->IsEmpty (map.GetECDbR (), true))
                 continue;
 
             if (queriesAddedToUnion > 0)
@@ -116,12 +125,9 @@ BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, ECSqlPre
     if (status != SUCCESS)
         return status;
 
-    if (!viewPropMaps.empty ())
-        {
-        viewSql.AppendComma (true);
-        AppendViewPropMapsToQuery (viewSql, classMap.GetECDbMap ().GetECDbR (), prepareContext, classMap.GetTable (), viewPropMaps, true /*forNullView*/);
-        }
-
+ 
+    AppendViewPropMapsToQuery (viewSql, classMap.GetECDbMap ().GetECDbR (), prepareContext, classMap.GetTable (), viewPropMaps, true /*forNullView*/);
+ 
     viewSql.Append (" LIMIT 0");
     return SUCCESS;
     }
@@ -263,13 +269,11 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass (std::
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, DbTableCR table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
     {
-    bool isFirstItem = true;
     for (auto const& propMapPair : viewPropMaps)
-        {
-       
+        {       
         auto basePropMap = propMapPair.first;
         auto actualPropMap = propMapPair.second;
-        if (!prepareContext.GetSelectionOptions ().IsSelected (actualPropMap->GetProperty ()))
+        if (!prepareContext.GetSelectionOptions ().IsSelected (actualPropMap->GetPropertyAccessString()))
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql (nullptr, ECSqlType::Select);
@@ -286,9 +290,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQu
 
         for (size_t i = 0; i < snippetCount; i++)
             {
-            if (!isFirstItem)
-                viewQuery.AppendComma (true);
-
+            viewQuery.AppendComma (true);
             auto const& aliasSqlSnippet = aliasSqlSnippets[i];
             if (forNullView)
                 viewQuery.Append ("NULL ");
@@ -296,7 +298,6 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQu
                 viewQuery.Append (colSqlSnippets[i]).AppendSpace ();
             
             viewQuery.Append (aliasSqlSnippet);
-            isFirstItem = false;
             }        
         }
 
@@ -334,9 +335,6 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
     auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass (viewPropMaps, prepareContext, baseClassMap, *firstChildClassMap, false, isEmbeded);
     if (status != BentleyStatus::SUCCESS)
         return status;
-
-    if (!viewPropMaps.empty ())
-        viewSql.AppendComma (true);
 
     //Append prop map columns to query [col1],[col2], ...
     AppendViewPropMapsToQuery (viewSql, map.GetECDbR (), prepareContext, table, viewPropMaps);
@@ -441,9 +439,6 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
     if (status != BentleyStatus::SUCCESS)
         return status;
 
-    if (!viewPropMaps.empty ())
-        viewSql.AppendComma (true);
-
     //Append columns to query [col1],[col2], ...
     AppendViewPropMapsToQuery (viewSql, relationMap.GetECDbMap ().GetECDbR (), prepareContext, relationMap.GetTable (), viewPropMaps, true);
     viewSql.Append (" LIMIT 0");
@@ -496,9 +491,6 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
     auto status = GetPropertyMapsOfDerivedClassCastAsBaseClass (viewPropMaps, prepareContext, baseClassMap, relationMap, true, false);
     if (status != SUCCESS)
         return status;
-
-    if (!viewPropMaps.empty ())
-        viewSql.AppendComma (true);
 
     //Append prop maps' columns to query [col1],[col2], ...
     AppendViewPropMapsToQuery (viewSql, ecdbMap.GetECDbR (), prepareContext, relationMap.GetTable (), viewPropMaps);
