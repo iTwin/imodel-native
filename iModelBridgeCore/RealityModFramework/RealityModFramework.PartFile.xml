@@ -2,27 +2,27 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="ThumbnailsHeader" BMakeFile="Thumbnails\Thumbnails.prewire.mke">
+    <Part Name="PropertiesHeader" BMakeFile="Properties\Properties.prewire.mke">
         <Bindings>
-            <PublicAPI Domain="Thumbnails" />
+            <PublicAPI Domain="Properties" />
         </Bindings>
     </Part>
 
     
-    <Part Name="Thumbnails" BMakeFile="Thumbnails\Thumbnails.mke">
-      <SubPart PartName="ThumbnailsHeader" />
+    <Part Name="Properties" BMakeFile="Properties\Properties.mke">
+      <SubPart PartName="PropertiesHeader" />
       <SubPart PartName="ImagePPDLL" PartFile="ImagePP" Repository="ImagePP" />
       <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
       <Bindings>
-          <Libs>Delivery/$(stlibprefix)Thumbnails$(stlibext)</Libs>
-          <Files ProductDirectoryName="RealityModFrameworkBin">delivery/Thumbnails.dll</Files>
+          <Libs>Delivery/$(stlibprefix)Properties$(stlibext)</Libs>
+          <Files ProductDirectoryName="RealityModFrameworkBin">delivery/Properties.dll</Files>
       </Bindings>
     </Part>
 
-    <Part Name="ThumbnailsTester" BMakeFile="Thumbnails\Tests\ThumbnailsTester\ThumbnailsTester.mke">
-        <SubPart PartName="Thumbnails"/>
+    <Part Name="PropertiesTester" BMakeFile="Properties\Tests\PropertiesTester\PropertiesTester.mke">
+        <SubPart PartName="Properties"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityModFrameworkBin">delivery/ThumbnailsTester.exe</Files>
+            <Files ProductDirectoryName="RealityModFrameworkBin">delivery/PropertiesTester.exe</Files>
         </Bindings>
     </Part>
 
@@ -78,8 +78,8 @@
 	
 
     <Product Name="RealityModFramework">
-        <SubPart PartName="Thumbnails"/>
-        <SubPart PartName="ThumbnailsTester"/>
+        <SubPart PartName="Properties"/>
+        <SubPart PartName="PropertiesTester"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
