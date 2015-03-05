@@ -2,7 +2,7 @@
 #
 #     $Source: PointoolsLibs/PointoolsLibsIO/VS2012/Formats/LibLAS/Format_LibLAS_1_7_0.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
@@ -28,7 +28,7 @@ always:
 
 always:
     @CreateSymLinks.py   -f"$(DeliveryDir)liblas_1.7.0_vc11_x64.lib"=${PointoolsLibs}\liblas\libLas-1.7.0\lib\liblas_1.7.0_vc11_x64.lib
-    @CreateSymLinks.py   -f"$(DeliveryDir)liblas_1.7.0_vc11_x64_d.lib"=${PointoolsLibs}\liblas\libLas-1.7.0\lib\liblas_1.7.0_vc11_x64_d.lib
+#   @CreateSymLinks.py   -f"$(DeliveryDir)liblas_1.7.0_vc11_x64_d.lib"=${PointoolsLibs}\liblas\libLas-1.7.0\lib\liblas_1.7.0_vc11_x64_d.lib
 
 %endif
 
