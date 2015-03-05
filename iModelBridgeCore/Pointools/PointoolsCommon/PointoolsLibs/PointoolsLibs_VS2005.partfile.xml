@@ -113,8 +113,8 @@
     <SubPart PartName="LibGeoTIFF_1_3_0_VS2005" Repository="PointoolsLibs"/>
 
     <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2005" Repository="PointoolsLibs"/>
-    <SubPart PartName="Format_LibLAS_1_6_0_VS2005" Repository="PointoolsLibs_LibLas"/>
-    <SubPart PartName="Format_LibLAS_1_7_0_VS2005" Repository="PointoolsLibs_LibLas"/>
+    <SubPart PartName="Format_LibLAS_1_6_0_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LibLAS_1_7_0_VS2005" Repository="PointoolsLibs"/>
     <SubPart PartName="Format_LASZip_2_1_0_VS2005" Repository="PointoolsLibs"/>
     <SubPart PartName="Format_TopconCodec_VS2005" Repository="PointoolsLibs"/>
     <SubPart PartName="Format_LibE57_VS2005" Repository="PointoolsLibs"/>
