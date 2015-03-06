@@ -1033,7 +1033,7 @@ public:
 //! if a ChangeTracker is enabled for that file.
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
-struct ChangeTracker
+struct ChangeTracker : RefCountedBase
 {
 protected:
     bool            m_isTracking;
@@ -1047,10 +1047,8 @@ protected:
     BE_SQLITE_EXPORT DbResult CreateSession();
 
 public:
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_dbFile=0; m_isTracking=false;}
-    virtual ~ChangeTracker() {EndTracking();}
+    virtual ~ChangeTracker() {}
 
     virtual void _OnSettingsSave() {}
     virtual void _OnSettingsSaved() {}
@@ -1207,8 +1205,6 @@ struct VirtualSet
     virtual bool _IsInSet(int nVals, DbValue const* vals) const = 0;
 };
 
-//__PUBLISH_SECTION_END__
-
 //=======================================================================================
 //! An Iterator for a ChangeSet. This class is used to step through the individual changes within a ChangeSet.
 // @bsiclass                                                    Keith.Bentley   05/11
@@ -1353,7 +1349,6 @@ public:
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
 
 };
-//__PUBLISH_SECTION_START__
 
 //=======================================================================================
 //! Wraps sqlite3_mprintf. Adds convenience that destructor frees memory.
@@ -1504,6 +1499,13 @@ public:
     //! @param[in] name The name of the parameter (including the "@" or ":" used in the SQL).
     //! @param[in] val The value to be bound to the parameter.
     BE_SQLITE_EXPORT void AddDoubleParameter(Utf8CP name, double val);
+
+    //! Add a blob parameter value to this NamedParams.
+    //! @param[in] name The name of the parameter (including the "@" or ":" used in the SQL).
+    //! @param[in] data The data value to be bound to the parameter.
+    //! @param[in] size The size value to be bound to the parameter.
+    //! @param[in] copy The Statement::MakeCopy value to be bound to the parameter.
+    BE_SQLITE_EXPORT void AddBlobParameter(Utf8CP name, void const* data, int size, Statement::MakeCopy copy);
 
     //! ctor for NamedParams
     //! @param[in] where an optional part of the where clause for a SELECT statement.
@@ -1986,6 +1988,8 @@ private:
     size_t          m_repositoryIdRlvIndex;
 
 protected:
+    typedef RefCountedPtr<ChangeTracker> ChangeTrackerPtr;
+
     bool            m_settingsTableCreated;
     bool            m_settingsDirty;
     bool            m_allowImplicitTxns;
@@ -1998,7 +2002,7 @@ protected:
     BeDbGuid        m_dbGuid;
     Savepoint       m_defaultTxn;
     BeRepositoryId  m_repositoryId;
-    bmap<Utf8String,ChangeTracker*> m_trackers;
+    bmap<Utf8String,ChangeTrackerPtr> m_trackers;
     StatementCache  m_statements;
     typedef bvector<Savepoint*> DbTxns;
     typedef DbTxns::iterator DbTxnIter;

@@ -1743,9 +1743,6 @@ DbFile::~DbFile()
     if (NULL == m_sqlDb)
         return;
 
-    for (auto tracker : m_trackers)
-        delete tracker.second;
-
     m_trackers.clear();
 
     if (0 != m_txns.size())
@@ -2444,7 +2441,6 @@ DbResult Db::DropChangeTracker(Utf8CP name)
     if (tracker == m_dbFile->m_trackers.end())
         return  BE_SQLITE_ERROR;
 
-    delete tracker->second;
     m_dbFile->m_trackers.erase(tracker);
     return  BE_SQLITE_OK;
     }
@@ -2454,7 +2450,7 @@ DbResult Db::DropChangeTracker(Utf8CP name)
 ChangeTracker* Db::FindChangeTracker(Utf8CP name)
     {
     auto tracker = m_dbFile->m_trackers.find(name);
-    return (tracker == m_dbFile->m_trackers.end()) ? NULL : tracker->second;
+    return (tracker == m_dbFile->m_trackers.end()) ? NULL : tracker->second.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2497,7 +2493,7 @@ void DbValue::Dump() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns) const
     {
-    for (auto i=startCol; i <= endCol; ++i)
+    for (int i=startCol; i <= endCol; ++i)
         {
         if (i != 0)
             printf(", ");
@@ -2584,7 +2580,7 @@ void ChangeSet::Dump(Db const& db) const
         }
     }
 
-    /*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ChangeSet::InterpretConflictCause(ChangeSet::ConflictCause cause)
@@ -3711,10 +3707,19 @@ struct DoubleParameter : NamedParams::SqlParameter
     DoubleParameter(Utf8CP name, double value) : SqlParameter(name), m_value(value) {}
     virtual void _Bind(Statement& stmt) {stmt.BindDouble(stmt.GetParameterIndex(m_name.c_str()), m_value);}
 };
+struct BlobParameter : NamedParams::SqlParameter
+{
+    void const* m_data;
+    int         m_size;
+    Statement::MakeCopy m_copy;
+    BlobParameter(Utf8CP name, void const* data, int size, Statement::MakeCopy copy) : SqlParameter(name), m_data(data), m_size(size), m_copy(copy){}
+    virtual void _Bind(Statement& stmt) {stmt.BindBlob(stmt.GetParameterIndex(m_name.c_str()), m_data, m_size, m_copy);}
+};
 
 void NamedParams::AddStringParameter(Utf8CP name, Utf8CP val) {AddSqlParameter(new StringParameter(name, val));}
 void NamedParams::AddIntegerParameter(Utf8CP name, uint64_t val) {AddSqlParameter(new IntegerParameter(name, val));}
 void NamedParams::AddDoubleParameter(Utf8CP name, double val) {AddSqlParameter(new DoubleParameter(name, val));}
+void NamedParams::AddBlobParameter(Utf8CP name, void const* data, int size, Statement::MakeCopy copy) {AddSqlParameter(new BlobParameter(name, data, size, copy));}
 void NamedParams::Bind(Statement& stmt) const {for (auto param : m_params) param->_Bind(stmt); }
 
 /*---------------------------------------------------------------------------------**//**
