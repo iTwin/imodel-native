@@ -25,7 +25,7 @@ public:
     //=======================================================================================
     // @bsiclass                                                 Affan.Khan    02/2015
     //+===============+===============+===============+===============+===============+======
-    struct SelectionOptions
+    struct SelectionOptions : NonCopyableClass
         {
         private:            
             static bool IsSystemProperty (WCharCP accessString)
@@ -88,6 +88,10 @@ public:
                         return true;
 
                 return SelectionOptions::IsSystemProperty (accessString);
+                }
+            bool IsConstantExpression () const
+                {
+                return m_selection.empty ();
                 }
         };
     //=======================================================================================

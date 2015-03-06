@@ -64,6 +64,12 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
         }
 
     static std::set<Utf8CP, CompareIUtf8> donotSkipViews {"dgnEC_ElementData", "dgnEC_ElementHasSecondaryInstances"};
+    bool skipOverEmptyTableFlag = map.GetECDbR().IsReadonly();
+    if (!skipOverEmptyTableFlag)
+        {
+        skipOverEmptyTableFlag = prepareContext.GetSelectionOptions ().IsConstantExpression ();
+        }
+
     if (status == BentleyStatus::SUCCESS)
         {
         int queriesAddedToUnion = 0;
@@ -81,8 +87,12 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
                     }
                 }
 
-            if (pvm.first->IsEmpty (map.GetECDbR (), true))
-                continue;
+            if (skipOverEmptyTableFlag)
+                {
+                if (pvm.first->IsEmpty (map.GetECDbR (), true))
+                    continue;
+                }
+
 
             if (queriesAddedToUnion > 0)
                 viewSql.Append (" UNION ");

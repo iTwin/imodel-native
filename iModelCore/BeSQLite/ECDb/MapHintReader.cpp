@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapHintReader.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -48,7 +48,29 @@ bool SchemaHintReader::TryReadTablePrefix (Utf8String& tablePrefix, IECInstanceC
     return false;
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Eberle                02/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaHintReader::TryReadDefaultClassMapStrategy (MapStrategy& mapStrategy, ECN::IECInstanceCR hint)
+    {
+    BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbSchemaHint));
+    mapStrategy = MapStrategy::DoNotMap;
+    WString hintMapStrategyName;
+    ECValue v;
+    if (hint.GetValue (v, BSCAP_DefaultClassMapStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
+        {
+        hintMapStrategyName = v.GetString ();
+        if (ClassHintReader::TryConvertToMapStrategy (mapStrategy, hintMapStrategyName.c_str ()))
+            {
+            if (mapStrategy == MapStrategy::DoNotMap || mapStrategy == MapStrategy::TableForThisClass)
+                return true;
 
+            mapStrategy = MapStrategy::DoNotMap;
+            }
+
+        }
+    return false;
+    }
 //*******************************************************************************************
 // ClassMapHintReader
 //*******************************************************************************************

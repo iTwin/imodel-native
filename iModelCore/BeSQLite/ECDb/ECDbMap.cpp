@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -693,7 +693,6 @@ CreateTableStatus ECDbMap::CreateOrUpdateRequiredTables ()
         {
         MappedTablePtr & mappedTable = it->second;
         DbTableP table = it->first;
-
         // <<-----------------
         // Load all the classes mapped to this table. This is done to ensure that the table definition is complete.
         classesMappedToDbTable.clear ();
@@ -883,8 +882,9 @@ size_t ECDbMap::GetTablesFromRelationshipEnd (bset<DbTableP>* tables, ECRelation
             }
 
         auto classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy() == MapStrategy::DoNotMap)
+        if (classMap->GetMapStrategy () == MapStrategy::DoNotMap || classMap->GetMapStrategy () == MapStrategy::DoNotMapHierarchy)
             continue;
+
         BeAssert (!classMap->IsUnmapped());
         DbTableR  table = classMap->GetTable();
         outTables->insert(&table);

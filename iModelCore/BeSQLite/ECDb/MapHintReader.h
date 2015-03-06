@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/MapHintReader.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,7 @@ private:
 public:
     static ECN::IECInstancePtr ReadHint (ECN::ECSchemaCR ecschema);
     static bool TryReadTablePrefix (Utf8String& tablePrefix, ECN::IECInstanceCR hint);
+    static bool TryReadDefaultClassMapStrategy (MapStrategy& mapStrategy, ECN::IECInstanceCR hint);  
     };
 
 
@@ -35,8 +36,8 @@ private:
     ClassHintReader ();
     ~ClassHintReader ();
 
-    static bool TryConvertToMapStrategy (MapStrategy& mapStrategy, WCharCP mapStrategyName);
 public:
+    static bool TryConvertToMapStrategy (MapStrategy& mapStrategy, WCharCP mapStrategyName);
     static ECN::IECInstancePtr ReadHint (ECN::ECClassCR ecClass);
     static bool TryReadMapStrategy (MapStrategy& mapStrategy, ECN::IECInstanceCR classHint);
     static bool TryReadTableName (Utf8String& tableName, ECN::IECInstanceCR classHint);
