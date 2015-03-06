@@ -17,6 +17,7 @@ using namespace System::IO;
 #include <iostream>
 using namespace std;
 
+#include <assert.h>
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Properties/PropertiesAPI.h>
@@ -97,9 +98,35 @@ int main(array<System::String ^> ^args)
             StreamWriter^ footprintFile = gcnew StreamWriter(footprintFilename);
 
             for (size_t i = 0; i < FOOTPRINT_SIZE; i += 2)
-                footprintFile->WriteLine("{0} {1}", pShape[i], pShape[i + 1]);
+            {
+                // {:R}: Round-trip format specifier used to ensure that a numeric value that is converted to a string will be 
+                //       parsed back into the same numeric value.
+                // {:G17}: In some cases, Double values formatted with the "R" standard numeric format string do not successfully 
+                //         round-trip if compiled using the /platform:x64 or /platform:anycpu switches and run on 64-bit systems. 
+                //         To work around this problem, you can format Double values by using the "G17" standard numeric format string.
+                footprintFile->WriteLine("{0:G17} {1:G17}", pShape[i], pShape[i + 1]);
+            }  
 
             footprintFile->Close();
+
+#ifndef NDEBUG
+            // Make sure footprint is a close shape, i.e., first point is equal to last point.
+            StreamReader^ footprintReader = gcnew StreamReader(footprintFilename);
+            String^ firstPt = footprintReader->ReadLine();
+            String^ lastPt = nullptr;
+            while (footprintReader->Peek() >= 0)
+            {
+                lastPt = footprintReader->ReadLine();
+            }
+            //Debug.Assert();
+            if (!firstPt->Equals(lastPt))
+            {
+                Console::WriteLine("ERROR: Footprint not valid.");
+                assert(false);
+            }       
+            footprintReader->Close();
+#endif
+
         }
         catch (Exception^)
         {
