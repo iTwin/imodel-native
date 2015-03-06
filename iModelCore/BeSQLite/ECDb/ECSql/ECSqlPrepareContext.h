@@ -25,7 +25,7 @@ public:
     //=======================================================================================
     // @bsiclass                                                 Affan.Khan    02/2015
     //+===============+===============+===============+===============+===============+======
-    struct SelectionOptions : NonCopyableClass
+    struct SelectionOptions
         {
         private:            
             static bool IsSystemProperty (WCharCP accessString)
