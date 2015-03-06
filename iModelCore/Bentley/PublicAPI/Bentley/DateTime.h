@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/DateTime.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -374,17 +374,14 @@ public:
     //!          Second fractions are rounded to milliseconds.
     //! @return String representation of this DateTime object. An empty string is returned
     //!         if this date time info object is not valid (see DateTime::IsValid )
-    BENTLEYDLL_EXPORT Utf8String ToUtf8String () const;
+    BENTLEYDLL_EXPORT Utf8String ToUtf8String() const;
 
     //! Converts the value of this DateTime into a string representation.
     //! @remarks The resulting string is formatted according to the ISO8601 standard.
     //!          Second fractions are rounded to milliseconds.
     //! @return String representation of this DateTime object. An empty string is returned
     //!         if this date time info object is not valid (see DateTime::IsValid )
-    WString ToString () const
-        {
-        return WString (ToUtf8String ().c_str (), BentleyCharEncoding::Utf8);
-        }
+    WString ToString() const {return WString (ToUtf8String().c_str(), BentleyCharEncoding::Utf8);}
     
     //! Parses an ISO 8601 date time string into a DateTime instance.
     //! @remarks This method supports T and a space as delimiter of the date and time component, e.g.

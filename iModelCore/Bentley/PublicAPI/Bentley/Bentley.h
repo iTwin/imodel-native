@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Bentley.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -155,6 +155,10 @@
 #define BEGIN_BENTLEY_NAMESPACE namespace BENTLEY_NAMESPACE_NAME {
 #define END_BENTLEY_NAMESPACE   }
 #define USING_NAMESPACE_BENTLEY using namespace BENTLEY_NAMESPACE_NAME;
+
+// use unnamed namespace instead of static in C++ source files.
+#define BEGIN_UNNAMED_NAMESPACE namespace {
+#define END_UNNAMED_NAMESPACE   }
 
 // These macros should only be used for classes in the Bentley namespace
 #define ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_sourceName_,_name_,structclass) \

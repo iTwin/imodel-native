@@ -8,8 +8,7 @@
 #pragma once
 
 /*--------------------------------------------------------------------------------------
-* This file contains ONLY typedefs and #defines specified by the Bentley Programming Style Guide
-* and are used by .cpp, .r, and .mt files.
+* This file contains ONLY typedefs and #defines specified by the Bentley Programming Style Guide.
 +--------------------------------------------------------------------------------------*/
 
 //__PUBLISH_SECTION_START__
@@ -92,32 +91,8 @@
 #endif
 
 #if !defined (NO_BENTLEY_BASICTYPES)
-// We no longer provide the following typedefs. Some conflict on various platforms, rendering them useless. Use the new C++11 intrinsic types in their place.
-// Because we have generally mapped our typedefs to the C++11 intrinsics anyway, interop should still be trivial.
-//
-//  Int8    > int8_t
-//  UInt8   > uint8_t
-//  Int16   > int16_t
-//  UInt16  > uint16_t
-//  Int32   > int32_t
-//  UInt32  > uint32_t
-//  Int64   > int64_t
-//  UInt64  > uint64_t
-//
-// We have removed these typedefs in favor of using their underlying types directly.
-// Note that in many cases you should use the explicit-sized C++11 types, especially when persisting data and using any string formatting functions.
-//
-//  UShort  > unsigned short
-//  ULong   > unsigned long
-//  Short   > short
-//  UInt    > unsigned int
-//  UChar   > unsigned char
-//
 // We have kept this typedef for readability reasons.
 typedef unsigned char Byte;
-//
-// We have remapped 'byte' to 'Byte' to make sure people realize it is not an intrinsic type.
-//  byte    > Byte
 #endif
 
 // NB: Do not use WChar/wchar_t to declare stored data.
