@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auipresentationmgr.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -19,13 +19,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct  ECPresentationManager: public NonCopyableClass
     {
     private:
-        typedef bvector<RefCountedPtr<ECPresentationCommandProvider> >      T_CmdProviderSet;
-        typedef bvector<RefCountedPtr<IECPresentationViewProvider> >        T_ViewProviderSet;
-        typedef bvector<RefCountedPtr<IJournalProvider> >                   T_JournalProviderSet;
-        typedef bvector<RefCountedPtr<IAUIContentServiceProvider> >         T_ContentProviderSet;
-        typedef bvector<RefCountedPtr<ECPresentationImageProvider> >        T_ImageProviderSet;
-        typedef bvector<RefCountedPtr<ECPresentationLocalizationProvider> > T_LocalizationProviderSet;
-        typedef bvector<RefCountedPtr<ECSelectionListener> >                T_SelectionListeners;
+        typedef bvector<ECPresentationCommandProviderP >      T_CmdProviderSet;
+        typedef bvector<IECPresentationViewProviderP >        T_ViewProviderSet;
+        typedef bvector<IJournalProviderP >                   T_JournalProviderSet;
+        typedef bvector<IAUIContentServiceProviderP >         T_ContentProviderSet;
+        typedef bvector<ECPresentationImageProviderP >        T_ImageProviderSet;
+        typedef bvector<ECPresentationLocalizationProviderP > T_LocalizationProviderSet;
+        typedef bvector<ECSelectionListenerP >                T_SelectionListeners;
         T_CmdProviderSet          m_cmdProviders;
         T_ViewProviderSet         m_viewProviders;
         T_JournalProviderSet      m_journalProviders;
