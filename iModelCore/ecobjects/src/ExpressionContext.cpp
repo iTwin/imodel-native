@@ -440,6 +440,8 @@ ExpressionStatus InstanceListExpressionContext::GetInstanceValue (EvaluationResu
             if (nullptr != typeAdapter)
                 {
                 IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*primProp, instance);
+                if (!context.IsValid())
+                    return ExprStatus_UnknownError;
                 context->SetEvaluationOptions (globalContext.GetEvaluationOptions ());
                 if (globalContext.AllowsTypeConversion () || globalContext.EnforceGlobalRepresentation ())
                     {
