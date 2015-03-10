@@ -407,8 +407,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECSchema (Db& db)
         "Description TEXT, "
         "NamespacePrefix TEXT, "
         "VersionMajor INTEGER, "
-        "VersionMinor INTEGER, "
-        "SchemaType INTEGER"
+        "VersionMinor INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)

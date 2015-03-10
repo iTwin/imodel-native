@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/docs/preparedocgeneration.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -53,6 +53,8 @@ always:
     PublishAPI.py $(PUBLISH_VERBOSE) -o${preprocessedSourceDir} -d$(baseDir)source $(cleanopt) -x$(TARGET_PLATFORM) --insertFileDir=${extractedSampleCodeDir} --insertFileMacros=@$(docsBuildDir)macros.txt
 
 
+#for the name of the latest version of the BSCA schema
+%include $(OutBuildContexts)ECStandards/StandardSchemas.delivery.mki
 
 #Link doc resources to build context so that consuming SDKs can use it to generate the final
 #documentation (Note folders in build context are pascal cased)
@@ -60,7 +62,8 @@ bcDocsDir = $(BuildContext)Docs/
 linkdocstobuildcontext:
     @CreateSymLinks.py -d"$(bcDocsDir)Source/ECDb=${preprocessedSourceDir}"
     @CreateSymLinks.py -d"$(bcDocsDir)Images/ECDb=$(baseDir)images"
-    @CreateSymLinks.py -d"$(bcDocsDir)Files/ECDb=$(baseDir)files"
+    @CreateSymLinks.py -m"$(bcDocsDir)Files/ECDb=$(baseDir)files"
+    @CreateSymLinks.py "$(bcDocsDir)Files/ECDb/Bentley_Standard_CustomAttributes.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(StandardCustomAttributesSchemaName)"
     
 
 

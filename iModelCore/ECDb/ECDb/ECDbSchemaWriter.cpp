@@ -69,30 +69,16 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECSchemaEntry (ECSchemaCR ecSchema, E
     DbECSchemaInfo info;
 
     info.ColsInsert =
-        DbECSchemaInfo::COL_ECSchemaId      |
-        DbECSchemaInfo::COL_Name            |
-        DbECSchemaInfo::COL_VersionMajor    |
-        DbECSchemaInfo::COL_VersionMinor    |
-        DbECSchemaInfo::COL_Description     |
-        DbECSchemaInfo::COL_NamespacePrefix |
-        DbECSchemaInfo::COL_SchemaType;
-    //ecSchema.IsSupplemented
+        DbECSchemaInfo::COL_ECSchemaId |
+        DbECSchemaInfo::COL_Name |
+        DbECSchemaInfo::COL_VersionMajor |
+        DbECSchemaInfo::COL_VersionMinor |
+        DbECSchemaInfo::COL_Description |
+        DbECSchemaInfo::COL_NamespacePrefix;
+
     info.m_ecSchemaId   = ecSchemaId;
     info.m_versionMajor = ecSchema.GetVersionMajor();
     info.m_versionMinor = ecSchema.GetVersionMinor();
-
-    info.m_schemaType = PERSISTEDSCHEMATYPE_Primary;
-    if (ecSchema.IsStandardSchema())
-        info.m_schemaType = PERSISTEDSCHEMATYPE_Standard;
-    else if (ecSchema.IsSupplemented())
-        info.m_schemaType = PERSISTEDSCHEMATYPE_Supplemented;
-    else
-        {
-         SupplementalSchemaMetaDataPtr supplementalSchemaMetaData;
-         if (ECOBJECTS_STATUS_Success == SupplementalSchemaMetaData::TryGetFromSchema(supplementalSchemaMetaData, ecSchema))
-             if (supplementalSchemaMetaData.IsValid())
-                info.m_schemaType = PERSISTEDSCHEMATYPE_Supplemental;
-        }
 
     BeStringUtilities::WCharToUtf8 (info.m_namespacePrefix, ecSchema.GetNamespacePrefix().c_str());
     BeStringUtilities::WCharToUtf8 (info.m_name, ecSchema.GetName().c_str());
