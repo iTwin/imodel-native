@@ -624,9 +624,9 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
             switch (relationMap.GetClassMapType ())
                 {
                 case ClassMap::Type::RelationshipEndTable:
-                    etm.push_back (static_cast<RelationshipClassEndTableMapCP>(cm));
+                    etm.push_back (static_cast<RelationshipClassEndTableMapCP>(cm)); break;
                 case ClassMap::Type::RelationshipLinkTable:
-                    ltm.push_back (static_cast<RelationshipClassLinkTableMapCP>(cm));
+                    ltm.push_back (static_cast<RelationshipClassLinkTableMapCP>(cm)); break;
                 }
             }
 
