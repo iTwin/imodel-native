@@ -132,7 +132,7 @@ public:
     static  BeSQLite::DbResult GetECSchemaKeys                          (ECSchemaKeys& keys, BeSQLite::Db& db);
     static  BeSQLite::DbResult GetECClassKeys                           (ECClassKeys& keys, ECSchemaId schemaId, BeSQLite::Db& db);
     static                bool IsECSchemaMapped                         (bool* schemaNotFound, ECN::ECSchemaCR ecSchema, BeSQLite::Db& db);
-    static  BeSQLite::DbResult GetClassesMappedToTable                  (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db);
+    static  BeSQLite::DbResult GetClassesMappedToTable (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, BeSQLite::Db& db);
     static                bool IsCustomAttributeDefined                 (BeSQLite::Db& db, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
     static  BeSQLite::DbResult DeleteECProperty                         (ECPropertyId propertyId, BeSQLite::Db& db);
     static  ECDbPropertyPathId GetECPropertyPathId (ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db& db);

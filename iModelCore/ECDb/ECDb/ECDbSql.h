@@ -1225,4 +1225,69 @@ struct ECDbSQLManager : public NonCopyableClass
             }
     };
 
+//struct ECDbSqlExpr
+//    {
+//
+//    };
+//struct ECDbSqlDerivedColumn : ECDbSqlExpr
+//    {
+//    Utf8String m_alias;
+//    ECDbSqlValueExpr m_value;
+//    };
+//
+//struct ECDbSqlValueExpr : ECDbSqlExpr
+//    {
+//
+//    };
+//struct ECDbSqlConstantExpr : ECDbSqlValueExpr
+//    {
+//    };
+//
+//struct ECDbSqlParameterExpr : ECDbSqlValueExpr
+//    {
+//    };
+//
+//struct ECDbSqlColumnExpr
+//    {
+//    ECDbSqlColumn const* m_column;
+//    };
+//
+//enum class ECDbSqlBinaryOperator
+//    {
+//
+//    };
+//enum class ECDbSqlUninaryOperator
+//    {
+//    IsNotNull,
+//    IsNull
+//
+//    };
+//struct SelectionExpr
+//    {
+//    std::vector<ECDbSqlDerivedColumn> m_columns;
+//    };
+//struct
+//struct ECDbSqlBooleanExpr
+//    {
+//
+//    };
+//struct ECDbSqlBinaryExpr
+//    {
+//    ECDbSqlBinaryOperator m_op;
+//    ECDbSqlValueExpr m_lhs;
+//    ECDbSqlValueExpr m_rhs;
+//    };
+//struct ECDbSqlUninaryExpr
+//    {
+//    ECDbSqlUninaryOperator m_op;
+//    ECDbSqlValueExpr m_value;
+//    };
+//
+//struct ECDbSqlRangeExpr
+//    {
+//    };
+//struct ECDbSqlTableExpr : ECDbSqlRangeExpr
+//    {
+//
+//    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1604,23 +1604,31 @@ ECRelatedInstanceDirection ECDbSchemaPersistence::ToECRelatedInstanceDirection (
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, BeSQLite::Db& db)
+DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, BeSQLite::Db& db)
     {
     BeSQLite::Statement stmt;
-    auto stat = stmt.Prepare(db,         
+    auto stat = skipRelationships ?
+        stmt.Prepare(db,         
         "SELECT DISTINCT ec_ClassMap.ECClassId  FROM ec_ClassMap"
         "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.[ClassMapId] = ec_ClassMap.[Id]"
         "   INNER JOIN ec_Column ON ec_Column.[Id] = ec_PropertyMap.[ColumnId]"
         "   INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.[TableId]"
         "   INNER JOIN ec_Class ON ec_Class.[ECClassId] = ec_ClassMap.ECClassId"
         "   WHERE  ec_Table.[Id] = ? AND ec_Class.IsRelationship = 0"
+        ) :
+        stmt.Prepare (db,
+        "SELECT DISTINCT ec_ClassMap.ECClassId  FROM ec_ClassMap"
+        "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.[ClassMapId] = ec_ClassMap.[Id]"
+        "   INNER JOIN ec_Column ON ec_Column.[Id] = ec_PropertyMap.[ColumnId]"
+        "   INNER JOIN ec_Table ON ec_Table.[Id] = ec_Column.[TableId]"
+        "   INNER JOIN ec_Class ON ec_Class.[ECClassId] = ec_ClassMap.ECClassId"
+        "   WHERE  ec_Table.[Id] = ?"
         );
 
     if (BE_SQLITE_OK != stat)
         return stat;
 
     stmt.BindInt64 (1, table.GetId());
-
     while ((stat = stmt.Step ()) == BE_SQLITE_ROW)
         {
         auto ecClassId = stmt.GetValueInt64 (0);

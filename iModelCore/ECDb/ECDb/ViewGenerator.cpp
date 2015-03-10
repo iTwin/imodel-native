@@ -171,34 +171,40 @@ bool ensureDerivedClassesAreLoaded
     if (classMap == nullptr)
         return SUCCESS;
 
-    if (!ECDbPolicyManager::GetClassPolicy (*classMap, IsValidInECSqlPolicyAssertion::Get ()).IsSupported () || classMap->IsRelationshipClassMap ())
-        //ECSQL_WIP Not supported yet
-        return BentleyStatus::SUCCESS;
-                        
-    if (classMap->GetTable().GetColumns ().empty ())
-        return BentleyStatus::SUCCESS;
-        
-    auto itor = viewMembers.find (&classMap->GetTable());
-    if (itor == viewMembers.end())
+    if (!classMap->IsRelationshipClassMap ())
         {
-        DbMetaDataHelper::ObjectType storageType = DbMetaDataHelper::ObjectType::Table;
-        if (optimizeByIncludingOnlyRealTables)
-            {
-            //This is a db query so optimization comes at a cost
-            storageType = DbMetaDataHelper::GetObjectType(map.GetECDbR(), classMap->GetTable().GetName().c_str());
-            }
-        viewMembers.insert(
-            ViewMemberByTable::value_type(&classMap->GetTable(), ViewMember(storageType, *classMap)));
+        if (!ECDbPolicyManager::GetClassPolicy (*classMap, IsValidInECSqlPolicyAssertion::Get ()).IsSupported ())
+            //ECSQL_WIP Not supported yet
+            return BentleyStatus::SUCCESS;
         }
-    else
+        
+    if (classMap->GetMapStrategy ().IsMapped ())
         {
-        if (optimizeByIncludingOnlyRealTables)
+        if (classMap->GetTable ().GetColumns ().empty ())
+            return BentleyStatus::SUCCESS;
+
+        auto itor = viewMembers.find (&classMap->GetTable ());
+        if (itor == viewMembers.end ())
             {
-            if (itor->second.GetStorageType() == DbMetaDataHelper::ObjectType::Table)
-                itor->second.GetClassMaps().push_back (classMap);
+            DbMetaDataHelper::ObjectType storageType = DbMetaDataHelper::ObjectType::Table;
+            if (optimizeByIncludingOnlyRealTables)
+                {
+                //This is a db query so optimization comes at a cost
+                storageType = DbMetaDataHelper::GetObjectType (map.GetECDbR (), classMap->GetTable ().GetName ().c_str ());
+                }
+            viewMembers.insert (
+                ViewMemberByTable::value_type (&classMap->GetTable (), ViewMember (storageType, *classMap)));
             }
         else
-            itor->second.GetClassMaps().push_back (classMap);
+            {
+            if (optimizeByIncludingOnlyRealTables)
+                {
+                if (itor->second.GetStorageType () == DbMetaDataHelper::ObjectType::Table)
+                    itor->second.GetClassMaps ().push_back (classMap);
+                }
+            else
+                itor->second.GetClassMaps ().push_back (classMap);
+            }
         }
 
     if (isPolymorphic)
@@ -304,7 +310,7 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
 
     std::vector<ECClassId> classesMappedToTable;
 
-    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, map.GetECDbR ()) != BE_SQLITE_DONE)
+    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, true, map.GetECDbR ()) != BE_SQLITE_DONE)
         return BentleyStatus::ERROR;
  
     bool oneToManyMapping = classesMappedToTable.size() > 1;
@@ -587,65 +593,90 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationship (NativeSqlBuilder& vi
 BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSql, ECDbMapCR map, IClassMap const& relationMap, bool isPolymorphic, bool optimizeByIncludingOnlyRealTables)
     {
     BeAssert (relationMap.IsRelationshipClassMap ());
-
-    auto& db = map.GetECDbR();
     BentleyStatus status = BentleyStatus::SUCCESS;
 
     if (relationMap.GetMapStrategy().IsUnmapped ())
         return BentleyStatus::ERROR;
 
-    auto& table = relationMap.GetTable ();
-    if (map.GetSQLManager().IsNullTable (table))
-        {
-        BeAssert(false && "Failed to get persistence table for the relationship");
-        return BentleyStatus::ERROR;
-        }
-    viewSql.AppendParenLeft();
-    viewSql.Append("Select * From ");
-    viewSql.AppendParenLeft ();
-    auto objectType = DbMetaDataHelper::GetObjectType (db, table.GetName ().c_str ());
-    if (objectType == DbMetaDataHelper::ObjectType::None || objectType == DbMetaDataHelper::ObjectType::Index)
-        status = CreateNullViewForRelationship (viewSql, map, relationMap, relationMap);
-    else 
-        status = CreateViewForRelationship (viewSql, map, relationMap, relationMap);
-
+    ViewMemberByTable vmt;
+    status = ComputeViewMembers (vmt, map, relationMap.GetClass (), isPolymorphic, optimizeByIncludingOnlyRealTables, true);
     if (status != BentleyStatus::SUCCESS)
-        return status; 
+        return status;
 
-    if (isPolymorphic)
+    if (vmt.empty ())
         {
-        std::vector<RelationshipClassMapCP> childRelationshipMaps;
-        if (GetAllChildRelationships(childRelationshipMaps, map, relationMap) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;      
+        return CreateNullViewForRelationship (viewSql, map, relationMap, relationMap);
+        }
 
-        for (auto childRelationshipMap : childRelationshipMaps)
-            {           
-            NativeSqlBuilder unionQuery;
-            if (optimizeByIncludingOnlyRealTables)
+    NativeSqlBuilder unionQuery;
+    for (auto& vm : vmt)
+        {
+        auto table = vm.first;
+        if (vm.second.GetStorageType () != DbMetaDataHelper::ObjectType::Table)
+            continue;
+
+
+
+        std::vector<RelationshipClassEndTableMapCP> etm;
+        std::vector<RelationshipClassLinkTableMapCP> ltm;
+        for (auto cm : vm.second.GetClassMaps ())
+            {
+            switch (relationMap.GetClassMapType ())
                 {
-                auto& table = childRelationshipMap->GetTable ();
-                if (map.GetSQLManager ().IsNullTable (table))
-                    {
-                    BeAssert(false && "Failed to get persistence table for the relationship");
-                    return BentleyStatus::ERROR;
-                    }
-
-                auto objectType = DbMetaDataHelper::GetObjectType (db, table.GetName ().c_str ());
-                if (objectType != DbMetaDataHelper::ObjectType::Table)
-                    continue;
+                case ClassMap::Type::RelationshipEndTable:
+                    etm.push_back (static_cast<RelationshipClassEndTableMapCP>(cm));
+                case ClassMap::Type::RelationshipLinkTable:
+                    ltm.push_back (static_cast<RelationshipClassLinkTableMapCP>(cm));
                 }
+            }
 
-            status = CreateViewForRelationship(unionQuery, map, *childRelationshipMap, relationMap);
+        if (!ltm.empty ())
+            {
+            if (!unionQuery.IsEmpty ())
+                unionQuery.Append (" UNION ");
+
+            status = CreateViewForRelationshipClassLinkTableMap (unionQuery, map, *ltm.front (), relationMap);
             if (status != BentleyStatus::SUCCESS)
                 return status;
 
+            auto column = table->GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+            if (column != nullptr)
+                {
+
+                std::vector<ECClassId> classesMappedToTable;
+                if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, *table, false, map.GetECDbR ()) != BE_SQLITE_DONE)
+                    return BentleyStatus::ERROR;
+
+                if (classesMappedToTable.size () != ltm.size ())
+                    {
+                    unionQuery.Append (" WHERE ");
+                    unionQuery.AppendEscaped (column->GetName ().c_str ()).Append (" IN ");
+                    unionQuery.AppendParenLeft ();
+                    for (auto lt : ltm)
+                        {
+                        unionQuery.Append (lt->GetClass ().GetId ());
+                        if (ltm.back () != lt)
+                            {
+                            unionQuery.AppendComma ();
+                            }
+                        }
+                    unionQuery.AppendParenRight ();
+                    }
+                }
+            }
+
+        for (auto et : etm)
+            {
             if (!unionQuery.IsEmpty ())
-                viewSql.Append (" UNION ").Append (unionQuery);
+                unionQuery.Append (" UNION ");
+
+            status = CreateViewForRelationshipClassEndTableMap (unionQuery, map, *et, relationMap);
+            if (status != BentleyStatus::SUCCESS)
+                return status;
             }
         }
-    viewSql.AppendParenRight();
-    viewSql.Append("Where ECClassId not NULL");
-    viewSql.AppendParenRight ();
+
+    viewSql.AppendParenLeft ().Append (unionQuery.ToString ()).AppendParenRight ();
     return status;
     }
 
