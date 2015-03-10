@@ -1711,6 +1711,116 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     }
     
 /*---------------------------------------------------------------------------------**//**
+* The initial native ECObjects implementation was based on the managed implementation.
+* Since then, the managed implementation has made significant changes to how base/overridden
+* properties are handled. The native implementation has not kept up with those changes.
+* In general, derived classes need to be informed and cleaned up when the base class
+* changes.
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ClassTest, AddAndRemoveBaseProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP base, derived;
+    ECSchema::CreateSchema (schema, L"Test", 1, 1);
+    schema->CreateClass (base, L"Base");
+
+    PrimitiveECPropertyP basePropA;
+    base->CreatePrimitiveProperty (basePropA, L"A");
+    schema->CreateClass (derived, L"Derived");
+    derived->AddBaseClass (*base);
+
+    PrimitiveECPropertyP derivedPropA, derivedPropB;
+    derived->CreatePrimitiveProperty (derivedPropA, L"A");
+    derived->CreatePrimitiveProperty (derivedPropB, L"B");
+
+    EXPECT_EQ (basePropA, derivedPropA->GetBaseProperty());
+    EXPECT_EQ (NULL, derivedPropB->GetBaseProperty());
+
+    PrimitiveECPropertyP basePropB;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, base->CreatePrimitiveProperty (basePropB, L"B"));
+    EXPECT_EQ (basePropB, derivedPropB->GetBaseProperty());
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, base->RemoveProperty (L"A"));
+    EXPECT_EQ (NULL, derivedPropA->GetBaseProperty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ClassTest, AddAndRemoveInheritedBaseProperties)
+    {
+    ECSchemaPtr schema;
+    ECClassP base, intermediate, derived;
+    ECSchema::CreateSchema (schema, L"Test", 1, 2);
+    schema->CreateClass (base, L"Base");
+
+    PrimitiveECPropertyP baseA, baseB;
+    base->CreatePrimitiveProperty (baseA, L"A");
+    base->CreatePrimitiveProperty (baseB, L"B");
+    
+    schema->CreateClass (intermediate, L"Intermediate");
+    intermediate->AddBaseClass (*base);
+
+    PrimitiveECPropertyP intermediateA;
+    intermediate->CreatePrimitiveProperty (intermediateA, L"A");
+
+    schema->CreateClass (derived, L"Derived");
+    derived->AddBaseClass (*intermediate);
+
+    PrimitiveECPropertyP derivedA, derivedB;
+    derived->CreatePrimitiveProperty (derivedA, L"A");
+    derived->CreatePrimitiveProperty (derivedB, L"B");
+
+    // Intermediate.A overrides Base.A
+    // Derived.A overrides Intermediate.A
+    // Derived.B overrides Base.B
+    EXPECT_EQ (baseA, intermediateA->GetBaseProperty());
+    EXPECT_EQ (intermediateA, derivedA->GetBaseProperty());
+    EXPECT_EQ (baseB, derivedB->GetBaseProperty());
+
+    // Remove intermediate A => Derived.A now overrides Base.A
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, intermediate->RemoveProperty (L"A"));
+    EXPECT_EQ (baseA, derivedA->GetBaseProperty());
+
+    // Add an intermediate B => Derived.B now overrides that instead of Base.A
+    PrimitiveECPropertyP intermediateB;
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, intermediate->CreatePrimitiveProperty (intermediateB, L"B"));
+    EXPECT_EQ (intermediateB, derivedB->GetBaseProperty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ClassTest, AndAddRemoveBaseClassesWithOverridableProperties)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, L"Test", 1, 3);
+    ECClassP hasA, hasB;
+    schema->CreateClass (hasA, L"HasA");
+    schema->CreateClass (hasB, L"HasB");
+    PrimitiveECPropertyP baseA, baseB;
+    hasA->CreatePrimitiveProperty (baseA, L"A");
+    hasB->CreatePrimitiveProperty (baseB, L"B");
+
+    ECClassP derived;
+    schema->CreateClass (derived, L"Derived");
+    PrimitiveECPropertyP derivedA, derivedB;
+    derived->CreatePrimitiveProperty (derivedA, L"A");
+    derived->CreatePrimitiveProperty (derivedB, L"B");
+
+    derived->AddBaseClass (*hasA);
+    derived->AddBaseClass (*hasB);
+
+    EXPECT_EQ (baseA, derivedA->GetBaseProperty());
+    EXPECT_EQ (baseB, derivedB->GetBaseProperty());
+
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, derived->RemoveBaseClass (*hasB));
+    EXPECT_EQ (baseA, derivedA->GetBaseProperty());
+    EXPECT_EQ (NULL, derivedB->GetBaseProperty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)

@@ -120,11 +120,11 @@
     </Part>
 
     <Part Name="RunECObjectsTests" BentleyBuildMakeFile="test/ECObjectsNativeTest.run.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,LinuxX86,iOSX86,iOSARM">
-
+        <SubPart PartName="Tests" />
     </Part>
 
     <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="test\ECObjectsPerformanceTest.run.mke">
-
+        <SubPart PartName="ECObjectsPerformanceTests" />
     </Part>
 
   <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->
