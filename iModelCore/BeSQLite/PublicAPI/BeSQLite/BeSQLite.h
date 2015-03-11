@@ -1048,7 +1048,7 @@ protected:
 
 public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_dbFile=0; m_isTracking=false;}
-    virtual ~ChangeTracker() {}
+    virtual ~ChangeTracker() {EndTracking();}
 
     virtual void _OnSettingsSave() {}
     virtual void _OnSettingsSaved() {}
