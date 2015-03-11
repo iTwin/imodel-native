@@ -393,9 +393,22 @@ ECClassCR          ecClass
             {
             case Strategy::TablePerHierarchy:
             case Strategy::InParentTable:
-                tphMaps.push_back (baseClassMap);
-                break;
+                {
 
+                auto add = true;
+                for (auto classMap : tphMaps)
+                    {
+                    if (classMap->GetTable ().GetId () == baseClassMap->GetTable ().GetId ())
+                        {
+                        add = false;
+                        break;
+                        }
+                    }
+
+                if (add)
+                    tphMaps.push_back (baseClassMap);
+                break;
+                }
             case Strategy::TablePerClass:
                 tpcMaps.push_back (baseClassMap);
                 break;
@@ -409,6 +422,7 @@ ECClassCR          ecClass
                 // MapStrategy::NoHint, MapStrategy::TableForThisClass
                 break;
             }
+
         baseClassMaps.push_back (baseClassMap);
         }
 
