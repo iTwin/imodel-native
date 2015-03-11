@@ -2,27 +2,35 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="PropertiesHeader" BMakeFile="Properties\Properties.prewire.mke">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="RealityModFramework.prewire.mke">
         <Bindings>
-            <PublicAPI Domain="Properties" />
+            <PublicAPI Domain="RealityPlatform" />
+            <PublicAPI Domain="RealityPackage" />
         </Bindings>
     </Part>
-
     
-    <Part Name="Properties" BMakeFile="Properties\Properties.mke">
-      <SubPart PartName="PropertiesHeader" />
-      <SubPart PartName="ImagePPDLL" PartFile="ImagePP" Repository="ImagePP" />
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
+      <SubPart PartName="PublicAPI" />
+      <SubPart PartName="ImagePPDLL"                 PartFile="ImagePP"                   Repository="ImagePP" />
       <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
       <Bindings>
-          <Libs>Delivery/$(stlibprefix)Properties$(stlibext)</Libs>
-          <Files ProductDirectoryName="RealityModFrameworkBin">delivery/Properties.dll</Files>
+          <Libs>Delivery/$(stlibprefix)RealityPlatform(stlibext)</Libs>
+          <Files ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform(shlibext)</Files>
       </Bindings>
     </Part>
 
-    <Part Name="PropertiesTester" BMakeFile="Properties\Tests\PropertiesTester\PropertiesTester.mke">
-        <SubPart PartName="Properties"/>
+    <Part Name="RealityPlatformTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataPlatformTester\RealityDataPlatformTester.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="RealityPlatform"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityModFrameworkBin">delivery/PropertiesTester.exe</Files>
+            <Files ProductDirectoryName="RealityAssemblies">Delivery/RealityPlatformTester.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke">
+        <SubPart PartName="BeXmlDll" PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityPackage(stlibext)</Libs>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RealityPackage(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -50,7 +58,7 @@
         <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
 
-        <ProductDirectory Name="RealityModFrameworkBin"     Path=""/>
+        <ProductDirectory Name="RealityAssemblies"      Path=""/>
         <ProductDirectory Name="BentleyNativeAssemblies"    Path=""/>
         <ProductDirectory Name="ImagePPAssemblies"          Path=""/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"  Path=""/>
@@ -63,23 +71,22 @@
         <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" />
         <ProductDirectory Name="MrSidAssemblies"            Path="" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
+        <ProductDirectory Name="ECObjectsNativeAssemblies" Path="" />
+        
+        <ProductDirectory Name="ECSchemas" Path="ECSchemas" />
+        
 
         <ProductDirectory Name="GeomNativeAssemblies" Path=""/>
         <ProductDirectory Name="PointoolsAssemblies" Path=""/>
         <ProductDirectory Name="PointoolsAssemblies32Ext" Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
 
         <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
-
     </ProductDirectoryList>
 
-	<!-- inherit from RealityModFrameworkDirList-->
-    <!-- <ProductDirectoryList ListName="ThumbnailsDirList" >
-    </ProductDirectoryList>-->
 	
-
     <Product Name="RealityModFramework">
-        <SubPart PartName="Properties"/>
-        <SubPart PartName="PropertiesTester"/>
+        <SubPart PartName="RealityPlatform"/>
+        <!--&&JFC TODO SubPart PartName="RealityPlatformTester"/-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 

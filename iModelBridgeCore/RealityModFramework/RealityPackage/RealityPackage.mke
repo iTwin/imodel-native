@@ -1,0 +1,57 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: RealityPackage/RealityPackage.mke $
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
+
+appName = RealityPackage
+baseDir	= $(_MakeFilePath)
+
+%include mdl.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=__REALITYPACKAGE_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#$(o)PropertiesProvider$(oext) : $(baseDir)PropertiesProvider.cpp $(PublicApiDir)PropertiesProvider.h ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+
+
+%include dlmlink.mki
+
+

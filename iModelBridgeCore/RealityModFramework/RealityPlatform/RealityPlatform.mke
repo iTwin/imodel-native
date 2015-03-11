@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: Properties/Properties.mke $
+#     $Source: RealityPlatform/RealityPlatform.mke $
 #    $RCSfile: imagepp.mke,v $
 #   $Revision: 1.50 $
 #       $Date: 2007/03/07 13:34:13 $
@@ -9,13 +9,13 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-appName = Properties
+appName = RealityPlatform
 baseDir	= $(_MakeFilePath)
 
-policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
+policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
 
-PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/Properties/
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
 
 
 #----------------------------------------------------------------------
@@ -26,18 +26,12 @@ always:
 
 CCompPDBName = $(appName)
 
-nameToDefine=UNICODE
-%include cdefapnd.mki
-    
-nameToDefine=_UNICODE
-%include cdefapnd.mki
-
 #----------------------------------------------------------------------
-#   Define __SHELLEXTUTIL_BUILD__ symbol, so that class declarations and function decls will
-#           know to specify dllexport, rather than dllimport (the default)
-#               !No other makefile should define this symbol!
+#   Define __REALITYPLATFORM_BUILD__ symbol, so that class declarations and function decls will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
 #----------------------------------------------------------------------
-nameToDefine=__PROPERTIES_BUILD__
+nameToDefine=__REALITYPLATFORM_BUILD__
 %include cdefapnd.mki
 
 
@@ -45,24 +39,22 @@ nameToDefine=__PROPERTIES_BUILD__
 #       Build source files
 #----------------------------------------------------------------------
 # Create PCH
-# CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
-# $(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h
+CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h $(PublicApiDir)RealityDataProvider.h
 
 # Use PCH
-# CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
 
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)dllmain$(oext) : $(baseDir)dllmain.cpp ${MultiCompileDepends}
+$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp ${MultiCompileDepends}
 
-$(o)PropertiesProvider$(oext) : $(baseDir)PropertiesProvider.cpp $(PublicApiDir)PropertiesProvider.h ${MultiCompileDepends}
+$(o)RealityDataProvider$(oext) : $(baseDir)RealityDataProvider.cpp $(PublicApiDir)RealityDataProvider.h ${MultiCompileDepends}
 
 $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
 
-$(o)PropertiesUtil$(oext) : $(baseDir)PropertiesUtil.cpp $(baseDir)PropertiesUtil.h ${MultiCompileDepends}
-
-#$(o)RasterFileFormats$(oext) : $(baseDir)RasterFileFormats.cpp $(PublicApiDir)RasterFileFormats.h ${MultiCompileDepends}
+$(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)RealityPlatformUtil.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

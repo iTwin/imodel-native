@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Properties/PropertiesUtil.cpp $
+|     $Source: RealityPlatform/RealityPlatformUtil.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,6 +10,7 @@
 |   Header File Dependencies
 +----------------------------------------------------------------------------*/
 #include "stdafx.h"
+#include "RealityPlatformUtil.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2013
@@ -29,6 +30,7 @@ void GetBaseDirOfExecutingModule (WStringR baseDir)
     baseDir = baseDirW;
     }
 
+//&&JFC in our context I don't think we need critical section. review..
 CRITICAL_SECTION CriticalSectionHelper::s_criticalSection;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012

@@ -1,15 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Properties/PointCloudVortex.h $
+|     $Source: RealityPlatform/PointCloudVortex.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "Geom/GeomApi.h"
-//#include "PointCloudCore/PtVortex.h"
-#include "Properties/PropertiesProvider.h"
 
-typedef uint32_t PtHandle;
+
+typedef uint32_t PtHandle;  //&&JFC multiple definition. find a common place. 
 
 //=======================================================================================    
 //! Class that encapsulates Vortex services

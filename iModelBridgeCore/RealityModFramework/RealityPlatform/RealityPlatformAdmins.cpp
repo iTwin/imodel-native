@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Properties/dllmain.cpp $
+|     $Source: RealityPlatform/RealityPlatformAdmins.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,40 +10,28 @@
 #define PREVIEWHANDLER_FILE_FORMATS       
 
 #include <ImagePP/all/h/HRFFileFormats.h>
-
-#include <GeoCoord/BaseGeoCoord.h>
-#include <GeoCoord/basegeocoordapi.h>
-
-static HINSTANCE                                s_moduleHandle = 0;
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-HINSTANCE GetDllHandle()
-    {
-    return s_moduleHandle;
-    }
-
+#include "RealityPlatformUtil.h"
+#include "PointCloudVortex.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void callHostOnAssert (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType)
+static void callHostOnAssert(WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType)
     {
+    //&&JFC  We want to assert, not silently ignore it. Look for example elsewhere.
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InitBaseGCS()
-{
+    {
     //WIP
     //BeFileName dllFileName;
     //Bentley::BeGetModuleFileName(dllFileName, NULL);
 
-    TCHAR exePath[MAX_PATH];
-    GetModuleFileName(NULL, exePath, MAX_PATH);
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
 
     WString geoCoordDir = exePath;
     size_t pos = geoCoordDir.find_last_of(L"/\\");
@@ -58,75 +46,83 @@ bool InitBaseGCS()
     GeoCoordinates::BaseGCS::Initialize(geoCoordDir.c_str());
 
     return true;
-}
+    }
 
 struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
-{
+    {
     DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
 
     virtual ImagePP::IRasterGeoCoordinateServices* _GetIRasterGeoCoordinateServicesImpl() const override
-    {
+        {
         //WIP
         //if (GeoCoordinationManager::GetServices() != NULL)
-            return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
+        return ImagePP::ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
 
         //return NULL;
-    }
-    
-    virtual ~MyImageppLibAdmin()
-    {
-    }
-};
+        }
 
-struct MyImageppLibHost : ImagePP::ImageppLib::Host     
-{
-    MyImageppLibHost()
+    virtual ~MyImageppLibAdmin()
+        {
+        }
+    };
+
+struct MyImageppLibHost : ImagePP::ImageppLib::Host
     {
+    MyImageppLibHost()
+        {
         BeAssertFunctions::SetBeAssertHandler(callHostOnAssert);
-    }
+        }
 
 
     virtual ImagePP::ImageppLibAdmin& _SupplyImageppLibAdmin() override
-    {
+        {
         return *new MyImageppLibAdmin();
-    }
+        }
 
 
     virtual void _RegisterFileFormat() override
-    {
+        {
         REGISTER_SUPPORTED_FILEFORMAT
-    }
-};
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IPropertiesProvider* IPropertiesProvider::Create(WCharCP inFilename, WCharCP view)
-{
+RefCountedPtr<PropertiesProvider> PropertiesProvider::Create(WCharCP inFilename, PointCloudView view)
+    {
     WString filename = inFilename;
     size_t pos = filename.find_last_of(L".");
 
-    WString ext = filename.substr(pos, filename.length());
-    ext.ToUpper();
+    WString ext = filename.substr(pos, filename.length()); 
+    ext.ToUpper();  //&&JFC use case insensitive(EqualsI) compare not ToUpper.
 
     if (ext.Equals(L".POD"))
-    {
-        static PointCloudProperties s_pointCloudProperties(inFilename, view);
-        return &s_pointCloudProperties;
-    }
+        {
+        //&&JFC We need a new instance per create. Using static here will have the effect of
+        // always returning the same instance which was created using the first filename.
+        // A refcounted object is always allocated with new and never allocated on the stack because the 
+        // RefcountedPtr container will always call delete.
+//         static PointCloudProperties s_pointCloudProperties(inFilename, view);
+//         return &s_pointCloudProperties;
+        }
     else
-    {
-        static RasterProperties s_rasterProperties(inFilename);
-        return &s_rasterProperties;
+        {
+//         static RasterProperties s_rasterProperties(inFilename);
+//         return &s_rasterProperties;
+        }
+
+    return NULL;
     }
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 RasterProperties::RasterProperties(WCharCP inFilename)
-    : mFilename(inFilename)
+: m_filename(inFilename)
     {
+    //&&JFC - need to this only once per session and out of the properties object.
+    //      - Move *Properties methods in RealityDataProvider.cpp and keep only init/admin stuff here.
     Initialize();
     }
 
@@ -143,10 +139,10 @@ RasterProperties::~RasterProperties()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RasterProperties::Initialize()
     {
-    CriticalSectionHelper::Init ();
+    CriticalSectionHelper::Init();
 
     //Initialize ImagePP host
-	ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
+    ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
 
     if (!InitBaseGCS())
         return false;
@@ -166,46 +162,29 @@ void RasterProperties::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudProperties::PointCloudProperties(WCharCP inFilename, WCharCP view)
-{
-    Initialize();
+PointCloudProperties::PointCloudProperties(WCharCP inFilename, PointCloudView view)
+    {
+    Initialize();   //&&JFC need to this only once per session.
 
-    WString viewTmp = view;
-    viewTmp.ToUpper();
-    if (viewTmp.Equals(L"RIGHT"))
-    {
-        mView = PointCloudView::Right;
-    }
-    else if (viewTmp.Equals(L"FRONT"))
-    {
-        mView = PointCloudView::Front;
-    }
-    else if (viewTmp.Equals(L"ISO"))
-    {
-        mView = PointCloudView::Iso;
-    }
-    else
-    {
-        mView = PointCloudView::Top;
-    }
+    m_view = view;
 
     GetFile(inFilename);
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointCloudProperties::~PointCloudProperties()
-{
+    {
     //CloseFile();
     Terminate();
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PointCloudProperties::Initialize()
-{
+    {
     CriticalSectionHelper::Init();
 
     PointCloudVortex::Initialize();
@@ -214,60 +193,13 @@ bool PointCloudProperties::Initialize()
         return false;
 
     return true;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudProperties::Terminate()
-{
-
-}
-
-
-/*----------------------------------------------------------------------------+
-|
-| name      DllMain
-|
-| This function is called everytime a new process or thread is attached or detached
-| to the dll
-|
-| author    Marc Bedard 06/2001
-|
-+----------------------------------------------------------------------------*/
-bool APIENTRY DllMain(HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
     {
-    static long nProcess = 0;
 
-    switch (ul_reason_for_call)
-        {
-            case DLL_PROCESS_ATTACH:
-                {
-                nProcess++;
-
-                if ((1 == nProcess))
-                    {
-                    s_moduleHandle = (HINSTANCE) hModule;
-                    }
-                }
-                break;
-            case DLL_THREAD_ATTACH:
-                {
-                }
-                break;
-            case DLL_THREAD_DETACH:
-                {
-                }
-                break;
-            case DLL_PROCESS_DETACH:
-                {
-                nProcess--;
-                if ((0 == nProcess))
-                    {
-                    s_moduleHandle = 0;
-                    }
-                }
-                break;
-        }
-    return true;
     }
+

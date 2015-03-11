@@ -1,11 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/Properties/PropertiesProvider.h $
+|     $Source: PublicApi/RealityPlatform/RealityDataProvider.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+
+//&&JFC - Add a begin/end namespace. Everything struct/class must in our own namespace. 
+//      - provide XXXX_TYPEDEFS and XXXX_REF_COUNTED_PTR
+//      - Do use add USING_ to one of the header file. Use the type defined by XXX_TYPEDEFS
 
 /*  WIP
     * CreateFootprint method should return a status and the double pointer should be pass in parameters.
@@ -27,49 +32,61 @@ enum class PointCloudView
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Jean-Francois.Cote              03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-class IPropertiesProvider
+struct PropertiesProvider : public RefCountedBase
 {
 public:
-    PROPERTIES_EXPORT virtual double*    GetFootprint() = 0;
-    PROPERTIES_EXPORT virtual StatusInt  GetThumbnail(HBITMAP *pThumbnailBmp) = 0;
+    //&&JFC we have a pointcloud specific param here maybe this create doesnot belong here.
+    static RefCountedPtr<PropertiesProvider> Create(WCharCP inFilename, PointCloudView view);
 
-    PROPERTIES_EXPORT static IPropertiesProvider* Create(WCharCP inFilename, WCharCP view);
+    //! &&JFC DOC Footprint format? Can we reuse one of the Bentley Geom type?
+    REALITYDATAPLATFORM_EXPORT double* GetFootprint() const;
+
+    //&&JFC remove HBITMAP and windows header dependency
+    REALITYDATAPLATFORM_EXPORT virtual StatusInt GetThumbnail(HBITMAP *pThumbnailBmp) const;
+
+protected:
+   
+    virtual ~PropertiesProvider(){};
+    virtual double*    _GetFootprint() const = 0;
+    virtual StatusInt  _GetThumbnail(HBITMAP *pThumbnailBmp) const = 0;
 };
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Jean-Francois.Cote              03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-class RasterProperties : public RefCounted<IPropertiesProvider>
+struct RasterProperties : public PropertiesProvider
 {
-public:
-    PROPERTIES_EXPORT virtual double*     GetFootprint();
-    PROPERTIES_EXPORT virtual StatusInt   GetThumbnail(HBITMAP *pThumbnailBmp);
+protected:
+
+    virtual double*  _GetFootprint() const override;
+    virtual StatusInt _GetThumbnail(HBITMAP *pThumbnailBmp) const override;
 
     RasterProperties(WCharCP filename);
     virtual ~RasterProperties();
 
 private:
-    double*         ExtractFootprint();
-    StatusInt       ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height);
+    double* ExtractFootprint() const;
 
-    bool            Initialize();
-    void            Terminate();
+    StatusInt ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height);
 
-    WCharCP mFilename;
+    bool Initialize();
+    void Terminate();
+
+    WCharCP m_filename;
 };
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Jean-Francois.Cote              03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-class PointCloudProperties : public RefCounted<IPropertiesProvider>
+struct PointCloudProperties : public PropertiesProvider
 {
-public:
-    PROPERTIES_EXPORT virtual double*     GetFootprint();
-    PROPERTIES_EXPORT virtual StatusInt   GetThumbnail(HBITMAP *pThumbnailBmp);
+protected:
+    virtual double*  _GetFootprint() const override;
+    virtual StatusInt _GetThumbnail(HBITMAP *pThumbnailBmp) const override;
 
-    PointCloudProperties(WCharCP filename, WCharCP view);
+    PointCloudProperties(WCharCP filename, PointCloudView view);
     virtual ~PointCloudProperties();
 
 private:
@@ -81,9 +98,9 @@ private:
     bool        Initialize();
     void        Terminate();
 
-    PointCloudView  mView;
-    PtHandle        mCloudFileHandle;
-    PtHandle        mCloudHandle;
+    PointCloudView  m_view;
+    PtHandle        m_cloudFileHandle;
+    PtHandle        m_cloudHandle;
 };
 
 

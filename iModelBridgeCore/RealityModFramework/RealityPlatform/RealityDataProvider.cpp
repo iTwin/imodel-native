@@ -1,60 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Properties/PropertiesProvider.cpp $
+|     $Source: RealityPlatform/RealityDataProvider.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 
-#include <Imagepp/all/h/HRFRasterFile.h>
-#include <Imagepp/all/h/HRFRasterFileFactory.h>
-#include <Imagepp/all/h/HFCURLFile.h>
-#include <Imagepp/all/h/HRFSLOStripAdapter.h>
-#include <Imagepp/all/h/HRFThumbnail.h>
-#include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFPageFileFactory.h>
-#include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
-#include <Imagepp/all/h/HRPPixelTypeV24B8G8R8.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HRFBmpFile.h>
-#include <Imagepp/all/h/HRFCalsFile.h>
-#include <Imagepp/all/h/HRFGeoTiffFile.h>
-#include <Imagepp/all/h/HRFHMRFile.h>
-#include <Imagepp/all/h/HRFImgRGBFile.h>
-#include <Imagepp/all/h/HRFIntergraphCITFile.h>
-#include <Imagepp/all/h/HRFIntergraphCOT29File.h>
-#include <Imagepp/all/h/HRFIntergraphCotFile.h>
-#include <Imagepp/all/h/HRFIntergraphRGBFile.h>
-#include <Imagepp/all/h/HRFIntergraphRLEFile.h>
-#include <Imagepp/all/h/HRFIntergraphTG4File.h>
-#include <Imagepp/all/h/HRFIntergraphC30File.h>
-#include <Imagepp/all/h/HRFIntergraphC31File.h>
-#include <Imagepp/all/h/HRFiTiffFile.h>
-#include <Imagepp/all/h/HRFJpegFile.h>
-#include <Imagepp/all/h/HRFPngFile.h>
-#include <Imagepp/all/h/HRFTiffFile.h>
-#include <Imagepp/all/h/HRFGifFile.h>
-#include <Imagepp/all/h/HRFRLCFile.h>
-#include <Imagepp/all/h/HRFImgMappedFile.h>
-#include <Imagepp/all/h/HRFcTiffFile.h>
-#include <Imagepp/all/h/HRFTgaFile.h>
-#include <Imagepp/all/h/HRFPcxFile.h>
-#include <Imagepp/all/h/HRFSunRasterFile.h>
-#include <Imagepp/all/h/HRFTiffIntgrFile.h>
-#include <Imagepp/all/h/HRFBilFile.h>
-#include <Imagepp/all/h/HRPPixelType.h>
-#include <Imagepp/all/h/HCDPacket.h>
-#include <Imagepp/all/h/HRPPixelTypeV32B8G8R8X8.h>
-#include <Imagepp/all/h/HFCStat.h>
-#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HCPGCoordModel.h>
-#include <Imagepp/all/h/HVE2DRectangle.h>
-
-#include <GeoCoord/BaseGeoCoord.h>
-#include <GeoCoord/basegeocoordapi.h>
+#include <RealityPlatform/RealityDataProvider.h>
+#include "PointCloudVortex.h"
 
 // For now we are only dealing with bounding boxes (5 points, first = last) and points are stored in an array of doubles (coordX, coordY).
 #define FOOTPRINT_SIZE      10
@@ -66,12 +20,12 @@
 USING_NAMESPACE_IMAGEPP
 
 enum WktFlavor
-{
+    {
     WktFlavor_Oracle9 = 1,
     WktFlavor_Autodesk,
     WktFlavor_OGC,
     WktFlavor_End,
-};
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Marc.Bedard                     11/2014
@@ -93,6 +47,7 @@ struct FactoryScanOnOpenGuard
             }
         ~FactoryScanOnOpenGuard()
             {
+            //&&MM remove this patch from the the factory. It could be a method param but not a setting guard thing.
             HRFRasterFileFactory::GetInstance()->SetFactoryScanOnOpen(m_oldValue);
             }
     };
@@ -101,67 +56,67 @@ struct FactoryScanOnOpenGuard
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 HFCPtr<HGF2DTransfoModel> GetTransfoModelToMeters(IRasterBaseGcsCR projection)
-{
+    {
     double toMeters = 1.0 / projection.GetUnitsFromMeters();
 
     HFCPtr<HGF2DTransfoModel> pUnitConvertion(new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), toMeters, toMeters));
 
     return pUnitConvertion;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MapWktFlavorEnum(GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, WktFlavor wktFlavor)
-{
+    {
     //Temporary use numeric value until the basegcs enum match the csmap's one.
     switch (wktFlavor)
-    {
-    case WktFlavor::WktFlavor_Oracle9:
-        baseGcsWktFlavor = GeoCoordinates::BaseGCS::wktFlavorOracle9;
-        break;
+        {
+        case WktFlavor::WktFlavor_Oracle9:
+            baseGcsWktFlavor = GeoCoordinates::BaseGCS::wktFlavorOracle9;
+            break;
 
-    case WktFlavor::WktFlavor_Autodesk:
-        baseGcsWktFlavor = GeoCoordinates::BaseGCS::wktFlavorAutodesk;
-        break;
+        case WktFlavor::WktFlavor_Autodesk:
+            baseGcsWktFlavor = GeoCoordinates::BaseGCS::wktFlavorAutodesk;
+            break;
 
-    case WktFlavor::WktFlavor_OGC:
-        baseGcsWktFlavor = GeoCoordinates::BaseGCS::wktFlavorOGC;
-        break;
+        case WktFlavor::WktFlavor_OGC:
+            baseGcsWktFlavor = GeoCoordinates::BaseGCS::wktFlavorOGC;
+            break;
 
-    default:
-        return false;
-    }
+        default:
+            return false;
+        }
 
     return true;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoCoordinates::BaseGCS::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wktStr)
-{
+    {
     WktFlavor wktFlavor = WktFlavor::WktFlavor_Oracle9;
 
     size_t charInd = wktStr.size() - 1;
 
     for (charInd = wktStr.size() - 1; charInd >= 0; charInd--)
-    {
-        if (wktStr[charInd] == L']')
         {
-            break;
-        }
-        else
-            if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < WktFlavor::WktFlavor_End))
+        if (wktStr[charInd] == L']')
             {
-                wktFlavor = (WktFlavor)wktStr[charInd];
+            break;
             }
-    }
+        else
+        if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < WktFlavor::WktFlavor_End))
+            {
+            wktFlavor = (WktFlavor)wktStr[charInd];
+            }
+        }
 
     if (wktStrWithoutFlavor != 0)
-    {
+        {
         *wktStrWithoutFlavor = wktStr.substr(0, charInd + 1);
-    }
+        }
 
     GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
 
@@ -170,17 +125,17 @@ GeoCoordinates::BaseGCS::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, co
     assert(result == true);
 
     return baseGcsWktFlavor;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
-{
+    {
     HFCPtr<HRFRasterFile> rasterFile;
 
     try
-    {
+        {
         WString filename(inFilename);
 
         if (filename.empty())
@@ -189,27 +144,27 @@ static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
         // Create URL
         HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
         if (srcFilename == 0)
-        {
+            {
             // Open the raster file as a file
             srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
-        }
+            }
 
         // Open Raster file
-        {
+            {
             // HFCMonitor __keyMonitor(m_KeyByMethod);
             FactoryScanOnOpenGuard __wantScan(false);
 
             // Create URL
             HFCPtr<HFCURL>  srcFilename(HFCURL::Instanciate(filename));
             if (srcFilename == 0)
-            {
+                {
                 // Open the raster file as a file
                 srcFilename = new HFCURLFile(WString(HFCURLFile::s_SchemeName() + L"://") + filename);
-            }
+                }
 
             // Open Raster file without checking "isKindOfFile"
             rasterFile = HRFRasterFileFactory::GetInstance()->OpenFile((HFCPtr<HFCURL>)srcFilename, true);
-        }
+                }
 
         if (rasterFile == 0)
             return rasterFile;
@@ -222,24 +177,24 @@ static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
         // Adapt Scan Line Orientation (1 bit images)
         bool CreateSLOAdapter = false;
 
-        if ((rasterFile->IsCompatibleWith(HRFIntergraphFile::CLASS_ID)) ||
-            (rasterFile->IsCompatibleWith(HRFCalsFile::CLASS_ID)))
-        {
-            if (HRFSLOStripAdapter::NeedSLOAdapterFor(rasterFile))
+        if ((rasterFile->IsCompatibleWith(HRFFileId_Intergraph)) ||
+            (rasterFile->IsCompatibleWith(HRFFileId_Cals)))
             {
+            if (HRFSLOStripAdapter::NeedSLOAdapterFor(rasterFile))
+                {
                 // Adapt only when the raster file has not a standard scan line orientation
                 // i.e. with an upper left origin, horizontal scan line.
                 //pi_rpRasterFile = HRFSLOStripAdapter::CreateBestAdapterFor(pi_rpRasterFile);
                 CreateSLOAdapter = true;
+                }
             }
         }
-    }
     catch (HFCException&)
-    {
+        {
         return NULL;
-    }
+        }
     catch (exception &e)
-    {
+        {
         //C++ exception
         ostringstream errorStr;
 
@@ -247,30 +202,31 @@ static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
         errorStr << "Type " << typeid(e).name() << endl;
 
         return NULL;
-    }
+        }
     catch (...)
-    {
+        {
         return NULL;
-    }
+        }
 
     return rasterFile;
-}
+    }
 
+#if 0 //&&JFC TODO
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 double* RasterProperties::GetFootprint()
-{
+    {
     cout << "RasterProperties - Footprint" << endl;
 
     return ExtractFootprint();
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 double* RasterProperties::ExtractFootprint()
-{
+    {
     // Get the rasterFile 
     HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(mFilename);
 
@@ -278,7 +234,7 @@ double* RasterProperties::ExtractFootprint()
         return 0;
 
     try
-    {
+        {
         HGFHMRStdWorldCluster worldCluster;
 
         HFCPtr<HRFPageDescriptor> pPageDescriptor = rasterFile->GetPageDescriptor(0);
@@ -297,7 +253,7 @@ double* RasterProperties::ExtractFootprint()
         if ((pSrcFileGeocoding != 0) &&
             (pSrcFileGeocoding->IsValid()) &&
             (pDestGeoCoding->IsValid()))
-        {
+            {
             IRasterBaseGcsPtr     pDestCoordSys(pDestGeoCoding->Clone());
 
             // Compute the image extent expressed in the src projection units
@@ -309,15 +265,15 @@ double* RasterProperties::ExtractFootprint()
             HFCPtr<HRFResolutionDescriptor> pRes(pPageDescriptor->GetResolutionDescriptor(0));
 
             if (pPageDescriptor->HasTransfoModel())
-            {
+                {
                 pPhysicalCoordSys = new HGF2DCoordSys(*pPageDescriptor->GetTransfoModel(),
                     worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
-            }
+                }
             else
-            {
+                {
                 pPhysicalCoordSys = new HGF2DCoordSys(HGF2DIdentity(),
                     worldCluster.GetCoordSysReference(rasterFile->GetWorldIdentificator()));
-            }
+                }
 
             // Create the reprojection transfo model (non adapted)
             HFCPtr<HGF2DTransfoModel> pDstToSrcTransfoModel(new HCPGCoordModel(*pDestCoordSys, *(pSrcFileGeocoding->Clone())));
@@ -350,44 +306,44 @@ double* RasterProperties::ExtractFootprint()
             assert(pointCollection.size() != 0);
 
             // *2 for storing coordX and coordY independently.
-            double* pPts = new double[pointCollection.size() * 2];
+            double* pPts = new double[pointCollection.size() * 2]; //&&JFC cannot returned memory that you have newed. use DRange3d?
 
             size_t j = -1;
             for (size_t i = 0; i < pointCollection.size(); ++i)
-            {
+                {
                 pPts[++j] = pointCollection[i].GetX();
                 pPts[++j] = pointCollection[i].GetY();
-            }
+                }
 
             return pPts;
+            }
+        return 0;
         }
-        return 0;
-    }
     catch (...)
-    {
+        {
         return 0;
+        }
     }
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt RasterProperties::GetThumbnail(HBITMAP *pThumbnailBmp)
-{
+    {
     cout << "RasterProperties - Thumbnail" << endl;
 
     return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt RasterProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height)
-{
-    try
     {
+    try
+        {
         // Get the rasterFile 
-        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(mFilename);
+        HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(m_Filename);
         if (NULL == rasterFile)
             return ERROR;
 
@@ -400,13 +356,13 @@ StatusInt RasterProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t wi
         RasterFacility::CreateHBitmapFromHRFThumbnail(pThumbnailBmp, pThumbnail, pPixelType);
 
         return SUCCESS;
-    }
+        }
     catch (HFCException&)
-    {
+        {
         return ERROR;
-    }
+        }
     catch (exception &e)
-    {
+        {
         //C++ exception
         ostringstream errorStr;
 
@@ -414,44 +370,47 @@ StatusInt RasterProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t wi
         errorStr << "Type " << typeid(e).name() << endl;
 
         return ERROR;
-    }
+        }
     catch (...)
-    {
+        {
         return ERROR;
+        }
     }
-}
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudProperties::GetFile(WCharCP inFilename)
-{
-    PointCloudVortex::OpenPOD(mCloudFileHandle, mCloudHandle, inFilename);
-}
+    {
+    PointCloudVortex::OpenPOD(m_cloudFileHandle, m_cloudHandle, inFilename);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudProperties::CloseFile()
-{
-    PointCloudVortex::ClosePOD(mCloudFileHandle);
-}
+    {
+    PointCloudVortex::ClosePOD(m_cloudFileHandle);
+    }
 
+#if 0 //&&JFC todo maybe we should split pointcloud and raster provider in 2 files.  They will both involve
+      // into a more complex class so we might split them right away.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 double* PointCloudProperties::GetFootprint()
-{
+    {
     cout << "PointCloudProperties - Footprint" << endl;
 
     return ExtractFootprint();
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 double* PointCloudProperties::ExtractFootprint()
-{
+    {
     if (NULL == mCloudFileHandle || NULL == mCloudHandle)
         return 0;
 
@@ -481,9 +440,9 @@ double* PointCloudProperties::ExtractFootprint()
 
     GeoCoordinates::BaseGCSPtr pSrcGcs = GeoCoordinates::BaseGCS::CreateGCS();
     if (pSrcGcs.IsValid())
-    {
+        {
         pSrcGcs->InitFromWellKnownText(&warning, &warningErrorMsg, wktFlavor, wktWithoutFlavor.GetWCharCP());
-    }
+        }
 
     // DestGCS
     GeoCoordinates::BaseGCSPtr pDestGcs = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
@@ -519,29 +478,29 @@ double* PointCloudProperties::ExtractFootprint()
 
     size_t j = -1;
     for (size_t i = 0; i < FOOTPRINT_PTS_NBR; ++i)
-    {
+        {
         pPts[++j] = rectPts[i].x;
         pPts[++j] = rectPts[i].y;
-    }
+        }
 
     return pPts;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PointCloudProperties::GetThumbnail(HBITMAP *pThumbnailBmp)
-{
-    cout << "PointCloudProperties - Thumbnail" << endl;
+    {
+    cout << "PointCloudProperties - Thumbnail" << endl; //&&JFC we should not use cout. look for more...
 
     return ExtractThumbnail(pThumbnailBmp, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PointCloudProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_t width, uint32_t height)
-{
+    {
     if (NULL == mCloudFileHandle || NULL == mCloudHandle)
         return ERROR;
 
@@ -563,5 +522,6 @@ StatusInt PointCloudProperties::ExtractThumbnail(HBITMAP *pThumbnailBmp, uint32_
         return ERROR;
 
     return SUCCESS;
-}
+    }
 
+#endif

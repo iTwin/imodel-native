@@ -2,24 +2,27 @@
 
 #include "stdafx.h"
 
-#include <windows.h>
-#include <vcclr.h>
+//#include <windows.h>
+//#include <vcclr.h>
+#include "PackageECTest.cpp"
 
-#using "System.Drawing.dll"
-#using "System.IO.dll"
-using namespace System;
-using namespace System::Drawing;
-using namespace System::IO;
+// #using "System.Drawing.dll"
+// #using "System.IO.dll"
+// using namespace System;
+// using namespace System::Drawing;
+// using namespace System::IO;
 
 //WIP
 //using namespace System::Runtime::InteropServices;
 
-#include <iostream>
-using namespace std;
+// #include <iostream>
+// using namespace std;
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
-#include <Properties/PropertiesAPI.h>
+//#include <Properties/PropertiesAPI.h>
+
+
 
 // For now we are only dealing with bounding boxes (5 points, first = last) and points are stored in an array of doubles (coordX, coordY).
 #define FOOTPRINT_SIZE 10
@@ -27,24 +30,26 @@ using namespace std;
 //-----------------------------------------------------------------------------
 // This function print out the usage for the current program.
 //-----------------------------------------------------------------------------
-static void ShowUsage()
-{
-    // Check that we have the right number of parameters.
-    cout << "PropertiesTests --- " << __DATE__ << endl
-        << endl
-        << "Usage:  PropertiesTests <drive:\\SourceFile[all raster or .pod]>  <drive:\\DestFile.[jpg, Png]>  <[Top|Front|Right|Iso]>" << endl
-        << "Note:   <[Top|Front|Right|Iso]> option is relevant only for a point cloud" << endl
-        << endl;
-}
+// static void ShowUsage()
+// {
+//     // Check that we have the right number of parameters.
+//     cout << "PropertiesTests --- " << __DATE__ << endl
+//         << endl
+//         << "Usage:  PropertiesTests <drive:\\SourceFile[all raster or .pod]>  <drive:\\DestFile.[jpg, Png]>  <[Top|Front|Right|Iso]>" << endl
+//         << "Note:   <[Top|Front|Right|Iso]> option is relevant only for a point cloud" << endl
+//         << endl;
+// }
 
 //WIP
 //[System::Runtime::ExceptionServices::HandleProcessCorruptedStateExceptions]
 //[System::Security::SecurityCritical]
 
-int main(array<System::String ^> ^args)
+int main(int argc, char * argv[])
 {
-    cout << "Copyright (c) Bentley Systems Inc, PropertiesTester " << "version 1.0 --- " << __DATE__ << endl;
+  //  cout << "Copyright (c) Bentley Systems Inc, PropertiesTester " << "version 1.0 --- " << __DATE__ << endl;
 
+    DoIt();
+#if 0
     // Check that we have the right number of parameters.
     if (args->Length != 2 && args->Length != 3)
     {
@@ -110,6 +115,7 @@ int main(array<System::String ^> ^args)
         Console::WriteLine("There was a problem input file (footprint).");
 
     Console::WriteLine("Done.");
-
+    #endif
     return 0;
+
 }

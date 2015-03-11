@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Properties/PointCloudVortex.cpp $
+|     $Source: RealityPlatform/PointCloudVortex.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,6 +10,8 @@
 #include <PointoolsVortexAPI_DLL/vortexLicense.c>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
 //#include <pointools/include/PointoolsVortexAPI_ResultCodes.h>
+#include "PointCloudVortex.h"
+#include "RealityPlatformUtil.h"
 
 
 bool LoadPointoolsDLL(const wchar_t* filepath);
@@ -24,6 +26,7 @@ void PointCloudVortex::Initialize()
     PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"In Initialize");
 #endif
 
+    //&&JFC ask if we did BePointools.dll
     //PtVortex::LoadDll();
 #ifdef _M_X64
     LoadPointoolsDLL (L"PointoolsVortexAPI.dll");
