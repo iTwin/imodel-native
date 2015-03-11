@@ -1718,7 +1718,7 @@ enum class BeSQLiteTxnMode {None=0, Deferred=1, Immediate=2, Exclusive=3,};
 enum StartDefaultTransaction
     {
     //! Do not start a default transaction. This is generally not a good idea except for very specialized cases. All access to a database requires a transaction.
-    //! So, unless you start a "default" transaction, you must wrap all SQL statements with a #Savepoint.
+    //! So, unless you start a "default" transaction, you must wrap all SQL statements with a \ref Savepoint.
     DefaultTxn_No = (int) BeSQLiteTxnMode::None,
     //! Create a default "normal" transaction. SQLite will acquire locks as they are needed.
     DefaultTxn_Yes = (int) BeSQLiteTxnMode::Deferred,
@@ -2575,10 +2575,7 @@ public:
     //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
     //! @param[out] newValue Incremented value
     //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
-    //! @param[in] initialValue if not nullptr, and if the specified RepositoryLocalValue does not exist yet,
-    //!            a RepositoryLocalValue with the @p initialValue will be saved and then incremented.
-    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If @initialValue is nullptr and
-    //!         the RepositoryLocalValue does not exist, and error code is returned.
+    //! @return BE_SQLITE_OK in case of success. Error code otherwise.
     //! @see RegisterRepositoryLocalValue
     BE_SQLITE_EXPORT DbResult IncrementRepositoryLocalValue (int64_t& newValue, size_t rlvIndex) const;
 
