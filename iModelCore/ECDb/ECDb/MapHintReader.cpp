@@ -51,10 +51,10 @@ bool SchemaHintReader::TryReadTablePrefix (Utf8String& tablePrefix, IECInstanceC
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaHintReader::TryReadDefaultClassMapStrategy (MapStrategy& mapStrategy, ECN::IECInstanceCR hint)
+bool SchemaHintReader::TryReadDefaultClassMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR hint)
     {
     BeAssert (hint.GetClass ().GetName ().Equals (BSCAC_ECDbSchemaHint));
-    mapStrategy = MapStrategy::DoNotMap;
+    mapStrategy = ECDbMapStrategy(Strategy::DoNotMap);
     WString hintMapStrategyName;
     ECValue v;
     if (hint.GetValue (v, BSCAP_DefaultClassMapStrategy) == ECOBJECTS_STATUS_Success && !v.IsNull ())
@@ -62,10 +62,10 @@ bool SchemaHintReader::TryReadDefaultClassMapStrategy (MapStrategy& mapStrategy,
         hintMapStrategyName = v.GetString ();
         if (ClassHintReader::TryConvertToMapStrategy (mapStrategy, hintMapStrategyName.c_str ()))
             {
-            if (mapStrategy == MapStrategy::DoNotMap || mapStrategy == MapStrategy::TableForThisClass)
+            if (mapStrategy.IsDoNotMap() || mapStrategy.IsTableForThisClass())
                 return true;
 
-            mapStrategy = MapStrategy::DoNotMap;
+            mapStrategy = ECDbMapStrategy(Strategy::DoNotMap);
             }
 
         }
@@ -279,6 +279,36 @@ bool ClassHintReader::TryReadIndices (bvector<ClassIndexInfoPtr>& indices, IECIn
     return true;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bool ClassHintReader::TryConvertToMapStrategy (ECDbMapStrategy& mapStrategy, WCharCP mapStrategyName)
+    {
+    bool success = true;
+    if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TablePerHierarchy))
+        mapStrategy = ECDbMapStrategy(Strategy::TablePerHierarchy);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_DoNotMapHierarchy))
+        mapStrategy = ECDbMapStrategy(Strategy::DoNotMapHierarchy);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_DoNotMap))
+        mapStrategy = ECDbMapStrategy(Strategy::DoNotMap);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TablePerClass))
+        mapStrategy = ECDbMapStrategy(Strategy::TablePerClass);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_TableForThisClass))
+        mapStrategy = ECDbMapStrategy(Strategy::TableForThisClass);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_NoHint))
+        mapStrategy = ECDbMapStrategy(Strategy::NoHint);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_RelationshipSourceTable))
+        mapStrategy = ECDbMapStrategy(Strategy::RelationshipSourceTable);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_RelationshipTargetTable))
+        mapStrategy = ECDbMapStrategy(Strategy::RelationshipTargetTable);
+    else if (0 == BeStringUtilities::Wcsicmp (mapStrategyName, BSCAV_SharedTableForThisClass))
+        mapStrategy = ECDbMapStrategy(Strategy::SharedTableForThisClass);
+    else
+        success = false;
+
+    return success;
+    }
 
 //************************************************************************************
 // RelationshipClassHintReader 

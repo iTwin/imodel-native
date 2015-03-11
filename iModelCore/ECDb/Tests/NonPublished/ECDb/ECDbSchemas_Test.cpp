@@ -2599,7 +2599,7 @@ TEST_F (ECDbSchemaFixture, SchemaDbDefaultMapStrategyHint)
     deleteExistingDgnb (fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db.GetEC ().GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db.GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_FALSE (db.TableExists ("sm_ArrayOfB"));
     EXPECT_FALSE (db.TableExists ("sm_b"));
@@ -2630,7 +2630,7 @@ TEST_F (ECDbSchemaFixture, SchemaDbDefaultMapStrategyHint1)
     deleteExistingDgnb (fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
-    auto status = db.GetEC ().GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    auto status = db.GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
     ASSERT_EQ (SUCCESS, status);
     EXPECT_TRUE (db.TableExists ("sm_ArrayOfB"));
     EXPECT_FALSE (db.TableExists ("sm_b"));

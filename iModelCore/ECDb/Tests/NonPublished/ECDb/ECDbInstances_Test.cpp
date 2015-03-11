@@ -115,9 +115,9 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     auto context = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr schema;
     ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
-    ASSERT_EQ (SUCCESS, db.GetEC ().GetSchemaManager ().ImportECSchemas (context->GetCache ()));
+    ASSERT_EQ (SUCCESS, db.GetSchemaManager ().ImportECSchemas (context->GetCache ()));
 
-    ECClassCP rootClass = db.GetEC ().GetClassLocater ().LocateClass (L"DSCacheSchema", L"Root");
+    ECClassCP rootClass = db.GetClassLocater ().LocateClass (L"DSCacheSchema", L"Root");
     ASSERT_NE (nullptr, rootClass);
 
     // Names

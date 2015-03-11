@@ -81,7 +81,7 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
 
             if (pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::View)
                 {
-                if (donotSkipViews.find (pvm.first->GetName ()) == donotSkipViews.end ())
+                if (donotSkipViews.find (pvm.first->GetName ().c_str()) == donotSkipViews.end ())
                     {
                     continue;
                     }
@@ -89,7 +89,7 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
 
             if (skipOverEmptyTableFlag)
                 {
-                if (pvm.first->IsEmpty (map.GetECDbR (), true))
+                if (!pvm.first->IsValid ())
                     continue;
                 }
 
@@ -283,7 +283,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass (std::
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, DbTableCR table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
+BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQuery, ECDbR ecdb, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, std::vector<std::pair<PropertyMapCP, PropertyMapCP>> const& viewPropMaps, bool forNullView)
     {
     for (auto const& propMapPair : viewPropMaps)
         {
@@ -320,7 +320,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery (NativeSqlBuilder& viewQu
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR map, ECSqlPrepareContext const& prepareContext, DbTableCR table, const std::vector<IClassMap const*>& childClassMap, IClassMap const& baseClassMap, bool isPolymorphic)
+BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, ECDbMapCR map, ECSqlPrepareContext const& prepareContext, ECDbSqlTable const& table, const std::vector<IClassMap const*>& childClassMap, IClassMap const& baseClassMap, bool isPolymorphic)
     {
     PRECONDITION(!childClassMap.empty(), BentleyStatus::ERROR);  
     PRECONDITION(!table.GetColumns().empty (), BentleyStatus::ERROR);  
@@ -613,7 +613,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
 
     if (vmt.empty ())
         {
-        return CreateNullViewForRelationship (viewSql, map, relationMap, relationMap);
+        return CreateNullViewForRelationship (viewSql, map, prepareContext, relationMap, relationMap);
         }
 
     NativeSqlBuilder unionQuery;
@@ -721,7 +721,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
         viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
         }
 
-    AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap.GetRelationshipClass ().GetSource (), relationMap);
+    AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetSource ());
     viewSql.AppendComma (true);
 
     //Target
@@ -742,7 +742,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
         viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
         }
 
-    AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap.GetRelationshipClass ().GetTarget (), relationMap);
+    AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetTarget ());
 
     return SUCCESS;
     }

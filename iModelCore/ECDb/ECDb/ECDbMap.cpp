@@ -855,7 +855,7 @@ size_t ECDbMap::GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECRel
             }
 
         auto classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy ().IsDoNotMap() || classMap->GetMapStrategy ()IsDoNotMapHierarchy())
+        if (classMap->GetMapStrategy ().IsDoNotMap() || classMap->GetMapStrategy ().IsDoNotMapHierarchy())
             continue;
 
         BeAssert (classMap->GetMapStrategy().IsMapped());

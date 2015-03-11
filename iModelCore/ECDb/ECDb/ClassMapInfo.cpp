@@ -220,7 +220,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
             }
         }
 
-    if (m_mapStrategy == MapStrategy::TablePerHierarchy)
+    if (GetMapStrategyR().IsTablePerHierarchy())
         return MapStatus::Success;
 
     // ClassMappingRule: If one or more parent is using TablePerClass, use TablePerClass mapping
@@ -284,7 +284,7 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassMapInfo::InitializeFromClassHint ()
     {
-    ECDbMapStrategy mapStrategy = ECDbMapStrategy::DoNotMap;
+    ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
     auto schemaHint = SchemaHintReader::ReadHint (m_ecClass.GetSchema ());
     if (schemaHint != nullptr)
         {
@@ -298,8 +298,8 @@ void ClassMapInfo::InitializeFromClassHint ()
         {
         if (ClassHintReader::TryReadMapStrategy (mapStrategy, *classHint))
             {
-            m_mapStrategy = mapStrategy;
-            if (m_mapStrategy == MapStrategy::TablePerHierarchy || m_mapStrategy == MapStrategy::SharedTableForThisClass)
+            GetMapStrategyR() = mapStrategy;
+            if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
                 {
                 if (m_isMapToVirtualTable)
                     m_isMapToVirtualTable = false;
