@@ -17,6 +17,8 @@ baseDir	= $(_MakeFilePath)
 
 %include mdl.mki
 
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPackage/
+
 #----------------------------------------------------------------------
 #       Create output directories
 #----------------------------------------------------------------------
@@ -35,7 +37,7 @@ nameToDefine=__REALITYPACKAGE_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-#$(o)PropertiesProvider$(oext) : $(baseDir)PropertiesProvider.cpp $(PublicApiDir)PropertiesProvider.h ${MultiCompileDepends}
+$(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
