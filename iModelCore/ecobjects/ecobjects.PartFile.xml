@@ -136,11 +136,11 @@
     </Part>
 
     <Part Name="RunECObjectsTests" BentleyBuildMakeFile="tests/ECObjectsNativeTest.run.mke" ExcludePlatforms="Android*,Linux*,iOS*">
-
+        <SubPart PartName="Tests" />
     </Part>
 
-    <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="tests\ECObjectsPerformanceTest.run.mke">
-
+    <Part Name="RunECObjectsPerformanceTests" BentleyBuildMakeFile="tests/ECObjectsPerformanceTest.run.mke">
+        <SubPart PartName="ECObjectsPerformanceTests" />
     </Part>
 
   <Product Name="ECObjectsStatic"> <!-- Only here to avoid putting directory list on ECObjectsTested -->

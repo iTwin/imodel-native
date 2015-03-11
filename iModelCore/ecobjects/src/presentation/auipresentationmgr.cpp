@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/auipresentationmgr.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -10,15 +10,6 @@
 #include <EcPresentation/auipresentationapi.h>
 
 USING_NAMESPACE_EC
-
-template <typename ProviderType>
-struct RefPtrComparer
-    {
-    bool operator () (RefCountedPtr<ProviderType> const& rhs, RefCountedPtr<ProviderType> const& lhs)
-        {
-        return rhs.get() <lhs.get();
-        }
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2012
@@ -31,9 +22,9 @@ bool            ECPresentationManager::CheckAndAddProviderFromList (ProviderType
         providerList.push_back(&provider);
         return false;
         }
-    RefCountedPtr <ProviderType> providerPtr (&provider);
-    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
-    if (iter != providerList.end() && iter->get() == &provider)
+    
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
+    if (iter != providerList.end() && *iter == &provider)
         return false;
     providerList.insert (iter, &provider);
     return true;
@@ -48,9 +39,8 @@ void            ECPresentationManager::RemoveProviderFromList (ProviderType & pr
     if (providerList.empty())
         return;
 
-    RefCountedPtr <ProviderType> providerPtr (&provider);
-    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), providerPtr, RefPtrComparer<ProviderType>());
-    if (iter == providerList.end() || iter->get() != &provider)
+    typename ContainerType::iterator iter = std::lower_bound(providerList.begin(), providerList.end(), &provider);
+    if (iter == providerList.end() || *iter != &provider)
         return;
 
     providerList.erase(iter);
@@ -135,8 +125,10 @@ void            ECPresentationManager::RemoveProvider (ECPresentationCommandProv
 ECPresentationCommandProviderCP ECPresentationManager::GetCommandProviderById (size_t providerId)
     {
     for (T_CmdProviderSet::iterator iter = m_cmdProviders.begin(); iter != m_cmdProviders.end(); ++iter)
-        if ((*iter)->GetProviderId () == providerId)
-            return iter->get();
+        {
+        if ((*iter)->GetProviderId() == providerId)
+            return *iter;
+        }
     return NULL;
     }
 
@@ -337,7 +329,7 @@ IAUIDataContextCP ECPresentationManager::GetSelection (void const* eventHub, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool sortECSelectionListenersByPriority (RefCountedPtr<ECSelectionListener> x, RefCountedPtr<ECSelectionListener> y)
+bool sortECSelectionListenersByPriority (ECSelectionListenerP x, ECSelectionListenerP y)
     {
     return (x->GetPriority () > y->GetPriority ());
     }
@@ -347,12 +339,10 @@ bool sortECSelectionListenersByPriority (RefCountedPtr<ECSelectionListener> x, R
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::RegisterSelectionHook (ECSelectionListener& listener)
     {
-    RefCountedPtr <ECSelectionListener> listenerPtr (&listener);
-
-    if (m_selectionListeners.end() != std::find (m_selectionListeners.begin(), m_selectionListeners.end(), listenerPtr))
+    if (m_selectionListeners.end() != std::find(m_selectionListeners.begin(), m_selectionListeners.end(), &listener))
         return; // do not allow duplicates
 
-    m_selectionListeners.push_back (listenerPtr);
+    m_selectionListeners.push_back(&listener);
     std::sort (m_selectionListeners.begin(), m_selectionListeners.end(), sortECSelectionListenersByPriority);
     }
 
@@ -361,9 +351,7 @@ void            ECPresentationManager::RegisterSelectionHook (ECSelectionListene
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECPresentationManager::UnRegisterSelectionHook (ECSelectionListener& listener)
     {
-    RefCountedPtr <ECSelectionListener> listenerPtr (&listener);
-    T_SelectionListeners::iterator iter = std::find (m_selectionListeners.begin(), m_selectionListeners.end(), listenerPtr);
-
+    T_SelectionListeners::iterator iter = std::find(m_selectionListeners.begin(), m_selectionListeners.end(), &listener);
     if (m_selectionListeners.end() == iter)
         return;
 
