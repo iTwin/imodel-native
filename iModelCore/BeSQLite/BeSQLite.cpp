@@ -5040,7 +5040,9 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
     static bool s_done = false;
     RUNONCE_CHECK(s_done,BE_SQLITE_OK);
 
-    sqlite3_config(SQLITE_CONFIG_LOG, logCallback, NULL);
+    if (LogErrors::No != logErrors)
+        sqlite3_config(SQLITE_CONFIG_LOG, logCallback, NULL);
+
     sqlite3_initialize();
     sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
 
