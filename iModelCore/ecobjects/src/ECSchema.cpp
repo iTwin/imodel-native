@@ -679,7 +679,7 @@ ECClassCR sourceClass
 
     if (!sourceClass.GetSchema().IsSupplemented())
         {
-        for(ECPropertyP sourceProperty: sourceClass.GetProperties(false))
+        for(ECPropertyCP sourceProperty: sourceClass.GetProperties(false))
             {
             ECPropertyP destProperty;
             status = targetClass->CopyProperty(destProperty, sourceProperty, true);

@@ -439,7 +439,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
 ECObjectsStatus ECClass::CopyProperty
 (
 ECPropertyP& destProperty, 
-ECPropertyP sourceProperty,
+ECPropertyCP sourceProperty,
 bool copyCustomAttributes
 )
     {
@@ -447,7 +447,7 @@ bool copyCustomAttributes
     if (sourceProperty->GetIsPrimitive())
         {
         PrimitiveECPropertyP destPrimitive;
-        PrimitiveECPropertyP sourcePrimitive = sourceProperty->GetAsPrimitivePropertyP();
+        PrimitiveECPropertyCP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
         destPrimitive = new PrimitiveECProperty(*this);
         destPrimitive->SetType(sourcePrimitive->GetType());
 
@@ -456,7 +456,7 @@ bool copyCustomAttributes
     else if (sourceProperty->GetIsArray())
         {
         ArrayECPropertyP destArray;
-        ArrayECPropertyP sourceArray = sourceProperty->GetAsArrayPropertyP();
+        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
         destArray = new ArrayECProperty (*this);
         if (NULL != sourceArray->GetStructElementType())
             {
@@ -477,7 +477,7 @@ bool copyCustomAttributes
     else if (sourceProperty->GetIsStruct())
         {
         StructECPropertyP destStruct;
-        StructECPropertyP sourceStruct = sourceProperty->GetAsStructPropertyP();
+        StructECPropertyCP sourceStruct = sourceProperty->GetAsStructProperty();
         destStruct = new StructECProperty (*this);
         ECClassCR sourceType = sourceStruct->GetType();
         ECClassP targetType = schema->GetClassP(sourceType.GetName().c_str());
@@ -510,7 +510,7 @@ bool copyCustomAttributes
 ECObjectsStatus ECClass::CopyPropertyForSupplementation
 (
 ECPropertyP& destProperty, 
-ECPropertyP sourceProperty, 
+ECPropertyCP sourceProperty, 
 bool copyCustomAttributes
 )
     {

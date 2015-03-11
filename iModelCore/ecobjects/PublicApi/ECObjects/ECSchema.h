@@ -962,7 +962,7 @@ private:
     void            RemoveDerivedClasses ();
     void            RemoveBaseClasses ();
     static void     SetErrorHandling (bool doAssert);
-    ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
+    ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
 
 protected:
@@ -1152,6 +1152,10 @@ public:
     //! Get the property that stores the instance label for the class.
     //! @return A pointer to ECN::ECProperty if the instance label has been specified; otherwise, NULL
     ECOBJECTS_EXPORT ECPropertyP GetInstanceLabelProperty() const;
+
+    //__PUBLISH_SECTION_END__
+    ECOBJECTS_EXPORT ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
+    //__PUBLISH_SECTION_START__
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
