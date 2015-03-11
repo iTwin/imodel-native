@@ -20,9 +20,12 @@ BEGIN_BENTLEY_NAMESPACE
 // Array of void* is used to force pointer type alignment
 // Must avoid including std headers here for CLR reasons
 //=======================================================================================
-#if defined (_WIN32) || defined (ANDROID)
+#if defined (_WIN32)
     #define BEMUTEX_DATA_ARRAY_LENGTH 1
     #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 2
+#elif defined (ANDROID)
+    #define BEMUTEX_DATA_ARRAY_LENGTH (4 / sizeof(void*))
+    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH (12 / sizeof(void*))
 #elif defined(__linux) && defined (__LP64__)
     #define BEMUTEX_DATA_ARRAY_LENGTH (40 /*__SIZEOF_PTHREAD_MUTEX_T*/ / sizeof(void*))
     #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH ((48 /*__SIZEOF_PTHREAD_COND_T*/ + 40 /*__SIZEOF_PTHREAD_MUTEX_T*/) / sizeof(void*))
