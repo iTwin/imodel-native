@@ -1253,7 +1253,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, 
         }
 
     ctx.GetSqlBuilderR ().Append (selectClauseNativeSqlSnippets);
-
+   
     return ResolveChildStatementsBinding(ctx);
     }
 

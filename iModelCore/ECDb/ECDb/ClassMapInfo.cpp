@@ -190,16 +190,13 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
     bvector<IClassMap const*> tphMaps; // TablePerHierarchy or InParentTable have the highest priority, but there can be only one
     bvector<IClassMap const*> tpcMaps; // TablePerClass have second priority
     bvector<IClassMap const*> nmhMaps; // DoNotMapHierarchy has priority only over NoHint or DoNotMap
+
     bool areBaseClassesMapped = GatherBaseClassMaps (baseClassMaps, tphMaps, tpcMaps, nmhMaps, m_ecClass);
     if (!areBaseClassesMapped)
         return MapStatus::BaseClassesNotMapped;
 
-    // ClassMappingRule: No more than one ancestor of a class can use TablePerHierarchy strategy. Mapping fails if this is violated
-    if (tphMaps.size () > 1)
-        return ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (m_ecClass, tphMaps);
-
     // ClassMappingRule: If exactly 1 ancestor ECClass is using TablePerHierarchy, use InParentTable mapping
-    if (tphMaps.size() == 1)
+    if (tphMaps.size() > 0)
         {
         m_parentClassMap = tphMaps[0];
         auto enableColumnReuse = m_parentClassMap->GetMapStrategy().IsReuseColumns();
@@ -209,7 +206,23 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
             {
             GetMapStrategyR().AddOption(Strategy::WithDisableReuseColumnsForThisClass);
             }
+
+        if (tphMaps.size () > 1)
+            {
+            WString msg = L"Found more then one base classes with 'TablePerHierarchy' for [";
+            msg.append (GetECClass ().GetFullName ()).append (L"] .BaseClasses with TablePerHierarchy are ");
+
+            for (auto const& tph : tphMaps)
+                msg.append (L"[").append (tph->GetClass ().GetFullName ()).append (L"]").append (L" ");
+
+            msg.append (L". This has been resolved by selecting first baseClass [").append (m_parentClassMap->GetClass ().GetFullName ()).append (L"] as parent class for current class. Please Fix this issue by apply property hint and make sure that no derived class inherit from more then two baseClasses that has MapStrategy = TablePerHierarchy");
+            LOG.warning (msg.c_str ());
+            }
         }
+
+    if (m_mapStrategy == MapStrategy::TablePerHierarchy)
+        return MapStatus::Success;
+
     // ClassMappingRule: If one or more parent is using TablePerClass, use TablePerClass mapping
     else if (tpcMaps.size () > 0)
         GetMapStrategyR ().SetTablePerClass (false);
@@ -271,23 +284,38 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassMapInfo::InitializeFromClassHint ()
     {
+    ECDbMapStrategy mapStrategy = ECDbMapStrategy::DoNotMap;
+    auto schemaHint = SchemaHintReader::ReadHint (m_ecClass.GetSchema ());
+    if (schemaHint != nullptr)
+        {
+        if (SchemaHintReader::TryReadDefaultClassMapStrategy (mapStrategy, *schemaHint))
+            GetMapStrategyR() = mapStrategy;
+
+        }
+
     auto classHint = ClassHintReader::ReadHint (m_ecClass);
-    if (classHint == nullptr)
-        return;
+    if (classHint != nullptr)
+        {
+        if (ClassHintReader::TryReadMapStrategy (mapStrategy, *classHint))
+            {
+            m_mapStrategy = mapStrategy;
+            if (m_mapStrategy == MapStrategy::TablePerHierarchy || m_mapStrategy == MapStrategy::SharedTableForThisClass)
+                {
+                if (m_isMapToVirtualTable)
+                    m_isMapToVirtualTable = false;
+                }
+            }
 
-    ECDbMapStrategy mapStrategy;
-    if (ClassHintReader::TryReadMapStrategy (mapStrategy, *classHint))
-        GetMapStrategyR() = mapStrategy;
+        Utf8String tableName;
+        if (ClassHintReader::TryReadTableName (tableName, *classHint))
+            m_tableName = tableName;
 
-    Utf8String tableName;
-    if (ClassHintReader::TryReadTableName (tableName, *classHint))
-        m_tableName = tableName;
+        Utf8String ecInstanceIdColumnName;
+        if (ClassHintReader::TryReadECInstanceIdColumnName (ecInstanceIdColumnName, *classHint))
+            m_ecInstanceIdColumnName = ecInstanceIdColumnName;
 
-    Utf8String ecInstanceIdColumnName;
-    if (ClassHintReader::TryReadECInstanceIdColumnName (ecInstanceIdColumnName, *classHint))
-        m_ecInstanceIdColumnName = ecInstanceIdColumnName;
-
-    ClassHintReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
+        ClassHintReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
+        }
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,78 @@ struct ECSqlStatementBase;
 struct ECSqlPrepareContext
     {
 public:
+    //=======================================================================================
+    // @bsiclass                                                 Affan.Khan    02/2015
+    //+===============+===============+===============+===============+===============+======
+    struct SelectionOptions
+        {
+        private:            
+            static bool IsSystemProperty (WCharCP accessString)
+                {
+                static std::set<WCharCP, CompareIWChar> s_systemProperties
+                    {
+                    ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W,
+                    ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W
+                };
+                return s_systemProperties.find (accessString) != s_systemProperties.end ();
+                }
+            static const std::vector<WString> Split (WCharCP accessString, WChar seperator)
+                {
+                WString s = accessString;
+                std::vector<WString> output;
+                std::string::size_type prev_pos = 0, pos = 0;
+                while ((pos = s.find (seperator, pos)) != WString::npos)
+                    {
+                    output.push_back (s.substr (prev_pos, pos - prev_pos));
+                    prev_pos = ++pos;
+                    }
+
+                output.push_back (s.substr (prev_pos, pos - prev_pos)); // Last word
+                return output;
+                }
+        private:
+            std::set<WString> m_selection;
+        public:
+             SelectionOptions ()
+                {
+                }
+
+            ~SelectionOptions ()
+                {}
+
+
+            void AddProperty (WCharCP accessString)
+                {
+                WString path;
+                for (auto const& subPath : Split (accessString, L'.'))
+                    {
+                    if (path.empty ())
+                        path.assign (subPath);
+                    else
+                        path.append (L".").append (subPath);
+
+                    m_selection.insert (path);
+                    }
+                }
+            bool IsSelected (WCharCP accessString) const
+                {
+
+                if (m_selection.find (accessString) != m_selection.end ())
+                        return true;
+
+                return SelectionOptions::IsSystemProperty (accessString);
+                }
+            bool IsConstantExpression () const
+                {
+                return m_selection.empty ();
+                }
+        };
     //=======================================================================================
     // @bsiclass                                                 Affan.Khan    06/2013
     //+===============+===============+===============+===============+===============+======
@@ -62,7 +134,7 @@ public:
         size_t Depth () const;
         ExpScope const& Current () const;
         };
-   
+ 
 private:
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlPrepareContext const* m_parentCtx;
@@ -72,7 +144,7 @@ private:
     bool m_nativeStatementIsNoop;
     bool m_nativeNothingToUpdate;
     ExpScopeStack m_scopes;
-
+    SelectionOptions m_selectionOptions;
     //SELECT only
     int m_nativeSqlSelectClauseColumnCount;
     static bool FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp);
@@ -90,6 +162,8 @@ public:
     ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx;}
     ArrayECPropertyCP GetParentArrayProperty () const { return m_parentArrayProperty;}
     ECSqlColumnInfo const* GetParentColumnInfo () const { return m_parentColumnInfo;}
+    SelectionOptions const& GetSelectionOptions () const { return m_selectionOptions; }
+    SelectionOptions& GetSelectionOptionsR () { return m_selectionOptions; }
 
     ECSqlStatementBase& GetECSqlStatementR () const;
 

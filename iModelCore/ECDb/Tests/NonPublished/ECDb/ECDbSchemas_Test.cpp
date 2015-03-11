@@ -2562,7 +2562,7 @@ TEST_F(ECDbSchemaFixture,ecdbClassHintDoNotMap)
 TEST_F(ECDbSchemaFixture,ecDbClassHintTablePerHierarchy)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 5);
+    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 11);
     ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
     ECClassCP testClass = bscaSchema->GetClassCP (L"ECDbClassHint");
@@ -2581,6 +2581,64 @@ TEST_F(ECDbSchemaFixture,ecDbClassHintTablePerHierarchy)
     EXPECT_TRUE(db.TableExists("sm_a"));
     EXPECT_TRUE(db.TableExists("sm_ArrayOfC"));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Adeel.Shoukat                        04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDbSchemaFixture, SchemaDbDefaultMapStrategyHint)
+    {
+    ECDbTestUtility::ReadECSchemaFromDisk (MappingSchema, MappingSchemaContext, L"SchemaMapping.01.00.ecschema.xml");
+    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 11);
+    ECSchemaPtr bscaSchema = MappingSchemaContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
+    ECClassCP testClass = bscaSchema->GetClassCP (L"ECDbSchemaHint");
+    IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ecInctance->SetValue (L"DefaultClassMapStrategy", ECValue (L"DoNotMap"));
+    MappingSchema->SetCustomAttribute (*ecInctance);
+    WCharCP fileName = L"TablePerHierarchyMapClassMapping.ecdb";
+    deleteExistingDgnb (fileName);
+    DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
+    auto status = db.GetEC ().GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    ASSERT_EQ (SUCCESS, status);
+    EXPECT_FALSE (db.TableExists ("sm_ArrayOfB"));
+    EXPECT_FALSE (db.TableExists ("sm_b"));
+    EXPECT_FALSE (db.TableExists ("sm_ArrayOfA"));
+    EXPECT_FALSE (db.TableExists ("sm_a"));
+    EXPECT_FALSE (db.TableExists ("sm_ArrayOfC"));
+    }
+/*---------------------------------------------------------------------------------**//**
+                                                                                      * @bsimethod                                   Adeel.Shoukat                        04/13
+                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDbSchemaFixture, SchemaDbDefaultMapStrategyHint1)
+    {
+    ECDbTestUtility::ReadECSchemaFromDisk (MappingSchema, MappingSchemaContext, L"SchemaMapping.01.00.ecschema.xml");
+    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 11);
+    ECSchemaPtr bscaSchema = MappingSchemaContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
+    ECClassCP testClass = bscaSchema->GetClassCP (L"ECDbSchemaHint");
+    IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ecInctance->SetValue (L"DefaultClassMapStrategy", ECValue (L"DoNotMap"));
+    MappingSchema->SetCustomAttribute (*ecInctance);
+
+    ECClassCP testClass1 = bscaSchema->GetClassCP (L"ECDbClassHint");
+    IECInstancePtr ecInctance1 = testClass1->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ecInctance1->SetValue (L"MapStrategy", ECValue (L"TableForThisClass"));
+    MappingSchema->GetClassP (L"B")->SetCustomAttribute (*ecInctance1);
+
+    WCharCP fileName = L"TablePerHierarchyMapClassMapping1.ecdb";
+    deleteExistingDgnb (fileName);
+    DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
+    auto status = db.GetEC ().GetSchemaManager ().ImportECSchemas (MappingSchemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false));
+    ASSERT_EQ (SUCCESS, status);
+    EXPECT_TRUE (db.TableExists ("sm_ArrayOfB"));
+    EXPECT_FALSE (db.TableExists ("sm_b"));
+    EXPECT_FALSE (db.TableExists ("sm_ArrayOfA"));
+    EXPECT_FALSE (db.TableExists ("sm_a"));
+    EXPECT_FALSE (db.TableExists ("sm_ArrayOfC"));
+    }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2588,7 +2646,7 @@ TEST_F(ECDbSchemaFixture,ecDbClassHintDoNotMapHierarchy)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 5);
+    SchemaKey schemaKey (L"Bentley_Standard_CustomAttributes", 1, 11);
     ECSchemaPtr bscaSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE (bscaSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName ().c_str () << "' not found.";
     ECClassCP testClass = bscaSchema->GetClassCP (L"ECDbClassHint");

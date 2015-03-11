@@ -96,6 +96,56 @@ TEST(ECInstanceIdHelper, ECInstanceIdInstanceIdConversion)
     BeTest::SetFailOnAssert (true);
     }   
 
+TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
+    {
+    ECDbTestProject::Initialize ();
+
+    BeFileName schemaDir;
+    BeTest::GetHost ().GetDocumentsRoot (schemaDir);
+    schemaDir.AppendToPath (L"DgnDb");
+    schemaDir.AppendToPath (L"ECDb");
+    schemaDir.AppendToPath (L"Schemas");
+    BeFileName dsCacheSchema1_4 (nullptr, schemaDir.GetName (), L"DSCacheSchema.01.04.ecschema.xml", nullptr);
+
+    // Setup ECDb
+    ECDb db;
+    ASSERT_EQ (BE_SQLITE_OK, db.CreateNewDb (":memory:"));
+
+    // Setup Schema
+    auto context = ECSchemaReadContext::CreateContext ();
+    ECSchemaPtr schema;
+    ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
+    ASSERT_EQ (SUCCESS, db.GetEC ().GetSchemaManager ().ImportECSchemas (context->GetCache ()));
+
+    ECClassCP rootClass = db.GetEC ().GetClassLocater ().LocateClass (L"DSCacheSchema", L"Root");
+    ASSERT_NE (nullptr, rootClass);
+
+    // Names
+    Utf8String rootName = "Foo";
+
+    // Test quety for same instance
+    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (db, ecsql.c_str ()));
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ (ECSqlStepStatus::Done, statement.Step ());
+
+    // Insert one instnace
+    Json::Value rootInstance;
+    rootInstance["Name"] = rootName;
+    rootInstance["Persistence"] = 0;
+
+    JsonInserter inserter (db, *rootClass);
+    ASSERT_EQ (SUCCESS, inserter.Insert (rootInstance));
+
+    // Try again
+    statement.Reset ();
+    statement.ClearBindings ();
+    ASSERT_EQ (ECSqlStatus::Success, statement.BindText (1, rootName.c_str (), IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ (ECSqlStepStatus::HasRow, statement.Step ());
+    EXPECT_EQ (ECInstanceId (1), statement.GetValueId <ECInstanceId> (0));
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         04/12
 +---------------+---------------+---------------+---------------+---------------+------*/

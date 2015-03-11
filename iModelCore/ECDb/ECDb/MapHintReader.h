@@ -23,6 +23,7 @@ private:
 public:
     static ECN::IECInstancePtr ReadHint (ECN::ECSchemaCR ecschema);
     static bool TryReadTablePrefix (Utf8String& tablePrefix, ECN::IECInstanceCR hint);
+    static bool TryReadDefaultClassMapStrategy (MapStrategy& mapStrategy, ECN::IECInstanceCR hint);  
     };
 
 
@@ -36,6 +37,7 @@ private:
     ~ClassHintReader ();
 
 public:
+    static bool TryConvertToMapStrategy (ECDbMapStrategy& mapStrategy, WCharCP mapStrategyName);
     static ECN::IECInstancePtr ReadHint (ECN::ECClassCR ecClass);
     static bool TryReadMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR classHint);
     static bool TryReadTableName (Utf8String& tableName, ECN::IECInstanceCR classHint);

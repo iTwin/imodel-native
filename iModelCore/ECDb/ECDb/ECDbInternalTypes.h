@@ -228,6 +228,8 @@ enum ECContainerType
 #define BSCAC_ECDbClassHasCurrentTimeStamp     L"ClassHasCurrentTimeStampProperty"
 #define BSCAC_ECDbSchemaHint            L"ECDbSchemaHint"
 #define BSCAP_TablePrefix               L"TablePrefix"
+#define BSCAP_DefaultClassMapStrategy   L"DefaultClassMapStrategy"
+
 #define BSCAP_MapStrategy               L"MapStrategy"
 #define BSCAP_TableName                 L"TableName"
 #define BSCAP_ECInstanceIdColumn        L"ECIdColumn"
