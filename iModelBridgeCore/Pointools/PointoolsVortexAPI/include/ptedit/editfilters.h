@@ -201,7 +201,7 @@ namespace ptedit
 			if (g_activeLayers)
 			{
 				UpdateLayerVisitor v;
-				TraverseScene::withVisitor(&v);
+				TraverseScene::withVisitor(&v, false); // don't use the scope here, it is possible to unhide a layer in a hidden cloud/scene, the scope prevents this working
 
 				// make sure hidden and layer flags propogate
 				TraverseScene::consolidateFlags();

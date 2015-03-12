@@ -393,6 +393,10 @@ void EditTool::command( int cmdId )
 		case CmdSaveLayersFile:
 			saveLayerChannels();
 			break;
+
+		case CmdCheckPointLayers:
+			doesLayerHavePoints();
+			break;
 	}
 }
 //-----------------------------------------------------------------------------
@@ -954,6 +958,16 @@ void	EditTool::drawPostDisplay()
 	}
 }
 //-----------------------------------------------------------------------------
+void	EditTool::doesLayerHavePoints()
+//-----------------------------------------------------------------------------
+{
+	//simple test to list layers with poitns
+	for (int i=0; i<PT_EDIT_MAX_LAYERS; i++)
+	{
+		std::cout << "Layer " << i << ": "<< (ptDoesLayerHavePoints(i) ? "Y" : "-") << std::endl;
+	}	
+}
+//-----------------------------------------------------------------------------
 void EditTool::buildUserInterface(GLUI_Node *parent)
 //-----------------------------------------------------------------------------
 {
@@ -1069,7 +1083,10 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		btn->set_back_col( &layerButtonCol );
 		col = new GLUI_Column( selectCopy, false );
 		btn = new GLUI_Button( selectCopy, "Move", CmdMovePoints, &Tool::dispatchCmd );
-		btn->set_back_col( &layerButtonCol );	
+		btn->set_back_col( &layerButtonCol );
+
+		btn = new GLUI_Button( selectCopy, "Occupancy", CmdCheckPointLayers, &Tool::dispatchCmd );
+		btn->set_back_col( &layerButtonCol );
 
 		/* Scope */ 
 		GLUI_Panel *selectScope = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);

@@ -20,7 +20,8 @@ class SnapTest : public Tool
 public:
 	enum
 	{
-		CmdMeasurePnt = 700
+		CmdMeasurePnt		= 700,
+		CmdMeasurePntScene	= 701
 	};
 
 	SnapTest();
@@ -43,9 +44,10 @@ private:
 		PointRayIntersection = 3
 	};
 
-	bool			findSnapPoint(int mx, int my);
+	bool			findSnapPoint(int mx, int my, bool test_scene_only = false );
 
 	bool			m_active;
+	int				m_cmd;
 	std::string		m_outputString;
 	GLUI_TextBox	*m_output;
 	double			m_lastSnapPoint[3];

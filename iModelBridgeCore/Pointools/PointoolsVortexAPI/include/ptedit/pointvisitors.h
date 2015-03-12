@@ -342,6 +342,32 @@ namespace ptedit
 		pt::BoundingBoxD	_bounds[EDT_MAX_THREADS];
 	};
 	/* ------------------------------------------------------------------------ */ 
+	/*  Check for occupancy						                                */ 
+	/* ------------------------------------------------------------------------ */ 
+	struct DoesLayerHavePointsVisitor : public pcloud::Node::Visitor
+	{
+		DoesLayerHavePointsVisitor( ubyte layerMask, bool approx ) 
+		{ 
+			_hasPnt = false; _approx = approx; _layerMask = layerMask; 
+		}
+
+		bool visitNode(const pcloud::Node *n);
+
+		inline void point( const pt::vector3d &p, uint index, ubyte &f) {  mt_point(0, p, index, f); }	
+
+		inline void mt_point(int t, const pt::vector3d &p, uint index, ubyte &f) 
+		{ 
+			if (f & _layerMask)
+				_hasPnt = true;
+		}
+		bool hasPoints() const	{ return _hasPnt; }
+		void approx( bool a )	{ _approx = a; }
+
+		bool				_approx;
+		ubyte				_layerMask;
+		bool				_hasPnt;
+	};
+	/* ------------------------------------------------------------------------ */ 
 	/*  Count Selected							                                */ 
 	/* ------------------------------------------------------------------------ */ 
 	struct GetSelectedVisitor : public pcloud::Node::Visitor

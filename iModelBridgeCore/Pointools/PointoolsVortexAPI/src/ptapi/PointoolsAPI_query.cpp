@@ -3718,6 +3718,7 @@ PTbool PTAPI ptIntersectRay(PThandle scene, const PTdouble *origin,
 {
 	pt::BoundingBoxD bb;
 	int numScenes = thePointsScene().size();
+	double mindist = RAY_LARGE_DISTANCE;
 
 	for (int i=0; i<(scene ? 1 : numScenes); i++)
 	{
@@ -3761,7 +3762,7 @@ PTbool PTAPI ptIntersectRay(PThandle scene, const PTdouble *origin,
 			//to do: a node based approach for faster results
 			//thePointsScene().visitVoxels( &raydistVisitor );
 
-			if (raydistVisitor.mindist < RAY_LARGE_DISTANCE)
+			if (raydistVisitor.mindist < mindist)
 			{
 				raydistVisitor.closestPnt.get(pnt);
 				pnt[0] *= g_unitScale;
@@ -3770,11 +3771,11 @@ PTbool PTAPI ptIntersectRay(PThandle scene, const PTdouble *origin,
 				g_rayIntData.voxelIndexInCloud = raydistVisitor.closestVoxel->indexInCloud();
 				g_rayIntData.cloudGUID = raydistVisitor.closestVoxel->pointCloud()->guid();
 
-				return true;
+				mindist = raydistVisitor.mindist;
 			}
 		}
 	}
-	return false;
+	return mindist == RAY_LARGE_DISTANCE ? false : true;
 }
 //-----------------------------------------------------------------------------
 // Intersect Ray

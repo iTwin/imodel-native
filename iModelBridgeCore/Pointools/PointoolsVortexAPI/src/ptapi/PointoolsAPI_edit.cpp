@@ -496,7 +496,7 @@ PTbool PTAPI ptIsLayerShown( PTuint layer )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptDoesLayerHavePoints( PTuint layer )
 {
-	return true;
+	return PointEditManager::instance()->doesLayerHavePoints( layer );
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptClearPointsFromLayer( PTuint layer )

@@ -12,7 +12,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include "SnapTest.h"
 
 //-----------------------------------------------------------------------------
-SnapTest::SnapTest() : Tool(CmdMeasurePnt, CmdMeasurePnt)
+SnapTest::SnapTest() : Tool(CmdMeasurePnt, CmdMeasurePntScene)
 //-----------------------------------------------------------------------------
 {
 	m_output = 0;
@@ -30,6 +30,7 @@ void SnapTest::buildUserInterface( GLUI_Node *parent )
 	spacer->set_w( PANEL_WIDTH );
 
 	new GLUI_Button( rolloutTests, "Measure Pnt", CmdMeasurePnt, &Tool::dispatchCmd );
+	new GLUI_Button( rolloutTests, "Measure Pnt Scene", CmdMeasurePntScene, &Tool::dispatchCmd );
 
 	spacer = new GLUI_StaticText( rolloutTests, "" );
 	spacer->set_w( PANEL_WIDTH );
@@ -45,8 +46,11 @@ void SnapTest::buildUserInterface( GLUI_Node *parent )
 void SnapTest::command( int cmdId )
 //-----------------------------------------------------------------------------
 {
-	if (cmdId == CmdMeasurePnt)
+	if (cmdId == CmdMeasurePnt || cmdId == CmdMeasurePntScene)
+	{
 		m_active = true;
+		m_cmd = cmdId;
+	}
 }
 //-----------------------------------------------------------------------------
 const double * SnapTest::lastSnapPoint() const
@@ -65,8 +69,12 @@ bool SnapTest::onMouseButtonDown( int button, int x, int y )
 		switch (button)
 		{
 		case MouseLeftButton:
-			findSnapPoint(x,y);
+			{
+			bool scene_only = m_cmd == CmdMeasurePntScene ? true : false;
+
+			findSnapPoint( x,y, scene_only );
 			Tool::viewUpdate();
+			}
 			return true;
 			break;
 
@@ -79,7 +87,7 @@ bool SnapTest::onMouseButtonDown( int button, int x, int y )
 	return false;
 }
 //-----------------------------------------------------------------------------
-bool SnapTest::findSnapPoint( int mx, int my )
+bool SnapTest::findSnapPoint( int mx, int my, bool test_scene_only )
 //-----------------------------------------------------------------------------
 {
 	pt::PerformanceTimer t0;
@@ -87,8 +95,18 @@ bool SnapTest::findSnapPoint( int mx, int my )
 
 	PTdouble pnt[3];
 
+	// test on second scene on
+	PThandle scene = 0;
+	PThandle handles[32];
+	if (test_scene_only)
+	{
+		int numscenes = ptGetSceneHandles(handles);
+		if (numscenes > 1)
+			scene = handles[1];
+	}
+
 	// find nearest screen point based on reading GL buffer and searching for point
-	int res = ptFindNearestScreenPoint( 0, mx, my, pnt );
+	int res = ptFindNearestScreenPoint( scene, mx, my, pnt );
 
 	if (res >=0 )	
 	{
@@ -109,7 +127,7 @@ bool SnapTest::findSnapPoint( int mx, int my )
 		ptSetIntersectionRadius( 0.005f );
 		
 		/* do intersection test */ 
-		bool didIntersect = ptIntersectRay(0, camera, dir, pnt, PT_QUERY_DENSITY_VIEW, 1);
+		bool didIntersect = ptIntersectRay( scene, camera, dir, pnt, PT_QUERY_DENSITY_VIEW, 1);
 
 		// get timing information
 		t0.end();

@@ -416,6 +416,30 @@ bool	PointEditManager::getLayerBoundingBox( int layerIndex, pt::BoundingBoxD &bb
 }
 /*****************************************************************************/
 /**
+* @brief		Performs the task of updating the node level layer states
+* @return void
+*/
+/*****************************************************************************/
+bool	PointEditManager::doesLayerHavePoints( int layerIndex ) const
+{
+	if (layerIndex < 0) return false;
+
+	ubyte layerMask = 1 << layerIndex;
+
+	// first do fast check
+	DoesLayerHavePointsVisitor checkForPoints( layerMask, true );
+	TraverseScene::withVisitor(&checkForPoints);
+
+	if (checkForPoints.hasPoints()) return true;
+	
+	// then slow
+	checkForPoints.approx( false );
+	TraverseScene::withVisitor(&checkForPoints);
+
+	return checkForPoints.hasPoints();
+}
+/*****************************************************************************/
+/**
 * @brief
 * @param layer
 * @param lock

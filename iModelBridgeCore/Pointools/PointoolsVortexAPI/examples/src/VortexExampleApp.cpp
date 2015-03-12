@@ -54,6 +54,7 @@ UI::UI()
 	ballView = 0;
 	panelSide = 0;
 	mainWindow = 0;
+	output=0;
 }
 //-----------------------------------------------------------------------------
 void UI::addStat(const std::string &stat)

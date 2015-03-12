@@ -58,6 +58,7 @@ public:
 	int		getCurrentLayer() const;
 	bool	isLayerLocked( int layer ) const;
 	bool	isLayerVisible( int layer ) const;
+	bool	doesLayerHavePoints( int layer ) const;
 
 	__int64 getLayerState() const;
 	void	setLayerState(__int64 state);

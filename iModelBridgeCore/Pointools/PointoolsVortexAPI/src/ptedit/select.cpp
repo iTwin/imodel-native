@@ -620,6 +620,45 @@ ComputeLayerBoundsVisitor::ComputeLayerBoundsVisitor( ubyte layerMask, bool appr
 //
 // compute a layers bounding box
 //
+bool DoesLayerHavePointsVisitor::visitNode(const pcloud::Node *n)
+{
+	if (n->layers(0) & _layerMask || n->layers(1) & _layerMask)
+	{
+		// compute down to leaf
+		if (n->isLeaf())
+		{
+			pcloud::Node *node = const_cast<pcloud::Node*>(n);
+			pcloud::Voxel *v = static_cast<pcloud::Voxel*>(node);
+			
+			if (v->channel(pcloud::PCloud_Filter) && !_approx)
+			{
+				boost::try_mutex::scoped_lock lock(v->mutex());
+
+				pcloud::Voxel::CoordinateSpaceTransform pst(const_cast<pcloud::PointCloud*>(v->pointCloud()), pt::ProjectSpace);
+				VoxFiltering::iteratePoints( v, *this, pst );
+
+				// return when first point in layer found
+				if (_hasPnt) 
+					return false;
+			}
+			else 
+			{
+				if ( n->layers(0) & _layerMask)
+					_hasPnt = true;
+				return false; // no need to continue;
+			}
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+	return false;
+}
+//
+// compute a layers bounding box
+//
 bool ComputeLayerBoundsVisitor::visitNode(const pcloud::Node *n)
 {
 	if (n->layers(0) & _layerMask || n->layers(1) & _layerMask)
