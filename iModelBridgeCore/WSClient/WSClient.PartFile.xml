@@ -24,12 +24,14 @@
     </Part>
 
     <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="Client/Client.mke">
+        <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
         <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
     </Part>
 
     <Part Name="WebServicesClient-Bindings" ExcludePlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(shlibext)</Assemblies>
@@ -37,6 +39,7 @@
     </Part>
 
     <Part Name="WebServicesClient-Bindings-Android" OnlyPlatforms="Android*">
+        <SubPart PartName="WebServicesClient-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
