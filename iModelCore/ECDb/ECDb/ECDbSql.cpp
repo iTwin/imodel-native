@@ -2085,7 +2085,7 @@ BentleyStatus DDLGenerator::AddColumns (ECDbSqlTable const& table, std::vector<U
 
 Utf8String DDLGenerator::GetCreateTriggerDDL(ECDbSqlTrigger const& trigger)
     {
-    //CREATE TRIGGER lastModElm AFTER UPDATE ON  dgn_Element WHEN old.LastMod = new.LastMod BEGIN UPDATE dgn_Element SET LastMod = julianday('now') WHERE Id = new.Id; END
+    // CREATE TRIGGER triggerName AFTER UPDATE ON tableName WHEN old.LastMod = new.LastMod BEGIN UPDATE tableName SET LastMod = julianday('now') WHERE Id = new.Id; END
 
     Utf8String sql = "";
     switch (trigger.GetType())
