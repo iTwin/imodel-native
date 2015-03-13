@@ -18,6 +18,7 @@
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke" ApiNumber="G">
+        <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeSQLite"        PartFile="BeSQLite"  Repository="BESQLite"/>
         <SubPart PartName="ECObjectsNative" PartFile="ecobjects" Repository="ecobjects" />
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="geomlibs" />
@@ -35,7 +36,7 @@
 
    
     <Part Name="ECDbPrepareDocGeneration" BentleyBuildMakeFile="ECDb/docs/preparedocgeneration.mke">
-        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
         <SubPart PartName="ECDbExtractCodeSamples" />
         <SubPart PartName="ECDbBuildCodeSamples" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
