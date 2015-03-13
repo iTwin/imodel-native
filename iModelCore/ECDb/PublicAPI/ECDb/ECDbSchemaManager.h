@@ -65,7 +65,33 @@ typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 //! Clients can import @ref ECN::ECSchema "ECSchemas" into or retrieve @ref ECN::ECSchema "ECSchemas" or 
 //! individual @ref ECN::ECClass "ECClasses" from the %ECDb file using the %ECDbSchemaManager.
 //!
-//! %ECDbSchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
+//! ###Incremental Loading of ECClasses
+//! ECDbSchemaManager supports incremental loading of ECClasses. So unlike with ECObjects calling
+//! ECDbSchemaManager::GetECClass doesn't load the rest of the ECN::ECSchema. 
+//! When incrementally loading ECClasses you shouldn't use ECN::ECSchema::GetECClass because 
+//! the ECN::ECSchema might not be fully populated yet. Always use the respective ECDbSchemaManager
+//! methods instead.
+//!
+//! ####Details
+//! 
+//! (which you don't need to be aware of if you consistently use the ECDbSchemaManager API to get ECClasses)
+//!
+//! * ECDbSchemaManager::GetECSchema with <c>ensureAllClassesLoaded=false</c> 
+//!     * Returns the ECSchema with only those ECClasses that have been loaded previously already. If
+//!       no ECClasses have been loaded previously, the returned ECSchema is empty.
+//! * ECDbSchemaManager::GetECClass
+//!     * loads the specified ECClass
+//!     * loads all base classes of the specified ECClass
+//!     * loads all struct classes used by the specified ECClass
+//!     * loads all CustomAttribute classes used by the specified ECClass
+//!     * does @b not load derived classes of the specified ECClass
+//! * ECDbSchemaManager::GetECClass for a relationship class
+//!     * same as for regular classes
+//!     * loads the ECClasses specified in the constraints of the relationship class
+//!       (but @b not their derived ECClasses)
+//!        
+//! ### %ECDbSchemaManager is a Schema Locater
+//! ECDbSchemaManager also implements ECN::IECSchemaLocater so it can be used to locate ECSchemas
 //! already stored in the %ECDb file when reading an ECSchema from disk, for example:
 //! 
 //!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext ();
