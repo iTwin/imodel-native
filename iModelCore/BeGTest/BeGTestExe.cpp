@@ -192,7 +192,9 @@ void initializeSqlangLocalization(BeGTestHost* hostP)
     hostP->_GetDgnPlatformAssetsDirectory(appDir);
     appDir.AppendToPath(L"sqlang");
     appDir.AppendToPath(L"BeGTest_en-US.sqlang.db3");
-    BeSQLite::L10N::Initialize(appDir);
+    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
+    if(appDir.DoesPathExist())
+        BeSQLite::L10N::Initialize(appDir);
     }
 
 /*---------------------------------------------------------------------------------**//**
