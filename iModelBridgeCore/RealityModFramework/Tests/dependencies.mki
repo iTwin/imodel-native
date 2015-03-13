@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Tests/dependencies.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#BEGTEST_LIBRARIES + $(BuildContext)SubParts/StaticLibs/BeXml.lib \
+#                    $(BuildContext)SubParts/StaticLibs/BeLibxml2.lib
+                    
+# Additional assets needed by DgnDb unit tests
+#BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
+#BEGTEST_ASSETS     + $(ProductRoot)BeTestDocuments/
+
+# Required xliff files
+BEGTEST_XLIFFS     + $[@wildcard $(BuildContext)SubParts/xliffs/*.xliff]

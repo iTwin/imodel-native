@@ -15,11 +15,12 @@
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
-//! Status codes for RealityPackage operations
-enum class RealityPackageStatus
+//! Status codes for RealityDataPackageStatus operations
+enum class RealityDataPackageStatus
     {
-    Success             = SUCCESS,  //!< The operation was successful
-    UnknownError        = ERROR,    //!< The operation failed with an unspecified error
+    Success                 = SUCCESS,  //!< The operation was successful
+    CouldNotCreateWriter,               //!< Make sure path is valid and that you have exclusive write privilege.
+    UnknownError            = ERROR,    //!< The operation failed with an unspecified error
     };
 
 //=======================================================================================
@@ -58,6 +59,9 @@ public:
 
     //! The number of points including duplicated closing point.
     size_t GetSize() const {return size();}
+
+    WString ToString() const;
+    RealityDataPackageStatus FromString(WCharCP);
 };
 
 
@@ -74,17 +78,17 @@ public:
     //  - create a new one. mandatory field?
     //  - create from existing.
     //! Create a new one.
-    REALITYPACKAGE_EXPORT RealityDataPackagePtr Create(WCharCP name/*&&MM define what is mandatory*/);
+    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(WCharCP name/*&&MM define what is mandatory*/);
 
     //! Create an instance from an existing package file.
-    REALITYPACKAGE_EXPORT RealityDataPackagePtr Create(RealityPackageStatus& status, BeFileNameCR filename);
+    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(RealityDataPackageStatus& status, BeFileNameCR filename);
 
     //! Populate this instance from the provided filename.
-    REALITYPACKAGE_EXPORT RealityPackageStatus Read(BeFileNameCR filename);
+    REALITYPACKAGE_EXPORT RealityDataPackageStatus Read(BeFileNameCR filename);
 
     //! Store the content of this instance to disk. 
     //! If at the time of writing the creation date is invalid a valid one will be created with the current date.
-    REALITYPACKAGE_EXPORT RealityPackageStatus Write(BeFileNameCR filename);
+    REALITYPACKAGE_EXPORT RealityDataPackageStatus Write(BeFileNameCR filename);
 
     //! The name of this package file.
     REALITYPACKAGE_EXPORT WStringCR GetName() const;
@@ -127,6 +131,8 @@ private:
     RealityDataPackage(WCharCP name);
     ~RealityDataPackage();
 
+    WString GetCreationDateUTC() const;
+
     WString m_name;
     WString m_description;
     WString m_copyright;
@@ -149,9 +155,11 @@ struct RealityDataSource : public RefCountedBase
 public:
     REALITYPACKAGE_EXPORT RealityDataSourcePtr Create(WCharCP uri, WCharCP type);
     
+    //&&MM todo doc what kind of uri we support or we simply do not care at this stage?
     REALITYPACKAGE_EXPORT WStringCR GetUri() const;
     REALITYPACKAGE_EXPORT void SetUri(WCharCP uri);
 
+    //&&MM todo doc categories.
     REALITYPACKAGE_EXPORT WStringCR GetType() const;
     REALITYPACKAGE_EXPORT void SetType(WCharCP type);
 

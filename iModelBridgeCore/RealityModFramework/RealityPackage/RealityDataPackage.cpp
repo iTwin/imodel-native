@@ -7,9 +7,28 @@
 +--------------------------------------------------------------------------------------*/
 #include <RealityPackage/RealityDataPackage.h>
 #include <Bentley/BeFileName.h>
+#include <BeXml/BeXml.h>
 
 USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+WString BoundingPolygon::ToString() const
+    {
+    //&&MM TODO. It would be nice to reuse something here.  CurveVector maybe? but that seems overkill and its 3d.
+    return WString();   //&&MM TODO 
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityDataPackageStatus BoundingPolygon::FromString(WCharCP polygon)
+    {
+    return RealityDataPackageStatus::UnknownError; //&&MM todo
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
@@ -27,7 +46,7 @@ WStringCR RealityDataPackage::GetPackageId() const {return m_packageId;}
 void      RealityDataPackage::SetPackageId(WCharCP packageId) {m_packageId = packageId;}
 
 DateTimeCR RealityDataPackage::GetCreationDate() const {return m_dateTime;}
-void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_dateTime=date;}
+void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_dateTime = date;}
 
 BoundingPolygonCR RealityDataPackage::GetBoundingPolygon() const {return m_boundingPolygon;}
 void              RealityDataPackage::SetBoundingPolygon(BoundingPolygonCR polygon) {BeAssert(polygon.IsValid()); m_boundingPolygon = polygon;}
@@ -70,15 +89,15 @@ RealityDataPackagePtr RealityDataPackage::Create(WCharCP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataPackagePtr RealityDataPackage::Create(RealityPackageStatus& status, BeFileNameCR filename)
+RealityDataPackagePtr RealityDataPackage::Create(RealityDataPackageStatus& status, BeFileNameCR filename)
     {
-    status = RealityPackageStatus::UnknownError;
+    status = RealityDataPackageStatus::UnknownError;
 
     RealityDataPackagePtr pPackage = new RealityDataPackage(filename.GetFileNameWithoutExtension().c_str());
 
     status = pPackage->Read(filename);
 
-    if(RealityPackageStatus::Success != status)
+    if(RealityDataPackageStatus::Success != status)
         pPackage = NULL;
 
     return pPackage;
@@ -87,19 +106,82 @@ RealityDataPackagePtr RealityDataPackage::Create(RealityPackageStatus& status, B
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataPackage::Read(BeFileNameCR filename)
+RealityDataPackageStatus RealityDataPackage::Read(BeFileNameCR filename)
     {
     //&&MM todo
-    return RealityPackageStatus::UnknownError;
+    return RealityDataPackageStatus::UnknownError;
+    }
+
+#define TOSTRING_FORMATTED_INDENTED ((BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent))
+
+#define W3SCHEMA_PREFIX     "xsi"
+#define W3SCHEMA_URI        "http://www.w3.org/2001/XMLSchema-instance"
+
+#define PACKAGE_NAMESPACE_1_0       "http://www.bentley.com/RealityDataServer/1.0"
+#define PACKAGE_VERSION_1_0         L"1.0"
+
+#define PACKAGE_ROOT_ELEMENT                "RealityDataPackage"
+#define PACKAGE_ROOT_ATTRIBUTE_Version      "Version"
+
+#define PACKAGE_ELEMENT_Name                "Name"
+#define PACKAGE_ELEMENT_Description         "Description"
+#define PACKAGE_ELEMENT_CreationDate        "CreationDate"
+#define PACKAGE_ELEMENT_Copyright           "Copyright"
+#define PACKAGE_ELEMENT_PackageId           "PackageId"
+#define PACKAGE_ELEMENT_BoundingPolygon     "BoundingPolygon"
+
+
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityDataPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
+    {
+    //&&MM Todo validate data before writing the file
+    // 
+
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateEmpty();
+
+    BeXmlNodeP pRootNode = pXmlDom->AddNewElement(PACKAGE_ROOT_ELEMENT, NULL, NULL);
+
+    pRootNode->AddAttributeStringValue(PACKAGE_ROOT_ATTRIBUTE_Version, PACKAGE_VERSION_1_0);
+    
+    // Namespaces
+    pRootNode->AddNamespace(NULL, PACKAGE_NAMESPACE_1_0);       // Default namespace.
+    pRootNode->AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
+
+    // Root children
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Name, GetName().c_str());
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Description, GetDescription().c_str());
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_CreationDate, GetCreationDateUTC().c_str());
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, GetCopyright().c_str());
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_PackageId, GetPackageId().c_str());
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_BoundingPolygon, GetBoundingPolygon().ToString().c_str());
+
+
+           
+    BeXmlStatus status = pXmlDom->ToFile(filename, TOSTRING_FORMATTED_INDENTED, BeXmlDom::FILE_ENCODING_Utf8);
+    if(BEXML_Success != status)
+        return RealityDataPackageStatus::UnknownError;
+
+    return RealityDataPackageStatus::Success;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
+WString RealityDataPackage::GetCreationDateUTC() const
     {
-    //&&MM todo
-    return RealityPackageStatus::UnknownError;
+    if(GetCreationDate().IsValid() && GetCreationDate().GetInfo().GetKind() != DateTime::Kind::Utc)
+        return GetCreationDate().ToString();
+
+    DateTime utcDateTime;
+    if(SUCCESS == GetCreationDate().ToUtc(utcDateTime))
+        return utcDateTime.ToString();
+
+    // By default use current time
+    return DateTime::GetCurrentTimeUtc ().ToString();
     }
 
 //=======================================================================================
