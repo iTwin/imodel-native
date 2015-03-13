@@ -77,9 +77,11 @@
     </Product>
 
     <Part Name="RunBeGTest" BentleyBuildMakeFile="RunBeGTest.mke" ExcludePlatforms="Android*,iOS*">
+        <SubProduct ProductName="BeGTest" />
     </Part>
 
     <Part Name="DisplayIgnoreList" BentleyBuildMakeFile="DisplayIgnoreList.mke">
+        <SubPart PartName="RunBeGTest" />
     </Part>
 
     <Part Name="RunBeGTestPerformance" BentleyBuildMakeFile="RunBeGTest.mke" BMakeOptions="+dGTEST_FILTER=--gtest_filter=Performance*" ExcludePlatforms="Android*,iOS*">
