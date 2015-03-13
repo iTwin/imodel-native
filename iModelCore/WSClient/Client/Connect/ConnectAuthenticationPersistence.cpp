@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Client/Connect/ConnectAuthenticationPersistence.h>
-#include <WebServices/Client/Connect/SecureStore.h>
+#include <MobileDgn/Utils/SecureStore.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN
