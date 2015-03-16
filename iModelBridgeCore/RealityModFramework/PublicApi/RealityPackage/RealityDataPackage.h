@@ -11,14 +11,16 @@
 #include <Bentley/bvector.h>
 #include <Geom/GeomApi.h>
 #include <Bentley/DateTime.h>
+#include <BeXml/BeXml.h>
 
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
-//! Status codes for RealityDataPackageStatus operations
-enum class RealityDataPackageStatus
+//! Status codes for RealityPackageStatus operations
+enum class RealityPackageStatus
     {
     Success                 = SUCCESS,  //!< The operation was successful
+    UnknownVersion,                     //!< Version is either undefined or we can't handle it.
     CouldNotCreateWriter,               //!< Make sure path is valid and that you have exclusive write privilege.
     UnknownError            = ERROR,    //!< The operation failed with an unspecified error
     };
@@ -61,7 +63,7 @@ public:
     size_t GetSize() const {return size();}
 
     WString ToString() const;
-    RealityDataPackageStatus FromString(WCharCP);
+    RealityPackageStatus FromString(WCharCP);
 };
 
 
@@ -81,14 +83,15 @@ public:
     REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(WCharCP name/*&&MM define what is mandatory*/);
 
     //! Create an instance from an existing package file.
-    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(RealityDataPackageStatus& status, BeFileNameCR filename);
-
-    //! Populate this instance from the provided filename.
-    REALITYPACKAGE_EXPORT RealityDataPackageStatus Read(BeFileNameCR filename);
+    //! @param[out] status      Success if the package was opened and parsed successfully.
+    //! @param[in]  fileName    The name of the package file.
+    //! @param[out] pParseError Optional. If supplied, and a parsing error occurs, diagnostic information.
+    //! @return NULL if the file cannot be found or successfully parsed.
+    REALITYPACKAGE_EXPORT static RealityDataPackagePtr CreateFromFile(RealityPackageStatus& status, BeFileNameCR filename, WStringP pParseError = NULL);
 
     //! Store the content of this instance to disk. 
     //! If at the time of writing the creation date is invalid a valid one will be created with the current date.
-    REALITYPACKAGE_EXPORT RealityDataPackageStatus Write(BeFileNameCR filename);
+    REALITYPACKAGE_EXPORT RealityPackageStatus Write(BeFileNameCR filename);
 
     //! The name of this package file.
     REALITYPACKAGE_EXPORT WStringCR GetName() const;
@@ -116,28 +119,30 @@ public:
 
     //! A read-only access to data source container. Might be empty
     REALITYPACKAGE_EXPORT DataSources const& GetImageryGroup() const;
-    REALITYPACKAGE_EXPORT DataSources const& GetTerrainGroup() const;
     REALITYPACKAGE_EXPORT DataSources const& GetModelGroup() const;
     REALITYPACKAGE_EXPORT DataSources const& GetPinnedGroup() const;
+    REALITYPACKAGE_EXPORT DataSources const& GetTerrainGroup() const;
 
     //! A read-write access to the data source container.
     REALITYPACKAGE_EXPORT DataSources& GetImageryGroupR();    
-    REALITYPACKAGE_EXPORT DataSources& GetTerrainGroupR();    
     REALITYPACKAGE_EXPORT DataSources& GetModelGroupR();    
     REALITYPACKAGE_EXPORT DataSources& GetPinnedGroupR();    
+    REALITYPACKAGE_EXPORT DataSources& GetTerrainGroupR();    
 
 
 private:
     RealityDataPackage(WCharCP name);
     ~RealityDataPackage();
 
-    WString GetCreationDateUTC() const;
+    WString GetCreationDateUTC();
+    RealityPackageStatus ReadDataSources(DataSources& sources, Utf8CP nodeName,  BeXmlNodeP pParent);
+    RealityPackageStatus WriteDataSources(DataSources const& sources, Utf8CP nodeName,  BeXmlNodeP pParent);
 
     WString m_name;
     WString m_description;
     WString m_copyright;
     WString m_packageId;        //&&MM should it be a GUID or UInt64 instead of a string?
-    DateTime m_dateTime;
+    DateTime m_creationDate;
     BoundingPolygon m_boundingPolygon;
     
     DataSources m_imagery;
@@ -153,8 +158,8 @@ private:
 struct RealityDataSource : public RefCountedBase
 {
 public:
-    REALITYPACKAGE_EXPORT RealityDataSourcePtr Create(WCharCP uri, WCharCP type);
-    
+    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(WCharCP uri, WCharCP type);
+
     //&&MM todo doc what kind of uri we support or we simply do not care at this stage?
     REALITYPACKAGE_EXPORT WStringCR GetUri() const;
     REALITYPACKAGE_EXPORT void SetUri(WCharCP uri);
@@ -163,9 +168,15 @@ public:
     REALITYPACKAGE_EXPORT WStringCR GetType() const;
     REALITYPACKAGE_EXPORT void SetType(WCharCP type);
 
+    // Persistence
+    static RealityDataSourcePtr CreateFromXml(BeXmlNodeP pSourceNode);
+    RealityPackageStatus Write(BeXmlNodeP pParent) const;
 protected:
     RealityDataSource(WCharCP uri, WCharCP type);
     virtual ~RealityDataSource();
+
+    //! returned the created source node. sub-classes can add their private that to that node.
+    virtual BeXmlNodeP _Write(BeXmlNodeP pParent) const;
 
 private:
     WString m_uri;
