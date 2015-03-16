@@ -1,11 +1,11 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-
 ECDbBrownBagDemo*       # Sample code for an ECDb BrownBag session which does not need to be run during a build.
 Performance*            # Performance tests are always excluded from being run during a build.
 ECSqlTestFixture.Debug  # This test only serves for debugging the ECSqlStatement API.
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -19,6 +19,8 @@ InstanceCRUDTests.InsertUpdateDeleteTest
 
 #this fail due to addition of a new version of schema. Since reference schema is loaded using latest version it load the new once
 FieldEngineer.RelationshipIssue
+#TFS Defects 186409,186444, 186457, 186461
+ECDbMapPersistenceTests.MappingStrategyTest
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
@@ -26,10 +28,8 @@ FieldEngineer.RelationshipIssue
 
 # Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
-ECDbFileInfo.ReplaceExistingEmbeddedFile # Notified Muhammad Hassan
 ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 
-ECDbFileInfo.ReadAddNewEntrySaveEmbeddedFile
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
