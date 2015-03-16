@@ -2563,6 +2563,7 @@ void Changes::Change::Dump(Db const& db) const
             printf("\n\t\tnew: ");
             DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames);
             break;
+
         default:
             BeAssert(false);
         }
@@ -2576,7 +2577,7 @@ void ChangeSet::Dump(Db const& db) const
     {
     printf("\nChangeSet:\n");
     Changes changes(*const_cast<ChangeSet*>(this));
-    for (auto change : changes)
+    for (auto& change : changes)
         {
         change.Dump(db);
         }
