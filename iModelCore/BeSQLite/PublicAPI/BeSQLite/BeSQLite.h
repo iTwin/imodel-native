@@ -1575,6 +1575,9 @@ public:
         bool operator==(Entry const& rhs) const {return (m_isValid == rhs.m_isValid);}
     };
 
+    //! Get the prepared statement for this iterator. This can be used to bind parameters before calling /c begin.
+    Statement* GetStatement() {return m_stmt.get();}
+
     //! Get a reference to the NamedParams for this iterator. This is useful for adding additional WHERE clause
     //! filtering to the iterator.
     NamedParams& Params() {return m_params;}
