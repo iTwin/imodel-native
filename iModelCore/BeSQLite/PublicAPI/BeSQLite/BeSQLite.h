@@ -1309,16 +1309,19 @@ private:
     int     m_size;
     void*   m_changeset;
 
-    BE_SQLITE_EXPORT void Free();
-
 public:
     virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
 
 public:
     //! construct a blank, empty ChangeSet
-    ChangeSet() {m_size=0; m_changeset=0;}
+    ChangeSet() {m_size=0; m_changeset=nullptr;}
     ~ChangeSet() {Free();}
+
+//__PUBLISH_SECTION_END__
+    //! Free the data held by this ChangeSet. @note Normally, the destructor will call Free. Do not try to use this ChangeSet after calling Free.
+    BE_SQLITE_EXPORT void Free();
+//__PUBLISH_SECTION_START__
 
     //! Re-create this ChangeSet from data from a previously saved incarnation of a ChangeSet.
     BE_SQLITE_EXPORT DbResult FromData(int size, void const* data, bool invert);

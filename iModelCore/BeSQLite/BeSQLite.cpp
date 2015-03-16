@@ -2332,8 +2332,11 @@ DbResult ChangeSet::FromData(int size, void const* data, bool invert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeSet::Free()
     {
-    sqlite3_free(m_changeset);
-    m_changeset = 0;
+    if (nullptr != m_changeset)
+        {
+        sqlite3_free(m_changeset);
+        m_changeset = nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
