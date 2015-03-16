@@ -63,13 +63,6 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
         status = ComputeViewMembers (viewMembers,  map, classMap.GetClass(), isPolymorphicQuery, optimizeByIncludingOnlyRealTables, /*ensureDerivedClassesAreLoaded=*/ true);
         }
 
-    static std::set<Utf8CP, CompareIUtf8> donotSkipViews {"dgnEC_ElementData", "dgnEC_ElementHasSecondaryInstances"};
-    bool skipOverEmptyTableFlag = map.GetECDbR().IsReadonly();
-    if (!skipOverEmptyTableFlag)
-        {
-        skipOverEmptyTableFlag = prepareContext.GetSelectionOptions ().IsConstantExpression ();
-        }
-
     if (status == BentleyStatus::SUCCESS)
         {
         int queriesAddedToUnion = 0;
@@ -78,21 +71,6 @@ BentleyStatus ViewGenerator::CreateView (NativeSqlBuilder& viewSql, ECDbMapCR ma
             if (optimizeByIncludingOnlyRealTables)
                 if (pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::None)
                     continue;
-
-            if (pvm.second.GetStorageType () == DbMetaDataHelper::ObjectType::View)
-                {
-                if (donotSkipViews.find (pvm.first->GetName ().c_str()) == donotSkipViews.end ())
-                    {
-                    continue;
-                    }
-                }
-
-            if (skipOverEmptyTableFlag)
-                {
-                if (!pvm.first->IsValid ())
-                    continue;
-                }
-
 
             if (queriesAddedToUnion > 0)
                 viewSql.Append (" UNION ");

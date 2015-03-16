@@ -195,8 +195,12 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
     if (!areBaseClassesMapped)
         return MapStatus::BaseClassesNotMapped;
 
+    // ClassMappingRule: No more than one ancestor of a class can use TablePerHierarchy strategy. Mapping fails if this is violated
+    if (tphMaps.size () > 1)
+        return ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (m_ecClass, tphMaps);
+
     // ClassMappingRule: If exactly 1 ancestor ECClass is using TablePerHierarchy, use InParentTable mapping
-    if (tphMaps.size() > 0)
+    if (tphMaps.size() == 1)
         {
         m_parentClassMap = tphMaps[0];
         auto enableColumnReuse = m_parentClassMap->GetMapStrategy().IsReuseColumns();
@@ -205,18 +209,6 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
         if (excludeFromColumnsReuse && enableColumnReuse)
             {
             GetMapStrategyR().AddOption(Strategy::WithDisableReuseColumnsForThisClass);
-            }
-
-        if (tphMaps.size () > 1)
-            {
-            WString msg = L"Found more then one base classes with 'TablePerHierarchy' for [";
-            msg.append (GetECClass ().GetFullName ()).append (L"] .BaseClasses with TablePerHierarchy are ");
-
-            for (auto const& tph : tphMaps)
-                msg.append (L"[").append (tph->GetClass ().GetFullName ()).append (L"]").append (L" ");
-
-            msg.append (L". This has been resolved by selecting first baseClass [").append (m_parentClassMap->GetClass ().GetFullName ()).append (L"] as parent class for current class. Please Fix this issue by apply property hint and make sure that no derived class inherit from more then two baseClasses that has MapStrategy = TablePerHierarchy");
-            LOG.warning (msg.c_str ());
             }
         }
 

@@ -34,7 +34,7 @@ public:
                     {
                     ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W,
                     ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME_W,
+                    ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME_W,
                     ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME_W,
                     ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME_W,
                     ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME_W,

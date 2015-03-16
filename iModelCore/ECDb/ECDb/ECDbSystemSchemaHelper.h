@@ -49,8 +49,8 @@ public:
     static WCharCP const ECARRAYINDEX_PROPNAME_W;
     static Utf8CP const PARENTECINSTANCEID_PROPNAME;
     static WCharCP const PARENTECINSTANCEID_PROPNAME_W;
-    static Utf8CP const ECPROPERTYID_PROPNAME;
-    static WCharCP const ECPROPERTYID_PROPNAME_W;
+    //static Utf8CP const ECPROPERTYID_PROPNAME;
+    //static WCharCP const ECPROPERTYID_PROPNAME_W;
     static Utf8CP const OWNERECINSTANCEID_PROPNAME;
     static WCharCP const OWNERECINSTANCEID_PROPNAME_W;
 

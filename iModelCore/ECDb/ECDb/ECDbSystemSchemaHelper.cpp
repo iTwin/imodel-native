@@ -32,8 +32,8 @@ Utf8CP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME = "ECArrayIndex";
 WCharCP const ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W = L"ECArrayIndex";
 Utf8CP const ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME = "ParentECInstanceId";
 WCharCP const ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME_W = L"ParentECInstanceId";
-Utf8CP const ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME = "ECPropertyId";
-WCharCP const ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME_W = L"ECPropertyId";
+//Utf8CP const ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME = "ECPropertyId";
+//WCharCP const ECDbSystemSchemaHelper::ECPROPERTYID_PROPNAME_W = L"ECPropertyId";
 Utf8CP const ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME = "OwnerECInstanceId";
 WCharCP const ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME_W = L"OwnerECInstanceId";
 
