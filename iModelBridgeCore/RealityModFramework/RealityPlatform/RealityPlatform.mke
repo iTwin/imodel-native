@@ -34,23 +34,32 @@ CCompPDBName = $(appName)
 nameToDefine=__REALITYPLATFORM_BUILD__
 %include cdefapnd.mki
 
+nameToDefine=UNICODE
+%include cdefapnd.mki
+    
+nameToDefine=_UNICODE
+%include cdefapnd.mki
 
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
 # Create PCH
-CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
-$(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h $(PublicApiDir)RealityDataProvider.h
+#CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+#$(o)StdAfx$(oext) $(o)$(appName).pch : $(baseDir)StdAfx.cpp $(baseDir)StdAfx.h  $(PublicApiDir)RealityDataProvider.h
 
 # Use PCH
-CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
+#CCPchOpts = -Yu"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
 
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp ${MultiCompileDepends}
+$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp $(baseDir)RealityPlatformAdmins.h ${MultiCompileDepends}
 
-$(o)RealityDataProvider$(oext) : $(baseDir)RealityDataProvider.cpp $(PublicApiDir)RealityDataProvider.h ${MultiCompileDepends}
+$(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(PublicApiDir)RealityDataHandler.h ${MultiCompileDepends}
+
+$(o)RasterDataHandler$(oext) : $(baseDir)RasterDataHandler.cpp ${MultiCompileDepends}
+
+$(o)PointCloudDataHandler$(oext) : $(baseDir)PointCloudDataHandler.cpp ${MultiCompileDepends}
 
 $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
 

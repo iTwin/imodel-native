@@ -1,17 +1,17 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RealityPlatform/Tests/PropertiesTester/PropertiesTester.mke $
+#     $Source: RealityPlatform/Tests/RealityDataHandlerTester/RealityDataHandlerTester.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
-appName = PropertiesTester
+appName = RealityDataHandlerTester
 
 policyFile = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
 
-PropertiesTesterDir = $(_MakeFilePath)
+RealityDataHandlerTesterDir = $(_MakeFilePath)
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -24,17 +24,17 @@ always:
 #----------------------------------------------------------------------
 # Create PCH
 CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
-$(o)StdAfx$(oext) $(o)$(appName).pch : $(PropertiesTesterDir)StdAfx.cpp $(PropertiesTesterDir)StdAfx.h
+$(o)StdAfx$(oext) $(o)$(appName).pch : $(RealityDataHandlerTesterDir)StdAfx.cpp $(RealityDataHandlerTesterDir)StdAfx.h
 
 # Use PCH
 CCPchOpts = -Yc"StdAfx.h" -Fp$(o)$(appName).pch -Zm110
 
-MultiCompileDepends=$(_MakeFileSpec) $(PropertiesTesterDir)StdAfx.h
+MultiCompileDepends=$(_MakeFileSpec) $(RealityDataHandlerTesterDir)StdAfx.h
 %include MultiCppCompileRule.mki
 
-#%include compileForCLRStart.mki
+%include compileForCLRStart.mki
 
-$(o)PropertiesTester$(oext) : $(PropertiesTesterDir)PropertiesTester.cpp $(PropertiesTesterDir)PackageECTest.cpp ${MultiCompileDepends}
+$(o)RealityDataHandlerTester$(oext) : $(RealityDataHandlerTesterDir)RealityDataHandlerTester.cpp ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -43,10 +43,10 @@ $(o)PropertiesTester$(oext) : $(PropertiesTesterDir)PropertiesTester.cpp $(Prope
 #
 %include MultiCppCompileGo.mki
 
-#%include compileForCLRStop.mki
+%include compileForCLRStop.mki
 
 # Is this required? Build goes well without it...
-#ProductRcIncludes + -i${PropertiesTesterDir}
+#ProductRcIncludes + -i${RealityDataHandlerTesterDir}
 
 
 #----------------------------------------------------------------------
@@ -64,9 +64,9 @@ EXE_OBJS = $(o)StdAfx$(oext) $(MultiCompileObjectList)
 
 LINKER_LIBRARIES = $(ContextSubpartsLibs)Bentley.lib \
                    $(ContextSubpartsLibs)BentleyAllocator.lib  \
-				   $(ContextDeliveryDir)Properties.lib \
+                   $(ContextSubpartsLibs)BentleyGeom.lib \
+				   $(ContextDeliveryDir)RealityPlatform.lib \
 				   Gdi32.lib \
-                   $(ContextSubpartsLibs)ECObjects.lib \
 
 
 # remove console options; let the system determine the entry point

@@ -7,12 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 
+#include "PointCloudVortex.h"
+
 #include <PointoolsVortexAPI_DLL/vortexLicense.c>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
-//#include <pointools/include/PointoolsVortexAPI_ResultCodes.h>
-#include "PointCloudVortex.h"
-#include "RealityPlatformUtil.h"
 
+USING_BENTLEY_NAMESPACE_REALITYPLATFORM
 
 bool LoadPointoolsDLL(const wchar_t* filepath);
 
@@ -26,7 +26,6 @@ void PointCloudVortex::Initialize()
     PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"In Initialize");
 #endif
 
-    //&&JFC ask if we did BePointools.dll
     //PtVortex::LoadDll();
 #ifdef _M_X64
     LoadPointoolsDLL (L"PointoolsVortexAPI.dll");
@@ -73,7 +72,7 @@ void PointCloudVortex::ClosePOD(PtHandle &cloudFileHandle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp, 
+HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
                                             uint32_t          bitmapWidth, 
                                             uint32_t          bitmapHeight, 
                                             PtHandle        cloudHandle, 
@@ -81,7 +80,6 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
                                             TransformCR     transform,
                                             bool            needsWhiteBackground)
     {
-    CriticalSectionHelper   __keyCriticalSection;
     try 
         {
         // Get bounds for first point cloud in the scene
@@ -768,22 +766,22 @@ void PointCloudVortex::GetPointCloudBounds(DPoint3dR lowerBound, DPoint3dR upper
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudVortex::GetPointCloudBounds(PtHandle cloudHandle, double* lower, double* upper)
-{
+    {
     ptCloudBoundsd(cloudHandle, lower, upper);
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 PtHandle PointCloudVortex::GetMetaDataHandle(PtHandle cloudHandle)
-{
+    {
     return ptGetMetaDataHandle(cloudHandle);
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PointCloudVortex::GetMetaTag(PtHandle metadataHandle, WCharCP tagName, WCharP value)
-{
+    {
     return ptGetMetaTag(metadataHandle, tagName, value);
-}
+    }
