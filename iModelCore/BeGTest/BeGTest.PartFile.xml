@@ -93,6 +93,7 @@
         <SubPart PartName="LoggingNative"                   PartFile="LoggingSDK"       Repository="loggingsdk" />
         <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
         <SubPart PartName="Base"/>
+        <SubPart PartName="PlatformUnitTests"/>
         <Bindings>
             <Directory ProductDirectoryName="BeGTestFiles" SourceName="Delivery"/>
         </Bindings>
