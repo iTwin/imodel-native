@@ -113,25 +113,38 @@
         <ProductDirectory Name="LoggingNativeAssemblies"            Deliver="false" />
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Deliver="false" />
         <ProductDirectory Name="BentleyNativeAssemblies"            Deliver="false" />
-        <ProductDirectory Name="BentleyNativeAssemblies"            Deliver="false"  LibType="static"/>
         <ProductDirectory Name="Libs"                               Deliver="false" />
         <ProductDirectory Name="Libs"                               Deliver="false"  LibType="static"/>
         <ProductDirectory Name="PublicAPI"                          Deliver="false" />
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"  LibType="static"/>
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
         <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false"/>
-        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       Deliver="false"/>
-        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false"  LibType="static"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"  LibType="static"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false" />
+        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false" />
+        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       Deliver="false" />
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false" />
+        <ProductDirectory Name="GeomNativeAssemblies"               Deliver="false" />
+        <ProductDirectory Name="ECSchemas"                          Deliver="false" />
+        <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" />
+        <ProductDirectory Name="ECObjectsTestSeedData"              Deliver="false" />
+        <ProductDirectory Name="ECObjectsTestExe"                   Deliver="false" />
+        <ProductDirectory Name="BeOpenSSLAssemblies"                Deliver="false" />
+        <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" />
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Deliver="false" />
+        <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false" />
+        <ProductDirectory Name="DgnPlatformFont"                    Deliver="false" />
+        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false" />
+        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" />
+        <ProductDirectory Name="ECSchemas"                          Deliver="false" />
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           Deliver="false" />
+        <ProductDirectory Name="sqlang"                             Deliver="false" />
+        <ProductDirectory Name="CordovaLibs"                        Deliver="false" />
+        <ProductDirectory Name="StdThemes"                          Deliver="false" />
+        <ProductDirectory Name="MobileDgnJavaScript"                Deliver="false" />
+        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Deliver="false" />
+        <ProductDirectory Name="MobileDgnNativeAssemblies"          Deliver="false" />
+        <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" />
+
     </ProductDirectoryList>
 
     <!-- ********************************************************************************************** -->
