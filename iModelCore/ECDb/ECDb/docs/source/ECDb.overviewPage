@@ -78,10 +78,8 @@
     do not simply map to a single column, but can map to multiple columns or even to another table.
     <b>Clients just author an ECSQL statement against the ECSchema of the repository.</b>
 
-    @section ECDbMappingCustomization Customizing the database mapping
-    %ECDb mapping refer to how ECSchemas, ECClasses and ECProperties are mapped to database tables and columns. This can be done through use 
-    of customAttributes. For detail see following.
-    @ref ECDbMappingStrategy "ECDb Mapping Hints"
+    The section @ref ECDbSchemaMappingCustomization describes how clients can customize how ECSchemas
+    are mapped to the ECDb database schema.
 
     @section ECDbApiEntryPoints ECDb API entry points
     The main entry points of the %ECDb API are:
@@ -99,6 +97,7 @@
     - @ref ECDbCreatingECDbFromScratch
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business 
     data in the @ref ECDbFile "ECDb file".
+    - @ref ECDbSchemaMappingCustomization
 
     */
 
@@ -174,109 +173,95 @@
     */
 
     /**
-@page ECDbMappingStrategy Mapping of EC Schemas in ECDb
+    @page ECDbSchemaMappingCustomization Customizing the ECDb schema mapping
     
-%ECDb applies a default mapping when importing an BentleyApi::ECN::ECSchema into the @ref ECDbFile "ECDb file". 
-%ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema 
-with dedicated <b>%ECDb hint custom attributes</b>, e.g. @b ECDbClassHint or @b ECDbPropertyHint. 
+    %ECDb applies a default mapping when importing an @ref BentleyApi::ECN::ECSchema "ECSchema" into the @ref ECDbFile "ECDb file". 
+    However, %ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema 
+    with dedicated <b>%ECDb hint custom attributes</b>, e.g. @b ECDbClassHint or @b ECDbPropertyHint. 
 
-Please see <a href="files/ecdb/Bentley_Standard_CustomAttributes.ecschema.xml" target="_blank">Bentley_Standard_CustomAttributes.ecschema.xml</a>
-for a detailed description of all available <b>%ECDb hint custom attributes</b>.
+    See also <a href="files/ecdb/Bentley_Standard_CustomAttributes.ecschema.xml" target="_blank">Bentley_Standard_CustomAttributes.ecschema.xml</a>
+    for how all available <b>%ECDb hint custom attributes</b> are defined.
 
-    @section ECDbDefaultMappingHints ECDb Default Mapping Rules
-    - Type of classes that are not mapped.
-        - CustomAttribute classes are not mapped.
-        - None-domain classes are not mapped.
-        - Relationship with no source/target constraints are not mapped.
-        - Classes which specify <em>DoNotMap</em> or <em>DoNotMapHiearchy</em>.
-        - If schema have hint <em>ECDbSchemaHint.DefaultClassMapStrategy = DoNotMap</em> then by default no class in schema is mapped unless class specify a MapStrategy other then DoNotMap.
-    - Type of classes that are mapped using <em>TablePerClass</em> strategy by default.
-        - Struct classes are always mapped using <em>TablePerClass</em> strategy.
-        - Domain classes are mapped using <em>TablePerClass</em> strategy.
-        - Supported values for <em>ECDbClassHint.MapStrategy</em>.
-            - <em>DoNotMap</em> - This only effect the class that specify it. The class will not be mapped to any database table.
-            - <em>DoNotMapHierarchy</em> - This map strategy effect the entire hierarchy of the class that specify it. The whole hierarchy of classes will not be mapped
-            - <em>TableForThisClass</em> - This only effect the class that specify it. This class will be mapped to its own table.
-            - <em>TablePerClass</em> - This map strategy effect the entire hierarchy of the class that specify it. This will cause each class in hierarchy to have its own table.
-            - <em>TablePerHierarchy</em> - This map strategy effect the entire hierarchy of the class that specify it. This will cause all the classes in the hierarchy to be mapped into a single table.
-            - <em>MapToExistingTable</em> - This only effect the class that specify it. <em>ECDbClassHint.TableName</em> must be provided which must point to a table that already exist and must have a INT64 type primary key column.
-            - <em>SharedTableForThisClass</em> -This only effect the class that specify it. <em>ECDbClassHint.TableName</em> must be provided. The table will be created and the class will be mapped to it. More then one class can be clustered into a single table.
-            - Extend Options can be specified using "|" pipe operator with other map strategies. Except <em>WithExclusivelyStoredInThisTable</em> which can be specified alone.
-                - <em>WithReuseColumns</em> - This can be applied to <em>TablePerHierarchy</em> or <em>SharedTableForThisClass</em>. This can potentially reduce number of column needed to store all the classes.
-                - <em>WithReadonly</em> - This will mark the table a read-only. It can only be used with <em>MapToExistingTable</em>.
-                - <em>WithExclusivelyStoredInThisTable</em> - This can be use independently on a derive class of a class that specify WithReuseColumns. It will exclude the columns required to store class from ReuseColumn strategy option.
-        - MapStrategy that effect hierarchy can be changed at derived class level using a different map strategy.
-    - Relationship is mapped either as 1) EndTable - Use foreign key column to establish relationship 2) LinkTable - Use a table to link two classes. Relationship are mapped using following rules.
-        - Relationship with cardinality 1:1 or 0:N will be mapped using EndTable mapping if possible.
-            - If source or target constraints end-up in a single table on each side then EndTable mapping will be used.
-            - If source or target constraints end-up in more then one table on any side it will be mapped using LinkTable mapping.
-            - If relationship has at least one property it will be mapped using LinkTable mapping
+    @section ECDbDefaultMappingRules ECDb Default Mapping Rules
+    - Type of ECClasses that <b>are not mapped</b>.
+        - CustomAttribute ECClasses
+        - Non-domain ECClasses
+        - Relationship ECClasses with no source/target constraints
+    - Type of ECClasses that are mapped using the @b TablePerClass strategy by default.
+        - Domain ECClasses
+        - Struct ECClasses
+    - ECRelationshipClasses are either mapped to the table of one of the constraint ends (aka foreign key mapping or EndTable mapping)
+    or to a link table.
+        - ECRelationshipClasses with cardinality 1:1 or 0:N
+            - If source or target constraints end-up in a single table on each side then @b EndTable mapping will be used.
+            - If source or target constraints end-up in more then one table on any side then @b LinkTable mapping will be used.
+            - If relationship has at least one ECProperty it will be mapped using @b LinkTable mapping
             - <em>ECDbRelationshipClassHint.PreferredDirection</em> can be use to specify which direction to optimize. This effect default indexes.
-        - Relationship with cardinality N:N is always mapped using LinkTable mapping.
-        - Relationship can use <em>TablePerHiearchy strategy</em>. If <em>TablePerHiearchy</em> strategy is specified then the whole hierarchy of that relationship will be mapped using LinkTable mapping.
-        - Default index is created on key columns in accordance with the cardinality. By default no duplicate relationships are allowed.
-            - This can be disabled using <em>ECDbRelationshipClassHint.AllowDuplicateRelationships</em>.
-                - Though disable does not mean it will work in all cases. It depend on mapping. 
-                    - If 1:1 mapping type is EndTable then it will allow 1:N duplication.
-                    - If 1:N mapping type is EndTable then it will allow 1:N duplication.
-                    - If mapping type is LinkTable then it will allow all type of duplication.
-                - Default index creation can completely disable using <em>ECDbRelationshipConstraintHint.GenerateDefaultIndex</em>.
-        - No referential integrity constraints are added in any-case. But it can be added through <em>ECDbRelationshipConstraintHint.ForeignKeyConstraint</em>
-        - Renaming default key columns is possible through following attributes
-            - For source/target constraint use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> to specify <em>ECClassId</em> column.
-            - For source/target constraint use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> to specify <em>ECInstanceId</em> column.
-    .
+        - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
+        - A default index is created on the key columns in accordance with the cardinality. 
+        - <em>ECDbRelationshipClassHint.AllowDuplicateRelationships</em> is set to false by default.
+        - No referential integrity constraints are added. (See @ref ECDbRelationshipConstraintHint for how to overwrite this)
 
-@section ECDbSchemaHint Mapping Hints for ECSchema
-
-Specifies a prefix for generated tables. If not specified, namespacePrefix of the ECSchema is used. (ECDb will only look for it in local attributes on the ECClass). Following properties can be set:
-   
-- TablePrefix :The prefix should be 2-4 letters followed by an underbar, e.g. plnt_. If not provided schema prefix is used by default. TablePrefix will effect all table that are created for this schema unless user used ECDbClassHint::TableName to override the table name altogether.
-- DefaultPropertyStrategy : <em>(Not supported yet)</em> Optional and can have one possible value DoNotMap.
-- DefaultClassMapStrategy : Optional and can have two possible values. It take following values.
-    - DoNotMap
-    - TableForThisClass
-.
-
-    Example
+    @section ECDbSchemaHintDescription Mapping Hints for ECSchemas
     
+    Description of the ECDbSchemaHint properties:
+    - TablePrefix: Specifies a prefix for generated tables. If not specified, the namespace prefix of the ECSchema is used. 
+    The prefix should be 2-4 letters long followed by an underbar, e.g. plnt_. This setting will affect all tables that are created 
+    for this ECSchema unless it is overwritten on the ECClass level via the @ref ECDbClassHintDescription "ECDbClassHint" property @b TableName.
+    - DefaultPropertyStrategy (optional): Possible values: DoNotMap. <b>Not supported yet</b>
+    - DefaultClassMapStrategy (optional): Possible values:
+        - DoNotMap
+        - TableForThisClass
+
+    ####Example
+
         <ECCustomAttributes>
             <ECDbSchemaHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                <TablePrefix>sc</TablePrefix>
+                <TablePrefix>sp</TablePrefix>
                 <DefaultClassMapStrategy>DoNotMap</DefaultClassMapStrategy>
             </ECDbSchemaHint>
         </ECCustomAttributes>​
-    
-    @section ECDbClassHint Mapping Hints for ECClass
-    Optional hint to tell how to map classes in database. (ECDb will only look for it in local attributes on the ECClass). Following Properties can be set:
-    
-    - MapStrategy: Optional hints regarding how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.    
-        - DoNotMap: This only effect the class that specify it. The class will not be mapped to any database table.
-        - DoNotMapHierarchy: This map strategy effect the entire hierarchy of the class that specify it. The whole hierarchy of classes will not be mapped
-        - TableForThisClass: This only effect the class that specify it. This class will be mapped to its own table.
-        - TablePerClass: This map strategy effect the entire hierarchy of the class that specify it. This will cause each class in hierarchy to have its own table.
-        - TablePerHierarchy: This map strategy effect the entire hierarchy of the class that specify it. This will cause all the classes in the hierarchy to be mapped into a single table.
-        - MapToExistingTable: This only effect the class that specify it. <em>ECDbClassHint.TableName</em> must be provided which must point to a table that already exist and must have a INT64 type primary key column.
-        - SharedTableForThisClass: This only effect the class that specify it. <em>ECDbClassHint.TableName</em> must be provided. The table will be created and the class will be mapped to it. More then one class can be clustered into a single table.
-        - Extend Options can be specified using "|" pipe operator with other map strategies. Except <em>WithExclusivelyStoredInThisTable</em> which can be specified alone.
-            - WithReuseColumns: This can be applied to <em>TablePerHierarchy</em> or <em>SharedTableForThisClass</em>. This can potentially reduce number of column needed to store all the classes.
-            - WithReadonly: This will mark the table a readonly. It can only be used with <em>MapToExistingTable</em>.
-            - WithExclusivelyStoredInThisTable: This can be use independently on a derive class of a class that specify WithReuseColumns. It will exclude the columns required to store class from ReuseColumns strategy option.
-    - TableName: Optionally provide user define table name for this class.
-        - TableName is required when MapStrategy is <em>MapToExistingTable</em> or <em>SharedTableForThisClass</em>
-    - MapToExistingTable: (Deprecated) Use MapStrategy <em>MapToExistingTable</em>.
-    - ReplaceEmptyTableWithEmptyView: (Deprecated) Optionally provide if table can be replaced by a readonly null view if table is empty. This can happen if target dgndb is only used as readonly after publishing.
-    - Indexes[] : Optional list of indexes on properties of this class. It can be use to improve query performance or to add unique constraint.
-        - Name: Optional name of the index. Follow EC identifier rules. It need to be globally unique in database. Two index with same name will cause error.
-        - IsUnique : Optional unique constraint. Default value is false. All keys in index must be unique
-        - Properties[] :List of properties that will be part of index. Only primitive type properties can be added to this array
-            - Property name provide must exist in ECClass or its base classes.
-        - Where: This can be used to create partial indexes. The supported value right now is ECDB_NOTNULL that would create a partial index ignoring any NULL values.
-    .
-    
-    Examples
 
-    Using  "DoNotMap" MapStrategy 
+    @section ECDbClassHintDescription Mapping Hints for ECClasses
+    
+    (ECDb will only look for it in local attributes on the ECClass).
+    
+    Description of the ECDbClassHint properties:
+
+    - MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.    
+        - DoNotMap: The class is not mapped to any database table. This does not affect subclasses of this ECClass.
+        - DoNotMapHierarchy: The whole hierarchy of classes is not mapped.
+        - TableForThisClass: This class are mapped to its own table. This does not affect subclasses of this ECClass.
+        - TablePerClass: This class and all its subclasses are mapped to its own table.
+        - TablePerHierarchy: This class and all its subclasses are mapped to a @i single table.
+        - MapToExistingTable: This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty. 
+        The table must have primary key column of type INTEGER. This does not affect subclasses of this ECClass.
+        - SharedTableForThisClass: Allows multiple classes which are not inherited from each other to reuse the same table.
+        The table is created by ECDb and its name @b must be specified via the ECProperty @b TableNamed. This does not affect subclasses of this ECClass.
+        - The above values can be combined with these options (use the "|" operator).
+            - WithReuseColumns: This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
+            This can reduce the number of columns (and cells with NULL values) in the table significantly.
+            This can be applied to @b TablePerHierarchy or @b SharedTableForThisClass. 
+            - WithReadonly: This will mark the table as readonly. Can only be used with @b MapToExistingTable.
+            - WithExclusivelyStoredInThisTable (not to combine with another MapStrategy): Apply this on a class where a base class specified WithReuseColumns. 
+            It will exclude this ECClass' ECProperties from the colum reuse and therefore create separate columns for its 
+            ECProperties.
+    - TableName (optional, required for MapStrategies @i MapToExistingTable and @i SharedTableForThisClass): 
+    Specify a table name for this class (instead of letting ECDb choose a name)
+    - Indexes (optional) : List of indexes to be created for properties of this class. 
+    It can be use to improve query performance or to add a unique constraint.
+        - Name (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
+        - IsUnique (optional): If true, the index will be a unique index. Default value is @i false.
+        - Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
+        in the ECClass or in the base classes.
+        - Where (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
+        creates a partial index ignoring any NULL values.
+    - MapToExistingTable (optional, deprecated): Use MapStrategy <em>MapToExistingTable</em> instead.
+    - ReplaceEmptyTableWithEmptyView (optional, deprecated) Do not use this anymore
+
+    ####Examples
+
+    #### MapStrategy DoNotMap
 
         <ECClass typeName="AClassThatDoesNotGetMappedToDb" isDomainClass="True">
             <ECCustomAttributes>
@@ -287,131 +272,106 @@ Specifies a prefix for generated tables. If not specified, namespacePrefix of th
             <ECProperty propertyName="stringFoo" typeName="string" />
         </ECClass>
 
-    Using  "TablePerHierarchy" MapStrategy 
+    #### MapStrategy  TablePerHierarchy
 
-        <ECClass typeName="Foo"  isDomainClass="True">
+        <ECClass typeName="Foo" isDomainClass="True">
             <ECCustomAttributes>
                 <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.11">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
-                    <TableName>FOO_FIGHTERS</TableName>
                 </ECDbClassHint>
             </ECCustomAttributes>
         ...
         </ECClass>
     
-    Creating database indexes on ECProperties
+    #### Creating database indexes on ECProperties
 
-        <ECClass typeName="ClassWithPrimitiveProperties" isDomainClass="True">
+        <ECClass typeName="Person" isDomainClass="True">
             <ECCustomAttributes>
                 <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.11">
                     <Indexes>
                         <ECDbIndex>
-                            <Name>IDX_ON_intProp_doubleProp_stringProp</Name>
+                            <Name>Foo_Name_ix</Name>
                             <IsUnique>False</IsUnique>
                             <Properties>
-                                <string>intProp</string>
-                                <string>doubleProp</string>
-                                <string>stringProp</string>
+                                <string>FirstName</string>
+                                <string>LastName</string>
                             </Properties>
                         </ECDbIndex>
                         <ECDbIndex>
-                            <Name>IDX_ON_date_time_and_binary</Name>
+                            <Name>Foo_Birthday_ix</Name>
                             <IsUnique>False</IsUnique>
                             <Properties>
-                                <string>dateTimeProp</string>
-                                <string>binaryProp</string>
-                            </Properties>
-                        </ECDbIndex>
-                        <ECDbIndex>
-                            <Name>IDX_ON_point2d</Name>
-                            <IsUnique>False</IsUnique>
-                            <Properties>
-                                <string>point2dProp</string>
-                                <string>point3dProp</string>
-                            </Properties>
-                        </ECDbIndex>
-                        <ECDbIndex>
-                            <Name>IDX_PARTIAL</Name>
-                            <IsUnique>False</IsUnique>
-                            <Properties>
-                                <string>point2dProp</string>
+                                <string>Birthday</string>
                             </Properties>
                             <Where>ECDB_NOTNULL</Where>
                         </ECDbIndex>
                     </Indexes>
                 </ECDbClassHint>
             </ECCustomAttributes>
-            <ECProperty propertyName="intProp" typeName="int">
-            </ECProperty>
-        ... 
+            <ECProperty propertyName="FirstName" typeName="string"/>
+            <ECProperty propertyName="LastName" typeName="string"/>
+            <ECProperty propertyName="Birthday" typeName="dateTime"/>
+            ...
         </ECClass>
     
-    @section ECDbPropertyHint Mapping Hints for ECProperty
-    Optional hint to tell how to map properties to database columns. (ECDb will only look for it in local attributes on the ECProperty) Following Properties can be set:
+    @section ECDbPropertyHintDescription Mapping Hints for ECProperty
     
-    - ColumnName: If not specified, the ECProperty name is used. It must follow EC Identifier specification.
-    - MapStrategy: Optionally, if not required by client to query individual members of these composite types, Arrays and Structs can be mapped into a single column as following
-       - ECXml: <em>(Not supported yet)</em> Store property as ECXml value.
-       - ECBinary: <em>(Not supported yet)</em> Store property as blob value.
-       - Json: <em>(Not supported yet)</em> Store property as json value.
-       - StoreInSeparateTable: Default for StructArray type properties. 
-       - Inline: Default for Struct, Point2D and Point3D type properties. The column required to store properties is added to same table to which class is mapped to.
-    - IsNullable: Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
-    - IsUnique: Only allow unique values for this column.
-    - Collate: Specify how string compare should work for this property. Following are possible values for collate property.
+    (ECDb will only look for it in local attributes on the ECProperty)
+    
+    Description of the ECDbPropertyHint properties:
+    
+    - ColumnName (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
+    follow EC naming rules.
+    - IsNullable (optional): If true, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
+    - IsUnique (optional): If true, values must be unique for this ECProperty.
+    - Collate (optional): Specifies the string comparison mode for this property. Possible values:
         - BINARY: (default): bit to bit matching.
         - NOCASE: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
         - RTRIM: The same as binary, except that trailing space characters are ignored.​
-    - Precision: <em>(Not supported yet)</em> Only applied to Double type properties. Possible value are 0-16.
-    .
-    Examples:
-
-    Mapping a array to a global "ECArrayOfStrings" table instead of default blob which is store in same table as the parent ECClass of this property is mapped to
+    - MapStrategy (optional, not supported yet)
+    - Precision (optional, not supported yet): Specifies precision for ECProperties of type double. Possible values: 0-16.
     
-        <ECArrayProperty propertyName="stringArrayProp" typeName="string" minOccurs="0" maxOccurs="unbounded" >
+    ###Examples
+   
+    #### Property custom name
+
+        <ECProperty propertyName="Id" typeName="int">
             <ECCustomAttributes>
                 <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <MapStrategy>StoreInSeparateTable</MapStrategy>
-                </ECDbPropertyHint>
-            </ECCustomAttributes>
-        </ECArrayProperty>
-    
-    Providing custom name for a property
-
-        <ECProperty propertyName="intProp" typeName="int">
-            <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <ColumnName>myColumn_intProp</ColumnName>
+                    <ColumnName>assetid</ColumnName>
                 </ECDbPropertyHint>
             </ECCustomAttributes>
         </ECProperty>
     
-    Specifying Collate or case-insensitive search for a property
+    #### Case-insensitive Collation
 
-        <ECProperty propertyName="stringProp" typeName="string">
+        <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <ColumnName>myColumn_stringProp</ColumnName>
                     <Collate>NoCase</Collate> 
                 </ECDbPropertyHint>
             </ECCustomAttributes>
         </ECProperty>
     
-    @section ECDbRelationshipClassHint Mapping Hints for ECRelationshipClass
-    Optional hint to provide indexing information to optimize relationship querying. (ECDb will only look for it in local attributes on the ECRelationshipClass) Following Properties can be set: 
+    @section ECDbRelationshipClassHintDescription Mapping Hints for ECRelationshipClasses
+    (ECDb will only look for it in local attributes on the ECRelationshipClass) 
     
+    Description of the ECDbRelationshipClassHint properties:
+
     - PreferredDirection: Specify preferred direction in N:N and 1:1 relation will be used more often. It is use as hint to optimize querying. Possible values are as following
         - SourceToTarget : Optimize for source to target traversal. 
         - Bidirectional : Optimize for source to target and target to source traversal. 
         - TargetToSource : Optimize for target to source traversal.
-    - AllowDuplicateRelationships: By default relationship need to be unique. The property can be set to override it and allow duplicate values.
-    - SourceECIdColumn: (Deprecated) Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em>.
-    - SourceECClassIdColumn: (Deprecated) Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em>.
-    - TargetECIdColumn: (Deprecated) Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em>.
-    - TargetECClassIdColumn: (Deprecated) Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em>.
-    .
-
-    Examples:
+    - AllowDuplicateRelationships: By default relationships need to be unique. If true, duplicate values are allowed
+    How the duplication works depends on the mapping type:
+        - For EndTable mappings it will allow 1:N duplication.
+        - For LinkTable mappings it will allow all type of duplication.
+    - SourceECIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
+    - SourceECClassIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
+    - TargetECIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
+    - TargetECClassIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
+    
+    ####Examples
         
         <ECRelationshipClass typeName="EmployeeHardware" isDomainClass="True" strength="referencing" strengthDirection="forward">
             <ECCustomAttributes>
@@ -423,40 +383,26 @@ Specifies a prefix for generated tables. If not specified, namespacePrefix of th
             <BaseClass>AssetRelationshipsBase</BaseClass>
             <BaseClass>EmployeeRelationshipsBase</BaseClass>
             <Source cardinality="(0,N)" roleLabel="Employee using hardware" polymorphic="True">
-                <ECCustomAttributes>
-                    <ECDbRelationshipConstraintHint  xmlns="Bentley_Standard_CustomAttributes.01.11">
-                        <ECIdColumn>Employee__src_0N_id</ECIdColumn>
-                        <ECClassIdColumn>Employee__src_0N_classId</ECClassIdColumn>
-                        <GenerateDefaultIndex>True</GenerateDefaultIndex>
-                    </ECDbRelationshipClassHint>
-                </ECCustomAttributes>
                 <Class class="Employee" />
             </Source>
             <Target cardinality="(0,N)" roleLabel="Hardware assigned to employee" polymorphic="True">
-                <ECCustomAttributes>
-                    <ECDbRelationshipConstraintHint  xmlns="Bentley_Standard_CustomAttributes.01.11">
-                        <ECIdColumn>Hardware__trg_0N_id</ECIdColumn>
-                        <ECClassIdColumn>Hardware__trg_0N_classid</ECClassIdColumn>
-                        <GenerateDefaultIndex>True</GenerateDefaultIndex>
-                    </ECDbRelationshipClassHint>
-                </ECCustomAttributes>
                 <Class class="Hardware" />
             </Target>
         </ECRelationshipClass>
     
-    @section ECDbRelationshipConstraintHint Mapping Hints for ECDbRelationshipConstraint
-    Optional hint allow fine tune ECDbRelationshipConstraint. It allow customize key columns, index and integrity constraints.
+    @section ECDbRelationshipConstraintHintDescription Mapping Hints for constraints of an ECRelationshipClass
+    It allows to customize key columns, index and integrity constraints.
 
-    - ECClassIdColumn: Specify preferred direction in N:N and 1:1 relation will be used more often. It is use as hint to optimize querying. ​Possible values are as following
-    - ECIdColumn : Optimize for source to target traversal. 
-    - GenerateDefaultIndex : Optimize for source to target and target to source traversal. 
-    - ForeignKeyConstraint : Optimize for target to source traversal.
+    - ECClassIdColumn: TBD
+    - ECIdColumn: TBD
+    - GenerateDefaultIndex: TBD (what is default value?)
+    - ForeignKeyConstraint: TBD
         - EnforceReferentialIntegrityCheck: This enable referential integrity. Default is 'false'.
             - OnDeleteAction: Optional and only used if 'EnforceReferentialIntegrityCheck=True'. Possible values are 'NoAction' (default) and 'Cascade' which delete child rows when parent row is deleted.
             - OnUpdateAction: Optional and only used if 'EnforceReferentialIntegrityCheck=True'. Possible values are 'NoAction' (default) and 'Cascade' which update child foreign key when parent primary key is updated.
             - MatchType: Optional default value is 'Full'. This is reserved for future use.
-    .
-    Examples:
+    
+    ####Examples
         
         <ECRelationshipClass typeName="SourceToTarget_Embedding" isDomainClass="True" strength="embedding" strengthDirection="forward">
             <Source cardinality="(1,1)" polymorphic="True">
