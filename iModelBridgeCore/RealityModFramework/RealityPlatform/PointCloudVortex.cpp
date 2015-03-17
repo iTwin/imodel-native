@@ -14,8 +14,6 @@
 
 USING_BENTLEY_NAMESPACE_REALITYPLATFORM
 
-bool LoadPointoolsDLL(const wchar_t* filepath);
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,14 +24,8 @@ void PointCloudVortex::Initialize()
     PointCloudPreviewHandlerLogger::GetLogger()->messagev (LOG_INFO, L"In Initialize");
 #endif
 
-    //PtVortex::LoadDll();
-#ifdef _M_X64
-    LoadPointoolsDLL (L"PointoolsVortexAPI.dll");
-#else
-    LoadPointoolsDLL (L"PointoolsVortexAPI.dll");
-#endif
+    LoadPointoolsDLL ("PointoolsVortexAPI.dll");
 
-    //PtVortex::Initialize();
     ptInitialize(vortexLicCode);
 
 #ifdef DEBUG_PH
