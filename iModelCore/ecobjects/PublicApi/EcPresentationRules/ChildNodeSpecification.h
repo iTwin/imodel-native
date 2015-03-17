@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ typedef bvector<struct ChildNodeRule*> ChildNodeRuleList;
 Base class for all ChildNodeSpecifications.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ChildNodeSpecification
+struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification
     {
 //__PUBLISH_SECTION_END__
     private:
