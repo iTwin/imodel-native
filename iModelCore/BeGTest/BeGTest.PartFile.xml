@@ -108,6 +108,8 @@
     <ProductDirectoryList ListName="BeGTestDirList" >
         <ProductDirectory Name="BeGTestFiles"                       Path="bin" />
 
+        <!-- ***NEEDS WORK: We say that we don't deliver anything. But, in fact, BeGTestExe.mke symlinks all this stuff into the "bin" directory. 
+                We can probably take that logic out of BeGTestExe.mke and put it here. -->
         <ProductDirectory Name="LoggingNativeAssemblies"            Deliver="false" />
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Deliver="false" />
         <ProductDirectory Name="BentleyNativeAssemblies"            Deliver="false" />
@@ -120,6 +122,16 @@
         <ProductDirectory Name="VendorAPI"                          Deliver="false"  LibType="static"/>
         <ProductDirectory Name="VendorNotices"                      Deliver="false"/>
         <ProductDirectory Name="VendorNotices"                      Deliver="false"  LibType="static"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"  LibType="static"/>
+        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false"/>
+        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false"  LibType="static"/>
+        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       Deliver="false"/>
+        <ProductDirectory Name="MobileDgnSdkIncludeDirectory"       Deliver="false"  LibType="static"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false"/>
+        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false"  LibType="static"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
+        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"  LibType="static"/>
     </ProductDirectoryList>
 
     <!-- ********************************************************************************************** -->
