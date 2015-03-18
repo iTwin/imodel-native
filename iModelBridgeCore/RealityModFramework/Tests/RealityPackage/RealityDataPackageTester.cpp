@@ -42,6 +42,22 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_TRUE(pPackage.IsValid());
     ASSERT_STREQ(L"MyName", pPackage->GetName().c_str()); 
 
+    pPackage->SetDescription(L"SomeDescription");
+    ASSERT_STREQ(L"SomeDescription", pPackage->GetDescription().c_str()); 
+
+    pPackage->SetCopyright(L"(c) 2015 Bentley Systems, Incorporated. All rights reserved.");
+    ASSERT_STREQ(L"(c) 2015 Bentley Systems, Incorporated. All rights reserved.", pPackage->GetCopyright().c_str()); 
+
+    pPackage->SetPackageId(L"123asd789avbdlk");
+    ASSERT_STREQ(L"123asd789avbdlk", pPackage->GetPackageId().c_str()); 
+
+    DPoint2d polygon[4] = {{1.0252, 53.04}, {441.024452, 4453.0444}, {44, 444.54}, {4541.066252, 5773.0666664}};
+    BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(polygon, 4);
+    pPackage->SetBoundingPolygon(*pBoundingPolygon);
+    ASSERT_EQ(4+1/*closure point*/, pPackage->GetBoundingPolygon().GetPointCount()); 
+    ASSERT_DOUBLE_EQ(polygon[2].x, pPackage->GetBoundingPolygon().GetPointCP()[2].x);
+    ASSERT_DOUBLE_EQ(polygon[3].y, pPackage->GetBoundingPolygon().GetPointCP()[3].y);
+
     pPackage->GetImageryGroupR().push_back(RealityDataSource::Create(L"./imagery/satellite.jpeg", L"image/jpeg"));
     pPackage->GetImageryGroupR().push_back(RealityDataSource::Create(L"http://107.20.228.18/ArcGIS/services/Wetlands/MapServer/WMSServer?", L"wms"));
 
@@ -86,7 +102,7 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_TRUE(pPackage->GetCreationDate().Equals(pReadPackage->GetCreationDate()));
 
     //&&MM iterate over pts and test with an epsilon.
-    ASSERT_EQ(pPackage->GetBoundingPolygon().size(), pReadPackage->GetBoundingPolygon().size());
+    ASSERT_EQ(pPackage->GetBoundingPolygon().GetPointCount(), pReadPackage->GetBoundingPolygon().GetPointCount());
 
     //&&MM validate the group content. how? it would be nice to do it field by field because it gives a more
     // explicit error but this is tedious

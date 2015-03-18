@@ -37,7 +37,7 @@ nameToDefine=__REALITYPACKAGE_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h ${MultiCompileDepends}
+$(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h $(PublicApiDir)RealityPackage.h ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -51,8 +51,8 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
-
+                       $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
 %include dlmlink.mki
 

@@ -21,49 +21,39 @@ enum class RealityPackageStatus
     {
     Success                 = SUCCESS,  //!< The operation was successful
     UnknownVersion,                     //!< Version is either undefined or we can't handle it.
-    CouldNotCreateWriter,               //!< Make sure path is valid and that you have exclusive write privilege.
+    PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
     UnknownError            = ERROR,    //!< The operation failed with an unspecified error
     };
 
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct BoundingPolygon : public bvector<DPoint2d>
+struct BoundingPolygon : public RefCountedBase
 {
-public:
-    //! An empty invalid BoundingPolygon
-    BoundingPolygon(){};
+public:    
+    //! Empty polygon
+    static BoundingPolygonPtr Create();
 
     //! Create a polygon from points. Duplication will be forced on first/last point.
-    BoundingPolygon(DPoint2dCP pPoints, size_t count)
-        {
-        if(count > 2)
-            {
-            if(pPoints[0].AlmostEqual(pPoints[count-1]))
-                {
-                assign(pPoints, &pPoints[count-2]);
-                }
-            else
-                {
-                assign(pPoints, &pPoints[count-1]);
-                }
+    REALITYPACKAGE_EXPORT static BoundingPolygonPtr Create(DPoint2dCP pPoints, size_t count);
 
-            push_back(pPoints[0]);  // Explicitly assign the last for bitwise equality.
-            }
-
-        BeAssert(IsValid());
-        }
-    ~BoundingPolygon(){};
-            
-    DPoint2dCP GetPoints() const {return begin();}
-
-    bool IsValid() const { return GetSize() > 3;}   // Need at least 4 points to have a closed polygon.
+    //! The polygon points including the duplicated closing point.
+    REALITYPACKAGE_EXPORT DPoint2dCP GetPointCP() const;
 
     //! The number of points including duplicated closing point.
-    size_t GetSize() const {return size();}
+    REALITYPACKAGE_EXPORT size_t GetPointCount() const;
 
+    bool IsValid() const; 
+    
     WString ToString() const;
-    RealityPackageStatus FromString(WCharCP);
+    static BoundingPolygonPtr FromString(WStringCR);
+private:
+    BoundingPolygon(){};
+    BoundingPolygon(bvector<DPoint2d>& pts):m_points(std::move(pts)){};
+    BoundingPolygon(DPoint2dCP pPoints, size_t count);
+    ~BoundingPolygon();
+
+    bvector<DPoint2d> m_points;
 };
 
 
@@ -75,12 +65,10 @@ struct RealityDataPackage : public RefCountedBase
 {
 public:
     typedef bvector<RealityDataSourcePtr> DataSources;
-
-    //&&MM need to be able :
-    //  - create a new one. mandatory field?
-    //  - create from existing.
-    //! Create a new one.
-    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(WCharCP name/*&&MM define what is mandatory*/);
+    
+    //&&MM need to be able mandatory field?
+    //! Create a new empty package.
+    REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(WCharCP name);
 
     //! Create an instance from an existing package file.
     //! @param[out] status      Success if the package was opened and parsed successfully.
@@ -115,9 +103,10 @@ public:
 
     //! Package bounding polygon in latitude/longitude.
     REALITYPACKAGE_EXPORT BoundingPolygonCR GetBoundingPolygon() const;
-    REALITYPACKAGE_EXPORT void SetBoundingPolygon(BoundingPolygonCR polygon);
+    //! Package object will increment ref count of 'polygon'.
+    REALITYPACKAGE_EXPORT void SetBoundingPolygon(BoundingPolygonR polygon);
 
-    //! A read-only access to data source container. Might be empty
+    //! A read-only access to data source container. Might be empty.
     REALITYPACKAGE_EXPORT DataSources const& GetImageryGroup() const;
     REALITYPACKAGE_EXPORT DataSources const& GetModelGroup() const;
     REALITYPACKAGE_EXPORT DataSources const& GetPinnedGroup() const;
@@ -143,7 +132,7 @@ private:
     WString m_copyright;
     WString m_packageId;        //&&MM should it be a GUID or UInt64 instead of a string?
     DateTime m_creationDate;
-    BoundingPolygon m_boundingPolygon;
+    BoundingPolygonPtr m_pBoundingPolygon;
     
     DataSources m_imagery;
     DataSources m_terrain;
@@ -152,7 +141,7 @@ private:
 };
 
 //=======================================================================================
-//!
+//! Base class for 
 //! @bsiclass
 //=======================================================================================
 struct RealityDataSource : public RefCountedBase
@@ -169,7 +158,7 @@ public:
     REALITYPACKAGE_EXPORT void SetType(WCharCP type);
 
     // Persistence
-    static RealityDataSourcePtr CreateFromXml(BeXmlNodeP pSourceNode);
+    static RealityDataSourcePtr Read(BeXmlNodeP pSourceNode);
     RealityPackageStatus Write(BeXmlNodeP pParent) const;
 protected:
     RealityDataSource(WCharCP uri, WCharCP type);
@@ -183,6 +172,21 @@ private:
     WString m_type;     
 };
 
+//=======================================================================================
+//!
+//! @bsiclass
+//=======================================================================================
+struct PinnedSource : public RealityDataSource
+{
+public:
+    //! Create a new PinnedSource object.
+    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(WCharCP uri, WCharCP type, double longitude, double latitude);
+
+    DPoint2dCR GetLocation() const; 
+    void SetLocation(DPoint2dCR location) const; 
+private:
+    DPoint2d m_location;        //! !spatial location in lat/long
+};
 
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

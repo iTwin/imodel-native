@@ -8,7 +8,6 @@
 #include <RealityPackage/RealityDataPackage.h>
 #include <Bentley/BeFileName.h>
 
-
 USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 
 #define PACKAGE_TOSTRING_OPTIONS ((BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent))
@@ -40,24 +39,153 @@ USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "Uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "Type"
 
+//=======================================================================================
+//                              BoundingPolygon
+//=======================================================================================
+#define SPACE_DELIMITER L" "
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+DPoint2dCP BoundingPolygon::GetPointCP() const {return &m_points[0];}
+bool BoundingPolygon::IsValid() const { return GetPointCount() > 3;}
+size_t BoundingPolygon::GetPointCount() const {return m_points.size();}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+BoundingPolygonPtr BoundingPolygon::Create()
+    {
+    return new BoundingPolygon();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+BoundingPolygonPtr BoundingPolygon::Create(DPoint2dCP pPoints, size_t count)
+    {
+    return new BoundingPolygon(pPoints, count);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+BoundingPolygon::BoundingPolygon(DPoint2dCP pPoints, size_t count)
+    {
+    if(count > 2)
+        {
+        if(pPoints[0].AlmostEqual(pPoints[count-1]))
+            {
+            m_points.assign(pPoints, pPoints + (count-1));
+            }
+        else
+            {
+            m_points.assign(pPoints, pPoints + count);
+            }
+
+        m_points.push_back(pPoints[0]);  // Explicitly assign the last for bitwise equality.
+        }
+
+    BeAssert(IsValid());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+BoundingPolygon::~BoundingPolygon(){};
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
 WString BoundingPolygon::ToString() const
     {
-    //&&MM TODO. It would be nice to reuse something here.  CurveVector maybe? but that seems overkill and its 3d.
-    // Use an inner and outer loop element. ?
-    return WString();   //&&MM TODO 
+    // convert to a space separated string.
+    WString result;
+    for(auto point : m_points)
+        {
+        WPrintfString pointStr(L"%f %f ", point.x, point.y);
+        result.append(pointStr);
+        }
+
+    // Remove extra whitespace
+    if(result.size() > 1)
+        result.resize(result.size()-1);
+
+    return result;
     }
 
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus BoundingPolygon::FromString(WCharCP polygon)
+BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
     {
-    return RealityPackageStatus::UnknownError; //&&MM todo
+    bvector<DPoint2d> points;
+
+    //&&MM make this parsing more pretty. Like get firststring get next string.
+    //  - properly handle error cases.
+
+    // Skip delimiters at beginning.
+    WString::size_type lastPos = polygon.find_first_not_of(SPACE_DELIMITER, 0);
+
+    // Find first non-delimiter.
+    WString::size_type pos = polygon.find_first_of(SPACE_DELIMITER, lastPos);
+
+    while (WString::npos != pos || WString::npos != lastPos) 
+        {
+        // X Coord
+        // Found a token, add it to the vector.
+        WString coordX = polygon.substr(lastPos, pos - lastPos);
+
+        // Skip delimiters.
+        lastPos = polygon.find_first_not_of(SPACE_DELIMITER, pos);
+
+        // Find next non-delimiter.
+        pos = polygon.find_first_of(SPACE_DELIMITER, lastPos);
+
+        if(WString::npos == pos && WString::npos == lastPos)
+            {
+            points.clear();
+            break;
+            }
+
+        // Y Coord
+        // Found a token, add it to the vector.
+        WString coordY = polygon.substr(lastPos, pos - lastPos);
+
+        // Skip delimiters.
+        lastPos = polygon.find_first_not_of(SPACE_DELIMITER, pos);
+
+        // Find next non-delimiter.
+        pos = polygon.find_first_of(SPACE_DELIMITER, lastPos);
+
+        DPoint2d point;
+        point.x = BeStringUtilities::Wtof(coordX.c_str());
+        point.y = BeStringUtilities::Wtof(coordY.c_str());
+
+        points.push_back(point);
+        }
+
+    if(points.size() > 2)
+        {
+        if(points[0].AlmostEqual(points[points.size()-1]))
+            {
+            points[points.size()-1] = points[points.size()-2];  // Explicitly assign the last for bitwise equality.
+            }
+        else
+            {
+            points.push_back(points[0]);    // add closure point.
+            }    
+
+        return new BoundingPolygon(points);
+        }
+    
+    return NULL;    
     }
+
+//=======================================================================================
+//                              RealityDataSource
+//=======================================================================================
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
@@ -77,8 +205,8 @@ void      RealityDataPackage::SetPackageId(WCharCP packageId) {m_packageId = pac
 DateTimeCR RealityDataPackage::GetCreationDate() const {return m_creationDate;}
 void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_creationDate = date;}
 
-BoundingPolygonCR RealityDataPackage::GetBoundingPolygon() const {return m_boundingPolygon;}
-void              RealityDataPackage::SetBoundingPolygon(BoundingPolygonCR polygon) {BeAssert(polygon.IsValid()); m_boundingPolygon = polygon;}
+BoundingPolygonCR RealityDataPackage::GetBoundingPolygon() const {return *m_pBoundingPolygon;}
+void              RealityDataPackage::SetBoundingPolygon(BoundingPolygonR polygon) {BeAssert(polygon.IsValid()); m_pBoundingPolygon = &polygon;}
 
 RealityDataPackage::DataSources const&  RealityDataPackage::GetImageryGroup() const {return m_imagery;}    
 RealityDataPackage::DataSources&        RealityDataPackage::GetImageryGroupR()      {return m_imagery;}   
@@ -96,6 +224,7 @@ RealityDataPackage::RealityDataPackage(WCharCP name)
     {
     BeAssert(!WString::IsNullOrEmpty(name));
     m_name = name;
+    m_pBoundingPolygon = BoundingPolygon::Create(); //empty invalid polygon
     }
 
 //----------------------------------------------------------------------------------------
@@ -166,8 +295,8 @@ RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& s
     pXmlDom->SelectNodeContent(pPackage->m_packageId, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageId, NULL, BeXmlDom::NODE_BIAS_First);
 
     WString polygonString;
-    pXmlDom->SelectNodeContent(pPackage->m_packageId, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, NULL, BeXmlDom::NODE_BIAS_First);
-    pPackage->m_boundingPolygon.FromString(polygonString.c_str());
+    pXmlDom->SelectNodeContent(polygonString, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, NULL, BeXmlDom::NODE_BIAS_First);
+    pPackage->m_pBoundingPolygon = BoundingPolygon::FromString(polygonString.c_str());
     
     //&&MM to do polygon
     status = RealityPackageStatus::Success;
@@ -217,7 +346,6 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
        RealityPackageStatus::Success != (status = WriteDataSources(GetTerrainGroup(), PACKAGE_ELEMENT_TerrainGroup, pRootNode)))
         return status;
     
-    //&&MM map some xmlstatus to RealityPackageStatus.
     BeXmlStatus xmlStatus = pXmlDom->ToFile(filename, PACKAGE_TOSTRING_OPTIONS, BeXmlDom::FILE_ENCODING_Utf8);
     if(BEXML_Success != xmlStatus)
         return RealityPackageStatus::UnknownError;
@@ -238,7 +366,7 @@ RealityPackageStatus RealityDataPackage::ReadDataSources(DataSources& sources, U
     
     for (BeXmlNodeP childElement = pSourceGroup->GetFirstChild(); NULL != childElement; childElement = childElement->GetNextSibling())
         {
-        RealityDataSourcePtr pSource = RealityDataSource::CreateFromXml(childElement);
+        RealityDataSourcePtr pSource = RealityDataSource::Read(childElement);
 
         // Do not return an error but warn about it. It might be a source node extension that we can't handle?
         BeDataAssert(pSource.IsValid());   
@@ -331,7 +459,7 @@ RealityDataSourcePtr RealityDataSource::Create(WCharCP uri, WCharCP type)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSource::CreateFromXml(BeXmlNodeP pSourceNode)
+RealityDataSourcePtr RealityDataSource::Read(BeXmlNodeP pSourceNode)
     {
     WString uri;
     if(BEXML_Success != pSourceNode->GetAttributeStringValue (uri, PACKAGE_SOURCE_ATTRIBUTE_Uri))
