@@ -187,7 +187,7 @@
         - CustomAttribute ECClasses
         - Non-domain ECClasses
         - Relationship ECClasses with no source/target constraints
-    - Type of ECClasses that are mapped using the @b TablePerClass strategy by default.
+    - Type of ECClasses that are mapped using the @b TableForThisClass strategy by default.
         - Domain ECClasses
         - Struct ECClasses
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (aka foreign key mapping or EndTable mapping)
@@ -228,36 +228,36 @@
     
     Description of the ECDbClassHint properties:
 
-    - MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.    
-        - DoNotMap: The class is not mapped to any database table. This does not affect subclasses of this ECClass.
-        - DoNotMapHierarchy: The whole hierarchy of classes is not mapped.
-        - TableForThisClass: This class are mapped to its own table. This does not affect subclasses of this ECClass.
-        - TablePerClass: This class and all its subclasses are mapped to its own table.
-        - TablePerHierarchy: This class and all its subclasses are mapped to a @i single table.
-        - MapToExistingTable: This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty. 
+    - <b>MapStrategy</b> (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.    
+        - <CODE>DoNotMap</CODE>: The class is not mapped to any database table. This does not affect subclasses of this ECClass.
+        - <CODE>DoNotMapHierarchy</CODE>: The whole hierarchy of classes is not mapped.
+        - <CODE>TableForThisClass</CODE>: This class are mapped to its own table. This does not affect subclasses of this ECClass.
+        - <CODE>TablePerClass</CODE>: This class and all its subclasses are mapped to its own table.
+        - <CODE>TablePerHierarchy</CODE>: This class and all its subclasses are mapped to a @i single table.
+        - <CODE>MapToExistingTable</CODE>: This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty. 
         The table must have primary key column of type INTEGER. This does not affect subclasses of this ECClass.
-        - SharedTableForThisClass: Allows multiple classes which are not inherited from each other to reuse the same table.
-        The table is created by ECDb and its name @b must be specified via the ECProperty @b TableNamed. This does not affect subclasses of this ECClass.
+        - <CODE>SharedTableForThisClass</CODE>: Allows multiple classes which are not inherited from each other to reuse the same table.
+        The table is created by ECDb and its name @b must be specified via the ECProperty @b TableName. This does not affect subclasses of this ECClass.
         - The above values can be combined with these options (use the "|" operator).
-            - WithReuseColumns: This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
+            - <CODE>WithReuseColumns</CODE>: This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
             This can be applied to @b TablePerHierarchy or @b SharedTableForThisClass. 
-            - WithReadonly: This will mark the table as readonly. Can only be used with @b MapToExistingTable.
-            - WithExclusivelyStoredInThisTable (not to combine with another MapStrategy): Apply this on a class where a base class specified WithReuseColumns. 
+            - <CODE>WithReadonly</CODE>: This will mark the table as readonly. Can only be used with @b MapToExistingTable.
+            - <CODE>WithExclusivelyStoredInThisTable</CODE> (not to combine with another MapStrategy): Apply this on a class where a base class specified WithReuseColumns. 
             It will exclude this ECClass' ECProperties from the colum reuse and therefore create separate columns for its 
             ECProperties.
-    - TableName (optional, required for MapStrategies @i MapToExistingTable and @i SharedTableForThisClass): 
+    - <b>TableName</b> (optional, required for MapStrategies @i MapToExistingTable and @i SharedTableForThisClass): 
     Specify a table name for this class (instead of letting ECDb choose a name)
-    - Indexes (optional) : List of indexes to be created for properties of this class. 
+    - <b>Indexes</b> (optional) : List of indexes to be created for properties of this class. 
     It can be use to improve query performance or to add a unique constraint.
-        - Name (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
-        - IsUnique (optional): If true, the index will be a unique index. Default value is @i false.
-        - Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
+        - <b>Name</b> (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
+        - <b>IsUnique</b> (optional): If true, the index will be a unique index. Default value is @i false.
+        - <b>Properties</b>: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
         in the ECClass or in the base classes.
-        - Where (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
+        - <b>Where</b> (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
         creates a partial index ignoring any NULL values.
-    - MapToExistingTable (optional, deprecated): Use MapStrategy <em>MapToExistingTable</em> instead.
-    - ReplaceEmptyTableWithEmptyView (optional, deprecated) Do not use this anymore
+    - <b>MapToExistingTable</b> (optional, deprecated): Use MapStrategy <em>MapToExistingTable</em> instead.
+    - <b>ReplaceEmptyTableWithEmptyView</b> (optional, deprecated) Do not use this anymore
 
     ####Examples
 
@@ -320,16 +320,16 @@
     
     Description of the ECDbPropertyHint properties:
     
-    - ColumnName (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
+    - <b>ColumnName</b> (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
     follow EC naming rules.
-    - IsNullable (optional): If true, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
-    - IsUnique (optional): If true, values must be unique for this ECProperty.
-    - Collate (optional): Specifies the string comparison mode for this property. Possible values:
-        - BINARY: (default): bit to bit matching.
-        - NOCASE: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
-        - RTRIM: The same as binary, except that trailing space characters are ignored.​
-    - MapStrategy (optional, not supported yet)
-    - Precision (optional, not supported yet): Specifies precision for ECProperties of type double. Possible values: 0-16.
+    - <b>IsNullable</b> (optional): If true, values must not be NULL. Might not be honoured when multiple ECClasses are stored in a single table or depending on MapStrategy.
+    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty.
+    - <b>Collate</b> (optional): Specifies the string comparison mode for this property. Possible values:
+        - <CODE>BINARY</CODE>: (default): bit to bit matching.
+        - <CODE>NOCASE</CODE>: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF.
+        - <CODE>RTRIM</CODE>: The same as binary, except that trailing space characters are ignored.​
+    - <b>MapStrategy</b> (optional, not supported yet)
+    - <b>Precision</b> (optional, not supported yet): Specifies precision for ECProperties of type double. Possible values: 0-16.
     
     ###Examples
    
@@ -358,18 +358,18 @@
     
     Description of the ECDbRelationshipClassHint properties:
 
-    - PreferredDirection: Specify preferred direction in N:N and 1:1 relation will be used more often. It is use as hint to optimize querying. Possible values are as following
-        - SourceToTarget : Optimize for source to target traversal. 
-        - Bidirectional : Optimize for source to target and target to source traversal. 
-        - TargetToSource : Optimize for target to source traversal.
-    - AllowDuplicateRelationships: By default relationships need to be unique. If true, duplicate values are allowed
+    - <b>PreferredDirection</b>: Specify preferred direction in N:N and 1:1 relation will be used more often. It is use as hint to optimize querying. Possible values are as following
+        - <CODE>SourceToTarget</CODE> : Optimize for source to target traversal. 
+        - <CODE>Bidirectional</CODE> : Optimize for source to target and target to source traversal. 
+        - <CODE>TargetToSource</CODE> : Optimize for target to source traversal.
+    - <b>AllowDuplicateRelationships</b>: By default relationships need to be unique. If true, duplicate values are allowed
     How the duplication works depends on the mapping type:
         - For EndTable mappings it will allow 1:N duplication.
         - For LinkTable mappings it will allow all type of duplication.
-    - SourceECIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
-    - SourceECClassIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
-    - TargetECIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
-    - TargetECClassIdColumn (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
+    - <b>SourceECIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
+    - <b>SourceECClassIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
+    - <b>TargetECIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
+    - <b>TargetECClassIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
     
     ####Examples
         
@@ -393,14 +393,14 @@
     @section ECDbRelationshipConstraintHintDescription Mapping Hints for constraints of an ECRelationshipClass
     It allows to customize key columns, index and integrity constraints.
 
-    - ECClassIdColumn: TBD
-    - ECIdColumn: TBD
-    - GenerateDefaultIndex: TBD (what is default value?)
-    - ForeignKeyConstraint: TBD
-        - EnforceReferentialIntegrityCheck: This enable referential integrity. Default is 'false'.
-            - OnDeleteAction: Optional and only used if 'EnforceReferentialIntegrityCheck=True'. Possible values are 'NoAction' (default) and 'Cascade' which delete child rows when parent row is deleted.
-            - OnUpdateAction: Optional and only used if 'EnforceReferentialIntegrityCheck=True'. Possible values are 'NoAction' (default) and 'Cascade' which update child foreign key when parent primary key is updated.
-            - MatchType: Optional default value is 'Full'. This is reserved for future use.
+    - <b>ECClassIdColumn</b>: Optional. Allow user to override the default name generated by %ECDb for SourceECClassId or TargetECClassId column depending on which constraint it was applied to.
+    - <b>ECIdColumn</b>: Optional. Allow user to override the default name generated by %ECDbfor SourceECInstanceId or TargetECInstanceId column depending on which constraint it was applied to.
+    - <b>GenerateDefaultIndex</b>: Optional and default value is 'True'. If 'False' %ECDb will not generate database index for the this relationship.
+    - <b>ForeignKeyConstraint</b>: Optional. It allow to create referential constraint at database level for the given relationship.
+        - <b>EnforceReferentialIntegrityCheck</b>: This enable referential integrity. Default is 'false'.
+            - <b>OnDeleteAction</b>: Optional and only used if <code>EnforceReferentialIntegrityCheck=True</code>. Possible values are <code>NoAction</code> (default) and <code>Cascade</code> which delete child rows when parent row is deleted.
+            - <b>OnUpdateAction</b>: Optional and only used if <code>EnforceReferentialIntegrityCheck=True</code>. Possible values are <code>NoAction</code> (default) and <code>Cascade</code> which update child foreign key when parent primary key is updated.
+            - <b>MatchType</b>: Optional default value is <code>Full</code>. This is reserved for future use.
     
     ####Examples
         
