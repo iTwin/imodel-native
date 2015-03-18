@@ -393,7 +393,7 @@ void            ECSchemaReadContext::_AddSchema(ECSchemaR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
-    m_knownSchemas->DropAllReferencesOfSchema(schema.GetSchemaKey());
+    m_knownSchemas->DropAllReferencesOfSchema(schema);
     }
 
 /*---------------------------------------------------------------------------------**//**

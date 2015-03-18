@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2410,32 +2410,29 @@ ECObjectsStatus ECSchemaCache::DropSchema  (SchemaKeyCR ecSchemaKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(SchemaKeyCR schemaKey)
+ECObjectsStatus ECSchemaCache::DropAllReferencesOfSchema(ECSchemaR schema)
     {
-    ECObjectsStatus status = DropSchema(schemaKey);
-    
-    bset<SchemaKey> schemasToRemove;
-    for (SchemaMap::iterator iter = m_schemas.begin(); iter != m_schemas.end(); ++iter)
+    for (SchemaMap::iterator iter = m_schemas.begin(); iter != m_schemas.end();)
         {
+        bool removeSchema = false;
         bvector<ECSchemaP> schemas;
         iter->second->FindAllSchemasInGraph(schemas, true);
         for (bvector<ECSchemaP>::const_iterator refIter = schemas.begin(); refIter != schemas.end(); ++refIter)
             {
-            if ((*refIter)->GetSchemaKey() == schemaKey)
+            if ((*refIter) == &schema)
                 {
-                schemasToRemove.insert(iter->second->GetSchemaKey());
+                removeSchema = true;
                 break;
                 }
             }
-        }
-    
-    for (bset<SchemaKey>::const_iterator iter = schemasToRemove.begin(); iter != schemasToRemove.end(); ++iter)
-        {
-        if (ECOBJECTS_STATUS_Success == DropSchema(*iter))
-            status = ECOBJECTS_STATUS_Success;
-        }
 
-    return status;
+        if (removeSchema)
+            iter = m_schemas.erase(iter);
+        else
+            ++iter;
+
+        }
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
