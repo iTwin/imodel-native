@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/StyleOverride.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -70,6 +70,11 @@ void StyleOverride::_WriteXml (BeXmlNodeP xmlNode)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR StyleOverride::GetForeColor (void) const { return m_foreColor; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tom.Amon                        03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void StyleOverride::SetForeColor (WString value) { m_foreColor = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

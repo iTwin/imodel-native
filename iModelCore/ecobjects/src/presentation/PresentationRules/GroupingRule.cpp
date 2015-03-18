@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/GroupingRule.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -118,6 +118,11 @@ WStringCR GroupingRule::GetClassName (void) const               { return m_class
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR GroupingRule::GetContextMenuCondition (void) const    { return m_contextMenuCondition; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tom.Amon                        03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void GroupingRule::SetContextMenuCondition (WString value)      { m_contextMenuCondition = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

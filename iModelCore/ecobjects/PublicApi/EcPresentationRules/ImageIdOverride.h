@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ImageIdOverride.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,9 @@ struct ImageIdOverride : public PresentationRule
 
         //! Returns ImageId override ECExpression string.
         ECOBJECTS_EXPORT WStringCR        GetImageId (void) const;
+
+        //! Set imageId override ECExpression string.
+        ECOBJECTS_EXPORT void             SetImageId (WString value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
