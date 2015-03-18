@@ -54,6 +54,7 @@ ECPropertyCP ECProperty::GetBaseProperty () const
 ECObjectsStatus ECProperty::SetBaseProperty (ECPropertyCP baseProperty)
     {
     m_baseProperty = baseProperty;
+    SetCachedTypeAdapter (NULL);
     return ECOBJECTS_STATUS_Success;
     }
 

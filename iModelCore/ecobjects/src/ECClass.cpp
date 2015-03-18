@@ -266,14 +266,26 @@ StandaloneECEnablerP ECClass::GetDefaultStandaloneEnabler() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECClass::OnBaseClassPropertyRemoved (ECPropertyCR baseProperty)
+    {
+    InvalidateDefaultStandaloneEnabler();
+    auto found = std::find_if (m_propertyList.begin(), m_propertyList.end(), [&baseProperty](ECPropertyCP arg) { return arg->GetBaseProperty() == &baseProperty; });
+    if (m_propertyList.end() != found)
+        (*found)->SetBaseProperty (baseProperty.GetBaseProperty());
+    else
+        {
+        for (ECClassP derivedClass : m_derivedClasses)
+            derivedClass->OnBaseClassPropertyRemoved (baseProperty);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::RemoveProperty (ECPropertyR prop)
     {
-    // ###TODO? Notify base and/or derived classes of this change. No known use case
-    if (HasBaseClasses() || 0 < m_derivedClasses.size())
-        return ECOBJECTS_STATUS_OperationNotSupported;
-
     PropertyMap::iterator iter = m_propertyMap.find (prop.GetName().c_str());
     if (iter == m_propertyMap.end() || iter->second != &prop)
         return ECOBJECTS_STATUS_PropertyNotFound;
@@ -282,6 +294,9 @@ ECObjectsStatus ECClass::RemoveProperty (ECPropertyR prop)
     m_propertyList.erase (std::find (m_propertyList.begin(), m_propertyList.end(), &prop));
 
     InvalidateDefaultStandaloneEnabler();
+
+    for (ECClassP derivedClass : m_derivedClasses)
+        derivedClass->OnBaseClassPropertyRemoved (prop);
 
     return ECOBJECTS_STATUS_Success;
     }
@@ -396,6 +411,30 @@ void ECClass::InvalidateDefaultStandaloneEnabler() const
     // When class structure changes, the ClassLayout stored in this enabler becomes out-of-date
     // nullify it so it will be reconstructed on next call to GetDefaultStandaloneEnabler()
     m_defaultStandaloneEnabler = NULL;
+    for (ECClassP derivedClass : m_derivedClasses)
+        derivedClass->InvalidateDefaultStandaloneEnabler();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty)
+    {
+    InvalidateDefaultStandaloneEnabler();
+    ECPropertyP derivedProperty = GetPropertyP (baseProperty.GetName(), false);
+    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    if (nullptr != derivedProperty)
+        {
+        if (ECOBJECTS_STATUS_Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
+            derivedProperty->SetBaseProperty (&baseProperty);
+        }
+    else
+        {
+        for (ECClassP derivedClass : m_derivedClasses)
+            status = derivedClass->OnBaseClassPropertyAdded (baseProperty);
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -412,24 +451,23 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty)
 
     // It isn't part of this schema, but does it exist as a property on a baseClass?
     ECPropertyP baseProperty = GetPropertyP(pProperty->GetName());
-    if (NULL == baseProperty)
+    if (NULL != baseProperty)
         {
-        m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
-        m_propertyList.push_back(pProperty);
+        ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty);
+        if (ECOBJECTS_STATUS_Success != status)
+            return status;
 
-        InvalidateDefaultStandaloneEnabler();
-        return ECOBJECTS_STATUS_Success;
+        pProperty->SetBaseProperty (baseProperty);
         }
 
-    ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty, *pProperty);
-    if (ECOBJECTS_STATUS_Success != status)
-        return status;
-
-    pProperty->SetBaseProperty (baseProperty);
     m_propertyMap.insert (bpair<WCharCP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
     m_propertyList.push_back(pProperty);
 
     InvalidateDefaultStandaloneEnabler();
+
+    for (ECClassP derivedClass : m_derivedClasses)
+        derivedClass->OnBaseClassPropertyAdded (*pProperty);
+
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -691,25 +729,7 @@ ECObjectsStatus ECClass::RemoveProperty (WStringCR name)
         return ECOBJECTS_STATUS_ClassNotFound;
         
     ECPropertyP ecProperty = propertyIterator->second;
- 
-    m_propertyMap.erase(propertyIterator);
-
-    // remove property from vector m_propertyList
-    PropertyList::iterator propertyListIterator;
-    for (propertyListIterator = m_propertyList.begin(); propertyListIterator != m_propertyList.end(); propertyListIterator++)
-        {
-        if (*propertyListIterator == ecProperty)
-            {
-            m_propertyList.erase(propertyListIterator);
-            break;
-            }
-        }
-
-    delete ecProperty;
-
-    InvalidateDefaultStandaloneEnabler();
-
-    return ECOBJECTS_STATUS_Success;
+    return DeleteProperty (*ecProperty);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -941,6 +961,11 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
     // any properties.  How do we handle property overrides?
     m_baseClasses.push_back((ECClassP)&baseClass);
 
+    InvalidateDefaultStandaloneEnabler();
+
+    for (ECPropertyP baseProperty : baseClass.GetProperties())
+        OnBaseClassPropertyAdded (*baseProperty);
+
     baseClass.AddDerivedClass (*this);
 
     return ECOBJECTS_STATUS_Success;
@@ -979,6 +1004,11 @@ ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
         }
         
     baseClass.RemoveDerivedClass(*this);
+
+    InvalidateDefaultStandaloneEnabler();
+
+    for (ECPropertyP baseProperty : baseClass.GetProperties())
+        OnBaseClassPropertyRemoved (*baseProperty);
 
     return ECOBJECTS_STATUS_Success;
     }

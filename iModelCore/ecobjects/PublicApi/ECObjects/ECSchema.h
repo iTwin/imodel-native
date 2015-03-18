@@ -957,6 +957,8 @@ private:
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyP sourceProperty, bool copyCustomAttributes);
 
+    void            OnBaseClassPropertyRemoved (ECPropertyCR baseProperty);
+    ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty);
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -1850,7 +1852,7 @@ protected:
 
     ECOBJECTS_EXPORT virtual ECSchemaPtr     _LocateSchema (SchemaKeyR schema, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
 public:
-                ECObjectsStatus DropAllReferencesOfSchema(SchemaKeyCR key);
+    ECObjectsStatus DropAllReferencesOfSchema(ECSchemaR schema);
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:

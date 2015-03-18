@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentation/auiprovider.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! NEEDSWORK: Add comment here
 * @bsistruct                                    Abeesh.Basheer                  04/2012
 +===============+===============+===============+===============+===============+======*/
-struct          IECPresentationProvider : public RefCountedBase
+struct          IECPresentationProvider
     {
     //! NEEDSWORK: Add comment here
     enum ProviderType
@@ -37,6 +37,8 @@ struct          IECPresentationProvider : public RefCountedBase
         virtual ProviderType    _GetProviderType (void) const = 0;
 
     public:
+        virtual ~IECPresentationProvider()
+            {}
         //! Get a unique identifier associated with this UI Provider.
         ECOBJECTS_EXPORT    size_t  GetProviderId () const;
 
