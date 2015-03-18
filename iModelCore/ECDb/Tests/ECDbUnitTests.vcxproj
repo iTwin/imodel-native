@@ -37,7 +37,7 @@
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\ECDbBrownBag_Demo.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
-    <ClCompile Include="Published\ECDbMapPresistence_Tests.cpp" />
+    <ClCompile Include="Published\ECDbMapPersistence_Tests.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />
     <ClCompile Include="Published\ECDbRelationshipTests.cpp" />

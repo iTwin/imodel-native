@@ -6,6 +6,10 @@ Performance*            # Performance tests are always excluded from being run d
 ECSqlTestFixture.Debug  # This test only serves for debugging the ECSqlStatement API.
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
 
+# Can be removed from list when DGN schema is stable
+ECDbMapPersistenceTests.DGNSchemaStructureMapPersistence
+ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
