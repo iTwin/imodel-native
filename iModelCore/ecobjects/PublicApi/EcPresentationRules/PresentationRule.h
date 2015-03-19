@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRule.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,6 +85,9 @@ protected:
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
     ECOBJECTS_EXPORT WStringCR              GetCondition (void) const;
+
+    //! Set condition ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
+    ECOBJECTS_EXPORT void                   SetCondition (WString value);
 
     //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
     ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const;

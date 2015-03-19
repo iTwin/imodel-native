@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/LabelOverride.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,9 +41,14 @@ struct LabelOverride : public PresentationRule
         //! Label override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
         ECOBJECTS_EXPORT WStringCR        GetLabel (void) const;
 
+        //! Set label override value. Can be ECExpression string. 
+        ECOBJECTS_EXPORT void             SetLabel (WString value);
+
         //! Description override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
         ECOBJECTS_EXPORT WStringCR        GetDescription (void) const;
 
+        //! Set description override value. Can be ECExpression string. 
+        ECOBJECTS_EXPORT void             SetDescription (WString value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

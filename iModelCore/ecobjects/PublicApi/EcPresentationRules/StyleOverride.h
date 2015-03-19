@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/StyleOverride.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,6 +40,9 @@ struct StyleOverride : public PresentationRule
 
         //! Foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
         ECOBJECTS_EXPORT WStringCR        GetForeColor (void) const;
+
+        //! Set foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
+        ECOBJECTS_EXPORT void             SetForeColor (WString value);
 
         //! Background color override value. Can be ECExpression string. If value is not set it will not affect original value.
         ECOBJECTS_EXPORT WStringCR        GetBackColor (void) const;

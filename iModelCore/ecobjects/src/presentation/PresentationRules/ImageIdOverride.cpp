@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ImageIdOverride.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -61,3 +61,8 @@ void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ImageIdOverride::GetImageId (void) const { return m_imageIdExpression; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Tom.Amon                        03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImageIdOverride::SetImageId (WString value) { m_imageIdExpression = value; }
