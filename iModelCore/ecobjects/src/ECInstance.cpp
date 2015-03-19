@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -175,6 +175,14 @@ ECObjectsStatus        IECInstance::SetInstanceId (WCharCP id)     { return _Set
 WString        IECInstance::GetInstanceId() const
     {
     return _GetInstanceId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString     IECInstance::GetInstanceIdForSerialization() const
+    {
+    return _GetInstanceIdForSerialization();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3078,7 +3086,7 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
     instanceNode->AddAttributeStringValue (XMLNS_ATTRIBUTE, fullSchemaName.c_str());
 
     if (writeInstanceId)
-        instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceId().c_str());
+        instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
 
     return WritePropertyValuesOfClassOrStructArrayMember (ecClass, ecInstance, NULL, *instanceNode);
     }
