@@ -13,9 +13,7 @@
 //  #include "ECInstanceIterable.h"
 #include "ECInstance.h"
 
-/*__PUBLISH_SECTION_END__*/
 #include <ECUnits/Units.h>
-/*__PUBLISH_SECTION_START__*/
 
 #define EXPR_TYPEDEFS(_name_)  \
         BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
@@ -107,8 +105,6 @@ typedef NodePtrVector::iterator                     NodePtrVectorIterator;
 typedef bvector<EvaluationResult>                   EvaluationResultVector;
 typedef EvaluationResultVector::iterator            EvaluationResultVectorIterator;
 
-/*__PUBLISH_SECTION_END__*/
-
 enum ValueType
     {
     ValType_None            =  0,
@@ -118,8 +114,6 @@ enum ValueType
     ValType_ValueList       =  4,
     ValType_Lambda          =  5,
     };
-
-/*__PUBLISH_SECTION_START__*/
 
 typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, EvaluationResultVector& arguments);
 typedef ExpressionStatus (*ExpressionStaticMethodWithContext_t)(EvaluationResult& evalResult, void*methodContext, EvaluationResultVector& arguments);
@@ -696,6 +690,7 @@ public:
     ECOBJECTS_EXPORT static IValueListResultPtr Create (EvaluationResultVector const& values);
     };
 
+/*__PUBLISH_SECTION_START__*/
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -713,7 +708,9 @@ private:
         };
     bool                m_ownsInstanceList;
     ValueType           m_valueType;
+
 public:
+/*__PUBLISH_SECTION_END__*/
     ValueType           GetValueType() const    { return m_valueType; }
     bool                IsInstanceList() const  { return ValType_InstanceList == m_valueType; }
     bool                IsECValue() const       { return ValType_ECValue == m_valueType; }
@@ -723,6 +720,7 @@ public:
     ExpressionStatus    GetInteger(int32_t& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
 
+/*__PUBLISH_SECTION_START__*/
     //  Constructors and destructors
     ECOBJECTS_EXPORT EvaluationResult ();
     ECOBJECTS_EXPORT ~EvaluationResult ();
@@ -751,7 +749,6 @@ public:
     ECOBJECTS_EXPORT void                   SetLambda (LambdaValueR value);
     };
 
-/*__PUBLISH_SECTION_START__*/
 /*=================================================================================**//**
 *
 * Used to introduce a named value into the context.
