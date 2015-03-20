@@ -2473,6 +2473,17 @@ InstanceXmlReader (ECInstanceReadContextR context, BeXmlNodeR xmlNode)
     {
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Carole.MacDonald       03/15
+//+---------------+---------------+---------------+---------------+---------------+----
+ECSchemaCP GetSchema(WString schemaName)
+    {
+    SchemaKey key;
+    if (ECOBJECTS_STATUS_Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
+        return NULL;
+
+    return m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2487,6 +2498,43 @@ ECSchemaCP       GetSchema()
     
     m_schema = m_context.FindSchemaCP(key, SCHEMAMATCHTYPE_LatestCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact 
     return m_schema; 
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                         Carole.MacDonald       03/15
+//+---------------+---------------+---------------+---------------+---------------+----
+StandaloneECInstancePtr CreateConstraintInstance( WString className, WString instanceId, ECSchemaCP defaultSchema)
+    {
+    // Classnames might be qualified by a schema name.
+    WString constraintSchemaName;
+    WString constraintClassName;
+    if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (constraintSchemaName, constraintClassName, className))
+        {
+        LOG.warningv ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be parsed.", 
+            Utf8String (className).c_str());
+        return nullptr;
+        }
+
+    ECSchemaCP constraintSchema = WString::IsNullOrEmpty(constraintSchemaName.c_str()) ? defaultSchema : GetSchema(constraintSchemaName);
+    if (nullptr == constraintSchema)
+        {
+        LOG.warningv  ("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            Utf8String (constraintSchemaName).c_str());
+        return nullptr;
+        }
+
+    ECClassCP constraintClass = constraintSchema->GetClassCP (constraintClassName.c_str());
+    if (nullptr == constraintClass)
+        {
+        LOG.warningv  ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            Utf8String (className).c_str(), Utf8String (constraintClassName).c_str(), Utf8String (constraintSchema->GetName().c_str()).c_str());
+        return nullptr;
+        }
+
+    auto constraintInstance= constraintClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    constraintInstance->SetInstanceId(instanceId.c_str());
+
+    return constraintInstance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2574,34 +2622,26 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
     if (NULL != relationshipInstance)
         {
         // see if we can find the attributes corresponding to the relationship instance ids.
-        WString relationshipClassName;
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, SOURCEINSTANCEID_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetSourceInstanceId (sourceInstanceId);
-#endif
-            }
+        WString sourceInstanceId;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceInstanceId, SOURCEINSTANCEID_ATTRIBUTE))
+            return INSTANCE_READ_STATUS_EmptyElement;
 
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (relationshipClassName, SOURCECLASS_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetSourceClass (sourceClass);
-#endif
-            }
+        WString sourceClassName;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceClassName, SOURCECLASS_ATTRIBUTE))
+            return INSTANCE_READ_STATUS_EmptyElement;
 
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (instanceId, TARGETINSTANCEID_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetTargetInstanceId (sourceInstanceId);
-#endif
-            }
+        WString targetInstanceId;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetInstanceId, TARGETINSTANCEID_ATTRIBUTE))
+            return INSTANCE_READ_STATUS_EmptyElement;
 
-        if (BEXML_Success == m_xmlNode.GetAttributeStringValue (relationshipClassName, TARGETCLASS_ATTRIBUTE))
-            {
-#if defined (NEEDSWORK_RELATIONSHIP)
-            relationshipInstance->SetTargetClass (sourceClass);
-#endif
-            }
+        WString targetClassName;
+        if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetClassName, TARGETCLASS_ATTRIBUTE))
+            return INSTANCE_READ_STATUS_EmptyElement;
+
+        IECInstancePtr source = CreateConstraintInstance(sourceClassName, sourceInstanceId, schema);
+        relationshipInstance->SetSource(source.get());
+        IECInstancePtr target = CreateConstraintInstance(targetClassName, targetInstanceId, schema);
+        relationshipInstance->SetTarget(target.get());
         }
 
     return INSTANCE_READ_STATUS_Success;
