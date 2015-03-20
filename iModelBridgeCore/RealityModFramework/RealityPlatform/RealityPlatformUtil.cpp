@@ -12,6 +12,37 @@
 #include "stdafx.h"
 #include "RealityPlatformUtil.h"
 
+USING_BENTLEY_NAMESPACE_REALITYPLATFORM
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SessionManager::InitBaseGCS()
+    {
+    //WIP
+    //BeFileName dllFileName;
+    //Bentley::BeGetModuleFileName(dllFileName, NULL);
+
+    //GetBaseDirOfExecutingModule
+
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    WString geoCoordDir = exePath;
+    size_t pos = geoCoordDir.find_last_of(L"/\\");
+    geoCoordDir = geoCoordDir.substr(0, pos + 1);
+    geoCoordDir.append(L"GeoCoordinateData");
+
+    // Make sure directory exist.
+    BeFileName dir(geoCoordDir);
+    if (!dir.IsDirectory())
+        return false;
+
+    GeoCoordinates::BaseGCS::Initialize(geoCoordDir.c_str());
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -30,41 +61,10 @@ void GetBaseDirOfExecutingModule (WStringR baseDir)
     baseDir = baseDirW;
     }
 
-//&&JFC in our context I don't think we need critical section. review..
-CRITICAL_SECTION CriticalSectionHelper::s_criticalSection;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Chantal.Poulin                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CriticalSectionHelper::CriticalSectionHelper ()
-    {
-    EnterCriticalSection  (&s_criticalSection);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Chantal.Poulin                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-CriticalSectionHelper::~CriticalSectionHelper ()
-    {
-    LeaveCriticalSection (&s_criticalSection);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Chantal.Poulin                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CriticalSectionHelper::Init ()
-    {
-    static volatile long initDone = 0;
-    if (InterlockedIncrement (&initDone) > 1)
-        return;
-
-    InitializeCriticalSection (&s_criticalSection);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Chantal.Poulin                  04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RasterFacility::ConvertThePixels (size_t pi_Width, size_t pi_Height, const HFCPtr<HRPPixelType>& pi_rpSrcPixelType,
+void RasterFacility::ConvertThePixels(size_t pi_Width, size_t pi_Height, const HFCPtr<HRPPixelType>& pi_rpSrcPixelType,
                                             const HFCPtr<HCDPacket>& pi_rpSrcPacket, const HFCPtr<HRPPixelType>& pi_rpDstPixelType,
                                             HFCPtr<HCDPacket>& po_rpDstPacket)
     {
@@ -145,7 +145,7 @@ void RasterFacility::ConvertThePixels (size_t pi_Width, size_t pi_Height, const 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RasterFacility::CreateHBitmapFromHRFThumbnail (HBITMAP* pThumbnailBmp, HFCPtr<HRFThumbnail>&  pThumbnail, HFCPtr<HRPPixelType>& pPixelType)
+void RasterFacility::CreateHBitmapFromHRFThumbnail(HBITMAP* pThumbnailBmp, HFCPtr<HRFThumbnail>&  pThumbnail, HFCPtr<HRPPixelType>& pPixelType)
     {
     // Copy the thumbnail in GDI format GDI
 //     RasterFileHandlerLogger::GetLogger()->message (LOG_TRACE, L"Copy the thumbnail in GDI format.");

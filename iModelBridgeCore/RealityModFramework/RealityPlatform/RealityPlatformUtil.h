@@ -8,6 +8,22 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
+
+typedef uint32_t PtHandle;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jean-Francois.Cote              03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+//&&JFC TODO: Create a mechanism that will initialize the libraries only once per session.
+// Init GCS
+// Init Pointools
+// Init IPP
+// ...
+struct SessionManager
+    {
+    static bool InitBaseGCS();
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     04/2013
@@ -15,18 +31,8 @@
 void GetBaseDirOfExecutingModule(WStringR baseDir);
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Chantal.Poulin                  04/2012
+* @bsiclass                                     Marc.Bedard                     04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-class CriticalSectionHelper
-    {
-    static CRITICAL_SECTION s_criticalSection;
-    
-    public:
-        CriticalSectionHelper();
-        ~CriticalSectionHelper();
-        static void Init();
-    };
-
 struct RasterFacility
     {
     static void ConvertThePixels(size_t pi_Width, size_t pi_Height, const HFCPtr<HRPPixelType>& pi_rpSrcPixelType,
@@ -36,3 +42,5 @@ struct RasterFacility
     static void CreateHBitmapFromHRFThumbnail(HBITMAP* pThumbnailBmp, HFCPtr<HRFThumbnail>&  pThumbnail, HFCPtr<HRPPixelType>& pPixelType);
 
     };
+
+END_BENTLEY_REALITYPLATFORM_NAMESPACE

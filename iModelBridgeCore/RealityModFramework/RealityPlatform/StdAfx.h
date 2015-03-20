@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
 
-#include <Geom/GeomApi.h>
 #include <Imagepp/h/ImageppAPI.h>
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
@@ -20,9 +19,16 @@
 #include <Imagepp/all/h/HRPPixelConverter.h>
 #include <Imagepp/all/h/HRPPixelTypeV32B8G8R8X8.h>
 #include <Imagepp/all/h/HCDCodec.h>
+#include <Imagepp/all/h/HGFHMRStdWorldCluster.h>
+#include <Imagepp/all/h/HGF2DIdentity.h>
+#include <Imagepp/all/h/HCPGCoordModel.h>
+#include <Imagepp/all/h/HVE2DRectangle.h>
+#include <Imagepp/all/h/HRFUtility.h>
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/basegeocoordapi.h>
+
+
 
 #ifdef _MANAGED
 #error File type handlers cannot be built as managed assemblies.  Set the Common Language Runtime options to no CLR support in project properties.
@@ -33,5 +39,5 @@
 // #endif
 
 #include <RealityPlatform/RealityPlatformApi.h>
-
-
+#include "RealityPlatformAdmins.h"
+#include "RealityPlatformUtil.h"

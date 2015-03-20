@@ -6,8 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include <RealityPlatform/RealityDataHandler.h>
 
-typedef uint32_t PtHandle;  //&&JFC multiple definition. find a common place. 
+BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=======================================================================================    
 //! Class that encapsulates Vortex services
@@ -15,6 +16,7 @@ typedef uint32_t PtHandle;  //&&JFC multiple definition. find a common place.
 //=======================================================================================    
 struct PointCloudVortex
 {
+
 private:
     static void TransformAddRotation(TransformR transform, double xRotation, double yRotation, double zRotation, DPoint3dCR rotationOrigin);
     static void TransformAddTranslation(TransformR transform, DPoint3dCR translation);
@@ -74,6 +76,8 @@ public:
     static void GetPointCloudBounds(PtHandle cloudHandle, double* lower, double* upper);
     static PtHandle GetMetaDataHandle(PtHandle cloudHandle);
     static bool GetMetaTag(PtHandle metaHandle, WCharCP tagName, WCharP value);
+    
 };
 
 
+END_BENTLEY_REALITYPLATFORM_NAMESPACE

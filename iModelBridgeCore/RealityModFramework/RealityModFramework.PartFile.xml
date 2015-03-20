@@ -19,10 +19,10 @@
       </Bindings>
     </Part>
 
-    <Part Name="RealityPlatformTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataPlatformTester\RealityDataPlatformTester.mke" OnlyPlatforms="x86,x64">
+    <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/RealityPlatformTester.exe</Files>
+            <Files ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Files>
         </Bindings>
     </Part>
 
@@ -100,9 +100,9 @@
 
 	
     <Product Name="RealityModFramework">
-        <!--SubPart PartName="RealityPlatform"/-->
-        <!--&&JFC TODO SubPart PartName="RealityPlatformTester"/-->
-        <!--SubPart PartName="RealityPackage"/-->
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityDataHandlerTester"/>
+        <SubPart PartName="RealityPackage"/>
         <SubPart PartName="RealityPackage-Tested"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
