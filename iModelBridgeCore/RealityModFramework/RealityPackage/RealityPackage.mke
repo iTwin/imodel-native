@@ -34,10 +34,21 @@ nameToDefine=__REALITYPACKAGE_BUILD__
 #----------------------------------------------------------------------
 #       Build source files
 #----------------------------------------------------------------------
+
+RealityDepends  =   $(_MakeFileSpec) \
+                    $(PublicApiDir)RealityDataPackage.h \
+                    $(PublicApiDir)RealityPackage.h \
+                    $(PublicApiDir)RealityDataSource.h \
+                    $(baseDir)RealitySerialization.h
+                    
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h $(PublicApiDir)RealityPackage.h ${MultiCompileDepends}
+$(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h $(RealityDepends) ${MultiCompileDepends}
+
+$(o)RealityDataSource$(oext) : $(baseDir)RealityDataSource.cpp $(PublicApiDir)RealityDataSource.h $(RealityDepends) ${MultiCompileDepends}
+
+$(o)RealitySerialization$(oext) : $(baseDir)RealitySerialization.cpp $(baseDir)RealitySerialization.h $(PublicApiDir)RealityPackage.h ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

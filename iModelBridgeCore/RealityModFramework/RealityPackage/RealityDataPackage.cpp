@@ -7,37 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #include <RealityPackage/RealityDataPackage.h>
 #include <Bentley/BeFileName.h>
+#include "RealitySerialization.h"
 
 USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 
 #define PACKAGE_TOSTRING_OPTIONS ((BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent))
 
-#define W3SCHEMA_PREFIX     "xsi"
-#define W3SCHEMA_URI        "http://www.w3.org/2001/XMLSchema-instance"
-
-#define PACKAGE_PREFIX              "rdp"
-#define PACKAGE_NAMESPACE_1_0       "http://www.bentley.com/RealityDataServer/1.0"
-#define PACKAGE_VERSION_1_0         L"1.0"
-
-#define PACKAGE_ROOT_ELEMENT                "RealityDataPackage"
-#define PACKAGE_ROOT_ATTRIBUTE_Version      "Version"
-
-#define PACKAGE_ELEMENT_Name                "Name"
-#define PACKAGE_ELEMENT_Description         "Description"
-#define PACKAGE_ELEMENT_CreationDate        "CreationDate"
-#define PACKAGE_ELEMENT_Copyright           "Copyright"
-#define PACKAGE_ELEMENT_PackageId           "PackageId"
-#define PACKAGE_ELEMENT_BoundingPolygon     "BoundingPolygon"
-
-
-#define PACKAGE_ELEMENT_ImageryGroup        "ImageryGroup"
-#define PACKAGE_ELEMENT_ModelGroup          "ModelGroup"
-#define PACKAGE_ELEMENT_PinnedGroup         "PinnedGroup"
-#define PACKAGE_ELEMENT_TerrainGroup        "TerrainGroup"
-
-#define PACKAGE_ELEMENT_Source              "Source"
-#define PACKAGE_SOURCE_ATTRIBUTE_Uri        "Uri"
-#define PACKAGE_SOURCE_ATTRIBUTE_Type       "Type"
+Utf8CP ImageryData::ElementName = PACKAGE_ELEMENT_ImageryData;
+Utf8CP ModelData::ElementName = PACKAGE_ELEMENT_ModelData;
+Utf8CP PinnedData::ElementName = PACKAGE_ELEMENT_PinnedData;
+Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
 
 //=======================================================================================
 //                              BoundingPolygon
@@ -184,7 +163,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
     }
 
 //=======================================================================================
-//                              RealityDataSource
+//                              RealityDataPackage
 //=======================================================================================
 
 //----------------------------------------------------------------------------------------
@@ -208,14 +187,14 @@ void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_creationDate 
 BoundingPolygonCR RealityDataPackage::GetBoundingPolygon() const {return *m_pBoundingPolygon;}
 void              RealityDataPackage::SetBoundingPolygon(BoundingPolygonR polygon) {BeAssert(polygon.IsValid()); m_pBoundingPolygon = &polygon;}
 
-RealityDataPackage::DataSources const&  RealityDataPackage::GetImageryGroup() const {return m_imagery;}    
-RealityDataPackage::DataSources&        RealityDataPackage::GetImageryGroupR()      {return m_imagery;}   
-RealityDataPackage::DataSources const&  RealityDataPackage::GetTerrainGroup() const {return m_terrain;}    
-RealityDataPackage::DataSources&        RealityDataPackage::GetTerrainGroupR()      {return m_terrain;}   
-RealityDataPackage::DataSources const&  RealityDataPackage::GetModelGroup() const   {return m_model;}    
-RealityDataPackage::DataSources&        RealityDataPackage::GetModelGroupR()        {return m_model;}    
-RealityDataPackage::DataSources const&  RealityDataPackage::GetPinnedGroup() const  {return m_pinned;}    
-RealityDataPackage::DataSources&        RealityDataPackage::GetPinnedGroupR()       {return m_pinned;}    
+RealityDataPackage::ImageryGroup const& RealityDataPackage::GetImageryGroup() const {return m_imagery;}    
+RealityDataPackage::ImageryGroup&       RealityDataPackage::GetImageryGroupR()      {return m_imagery;}   
+RealityDataPackage::ModelGroup const&   RealityDataPackage::GetModelGroup() const   {return m_model;}    
+RealityDataPackage::ModelGroup&         RealityDataPackage::GetModelGroupR()        {return m_model;}    
+RealityDataPackage::PinnedGroup const&  RealityDataPackage::GetPinnedGroup() const  {return m_pinned;}    
+RealityDataPackage::PinnedGroup&        RealityDataPackage::GetPinnedGroupR()       {return m_pinned;}    
+RealityDataPackage::TerrainGroup const& RealityDataPackage::GetTerrainGroup() const {return m_terrain;}    
+RealityDataPackage::TerrainGroup&       RealityDataPackage::GetTerrainGroupR()      {return m_terrain;}   
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -302,11 +281,11 @@ RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& s
     status = RealityPackageStatus::Success;
 
     // Data sources
-    if(RealityPackageStatus::Success != (status = pPackage->ReadDataSources(pPackage->GetImageryGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ImageryGroup, pRootNode)) ||
-       RealityPackageStatus::Success != (status = pPackage->ReadDataSources(pPackage->GetModelGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ModelGroup, pRootNode)) ||
-       RealityPackageStatus::Success != (status = pPackage->ReadDataSources(pPackage->GetPinnedGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PinnedGroup, pRootNode)) ||
-       RealityPackageStatus::Success != (status = pPackage->ReadDataSources(pPackage->GetTerrainGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TerrainGroup, pRootNode)))
-       return NULL;
+    if(RealityPackageStatus::Success != (status = pPackage->ReadDataGroup_T(pPackage->GetImageryGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ImageryGroup, *pRootNode)) ||
+       RealityPackageStatus::Success != (status = pPackage->ReadDataGroup_T(pPackage->GetModelGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_ModelGroup, *pRootNode)) ||
+       RealityPackageStatus::Success != (status = pPackage->ReadDataGroup_T(pPackage->GetPinnedGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PinnedGroup, *pRootNode)) ||
+       RealityPackageStatus::Success != (status = pPackage->ReadDataGroup_T(pPackage->GetTerrainGroupR(), PACKAGE_PREFIX ":" PACKAGE_ELEMENT_TerrainGroup, *pRootNode)))
+        return NULL;
 
     return pPackage;
     }
@@ -324,6 +303,8 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateEmpty();
 
     BeXmlNodeP pRootNode = pXmlDom->AddNewElement(PACKAGE_ROOT_ELEMENT, NULL, NULL);
+    if(NULL == pRootNode)
+        return RealityPackageStatus::UnknownError;
 
     pRootNode->AddAttributeStringValue(PACKAGE_ROOT_ATTRIBUTE_Version, PACKAGE_VERSION_1_0);
     
@@ -334,16 +315,16 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
     // Root children
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Name, GetName().c_str());
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Description, GetDescription().c_str());
-    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_CreationDate, GetCreationDateUTC().c_str());
+    pRootNode->AddElementStringValue(PACKAGE_ELEMENT_CreationDate, BuildCreationDateUTC().c_str());
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_Copyright, GetCopyright().c_str());
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_PackageId, GetPackageId().c_str());
     pRootNode->AddElementStringValue(PACKAGE_ELEMENT_BoundingPolygon, GetBoundingPolygon().ToString().c_str());
 
     // Data sources
-    if(RealityPackageStatus::Success != (status = WriteDataSources(GetImageryGroup(), PACKAGE_ELEMENT_ImageryGroup, pRootNode)) ||
-       RealityPackageStatus::Success != (status = WriteDataSources(GetModelGroup(), PACKAGE_ELEMENT_ModelGroup, pRootNode)) ||
-       RealityPackageStatus::Success != (status = WriteDataSources(GetPinnedGroup(), PACKAGE_ELEMENT_PinnedGroup, pRootNode)) ||
-       RealityPackageStatus::Success != (status = WriteDataSources(GetTerrainGroup(), PACKAGE_ELEMENT_TerrainGroup, pRootNode)))
+    if(RealityPackageStatus::Success != (status = WriteDataGroup_T(GetImageryGroup(), PACKAGE_ELEMENT_ImageryGroup, *pRootNode)) ||
+       RealityPackageStatus::Success != (status = WriteDataGroup_T(GetModelGroup(), PACKAGE_ELEMENT_ModelGroup, *pRootNode)) ||
+       RealityPackageStatus::Success != (status = WriteDataGroup_T(GetPinnedGroup(), PACKAGE_ELEMENT_PinnedGroup, *pRootNode)) ||
+       RealityPackageStatus::Success != (status = WriteDataGroup_T(GetTerrainGroup(), PACKAGE_ELEMENT_TerrainGroup, *pRootNode)))
         return status;
     
     BeXmlStatus xmlStatus = pXmlDom->ToFile(filename, PACKAGE_TOSTRING_OPTIONS, BeXmlDom::FILE_ENCODING_Utf8);
@@ -356,22 +337,23 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataPackage::ReadDataSources(DataSources& sources, Utf8CP nodePath, BeXmlNodeP pParent)
+template<class Group_T>
+RealityPackageStatus RealityDataPackage::ReadDataGroup_T(Group_T& group, Utf8CP nodePath, BeXmlNodeR parent)
     {
-    sources.clear();
+    group.clear();
 
-    BeXmlNodeP pSourceGroup = pParent->SelectSingleNode (nodePath);
+    BeXmlNodeP pSourceGroup = parent.SelectSingleNode (nodePath);
     if(NULL == pSourceGroup)
-        return RealityPackageStatus::Success;       // Source group are optional.
+        return RealityPackageStatus::Success;       // Source groups are optional.
     
     for (BeXmlNodeP childElement = pSourceGroup->GetFirstChild(); NULL != childElement; childElement = childElement->GetNextSibling())
         {
-        RealityDataSourcePtr pSource = RealityDataSource::Read(childElement);
+        Group_T::value_type pData = RealityDataSerializer::Load<Group_T::value_type>(*childElement);
 
         // Do not return an error but warn about it. It might be a source node extension that we can't handle?
-        BeDataAssert(pSource.IsValid());   
-        if(pSource.IsValid())
-            sources.push_back(pSource);        
+        BeDataAssert(pData.IsValid());   
+        if(pData.IsValid())
+            group.push_back(pData);        
         }
 
     return RealityPackageStatus::Success;
@@ -381,17 +363,24 @@ RealityPackageStatus RealityDataPackage::ReadDataSources(DataSources& sources, U
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityPackageStatus RealityDataPackage::WriteDataSources(DataSources const& sources, Utf8CP nodeName, BeXmlNodeP pParent)
+template<class Group_T>
+RealityPackageStatus RealityDataPackage::WriteDataGroup_T(Group_T const& group, Utf8CP nodeName, BeXmlNodeR parent)
     {
-    if(sources.empty())
+    if(group.empty())
         return RealityPackageStatus::Success;
+
+    BeXmlNodeP pGroupNode = parent.AddEmptyElement(nodeName);
+    if(NULL == pGroupNode)
+        return RealityPackageStatus::UnknownError;
 
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
 
-    BeXmlNodeP pGroupNode = pParent->GetDom()->AddNewElement(nodeName, NULL, pParent);
-    for (auto pDataSource : sources)
+    for (auto pData : group)
         {
-        status = pDataSource->Write(pGroupNode);
+        if(!pData.IsValid())
+            continue;
+
+        status = RealityDataSerializer::Store<Group_T::value_type::element_type>(*pData, *pGroupNode);
         if(RealityPackageStatus::Success != status)
             break;
         }
@@ -402,7 +391,7 @@ RealityPackageStatus RealityDataPackage::WriteDataSources(DataSources const& sou
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-WString RealityDataPackage::GetCreationDateUTC()
+WString RealityDataPackage::BuildCreationDateUTC()
     {
     if(GetCreationDate().IsValid() && GetCreationDate().GetInfo().GetKind() != DateTime::Kind::Utc)
         return GetCreationDate().ToString();
@@ -417,76 +406,200 @@ WString RealityDataPackage::GetCreationDateUTC()
     }
 
 //=======================================================================================
-//                              RealityDataSource
+//                              RealityData
 //=======================================================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   
-//----------------------------------------------------------------------------------------
-WStringCR RealityDataSource::GetUri() const {return m_uri;} 
-void RealityDataSource::SetUri(WCharCP uri) {m_uri=uri;}
-
-WStringCR RealityDataSource::GetType() const  {return m_type;} 
-void RealityDataSource::SetType(WCharCP type) {m_type=type;}
-
-RealityPackageStatus RealityDataSource::Write(BeXmlNodeP pParent) const {return _Write(pParent) ? RealityPackageStatus::Success : RealityPackageStatus::UnknownError;}
+RealityDataSourceR RealityData::GetSourceR() {return *m_pSource;}
+RealityDataSourceCR RealityData::GetSource() const {return *m_pSource;}
+RealityData::RealityData(RealityDataSourceR dataSource):m_pSource(&dataSource){}
+RealityData::~RealityData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSource::RealityDataSource(WCharCP uri, WCharCP type)
+RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
     {
-    BeAssert(!WString::IsNullOrEmpty(uri) && !WString::IsNullOrEmpty(type));
-    m_uri = uri;
-    m_type = type;
+    // Source should be the the first child element but we loop to be more flexible.
+    for (BeXmlNodeP pChildElement = dataNode.GetFirstChild(); NULL != pChildElement; pChildElement = pChildElement->GetNextSibling())
+        {
+        m_pSource = RealityDataSourceSerializer::Get().Load(*pChildElement);
+        if(m_pSource.IsValid())
+            return RealityPackageStatus::Success;
+        }
+
+    return RealityPackageStatus::UnknownError;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSource::~RealityDataSource(){}
+RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
+    {
+    if(!m_pSource.IsValid())
+        return RealityPackageStatus::UnknownError;
+
+    return RealityDataSourceSerializer::Get().Store(*m_pSource, dataNode);
+    }
+
+//=======================================================================================
+//                              ImageryData
+//=======================================================================================
+ImageryData::ImageryData(RealityDataSourceR dataSource):RealityData(dataSource){}
+ImageryData::~ImageryData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSource::Create(WCharCP uri, WCharCP type)
+ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource)
     {
-    if(WString::IsNullOrEmpty(uri) || WString::IsNullOrEmpty(type))
-        return NULL;
-        
-    return new RealityDataSource(uri, type);
+    return new ImageryData(dataSource);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSource::Read(BeXmlNodeP pSourceNode)
+RealityPackageStatus ImageryData::_Read(BeXmlNodeR dataNode)
     {
-    WString uri;
-    if(BEXML_Success != pSourceNode->GetAttributeStringValue (uri, PACKAGE_SOURCE_ATTRIBUTE_Uri))
-        return NULL;
-
-    WString type;
-    if(BEXML_Success != pSourceNode->GetAttributeStringValue (type, PACKAGE_SOURCE_ATTRIBUTE_Type))
-        return NULL;
-
-    return RealityDataSource::Create(uri.c_str(), type.c_str());
+    // ImageryData have no specific element/attributes. Read base only.
+    return RealityData::_Read(dataNode);
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-BeXmlNodeP RealityDataSource::_Write(BeXmlNodeP pParent) const
+RealityPackageStatus ImageryData::_Write(BeXmlNodeR dataNode) const
     {
-    if(m_uri.empty() || m_type.empty())
-        return NULL;
-        
-    BeXmlNodeP pSourceNode = pParent->GetDom()->AddNewElement(PACKAGE_ELEMENT_Source, NULL, pParent);
-
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, m_uri.c_str());
-    pSourceNode->AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, m_type.c_str());
-
-    return pSourceNode;    
+    // ImageryData have no specific element/attributes. Write base only.
+    return RealityData::_Write(dataNode);
     }
 
+//=======================================================================================
+//                              ModelData
+//=======================================================================================
+ModelData::ModelData(RealityDataSourceR dataSource):RealityData(dataSource){}
+ModelData::~ModelData(){}
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+ModelDataPtr ModelData::Create(RealityDataSourceR dataSource)
+    {
+    return new ModelData(dataSource);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus ModelData::_Read(BeXmlNodeR dataNode)
+    {
+    // ModelData have no specific element/attributes. Read base only.
+    return T_Super::_Read(dataNode);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus ModelData::_Write(BeXmlNodeR dataNode) const
+    {
+    // ModelData have no specific element/attributes. Write base only.
+    return T_Super::_Write(dataNode);
+    }
+
+//=======================================================================================
+//                              PinnedData
+//=======================================================================================
+PinnedData::PinnedData(RealityDataSourceR dataSource, double longitude, double latitude):RealityData(dataSource){m_location.Init(longitude, latitude);}
+PinnedData::~PinnedData(){}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double longitude, double latitude)
+    {
+    //&&MM validate longitude/latitude values
+    return new PinnedData(dataSource, longitude, latitude);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
+    {
+    // Read base first
+    RealityPackageStatus status = T_Super::_Read(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+    
+    //&&MM todo Read our location.
+
+    return status;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
+    {
+    // Write base first
+    RealityPackageStatus status = T_Super::_Write(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    //&&MM todo write our location
+    
+    return status;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+DPoint2dCR PinnedData::GetLocation() const{return m_location;}
+bool PinnedData::SetLocation(DPoint2dCR location)
+    {
+    m_location = location;
+    //&&MM validate longitude/latitude values
+    return false;
+    }
+
+//=======================================================================================
+//                              TerrainData
+//=======================================================================================
+TerrainData::TerrainData(RealityDataSourceR dataSource):RealityData(dataSource){}
+TerrainData::~TerrainData(){}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TerrainDataPtr TerrainData::Create(RealityDataSourceR dataSource)
+    {
+    return new TerrainData(dataSource);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus TerrainData::_Read(BeXmlNodeR dataNode)
+    {
+    // Read base first
+    RealityPackageStatus status = T_Super::_Read(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    // Read TerrainData specific here...
+
+    return status;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityPackageStatus TerrainData::_Write(BeXmlNodeR dataNode) const
+    {
+    // Write base first
+    RealityPackageStatus status = T_Super::_Write(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    // Write TerrainObject specific here...
+    
+    return status;
+    }

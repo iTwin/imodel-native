@@ -30,14 +30,39 @@
     BEGIN_BENTLEY_API_NAMESPACE typedef RefCountedPtr<RealityPackage::_sname_> _sname_##Ptr; END_BENTLEY_API_NAMESPACE
 
 
+// Package
 REALITYPACKAGE_TYPEDEFS(RealityDataPackage)
 REALITYPACKAGE_REF_COUNTED_PTR(RealityDataPackage)
-
-REALITYPACKAGE_TYPEDEFS(RealityDataSource)
-REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSource)
-REALITYPACKAGE_TYPEDEFS(PinnedSource)
-REALITYPACKAGE_REF_COUNTED_PTR(PinnedSource)
-
 REALITYPACKAGE_TYPEDEFS(BoundingPolygon)
 REALITYPACKAGE_REF_COUNTED_PTR(BoundingPolygon)
 
+// RealiteSources
+REALITYPACKAGE_TYPEDEFS(RealityDataSource)
+REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSource)
+REALITYPACKAGE_TYPEDEFS(WmsDataSource)
+REALITYPACKAGE_REF_COUNTED_PTR(WmsDataSource)
+
+// RealityData
+REALITYPACKAGE_TYPEDEFS(RealityData)
+REALITYPACKAGE_REF_COUNTED_PTR(RealityData)
+REALITYPACKAGE_TYPEDEFS(ImageryData)
+REALITYPACKAGE_REF_COUNTED_PTR(ImageryData)
+REALITYPACKAGE_TYPEDEFS(ModelData)
+REALITYPACKAGE_REF_COUNTED_PTR(ModelData)
+REALITYPACKAGE_TYPEDEFS(PinnedData)
+REALITYPACKAGE_REF_COUNTED_PTR(PinnedData)
+REALITYPACKAGE_TYPEDEFS(TerrainData)
+REALITYPACKAGE_REF_COUNTED_PTR(TerrainData)
+
+BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
+
+//! Status codes for RealityPackageStatus operations
+enum class RealityPackageStatus
+    {
+    Success                 = SUCCESS,  //!< The operation was successful
+    UnknownVersion,                     //!< Version is either undefined or we can't handle it.
+    PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
+    UnknownError            = ERROR,    //!< The operation failed with an unspecified error
+    };
+
+END_BENTLEY_REALITYPACKAGE_NAMESPACE

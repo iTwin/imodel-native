@@ -8,22 +8,15 @@
 #pragma once
 
 #include <RealityPackage/RealityPackage.h>
+#include <RealityPackage/RealityDataSource.h>
 #include <Bentley/bvector.h>
 #include <Geom/GeomApi.h>
 #include <Bentley/DateTime.h>
 #include <BeXml/BeXml.h>
 
-
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
-//! Status codes for RealityPackageStatus operations
-enum class RealityPackageStatus
-    {
-    Success                 = SUCCESS,  //!< The operation was successful
-    UnknownVersion,                     //!< Version is either undefined or we can't handle it.
-    PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
-    UnknownError            = ERROR,    //!< The operation failed with an unspecified error
-    };
+struct RealityDataSerializer;
 
 //=======================================================================================
 //! @bsiclass
@@ -64,7 +57,10 @@ private:
 struct RealityDataPackage : public RefCountedBase
 {
 public:
-    typedef bvector<RealityDataSourcePtr> DataSources;
+    typedef bvector<ImageryDataPtr>   ImageryGroup;
+    typedef bvector<ModelDataPtr>     ModelGroup;
+    typedef bvector<PinnedDataPtr>    PinnedGroup;
+    typedef bvector<TerrainDataPtr>   TerrainGroup;
     
     //&&MM need to be able mandatory field?
     //! Create a new empty package.
@@ -107,86 +103,170 @@ public:
     REALITYPACKAGE_EXPORT void SetBoundingPolygon(BoundingPolygonR polygon);
 
     //! A read-only access to data source container. Might be empty.
-    REALITYPACKAGE_EXPORT DataSources const& GetImageryGroup() const;
-    REALITYPACKAGE_EXPORT DataSources const& GetModelGroup() const;
-    REALITYPACKAGE_EXPORT DataSources const& GetPinnedGroup() const;
-    REALITYPACKAGE_EXPORT DataSources const& GetTerrainGroup() const;
+    REALITYPACKAGE_EXPORT ImageryGroup const& GetImageryGroup() const;
+    REALITYPACKAGE_EXPORT ModelGroup const& GetModelGroup() const;
+    REALITYPACKAGE_EXPORT PinnedGroup const& GetPinnedGroup() const;
+    REALITYPACKAGE_EXPORT TerrainGroup const& GetTerrainGroup() const;
 
     //! A read-write access to the data source container.
-    REALITYPACKAGE_EXPORT DataSources& GetImageryGroupR();    
-    REALITYPACKAGE_EXPORT DataSources& GetModelGroupR();    
-    REALITYPACKAGE_EXPORT DataSources& GetPinnedGroupR();    
-    REALITYPACKAGE_EXPORT DataSources& GetTerrainGroupR();    
-
+    REALITYPACKAGE_EXPORT ImageryGroup& GetImageryGroupR();    
+    REALITYPACKAGE_EXPORT ModelGroup& GetModelGroupR();    
+    REALITYPACKAGE_EXPORT PinnedGroup& GetPinnedGroupR();    
+    REALITYPACKAGE_EXPORT TerrainGroup& GetTerrainGroupR();    
 
 private:
     RealityDataPackage(WCharCP name);
     ~RealityDataPackage();
 
-    WString GetCreationDateUTC();
-    RealityPackageStatus ReadDataSources(DataSources& sources, Utf8CP nodeName,  BeXmlNodeP pParent);
-    RealityPackageStatus WriteDataSources(DataSources const& sources, Utf8CP nodeName,  BeXmlNodeP pParent);
+    WString BuildCreationDateUTC();   // May update m_creationDate.
+
+    template<class Group_T>
+    RealityPackageStatus ReadDataGroup_T(Group_T& group, Utf8CP nodePath, BeXmlNodeR parent);
+
+    template<class Group_T>
+    RealityPackageStatus WriteDataGroup_T(Group_T const& group, Utf8CP nodeName, BeXmlNodeR parent);
 
     WString m_name;
     WString m_description;
     WString m_copyright;
-    WString m_packageId;        //&&MM should it be a GUID or UInt64 instead of a string?
+    WString m_packageId;
     DateTime m_creationDate;
     BoundingPolygonPtr m_pBoundingPolygon;
     
-    DataSources m_imagery;
-    DataSources m_terrain;
-    DataSources m_model;
-    DataSources m_pinned;
+    ImageryGroup m_imagery;
+    ModelGroup m_model;
+    PinnedGroup m_pinned;
+    TerrainGroup m_terrain;
 };
 
 //=======================================================================================
-//! Base class for 
+//! Abstract class for classified reality data.
 //! @bsiclass
 //=======================================================================================
-struct RealityDataSource : public RefCountedBase
+struct RealityData : public RefCountedBase
 {
-public:
-    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(WCharCP uri, WCharCP type);
+public:      
+    RealityDataSourceR GetSourceR();
+    RealityDataSourceCR GetSource() const;
 
-    //&&MM todo doc what kind of uri we support or we simply do not care at this stage?
-    REALITYPACKAGE_EXPORT WStringCR GetUri() const;
-    REALITYPACKAGE_EXPORT void SetUri(WCharCP uri);
-
-    //&&MM todo doc categories.
-    REALITYPACKAGE_EXPORT WStringCR GetType() const;
-    REALITYPACKAGE_EXPORT void SetType(WCharCP type);
-
-    // Persistence
-    static RealityDataSourcePtr Read(BeXmlNodeP pSourceNode);
-    RealityPackageStatus Write(BeXmlNodeP pParent) const;
 protected:
-    RealityDataSource(WCharCP uri, WCharCP type);
-    virtual ~RealityDataSource();
+    explicit RealityData(){}; // for persistence.
+    RealityData(RealityDataSourceR dataSource);
+    virtual ~RealityData();
 
-    //! returned the created source node. sub-classes can add their private that to that node.
-    virtual BeXmlNodeP _Write(BeXmlNodeP pParent) const;
-
+    // read/write from a dataNode.
+    virtual RealityPackageStatus _Read(BeXmlNodeR dtaNode);
+    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const;
+      
 private:
-    WString m_uri;
-    WString m_type;     
+    RealityDataSourcePtr m_pSource;
+};
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ImageryData: public RealityData
+{
+    DEFINE_T_SUPER(RealityData)
+public:
+    friend RealityDataSerializer;
+
+    //! Create a new ImageryData.
+    REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource);
+    
+    //&&MM add corners.  May be empty.
+       
+    static Utf8CP ElementName; 
+private:
+    explicit ImageryData(){}; // for persistence.
+    ImageryData(RealityDataSourceR dataSource);
+    virtual ~ImageryData();
+
+    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
+    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
+};
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ModelData: public RealityData
+{
+    DEFINE_T_SUPER(RealityData)
+public:
+    friend RealityDataSerializer;
+
+    //! Create a new ModelData.
+    REALITYPACKAGE_EXPORT static ModelDataPtr Create(RealityDataSourceR dataSource);
+
+    //&&MM add table mapping.
+
+    static Utf8CP ElementName;
+private:
+    explicit ModelData(){}; // for persistence
+    ModelData(RealityDataSourceR dataSource);
+    virtual ~ModelData();
+
+    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
+    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
+};
+
+
+//=======================================================================================
+//!
+//! @bsiclass
+//=======================================================================================
+struct PinnedData : public RealityData
+{
+    DEFINE_T_SUPER(RealityData)
+
+public:
+    friend RealityDataSerializer;
+
+    //! Create a new PinnedData.
+    REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double longitude, double latitude);
+
+    //! Get the object location in lat/long coordinate. 
+    REALITYPACKAGE_EXPORT DPoint2dCR GetLocation() const; 
+
+    //! Set the object location in lat/long coordinate. 
+    //! Latitudes range from -90 to 90. Longitudes range from -180 to 180.
+    //! False is returned if location is invalid.
+    REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location); 
+
+    static Utf8CP ElementName;
+private:
+    explicit PinnedData(){m_location.Zero();}; // for persistence
+    PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
+    virtual ~PinnedData();
+
+    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
+    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
+
+    DPoint2d m_location;        //!spatial location in lat/long
 };
 
 //=======================================================================================
 //!
 //! @bsiclass
 //=======================================================================================
-struct PinnedSource : public RealityDataSource
+struct TerrainData: public RealityData
 {
+    DEFINE_T_SUPER(RealityData)
 public:
-    //! Create a new PinnedSource object.
-    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(WCharCP uri, WCharCP type, double longitude, double latitude);
+    friend RealityDataSerializer;
 
-    DPoint2dCR GetLocation() const; 
-    void SetLocation(DPoint2dCR location) const; 
+    //! Create a new TerrainData.
+    REALITYPACKAGE_EXPORT static TerrainDataPtr Create(RealityDataSourceR dataSource);
+
+    static Utf8CP ElementName;
+
 private:
-    DPoint2d m_location;        //! !spatial location in lat/long
-};
+    explicit TerrainData(){}; // for persistence
+    TerrainData(RealityDataSourceR dataSource);
+    virtual ~TerrainData();
 
+    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
+    virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
+};
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE
