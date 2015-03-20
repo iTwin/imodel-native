@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFile.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -63,6 +63,9 @@ static BeFileStatus translateHResultToBeFileStatus (int32_t result)
         case ERROR_FILE_NOT_FOUND:
         case ERROR_PATH_NOT_FOUND:
             return BeFileStatus::FileNotFoundError;
+
+        case ERROR_DISK_FULL:
+            return BeFileStatus::DiskFull;
         }
 
     return BeFileStatus::UnknownError;
@@ -304,6 +307,7 @@ BeFileStatus BeFile::Read (void* buffer, uint32_t* bytesRead, uint32_t numBytes)
     if (-1 != (*bytesRead = read (AS_FDES(m_handle), buffer, numBytes)))
         return BeFileStatus::Success;
 
+    *bytesRead = 0;
     return SetLastError ();
 
 #else
