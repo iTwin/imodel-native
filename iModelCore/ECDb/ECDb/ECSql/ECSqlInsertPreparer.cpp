@@ -59,7 +59,6 @@ int ECSqlInsertPreparer::GetParamterCount(Exp const& exp, std::set<ParameterExp 
             nFoundParameters = nFoundParameters + 1;
         }
 
-
     for (auto const child : exp.GetChildren())
         {
         if (child->GetType() == Exp::Type::Parameter)
@@ -547,6 +546,12 @@ ECN::ECRelationshipEnd constraintEnd
             return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.", 
                             retrievedConstraintClassId, constraintClassIdPropName.c_str ());
 
+        return ECSqlStatus::Success;
+        }
+    //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
+    //In this case if user did not specify it is not a error..
+    if (!constraintClassIdPropMap->IsMappedToPrimaryTable ())
+        {
         return ECSqlStatus::Success;
         }
 

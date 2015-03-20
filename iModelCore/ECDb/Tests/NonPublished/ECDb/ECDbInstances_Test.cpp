@@ -830,7 +830,86 @@ TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
             }
         }
     }
+ void ExecuteECSQL (ECInstanceKey& key, ECDbR ecdb, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ (stmt.Prepare (ecdb, ecsql), ECSqlStatus::Success);
+    ASSERT_EQ (stmt.Step (key), ECSqlStepStatus::Done);
+    }
+ TEST (ECDbInstances, EndTableMapTest)
+     {
+     ECDbTestProject::Initialize ();
 
+     WCharCP schema =
+         L"<?xml version = '1.0' encoding = 'utf-8' ?> "
+         L"<ECSchema schemaName = 'RelationshipConstraintTest' nameSpacePrefix = 'rct' version = '1.0' xmlns = 'http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
+         L"      <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca'/> "
+         L"      <ECClass typeName = 'ClassA' isDomainClass = 'True'> "
+         L"          <ECCustomAttributes> "
+         L"              <ECDbClassHint xmlns = 'Bentley_Standard_CustomAttributes.01.11'> "
+         L"                  <MapStrategy>TablePerHierarchy</MapStrategy> "
+         L"              </ECDbClassHint> "
+         L"          </ECCustomAttributes> "
+         L"          <ECProperty propertyName = 'PropertyA' typeName = 'string'/> "
+         L"      </ECClass> "
+         L"      <ECClass typeName = 'ClassAB' isDomainClass = 'True'> "
+         L"          <BaseClass>ClassA</BaseClass> "
+         L"          <ECProperty propertyName = 'PropertyAB' typeName = 'string'/> "
+         L"      </ECClass> "
+         L"      <ECClass typeName = 'ClassAC' isDomainClass = 'True'> "
+         L"          <BaseClass>ClassA</BaseClass> "
+         L"          <ECProperty propertyName = 'PropertyAC' typeName = 'string'/> "
+         L"      </ECClass> "
+         L"      <ECClass typeName = 'ClassD' isDomainClass = 'True'> "
+         L"          <ECProperty propertyName = 'PropertyD' typeName = 'string'/> "
+         L"      </ECClass> "
+         L"      <ECRelationshipClass typeName = 'RelationshipClassA' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+         L"          <Source cardinality = '(0,1)' polymorphic = 'True'> "
+         L"              <Class class = 'ClassA'/> "
+         L"          </Source> "
+         L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+         L"              <Class class = 'ClassD'/> "
+         L"          </Target> "
+         L"      </ECRelationshipClass> "
+         L"</ECSchema> ";
+
+     auto context = ECSchemaReadContext::CreateContext ();
+     ECSchemaPtr testSchema;
+     ECSchema::ReadFromXmlString (testSchema, schema, *context);
+     ASSERT_TRUE (testSchema.IsValid ());
+
+     ECDb ecdb;
+     ASSERT_EQ (BE_SQLITE_OK, ecdb.CreateNewDb (":memory:"));
+     ASSERT_EQ (ecdb.GetSchemaManager ().ImportECSchemas (context->GetCache ()), BentleyStatus::SUCCESS);
+
+     ECInstanceKey classDKey1, classDKey2, classDKey3, classAKey, classBKey, classCKey;
+
+     ExecuteECSQL (classDKey1, ecdb, "INSERT INTO rct.ClassD (PropertyD) VALUES ('D1')");
+     ExecuteECSQL (classDKey2, ecdb, "INSERT INTO rct.ClassD (PropertyD) VALUES ('D2')");
+     ExecuteECSQL (classDKey3, ecdb, "INSERT INTO rct.ClassD (PropertyD) VALUES ('D3')");
+     ExecuteECSQL (classAKey, ecdb, "INSERT INTO rct.ClassA (PropertyA) VALUES ('A')");
+     ExecuteECSQL (classBKey, ecdb, "INSERT INTO rct.ClassAB (PropertyA, PropertyAB) VALUES ('A', 'AB')");
+     ExecuteECSQL (classCKey, ecdb, "INSERT INTO rct.ClassAC (PropertyA, PropertyAC) VALUES ('A', 'AC')");
+
+     ECSqlStatement rct1, rct2, rct3;
+     ASSERT_EQ (rct1.Prepare (ecdb, "INSERT INTO rct.RelationshipClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+     rct1.BindId (1, classAKey.GetECInstanceId ());
+     rct1.BindInt64 (2, classAKey.GetECClassId ());
+     rct1.BindId (3, classDKey1.GetECInstanceId ());
+     rct1.BindInt64 (4, classDKey1.GetECClassId ());
+     ASSERT_EQ (rct1.Step (), ECSqlStepStatus::Done);
+
+     ASSERT_EQ (rct2.Prepare (ecdb, "INSERT INTO rct.RelationshipClassA (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?)"), ECSqlStatus::Success);
+     rct2.BindId (1, classBKey.GetECInstanceId ());
+     rct2.BindId (2, classDKey2.GetECInstanceId ());
+     rct2.BindInt64 (3, classDKey2.GetECClassId ());
+     ASSERT_EQ (rct2.Step (), ECSqlStepStatus::Done);
+
+     ASSERT_EQ (rct3.Prepare (ecdb, "INSERT INTO rct.RelationshipClassA (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
+     rct3.BindId (1, classCKey.GetECInstanceId ());
+     rct3.BindId (2, classDKey3.GetECInstanceId ());
+     ASSERT_EQ (rct3.Step (), ECSqlStepStatus::Done);
+     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Carole.MacDonald                 08/14
 //+---------------+---------------+---------------+---------------+---------------+------
