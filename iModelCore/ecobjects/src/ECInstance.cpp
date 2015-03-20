@@ -2,11 +2,12 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <ECObjects/ECSchema.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 DEFINE_KEY_METHOD(ECN::IECRelationshipInstance)
 
@@ -2927,6 +2928,35 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
             break;
             }
 
+        case PRIMITIVETYPE_IGeometry:
+            {
+            T_ByteArray                     byteArray;
+            // try to read the actual value.
+            WString     propertyValueString;
+            if (BEXML_Success != primitiveValueNode.GetContent (propertyValueString))
+                return INSTANCE_READ_STATUS_Success;
+
+            // It is possible that this came in as serialized text Xml, and not binary.  Let's try to get it as xmlText
+            if (!convertStringToByteArray (byteArray, propertyValueString.c_str ()))
+                {
+                if (NULL != primitiveValueNode.GetFirstChild())
+                    {
+                    Utf8String xmlString;
+                    primitiveValueNode.GetFirstChild()->GetXmlString(xmlString);
+                    bvector<IGeometryPtr> geoms;
+                    bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
+                    if (BeXmlCGStreamReader::TryParse(xmlString.c_str(), geoms, extendedData, 0))
+                        {
+                        ecValue.SetIGeometry(*geoms[0]);
+                        break;
+                        }
+                    }
+                LOG.warningv(L"Type mismatch in deserialization: \"%ls\" is not Binary", propertyValueString.c_str ());
+                return INSTANCE_READ_STATUS_TypeMismatch;
+                }
+            ecValue.SetIGeometry(&byteArray.front(), byteArray.size(), true);
+            break;
+            }
         case PRIMITIVETYPE_Boolean:
             {
             bool boolValue;
@@ -3138,6 +3168,33 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
     Utf8String  utf8ClassName (className.c_str());
     BeXmlNodeP  instanceNode = m_xmlDom.AddNewElement (utf8ClassName.c_str(), NULL, m_rootNode);
     instanceNode->AddAttributeStringValue (XMLNS_ATTRIBUTE, fullSchemaName.c_str());
+
+    auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);
+    // if relationship, need the attributes used in relationships.
+    if (NULL != relationshipInstance)
+        {
+        if (!relationshipInstance->GetSource().IsValid())
+            return INSTANCE_WRITE_STATUS_XmlWriteError;
+
+        WString sourceClassName;
+        if (0 != relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
+            sourceClassName.Sprintf(L"%ls:%ls", relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
+        else
+            sourceClassName.Sprintf(L"%ls", relationshipInstance->GetSource()->GetClass().GetName().c_str());
+        instanceNode->AddAttributeStringValue(SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
+        instanceNode->AddAttributeStringValue(SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
+
+        if (!relationshipInstance->GetTarget().IsValid())
+            return INSTANCE_WRITE_STATUS_XmlWriteError;
+
+        WString targetClassName;
+        if (0 != relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
+            targetClassName.Sprintf(L"%ls:%ls", relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+        else
+            targetClassName.Sprintf(L"%ls", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+        instanceNode->AddAttributeStringValue(TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
+        instanceNode->AddAttributeStringValue(TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
+        }
 
     if (writeInstanceId)
         instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceId().c_str());
