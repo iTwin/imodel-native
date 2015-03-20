@@ -181,7 +181,7 @@
     <Product Name="BeTestDocuments" PrgOutputDir="MobileDgnSdk">
         <Directories DirectoryListName="BeTestDocumentsDirList" />
         <SubPart PartName="DgnV8Converter"/>
-        <SubPart PartName="LinkDgnDbPublisherIntoToolContext" />
+        <SubPart PartName="LinkDgnDbPublisherIntoToolContext" LibType="Dynamic"/>
         <SubPart PartName="UnitTests_Documents" LibType="Static"    PartFile="ECDb" Repository="ECDb" />
     </Product>
 
@@ -190,6 +190,7 @@
     </Part>
 
     <Part Name="LinkDgnDbPublisherIntoToolContext" BentleyBuildMakeFile="LinkDgnDbPublisherIntoToolContext.mke" OnlyPlatforms="x64,x86">
+        <SubPart PartName="DgnV8Converter" LibType="Dynamic"/>
     </Part>
 
     <ProductDirectoryList ListName="BeTestDocumentsDirList">
