@@ -489,7 +489,7 @@ enum DbSchemaValues
     BEDB_SUPPORTED_VERSION_Sub2  = 0,
     };
 
-enum PackageSchemaValues
+enum IModelSchemaValues
     {
     PACKAGE_CURRENT_VERSION_Major = 1,
     PACKAGE_CURRENT_VERSION_Minor = 1,
@@ -513,16 +513,6 @@ public:
     explicit SchemaVersion(Utf8CP json) { FromJson(json); }
     BE_SQLITE_EXPORT Utf8String ToJson() const;
     BE_SQLITE_EXPORT void FromJson(Utf8CP);
-};
-
-//=======================================================================================
-//! A 4-digit number that specifies the version of the "schema" of a Package.
-// @bsiclass
-//=======================================================================================
-struct PackageSchemaVersion : SchemaVersion
-{
-    PackageSchemaVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
-    PackageSchemaVersion(Utf8CP val) : SchemaVersion(val){}
 };
 
 //=======================================================================================
@@ -746,9 +736,7 @@ struct Statement : NonCopyableClass
 private:
     SqlStatementP m_stmt;
 
-//__PUBLISH_SECTION_END__
     DbResult DoPrepare(SqlDbP db, Utf8CP sql);
-//__PUBLISH_SECTION_START__
 
 public:
     enum class MakeCopy : bool {No=0, Yes=1};
@@ -758,10 +746,8 @@ public:
     Statement() {m_stmt=0; }
     ~Statement() {Finalize();}
 
-//__PUBLISH_SECTION_END__
     SqlStatementP& GetStmtR() {return m_stmt;} // internal use only
-    DbResult Prepare(BeSQLiteDbFileCR, Utf8CP sql);
-//__PUBLISH_SECTION_START__
+    DbResult Prepare(BeSQLiteDbFileCR, Utf8CP sql); // internal use only
 
     //! Determine whether this Statement has already been prepared.
     bool IsPrepared() const {return NULL != m_stmt;}
@@ -1050,6 +1036,8 @@ public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_dbFile=0; m_isTracking=false;}
     virtual ~ChangeTracker() {EndTracking();}
 
+    enum class OnCommitStatus {Continue=0, Abort=1};
+    virtual OnCommitStatus _OnCommit(bool isCommit) = 0;
     virtual void _OnSettingsSave() {}
     virtual void _OnSettingsSaved() {}
 
@@ -1976,6 +1964,89 @@ struct BusyRetry : RefCountedBase
 };
 
 //=======================================================================================
+// Cached "repository local values"
+// @bsiclass                                                    Keith.Bentley   12/12
+//=======================================================================================
+struct CachedRLV
+    {
+private:
+    Utf8String   m_name;
+    bool         m_isUnset;
+    mutable bool m_dirty;
+    int64_t      m_value;
+
+public:
+    explicit CachedRLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
+    Utf8CP GetName() const {return m_name.c_str();}
+    int64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
+    void ChangeValue(int64_t value, bool initializing = false) {m_isUnset=false; m_dirty=!initializing; m_value=value;}
+    int64_t Increment() {BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value;}
+    bool IsUnset() const { return m_isUnset; }
+    bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
+    void SetIsNotDirty() const {BeAssert(!m_isUnset); m_dirty = false;}
+    void Reset() {m_isUnset=true; m_dirty=false; m_value=-1LL;}
+    };
+
+//=======================================================================================
+// Cache for int64_t RepositoryLocalValues. This is for RLV's that are of type int64_t and are frequently 
+// accessed and/or modified. The RLVs are identified in the cache by "registering" their name are thereafter 
+// accessed by index. The cache is held in memory for performance. It is automatically saved whenever a transaction is committed.
+// @bsiclass                                                    Krischan.Eberle     07/14
+//=======================================================================================
+struct RepositoryLocalValueCache : NonCopyableClass
+    {
+private:
+    friend struct DbFile;
+    friend struct Db;
+    bvector<CachedRLV> m_cache;
+    DbFile& m_dbFile;
+
+    void Clear();
+    bool TryQuery(CachedRLV*&, size_t rlvIndex);
+
+public:
+    RepositoryLocalValueCache(DbFile& dbFile) : m_dbFile(dbFile) {}
+
+    //! Register a RepositoryLocalValue name with the Db.
+    //! @remarks On closing the Db the registration is cleared.
+    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
+    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
+    //! has to ensure that it remains valid for the entire lifetime of the Db object.
+    //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
+    //! name has already been registered.
+    BE_SQLITE_EXPORT DbResult Register(size_t& index, Utf8CP name);
+
+    //! Look up the RepositoryLocalValue index for the given name
+    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
+    //! @param[in] rlvName Name of the RepositoryLocalValue
+    //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
+    //! false otherwise.
+    BE_SQLITE_EXPORT bool TryGetIndex(size_t& index, Utf8CP name);
+
+    //! Save an RepositoryLocalValue into the BEDB_TABLE_Local table.
+    //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
+    //! @param[in] value Value to save
+    //! @return BE_SQLITE_OK if successful, error code otherwise.
+    //! @see RegisterRepositoryLocalValue
+    BE_SQLITE_EXPORT DbResult SaveValue(size_t rlvIndex, int64_t value);
+
+    //! Read a RepositoryLocalValue from BEDB_TABLE_Local table.
+    //! @param[out] value Retrieved value
+    //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
+    //! @return BE_SQLITE_OK if the value exists, error code otherwise.
+    //! @see RegisterRepositoryLocalValue
+    BE_SQLITE_EXPORT DbResult QueryValue(int64_t& value, size_t rlvIndex);
+
+    //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
+    //! @param[out] newValue Incremented value
+    //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
+    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If @initialValue is nullptr and
+    //!         the RepositoryLocalValue does not exist, and error code is returned.
+    //! @see RegisterRepositoryLocalValue
+    BE_SQLITE_EXPORT DbResult IncrementValue(int64_t& newValue, size_t rlvIndex);
+    };
+
+//=======================================================================================
 //! A physical Db file.
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -1988,8 +2059,7 @@ struct DbFile
     friend struct RTreeMatch;
 
 private:
-    static Utf8CP const BE_REPOSITORYID_NAME;
-    size_t          m_repositoryIdRlvIndex;
+    size_t  m_repositoryIdRlvIndex;
 
 protected:
     typedef RefCountedPtr<ChangeTracker> ChangeTrackerPtr;
@@ -2002,7 +2072,7 @@ protected:
     uint64_t        m_dataVersion; // for detecting changes from another process
     RefCountedPtr<BusyRetry> m_retry;
     mutable void*   m_cachedProps;
-    struct RlvCache* m_rlvCache;
+    RepositoryLocalValueCache m_rlvCache;
     BeDbGuid        m_dbGuid;
     Savepoint       m_defaultTxn;
     BeRepositoryId  m_repositoryId;
@@ -2036,9 +2106,7 @@ protected:
     void DeleteCachedPropertyMap();
     void SaveCachedProperties(bool isCommit);
     Utf8CP GetLastError(DbResult* lastResult) const;
-    struct RlvCache& GetRlvCache() const;
-    void SaveCachedRlvs(bool isCommit) const;
-    void ClearRlvCache() const;
+    void SaveCachedRlvs(bool isCommit);
 
 public:
     int OnCommit();
@@ -2060,6 +2128,7 @@ protected:
     BE_SQLITE_EXPORT int AddAggregateFunction(AggregateFunction& function) const;
     BE_SQLITE_EXPORT int AddScalarFunction(ScalarFunction& function) const;
     BE_SQLITE_EXPORT int RemoveFunction(DbFunction&) const;
+    BE_SQLITE_EXPORT RepositoryLocalValueCache& GetRLVCache();
 };
 
 //=======================================================================================
@@ -2227,9 +2296,6 @@ public:
     };
 
 private:
-    //__PUBLISH_SECTION_END__
-    bool TryQueryRepositoryLocalValue(struct CachedRlValue*&, size_t rlvIndex) const;
-    //__PUBLISH_SECTION_START__
 
 protected:
     DbFile* m_dbFile;
@@ -2291,7 +2357,6 @@ protected:
     DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
     DbResult SaveRepositoryId();
-
 
 private:
     void DoCloseDb();
@@ -2574,47 +2639,13 @@ public:
 
     //! @name RepositoryLocalValue
     //! @{
-    //! It is used for information specific to this copy of the Db. The table BEDB_Table_Local in which
+    //! Repository Local Values are used for information specific to this copy of the Db. The table BEDB_Table_Local in which
     //! RepositoryLocalValues are stored is not change tracked or change merged.
 
-    //! Register a RepositoryLocalValue name with the Db.
-    //! @remarks On closing the Db the registration is cleared.
-    //! @param[out] rlvIndex Index for the RepositoryLocalValue used as input to the RepositoryLocalValue API.
-    //! @param[in] rlvName Name of the RepositoryLocalValue. Db does not make a copy of @p rlvName, so the caller
-    //! has to ensure that it remains valid for the entire lifetime of the Db object.
-    //! @return BE_SQLITE_OK if registration was successful. Error code, if a RepositoryLocalValue with the same
-    //! name has already been registered.
-    BE_SQLITE_EXPORT DbResult RegisterRepositoryLocalValue(size_t& rlvIndex, Utf8CP rlvName);
+    RepositoryLocalValueCache& GetRLVCache() {return m_dbFile->GetRLVCache();}
 
-    //! Look up the RepositoryLocalValue index for the given name
-    //! @param[out] rlvIndex Found index for the RepositoryLocalValue
-    //! @param[in] rlvName Name of the RepositoryLocalValue
-    //! @return true, if the RepositoryLocalValue index was found, i.e. a RepositoryLocalValue is registered for @p rlvName,
-    //! false otherwise.
-    BE_SQLITE_EXPORT bool TryGetRepositoryLocalValueIndex(size_t& rlvIndex, Utf8CP rlvName) const;
-
-    //! Save an RepositoryLocalValue into the BEDB_TABLE_Local table.
-    //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
-    //! @param[in] value Value to save
-    //! @return BE_SQLITE_OK if successful, error code otherwise.
-    //! @see RegisterRepositoryLocalValue
-    BE_SQLITE_EXPORT DbResult SaveRepositoryLocalValue(size_t rlvIndex, int64_t value);
-
-    //! Read a RepositoryLocalValue from BEDB_TABLE_Local table.
-    //! @param[out] value Retrieved value
-    //! @param[in] rlvIndex The index of the RepositoryLocalValue to query.
-    //! @return BE_SQLITE_OK if the value exists, error code otherwise.
-    //! @see RegisterRepositoryLocalValue
-    BE_SQLITE_EXPORT DbResult QueryRepositoryLocalValue(int64_t& value, size_t rlvIndex) const;
-
-    //! Increment the RepositoryLocalValue by one for the given @p rlvIndex.
-    //! @param[out] newValue Incremented value
-    //! @param[in] rlvIndex The index of the RepositoryLocalValue to increment.
-    //! @return BE_SQLITE_OK in case of success. Error code otherwise. If @initialValue is nullptr and
-    //!         the RepositoryLocalValue does not exist, and error code is returned.
-    //! @see RegisterRepositoryLocalValue
-    BE_SQLITE_EXPORT DbResult IncrementRepositoryLocalValue(int64_t& newValue, size_t rlvIndex) const;
-
+    BE_SQLITE_EXPORT DbResult QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const;
+    BE_SQLITE_EXPORT DbResult SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value);
     //! @}
 
     //! @return the rowid from the last insert statement for this Db.
@@ -3169,18 +3200,8 @@ struct Properties
     static PropSpec SchemaVersion()     {return PropSpec("SchemaVersion");}
     static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
-    //! The date and time when the Db was created.
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
-    //! Identifies the most recent change set that was generated from or applied to this Db.
-    //! If this Db is a master, then change sets may be generated from it.
-    //! If this Db is a copy, then change sets may be applied to it.
-    //! @note This property is optional.
-    static PropSpec LatestChangeSetId() {return PropSpec("LatestChangeSetId");}
-    //! The date and time when the Db should be considered out of date.
-    //! When a Db is out of date, the user or application should either obtain a new copy from the original source
-    //! or obtain and apply recent changesets in order to update it.
-    //! @note This property is optional.
-    static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
+    static PropSpec ExpirationDate()     {return PropSpec("ExpirationDate");}
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
