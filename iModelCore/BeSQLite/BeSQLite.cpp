@@ -4122,9 +4122,9 @@ static DbResult compressAndEmbedFile (Db& db, uint64_t& filesize, uint32_t& chun
         return translateZipErrorToSQLiteError(compressResult);
         }
 
-    if (inStream.GetBytesRead() != size)
+    if (inStream.GetBytesRead() != filesize)
         {
-        LOG.errorv("LzmaEncoder::Compress succeeded but read the wrong number of bytes: expected %lld, actual %lld", size, inStream.GetBytesRead());
+        LOG.errorv("LzmaEncoder::Compress succeeded but read the wrong number of bytes: expected %lld, actual %lld", filesize, inStream.GetBytesRead());
         return BE_SQLITE_IOERR;
         }
 
