@@ -450,6 +450,8 @@ protected:
     virtual bool                _GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const = 0;
 
     virtual bool                _GetPropertyNotSetValue (ECValueR v) const { return false; }
+
+    virtual bool                _IsOrdinalType () const = 0;
 public:
     // For DgnPlatform interop
     struct Factory
@@ -481,6 +483,11 @@ public:
     //! Some extended types have a sigil value like -1 which is treated as if the property is not set from the user's perspective - often displayed to
     //! the user as "(None)" in UI. If this type adapter has such a sigil value, set it in the ECValue and return true; else return false;
     ECOBJECTS_EXPORT bool       GetPropertyNotSetValue (ECValueR v) const;
+
+    //! Should return true if adapter type is ordinal. This gives hints for the UI in order to decide which operators to show.
+    //! For example, for some numeric properties it doesn't make sence to show ordinal operators, because adapter gives a list
+    //! of string rather than numbers.
+    ECOBJECTS_EXPORT bool       IsOrdinalType () const;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
