@@ -1784,6 +1784,10 @@ Utf8CP Db::GetDbFileName() const
     return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : NULL;
     }
 
+//  See http://www.sqlite.org/fileformat.html for format of header. 
+#define DBFILE_PAGESIZE_OFFSET  16
+#define DBFILE_PAGECOUNT_OFFSET 28
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1803,32 +1807,46 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
         }
 
     uint32_t bytesRead;
-    Utf8Char ident[16] = "";
-    tester.Read(ident, &bytesRead, sizeof(ident));
+    uint8_t header[100] = "";
+    tester.Read (header, &bytesRead, sizeof(header));
     tester.Close();
 
-    if (0 == strcmp(ident, SQLITE_FORMAT_SIGNATURE))
-        return  BE_SQLITE_OK;
-
-    if (NULL != BeSQLiteLib::GetDownloadAdmin() && (0 == strcmp(ident, DOWNLOAD_FORMAT_SIGNATURE)))
+    DbResult result = BE_SQLITE_NOTADB;
+    Utf8CP ident = (Utf8CP)header;
+    if (0 == strcmp (ident, SQLITE_FORMAT_SIGNATURE))
+        result = BE_SQLITE_OK;
+    else if (NULL != BeSQLiteLib::GetDownloadAdmin() && (0 == strcmp (ident, DOWNLOAD_FORMAT_SIGNATURE)))
         {
         vfs = BeSQLiteLib::GetDownloadAdmin()->GetVfs();
-        return  BE_SQLITE_OK;
+        result = BE_SQLITE_OK;
         }
-
-    if (0 == strcmp(ident, SQLZLIB_FORMAT_SIGNATURE))
+    else if (0 == strcmp (ident, SQLZLIB_FORMAT_SIGNATURE))
         {
         vfs = loadZlibVfs();
-        return  BE_SQLITE_OK;
+        result = BE_SQLITE_OK;
         }
-
-    if (0 == strcmp(ident, SQLSNAPPY_FORMAT_SIGNATURE))
+    else if (0 == strcmp (ident, SQLSNAPPY_FORMAT_SIGNATURE))
         {
         vfs = loadSnappyVfs();
-        return  BE_SQLITE_OK;
+        result = BE_SQLITE_OK;
         }
 
-    return BE_SQLITE_NOTADB;
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    //  Extract big endian values
+    uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET+0] << 8) + header[DBFILE_PAGESIZE_OFFSET+1];  
+    uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET+0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET+1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET+2] << 8) + header[DBFILE_PAGECOUNT_OFFSET+3]; 
+    uint64_t requiredMin = pageSize*pageCount;
+    uint64_t filesize;
+    BeFileName::GetFileSize(filesize, filenameW.c_str());
+    if (filesize<requiredMin)
+        {
+        LOG.errorv("isValidDbFile: file %s is truncated", filename);
+        return BE_SQLITE_CORRUPT_VTAB;
+        }
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3433,6 +3451,8 @@ public:
             return BE_SQLITE_OK;
 
         DbResult rc = m_db.SaveProperty(Properties::EmbeddedFileBlob(), m_buffer.data(), m_bufferOffset, m_id.GetValue(), m_nextChunk++);
+        if (BE_SQLITE_OK != rc)
+            LOG.errorv("PropertyBlobOutStream::Flush is returning %d", rc);
         m_bufferOffset = 0;
         return rc;
         }
@@ -3472,7 +3492,6 @@ public:
                 memcpy(m_buffer.data() + m_bufferOffset, (CharCP)data + bytesWritten, bytesToTransfer);
 
             m_bufferOffset += bytesToTransfer;
-            bytesWritten += bytesToTransfer;
             if (m_alwaysFlush)
                 {
                 if (BE_SQLITE_OK != Flush())
@@ -3483,6 +3502,7 @@ public:
                 if (BE_SQLITE_OK != Flush())
                     return ZIP_ERROR_WRITE_ERROR;
                 }
+            bytesWritten += bytesToTransfer;
             }
 
         return ZIP_SUCCESS;
@@ -3605,6 +3625,52 @@ static DbResult compressAndEmbedFileImage(Db& db, uint32_t& chunkSize, BeReposit
     return rc;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    03/2015
+//---------------------------------------------------------------------------------------
+static DbResult translateZipErrorToSQLiteError(ZipErrors zipError)
+    {
+    switch (zipError)
+        {
+        case ZIP_SUCCESS:
+            return BE_SQLITE_OK;
+        case ZIP_ERROR_READ_ERROR:
+            return BE_SQLITE_IOERR_READ;
+        case ZIP_ERROR_WRITE_ERROR:
+            return BE_SQLITE_IOERR_WRITE;
+        case ZIP_ERROR_ABORTED:
+            return BE_SQLITE_ABORT;
+        case ZIP_ERROR_END_OF_DATA:
+            return BE_SQLITE_IOERR_SHORT_READ;
+        }
+
+    return BE_SQLITE_ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// On Windows SQLite locks files by locking bytes starting at SQLITE_PENDING_BYTE (1gig)
+// when there are pending writes.  We test for it here because:
+//  --  it allows us to detect if the program has uncommitted changes
+//  --  it allows this code to abort early instead of after processing a gig of data.
+// @bsimethod                                                   John.Gooding    03/2015
+//---------------------------------------------------------------------------------------
+static bool isFileLockedBySQLite(BeFile& testfile)
+    {
+    if (testfile.SetPointer(SQLITE_PENDING_BYTE, BeFileSeekOrigin::Begin) == BeFileStatus::Success)
+        {
+        uint8_t buffer[512];
+        if (testfile.Read(buffer, nullptr, sizeof (buffer)) == BeFileStatus::SharingViolationError)
+            {
+            testfile.SetPointer(0, BeFileSeekOrigin::Begin);
+            LOG.errorv("embedFile got a SharingViolationError at 1meg. Apparently SQLite has this file locked.");
+            return true;
+            }
+        } 
+
+    testfile.SetPointer(0, BeFileSeekOrigin::Begin);
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3624,6 +3690,9 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
 
     filesize = inStream._GetSize();
 
+    if (isFileLockedBySQLite(inStream.GetBeFile()))
+        return BE_SQLITE_BUSY;
+
     uint32_t dictionarySize = static_cast <uint32_t> (std::min(filesize, (uint64_t) chunkSize));
 
     LzmaEncoder encoder(dictionarySize);
@@ -3637,8 +3706,19 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
     if (bytesWritten != sizeof (header))
         return BE_SQLITE_IOERR;
 
-    if (encoder.Compress(outStream, inStream, NULL, supportRandomAccess) != ZIP_SUCCESS)
+    ZipErrors compressResult = encoder.Compress (outStream, inStream, NULL, supportRandomAccess);
+    if (compressResult != ZIP_SUCCESS)
+        {
+        LOG.errorv("LzmaEncoder::Compress returned %d", compressResult);
+
+        return translateZipErrorToSQLiteError(compressResult);
+        }
+
+    if (inStream.GetBytesRead() != filesize)
+        {
+        LOG.errorv("LzmaEncoder::Compress succeeded but read the wrong number of bytes: expected %lld, actual %lld", filesize, inStream.GetBytesRead());
         return BE_SQLITE_IOERR;
+        }
 
     DbResult rc = outStream.Flush();
 
@@ -3684,6 +3764,9 @@ static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t 
     if (inputFile.Open(filename, BeFileAccess::Read) != BeFileStatus::Success)
         return BE_SQLITE_ERROR_FileNotFound;
 
+    if (isFileLockedBySQLite(inputFile))
+        return BE_SQLITE_BUSY;
+
     int32_t nChunks=0;
     EmbeddedLzmaHeader  header(EmbeddedLzmaHeader::NO_COMPRESSION);
     DbResult rc = db.SaveProperty(Properties::EmbeddedFileBlob(), &header, (uint32_t)sizeof(header), id.GetValue(), nChunks++);
@@ -3693,7 +3776,7 @@ static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t 
     filename.GetFileSize(filesize);
     bvector<Byte>    buffer;
     buffer.resize(chunkSize);
-
+    uint64_t    totalBytesRead = 0;
     while(true)
         {
         uint32_t bytesRead;
@@ -3701,10 +3784,14 @@ static DbResult embedFileWithoutCompressing(Db& db, uint64_t&filesize, uint32_t 
         if (0 == bytesRead)
             break;
 
+        totalBytesRead += bytesRead;
         rc = db.SaveProperty(Properties::EmbeddedFileBlob(), &buffer[0], bytesRead, id.GetValue(), nChunks++);
         if (rc != BE_SQLITE_OK)
             return  rc;
         }
+
+    if (totalBytesRead != filesize)
+        return BE_SQLITE_IOERR_READ;
 
     return BE_SQLITE_OK;
     }
@@ -3788,6 +3875,23 @@ BeRepositoryBasedId DbEmbeddedFileTable::ImportWithoutCompressing(DbResult* stat
         return newId;
     else
         return BeRepositoryBasedId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    03/2015
+//---------------------------------------------------------------------------------------
+BeRepositoryBasedId DbEmbeddedFileTable::ImportDbFile (DbResult& stat, Utf8CP name, Utf8CP filespec, Utf8CP type, Utf8CP description, DateTime const* lastModified, uint32_t chunkSize, bool supportRandomAccess)
+    {
+    Utf8CP vfs = 0;
+    stat = isValidDbFile(filespec, vfs);
+    //  We aren't going to use the VFS to read it so it better not require a VFS.
+    if (BE_SQLITE_OK != stat || nullptr != vfs)
+        {
+        LOG.errorv("ImportDbFile: isValidDbFile reported error %d", stat);
+        return BeRepositoryBasedId();
+        }
+
+    return Import(&stat, name, filespec, type, description, lastModified, chunkSize, supportRandomAccess);
     }
 
 //--------------------------------------------------------------------------------------
@@ -3924,9 +4028,9 @@ DbResult DbEmbeddedFileTable::Save(void const* data, uint64_t size, Utf8CP name,
 DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProgressTracker* progress)
     {
     BeAssert(m_db.IsTransactionActive());
-    uint64_t actualSize;
+    uint64_t expectedFileSize;
     uint32_t chunkSize;
-    BeRepositoryBasedId id = QueryFile(name, &actualSize, &chunkSize);
+    BeRepositoryBasedId id = QueryFile(name, &expectedFileSize, &chunkSize);
     if (!id.IsValid())
         return  BE_SQLITE_ERROR;
 
@@ -3949,8 +4053,27 @@ DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProg
         {
         LzmaDecoder decoder;
         ZipErrors result = decoder.Uncompress(outStream, inStream, true, progress);
+        if (ZIP_SUCCESS != result)
+            {
+            outName.BeDeleteFile();
+            //  LZMA does not pass through any detail on write errors so we try to pull the detail from the BeFile.
+            if (result == ZIP_ERROR_WRITE_ERROR && outStream.GetBeFile().GetLastError() == BeFileStatus::DiskFull)
+                return BE_SQLITE_FULL;
+            return  translateZipErrorToSQLiteError(result);
+            }
 
-        return  ZIP_SUCCESS == result ? BE_SQLITE_OK : BE_SQLITE_IOERR_READ;
+        uint64_t  sizeOfNewFile;
+        outName.GetFileSize(sizeOfNewFile);
+        if (expectedFileSize != sizeOfNewFile)
+            {
+            LOG.errorv("DbEmbeddedFileTable::Export: exported file is not the expected size");
+            outName.BeDeleteFile();
+            return BE_SQLITE_IOERR_READ;
+            }
+
+        BeAssert(expectedFileSize == outStream.GetBytesWritten());
+
+        return BE_SQLITE_OK;
         }
 
     bvector<Byte>   buffer;
@@ -3965,14 +4088,36 @@ DbResult DbEmbeddedFileTable::Export(Utf8CP filespec, Utf8CP name, ICompressProg
         uint32_t bytesWritten = 0;
         outStream._Write(&buffer[0], actuallyRead, bytesWritten);
         if (bytesWritten != actuallyRead)
+            {
+            if (outStream.GetBeFile().GetLastError() == BeFileStatus::DiskFull)
+                return BE_SQLITE_FULL;
             return BE_SQLITE_IOERR_WRITE;
+            }
         }
 
     //  Verify that the file size matches.
-    if (totalRead != actualSize)
+    if (totalRead != expectedFileSize)
         return BE_SQLITE_IOERR_READ;
 
     return BE_SQLITE_OK;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    03/2015
+//---------------------------------------------------------------------------------------
+DbResult DbEmbeddedFileTable::ExportDbFile (Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress)
+    {
+    DbResult status = Export(localFileName, name, progress);
+    if (BE_SQLITE_OK != status)
+        return status;
+
+    Utf8CP  vfs;
+    status = isValidDbFile(localFileName, vfs);
+    if (BE_SQLITE_OK != status)
+        LOG.errorv("ExportDbFile: validateDbFile returned %d", status);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4721,6 +4866,7 @@ StatusInt BeFileLzmaInStream::OpenInputFile(BeFileNameCR fileName)
     if (m_file.IsOpen())
         return BSIERROR;
 
+    m_bytesRead = 0;
     BeFileStatus    result = m_file.Open(fileName.GetName(), BeFileAccess::Read);
     if (BeFileStatus::Success != result)
         return (StatusInt)result;
@@ -4736,7 +4882,21 @@ StatusInt BeFileLzmaInStream::OpenInputFile(BeFileNameCR fileName)
 //---------------------------------------------------------------------------------------
 ZipErrors BeFileLzmaInStream::_Read(void* data, uint32_t size, uint32_t& actuallyRead)
     {
-    return (BeFileStatus::Success != m_file.Read(data, &actuallyRead, size)) ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;
+    BeFileStatus result = m_file.Read(data, &actuallyRead, size);
+    m_bytesRead += actuallyRead;
+
+    if (BeFileStatus::Success != result)
+        {
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+        HRESULT hr = ::GetLastError();
+#endif
+        LOG.errorv("BeFileLzmaInStream::_Read result = %d, m_bytesRead = %lld, filesize = %lld", result, m_bytesRead, m_fileSize);
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+        LOG.errorv("    HRESULT = %d", hr);
+#endif
+        }
+
+    return BeFileStatus::Success != result ? ZIP_ERROR_READ_ERROR : ZIP_SUCCESS;
     }
 
 //=======================================================================================
@@ -4833,6 +4993,7 @@ BeFileStatus BeFileLzmaOutStream::CreateOutputFile(BeFileNameCR fileName, bool c
     if (m_file.IsOpen())
         return BeFileStatus::UnknownError;
 
+    m_bytesWritten = 0;
     BeFileStatus    result = m_file.Create(fileName.GetName(), createAlways);
     if (BeFileStatus::Success != result)
         return result;
@@ -4852,9 +5013,15 @@ void BeFileLzmaOutStream::_SetAlwaysFlush(bool flushOnEveryWrite) {}
 //---------------------------------------------------------------------------------------
 ZipErrors BeFileLzmaOutStream::_Write(void const* data, uint32_t size, uint32_t& bytesWritten)
     {
-    //  The LZMA2 multithreaded ensures that calls to _Read are sequential and do not overlap, so this code does not need to
+    //  The LZMA2 multi-threading support ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
-    if (BeFileStatus::Success != m_file.Write(&bytesWritten, data, size))
+    BeFileStatus result = m_file.Write(&bytesWritten, data, size);
+    //  We check m_bytesWritten at the end to verify that we have processed exactly the expected number of bytes.
+    m_bytesWritten += bytesWritten;
+
+    if (bytesWritten != size)
+        LOG.errorv("BeFileLzmaOutStream::_Write %u requested, %u written", size, bytesWritten);
+    if (BeFileStatus::Success != result)
         return ZIP_ERROR_WRITE_ERROR;
 
     return ZIP_SUCCESS;
@@ -4865,7 +5032,7 @@ ZipErrors BeFileLzmaOutStream::_Write(void const* data, uint32_t size, uint32_t&
 //---------------------------------------------------------------------------------------
 ZipErrors LzmaOutToBvectorStream::_Write(void const* data, uint32_t size, uint32_t& bytesWritten)
     {
-    //  The LZMA2 multi-threading support ensures that calls to _Read are sequential and do not overlap, so this code does not need to
+    //  The LZMA2 multi-threading support  ensures that calls to _Read are sequential and do not overlap, so this code does not need to
     //  be concerned with preventing race conditions
     auto currSize = m_buffer.size();
     m_buffer.resize(currSize+size);
@@ -4906,11 +5073,11 @@ static SRes readFor7z(void *p, void *buf, size_t *size)
     {
     SeqInStreamImpl* pImpl = static_cast <SeqInStreamImpl*>(p);
 
-    uint32_t bytesRead;
-    pImpl->GetStream()._Read(buf, (uint32_t)*size, bytesRead);
+    uint32_t bytesRead = 0;
+    ZipErrors zipError = pImpl->GetStream()._Read(buf, (uint32_t)*size, bytesRead);
     *size = bytesRead;
 
-    return SZ_OK;
+    return ZIP_SUCCESS == zipError ? SZ_OK : SZ_ERROR_READ;
     }
 
 //---------------------------------------------------------------------------------------
@@ -4948,7 +5115,7 @@ static SRes progressFor7z(void *p, UInt64 inSize, UInt64 outSize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    01/2013
 //---------------------------------------------------------------------------------------
-static ZipErrors translate7ZipError(SRes code)
+static ZipErrors translate7ZipError (SRes code, bool readingFromFile)
     {
     switch (code)
         {
@@ -4963,6 +5130,9 @@ static ZipErrors translate7ZipError(SRes code)
             return ZIP_ERROR_END_OF_DATA;
 
         case SZ_ERROR_READ:
+            if (readingFromFile)
+                return ZIP_ERROR_READ_ERROR;
+
             return ZIP_ERROR_BLOB_READ_ERROR;
 
         case SZ_ERROR_OUTPUT_EOF:
@@ -5110,14 +5280,14 @@ public:
             outPos = 0;
 
             if (res != SZ_OK || thereIsSize && unpackSize == 0)
-                return translate7ZipError(res);
+                return translate7ZipError(res, false);
 
             if (inProcessed == 0 && outProcessed == 0)
                 {
                 if (thereIsSize || status != LZMA_STATUS_FINISHED_WITH_MARK)
                     return ZIP_ERROR_BAD_DATA;
 
-                return translate7ZipError(res);
+                return translate7ZipError(res, false);
                 }
             }
         }
@@ -5141,6 +5311,8 @@ public:
             if (inPos == inSize)
                 {
                 inSize = DECODE_INPUT_BUFFER_SIZE;
+                //  We ignore the read error here. It probably means end-of-stream.  We count on LZMA detecting that it
+                //  has hit the end of the input data without hitting the end of the stream.  As a failsafe Export verifies that the output file is the expected size.
                 m_inStream.ReadData(inBuf, &inSize);
                 totalRead += inSize;
                 inPos = 0;
@@ -5166,14 +5338,14 @@ public:
                 res = m_compressProgress->Progress(m_compressProgress, totalRead, totalWritten);
 
             if (res != SZ_OK)
-                return translate7ZipError(res);
+                return translate7ZipError(res, false);
 
             if (inProcessed == 0 && outProcessed == 0)
                 {
                 if (status != LZMA_STATUS_FINISHED_WITH_MARK)
                     return ZIP_ERROR_END_OF_DATA;
 
-                return translate7ZipError(res);
+                return translate7ZipError(res, false);
                 }
             }
         }
@@ -5223,14 +5395,14 @@ public:
 
         int res = LzmaEnc_SetProps(enc, encProps);
         if (SZ_OK != res)
-            return translate7ZipError(res);
+            return translate7ZipError(res, true);
 
         Byte header[LZMA_PROPS_SIZE + 8];
         size_t headerSize = LZMA_PROPS_SIZE;
 
         res = LzmaEnc_WriteProperties(enc, header, &headerSize);
         if (SZ_OK != res)
-            return translate7ZipError(res);
+            return translate7ZipError(res, true);
 
         uint64_t sourceSize = m_inStream.GetSize();
         for (unsigned i = 0; i < 8; i++)
@@ -5242,7 +5414,7 @@ public:
         //  Compress progress may be NULL.
         res = LzmaEnc_Encode(enc, &m_outStream, &m_inStream, m_compressProgress, &m_szAlloc, &m_szAlloc);
         if (SZ_OK != res)
-            return translate7ZipError(res);
+            return translate7ZipError(res, true);
 
         LzmaEnc_Destroy(enc, &m_szAlloc, &m_szAlloc);
 
@@ -5279,7 +5451,7 @@ public:
         Lzma2Enc_Destroy(enc);
 
         if (SZ_OK != res)
-            return translate7ZipError(res);
+            return translate7ZipError(res, true);
 
         return ZIP_SUCCESS;
     }
