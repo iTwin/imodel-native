@@ -124,6 +124,12 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 
 #define TEMP_TABLE_Prefix "temp.t_"
 
+//  Copied from sqlite3-1.c
+#define SQLITE_PENDING_BYTE     (0x40000000)
+#define SQLITE_RESERVED_BYTE    (PENDING_BYTE+1)
+#define SQLITE_SHARED_FIRST     (PENDING_BYTE+2)
+#define SQLITE_SHARED_SIZE      510
+
 //__PUBLISH_SECTION_START__
 #define BEDB_TABLE_Property     "be_Prop"
 #define BEDB_TABLE_EmbeddedFile "be_EmbedFile"
@@ -543,7 +549,7 @@ enum DbResult
     BE_SQLITE_IOERR       = 10,   //!< Some kind of disk I/O error occurred
     BE_SQLITE_CORRUPT     = 11,   //!< The database disk image is malformed
     BE_SQLITE_NOTFOUND    = 12,   //!< NOT USED. Table or record not found
-    BE_SQLITE_FULL        = 13,   //!< Insertion failed because database is full
+    BE_SQLITE_FULL        = 13,   //!< Insertion failed because database is full or write operation failed because disk is full
     BE_SQLITE_CANTOPEN    = 14,   //!< Unable to open the database file
     BE_SQLITE_PROTOCOL    = 15,   //!< Database lock protocol error
     BE_SQLITE_EMPTY       = 16,   //!< Database is empty
@@ -1665,6 +1671,20 @@ public:
     //! @return Id of the embedded file
     BE_SQLITE_EXPORT BeRepositoryBasedId ImportWithoutCompressing(DbResult* stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024);
 
+    //! Import a copy of an existing SQLite file from the local filesystem into this BeSQLite::Db after validating the file to be imported.
+    //! @param[out] stat Success or error code. May be NULL.
+    //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
+    //! @param[in] localFileName the name of a physical file on the local filesystem to be imported. The import will fail if the file doesn't
+    //! exist or can't be read.
+    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be NULL.
+    //! @param[in] description a string that describes this entry. May be NULL.
+    //! @param[in] lastModified the time the file was last modified. May be NULL.
+    //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
+    //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
+    //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
+    //! @return Id of the embedded file
+    BE_SQLITE_EXPORT BeRepositoryBasedId ImportDbFile (DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
+
     //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.
     //! @param[out] stat Success or error code. May be NULL.
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
@@ -1696,6 +1716,13 @@ public:
         Import(&stat, name, localFileName, typeStr, description, nullptr, chunkSize, supportRandomAccess);
         return stat;
         }
+
+    //! Create a new file on the local file system with a copy of the content of an embedded file, by name and verify that the generated file is a valid SQLite database.
+    //! @param[in] localFileName the name for the new file. This method will fail if the file already exists or cannot be created.
+    //! @param[in] name the name by which the file was embedded.
+    //! @param[in] progress the interface to call to report progress.  May be NULL.
+    //! @return BE_SQLITE_OK if the file was successfully exported, and error status otherwise.
+    BE_SQLITE_EXPORT DbResult ExportDbFile (Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
 
     //! Create a new file on the local file system with a copy of the content of an embedded file, by name.
     //! @param[in] localFileName the name for the new file. This method will fail if the file already exists or cannot be created.
@@ -2995,12 +3022,15 @@ struct BeFileLzmaInStream : ILzmaInputStream
 private:
     BeFile         m_file;
     uint64_t       m_fileSize;
+    uint64_t       m_bytesRead;
 
 public:
     virtual ~BeFileLzmaInStream() {}
     BE_SQLITE_EXPORT StatusInt OpenInputFile(BeFileNameCR fileName);
     BE_SQLITE_EXPORT ZipErrors _Read(void* data, uint32_t size, uint32_t& actuallyRead) override;
     uint64_t _GetSize() override { return m_fileSize; }
+    uint64_t GetBytesRead() { return m_bytesRead; }
+    BeFile& GetBeFile() { return m_file; }
 };
 
 //=======================================================================================
@@ -3027,12 +3057,15 @@ struct BeFileLzmaOutStream : ILzmaOutputStream
 {
 private:
     BeFile      m_file;
+    uint64_t    m_bytesWritten;
 
 public:
     virtual ~BeFileLzmaOutStream() {}
     BE_SQLITE_EXPORT BeFileStatus CreateOutputFile(BeFileNameCR fileName, bool createAlways = true);
     BE_SQLITE_EXPORT ZipErrors _Write(void const* data, uint32_t size, uint32_t& bytesWritten) override;
     BE_SQLITE_EXPORT void _SetAlwaysFlush(bool flushOnEveryWrite) override;
+    uint64_t GetBytesWritten() { return m_bytesWritten; }
+    BeFile& GetBeFile() { return m_file; }
 };
 
 //=======================================================================================
