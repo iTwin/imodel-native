@@ -123,6 +123,11 @@ static BeFileStatus translateErrnoToBeFileStatus (int e)
 
         case ENOENT:
             return BeFileStatus::FileNotFoundError;
+
+#if defined(ENOSPC)
+        case ENOSPC:
+            return BeFileStatus::DiskFull;
+#endif
         }
 
     return BeFileStatus::UnknownError;
