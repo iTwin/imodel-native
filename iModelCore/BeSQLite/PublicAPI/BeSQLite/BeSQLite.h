@@ -1723,7 +1723,6 @@ public:
     //! @remarks When ExportDbFile returns an error other than BE_SQLITE_ERROR_FileExists it also deletes the file specified in the localFileName parameter.  If
     //! ExportDbFile creates the output file and subsequently detects an error it deletes the file before returning an error status.
     //! ExportDbFile can return any of these error status codes:
-    //!
     //!     - BE_SQLITE_NOTADB if the extracted file is not an SQLite database file.
     //!     - BE_SQLITE_CORRUPT_VTAB if the extracted file appears to be an SQLite database file but fails some consistency check.
     //!     - BE_SQLITE_ERROR_FileExists if the target file exists.
