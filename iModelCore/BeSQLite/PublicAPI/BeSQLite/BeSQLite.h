@@ -1091,9 +1091,7 @@ struct DbValue
     BE_SQLITE_EXPORT void        GetValueGuid(BeGuidR) const; //!< get the value as a GUID
     template <class T_Id> T_Id   GetValueId() const {return T_Id (GetValueInt64());}
 
-//__PUBLISH_SECTION_END__
-    BE_SQLITE_EXPORT void        Dump() const; //!< Dump to stdout for debugging purposes.
-//__PUBLISH_SECTION_START__
+    BE_SQLITE_EXPORT void Dump() const; //!< Dump to stdout for debugging purposes.
 };
 
 //=======================================================================================
@@ -1425,9 +1423,7 @@ private:
 public:
     StatementCache(int size){m_entries.reserve(size);}
     ~StatementCache() {Empty();}
-//__PUBLISH_SECTION_END__
     DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
-//__PUBLISH_SECTION_START__
 
     BE_SQLITE_EXPORT void Dump();
     BE_SQLITE_EXPORT void Empty();
@@ -1897,10 +1893,8 @@ public:
     //! @note name and namespace should always point to static strings.
     PropertySpec(Utf8CP name, Utf8CP nameSpace, ProperyTxnMode txnMode=TXN_MODE_Normal, WantCompress compress=COMPRESS_PROPERTY_Yes, bool saveIfNull=false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_txnMode(txnMode), m_saveIfNull(saveIfNull){}
 
-//__PUBLISH_SECTION_END__
     //! Copy a PropertySpec, changing only the setting flag
     PropertySpec(PropertySpec const& other, ProperyTxnMode txnMode) {*this = other; m_txnMode=txnMode;}
-//__PUBLISH_SECTION_START__
 
     Utf8CP GetName() const {return m_name;}
     Utf8CP GetNamespace() const {return m_namespace;}
@@ -2556,7 +2550,6 @@ public:
 
     //! @name Db Properties
     //! @{
-
     //! Save a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
     //! @param[in] value A pointer to a buffer that holds the new value of the property to be saved. May be NULL
@@ -2634,7 +2627,6 @@ public:
     //! Make any previous changes to settings properties part of the current transaction. They will be written to disk if/when the transaction is committed.
     //! Unless this method is called after changes are made to setting properties, the changes are held in memory only and not saved to disk.
     BE_SQLITE_EXPORT void SaveSettings();
-
     //! @}
 
     //! @name RepositoryLocalValue
@@ -2642,9 +2634,19 @@ public:
     //! Repository Local Values are used for information specific to this copy of the Db. The table BEDB_Table_Local in which
     //! RepositoryLocalValues are stored is not change tracked or change merged.
 
+    //! Get a reference to the RepositoryLocalValueCache for this Db.
     RepositoryLocalValueCache& GetRLVCache() {return m_dbFile->GetRLVCache();}
 
+    //! Query the current value of a Repository Local Value of type string.
+    //! @param[in] name The name of the RLV.
+    //! @param[out] value On success, the value of the RLV.
+    //! @return BE_SQLITE_ROW if the value exists and value is valid, error status otherwise.
     BE_SQLITE_EXPORT DbResult QueryRepositoryLocalValue(Utf8CP name, Utf8StringR value) const;
+
+    //! Save a new value of a Repository Local Value of type string. If the RLC already exists, its value is replaced.
+    //! @param[in] name The name of the RLV.
+    //! @param[in] value The new value for RLV name.
+    //! @return BE_SQLITE_DONE if the value was saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value);
     //! @}
 
@@ -3201,7 +3203,7 @@ struct Properties
     static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
-    static PropSpec ExpirationDate()     {return PropSpec("ExpirationDate");}
+    static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
