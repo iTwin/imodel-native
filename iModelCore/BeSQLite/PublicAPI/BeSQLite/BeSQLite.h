@@ -1747,7 +1747,7 @@ enum class BeSQLiteTxnMode {None=0, Deferred=1, Immediate=2, Exclusive=3,};
 enum StartDefaultTransaction
     {
     //! Do not start a default transaction. This is generally not a good idea except for very specialized cases. All access to a database requires a transaction.
-    //! So, unless you start a "default" transaction, you must wrap all SQL statements with a #Savepoint.
+    //! So, unless you start a "default" transaction, you must wrap all SQL statements with a \ref Savepoint.
     DefaultTxn_No = (int) BeSQLiteTxnMode::None,
     //! Create a default "normal" transaction. SQLite will acquire locks as they are needed.
     DefaultTxn_Yes = (int) BeSQLiteTxnMode::Deferred,
