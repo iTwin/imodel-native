@@ -330,8 +330,8 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
             {
             int val = localValues[i];
             size_t keyIndex = 0;
-            ASSERT_EQ (BE_SQLITE_OK, db.RegisterRepositoryLocalValue (keyIndex, localValueNames[i].c_str ())) << "Registration of RLV " << localValueNames[i].c_str () << " is expected to succeed.";
-            auto result = db.SaveRepositoryLocalValue (keyIndex, val);
+            ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(keyIndex, localValueNames[i].c_str ())) << "Registration of RLV " << localValueNames[i].c_str () << " is expected to succeed.";
+            auto result = db.GetRLVCache().SaveValue (keyIndex, val);
             ASSERT_EQ (BE_SQLITE_OK, result) << L"Saving test RLV '" << localValueNames[i].c_str () << L"=" << val << L"' failed";
             }
 
@@ -362,7 +362,7 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
 
     Utf8CP const repoIdKey = "be_repositoryId";
     size_t repoIdIndex = 0;
-    ASSERT_TRUE (db.TryGetRepositoryLocalValueIndex (repoIdIndex, repoIdKey));
+    ASSERT_TRUE (db.GetRLVCache().TryGetIndex(repoIdIndex, repoIdKey));
     //query be_local to check that there is only one row (the repo id)
     Statement statement;
     ASSERT_EQ (BE_SQLITE_OK, statement.Prepare (db, "SELECT Name, Val from " BEDB_TABLE_Local)) << L"Preparing SQL statement to retrieve content of be_local failed";
@@ -381,7 +381,7 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
 
     //check value of repo id through API. As we opened file from scratch the old id cannot be in the cache anymore.
     int64_t actualRepoId;
-    db.QueryRepositoryLocalValue (actualRepoId, repoIdIndex);
+    db.GetRLVCache().QueryValue (actualRepoId, repoIdIndex);
     EXPECT_EQ (expectedRepoId.GetValue (), (int32_t) actualRepoId) << L"QueryRepositoryLocalValue did not return the right value for repository id after repository id had been changed.";
     }
 

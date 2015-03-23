@@ -2,7 +2,7 @@
 |
 |     $Source: IModelExtractor/IModelExtractor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IModelExtractor.h"
@@ -284,10 +284,10 @@ static DbResult checkPackageVersion (BeSQLite::Db& db, Db::OpenParams const& ope
         }
     EXTRACTOR_V ("Actual package schema version: %s", versionString.c_str ());
 
-    PackageSchemaVersion actualPackageSchemaVersion (0,0,0,0);
+    SchemaVersion actualPackageSchemaVersion (0,0,0,0);
     actualPackageSchemaVersion.FromJson (versionString.c_str ());
-    PackageSchemaVersion expectedPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    PackageSchemaVersion minimumAutoUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    SchemaVersion expectedPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    SchemaVersion minimumAutoUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
     EXTRACTOR_V ("Expected package schema version: %s", expectedPackageVersion.ToJson ().c_str ());
     EXTRACTOR_V ("Minimum auto-upgradable package schema version: %s", minimumAutoUpgradablePackageVersion.ToJson ().c_str ());

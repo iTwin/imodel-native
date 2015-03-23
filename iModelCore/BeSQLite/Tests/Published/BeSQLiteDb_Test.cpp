@@ -500,33 +500,28 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
 
     Utf8CP testPropValueName = "TestProp";
     size_t rlvIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, m_db.RegisterRepositoryLocalValue (rlvIndex, testPropValueName));
-    m_result = m_db.SaveRepositoryLocalValue (rlvIndex, val);
+    ASSERT_EQ (BE_SQLITE_OK, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
+    m_result = m_db.GetRLVCache().SaveValue (rlvIndex, val);
     EXPECT_EQ (BE_SQLITE_OK, m_result) << "SaveRepositoryLocalValue failed";
 
     int64_t actualVal = -1LL;
-    m_result = m_db.QueryRepositoryLocalValue (actualVal, rlvIndex);
+    m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);
 
     m_db.SaveChanges();
 
     actualVal = -1LL;
-    m_result = m_db.QueryRepositoryLocalValue (actualVal, rlvIndex);
+    m_result = m_db.GetRLVCache().QueryValue(actualVal, rlvIndex);
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_EQ (val, (int) actualVal);
 
-    ASSERT_TRUE (m_db.TryGetRepositoryLocalValueIndex (rlvIndex, testPropValueName));
-    ASSERT_FALSE (m_db.TryGetRepositoryLocalValueIndex (rlvIndex, "GarbageProp"));
+    ASSERT_TRUE (m_db.GetRLVCache().TryGetIndex (rlvIndex, testPropValueName));
+    ASSERT_FALSE (m_db.GetRLVCache().TryGetIndex (rlvIndex, "GarbageProp"));
 
-    ASSERT_EQ (BE_SQLITE_ERROR, m_db.RegisterRepositoryLocalValue (rlvIndex, testPropValueName));
+    ASSERT_EQ (BE_SQLITE_ERROR, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
 
     m_db.CloseDb ();
-    BeTest::SetFailOnAssert (false);
-        {
-        ASSERT_FALSE (m_db.TryGetRepositoryLocalValueIndex (rlvIndex, testPropValueName)) << "After closing the Db any registered RepositoryLocalValue is expected to be gone.";
-        }
-    BeTest::SetFailOnAssert (true);
     }
 
 
@@ -560,7 +555,7 @@ size_t repositoryLocalKeyIndex
 )
     {
     int64_t newValue = 0LL;
-    /*auto stat = */db.IncrementRepositoryLocalValue (newValue, repositoryLocalKeyIndex);
+    /*auto stat = */db.GetRLVCache().IncrementValue (newValue, repositoryLocalKeyIndex);
     //ASSERT_EQ (BE_SQLITE_OK, stat) << L"IncrementRepositoryLocalValueInt64 failed.";
     }
 
@@ -611,9 +606,9 @@ Utf8CP repositoryLocalKey
         dbPath.assign (db.GetDbFileName ());
 
         size_t repositoryLocalKeyIndex = 0;
-        ASSERT_EQ (BE_SQLITE_OK, db.RegisterRepositoryLocalValue (repositoryLocalKeyIndex, repositoryLocalKey));
+        ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(repositoryLocalKeyIndex, repositoryLocalKey));
         const int64_t zero = 0LL;
-        stat = db.SaveRepositoryLocalValue (repositoryLocalKeyIndex, zero);
+        stat = db.GetRLVCache().SaveValue(repositoryLocalKeyIndex, zero);
         ASSERT_EQ (BE_SQLITE_OK, stat) << L"Saving initial value of repository local value failed";
         ASSERT_EQ (BE_SQLITE_OK, db.SaveChanges ()) << L"Committing repository local values failed.";
         }
@@ -635,7 +630,7 @@ TEST(PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueNoTransaction)
     SetupIncrementRepositoryLocalValueTestDgnDb ( testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
     //printf ("Attach to profiler and press any key...\r\n"); getchar ();
     StopWatch stopwatch (true);
     for (int64_t i = 0LL; i < iterationCount; i++)
@@ -722,7 +717,7 @@ TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWithoutInMemoryCa
     SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
 
     Statement queryStmt;
     DbResult stat = queryStmt.Prepare (testDb, SqlPrintfString ("select Val from " BEDB_TABLE_Local " where Name='%s'", mockSequenceKey));
@@ -773,7 +768,7 @@ TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueWrappedInSavepoin
     SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
 
     StopWatch stopwatch ("", true);
     for (int i = 0; i < iterationCount; i++)
@@ -802,7 +797,7 @@ TEST (PerformanceBeSQLiteDbTests, IncrementRepositoryLocalValueAndCommittingOute
     SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
 
     StopWatch stopwatch ("", true);
     for (int i = 0; i < iterationCount; i++)
@@ -832,7 +827,7 @@ TEST(PerformanceBeSQLiteDbTests, SaveRepositoryLocalValueWithSavepointPerIterati
     SetupIncrementRepositoryLocalValueTestDgnDb (testDb, mockSequenceKey);
 
     size_t mockSequenceKeyIndex = 0;
-    ASSERT_EQ (BE_SQLITE_OK, testDb.RegisterRepositoryLocalValue (mockSequenceKeyIndex, mockSequenceKey));
+    ASSERT_EQ (BE_SQLITE_OK, testDb.GetRLVCache().Register(mockSequenceKeyIndex, mockSequenceKey));
 
     StopWatch stopwatch ("", true);
     for (int i = 0; i < iterationCount; i++)
@@ -840,7 +835,7 @@ TEST(PerformanceBeSQLiteDbTests, SaveRepositoryLocalValueWithSavepointPerIterati
         Savepoint savepoint (testDb, "", true);
         
         int64_t val = i * 1000LL;
-        DbResult stat = testDb.SaveRepositoryLocalValue (mockSequenceKeyIndex, val);
+        DbResult stat = testDb.GetRLVCache().SaveValue(mockSequenceKeyIndex, val);
         ASSERT_EQ (BE_SQLITE_OK, stat) << "SaveRepositoryLocalValue failed";
         savepoint.Commit ();
         }

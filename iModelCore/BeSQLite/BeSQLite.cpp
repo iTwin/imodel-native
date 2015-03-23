@@ -110,101 +110,6 @@ struct CachedProperyMap : bmap<CachedPropertyKey, CachedPropertyValue>
         }
     };
 
-//=======================================================================================
-// Cached "repository local values"
-// @bsiclass                                                    Keith.Bentley   12/12
-//=======================================================================================
-struct CachedRlValue
-    {
-private:
-    Utf8String m_name;
-    bool m_isUnset;
-    bool m_dirty;
-    int64_t m_value;
-
-public:
-    explicit CachedRlValue(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOrEmpty(name)); Reset();}
-    Utf8CP GetName() const {return m_name.c_str();}
-    int64_t GetValue() const {BeAssert(!m_isUnset); return m_value;}
-    void ChangeValue(int64_t value, bool initializing = false)
-        {
-        m_isUnset = false;
-        m_dirty = !initializing;
-        m_value = value;
-        }
-
-    int64_t Increment()
-        {
-        BeAssert(!m_isUnset);
-        m_dirty = true;
-        m_value++;
-        return m_value;
-        }
-
-    bool IsUnset() const { return m_isUnset; }
-    bool IsDirty() const {BeAssert(!m_isUnset); return m_dirty;}
-    void SetIsNotDirty() {BeAssert(!m_isUnset); m_dirty = false;}
-    void Reset() {m_isUnset=true; m_dirty=false; m_value=-1LL;}
-    };
-
-//=======================================================================================
-// Cache for RepositoryLocalValues
-// @bsiclass                                                    Krischan.Eberle     07/14
-//=======================================================================================
-struct RlvCache : NonCopyableClass
-    {
-public:
-    typedef bvector<CachedRlValue>::iterator iterator;
-
-private:
-    bvector<CachedRlValue> m_cache;
-
-public:
-    DbResult RegisterRlv(size_t& index, Utf8CP name)
-        {
-        size_t existingIndex = 0;
-        if (TryGetIndex(existingIndex, name))
-            return BE_SQLITE_ERROR;
-
-        m_cache.push_back(CachedRlValue(name));
-        index = m_cache.size() - 1;
-        return BE_SQLITE_OK;
-        }
-
-    bool TryGetIndex(size_t& index, Utf8CP name) const
-        {
-        const size_t size = m_cache.size();
-        for (size_t i = 0; i < size; i++)
-            {
-            if (strcmp(name, m_cache[i].GetName()) == 0)
-                {
-                index = i;
-                return true;
-                }
-            }
-
-        return false;
-        }
-
-    CachedRlValue& operator[] (size_t index)
-        {
-        BeAssert(index < m_cache.size());
-        return m_cache[index];
-        }
-
-    size_t Size() const { return m_cache.size(); }
-
-    iterator begin() { return m_cache.begin(); }
-    iterator end() { return m_cache.end(); }
-
-    void Clear()
-        {
-        for (CachedRlValue& val : m_cache)
-            {
-            val.Reset();
-            }
-        }
-    };
 
 END_BENTLEY_SQLITE_NAMESPACE
 
@@ -449,14 +354,12 @@ SqlPrintfString::~SqlPrintfString() {sqlite3_free(m_str);}
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP const DbFile::BE_REPOSITORYID_NAME = "be_repositoryId";
-
 static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const*) retry)->_OnBusy(count);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(new RlvCache()), 
+DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_rlvCache(*this),
             m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10), m_rtreeMatch("rTreeAccept", 1)
     {
     m_inCommit = false;
@@ -470,11 +373,10 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
         sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
         }
 
-    if (BE_SQLITE_OK != m_rlvCache->RegisterRlv(m_repositoryIdRlvIndex, BE_REPOSITORYID_NAME))
-        {
-        BeAssert(false && "Could not register RepositoryLocalValue for 'be_repositoryId'.");
-        }
+    m_rlvCache.Register(m_repositoryIdRlvIndex, "be_repositoryId");
     }
+
+RepositoryLocalValueCache& DbFile::GetRLVCache() {return m_rlvCache;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
@@ -590,8 +492,12 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit)
     // we can't commit or rollback if any active changetrack has changes.
     for (auto const& tracker : m_trackers)
         {
-        if (tracker.second->HasChanges())
+        // Give trackers a chance to save the changes.
+        if (tracker.second->HasChanges() && ChangeTracker::OnCommitStatus::Abort == tracker.second->_OnCommit(isCommit))
+            {
+            BeAssert(false);
             return  BE_SQLITE_ERROR_ChangeTrackError;
+            }
         }
 
     // attempt the commit/release or rollback
@@ -776,32 +682,19 @@ void DbFile::SaveCachedProperties(bool isCommit)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-RlvCache& DbFile::GetRlvCache() const
-    {
-    BeAssert(m_rlvCache != nullptr);
-    return *m_rlvCache;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SaveCachedRlvs(bool isCommit) const
+void DbFile::SaveCachedRlvs(bool isCommit) 
     {
-    if (nullptr == m_rlvCache)
-        return;
-
     if (!isCommit)
         {
-        ClearRlvCache();
+        m_rlvCache.Clear();
         return; // only clear cached RLVs on cancel, not commit
         }
 
     CachedStatementPtr stmt;
-    RlvCache& cache = GetRlvCache();
-    for (CachedRlValue& rlv : cache)
+    for (CachedRLV const& rlv : m_rlvCache.m_cache)
         {
         if (!rlv.IsUnset() && rlv.IsDirty())
             {
@@ -1228,7 +1121,7 @@ DbResult Db::SaveRepositoryId()
     if (!m_dbFile->m_repositoryId.IsValid())
         m_dbFile->m_repositoryId = BeRepositoryId(0);
 
-    return SaveRepositoryLocalValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
+    return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1483,9 +1376,15 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
 DbResult Db::DetachDb(Utf8CP alias)
     {
     Savepoint* txn = GetSavepoint(0);
-    bool wasActive = (txn!= NULL) && (BE_SQLITE_OK == txn->Commit());
+    bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit()); 
 
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), SqlPrintfString("DETACH %s", alias), NULL, NULL, NULL);
+    if (rc != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        Utf8CP lastError = GetLastError(nullptr); // keep on separate line for debuggging
+        LOG.errorv("DetachDb failed: \"%s\" alias:[%s]", lastError, alias);
+        }
 
     if (wasActive)
         txn->Begin();
@@ -1493,59 +1392,69 @@ DbResult Db::DetachDb(Utf8CP alias)
     return  rc;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::RegisterRepositoryLocalValue(size_t& rlvIndex, Utf8CP rlvName)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult RepositoryLocalValueCache::Register(size_t& index, Utf8CP name)
     {
-    if (m_dbFile == nullptr)
-        {
-        LOG.fatal("Cannot call RegisterRepositoryLocalValue until Db has been opened/created.");
+    size_t existingIndex = 0;
+    if (TryGetIndex(existingIndex, name))
         return BE_SQLITE_ERROR;
-        }
 
-    return m_dbFile->GetRlvCache().RegisterRlv(rlvIndex, rlvName);
+    m_cache.push_back(CachedRLV(name));
+    index = m_cache.size() - 1;
+    return BE_SQLITE_OK;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Db::TryGetRepositoryLocalValueIndex(size_t& rlvIndex, Utf8CP rlvName) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RepositoryLocalValueCache::TryGetIndex(size_t& index, Utf8CP name) 
     {
-    if (m_dbFile == nullptr)
+    const size_t size = m_cache.size();
+    for (size_t i = 0; i < size; i++)
         {
-        LOG.fatal("Cannot call TryGetRepositoryLocalValueIndex until Db has been opened/created.");
-        BeAssert(false && "Cannot call TryGetRepositoryLocalValueIndex until Db has been opened/created.");
-        return false;
+        if (strcmp(name, m_cache[i].GetName()) == 0)
+            {
+            index = i;
+            return true;
+            }
         }
 
-    return m_dbFile->GetRlvCache().TryGetIndex(rlvIndex, rlvName);
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryLocalValueCache::Clear()
+    {
+    for (CachedRLV& val : m_cache)
+        val.Reset();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::SaveRepositoryLocalValue(size_t rlvIndex, int64_t value)
+DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, int64_t value)
     {
-    auto& rlvCache = m_dbFile->GetRlvCache();
-    if (rlvIndex >= rlvCache.Size())
+    if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
 
-    rlvCache[rlvIndex].ChangeValue(value);
+    m_cache[rlvIndex].ChangeValue(value);
     return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::QueryRepositoryLocalValue(int64_t& value, size_t rlvIndex) const
+DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex) 
     {
-    auto& rlvCache = m_dbFile->GetRlvCache();
-    if (rlvIndex >= rlvCache.Size())
+    if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
 
-    CachedRlValue* cachedRlv = nullptr;
-    if (!TryQueryRepositoryLocalValue(cachedRlv, rlvIndex))
+    CachedRLV* cachedRlv = nullptr;
+    if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
     value = cachedRlv->GetValue();
@@ -1555,13 +1464,12 @@ DbResult Db::QueryRepositoryLocalValue(int64_t& value, size_t rlvIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::IncrementRepositoryLocalValue(int64_t& newValue, size_t rlvIndex) const
+DbResult RepositoryLocalValueCache::IncrementValue(int64_t& newValue, size_t rlvIndex) 
     {
-    CachedRlValue* cachedRlv = nullptr;
-    if (!TryQueryRepositoryLocalValue(cachedRlv, rlvIndex))
+    CachedRLV* cachedRlv = nullptr;
+    if (!TryQuery(cachedRlv, rlvIndex))
         return BE_SQLITE_ERROR;
 
-    BeAssert(cachedRlv->GetValue() < BeRepositoryBasedId (GetRepositoryId(), std::numeric_limits<uint32_t>::max()).GetValue() && "Maximum BeRepositoryBasedId reached.");
     newValue = cachedRlv->Increment();
     return BE_SQLITE_OK;
     }
@@ -1569,17 +1477,16 @@ DbResult Db::IncrementRepositoryLocalValue(int64_t& newValue, size_t rlvIndex) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool Db::TryQueryRepositoryLocalValue(CachedRlValue*& value, size_t rlvIndex) const
+bool RepositoryLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex) 
     {
-    auto& rlvCache = m_dbFile->GetRlvCache();
-    if (rlvIndex >= rlvCache.Size())
+    if (rlvIndex >= m_cache.size())
         return false;
 
-    CachedRlValue& cachedRlv = rlvCache[rlvIndex];
+    CachedRLV& cachedRlv = m_cache[rlvIndex];
     if (cachedRlv.IsUnset())
         {
         Statement stmt;
-        stmt.Prepare(*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
+        stmt.Prepare(m_dbFile, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
         stmt.BindText(1, cachedRlv.GetName(), Statement::MakeCopy::No);
 
         const DbResult rc = stmt.Step();
@@ -1604,8 +1511,37 @@ bool Db::TryQueryRepositoryLocalValue(CachedRlValue*& value, size_t rlvIndex) co
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult Db::DeleteRepositoryLocalValues()
     {
-    m_dbFile->ClearRlvCache();
+    m_dbFile->m_rlvCache.Clear();
     return TruncateTable(BEDB_TABLE_Local);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SaveRepositoryLocalValue(Utf8CP name, Utf8StringCR value)
+    {
+    Statement stmt;
+    stmt.Prepare(*this, "INSERT OR REPLACE INTO " BEDB_TABLE_Local " (Name,Val) VALUES(?,?)");
+    stmt.BindText(1, name, Statement::MakeCopy::No);
+    stmt.BindText(2, value, Statement::MakeCopy::No);
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::QueryRepositoryLocalValue (Utf8CP name, Utf8StringR value) const
+    {
+    Statement stmt;
+    stmt.Prepare (*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
+    stmt.BindText(1, name, Statement::MakeCopy::No);
+
+    DbResult rc = stmt.Step();
+    if (rc != BE_SQLITE_ROW)
+        return rc;
+
+    value = stmt.GetValueText(0);
+    return BE_SQLITE_ROW;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1727,14 +1663,6 @@ void DbFile::DeleteCachedPropertyMap()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::ClearRlvCache() const
-    {
-    GetRlvCache().Clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::~DbFile()
@@ -1752,11 +1680,7 @@ DbFile::~DbFile()
 
     m_statements.Empty();           // No more statements will be prepared and cached.
     DeleteCachedPropertyMap();
-    if (m_rlvCache != nullptr)
-        {
-        delete m_rlvCache;
-        m_rlvCache = nullptr;
-        }
+    m_rlvCache.Clear();
 
     BeAssert(m_txns.empty());
     BeAssert(m_statements.IsEmpty());
@@ -2012,6 +1936,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::GetExpirationDate(DateTime& xdate) const
     {
+#if defined (NEEDS_WORK_CONVERTER)
     if (!IsDbOpen())
         return BE_SQLITE_ERROR;
 
@@ -2027,6 +1952,7 @@ DbResult Db::GetExpirationDate(DateTime& xdate) const
         BeDataAssert(false && "invalid value stored for expiration date property");
         return BE_SQLITE_ERROR;
         }
+#endif
 
     return BE_SQLITE_OK;
     }
@@ -2036,10 +1962,13 @@ DbResult Db::GetExpirationDate(DateTime& xdate) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::SetExpirationDate(DateTime const& xdate)
     {
+#if defined (NEEDS_WORK_CONVERTER)
     if (xdate.IsValid() && xdate.GetInfo().GetKind() != DateTime::Kind::Utc)
         return BE_SQLITE_ERROR;
 
     return SavePropertyString(Properties::ExpirationDate(), Utf8String(xdate.ToString()));
+#endif
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2088,7 +2017,7 @@ DbResult Db::_OnDbOpened() {return QueryDbIds();}
 void Db::_OnDbChangedByOtherConnection()
     {
     m_dbFile->DeleteCachedPropertyMap();
-    m_dbFile->ClearRlvCache();
+    m_dbFile->m_rlvCache.Clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2199,7 +2128,7 @@ DbResult Db::QueryDbIds()
         return  BE_SQLITE_ERROR_NoPropertyTable;
 
     int64_t repoId;
-    rc = QueryRepositoryLocalValue(repoId, m_dbFile->m_repositoryIdRlvIndex);
+    rc = m_dbFile->m_rlvCache.QueryValue(repoId, m_dbFile->m_repositoryIdRlvIndex);
     if (BE_SQLITE_OK != rc)
         return BE_SQLITE_ERROR_NoPropertyTable;
 
