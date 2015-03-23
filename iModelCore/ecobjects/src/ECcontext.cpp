@@ -335,6 +335,11 @@ ECInstanceReadContextPtr ECInstanceReadContext::CreateContext (ECSchemaReadConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr ECInstanceReadContext::_CreateStandaloneInstance (ECClassCR ecClass)
     {
+    if (nullptr != ecClass.GetRelationshipClassCP())
+        {
+        StandaloneECRelationshipEnablerPtr enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*(ecClass.GetRelationshipClassCP()));
+        return enabler->CreateRelationshipInstance();
+        }
     StandaloneECEnablerPtr standaloneEnabler = ecClass.GetDefaultStandaloneEnabler();
         
     return standaloneEnabler->CreateInstance();
