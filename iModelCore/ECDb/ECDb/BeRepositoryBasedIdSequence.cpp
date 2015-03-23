@@ -30,7 +30,7 @@ BeRepositoryBasedIdSequence::~BeRepositoryBasedIdSequence ()
 //+---------------+---------------+---------------+---------------+---------------+-
 DbResult BeRepositoryBasedIdSequence::Initialize () const
     {
-    const auto stat = m_db.RegisterRepositoryLocalValue (m_repositoryLocalValueIndex, m_repositoryLocalValueName.c_str ());
+    const auto stat = m_db.GetRLVCache().Register(m_repositoryLocalValueIndex, m_repositoryLocalValueName.c_str ());
     if (stat != BE_SQLITE_OK)
         {
         LOG.fatalv ("Could not register RepositoryLocalValue for BeRepositoryBasedIdSequence '%s'.", m_repositoryLocalValueName.c_str ());
@@ -51,7 +51,7 @@ DbResult BeRepositoryBasedIdSequence::Reset (BeRepositoryId repositoryId) const
     //set the sequence start value (first id generated should be 1 for the given repo id.
     //Therefore call GetValueUnchecked as the stored last value is not a valid id yet.
     const BeRepositoryBasedId initialId (repositoryId, 0);
-    auto stat = m_db.SaveRepositoryLocalValue (m_repositoryLocalValueIndex, initialId.GetValueUnchecked ());
+    auto stat = m_db.GetRLVCache().SaveValue (m_repositoryLocalValueIndex, initialId.GetValueUnchecked ());
     if (stat != BE_SQLITE_OK)
         {
         LOG.fatalv ("Could not save initial sequence value SaveRepositoryLocalValue for BeRepositoryBasedIdSequence '%s'.", m_repositoryLocalValueName.c_str ());
@@ -70,7 +70,7 @@ DbResult BeRepositoryBasedIdSequence::GetNextInt64Value (int64_t& nextValue) con
         return BE_SQLITE_READONLY;
 
     int64_t deserializedLastValue = -1LL;
-    DbResult stat = m_db.IncrementRepositoryLocalValue (deserializedLastValue, m_repositoryLocalValueIndex);
+    DbResult stat = m_db.GetRLVCache().IncrementValue (deserializedLastValue, m_repositoryLocalValueIndex);
     if (stat != BE_SQLITE_OK)
         {
         LOG.fatalv ("Could not increment sequence value for BeRepositoryBasedIdSequence '%s'.", m_repositoryLocalValueName.c_str ());

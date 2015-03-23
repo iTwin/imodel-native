@@ -188,13 +188,13 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
         DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
         EXPECT_EQ (BE_SQLITE_OK, stat) << L"Opening test db failed.";
 
-        ASSERT_EQ (BE_SQLITE_OK, db.RegisterRepositoryLocalValue (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
+        ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
         //artificially set sequence close to maximum
         BeRepositoryId repoId = db.GetRepositoryId ();
         maxId = BeRepositoryBasedId (repoId, std::numeric_limits<uint32_t>::max ()).GetValue ();
 
         twoBelowMaxId = maxId - 2LL;
-        stat = db.SaveRepositoryLocalValue (sequenceIndex, twoBelowMaxId);
+        stat = db.GetRLVCache().SaveValue (sequenceIndex, twoBelowMaxId);
         EXPECT_EQ (BE_SQLITE_OK, stat) << L"Setting ECInstanceIdSequence to two below per repository max in be_Local failed.";
         db.SaveChanges ();
         }
@@ -207,7 +207,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
     ASSERT_TRUE (testClass != nullptr) << L"Test class not found";
 
     int64_t lastId = -1LL;
-    DbResult stat = ecdb.QueryRepositoryLocalValue (lastId, sequenceIndex);
+    DbResult stat = ecdb.GetRLVCache().QueryValue(lastId, sequenceIndex);
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Retrieving ECInstanceIdSequence state from be_Local failed.";
     ASSERT_EQ (twoBelowMaxId, lastId) << L"Retrieved ECInstanceIdSequence state doesn't match what the state that was stored";
     
@@ -246,8 +246,8 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
         CreateAndReopenTestDb (db, "StartupCompany.ecdb", schemaFullName, 0, Db::OPEN_ReadWrite, expectedRepoId);
         dbPath = Utf8String (db.GetDbFileName ());
 
-        ASSERT_TRUE (db.TryGetRepositoryLocalValueIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
-        DbResult stat = db.SaveRepositoryLocalValue (sequenceIndex, oneBelowMaxIdValue);
+        ASSERT_TRUE (db.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
+        DbResult stat = db.GetRLVCache().SaveValue (sequenceIndex, oneBelowMaxIdValue);
         EXPECT_EQ (BE_SQLITE_OK, stat) << L"Setting ECInstanceIdSequence to three below max in be_Local failed.";
         db.SaveChanges ();
         }
@@ -282,11 +282,11 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
     ECDb ecdb;
     CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite);
     size_t sequenceIndex = 0;
-    ASSERT_TRUE (ecdb.TryGetRepositoryLocalValueIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
+    ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
 
     BeRepositoryId repoId = ecdb.GetRepositoryId ();
     int64_t lastId = -1LL;
-    DbResult stat = ecdb.QueryRepositoryLocalValue (lastId, sequenceIndex);
+    DbResult stat = ecdb.GetRLVCache().QueryValue (lastId, sequenceIndex);
     EXPECT_EQ (BE_SQLITE_OK, stat) << L"Querying last id of ECInstanceIdSequence from be_Local failed";
 
     EXPECT_GT (lastId, 0LL) << L"Last id of ECInstanceIdSequence in be_Local must be greater than 0 as instances were already inserted.";
@@ -433,7 +433,7 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite, &schema);
 
     size_t sequenceIndex = 0;
-    ASSERT_TRUE (ecdb.TryGetRepositoryLocalValueIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
+    ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
     ECClassCR testClass = *(schema->GetClassCP (L"AAA"));
 
     //insert instance before repo id change
@@ -446,7 +446,7 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Changing the repository id failed unexpectedly.";
 
     int64_t sequenceLastValue = -1LL;
-    stat = ecdb.QueryRepositoryLocalValue (sequenceLastValue, sequenceIndex);
+    stat = ecdb.GetRLVCache().QueryValue(sequenceLastValue, sequenceIndex);
     EXPECT_EQ (BE_SQLITE_OK, stat) << L"Failed to retrieve last ECInstanceIdSequence value from be_local";
 
     const BeRepositoryBasedId expectedSequenceLastValueAfterReset (expectedRepoId, 0);
