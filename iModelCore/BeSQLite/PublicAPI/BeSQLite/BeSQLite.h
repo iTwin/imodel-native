@@ -1671,6 +1671,16 @@ public:
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
     //! @return Id of the embedded file
+    //! @remarks
+    //! ImportDb may return one of these DbResult values via the stat parameter:
+    //!     - BE_SQLITE_NOTADB if the input file is not an SQLite database file.
+    //!     - BE_SQLITE_CORRUPT_VTAB if the input file appears to be an SQLite database file but fails some consistency check.
+    //!     - BE_SQLITE_CONSTRAINT_BASE if the database already contains an entry of the same name.
+    //!     - BE_SQLITE_BUSY if the file to be embedded has a pending write or is open in DefaultTxn_Immediate or DefaultTxn_Exclusive transaction mode.  This conflict can be caused by 
+    //!       any process on the system.
+    //!     - BE_SQLITE_IOERR if ImportDbFile failed to read the proper number of bytes from the file.
+    //!     - BE_SQLITE_IOERR_WRITE if a write failed.
+    //!     - BE_SQLITE_ERROR if there was an SQLite error and it was not possible to provide more detail.
     BE_SQLITE_EXPORT BeRepositoryBasedId ImportDbFile (DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
 
     //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.
@@ -1710,6 +1720,19 @@ public:
     //! @param[in] name the name by which the file was embedded.
     //! @param[in] progress the interface to call to report progress.  May be NULL.
     //! @return BE_SQLITE_OK if the file was successfully exported, and error status otherwise.
+    //! @remarks When ExportDbFile returns an error other than BE_SQLITE_ERROR_FileExists it also deletes the file specified in the localFileName parameter.  If
+    //! ExportDbFile creates the output file and subsequently detects an error it deletes the file before returning an error status.
+    //! ExportDbFile can return any of these error status codes:
+    //!
+    //!     - BE_SQLITE_NOTADB if the extracted file is not an SQLite database file.
+    //!     - BE_SQLITE_CORRUPT_VTAB if the extracted file appears to be an SQLite database file but fails some consistency check.
+    //!     - BE_SQLITE_ERROR_FileExists if the target file exists.
+    //!     - BE_SQLITE_MISMATCH if the input file does not have a proper header for a compressed imodel.
+    //!     - BE_SQLITE_ERROR if there was an SQLite error and it was not possible to provide more detail.
+    //!     - BE_SQLITE_FULL if it failed to write because the disk is full.
+    //!     - BE_SQLITE_IOERR_WRITE if a write failed with an error other than disk full.
+    //!     - BE_SQLITE_IOERR_READ, BE_SQLITE_IOERR_SHORT_READ if the extracted file is not the expected size; the DbEmbeddedFileTable specifies the expected file size.
+    //!     - BE_SQLITE_ABORT if the ICompressProgressTracker provided via the progress argument requested the operation be aborted.
     BE_SQLITE_EXPORT DbResult ExportDbFile (Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
 
     //! Create a new file on the local file system with a copy of the content of an embedded file, by name.
