@@ -2,15 +2,16 @@
 |
 |     $Source: PublicApi/ECUnits/Units.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-/*__BENTLEY_INTERNAL_ONLY__*/
-
 // Note: This is a barebones implementation targeting Graphite requirements.
 // It supports applying UnitSpecifications and DisplayUnitSpecifications to ECProperties.
+
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjects.h>
 
@@ -41,6 +42,7 @@ public:
     explicit UnitConverter (double factor) : m_type (UnitConversionType_Factor), m_factor (factor), m_offset (0.0) { BeAssert (0.0 != factor); }
     UnitConverter (double factor, double offset) : m_type (UnitConversionType_FactorAndOffset), m_factor (factor), m_offset (offset) { BeAssert (0.0 != factor); }
     UnitConverter (UnitConverterCR other) : m_type(other.m_type), m_factor(other.m_factor), m_offset(other.m_offset) { }
+/*__PUBLISH_SECTION_END__*/
 
     ECOBJECTS_EXPORT double         ToBase (double valueInThisUnit) const;
     ECOBJECTS_EXPORT double         FromBase (double valueInBaseUnit) const;
@@ -51,6 +53,7 @@ public:
     double                          GetOffset() const           { return UnitConversionType_FactorAndOffset == m_type ? m_offset : 0.0; }
 
     WString                         ToECExpressionString() const;
+/*__PUBLISH_SECTION_START__*/
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,6 +67,7 @@ private:
 public:
     UnitSpec() { }
     UnitSpec (WCharCP baseUnit, UnitConverterCR converter) : m_baseUnitName (baseUnit), m_converter (converter) { }
+/*__PUBLISH_SECTION_END__*/
 
     WCharCP                 GetBaseUnitName() const                 { return m_baseUnitName.c_str(); }
     bool                    IsCompatible (UnitSpecCR other) const   { return m_baseUnitName.Equals (other.m_baseUnitName); }
@@ -77,8 +81,9 @@ public:
     ECOBJECTS_EXPORT bool   ConvertTo (double& value, UnitSpecCR target) const;
 
     ECOBJECTS_EXPORT WString    ToECExpressionString() const;
+/*__PUBLISH_SECTION_START__*/
     };
-
+/*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -107,8 +112,8 @@ public:
     // Returns false if no UnitSpecification present or if an error occurs
     ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance, IECClassLocaterR unitsECClassLocater);
     ECOBJECTS_EXPORT static bool        FormatValue (WStringR formatted, ECValueCR v, ECPropertyCR ecprop, IECInstanceCP instance);
-
     };
+/*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
