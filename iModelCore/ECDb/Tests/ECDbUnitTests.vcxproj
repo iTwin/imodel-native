@@ -48,6 +48,7 @@
     <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
     <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
     <ClCompile Include="Published\ECSqlCrudAsserter.cpp" />
+    <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp" />
     <ClCompile Include="Published\ECSqlDeleteStatementCrudTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlInsertStatementCrudTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlQueryAdapter_Tests.cpp" />

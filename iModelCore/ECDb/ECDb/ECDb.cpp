@@ -147,17 +147,17 @@ ECN::IECClassLocaterR ECDb::GetClassLocater () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
-int ECDb::AddECSqlCustomFunction (ScalarFunction& scalarFunction) const
+BentleyStatus ECDb::AddECSqlFunction (ECSqlFunction& ecsqlFunction) const
     {
-    return m_pimpl->AddECSqlCustomFunction(scalarFunction);
+    return m_pimpl->AddECSqlFunction(ecsqlFunction);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
-int ECDb::RemoveECSqlCustomFunction(DbFunction& function) const
+BentleyStatus ECDb::RemoveECSqlFunction(ECSqlFunction& ecsqlFunction) const
     {
-    return m_pimpl->RemoveECSqlCustomFunction(function);
+    return m_pimpl->RemoveECSqlFunction(ecsqlFunction);
     }
 
 //--------------------------------------------------------------------------------------

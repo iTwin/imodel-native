@@ -529,12 +529,13 @@ Utf8String ECClassIdFunctionExp::ToECSql () const
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    const size_t argCount = GetChildrenCount();
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        {
-        if (ctx.GetECDb().GetECDbImplR().IsECSqlFunctionDefined(GetFunctionName(), (int) argCount))
-            return FinalizeParseStatus::NotCompleted;
+        return FinalizeParseStatus::NotCompleted;
 
+    const size_t argCount = GetChildrenCount();
+    ECSqlFunction* func = nullptr;
+    if (!ctx.GetECDb().GetECDbImplR().TryGetECSqlFunction(func, GetFunctionName(), (int) argCount))
+        {
         ctx.SetError(ECSqlStatus::InvalidECSql, "Unknown function '%s' with %d args. If this is a custom function, make sure to have it registered.", m_functionName.c_str(), argCount);
         return FinalizeParseStatus::Error;
         }
@@ -543,15 +544,16 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& c
     for (size_t i = 0; i < argCount; i++)
         {
         ValueExp const* argExp = GetChild<ValueExp>(i);
-        if (!argExp->GetTypeInfo().IsPrimitive())
+        ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
+        if (typeKind != ECSqlTypeInfo::Kind::Primitive)
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is NULL or not primitive.",
                          m_functionName.c_str(), i + 1);
             return FinalizeParseStatus::Error;
             }
         }
 
-    SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+    SetTypeInfo(ECSqlTypeInfo(func->GetReturnType ()));
     return FinalizeParseStatus::Completed;
     }
 

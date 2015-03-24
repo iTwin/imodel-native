@@ -1274,11 +1274,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp (NativeSqlBuilder::List& na
             if (status != ECSqlStatus::Success)
                 return status;
 
-            if (nativeSqlArgumentList.size() > 1)
-                return ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid argument '%s' in function '%s'.", argExp->ToECSql().c_str(), functionName);
-            else
-                nativeSql.Append(nativeSqlArgumentList[0]);
-
+            nativeSql.Append(nativeSqlArgumentList);
             isFirstItem = false;
             }
         }

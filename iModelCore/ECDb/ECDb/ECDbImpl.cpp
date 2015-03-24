@@ -211,31 +211,53 @@ ECN::IECClassLocaterR ECDb::Impl::GetClassLocater () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECDb::Impl::AddECSqlCustomFunction(ScalarFunction& ecsqlFunction) const
+BentleyStatus ECDb::Impl::AddECSqlFunction(ECSqlFunction& ecsqlFunction) const
     {
-    const int stat = m_ecdb.AddScalarFunction(ecsqlFunction);
-    if (BE_SQLITE_OK == stat)
-        m_ecsqlCustomFunctions.insert(&ecsqlFunction);
+    ECSqlFunctionKey key(ecsqlFunction);
+    if (m_ecsqlFunctions.find(key) != m_ecsqlFunctions.end())
+        {
+        LOG.errorv("ECSQL function %s with %d arguments is already registered.", ecsqlFunction.GetName(), ecsqlFunction.GetArgCount());
+        return ERROR;
+        }
 
-    return stat;
+    const int stat = m_ecdb.AddScalarFunction(ecsqlFunction.GetSQLiteFunction ());
+    if (0 != stat)
+        {
+        LOG.errorv("Failed to register ECSQL function %s with %d arguments as SQLite function. SQLite error: %d", ecsqlFunction.GetName(), ecsqlFunction.GetArgCount(), stat);
+        return ERROR;
+        }
+
+    m_ecsqlFunctions[key] = &ecsqlFunction;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-int ECDb::Impl::RemoveECSqlCustomFunction(DbFunction& function) const
+BentleyStatus ECDb::Impl::RemoveECSqlFunction(ECSqlFunction& ecsqlFunction) const
     {
-    m_ecsqlCustomFunctions.erase(&function);
-    return m_ecdb.RemoveFunction(function);
+    if (0 != m_ecdb.RemoveFunction(ecsqlFunction.GetSQLiteFunction()))
+        return ERROR;
+
+    ECSqlFunctionKey key(ecsqlFunction);
+    m_ecsqlFunctions.erase(key);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::Impl::IsECSqlFunctionDefined(Utf8CP name, int nArgs) const
+bool ECDb::Impl::TryGetECSqlFunction(ECSqlFunction*& function, Utf8CP name, int argCount) const
     {
-    DbFunction key(name, nArgs);
-    return m_ecsqlCustomFunctions.find(&key) != m_ecsqlCustomFunctions.end();
+    auto it = m_ecsqlFunctions.find(ECSqlFunctionKey(name,argCount));
+    if (it == m_ecsqlFunctions.end())
+        {
+        function = nullptr;
+        return false;
+        }
+
+    function = it->second;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
