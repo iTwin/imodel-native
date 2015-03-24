@@ -62,7 +62,6 @@ public:
     typedef bvector<PinnedDataPtr>    PinnedGroup;
     typedef bvector<TerrainDataPtr>   TerrainGroup;
     
-    //&&MM need to be able mandatory field?
     //! Create a new empty package.
     REALITYPACKAGE_EXPORT static RealityDataPackagePtr Create(WCharCP name);
 
@@ -146,8 +145,8 @@ private:
 struct RealityData : public RefCountedBase
 {
 public:      
-    RealityDataSourceR GetSourceR();
-    RealityDataSourceCR GetSource() const;
+    REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR();
+    REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource() const;
 
 protected:
     explicit RealityData(){}; // for persistence.
@@ -171,19 +170,39 @@ struct ImageryData: public RealityData
 public:
     friend RealityDataSerializer;
 
-    //! Create a new ImageryData.
-    REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource);
+    //! Imagery corners.
+    enum Corners
+        {
+        LowerLeft   = 0,    // (0,0)
+        LowerRight  = 1,    // (1,0)
+        UpperLeft   = 2,    // (0,1)
+        UpperRight  = 3     // (1,1)
+        };
+
+    //! Create a new ImageryData. Optionally imagery corners in lat/long.
+    REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, DPoint2dCP pCorners);
     
-    //&&MM add corners.  May be empty.
+    REALITYPACKAGE_EXPORT bool HasValidCorners() const;
+
+    //! Imagery corners in lat/long.
+    //! May return NULL. In such a case the corners should be read from the file header.
+    REALITYPACKAGE_EXPORT DPoint2dCP GetCornersCP() const;
+
+    //! Set Imagery corners.
+    REALITYPACKAGE_EXPORT void SetCorners(DPoint2dCP pCorners);
        
     static Utf8CP ElementName; 
 private:
-    explicit ImageryData(){}; // for persistence.
-    ImageryData(RealityDataSourceR dataSource);
+    explicit ImageryData(){InvalidateCorners();}; // for persistence.
+    ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners);
     virtual ~ImageryData();
 
     virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
+
+    void InvalidateCorners() {memset(m_corners, 0, sizeof(m_corners));}
+
+    DPoint2d m_corners[4];
 };
 
 //=======================================================================================
@@ -223,7 +242,7 @@ public:
     friend RealityDataSerializer;
 
     //! Create a new PinnedData.
-    REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double longitude, double latitude);
+    REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double latitude, double longitude);
 
     //! Get the object location in lat/long coordinate. 
     REALITYPACKAGE_EXPORT DPoint2dCR GetLocation() const; 
@@ -236,11 +255,13 @@ public:
     static Utf8CP ElementName;
 private:
     explicit PinnedData(){m_location.Zero();}; // for persistence
-    PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
+    PinnedData(RealityDataSourceR dataSource, double latitude, double longitude);
     virtual ~PinnedData();
 
     virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
+
+    static bool IsValidLatLong(double latitude, double longitude);
 
     DPoint2d m_location;        //!spatial location in lat/long
 };

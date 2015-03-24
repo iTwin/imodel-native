@@ -12,6 +12,8 @@
 
 USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 
+#define LATLONG_EPSILON 0.000001
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
@@ -65,23 +67,30 @@ TEST_F (PackageTestFixture, CreateAndRead)
     RealityDataSourcePtr pPodDataSource = RealityDataSource::Create(L"./terrain/canada.pod", L"pod");
     ASSERT_TRUE(pPodDataSource.IsValid());
 
+    RealityDataSourcePtr pTifDataSource = RealityDataSource::Create(L"./terrain/satellite.tif", L"image/tif");
+    ASSERT_TRUE(pTifDataSource.IsValid());
+
+    RealityDataSourcePtr pDtmDataSource = RealityDataSource::Create(L"./terrain/canada.dtm", L"dtm");
+    ASSERT_TRUE(pDtmDataSource.IsValid());
+
     RealityDataSourcePtr pShapeDataSource = RealityDataSource::Create(L"./model/shape.shp", L"shapefile");
     ASSERT_TRUE(pShapeDataSource.IsValid());
 
     RealityDataSourcePtr pWmsDataDataSource = WmsDataSource::Create(L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities&version=1.3.0");
     ASSERT_TRUE(pWmsDataDataSource.IsValid());
 
-    //&&MM not nowpPackage->GetImageryGroupR().push_back(RealityDataSource::Create(L"http://107.20.228.18/ArcGIS/services/Wetlands/MapServer/WMSServer?", L"wms"));
-    //pPackage->GetTerrainGroupR().push_back(RealityDataSource::Create(L"./terrain/satellite.tif", L"image/tif"));
-    //pPackage->GetTerrainGroupR().push_back(RealityDataSource::Create(L"./terrain/canada.dtm", L"dtm"));
-    //pPackage->GetTerrainGroupR().push_back(NULL); // must handle a NULL.
-    //pPackage->GetPinnedGroupR().push_back(RealityDataSource::Create(L"./pinned/beach.avi", L"video/avi"));
+    RealityDataSourcePtr pAviDataDataSource = RealityDataSource::Create(L"./pinned/beach.avi", L"video/avi");
+    ASSERT_TRUE(pAviDataDataSource.IsValid());
+
+    RealityDataSourcePtr pMyHouseDataDataSource = RealityDataSource::Create(L"./pinned/myHouse.jpeg", L"image/jpeg");
+    ASSERT_TRUE(pMyHouseDataDataSource.IsValid());
 
     // *** Reality entries
-    ImageryDataPtr pJpegImagery = ImageryData::Create(*pJpegDataSource);
+    DPoint2d jpegCorners[4] = {{5.123456789, 454.987654321}, {455.4554, 2254.44}, {125.4551234, 111.22}, {445.14, 989.999}};
+    ImageryDataPtr pJpegImagery = ImageryData::Create(*pJpegDataSource, jpegCorners);
     ASSERT_TRUE(pJpegImagery.IsValid());
     pPackage->GetImageryGroupR().push_back(pJpegImagery);
-    ImageryDataPtr pWmsImagery = ImageryData::Create(*pWmsDataDataSource);
+    ImageryDataPtr pWmsImagery = ImageryData::Create(*pWmsDataDataSource, NULL);
     ASSERT_TRUE(pWmsImagery.IsValid());
     pPackage->GetImageryGroupR().push_back(pWmsImagery);
     
@@ -89,15 +98,17 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_TRUE(pShapeModel.IsValid());
     pPackage->GetModelGroupR().push_back(pShapeModel);
 
-    PinnedDataPtr pPinnedJpeg = PinnedData::Create(*pJpegDataSource, 90, -180);
+    PinnedDataPtr pPinnedJpeg = PinnedData::Create(*pMyHouseDataDataSource, 89.123456789, -180);
     ASSERT_TRUE(pPinnedJpeg.IsValid());
     pPackage->GetPinnedGroupR().push_back(pPinnedJpeg);
+    pPackage->GetPinnedGroupR().push_back(PinnedData::Create(*pAviDataDataSource, -90, 166.987654321));
 
     TerrainDataPtr pPodTerrain = TerrainData::Create(*pPodDataSource);
     ASSERT_TRUE(pPodTerrain.IsValid());
     pPackage->GetTerrainGroupR().push_back(pPodTerrain);
-
-    
+    pPackage->GetTerrainGroupR().push_back(TerrainData::Create(*pDtmDataSource));
+    pPackage->GetTerrainGroupR().push_back(TerrainData::Create(*pTifDataSource));
+       
     
     ASSERT_EQ(RealityPackageStatus::Success, pPackage->Write(outfilename));
     
@@ -120,8 +131,8 @@ TEST_F (PackageTestFixture, CreateAndRead)
     WString parseError;
     RealityPackageStatus readStatus = RealityPackageStatus::UnknownError;
     RealityDataPackagePtr pReadPackage = RealityDataPackage::CreateFromFile(readStatus, outfilename, &parseError);
-    ASSERT_TRUE(pReadPackage.IsValid());
     ASSERT_EQ(RealityPackageStatus::Success, readStatus);
+    ASSERT_TRUE(pReadPackage.IsValid());
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
 
 
@@ -131,81 +142,70 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_STREQ(pPackage->GetPackageId().c_str(), pReadPackage->GetPackageId().c_str());
     ASSERT_TRUE(pPackage->GetCreationDate().Equals(pReadPackage->GetCreationDate()));
 
-    //&&MM iterate over pts and test with an epsilon.
     ASSERT_EQ(pPackage->GetBoundingPolygon().GetPointCount(), pReadPackage->GetBoundingPolygon().GetPointCount());
+    for(size_t index=0; index < pPackage->GetBoundingPolygon().GetPointCount(); ++index)
+        {
+        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].x, pReadPackage->GetBoundingPolygon().GetPointCP()[index].x, LATLONG_EPSILON);
+        ASSERT_NEAR(pPackage->GetBoundingPolygon().GetPointCP()[index].y, pReadPackage->GetBoundingPolygon().GetPointCP()[index].y, LATLONG_EPSILON);
+        }
 
-    //&&MM validate the group content. how? it would be nice to do it field by field because it gives a more
-    // explicit error but this is tedious
+    // *** Imagery Data
     ASSERT_EQ(pPackage->GetImageryGroup().size(), pReadPackage->GetImageryGroupR().size());
+    for(size_t index=0; index < pPackage->GetImageryGroup().size(); ++index)
+        {
+        ImageryDataPtr pLeft = pPackage->GetImageryGroup()[index];
+        ImageryDataPtr pRight = pReadPackage->GetImageryGroup()[index];
+
+        ASSERT_STREQ(pLeft->GetSource().GetUri().c_str(), pRight->GetSource().GetUri().c_str());
+        ASSERT_STREQ(pLeft->GetSource().GetType().c_str(), pRight->GetSource().GetType().c_str());
+        
+        ASSERT_EQ(pLeft->HasValidCorners(), pRight->HasValidCorners());
+        if(pLeft->HasValidCorners())
+            {
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].x, pRight->GetCornersCP()[ImageryData::LowerLeft].x, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].y, pRight->GetCornersCP()[ImageryData::LowerLeft].y, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].x, pRight->GetCornersCP()[ImageryData::LowerRight].x, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerRight].y, pRight->GetCornersCP()[ImageryData::LowerRight].y, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].x, pRight->GetCornersCP()[ImageryData::UpperLeft].x, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperLeft].y, pRight->GetCornersCP()[ImageryData::UpperLeft].y, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].x, pRight->GetCornersCP()[ImageryData::UpperRight].x, LATLONG_EPSILON);
+            ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::UpperRight].y, pRight->GetCornersCP()[ImageryData::UpperRight].y, LATLONG_EPSILON);
+            }
+        }
+    
+    // *** Model data
     ASSERT_EQ(pPackage->GetModelGroup().size(), pReadPackage->GetModelGroup().size());
+    for(size_t index=0; index < pPackage->GetModelGroup().size(); ++index)
+        {
+        ModelDataPtr pLeft = pPackage->GetModelGroup()[index];
+        ModelDataPtr pRight = pReadPackage->GetModelGroup()[index];
+
+        ASSERT_STREQ(pLeft->GetSource().GetUri().c_str(), pRight->GetSource().GetUri().c_str());
+        ASSERT_STREQ(pLeft->GetSource().GetType().c_str(), pRight->GetSource().GetType().c_str());
+        }
+
+    // *** Pinned data
     ASSERT_EQ(pPackage->GetPinnedGroup().size(), pReadPackage->GetPinnedGroup().size());
+    for(size_t index=0; index < pPackage->GetPinnedGroup().size(); ++index)
+        {
+        PinnedDataPtr pLeft = pPackage->GetPinnedGroup()[index];
+        PinnedDataPtr pRight = pReadPackage->GetPinnedGroup()[index];
+
+        ASSERT_STREQ(pLeft->GetSource().GetUri().c_str(), pRight->GetSource().GetUri().c_str());
+        ASSERT_STREQ(pLeft->GetSource().GetType().c_str(), pRight->GetSource().GetType().c_str());
+        ASSERT_NEAR(pLeft->GetLocation().x, pRight->GetLocation().x, LATLONG_EPSILON);
+        ASSERT_NEAR(pLeft->GetLocation().y, pRight->GetLocation().y, LATLONG_EPSILON);
+        }
+
+    // *** Terrain data.
     ASSERT_EQ(pPackage->GetTerrainGroup().size(), pReadPackage->GetTerrainGroup().size());
+    for(size_t index=0; index < pPackage->GetTerrainGroup().size(); ++index)
+        {
+        TerrainDataPtr pLeft = pPackage->GetTerrainGroup()[index];
+        TerrainDataPtr pRight = pReadPackage->GetTerrainGroup()[index];
+
+        ASSERT_STREQ(pLeft->GetSource().GetUri().c_str(), pRight->GetSource().GetUri().c_str());
+        ASSERT_STREQ(pLeft->GetSource().GetType().c_str(), pRight->GetSource().GetType().c_str());
+        }
     }
 
-#if 0 //&&MM todo validate xml file.
-/*
-============================================================================
-Name        : xmlvalidation.c
-============================================================================
-*/
-#define LIBXML_SCHEMAS_ENABLED
-#include <libxml/xmlschemastypes.h>
-
-int main()
-    {
-    xmlDocPtr doc;
-    xmlSchemaPtr schema = NULL;
-    xmlSchemaParserCtxtPtr ctxt;
-    char *XMLFileName = "test.xml";
-    char *XSDFileName = "test.xsd";
-
-    xmlLineNumbersDefault(1);
-
-    ctxt = xmlSchemaNewParserCtxt(XSDFileName);
-
-    xmlSchemaSetParserErrors(ctxt, (xmlSchemaValidityErrorFunc)fprintf, (xmlSchemaValidityWarningFunc)fprintf, stderr);
-    schema = xmlSchemaParse(ctxt);
-    xmlSchemaFreeParserCtxt(ctxt);
-    //xmlSchemaDump(stdout, schema); //To print schema dump
-
-    doc = xmlReadFile(XMLFileName, NULL, 0);
-
-    if (doc == NULL)
-        {
-        fprintf(stderr, "Could not parse %s\n", XMLFileName);
-        }
-    else
-        {
-        xmlSchemaValidCtxtPtr ctxt;
-        int ret;
-
-        ctxt = xmlSchemaNewValidCtxt(schema);
-        xmlSchemaSetValidErrors(ctxt, (xmlSchemaValidityErrorFunc)fprintf, (xmlSchemaValidityWarningFunc)fprintf, stderr);
-        ret = xmlSchemaValidateDoc(ctxt, doc);
-        if (ret == 0)
-            {
-            printf("%s validates\n", XMLFileName);
-            }
-        else if (ret > 0)
-            {
-            printf("%s fails to validate\n", XMLFileName);
-            }
-        else
-            {
-            printf("%s validation generated an internal error\n", XMLFileName);
-            }
-        xmlSchemaFreeValidCtxt(ctxt);
-        xmlFreeDoc(doc);
-        }
-
-    // free the resource
-    if (schema != NULL)
-        xmlSchemaFree(schema);
-
-    xmlSchemaCleanupTypes();
-    xmlCleanupParser();
-    xmlMemoryDump();
-
-    return(0);
-    }
-#endif

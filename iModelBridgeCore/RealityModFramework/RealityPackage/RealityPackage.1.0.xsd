@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<xs:schema targetNamespace="http://www.bentley.com/RealityDataServer/1.0" 
+           elementFormDefault="qualified"
+           xmlns="http://www.bentley.com/RealityDataServer/1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+
+    <!-- Type Definition -->
+    <!-- =========================================================== -->
+    <xs:simpleType name="doubleList">
+        <xs:list itemType="xs:double"/>
+    </xs:simpleType>
+
+    <!-- =========================================================== -->
+    <xs:simpleType name="StringList">
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+    
+    <!-- =========================================================== -->
+    <xs:complexType name="PolygonType">
+        <xs:annotation>
+            <xs:documentation>A space-separated list of double values. Values are in latitude and longitude. A single
+            value lat/long pair is point.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="doubleList"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="SourceType">
+        <xs:sequence>
+            <xs:element name="Attribution" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="BoundingPolygon" type="PolygonType" minOccurs="0" maxOccurs="1"/>
+            <xs:choice minOccurs="0" maxOccurs="1">
+                <!-- What I wanted here is list every element we know and add an 'any' entry for future
+                     extension. Unfortunately that gives an "Unique Particle Attribution" error because
+                     listed elements can also appear in the 'any' clause and that is ambiguous.
+                     see http://en.wikipedia.org/wiki/Unique_Particle_Attribution -->
+                <!--xs:element name="WmsSource" type="WmsSourceType" minOccurs="0" maxOccurs="1"/-->
+                <xs:any namespace="##any" minOccurs='0' maxOccurs='unbounded' processContents='lax'/>
+            </xs:choice>
+        </xs:sequence>         
+        <xs:attribute name="Uri" use="required" type="xs:anyURI">
+            <xs:annotation>
+                <xs:documentation>
+                    A string representing the source location. 
+                    A relative path has the following for "./rel/file.ext" and is relative to the package file.
+                    Otherwise it should be a fully qualified URL.  ex: 
+                    </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>            
+        <xs:attribute name="Type" use="required" type="xs:string"/>            
+    </xs:complexType>
+        
+	<!-- =========================================================== -->
+	<simpleType name="longitudeType">
+		<restriction base="double">
+			<minInclusive value="-180"/>
+			<maxInclusive value="180"/>
+		</restriction>
+	</simpleType>
+
+	<!-- =========================================================== -->
+	<simpleType name="latitudeType">
+		<restriction base="double">
+			<minInclusive value="-90"/>
+			<maxInclusive value="90"/>
+		</restriction>
+	</simpleType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="WmsSourceType">
+        <xs:annotation>
+            <xs:documentation>TODO DOC Anything required to connect to WMS</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="Layers" type="StringList" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Styles" type="StringList" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- =========================================================== -->
+    <xs:complexType name="SourceGroup">
+        <xs:sequence>
+            <xs:element name="Source" type="SourceType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Package Definition -->
+    <!-- =========================================================== -->
+    <xs:element name="RealityDataPackage">
+        <xs:annotation>
+            <xs:documentation>TODO DOC what a package is</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+				<xs:element name="Name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="Description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="CreationDate" type="xs:dateTime" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>The package creation date in the following form YYYY-MM-DD</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+				<xs:element name="Copyright" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                <xs:element name="PackageId" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                
+                <xs:element name="BoundingPolygon" type="PolygonType" minOccurs="1" maxOccurs="1"/>
+
+                <xs:element name="ImageryGroup" type="SourceGroup" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="ModelGroup" type="SourceGroup" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="PinnedGroup" type="SourceGroup" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="TerrainGroup" type="SourceGroup" minOccurs="0" maxOccurs="1"/>               
+                
+            </xs:sequence>
+            <xs:attribute name="Version" type="xs:decimal" use="required">
+                <xs:annotation>
+                    <xs:documentation>The version of the package file in the form MM.mm (where MM is the major version and mm is the minor.) 
+                    Compatible changes require an increase of the minor version while incompatible changes require an increase of the major version.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            
+        </xs:complexType>        
+    </xs:element>
+
+</xs:schema>

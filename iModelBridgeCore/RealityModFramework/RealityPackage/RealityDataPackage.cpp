@@ -21,8 +21,6 @@ Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
 //=======================================================================================
 //                              BoundingPolygon
 //=======================================================================================
-#define SPACE_DELIMITER L" "
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
@@ -93,55 +91,24 @@ WString BoundingPolygon::ToString() const
     return result;
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
+BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon) 
     {
     bvector<DPoint2d> points;
 
-    //&&MM make this parsing more pretty. Like get firststring get next string.
-    //  - properly handle error cases.
-
-    // Skip delimiters at beginning.
-    WString::size_type lastPos = polygon.find_first_not_of(SPACE_DELIMITER, 0);
-
-    // Find first non-delimiter.
-    WString::size_type pos = polygon.find_first_of(SPACE_DELIMITER, lastPos);
-
-    while (WString::npos != pos || WString::npos != lastPos) 
+    WStringTokenizer tokenizer(polygon, SPACE_DELIMITER_U);
+    
+    while(tokenizer.HasValue())
         {
-        // X Coord
-        // Found a token, add it to the vector.
-        WString coordX = polygon.substr(lastPos, pos - lastPos);
-
-        // Skip delimiters.
-        lastPos = polygon.find_first_not_of(SPACE_DELIMITER, pos);
-
-        // Find next non-delimiter.
-        pos = polygon.find_first_of(SPACE_DELIMITER, lastPos);
-
-        if(WString::npos == pos && WString::npos == lastPos)
+        DPoint2d point;
+        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y))
             {
-            points.clear();
+            points.clear(); // incomplete x-y sequence.
             break;
             }
-
-        // Y Coord
-        // Found a token, add it to the vector.
-        WString coordY = polygon.substr(lastPos, pos - lastPos);
-
-        // Skip delimiters.
-        lastPos = polygon.find_first_not_of(SPACE_DELIMITER, pos);
-
-        // Find next non-delimiter.
-        pos = polygon.find_first_of(SPACE_DELIMITER, lastPos);
-
-        DPoint2d point;
-        point.x = BeStringUtilities::Wtof(coordX.c_str());
-        point.y = BeStringUtilities::Wtof(coordY.c_str());
-
+        
         points.push_back(point);
         }
 
@@ -149,7 +116,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
         {
         if(points[0].AlmostEqual(points[points.size()-1]))
             {
-            points[points.size()-1] = points[points.size()-2];  // Explicitly assign the last for bitwise equality.
+            points[points.size()-1] = points[0];  // Explicitly assign the last for bitwise equality.
             }
         else
             {
@@ -158,6 +125,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
 
         return new BoundingPolygon(points);
         }
+
     
     return NULL;    
     }
@@ -346,17 +314,21 @@ RealityPackageStatus RealityDataPackage::ReadDataGroup_T(Group_T& group, Utf8CP 
     if(NULL == pSourceGroup)
         return RealityPackageStatus::Success;       // Source groups are optional.
     
+    RealityPackageStatus loadStatus = RealityPackageStatus::Success;    // Empty group is valid.
+
     for (BeXmlNodeP childElement = pSourceGroup->GetFirstChild(); NULL != childElement; childElement = childElement->GetNextSibling())
         {
-        Group_T::value_type pData = RealityDataSerializer::Load<Group_T::value_type>(*childElement);
+        Group_T::value_type pData = RealityDataSerializer::TryLoad<Group_T::value_type>(loadStatus, *childElement);
 
-        // Do not return an error but warn about it. It might be a source node extension that we can't handle?
-        BeDataAssert(pData.IsValid());   
+        if(RealityPackageStatus::Success != loadStatus)
+            return loadStatus;
+
+        // TryLoad return Success for unknown type node.
         if(pData.IsValid())
             group.push_back(pData);        
         }
 
-    return RealityPackageStatus::Success;
+    return loadStatus;
     }
 
 
@@ -443,15 +415,16 @@ RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
 //=======================================================================================
 //                              ImageryData
 //=======================================================================================
-ImageryData::ImageryData(RealityDataSourceR dataSource):RealityData(dataSource){}
+ImageryData::ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners):RealityData(dataSource){SetCorners(pCorners);}
+
 ImageryData::~ImageryData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource)
+ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, DPoint2dCP pCorners)
     {
-    return new ImageryData(dataSource);
+    return new ImageryData(dataSource, pCorners);
     }
 
 //----------------------------------------------------------------------------------------
@@ -459,8 +432,28 @@ ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus ImageryData::_Read(BeXmlNodeR dataNode)
     {
-    // ImageryData have no specific element/attributes. Read base only.
-    return RealityData::_Read(dataNode);
+    // Write base first
+    RealityPackageStatus status = T_Super::_Read(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    BeXmlNodeP pCornerNode = dataNode.SelectSingleNode(PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Corners);
+    if(NULL == pCornerNode)
+        {
+        InvalidateCorners();
+        return RealityPackageStatus::Success;   // Corners are optional
+        }
+
+    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[LowerLeft], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft))    ||
+       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[LowerRight], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight))  ||
+       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[UpperLeft], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft))    ||
+       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[UpperRight], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
+        {
+        InvalidateCorners();
+        return status;
+        }
+
+    return status;    
     }
 
 //----------------------------------------------------------------------------------------
@@ -468,8 +461,52 @@ RealityPackageStatus ImageryData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus ImageryData::_Write(BeXmlNodeR dataNode) const
     {
-    // ImageryData have no specific element/attributes. Write base only.
-    return RealityData::_Write(dataNode);
+    // Write base first
+    RealityPackageStatus status = T_Super::_Write(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    if(!HasValidCorners())
+        return RealityPackageStatus::Success;  // Corners is optional.
+        
+    BeXmlNodeP pCornerNode = dataNode.AddEmptyElement(PACKAGE_ELEMENT_Corners);
+    if(NULL == pCornerNode)
+        return RealityPackageStatus::UnknownError;
+
+    if(RealityPackageStatus::Success != (status = RealityDataSerializer::WriteDPoint2d(*pCornerNode, PACKAGE_ELEMENT_LowerLeft, m_corners[LowerLeft])) ||
+       RealityPackageStatus::Success != (status = RealityDataSerializer::WriteDPoint2d(*pCornerNode, PACKAGE_ELEMENT_LowerRight, m_corners[LowerRight])) ||
+       RealityPackageStatus::Success != (status = RealityDataSerializer::WriteDPoint2d(*pCornerNode, PACKAGE_ELEMENT_UpperLeft, m_corners[UpperLeft])) ||
+       RealityPackageStatus::Success != (status = RealityDataSerializer::WriteDPoint2d(*pCornerNode, PACKAGE_ELEMENT_UpperRight, m_corners[UpperRight])))
+        {
+        return status;
+        }
+
+    return status;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+bool ImageryData::HasValidCorners() const {return !m_corners[0].isEqual(&m_corners[1]);} 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+DPoint2dCP ImageryData::GetCornersCP() const
+    {
+    BeAssert(HasValidCorners());
+    return m_corners;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+void ImageryData::SetCorners(DPoint2dCP pCorners)
+    {
+    if(pCorners)
+        memcpy(m_corners, pCorners, sizeof(m_corners));
+    else
+        InvalidateCorners();
     }
 
 //=======================================================================================
@@ -507,16 +544,18 @@ RealityPackageStatus ModelData::_Write(BeXmlNodeR dataNode) const
 //=======================================================================================
 //                              PinnedData
 //=======================================================================================
-PinnedData::PinnedData(RealityDataSourceR dataSource, double longitude, double latitude):RealityData(dataSource){m_location.Init(longitude, latitude);}
+PinnedData::PinnedData(RealityDataSourceR dataSource, double latitude, double longitude):RealityData(dataSource){m_location.Init(latitude, longitude);}
 PinnedData::~PinnedData(){}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double longitude, double latitude)
+PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double latitude, double longitude)
     {
-    //&&MM validate longitude/latitude values
-    return new PinnedData(dataSource, longitude, latitude);
+    if(!IsValidLatLong(latitude, longitude))
+        return NULL;
+    
+    return new PinnedData(dataSource, latitude, longitude);
     }
 
 //----------------------------------------------------------------------------------------
@@ -529,9 +568,10 @@ RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
     if(RealityPackageStatus::Success != status)
         return status;
     
-    //&&MM todo Read our location.
+    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_location, dataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SpatialLocation))) 
+        return status;  // location is mandatory for pinned data.
 
-    return status;
+    return IsValidLatLong(m_location.x, m_location.y) ? RealityPackageStatus::Success : RealityPackageStatus::UnknownError;
     }
 
 //----------------------------------------------------------------------------------------
@@ -539,13 +579,15 @@ RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
     {
+    BeAssert(IsValidLatLong(m_location.x, m_location.y));
+
     // Write base first
     RealityPackageStatus status = T_Super::_Write(dataNode);
     if(RealityPackageStatus::Success != status)
         return status;
 
-    //&&MM todo write our location
-    
+    status = RealityDataSerializer::WriteDPoint2d(dataNode, PACKAGE_ELEMENT_SpatialLocation, GetLocation());
+       
     return status;
     }
 
@@ -555,8 +597,21 @@ RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
 DPoint2dCR PinnedData::GetLocation() const{return m_location;}
 bool PinnedData::SetLocation(DPoint2dCR location)
     {
+    if(!IsValidLatLong(location.x, location.y))
+        return false;
+
     m_location = location;
-    //&&MM validate longitude/latitude values
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+bool PinnedData::IsValidLatLong(double latitude, double longitude)
+    {
+    if(IN_RANGE(latitude, -90, 90) && IN_RANGE(longitude, -180, 180))
+        return true;
+
     return false;
     }
 

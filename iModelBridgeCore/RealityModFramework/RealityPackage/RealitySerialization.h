@@ -9,6 +9,7 @@
 
 #include <RealityPackage/RealityPackage.h>
 #include <BeXml/BeXml.h>
+#include <geom/GeomApi.h>
 
 // **************************************************
 // Naming-Convention:
@@ -35,12 +36,18 @@
 // RealityData
 #define PACKAGE_ELEMENT_ImageryGroup        "ImageryGroup"
 #define PACKAGE_ELEMENT_ImageryData         "ImageryData"
+#define PACKAGE_ELEMENT_Corners             "Corners"
+#define PACKAGE_ELEMENT_LowerLeft           "LowerLeft"
+#define PACKAGE_ELEMENT_LowerRight          "LowerRight"
+#define PACKAGE_ELEMENT_UpperLeft           "UpperLeft"
+#define PACKAGE_ELEMENT_UpperRight          "UpperRight"
 
 #define PACKAGE_ELEMENT_ModelGroup          "ModelGroup"
 #define PACKAGE_ELEMENT_ModelData           "ModelData"
 
 #define PACKAGE_ELEMENT_PinnedGroup         "PinnedGroup"
 #define PACKAGE_ELEMENT_PinnedData          "PinnedData"
+#define PACKAGE_ELEMENT_SpatialLocation     "SpatialLocation"
 
 #define PACKAGE_ELEMENT_TerrainGroup        "TerrainGroup"
 #define PACKAGE_ELEMENT_TerrainData         "TerrainData"
@@ -53,8 +60,84 @@
 #define PACKAGE_ELEMENT_WmsSource           "WmsSource"
 #define WMS_SOURCE_TYPE                     L"wms"
 
+#define SPACE_DELIMITER    " "
+#define SPACE_DELIMITER_U L" "
+
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+template<typename String_T>
+inline double StringToDouble(String_T const* pString)
+    {
+    // *** If you get an error here, you must implement the specialization for type 'String_T'
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+template<>
+inline double StringToDouble(wchar_t const* pString)
+    {
+    return BeStringUtilities::Wtof(pString);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+template<>
+inline double StringToDouble(char const* pString)
+    {
+    return atof(pString);
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+template<typename String_T> 
+struct StringTokenizer
+    {
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    StringTokenizer(String_T const& source, typename String_T::value_type const* delimeter)
+    :m_source(source), m_delimiter(delimeter)
+        {
+        m_startPos = m_source.find_first_not_of(m_delimiter, 0); // Skip delimiters at beginning.
+        m_endPos = m_source.find_first_of(m_delimiter, m_startPos); // Find first non-delimiter.
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    bool Get(double& val)
+        {
+        if(!HasValue())
+            return false;
+
+        String_T valStr = m_source.substr(m_startPos, m_endPos - m_startPos);
+        val = StringToDouble(valStr.c_str());
+
+        // Goto next.
+        m_startPos = m_source.find_first_not_of(m_delimiter, m_endPos); // Skip delimiters.
+        m_endPos = m_source.find_first_of(m_delimiter, m_startPos);     // Find next non-delimiter.
+
+        return true;
+        }
+
+    bool HasValue() const {return String_T::npos != m_startPos;}
+
+    typename String_T::size_type m_startPos;
+    typename String_T::size_type m_endPos;
+    String_T const& m_source;
+    typename String_T::value_type const*   m_delimiter;
+    };
+
+typedef StringTokenizer<WString>    WStringTokenizer;
+typedef StringTokenizer<Utf8String> Utf8StringTokenizer;
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -81,7 +164,7 @@ struct RealityDataSourceSerializer
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
-    BentleyApi::RealityPackage::RealityPackageStatus Store(RealityDataSourceCR source, BeXmlNodeR parentNode);
+    RealityPackageStatus Store(RealityDataSourceCR source, BeXmlNodeR parentNode);
 
     bmap<Utf8String, IDataSourceCreate*> m_creators;
 };
@@ -91,18 +174,51 @@ struct RealityDataSourceSerializer
 //----------------------------------------------------------------------------------------
 struct RealityDataSerializer
     {
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    static RealityPackageStatus ReadDPoint2d(DPoint2dR point, BeXmlNodeR parent, Utf8CP childName)
+        {
+        // Use UTF8 since it is the native format.
+        Utf8String pointStr;
+        if(BEXML_Success != parent.GetContent(pointStr, childName))
+            return RealityPackageStatus::UnknownError;  
+
+        Utf8StringTokenizer tokenizer(pointStr, SPACE_DELIMITER);
+
+        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y))
+            return RealityPackageStatus::UnknownError;  
+
+        return RealityPackageStatus::Success;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    static RealityPackageStatus WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point)
+        {
+        WString pointString;
+        pointString.Sprintf (L"%.10g %.10g", point.x, point.y);  // Alain Robert: Lat/long precision of 1/100 millimeter.
+        if(NULL == parent.AddElementStringValue(childName, pointString.c_str()))
+            return RealityPackageStatus::UnknownError;
+
+        return RealityPackageStatus::Success;
+        }
+
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
     template<class RefCountedData_T>
-    static RefCountedData_T Load(BeXmlNodeR node)
+    static RefCountedData_T TryLoad(RealityPackageStatus& status, BeXmlNodeR node)
         {
+        status = RealityPackageStatus::Success; // We return NULL and SUCCESS if node is not of RealityData type.
         if(0 != BeStringUtilities::Stricmp(node.GetName(), RefCountedData_T::element_type::ElementName))
             return NULL;
 
         RefCountedData_T pData = new RefCountedData_T::element_type();
 
-        if(RealityPackageStatus::Success != pData->_Read(node))
+        if(RealityPackageStatus::Success != (status = pData->_Read(node)))
             return NULL;
 
         return pData;
