@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,8 +69,6 @@ public:
     static ECSqlStatus PrepareRelationshipJoinExp (ECSqlPrepareContext& ctx, RelationshipJoinExp const* exp);
     static ECSqlStatus PrepareRowValueConstructorListExp (NativeSqlBuilder::ListOfLists& nativeSqlSnippetLists, ECSqlPrepareContext& ctx, RowValueConstructorListExp const* exp, PropertyNameListExp const* targetExp, NativeSqlBuilder::ListOfLists& targetNativeSqlSnippetLists);
     static ECSqlStatus PrepareSelectClauseExp (ECSqlPrepareContext& ctx, SelectClauseExp const* exp);
-    static ECSqlStatus PrepareSetFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const* exp);
-    static ECSqlStatus PrepareStringFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, StringFunctionCallExp const* exp);
     static ECSqlStatus PrepareSubqueryExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SubqueryExp const* exp);
     static ECSqlStatus PrepareSubqueryRefExp (ECSqlPrepareContext& ctx, SubqueryRefExp const* exp);
     static ECSqlStatus PrepareSubqueryTestExp (ECSqlPrepareContext& ctx, SubqueryTestExp const* exp);

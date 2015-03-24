@@ -68,23 +68,20 @@ DbResult ECDb::_OnDbCreated (CreateParams const& params)
 
     BeAssert (!IsReadonly ());
 
-    return m_pimpl->OnDbCreated (*this);
+    return m_pimpl->OnDbCreated ();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //override
-DbResult ECDb::_OnRepositoryIdChanged
-(
-BeRepositoryId newRepositoryId
-)
+DbResult ECDb::_OnRepositoryIdChanged(BeRepositoryId newRepositoryId)
     {
     DbResult stat = Db::_OnRepositoryIdChanged (newRepositoryId);
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->OnRepositoryIdChanged (*this, newRepositoryId);
+    return m_pimpl->OnRepositoryIdChanged (newRepositoryId);
     }
 
 //--------------------------------------------------------------------------------------
@@ -120,7 +117,7 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return m_pimpl->VerifySchemaVersion (*this, params);
+    return m_pimpl->VerifySchemaVersion (params);
     }
 
 //--------------------------------------------------------------------------------------
@@ -145,6 +142,22 @@ ECN::IECSchemaLocaterR ECDb::GetSchemaLocater () const
 ECN::IECClassLocaterR ECDb::GetClassLocater () const
     {
     return m_pimpl->GetClassLocater ();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+int ECDb::AddECSqlCustomFunction (ScalarFunction& scalarFunction) const
+    {
+    return m_pimpl->AddECSqlCustomFunction(scalarFunction);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+int ECDb::RemoveECSqlCustomFunction(DbFunction& function) const
+    {
+    return m_pimpl->RemoveECSqlCustomFunction(function);
     }
 
 //--------------------------------------------------------------------------------------

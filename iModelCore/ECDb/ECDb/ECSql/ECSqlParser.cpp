@@ -687,25 +687,25 @@ unique_ptr<FunctionCallExp> ECSqlParser::parse_fct_spec (ECSqlParseContext& ctx,
             }
         }
 
-    /* WIP_ECSQL: Function arg parsing not working yet
-    auto functionCallExp = unique_ptr<FunctionCallExp> (new FunctionCallExp (knownFunctionName));
+    auto functionCallExp = std::unique_ptr<FunctionCallExp> (new FunctionCallExp (knownFunctionName));
+    //parse function args. (if child parse node count is < 4, function doesn't have args)
     if (parseNode->count() == 4)
         {
         auto arguments = parseNode->getChild(2);
         for (size_t i = 0; i < arguments->count (); i++)
             {
             auto argument_expr = parse_value_exp (ctx, arguments->getChild(i));
-            if (argument_expr == nullptr) 
-                break;
+            if (argument_expr == nullptr)
+                return nullptr; // error reporting already done in child call
+
             functionCallExp->AddArgument (move (argument_expr));
             }
-        }    
+        }
 
     if (ctx.IsSuccess())
         return functionCallExp;
-    */
-    
-    ctx.SetError (ECSqlStatus::InvalidECSql, "Function %s not supported.", knownFunctionName);
+
+    BeAssert(false);
     return nullptr;
     }
 

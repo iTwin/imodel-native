@@ -652,25 +652,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp (ECSqlPrepareContext& ctx, FromExp 
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp)
-    {
-    switch (exp->GetType ())
-        {
-        case Exp::Type::SetFunctionCall:
-            return PrepareSetFunctionCallExp (nativeSqlSnippets, ctx, static_cast<SetFunctionCallExp const*> (exp));
-
-        case Exp::Type::StringFunctionCall:
-            return PrepareStringFunctionCallExp (nativeSqlSnippets, ctx, static_cast<StringFunctionCallExp const*> (exp));
-
-        default:
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Function call expression not yet supported.");
-        }
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -1258,41 +1239,45 @@ ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, 
     }
 
 
-
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
+// @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp)
     {
-    auto const& functionName = exp->GetFunctionName ();
-    NativeSqlBuilder nativeSql (functionName.c_str ());
+    Utf8CP functionName = exp->GetFunctionName ();
+    NativeSqlBuilder nativeSql (functionName);
     nativeSql.AppendSpace ().AppendParenLeft ();
-    nativeSql.Append (exp->GetSetQuantifier ());
 
-    if (functionName.EqualsI ("count"))
+    if (exp->GetType() == Exp::Type::SetFunctionCall)
+        {
+        SetFunctionCallExp const* setFunctionCallExp = static_cast<SetFunctionCallExp const*> (exp);
+        nativeSql.Append(setFunctionCallExp->GetSetQuantifier());
+        }
+
+    if (BeStringUtilities::Stricmp (functionName,"count") == 0)
         {
         //For count we simply use * as this is the same semantically and it is faster anyways in SQLite
-        nativeSql.Append (Exp::ASTERISK_TOKEN);
+        nativeSql.Append(Exp::ASTERISK_TOKEN);
         }
     else
         {
-        //for SQL standard functions we only support primitive types so far
+        //for functions we only support args of primitive type so far
         bool isFirstItem = true;
-        for (auto argExp : exp->GetChildren ())
+        for (auto argExp : exp->GetChildren())
             {
             if (!isFirstItem)
-                nativeSql.AppendComma (true);
+                nativeSql.AppendComma();
 
             NativeSqlBuilder::List nativeSqlArgumentList;
-            auto status = PrepareValueExp (nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
+            auto status = PrepareValueExp(nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
             if (status != ECSqlStatus::Success)
                 return status;
 
-            if (nativeSqlArgumentList.size () > 1)
-                return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid argument '%s' in function '%s'.", argExp->ToECSql ().c_str (), functionName.c_str ());
+            if (nativeSqlArgumentList.size() > 1)
+                return ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid argument '%s' in function '%s'.", argExp->ToECSql().c_str(), functionName);
             else
-                nativeSql.Append (nativeSqlArgumentList[0]);
+                nativeSql.Append(nativeSqlArgumentList[0]);
 
             isFirstItem = false;
             }
@@ -1302,43 +1287,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp (NativeSqlBuilder::List&
     nativeSqlSnippets.push_back (move (nativeSql));
 
     return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareStringFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, StringFunctionCallExp const* exp)
-    {
-    auto const& functionName = exp->GetFunctionName ();
-    NativeSqlBuilder nativeSql (functionName.c_str ());
-    nativeSql.AppendSpace ().AppendParenLeft ();
-
-    //for SQL standard functions we only support primitive types so far
-    bool isFirstItem = true;
-    for (auto argExp : exp->GetChildren ())
-        {
-        if (!isFirstItem)
-            nativeSql.AppendComma (true);
-
-        NativeSqlBuilder::List nativeSqlArgumentList;
-        auto status = PrepareValueExp (nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
-        if (status != ECSqlStatus::Success)
-            return status;
-
-        if (nativeSqlArgumentList.size () > 1)
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects arguments of type string.", argExp->ToECSql ().c_str (), functionName.c_str ());
-        else
-            nativeSql.Append (nativeSqlArgumentList[0]);
-
-        isFirstItem = false;
-        }
-
-    nativeSql.AppendParenRight ();
-    nativeSqlSnippets.push_back (move (nativeSql));
-
-    return ECSqlStatus::Success;
-
     }
 
 //-----------------------------------------------------------------------------------------

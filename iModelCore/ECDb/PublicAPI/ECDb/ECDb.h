@@ -79,6 +79,18 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater () const;
 
+    //! Registers a scalar ECSQL custom function.
+    //! After successful registration, the function can be used in ECSQL statements just like built-in functions.
+    //! For details on how to implement and provide a function see BeSQLite::ScalarFunction and
+    //! BeSQLite::Db::AddScalarFunction.
+    //! @param scalarECSqlFunction[in] ECSQL function to register
+    ECDB_EXPORT int AddECSqlCustomFunction(ScalarFunction& scalarECSqlFunction) const;
+
+    //! Unregisters the specified ECSQL custom function.
+    //! @see BeSQLite::Db::RemoveFunction
+    //! @param ecsqlFunction[in] ECSQL function to unregister
+    ECDB_EXPORT int RemoveECSqlCustomFunction(DbFunction& ecsqlFunction) const;
+
     //! Clears the ECDb cache
     ECDB_EXPORT void ClearECDbCache() const;
 

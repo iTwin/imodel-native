@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -529,12 +529,30 @@ Utf8String ECClassIdFunctionExp::ToECSql () const
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    //we only need to throw the error once, so doing this after the children
+    const size_t argCount = GetChildrenCount();
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        return FinalizeParseStatus::NotCompleted;
+        {
+        if (ctx.GetECDb().GetECDbImplR().IsECSqlFunctionDefined(GetFunctionName(), (int) argCount))
+            return FinalizeParseStatus::NotCompleted;
 
-    ctx.SetError(ECSqlStatus::InvalidECSql, "Unknown or not yet supported function '%s'", m_functionName.c_str());
-    return FinalizeParseStatus::Error;
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Unknown function '%s' with %d args. If this is a custom function, make sure to have it registered.", m_functionName.c_str(), argCount);
+        return FinalizeParseStatus::Error;
+        }
+
+    //now verify that args are all primitive
+    for (size_t i = 0; i < argCount; i++)
+        {
+        ValueExp const* argExp = GetChild<ValueExp>(i);
+        if (!argExp->GetTypeInfo().IsPrimitive())
+            {
+            ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
+                         m_functionName.c_str(), i + 1);
+            return FinalizeParseStatus::Error;
+            }
+        }
+
+    SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+    return FinalizeParseStatus::Completed;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -552,7 +570,7 @@ bool FunctionCallExp::IsValidArgCount (ECSqlParseContext& ctx, size_t expectedAr
     {
     if (expectedArgCount != actualArgCount)
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects %d argument(s)", ToECSql ().c_str (), GetFunctionName ().c_str (), expectedArgCount);
+        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects %d argument(s)", ToECSql ().c_str (), GetFunctionName (), expectedArgCount);
         return false;
         }
 
@@ -686,28 +704,28 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing( ECSqlParseContext
 
     //verify supported functions
     auto const& functionName = GetFunctionName ();
-    if (functionName.EqualsI ("COUNT"))
+    if (BeStringUtilities::Stricmp (functionName, "COUNT") == 0)
         {
         SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Long));
         }
-    else if (functionName.EqualsI ("AVG"))
+    else if (BeStringUtilities::Stricmp(functionName,"AVG") == 0)
         {
         if (!GetChild<ValueExp> (0)->GetTypeInfo ().IsNumeric ())
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql ().c_str (), functionName.c_str ());
+            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql ().c_str (), functionName);
             return FinalizeParseStatus::Error;
             }
 
         SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Double));
         }
-    else if (functionName.EqualsI ("MAX") || 
-             functionName.EqualsI ("MIN") || 
-             functionName.EqualsI ("SUM")) //arg dependent
+    else if (BeStringUtilities::Stricmp(functionName,"MAX") == 0 ||
+             BeStringUtilities::Stricmp(functionName,"MIN") == 0 ||
+             BeStringUtilities::Stricmp(functionName,"SUM") == 0) //arg dependent
         {
         auto const& firstArgTypeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
         if (!firstArgTypeInfo.IsNumeric ())
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql ().c_str (), functionName.c_str ());
+            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql ().c_str (), functionName);
             return FinalizeParseStatus::Error;
             }
 
@@ -716,7 +734,7 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing( ECSqlParseContext
     else
         {
         BeAssert (false && "Unsupported standard set function. Check parse_general_set_fct()");
-        ctx.SetError (ECSqlStatus::ProgrammerError, "Unsupported standard set function '%s'. Check parse_general_set_fct()", functionName.c_str ());
+        ctx.SetError (ECSqlStatus::ProgrammerError, "Unsupported standard set function '%s'. Check parse_general_set_fct()", functionName);
         return FinalizeParseStatus::Error;
         }
 
@@ -729,23 +747,24 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing( ECSqlParseContext
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String SetFunctionCallExp::ToECSql() const 
     {
-    Utf8String tmp = GetFunctionName() + "(";
+    Utf8String ecsql(GetFunctionName());
+    ecsql.append ("(");
     Utf8String selectionType = ExpHelper::ToString(GetSetQuantifier());
     if (!selectionType.empty())
-        tmp+= selectionType + " ";
+        ecsql.append (selectionType).append (" ");
 
     bool isFirstItem = true;
     for(auto argExp : GetChildren ())
         {
         if (!isFirstItem)
-            tmp.append(", ");
+            ecsql.append(", ");
 
-        tmp.append(argExp->ToECSql ());
+        ecsql.append(argExp->ToECSql());
         isFirstItem = false;
         }
 
-    tmp.append(")");
-    return tmp;
+    ecsql.append(")");
+    return ecsql;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -754,7 +773,7 @@ Utf8String SetFunctionCallExp::ToECSql() const
 Utf8String SetFunctionCallExp::_ToString() const 
     {
     Utf8String str ("SetFunctionCall [Function: ");
-    str.append (GetFunctionName ().c_str ()).append (", Type: ").append (ExpHelper::ToString (m_setQuantifier)).append ("]");
+    str.append (GetFunctionName ()).append (", Type: ").append (ExpHelper::ToString (m_setQuantifier)).append ("]");
     return str;
     }
 
@@ -773,7 +792,7 @@ Exp::FinalizeParseStatus StringFunctionCallExp::_FinalizeParsing (ECSqlParseCont
 
     const auto childCount = GetChildren ().size ();
     auto const& functionName = GetFunctionName ();
-    if (functionName.EqualsI ("LOWER") || functionName.EqualsI ("UPPER"))
+    if (BeStringUtilities::Stricmp(functionName, "LOWER") == 0 || BeStringUtilities::Stricmp(functionName,"UPPER") == 0)
         {
         if (!IsValidArgCount (ctx, 1, childCount))
             return FinalizeParseStatus::Error;
@@ -781,14 +800,14 @@ Exp::FinalizeParseStatus StringFunctionCallExp::_FinalizeParsing (ECSqlParseCont
         auto const& typeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
         if (!typeInfo.IsPrimitive () || typeInfo.GetPrimitiveType () != PRIMITIVETYPE_String)
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName.c_str ());
+            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);
             return FinalizeParseStatus::Error;
             }
 
         }
     else
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Function '%s' not yet supported.", functionName.c_str ());
+        ctx.SetError (ECSqlStatus::InvalidECSql, "Function '%s' not yet supported.", functionName);
         return FinalizeParseStatus::Error;
         }
 
@@ -801,7 +820,7 @@ Exp::FinalizeParseStatus StringFunctionCallExp::_FinalizeParsing (ECSqlParseCont
 Utf8String StringFunctionCallExp::_ToString () const
     {
     Utf8String str ("StringFunctionCall [Function: ");
-    str.append (GetFunctionName ().c_str ()).append ("]");
+    str.append (GetFunctionName ()).append ("]");
     return str;
     }
 

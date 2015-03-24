@@ -22,6 +22,15 @@ struct ECDb::Impl : NonCopyableClass
     friend struct ECDb;
         
 private:
+    struct DbFunctionComparer
+        {
+        bool operator() (DbFunction* lhs, DbFunction* rhs) const
+            {
+            BeAssert(lhs != nullptr && rhs != nullptr);
+            return BeStringUtilities::Stricmp(lhs->GetName(), rhs->GetName()) < 0 || lhs->GetNumArgs() < rhs->GetNumArgs();
+            }
+        };
+
     static Utf8CP const ECINSTANCEIDSEQUENCE_BELOCALKEY;
     static Utf8CP const ECSCHEMAIDSEQUENCE_BELOCALKEY;
     static Utf8CP const ECCLASSIDSEQUENCE_BELOCALKEY;
@@ -34,6 +43,7 @@ private:
     static Utf8CP const CLASSMAPIDSEQUENCE_BELOCALKEY;
     static Utf8CP const PROPERTYPATHIDSEQUENCE_BELOCALKEY;
 
+    ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
     std::unique_ptr<ECDbMap> m_ecdbMap;
 
@@ -48,22 +58,26 @@ private:
     BeRepositoryBasedIdSequence m_classmapIdSequence;
     BeRepositoryBasedIdSequence m_propertypathIdSequence;
 
+    mutable bset<DbFunction*, DbFunctionComparer> m_ecsqlCustomFunctions;
+
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl (ECDbR ecdb);
     static DbResult Initialize (BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
-
-    void ClearECDbCache () const;
 
     ECDbSchemaManager const& GetSchemaManager () const;
     ECN::IECSchemaLocaterR GetSchemaLocater () const;
     ECN::IECClassLocaterR GetClassLocater () const;
 
+    int AddECSqlCustomFunction(ScalarFunction&) const;
+    int RemoveECSqlCustomFunction(DbFunction&) const;
+
+    void ClearECDbCache() const;
 
     DbResult OnDbOpened () const;
-    DbResult OnDbCreated (ECDbR ecdb) const;
-    DbResult OnRepositoryIdChanged (ECDbR ecdb, BeRepositoryId newRepositoryId);
+    DbResult OnDbCreated () const;
+    DbResult OnRepositoryIdChanged (BeRepositoryId newRepositoryId);
     void OnDbChangedByOtherConnection () const;
-    DbResult VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params) const;
+    DbResult VerifySchemaVersion (Db::OpenParams const& params) const;
 
     //other private methods
     std::vector<BeRepositoryBasedIdSequence const*> GetSequences () const;
@@ -73,7 +87,7 @@ public:
 
     ECDbMap const& GetECDbMap () const;
 
-    DbResult ResetSequences (ECDbR ecdb, BeRepositoryId* repoId = nullptr);
+    DbResult ResetSequences (BeRepositoryId* repoId = nullptr);
     BeRepositoryBasedIdSequence& GetECInstanceIdSequence () { return m_ecInstanceIdSequence; }
     BeRepositoryBasedIdSequence& GetECSchemaIdSequence () {return m_ecSchemaIdSequence; }
     BeRepositoryBasedIdSequence& GetECClassIdSequence () { return m_ecClassIdSequence; }
@@ -84,6 +98,8 @@ public:
     BeRepositoryBasedIdSequence& GetConstraintIdSequence () { return m_constraintIdSequence; }
     BeRepositoryBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
     BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
+
+    bool IsECSqlFunctionDefined(Utf8CP name, int nArgs) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

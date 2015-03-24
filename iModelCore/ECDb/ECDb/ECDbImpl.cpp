@@ -38,7 +38,7 @@ Utf8CP const ECDb::Impl::PROPERTYPATHIDSEQUENCE_BELOCALKEY = "ec_propertypathids
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::Impl::Impl (ECDbR ecdb)
-    : m_schemaManager (nullptr),
+    : m_ecdb(ecdb), m_schemaManager (nullptr),
     m_ecdbMap (std::unique_ptr<ECDbMap> (new ECDbMap (ecdb))),
     m_ecInstanceIdSequence (ecdb, ECINSTANCEIDSEQUENCE_BELOCALKEY),
     m_ecSchemaIdSequence (ecdb, ECSCHEMAIDSEQUENCE_BELOCALKEY),
@@ -104,33 +104,29 @@ DbResult ECDb::Impl::OnDbOpened () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbCreated (ECDbR ecdb) const
+DbResult ECDb::Impl::OnDbCreated () const
     {
     auto stat = OnDbOpened ();
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return ECDbProfileManager::CreateECProfile (ecdb);
+    return ECDbProfileManager::CreateECProfile (m_ecdb);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnRepositoryIdChanged
-(
-ECDbR ecdb,
-BeRepositoryId newRepositoryId
-)
+DbResult ECDb::Impl::OnRepositoryIdChanged(BeRepositoryId newRepositoryId)
     {
-    if (ecdb.IsReadonly ())
+    if (m_ecdb.IsReadonly ())
         return BE_SQLITE_READONLY;
 
-    const auto stat = ResetSequences (ecdb, &newRepositoryId);
+    const auto stat = ResetSequences (&newRepositoryId);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv ("Changing repository id to %d in file '%s' failed because ECDb's id sequences could not be reset.",
                     newRepositoryId.GetValue (),
-                    ecdb.GetDbFileName ());
+                    m_ecdb.GetDbFileName());
         }
 
     return stat;
@@ -149,9 +145,9 @@ void ECDb::Impl::OnDbChangedByOtherConnection () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::VerifySchemaVersion (ECDbR ecdb, Db::OpenParams const& params) const
+DbResult ECDb::Impl::VerifySchemaVersion (Db::OpenParams const& params) const
     {
-    return ECDbProfileManager::UpgradeECProfile (ecdb, params);
+    return ECDbProfileManager::UpgradeECProfile (m_ecdb, params);
     }
 
 
@@ -211,6 +207,37 @@ ECN::IECClassLocaterR ECDb::Impl::GetClassLocater () const
     return *m_schemaManager;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+int ECDb::Impl::AddECSqlCustomFunction(ScalarFunction& ecsqlFunction) const
+    {
+    const int stat = m_ecdb.AddScalarFunction(ecsqlFunction);
+    if (BE_SQLITE_OK == stat)
+        m_ecsqlCustomFunctions.insert(&ecsqlFunction);
+
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+int ECDb::Impl::RemoveECSqlCustomFunction(DbFunction& function) const
+    {
+    m_ecsqlCustomFunctions.erase(&function);
+    return m_ecdb.RemoveFunction(function);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::Impl::IsECSqlFunctionDefined(Utf8CP name, int nArgs) const
+    {
+    DbFunction key(name, nArgs);
+    return m_ecsqlCustomFunctions.find(&key) != m_ecsqlCustomFunctions.end();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan       06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -222,9 +249,9 @@ ECDbMap const& ECDb::Impl::GetECDbMap () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::ResetSequences (ECDbR ecdb, BeRepositoryId* repoId)
+DbResult ECDb::Impl::ResetSequences (BeRepositoryId* repoId)
     {
-    BeRepositoryId actualRepoId = repoId != nullptr ? *repoId : ecdb.GetRepositoryId ();
+    BeRepositoryId actualRepoId = repoId != nullptr ? *repoId : m_ecdb.GetRepositoryId ();
     for (auto sequence : GetSequences ())
         {
         auto stat = sequence->Reset (actualRepoId);

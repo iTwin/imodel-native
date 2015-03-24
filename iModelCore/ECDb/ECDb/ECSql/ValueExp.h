@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -192,13 +192,12 @@ struct FunctionCallExp : ValueExp
     DEFINE_EXPR_TYPE(FunctionCall)
 private:
     Utf8String m_functionName;
-
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     
     virtual Utf8String _ToString () const override
         {
         Utf8String str ("FunctionCall [Function: ");
-        str.append (m_functionName.c_str ()).append ("]");
+        str.append (m_functionName).append ("]");
         return str;
         }
 
@@ -206,31 +205,28 @@ protected:
     bool IsValidArgCount (ECSqlParseContext& ctx, size_t expectedArgCount, size_t actualArgCount) const;
 
 public:
-    explicit FunctionCallExp (Utf8CP functionName)
-        : ValueExp (), m_functionName(functionName)
-        {
-        }
-
+    explicit FunctionCallExp (Utf8CP functionName) : ValueExp (), m_functionName(functionName) {}
     virtual ~FunctionCallExp () {}
 
-    Utf8StringCR GetFunctionName() const { return m_functionName;}
+    Utf8CP GetFunctionName() const { return m_functionName.c_str();}
 
     void AddArgument (std::unique_ptr<ValueExp> argument);
 
     virtual Utf8String ToECSql() const override  
         {
-        Utf8String tmp = m_functionName + "(";
+        Utf8String ecsql(m_functionName);
+        ecsql.append("(");
         bool isFirstItem = true;
         for(auto argExp : GetChildren ())
             {
             if (!isFirstItem)
-                tmp.append(", ");
+                ecsql.append(",");
 
-            tmp.append(argExp->ToECSql ());
+            ecsql.append(argExp->ToECSql());
             isFirstItem = false;
             }
-        tmp.append(")");
-        return tmp;
+        ecsql.append(")");
+        return std::move(ecsql);
         }
     };
 
