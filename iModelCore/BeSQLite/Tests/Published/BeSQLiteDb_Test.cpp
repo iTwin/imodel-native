@@ -326,14 +326,6 @@ TEST_F(BeSQLiteDbTests, TableExists)
 
     //now test with closed connection
     m_db.CloseDb ();
-
-    //The following might throw assertions, so disable them
-    BeTest::SetFailOnAssert (false);
-        {
-        EXPECT_FALSE (m_db.TableExists (testTableName)) << "Db::TableExists is expected to return false if database connection is not open.";
-        EXPECT_FALSE (m_db.TableExists ("garbage")) << "Db::TableExists is expected to return false if database connection is not open.";
-        }
-    BeTest::SetFailOnAssert (true);
     }
 
 //---------------------------------------------------------------------------------------
