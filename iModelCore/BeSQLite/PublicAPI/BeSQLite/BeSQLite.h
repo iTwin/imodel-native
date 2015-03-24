@@ -226,13 +226,13 @@ struct BeGuid
     //! @note This method requires that the BeSQLiteLib::Initialize be called prior to use.
     BE_SQLITE_EXPORT void Create();
 
-    //! Serialize
-    //! @return The formatted UUID value in 8-4-4-4-12 format
+    //! Convert this BeGuid to a string
+    //! @return The formatted value in 8-4-4-4-12 format
     BE_SQLITE_EXPORT Utf8String ToString() const;
 
-    //! De-serialize
-    //! @param[in]  str The formatted UUID value. Must be in the following format: 8-4-4-4-12
-    //! @return non-zero error status if \a str is not a valid UUID value string.
+    //! Initialize this BuGuid from a previously saved string.
+    //! @param[in] str The string holding the value. Must be in the following format: 8-4-4-4-12
+    //! @return non-zero error status if \a str is not a valid BeGuid string.
     BE_SQLITE_EXPORT BentleyStatus FromString(Utf8CP str);
 };
 
@@ -296,11 +296,8 @@ template <typename Derived> struct BeInt64Id
 
     void UseNext() {++m_id; BeAssert(IsValid());}
 
-//__PUBLISH_SECTION_END__
-    //! NOT PUBLISHED: only for internal callers that understand the semantics of invalid IDs.
+    //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
     int64_t GetValueUnchecked() const {return m_id;}
-
-//__PUBLISH_SECTION_START__
     };
 
 //=======================================================================================
@@ -327,13 +324,11 @@ struct BeRepositoryBasedId : BeInt64Id<BeRepositoryBasedId>
     //! Construct a BeRepositoryBasedId from a RepositoryId value and an id.
     BeRepositoryBasedId(BeRepositoryId repositoryId, uint32_t id) : BeInt64Id(repositoryId,id) {}
 
-#if !defined (DOCUMENTATION_GENERATOR)
     //! Test to see whether this BeRepositoryBasedId is valid. 0 and -1 are not valid ids.
     bool Validate() const {return m_id!=0 && m_id!=-1;}
 
     //! Set this BeRepositoryBasedId to an invalid value (-1).
     void Invalidate() {m_id = -1;}
-#endif // DOCUMENTATION_GENERATOR
 };
 
 #define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass {classname() : superclass() {}  \
@@ -1101,7 +1096,7 @@ struct DbValue
 };
 
 //=======================================================================================
-//! A user-defined function that can be added to a Db and then used in SQL.
+//! A user-defined function that can be added to a Db connection and then used in SQL.
 //! See http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================

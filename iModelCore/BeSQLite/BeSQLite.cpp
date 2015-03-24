@@ -1577,12 +1577,6 @@ DbResult Db::TruncateTable(Utf8CP tableName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::TableExists(Utf8CP tableName) const
     {
-    if (!IsDbOpen())
-        {
-        BeAssert(false);
-        return false;
-        }
-
     Statement statement;
     return BE_SQLITE_OK == statement.TryPrepare(*this, SqlPrintfString("SELECT NULL FROM %s", tableName));
     }
@@ -1600,13 +1594,6 @@ void Db::FlushPageCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
     {
-    if (!IsDbOpen())
-        {
-        LOG.error("Db::ColumnExists can only be called on open database connection.");
-        BeAssert(IsDbOpen());
-        return false;
-        }
-
     Statement sql;
     return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM [%s]", columnName, tableName));
     }
@@ -1616,12 +1603,6 @@ bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
     {
-    if (!IsDbOpen())
-        {
-        BeAssert(false);
-        return false;
-        }
-
     Statement statement;
     DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM [%s] LIMIT 0", tableName));
     if (status != BE_SQLITE_OK)
@@ -1641,12 +1622,6 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::RenameTable(Utf8CP tableName, Utf8CP newTableName)
     {
-    if (!IsDbOpen())
-        {
-        BeAssert(false);
-        return false;
-        }
-
     return BE_SQLITE_OK == ExecuteSql(SqlPrintfString("ALTER TABLE [%s] RENAME TO [%s]", tableName, newTableName));
     }
 
@@ -1655,11 +1630,11 @@ bool Db::RenameTable(Utf8CP tableName, Utf8CP newTableName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DbFile::DeleteCachedPropertyMap()
     {
-    if (NULL != m_cachedProps)
-        {
-        delete (CachedProperyMap*) m_cachedProps;
-        m_cachedProps = NULL;
-        }
+    if (NULL == m_cachedProps)
+        return;
+
+    delete (CachedProperyMap*) m_cachedProps;
+    m_cachedProps = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1934,25 +1909,18 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetExpirationDate(DateTime& xdate) const
+DbResult Db::GetExpirationDate(DateTime& expirationDate) const 
     {
-#if defined (NEEDS_WORK_CONVERTER)
-    if (!IsDbOpen())
-        return BE_SQLITE_ERROR;
-
-    BeAssert(TableExists(BEDB_TABLE_Property) && "call GetExpirationDate only on Dbs that have a be_Prop table.");
-
-    Utf8String xdateStr;
-    auto rc = QueryProperty(xdateStr, Properties::ExpirationDate());
+    Utf8String dateStr;
+    DbResult rc = QueryProperty(dateStr, Properties::ExpirationDate());
     if (BE_SQLITE_ROW != rc)
-        return  BE_SQLITE_NOTFOUND;   // expiration date is optional
+        return BE_SQLITE_NOTFOUND;   // expiration date is optional
 
-    if (DateTime::FromString(xdate, xdateStr.c_str()) != BSISUCCESS)
+    if (DateTime::FromString(expirationDate, dateStr.c_str()) != BSISUCCESS)
         {
         BeDataAssert(false && "invalid value stored for expiration date property");
         return BE_SQLITE_ERROR;
         }
-#endif
 
     return BE_SQLITE_OK;
     }
@@ -1960,15 +1928,12 @@ DbResult Db::GetExpirationDate(DateTime& xdate) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetExpirationDate(DateTime const& xdate)
+DbResult Db::SetExpirationDate(DateTime const& expirationDate)
     {
-#if defined (NEEDS_WORK_CONVERTER)
-    if (xdate.IsValid() && xdate.GetInfo().GetKind() != DateTime::Kind::Utc)
+    if (expirationDate.IsValid() && expirationDate.GetInfo().GetKind() != DateTime::Kind::Utc)
         return BE_SQLITE_ERROR;
 
-    return SavePropertyString(Properties::ExpirationDate(), Utf8String(xdate.ToString()));
-#endif
-    return BE_SQLITE_OK;
+    return SavePropertyString(Properties::ExpirationDate(), Utf8String(expirationDate.ToString()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1976,11 +1941,11 @@ DbResult Db::SetExpirationDate(DateTime const& xdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::IsExpired() const
     {
-    DateTime xdate;
-    if (GetExpirationDate (xdate) != BE_SQLITE_OK)
+    DateTime expirationDate;
+    if (BE_SQLITE_OK != GetExpirationDate(expirationDate))
         return false;
 
-    return DateTime::Compare(DateTime::GetCurrentTimeUtc(), xdate) != DateTime::CompareResult::EarlierThan;
+    return DateTime::Compare(DateTime::GetCurrentTimeUtc(), expirationDate) != DateTime::CompareResult::EarlierThan;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2279,11 +2244,11 @@ DbResult ChangeSet::FromData(int size, void const* data, bool invert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeSet::Free()
     {
-    if (nullptr != m_changeset)
-        {
-        sqlite3_free(m_changeset);
-        m_changeset = nullptr;
-        }
+    if (nullptr == m_changeset)
+        return;
+
+    sqlite3_free(m_changeset);
+    m_changeset = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2305,11 +2270,11 @@ DbResult ChangeSet::ApplyChanges(BeSQLiteDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Finalize() const
     {
-    if (m_iter)
-        {
-        sqlite3changeset_finalize(m_iter);
-        m_iter=0;
-        }
+    if (nullptr == m_iter)
+        return;
+
+    sqlite3changeset_finalize(m_iter);
+    m_iter = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2322,8 +2287,8 @@ Changes::Change Changes::begin() const
     if (m_changeset.IsValid())
         sqlite3changeset_start(&m_iter, m_changeset.GetSize(),(void*) m_changeset.GetData());
 
-    if (0 == m_iter)
-        return  Change(0, false);
+    if (nullptr == m_iter)
+        return Change(0, false);
 
     DbResult result = (DbResult) sqlite3changeset_next(m_iter);
     return  Change(m_iter, result==BE_SQLITE_ROW);
@@ -2335,22 +2300,28 @@ Changes::Change Changes::begin() const
 Changes::~Changes() {Finalize();}
 DbResult Changes::Change::GetOperation(Utf8CP* tableName, int* nCols, DbOpcode* opcode, int* indirect)const {return (DbResult) sqlite3changeset_op(m_iter, tableName, nCols, (int*) opcode, indirect);}
 DbResult Changes::Change::GetPrimaryKeyColumns(Byte** cols, int* nCols) const {return (DbResult) sqlite3changeset_pk(m_iter, cols, nCols);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DbValue  Changes::Change::GetOldValue(int colNum) const
     {
-    SqlValueP val=0;
+    SqlValueP val=nullptr;
     int rc=sqlite3changeset_old(m_iter, colNum, &val);
-    if (rc!=BE_SQLITE_OK)
-        { BeAssert(false); }
+    BeAssert (rc==BE_SQLITE_OK);
+    UNUSED_VARIABLE(rc);
     return DbValue(val);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DbValue  Changes::Change::GetNewValue(int colNum) const
     {
-    SqlValueP val=0;
+    SqlValueP val=nullptr;
     int rc=sqlite3changeset_new(m_iter, colNum, &val);
-    if (rc!=BE_SQLITE_OK)
-        { BeAssert(false); }
-
+    BeAssert (rc==BE_SQLITE_OK);
+    UNUSED_VARIABLE(rc);
     return DbValue(val);
     }
 
@@ -2368,17 +2339,17 @@ Changes::Change& Changes::Change::operator++()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::AddChangeTracker(ChangeTracker& tracker)
     {
-    if (tracker.GetDbFile() != NULL)
+    if (tracker.GetDbFile() != nullptr)
         {
         BeAssert(false);
-        return  BE_SQLITE_ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     if (!m_dbFile->m_trackers.Insert(tracker.GetName(), &tracker).second)
-        return  BE_SQLITE_ERROR;
+        return BE_SQLITE_ERROR;
 
     tracker.SetDbFile(m_dbFile);
-    return  BE_SQLITE_OK;
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2388,10 +2359,10 @@ DbResult Db::DropChangeTracker(Utf8CP name)
     {
     auto tracker = m_dbFile->m_trackers.find(name);
     if (tracker == m_dbFile->m_trackers.end())
-        return  BE_SQLITE_ERROR;
+        return BE_SQLITE_ERROR;
 
     m_dbFile->m_trackers.erase(tracker);
-    return  BE_SQLITE_OK;
+    return BE_SQLITE_OK;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
