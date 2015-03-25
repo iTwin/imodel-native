@@ -4634,7 +4634,6 @@ OSQLParser::RuleIDMap   OSQLParser::s_aReverseRuleIDLookup;
 OParseContext            OSQLParser::s_aDefaultContext;
 
 sal_Int32                  OSQLParser::s_nRefCount    = 0;
-//BeCriticalSection        OSQLParser::s_aMutex;
 OSQLScanner*            OSQLParser::s_pScanner = 0;
 OSQLParseNodesGarbageCollector*        OSQLParser::s_pGarbageCollector = 0;
 RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;
@@ -4646,7 +4645,7 @@ void setParser(OSQLParser* _pParser)
 // -------------------------------------------------------------------------
 void OSQLParser::setParseTree(OSQLParseNode * pNewParseTree)
 {
-    BeCriticalSectionHolder aGuard(getCriticalSection());
+    BeMutexHolder aGuard(getCriticalSection());
     m_pParseTree = pNewParseTree;
 }
 //-----------------------------------------------------------------------------
@@ -4718,7 +4717,7 @@ OSQLParseNode* OSQLParser::parseTree(Utf8String& rErrorMessage,
 
 
     // Guard the parsing
-    BeCriticalSectionHolder aGuard(getCriticalSection());
+    BeMutexHolder aGuard(getCriticalSection());
     // must be reset
     setParser(this);
 

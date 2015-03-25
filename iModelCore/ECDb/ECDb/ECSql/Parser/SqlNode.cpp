@@ -1405,6 +1405,7 @@ namespace connectivity
                     {OSQLParseNode::column_val, "column_val"},
                     {OSQLParseNode::fct_spec, "fct_spec"},
                     {OSQLParseNode::ecclassid_fct_spec, "ecclassid_fct_spec"},
+                    {OSQLParseNode::function_args_commalist, "function_args_commalist"},
                     {OSQLParseNode::boolean_term, "boolean_term"},
                     {OSQLParseNode::boolean_primary, "boolean_primary"},
                     {OSQLParseNode::num_value_exp, "num_value_exp"},

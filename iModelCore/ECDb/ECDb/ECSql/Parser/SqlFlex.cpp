@@ -1,4 +1,4 @@
-#line 3 "E:\\dev\\Working\\Graphite0502\\src\\BeSQLite\\ECDb\\ECSql\\parser\\SQLflex.l"
+#line 3 "c:\\dev\\bsw\\graphite\\06\\work\\src\\\\ECDb\\ECDb\\ECSql\\parser\\SQLflex.l"
 //------------------------------------------------------------
 // 
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -43,7 +43,7 @@
 
 
 
-#line 47 "E:\\dev\\Working\\Graphite0502\\src\\BeSQLite\\ECDb\\ECSql\\parser\\SqlFlex.cpp"
+#line 47 "c:\\dev\\bsw\\graphite\\06\\work\\src\\\\ECDb\\ECDb\\ECSql\\parser\\SqlFlex.cpp"
 
 #define  YY_INT_ALIGNED short int
 

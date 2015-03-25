@@ -184,8 +184,8 @@ using namespace connectivity;
 
 /* In a future release of Bison, this section will be replaced
    by #include "SqlBison.h".  */
-#ifndef YY_SQLYY_E_DEV_WORKING_GRAPHITE0502_SRC_BESQLITE_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
-# define YY_SQLYY_E_DEV_WORKING_GRAPHITE0502_SRC_BESQLITE_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+#ifndef YY_SQLYY_C_DEV_BSW_GRAPHITE_06_WORK_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+# define YY_SQLYY_C_DEV_BSW_GRAPHITE_06_WORK_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -514,7 +514,7 @@ int SQLyyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_SQLYY_E_DEV_WORKING_GRAPHITE0502_SRC_BESQLITE_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
+#endif /* !YY_SQLYY_C_DEV_BSW_GRAPHITE_06_WORK_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
@@ -8075,7 +8075,6 @@ OSQLParser::RuleIDMap   OSQLParser::s_aReverseRuleIDLookup;
 OParseContext            OSQLParser::s_aDefaultContext;
 
 sal_Int32                  OSQLParser::s_nRefCount    = 0;
-//BeCriticalSection        OSQLParser::s_aMutex;
 OSQLScanner*            OSQLParser::s_pScanner = 0;
 OSQLParseNodesGarbageCollector*        OSQLParser::s_pGarbageCollector = 0;
 RefCountedPtr< ::com::sun::star::i18n::XLocaleData>        OSQLParser::s_xLocaleData = NULL;

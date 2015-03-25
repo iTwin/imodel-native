@@ -168,6 +168,7 @@ namespace connectivity
                 parameter,
                 general_set_fct,
                 ecclassid_fct_spec,
+                function_args_commalist,
                 range_variable,
                 column,
                 delete_statement_positioned,
