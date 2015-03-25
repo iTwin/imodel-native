@@ -4,11 +4,15 @@
 #   $Revision: 1.8 $
 #       $Date: 2009/03/20 18:17:50 $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK = 1
 DLMLINK_WARNINGS_AS_ERRORS=1
+
+# ImagePP\all\gra\HTiff\src\IDTMFileDirectories\IDTMLayerDir.cpp(371) : error C2440: 'initializing' : cannot convert from 'const wchar_t [1]' to 'Bentley::WCharP'
+#                                                                       Conversion from string literal loses const qualifier (see /Zc:strictStrings)
+DEVELOPER_NEEDS_TO_FIX_COMPILER_WARNINGS=1
 
 %include $(SrcImagepp)mki/imageppdirs.mki
 
