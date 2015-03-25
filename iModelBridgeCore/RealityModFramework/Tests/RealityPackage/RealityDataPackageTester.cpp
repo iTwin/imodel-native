@@ -12,6 +12,11 @@
 
 USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 
+#define _STRINGIFY(s) #s
+#define STRINGIFY(s) _STRINGIFY(s)
+#define WIDEN(quote) _WIDEN(quote)
+#define _WIDEN(quote) L##quote
+
 #define LATLONG_EPSILON 0.000000001 // precision of 0.1 millimeter
 
 //----------------------------------------------------------------------------------------
@@ -32,6 +37,201 @@ public:
         return outputFilePath;
         }
 };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, InvalidVersion)
+    {
+    Utf8CP package =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' Version='999999.0'>"
+            "<Name>ProjectName</Name>"
+        "</RealityDataPackage>";
+    
+    WString parseError;
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
+    ASSERT_EQ(RealityPackageStatus::UnsupportedVersion, status);
+    ASSERT_TRUE(!pPackage.IsValid());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, BoundingPolygonTest)
+    {
+    DPoint2d polygon[4] = {{1.0252, 53.04}, {41.024452, 53.0444}, {44, -55.54}, {-19.066252, -73.0666664}};
+    BoundingPolygonPtr pPoly = BoundingPolygon::Create(polygon, 4);
+    ASSERT_TRUE(pPoly.IsValid() && pPoly->IsValid());
+
+    // invalid Lat.
+    polygon[3].x = -10009.066252;
+    //ASSERT_DEATH(BoundingPolygon::Create(polygon, 4), "");
+    pPoly = BoundingPolygon::Create(polygon, 4);
+    ASSERT_TRUE(!pPoly.IsValid()); 
+
+    // valid 3 pts
+    pPoly = BoundingPolygon::Create(polygon, 3);
+    ASSERT_TRUE(pPoly.IsValid() && pPoly->IsValid());
+
+    // invalid Long.
+    polygon[2].y = 1111.066252;
+    pPoly = BoundingPolygon::Create(polygon, 3);
+    ASSERT_TRUE(!pPoly.IsValid());
+
+    // missing points.
+    pPoly = BoundingPolygon::Create(polygon, 2);
+    ASSERT_TRUE(!pPoly.IsValid());
+    pPoly = BoundingPolygon::Create(polygon, 1);
+    ASSERT_TRUE(!pPoly.IsValid());
+    pPoly = BoundingPolygon::Create(polygon, 0);
+    ASSERT_TRUE(!pPoly.IsValid());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, ReadVersion_1_0)
+    {
+    #define RPACKAGE_NAME           "name"
+    #define RPACKAGE_DESCRIPTION    "description"
+    #define RPACKAGE_DATE           "2015-03-25T15:17:11.588Z"
+    #define RPACKAGE_COPYRIGHT      "(c) 2015 Bentley Systems"
+    #define RPACKAGE_ID             "123asd789avbdlk"
+    #define RPACKAGE_POLYGON        "1.0252 53.04 41.024452 53.0444 44 -55.54 -19.066252 -73.0666664 1.0252 53.04"
+    #define RPACKAGE_JPEG           "./imagery/map.jpeg"
+    #define RPACKAGE_JPEG_LL_x      5.123456789
+    #define RPACKAGE_JPEG_LL_y      4.987654321
+    #define RPACKAGE_JPEG_LR_x      55.4554
+    #define RPACKAGE_JPEG_LR_y      22.44
+    #define RPACKAGE_JPEG_UL_x      15.4551234
+    #define RPACKAGE_JPEG_UL_y      111.22
+    #define RPACKAGE_JPEG_UR_x      5.14
+    #define RPACKAGE_JPEG_UR_y      89.999
+    #define RPACKAGE_WMS_URI        "http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities&version=1.3.0"
+    #define RPACKAGE_WMS_URI_AMP    "http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&amp;request=GetCapabilities&amp;version=1.3.0"
+    #define RPACKAGE_ROAD_URI       "./model/roads.shp"
+    #define RPACKAGE_HOUSE_URI      "./pinned/myHouse.jpeg"
+    #define RPACKAGE_HOUSE_LAT      89.123456789
+    #define RPACKAGE_HOUSE_LONG     -180
+    #define RPACKAGE_TRAFFIC_URI    "./pinned/roadTraffic.avi"
+    #define RPACKAGE_TRAFFIC_LAT    -90
+    #define RPACKAGE_TRAFFIC_LONG   166.987654321
+    #define RPACKAGE_CANADA_POD_URI "./terrain/canada.pod"
+    #define RPACKAGE_CANADA_DTM_URI "./terrain/canada.dtm"
+
+    Utf8CP package =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' Version='1.0'>"
+            "<Name>" RPACKAGE_NAME "</Name>"
+            "<Description>" RPACKAGE_DESCRIPTION "</Description>"
+            "<CreationDate>" RPACKAGE_DATE "</CreationDate>"
+            "<Copyright>" RPACKAGE_COPYRIGHT "</Copyright>"
+            "<PackageId>" RPACKAGE_ID "</PackageId>"
+            "<BoundingPolygon>" RPACKAGE_POLYGON "</BoundingPolygon>"
+            "<ImageryGroup>"
+                "<ImageryData>"
+                    "<Source uri='" RPACKAGE_JPEG "' type='image/jpeg'/>"
+                    "<Corners>"
+                        "<LowerLeft>" STRINGIFY(RPACKAGE_JPEG_LL_x) " " STRINGIFY(RPACKAGE_JPEG_LL_y) "</LowerLeft>"
+                        "<LowerRight>" STRINGIFY(RPACKAGE_JPEG_LR_x) " " STRINGIFY(RPACKAGE_JPEG_LR_y) "</LowerRight>"
+                        "<UpperLeft>" STRINGIFY(RPACKAGE_JPEG_UL_x) " " STRINGIFY(RPACKAGE_JPEG_UL_y) "</UpperLeft>"
+                        "<UpperRight>" STRINGIFY(RPACKAGE_JPEG_UR_x) " " STRINGIFY(RPACKAGE_JPEG_UR_y) "</UpperRight>"
+                    "</Corners>"
+                "</ImageryData>"
+                "<ImageryData>"
+                    "<WmsSource uri='" RPACKAGE_WMS_URI_AMP "' type='wms'/>"
+                "</ImageryData>"
+            "</ImageryGroup>"
+            "<ModelGroup>"
+                "<ModelData>"
+                    "<Source uri='" RPACKAGE_ROAD_URI "' type='shapefile'/>"
+                "</ModelData>"
+            "</ModelGroup>"
+            "<PinnedGroup>"
+                "<PinnedData>"
+                    "<Source uri='" RPACKAGE_HOUSE_URI "' type='image/jpeg'/>"
+                    "<Position>" STRINGIFY(RPACKAGE_HOUSE_LAT) " " STRINGIFY(RPACKAGE_HOUSE_LONG) "</Position>"
+                "</PinnedData>"
+                "<PinnedData>"
+                    "<Source uri='" RPACKAGE_TRAFFIC_URI "' type='video/avi'/>"
+                    "<Position>" STRINGIFY(RPACKAGE_TRAFFIC_LAT) " " STRINGIFY(RPACKAGE_TRAFFIC_LONG) "</Position>"
+                "</PinnedData>"
+            "</PinnedGroup>"
+            "<TerrainGroup>"
+                "<TerrainData>"
+                    "<Source uri='" RPACKAGE_CANADA_POD_URI "' type='pod'/>"
+                "</TerrainData>"
+                "<TerrainData>"
+                    "<Source uri='" RPACKAGE_CANADA_DTM_URI "' type='dtm'/>"
+                "</TerrainData>"
+            "</TerrainGroup>"
+        "</RealityDataPackage>";
+
+    WString parseError;
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
+    ASSERT_EQ(RealityPackageStatus::Success, status);
+    ASSERT_TRUE(pPackage.IsValid());
+
+    ASSERT_EQ(1, pPackage->GetMajorVersion()); 
+    ASSERT_EQ(0, pPackage->GetMinorVersion()); 
+
+    ASSERT_STREQ(WIDEN(RPACKAGE_NAME), pPackage->GetName().c_str()); 
+    ASSERT_STREQ(WIDEN(RPACKAGE_DESCRIPTION), pPackage->GetDescription().c_str()); 
+    ASSERT_STREQ(WIDEN(RPACKAGE_DATE), pPackage->GetCreationDate().ToString().c_str()); 
+    ASSERT_STREQ(WIDEN(RPACKAGE_COPYRIGHT), pPackage->GetCopyright().c_str());     
+    ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON), pPackage->GetBoundingPolygon().ToString().c_str());
+
+    // Imagery
+    ASSERT_STREQ(WIDEN(RPACKAGE_JPEG), pPackage->GetImageryGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"image/jpeg", pPackage->GetImageryGroup()[0]->GetSource().GetType().c_str());
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].x, RPACKAGE_JPEG_LR_x, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerRight].y, RPACKAGE_JPEG_LR_y, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].x, RPACKAGE_JPEG_UL_x, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_JPEG_UL_y, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_JPEG_UR_x, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_JPEG_UR_y, LATLONG_EPSILON);
+    ASSERT_STREQ(WIDEN(RPACKAGE_WMS_URI), pPackage->GetImageryGroup()[1]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"wms", pPackage->GetImageryGroup()[1]->GetSource().GetType().c_str());
+
+    // Model
+    ASSERT_STREQ(WIDEN(RPACKAGE_ROAD_URI), pPackage->GetModelGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"shapefile", pPackage->GetModelGroup()[0]->GetSource().GetType().c_str());
+
+    // Pinned
+    ASSERT_STREQ(WIDEN(RPACKAGE_HOUSE_URI), pPackage->GetPinnedGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"image/jpeg", pPackage->GetPinnedGroup()[0]->GetSource().GetType().c_str());
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_HOUSE_LAT, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_HOUSE_LONG, LATLONG_EPSILON);
+    ASSERT_STREQ(WIDEN(RPACKAGE_TRAFFIC_URI), pPackage->GetPinnedGroup()[1]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"video/avi", pPackage->GetPinnedGroup()[1]->GetSource().GetType().c_str());
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_TRAFFIC_LAT, LATLONG_EPSILON);
+    ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_TRAFFIC_LONG, LATLONG_EPSILON);
+
+    // Terrain
+    ASSERT_STREQ(WIDEN(RPACKAGE_CANADA_POD_URI), pPackage->GetTerrainGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"pod", pPackage->GetTerrainGroup()[0]->GetSource().GetType().c_str());
+    ASSERT_STREQ(WIDEN(RPACKAGE_CANADA_DTM_URI), pPackage->GetTerrainGroup()[1]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(L"dtm", pPackage->GetTerrainGroup()[1]->GetSource().GetType().c_str());
+
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, IgnoreUnknownElement)
+    {
+    //&&MM must be able to read file that have unknown element and skip them gracefully.
+
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015

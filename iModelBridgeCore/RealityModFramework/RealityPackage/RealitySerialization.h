@@ -11,10 +11,10 @@
 #include <BeXml/BeXml.h>
 #include <geom/GeomApi.h>
 
-#define XSTRINGIFY(s) STRINGIFY(s)
-#define STRINGIFY(s) #s
-#define WIDEN(quote) WIDEN2(quote)
-#define WIDEN2(quote) L##quote
+#define _STRINGIFY(s) #s
+#define STRINGIFY(s) _STRINGIFY(s)
+#define WIDEN(quote) _WIDEN(quote)
+#define _WIDEN(quote) L##quote
 
 // **************************************************
 // Naming-Convention:
@@ -30,8 +30,8 @@
 #define PACKAGE_PREFIX              "rdp"
 #define PACKAGE_CURRENT_MAJOR_VERSION 1
 #define PACKAGE_CURRENT_MINOR_VERSION 0
-#define PACKAGE_CURRENT_VERSION       (WIDEN(XSTRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)) L"." WIDEN(XSTRINGIFY(PACKAGE_CURRENT_MINOR_VERSION)))
-#define PACKAGE_CURRENT_NAMESPACE     "http://www.bentley.com/RealityDataServer/v" XSTRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)
+#define PACKAGE_CURRENT_VERSION       (WIDEN(STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)) L"." WIDEN(STRINGIFY(PACKAGE_CURRENT_MINOR_VERSION)))
+#define PACKAGE_CURRENT_NAMESPACE     "http://www.bentley.com/RealityDataServer/v" STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)
 
 #define PACKAGE_ELEMENT_Root                "RealityDataPackage"
 #define PACKAGE_ATTRIBUTE_Version           "Version"

@@ -29,7 +29,6 @@ static bool s_IsValidLatLong(double latitude, double longitude)
     return false;
     }
 
-
 //=======================================================================================
 //                              BoundingPolygon
 //=======================================================================================
@@ -53,6 +52,18 @@ BoundingPolygonPtr BoundingPolygon::Create()
 //----------------------------------------------------------------------------------------
 BoundingPolygonPtr BoundingPolygon::Create(DPoint2dCP pPoints, size_t count)
     {
+    if(count < 3)
+        return NULL;
+
+    for(size_t i=0; i < count; ++i)
+        {
+        if(!s_IsValidLatLong(pPoints[i].x, pPoints[i].y))
+            {
+            BeDataAssert(!"Invalid polygon lat/long");
+            return NULL;
+            }
+        }
+
     return new BoundingPolygon(pPoints, count);
     }
 
@@ -75,7 +86,7 @@ BoundingPolygon::BoundingPolygon(DPoint2dCP pPoints, size_t count)
         m_points.push_back(pPoints[0]);  // Explicitly assign the last for bitwise equality.
         }
 
-    BeAssert(IsValid());
+    BeDataAssert(IsValid());
     }
 
 //----------------------------------------------------------------------------------------
@@ -106,17 +117,18 @@ WString BoundingPolygon::ToString() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon) 
+BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr) 
     {
     bvector<DPoint2d> points;
 
-    WStringTokenizer tokenizer(polygon, SPACE_DELIMITER_U);
+    WStringTokenizer tokenizer(polygonStr, SPACE_DELIMITER_U);
     
     while(tokenizer.HasValue())
         {
         DPoint2d point;
-        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y))
+        if(!tokenizer.Get(point.x) || !tokenizer.Get(point.y) || !s_IsValidLatLong(point.x, point.y))
             {
+            BeDataAssert(!"Invalid polygon data");
             points.clear(); // incomplete x-y sequence.
             break;
             }
@@ -135,11 +147,10 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
             points.push_back(points[0]);    // add closure point.
             }    
 
-        return new BoundingPolygon(points);
+        return new BoundingPolygon(points); // >>> Use std::move on 'points'.
         }
-
     
-    return BoundingPolygon::Create();    // Empty invalid polygon.
+    return NULL;    // invalid polygon string.
     }
 
 //=======================================================================================
@@ -228,6 +239,21 @@ RealityPackageStatus RealityDataPackage::ReadVersion(BeXmlNodeR rootNode)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
+RealityDataPackagePtr RealityDataPackage::CreateFromString(RealityPackageStatus& status, Utf8CP pSource, WStringP pParseError)
+    {
+    status = RealityPackageStatus::UnknownError;
+
+    BeXmlStatus xmlStatus = BEXML_Success;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pSource, 0, pParseError);
+    if(BEXML_Success != xmlStatus)    
+        return NULL;
+
+    return RealityDataPackage::CreateFromDom(status, *pXmlDom, L"?"/*defaultName*/, pParseError);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
 RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& status, BeFileNameCR filename, WStringP pParseError)
     {
     status = RealityPackageStatus::UnknownError;
@@ -236,39 +262,50 @@ RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& s
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.c_str(), pParseError);
     if(BEXML_Success != xmlStatus)    
         return NULL;
-      
-    RealityDataPackagePtr pPackage = new RealityDataPackage(filename.GetFileNameWithoutExtension().c_str());
-    
-    BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
+
+    return RealityDataPackage::CreateFromDom(status, *pXmlDom,filename.GetFileNameWithoutExtension().c_str(), pParseError);
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+RealityDataPackagePtr RealityDataPackage::CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, WCharCP defaultName, WStringP pParseError)
+    {
+    status = RealityPackageStatus::UnknownError;
+
+    BeXmlNodeP pRootNode = xmlDom.GetRootElement();
     if(NULL == pRootNode)
         return NULL;
 
+    RealityDataPackagePtr pPackage = new RealityDataPackage(defaultName);
+    
     if(RealityPackageStatus::Success != pPackage->ReadVersion(*pRootNode) || pPackage->GetMajorVersion() > PACKAGE_CURRENT_MAJOR_VERSION)
         {
         status = RealityPackageStatus::UnsupportedVersion;
         return NULL;
         }
 
-    pXmlDom->RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
+    xmlDom.RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
 
-    xmlXPathContextPtr pRootContext = pXmlDom->AcquireXPathContext (pRootNode);
-    // see DgnFontManager::ProcessLocaleConfiguration
+    xmlXPathContextPtr pRootContext = xmlDom.AcquireXPathContext (pRootNode);
 
-    pXmlDom->SelectNodeContent(pPackage->m_name, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, pRootContext, BeXmlDom::NODE_BIAS_First);
-    pXmlDom->SelectNodeContent(pPackage->m_description, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Description, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pPackage->m_name, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pPackage->m_description, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Description, pRootContext, BeXmlDom::NODE_BIAS_First);
 
     WString creationDateUTC;
-    pXmlDom->SelectNodeContent(creationDateUTC, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_CreationDate, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(creationDateUTC, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_CreationDate, pRootContext, BeXmlDom::NODE_BIAS_First);
     pPackage->m_creationDate = DateTime();
     DateTime::FromString(pPackage->m_creationDate, creationDateUTC.c_str());
     
-    pXmlDom->SelectNodeContent(pPackage->m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright, pRootContext, BeXmlDom::NODE_BIAS_First);
-    pXmlDom->SelectNodeContent(pPackage->m_packageId, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageId, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pPackage->m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(pPackage->m_packageId, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageId, pRootContext, BeXmlDom::NODE_BIAS_First);
 
     WString polygonString;
-    pXmlDom->SelectNodeContent(polygonString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, pRootContext, BeXmlDom::NODE_BIAS_First);
+    xmlDom.SelectNodeContent(polygonString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, pRootContext, BeXmlDom::NODE_BIAS_First);
     pPackage->m_pBoundingPolygon = BoundingPolygon::FromString(polygonString.c_str());
-    BeAssert(!pPackage->m_pBoundingPolygon.IsNull()); // We expect at least an empty instance.
+    if(pPackage->m_pBoundingPolygon.IsNull())
+        pPackage->m_pBoundingPolygon = BoundingPolygon::Create();   // empty one.
 
     status = RealityPackageStatus::Success;
 

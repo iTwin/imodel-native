@@ -27,18 +27,21 @@ public:
     //! Empty polygon
     static BoundingPolygonPtr Create();
 
-    //! Create a polygon from points. Duplication will be forced on first/last point.
+    //! Create a polygon from points. Duplication will be forced on first/last point. 
+    //! Return NULL if count is less than 3 or if points value are not within lat/long range.
     REALITYPACKAGE_EXPORT static BoundingPolygonPtr Create(DPoint2dCP pPoints, size_t count);
 
-    //! The polygon points including the duplicated closing point.
+    //! The polygon points in lat/long including the duplicated closing point.
     REALITYPACKAGE_EXPORT DPoint2dCP GetPointCP() const;
 
     //! The number of points including duplicated closing point.
     REALITYPACKAGE_EXPORT size_t GetPointCount() const;
 
-    bool IsValid() const; 
+    REALITYPACKAGE_EXPORT bool IsValid() const; 
     
-    WString ToString() const;
+    REALITYPACKAGE_EXPORT WString ToString() const;
+
+    //! Return NULL is a parsing error occurs
     static BoundingPolygonPtr FromString(WStringCR);
 private:
     BoundingPolygon(){};
@@ -121,13 +124,17 @@ public:
     REALITYPACKAGE_EXPORT TerrainGroup& GetTerrainGroupR();    
 
     //! Get package version.
-    uint32_t GetMajorVersion() const;
-    uint32_t GetMinorVersion() const;
+    REALITYPACKAGE_EXPORT uint32_t GetMajorVersion() const;
+    REALITYPACKAGE_EXPORT uint32_t GetMinorVersion() const;
+
+    REALITYPACKAGE_EXPORT static RealityDataPackagePtr CreateFromString(RealityPackageStatus& status, Utf8CP pSource, WStringP pParseError = NULL);
 
 private:
     RealityDataPackage() = delete;
     RealityDataPackage(WCharCP name);
     ~RealityDataPackage();
+
+    static RealityDataPackagePtr CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, WCharCP defaultName, WStringP pParseError);
 
     WString BuildCreationDateUTC();   // May update m_creationDate.
 
