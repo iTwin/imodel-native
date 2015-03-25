@@ -2521,34 +2521,20 @@ namespace connectivity
         sal_Int32 nType = DataType::VARCHAR;
         Utf8String sFunctionName = _sFunctionName;
 
-        if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ASCII, pContext)))                     nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_BIT_LENGTH, pContext)))           nType = DataType::INTEGER;
+        if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_BIT_LENGTH, pContext)))                nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CHAR, pContext)))                 nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CHAR_LENGTH, pContext)))          nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CONCAT, pContext)))               nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DIFFERENCE, pContext)))           nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_INSERT, pContext)))               nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LEFT, pContext)))                 nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LENGTH, pContext)))               nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LOCATE, pContext)))               nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LOCATE_2, pContext)))             nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LTRIM, pContext)))                nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_OCTET_LENGTH, pContext)))         nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_POSITION, pContext)))             nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_REPEAT, pContext)))               nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_REPLACE, pContext)))              nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_RIGHT, pContext)))                nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_RTRIM, pContext)))                nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_SOUNDEX, pContext)))              nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_SPACE, pContext)))                nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_SUBSTRING, pContext)))            nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CURRENT_DATE, pContext)))         nType = DataType::DATE;
-        //    else if(sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURRENT_TIME,pContext)))         nType = DataType::TIME;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CURRENT_TIMESTAMP, pContext)))    nType = DataType::TIMESTAMP;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CURDATE, pContext)))              nType = DataType::DATE;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DATEDIFF, pContext)))             nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DATEVALUE, pContext)))            nType = DataType::DATE;
-        //    else if(sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURTIME,pContext)))              nType = DataType::TIME;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DAYNAME, pContext)))              nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DAYOFMONTH, pContext)))           nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DAYOFWEEK, pContext)))            nType = DataType::INTEGER;
@@ -2566,33 +2552,6 @@ namespace connectivity
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_TIMEVALUE, pContext)))            nType = DataType::TIMESTAMP;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_WEEK, pContext)))                 nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_YEAR, pContext)))                 nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ABS, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ACOS, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ASIN, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ATAN, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ATAN2, pContext)))                nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_CEILING, pContext)))              nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_COS, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_COT, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_DEGREES, pContext)))              nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_EXP, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_FLOOR, pContext)))                nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LOGF, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LOG, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LOG10, pContext)))                nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_LN, pContext)))                   nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_MOD, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_PI, pContext)))                   nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_POWER, pContext)))                nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_RADIANS, pContext)))              nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_RAND, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ROUND, pContext)))                nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_ROUNDMAGIC, pContext)))           nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_SIGN, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_SIN, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_SQRT, pContext)))                 nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_TAN, pContext)))                  nType = DataType::DOUBLE;
-        else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_TRUNCATE, pContext)))             nType = DataType::DOUBLE;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_COUNT, pContext)))                nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_MAX, pContext)))                  nType = DataType::DOUBLE;
         else if (sFunctionName.EqualsI (TokenIDToStr (SQL_TOKEN_MIN, pContext)))                  nType = DataType::DOUBLE;
@@ -2618,25 +2577,6 @@ namespace connectivity
             {
             if (_nPos == 2)
                 nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_LOCATE)
-            {
-            if (_nPos == 3)
-                nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_LOCATE_2)
-            {
-            if (_nPos == 3)
-                nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_REPEAT || _nTokenId == SQL_TOKEN_RIGHT)
-            {
-            if (_nPos == 2)
-                nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_SPACE)
-            {
-            nType = DataType::INTEGER;
             }
         else if (_nTokenId == SQL_TOKEN_SUBSTRING)
             {
@@ -2672,33 +2612,6 @@ namespace connectivity
         else if (_nTokenId == SQL_TOKEN_WEEK)                 nType = DataType::DATE;
         else if (_nTokenId == SQL_TOKEN_YEAR)                 nType = DataType::DATE;
 
-        else if (_nTokenId == SQL_TOKEN_ABS)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_ACOS)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_ASIN)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_ATAN)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_ATAN2)                nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_CEILING)              nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_COS)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_COT)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_DEGREES)              nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_EXP)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_FLOOR)                nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_LOGF)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_LOG)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_LOG10)                nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_LN)                   nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_MOD)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_PI)                   nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_POWER)                nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_RADIANS)              nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_RAND)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_ROUND)                nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_ROUNDMAGIC)           nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_SIGN)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_SIN)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_SQRT)                 nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_TAN)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_TRUNCATE)             nType = DataType::DOUBLE;
         else if (_nTokenId == SQL_TOKEN_COUNT)                nType = DataType::INTEGER;
         else if (_nTokenId == SQL_TOKEN_MAX)                  nType = DataType::DOUBLE;
         else if (_nTokenId == SQL_TOKEN_MIN)                  nType = DataType::DOUBLE;

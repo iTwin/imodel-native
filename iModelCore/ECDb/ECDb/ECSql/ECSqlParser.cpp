@@ -658,47 +658,39 @@ unique_ptr<CastExp> ECSqlParser::parse_cast_spec (ECSqlParseContext& ctx, OSQLPa
 //+---------------+---------------+---------------+---------------+---------------+------
 unique_ptr<FunctionCallExp> ECSqlParser::parse_fct_spec (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
-    if (!SQL_ISRULE(parseNode, fct_spec ) && parseNode->count() == 3)
+    if (!SQL_ISRULE(parseNode, fct_spec ))
         {
         BeAssert (false && "Wrong grammar");
         ctx.SetError(ECSqlStatus::ProgrammerError, "Wrong grammar");
         return nullptr;
         }
 
-    auto functionNameNode = parseNode->getChild (0);
+    OSQLParseNode* functionNameNode = parseNode->getChild (0);
     Utf8CP knownFunctionName = functionNameNode->getTokenValue ().c_str ();
     if (Utf8String::IsNullOrEmpty (knownFunctionName))
         {
-        if (!functionNameNode->isToken ())
-            {
-            BeAssert (false && "Invalid grammar. Function name node is expected to be a SQL_TOKEN.");
-            ctx.SetError(ECSqlStatus::ProgrammerError, "Invalid grammar. Function name node is expected to be a SQL_TOKEN.");
-            return nullptr;
-            }
-
         const auto tokenId = functionNameNode->getTokenID ();
-        switch (tokenId)
-            {
-            case SQL_TOKEN_ROUND: knownFunctionName = "ROUND"; break;
-            case SQL_TOKEN_LENGTH: knownFunctionName = "LENGTH"; break;
-            default:
-                ctx.SetError(ECSqlStatus::InvalidECSql, "Function with token ID %d not yet supported.", tokenId);
-                return nullptr;
-            }
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Function with token ID %d not yet supported.", tokenId);
+        return nullptr;
         }
 
     auto functionCallExp = std::unique_ptr<FunctionCallExp> (new FunctionCallExp (knownFunctionName));
     //parse function args. (if child parse node count is < 4, function doesn't have args)
     if (parseNode->count() == 4)
         {
-        auto arguments = parseNode->getChild(2);
-        for (size_t i = 0; i < arguments->count (); i++)
+        OSQLParseNode* argumentsNode = parseNode->getChild(2);
+        if (SQL_ISRULE(argumentsNode, function_args_commalist))
             {
-            auto argument_expr = parse_value_exp (ctx, arguments->getChild(i));
-            if (argument_expr == nullptr)
-                return nullptr; // error reporting already done in child call
-
-            functionCallExp->AddArgument (move (argument_expr));
+            for (size_t i = 0; i < argumentsNode->count(); i++)
+                {
+                if (SUCCESS != parse_and_add_functionarg(ctx, *functionCallExp, argumentsNode->getChild(i)))
+                    return nullptr;
+                }
+            }
+        else
+            {
+            if (SUCCESS != parse_and_add_functionarg(ctx, *functionCallExp, argumentsNode))
+                return nullptr;
             }
         }
 
@@ -707,6 +699,19 @@ unique_ptr<FunctionCallExp> ECSqlParser::parse_fct_spec (ECSqlParseContext& ctx,
 
     BeAssert(false);
     return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::parse_and_add_functionarg(ECSqlParseContext& ctx, FunctionCallExp& functionCallExp, connectivity::OSQLParseNode const* argNode)
+    {
+    auto argument_expr = parse_result(ctx, argNode);
+    if (argument_expr == nullptr)
+        return ERROR; // error reporting already done in child call
+
+    functionCallExp.AddArgument(move(argument_expr));
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -735,13 +740,6 @@ unique_ptr<SetFunctionCallExp> ECSqlParser::parse_general_set_fct (ECSqlParseCon
             //case SQL_TOKEN_EVERY: known_funtion_name = "EVERY"; break;
             //case SQL_TOKEN_ANY: known_funtion_name = "ANY"; break;
             //case SQL_TOKEN_SOME: known_funtion_name = "SOME"; break;
-            //case SQL_TOKEN_STDDEV_POP: known_funtion_name = "STDDEV_POP"; break;
-            //case SQL_TOKEN_STDDEV_SAMP: known_funtion_name = "STDDEV_SAMP"; break;
-            //case SQL_TOKEN_VAR_SAMP: known_funtion_name = "VAR_SAMP"; break;
-            //case SQL_TOKEN_VAR_POP: known_funtion_name = "VAR_POP"; break;
-            //case SQL_TOKEN_COLLECT: known_funtion_name = "COLLECT"; break;
-            //case SQL_TOKEN_FUSION: known_funtion_name = "FUSION"; break;
-            //case SQL_TOKEN_INTERSECTION: known_funtion_name = "INTERSECTION"; break;
         default:
             {
             ctx.SetError(ECSqlStatus::InvalidECSql, "Unsupported standard SQL function with token ID %d", tokenId);
@@ -751,25 +749,26 @@ unique_ptr<SetFunctionCallExp> ECSqlParser::parse_general_set_fct (ECSqlParseCon
 
     if (function_name->getTokenID() == SQL_TOKEN_COUNT)
         {
-        auto function_call = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp (known_function_name));
+        auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(known_function_name));
         if (Exp::IsAsteriskToken (parseNode->getChild(2)->getTokenValue().c_str ()))
             {
             auto argExp = ConstantValueExp::Create (ctx, Exp::ASTERISK_TOKEN, ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
-            function_call->AddArgument (move (argExp));
-            return function_call;
+            functionCallExp->AddArgument(move(argExp));
+            return functionCallExp;
             }
         }
+
     //Following cover COUNT(ALL|DISTINCT funtion_arg) and AVG,MAX...(ALL|DISTINCT funtion_arg)
     auto opt_all_distinct = parseNode->getChild(2); 
     auto setQuantifier = parse_opt_all_distinct(ctx, opt_all_distinct); 
-    auto function_arg = parseNode->getChild (3/*function_arg*/);
-    auto arg = parse_result(ctx, function_arg);
 
-    auto function_call = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp (known_function_name, setQuantifier));
-    function_call->AddArgument (move (arg));
+    auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(known_function_name, setQuantifier));
+    if (SUCCESS != parse_and_add_functionarg(ctx, *functionCallExp, parseNode->getChild(3/*function_arg*/)))
+        return nullptr;
 
     if (ctx.IsSuccess())
-        return function_call;
+        return functionCallExp;
+
     return nullptr;
     }
 

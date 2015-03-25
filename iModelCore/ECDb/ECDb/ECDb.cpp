@@ -121,6 +121,22 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+int ECDb::_OnAddScalarFunction (ScalarFunction& func) const
+    {
+    return (int) m_pimpl->OnAddScalarFunction(func);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::_OnRemoveFunction (DbFunction& func) const
+    {
+    m_pimpl->OnRemoveFunction(func);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
 ECDbSchemaManagerCR ECDb::GetSchemaManager () const
@@ -142,22 +158,6 @@ ECN::IECSchemaLocaterR ECDb::GetSchemaLocater () const
 ECN::IECClassLocaterR ECDb::GetClassLocater () const
     {
     return m_pimpl->GetClassLocater ();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                03/2014
-//---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::AddECSqlFunction (ECSqlFunction& ecsqlFunction) const
-    {
-    return m_pimpl->AddECSqlFunction(ecsqlFunction);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                03/2014
-//---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::RemoveECSqlFunction(ECSqlFunction& ecsqlFunction) const
-    {
-    return m_pimpl->RemoveECSqlFunction(ecsqlFunction);
     }
 
 //--------------------------------------------------------------------------------------

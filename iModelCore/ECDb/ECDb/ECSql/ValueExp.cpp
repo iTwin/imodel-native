@@ -529,31 +529,40 @@ Utf8String ECClassIdFunctionExp::ToECSql () const
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
+    //We don't know the data type for function args. We choose Double
+    //as default type as it can take any numeric value and SQLite supports implicit conversions
+    //between the primitive types anyways
+    const ECN::PrimitiveType defaultType = ECN::PRIMITIVETYPE_Double;
+
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
     const size_t argCount = GetChildrenCount();
-    ECSqlFunction* func = nullptr;
-    if (!ctx.GetECDb().GetECDbImplR().TryGetECSqlFunction(func, GetFunctionName(), (int) argCount))
-        {
-        ctx.SetError(ECSqlStatus::InvalidECSql, "Unknown function '%s' with %d args. If this is a custom function, make sure to have it registered.", m_functionName.c_str(), argCount);
-        return FinalizeParseStatus::Error;
-        }
-
-    //now verify that args are all primitive
+    //now verify that args are all primitive and handle parameter args
     for (size_t i = 0; i < argCount; i++)
         {
-        ValueExp const* argExp = GetChild<ValueExp>(i);
-        ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
-        if (typeKind != ECSqlTypeInfo::Kind::Primitive)
+        ValueExp* argExp = GetChildP<ValueExp>(i);
+        if (argExp->GetType() == Exp::Type::Parameter)
             {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is NULL or not primitive.",
-                         m_functionName.c_str(), i + 1);
-            return FinalizeParseStatus::Error;
+            ParameterExp* parameterExp = static_cast<ParameterExp*> (argExp);
+            parameterExp->SetTypeInfoFromTarget(ECSqlTypeInfo(defaultType));
+            }
+        else
+            {
+            ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
+            if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Function '%s' can only be called with primitive arguments. Argument #%d is not primitive.",
+                             m_functionName.c_str(), i + 1);
+                return FinalizeParseStatus::Error;
+                }
             }
         }
 
-    SetTypeInfo(ECSqlTypeInfo(func->GetReturnType ()));
+    ECSqlScalarFunction* func = nullptr;
+    const bool isCustomFunction = ctx.GetECDb().GetECDbImplR().TryGetECSqlFunction(func, GetFunctionName(), (int) argCount);
+    const ECN::PrimitiveType returnType = isCustomFunction ? func->GetReturnType() : defaultType;
+    SetTypeInfo(ECSqlTypeInfo (returnType));
     return FinalizeParseStatus::Completed;
     }
 
@@ -616,8 +625,6 @@ Utf8String LikeRhsValueExp::ToECSql () const
     return ecsql;
     }
 
-
-
 //****************************** ParameterExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -649,11 +656,14 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing (ECSqlParseContext& ctx,
             SetTypeInfoFromTarget (targetExp->GetTypeInfo ());
             }
         }
-    else
+    //For some expressions there is no target exp, but a target type. If that has been set, we don't need to do anything anymore.
+    else if (GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Unset)
+        {
         //In some cases the parameter exp has no target type (e.g. in limit/offset clauses. In
         //that case just assume a numeric type.
         //TODO: assumption to choose numeric type in that case is error-prone. 
-        SetTypeInfoFromTarget (ECSqlTypeInfo (PRIMITIVETYPE_Long));
+        SetTypeInfoFromTarget(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+        }
 
     m_parameterIndex = ctx.TrackECSqlParameter (*this);
     return FinalizeParseStatus::Completed;

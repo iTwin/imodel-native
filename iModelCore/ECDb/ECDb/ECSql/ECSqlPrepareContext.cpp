@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -111,24 +111,24 @@ ECSqlPrepareContext::ExpScope const& ECSqlPrepareContext::ExpScopeStack::Current
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext (ECSqlStatementBase& preparedStatment)
-: m_ecsqlStatement (preparedStatment), m_parentCtx (nullptr), m_parentArrayProperty (nullptr), 
+ECSqlPrepareContext::ECSqlPrepareContext (ECDbCR ecdb, ECSqlStatementBase& preparedStatment)
+: m_ecdb (ecdb), m_ecsqlStatement (preparedStatment), m_parentCtx (nullptr), m_parentArrayProperty (nullptr), 
 m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_nativeSqlSelectClauseColumnCount(0), m_nativeNothingToUpdate(false)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext (ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
-: m_ecsqlStatement (preparedStatment), m_parentCtx (&parentCtx), m_parentArrayProperty (nullptr),
-m_parentColumnInfo (nullptr), m_nativeStatementIsNoop (false), m_nativeSqlSelectClauseColumnCount (0), m_nativeNothingToUpdate(false)
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx)
+    : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(nullptr),
+    m_parentColumnInfo (nullptr), m_nativeStatementIsNoop (false), m_nativeSqlSelectClauseColumnCount (0), m_nativeNothingToUpdate(false)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext (ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
- : m_ecsqlStatement (preparedStatment), m_parentCtx (&parentCtx), m_parentArrayProperty (&parentArrayProperty), m_parentColumnInfo (parentColumnInfo), m_nativeStatementIsNoop (false), m_nativeSqlSelectClauseColumnCount (0), m_nativeNothingToUpdate(false)
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo)
+    : m_ecdb(ecdb), m_ecsqlStatement(preparedStatment), m_parentCtx(&parentCtx), m_parentArrayProperty(&parentArrayProperty), m_parentColumnInfo(parentColumnInfo), m_nativeStatementIsNoop(false), m_nativeSqlSelectClauseColumnCount(0), m_nativeNothingToUpdate(false)
     {}
 
 //-----------------------------------------------------------------------------------------

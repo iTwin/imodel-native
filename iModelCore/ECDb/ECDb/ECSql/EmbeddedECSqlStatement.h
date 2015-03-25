@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/EmbeddedECSqlStatement.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@ private:
     ECSqlColumnInfo const* m_parentColumnInfo;
 
     using ECSqlStatementBase::Initialize;
-    virtual ECSqlPrepareContext _InitializePrepare (Utf8CP ecsql) override;
+    virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) override;
 
     ECSqlStatementBase& GetParentStatement () const;
     ArrayECPropertyCP GetArrayProperty () const;

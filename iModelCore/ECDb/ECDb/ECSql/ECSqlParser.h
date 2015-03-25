@@ -71,6 +71,8 @@ private:
 
     static std::unique_ptr<ECClassIdFunctionExp>       parse_ecclassid_fct_spec        (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
+    static std::unique_ptr<FunctionCallExp>            parse_fct_spec                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static BentleyStatus                               parse_and_add_functionarg       (ECSqlParseContext& ctx, FunctionCallExp& functionCallExp, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<UnaryExp>                   parse_factor                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<StringFunctionCallExp>      parse_fold                      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
@@ -116,7 +118,6 @@ private:
     static std::unique_ptr<ValueExp>                   parse_result                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<ValueExp>                   parse_row_value_constructor     (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
-    static std::unique_ptr<FunctionCallExp>            parse_fct_spec                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<SubqueryExp>                parse_subquery                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static Utf8CP                                      parse_table_name                (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);

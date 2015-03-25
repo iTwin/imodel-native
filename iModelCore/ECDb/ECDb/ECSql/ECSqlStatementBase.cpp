@@ -77,7 +77,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     if (Utf8String::IsNullOrEmpty (ecsql))
         return statusContext.SetError (ECSqlStatus::InvalidECSql, "ECSQL string is empty.");
 
-    auto prepareContext = _InitializePrepare (ecsql);
+    auto prepareContext = _InitializePrepare (ecdb, ecsql);
     BeAssert (statusContext.IsSuccess ());
 
     //Step 1: parse the ECSQL

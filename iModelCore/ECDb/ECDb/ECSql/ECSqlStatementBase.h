@@ -27,7 +27,7 @@ private:
     ECSqlEventManager m_eventManager;
     ECSqlStatusContext* m_statusContext;
 
-    virtual ECSqlPrepareContext _InitializePrepare (Utf8CP ecsql) = 0;
+    virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) = 0;
 
     ECSqlParseTreePtr ParseECSql (ECDbCR ecdb, Utf8CP ecsql, IClassMap::View classView);
 

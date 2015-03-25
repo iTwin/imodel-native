@@ -1142,13 +1142,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, 1);
 
     ecsql = "SELECT LENGTH (S) FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT S FROM ecsql.PSA WHERE LENGTH (S) = 0";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, 0);
 
     ecsql = "SELECT ECInstanceId FROM ecsql.PSA WHERE I = ROUND (122.8)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     //**** GetECClassId
     ecsql = "SELECT GetECClassId() FROM ecsql.PSA";
@@ -1256,7 +1256,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::InOperatorTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE I IN (1, 2, ROUND (122.9879))";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE L IN (1, AVG(L))";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);

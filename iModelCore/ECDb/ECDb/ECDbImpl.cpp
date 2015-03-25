@@ -207,49 +207,42 @@ ECN::IECClassLocaterR ECDb::Impl::GetClassLocater () const
     return *m_schemaManager;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::AddECSqlFunction(ECSqlFunction& ecsqlFunction) const
+BentleyStatus ECDb::Impl::OnAddScalarFunction(ScalarFunction& scalarFunction) const
     {
-    ECSqlFunctionKey key(ecsqlFunction);
-    if (m_ecsqlFunctions.find(key) != m_ecsqlFunctions.end())
+    ECSqlScalarFunction* ecsqlFunction = dynamic_cast<ECSqlScalarFunction*> (&scalarFunction);
+    if (ecsqlFunction == nullptr)
+        return SUCCESS;
+
+    ECN::PrimitiveType returnType = ecsqlFunction->GetReturnType();
+    if (returnType == ECN::PRIMITIVETYPE_Point2D || returnType == ECN::PRIMITIVETYPE_Point3D)
         {
-        LOG.errorv("ECSQL function %s with %d arguments is already registered.", ecsqlFunction.GetName(), ecsqlFunction.GetArgCount());
+        LOG.errorv("Failed to register ECSQL function %s. ECSQL functions can only have primitive return types (excluding Point2D and Point3D)", ecsqlFunction->GetName());
         return ERROR;
         }
 
-    const int stat = m_ecdb.AddScalarFunction(ecsqlFunction.GetSQLiteFunction ());
-    if (0 != stat)
-        {
-        LOG.errorv("Failed to register ECSQL function %s with %d arguments as SQLite function. SQLite error: %d", ecsqlFunction.GetName(), ecsqlFunction.GetArgCount(), stat);
-        return ERROR;
-        }
-
-    m_ecsqlFunctions[key] = &ecsqlFunction;
+    DbFunctionKey key(*ecsqlFunction);
+    m_ecsqlFunctions[key] = ecsqlFunction;
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::RemoveECSqlFunction(ECSqlFunction& ecsqlFunction) const
+void ECDb::Impl::OnRemoveFunction(DbFunction& function) const
     {
-    if (0 != m_ecdb.RemoveFunction(ecsqlFunction.GetSQLiteFunction()))
-        return ERROR;
-
-    ECSqlFunctionKey key(ecsqlFunction);
+    DbFunctionKey key(function);
     m_ecsqlFunctions.erase(key);
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::Impl::TryGetECSqlFunction(ECSqlFunction*& function, Utf8CP name, int argCount) const
+bool ECDb::Impl::TryGetECSqlFunction(ECSqlScalarFunction*& function, Utf8CP name, int argCount) const
     {
-    auto it = m_ecsqlFunctions.find(ECSqlFunctionKey(name,argCount));
+    auto it = m_ecsqlFunctions.find(DbFunctionKey(name, argCount));
     if (it == m_ecsqlFunctions.end())
         {
         function = nullptr;

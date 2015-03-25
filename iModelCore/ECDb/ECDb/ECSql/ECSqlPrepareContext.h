@@ -136,6 +136,7 @@ public:
         };
  
 private:
+    ECDbCR m_ecdb;
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlPrepareContext const* m_parentCtx;
     ArrayECPropertyCP m_parentArrayProperty;
@@ -149,9 +150,9 @@ private:
     int m_nativeSqlSelectClauseColumnCount;
     static bool FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp);
 public:
-    explicit ECSqlPrepareContext (ECSqlStatementBase& ecsqlStatement);
-    ECSqlPrepareContext (ECSqlStatementBase& ecsqlStatement, ECSqlPrepareContext const& parent, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
-    ECSqlPrepareContext (ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx);
+    ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement);
+    ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement, ECSqlPrepareContext const& parent, ArrayECPropertyCR parentArrayProperty, ECSqlColumnInfo const* parentColumnInfo);
+    ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlPrepareContext const& parentCtx);
     //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
 
     //! Gets the view mode to be used for class maps for classes in the ECSQL to prepare
@@ -159,6 +160,7 @@ public:
     //! @return View mode for class maps for this prepare context
     IClassMap::View GetClassMapViewMode () const;
 
+    ECDbCR GetECDb() const { return m_ecdb; }
     ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx;}
     ArrayECPropertyCP GetParentArrayProperty () const { return m_parentArrayProperty;}
     ECSqlColumnInfo const* GetParentColumnInfo () const { return m_parentColumnInfo;}

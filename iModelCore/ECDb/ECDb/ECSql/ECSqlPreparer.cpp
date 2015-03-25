@@ -1262,7 +1262,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp (NativeSqlBuilder::List& na
         }
     else
         {
-        //for functions we only support args of primitive type so far
         bool isFirstItem = true;
         for (auto argExp : exp->GetChildren())
             {
@@ -1270,7 +1269,16 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp (NativeSqlBuilder::List& na
                 nativeSql.AppendComma();
 
             NativeSqlBuilder::List nativeSqlArgumentList;
-            auto status = PrepareValueExp(nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
+            ECSqlStatus status;
+            if (IsNullExp(*argExp))
+                {
+                //for functions we only support args of single column primitive types so far, therefore an ECSQL NULL
+                //always means a single SQLite NULL
+                status = PrepareNullConstantValueExp(nativeSqlArgumentList, ctx, static_cast<ConstantValueExp const*> (argExp), 1);
+                }
+            else
+                status = PrepareValueExp(nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
+
             if (status != ECSqlStatus::Success)
                 return status;
 

@@ -32,8 +32,7 @@ ECSqlStatement::Impl::Impl ()
 // @bsimethod                                             Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatement::Impl::~Impl ()
-    { 
-    }
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
@@ -47,13 +46,13 @@ ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare (Utf8CP ecsql)
+ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     //re-establish a status context with the ECSQL string, so that the ECSQL gets output in error messages, too.
     m_currentStatusContext = ECSqlStatusContext (ecsql);
     BeAssert (GetStatusContextR ().IsSuccess ());
 
-    return ECSqlPrepareContext (*this);
+    return ECSqlPrepareContext(ecdb, *this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -63,9 +62,7 @@ ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare (Utf8CP ecsql)
 NativeLogging::ILogger& ECSqlStatement::Impl::GetPrepareDiagnosticsLogger ()
     {
     if (s_prepareDiagnosticsLogger == nullptr)
-        {
         s_prepareDiagnosticsLogger = NativeLogging::LoggingManager::GetLogger (L"Diagnostics.ECSqlStatement.Prepare");
-        }
 
     BeAssert (s_prepareDiagnosticsLogger != nullptr);
     return *s_prepareDiagnosticsLogger;

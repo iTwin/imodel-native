@@ -118,9 +118,9 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_ESCAPE SQL_TOKEN_EXCEPT SQL_TOKEN_EXISTS SQL_TOKEN_FALSE SQL_TOKEN_FETCH SQL_TOKEN_FLOAT SQL_TOKEN_FOR SQL_TOKEN_FOREIGN SQL_TOKEN_FOUND SQL_TOKEN_FROM SQL_TOKEN_FULL
 
-%token <pParseNode> SQL_TOKEN_GROUP SQL_TOKEN_HAVING SQL_TOKEN_IN SQL_TOKEN_INDICATOR SQL_TOKEN_INNER SQL_TOKEN_INTO SQL_TOKEN_IS SQL_TOKEN_INTERSECT
+%token <pParseNode> SQL_TOKEN_GROUP SQL_TOKEN_HAVING SQL_TOKEN_IN SQL_TOKEN_INDICATOR SQL_TOKEN_INNER SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_IS SQL_TOKEN_INTERSECT
 
-%token <pParseNode> SQL_TOKEN_JOIN SQL_TOKEN_KEY SQL_TOKEN_LEADING SQL_TOKEN_LIKE SQL_TOKEN_LOCAL SQL_TOKEN_LOWER
+%token <pParseNode> SQL_TOKEN_JOIN SQL_TOKEN_KEY SQL_TOKEN_LEADING SQL_TOKEN_LIKE SQL_TOKEN_LOCAL SQL_TOKEN_LEFT SQL_TOKEN_RIGHT SQL_TOKEN_LOWER
 %token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NCHAR SQL_TOKEN_NULL SQL_TOKEN_NUMERIC
 
 %token <pParseNode> SQL_TOKEN_OCTET_LENGTH SQL_TOKEN_OF SQL_TOKEN_ON SQL_TOKEN_OPTION SQL_TOKEN_ORDER SQL_TOKEN_OUTER
@@ -135,12 +135,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_UPPER SQL_TOKEN_USAGE SQL_TOKEN_USING SQL_TOKEN_VALUES SQL_TOKEN_VIEW
 %token <pParseNode> SQL_TOKEN_WHERE SQL_TOKEN_WITH SQL_TOKEN_WORK 
 
-/* string functions */
-%token <pParseNode> SQL_TOKEN_ASCII SQL_TOKEN_BIT_LENGTH  SQL_TOKEN_CHAR  SQL_TOKEN_CHAR_LENGTH  SQL_TOKEN_SQL_TOKEN_INTNUM
-%token <pParseNode> SQL_TOKEN_CONCAT
-%token <pParseNode> SQL_TOKEN_DIFFERENCE  SQL_TOKEN_INSERT  SQL_TOKEN_LEFT SQL_TOKEN_LENGTH  SQL_TOKEN_LOCATE
-%token <pParseNode> SQL_TOKEN_LOCATE_2 SQL_TOKEN_LTRIM SQL_TOKEN_POSITION SQL_TOKEN_REPEAT SQL_TOKEN_REPLACE
-%token <pParseNode> SQL_TOKEN_RIGHT SQL_TOKEN_RTRIM SQL_TOKEN_SOUNDEX SQL_TOKEN_SPACE  SQL_TOKEN_SUBSTRING
+%token <pParseNode> SQL_TOKEN_BIT_LENGTH SQL_TOKEN_CHAR SQL_TOKEN_CHAR_LENGTH SQL_TOKEN_POSITION SQL_TOKEN_SUBSTRING SQL_TOKEN_SQL_TOKEN_INTNUM
 
 /* time and date functions */
 %token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIMESTAMP SQL_TOKEN_CURDATE SQL_TOKEN_NOW SQL_TOKEN_EXTRACT
@@ -149,14 +144,8 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_HOUR SQL_TOKEN_MINUTE  SQL_TOKEN_MONTH  SQL_TOKEN_MONTHNAME SQL_TOKEN_QUARTER SQL_TOKEN_DATEDIFF
 %token <pParseNode> SQL_TOKEN_SECOND SQL_TOKEN_TIMESTAMPADD SQL_TOKEN_TIMESTAMPDIFF SQL_TOKEN_TIMEVALUE SQL_TOKEN_WEEK SQL_TOKEN_YEAR
 
-/* numeric functions */
-%token <pParseNode> SQL_TOKEN_ABS SQL_TOKEN_ACOS SQL_TOKEN_ASIN SQL_TOKEN_ATAN SQL_TOKEN_ATAN2 SQL_TOKEN_CEILING
-%token <pParseNode> SQL_TOKEN_COS SQL_TOKEN_COT SQL_TOKEN_DEGREES SQL_TOKEN_EXP SQL_TOKEN_FLOOR SQL_TOKEN_LOGF  SQL_TOKEN_LOG SQL_TOKEN_LN
-%token <pParseNode> SQL_TOKEN_LOG10 SQL_TOKEN_MOD SQL_TOKEN_PI SQL_TOKEN_POWER SQL_TOKEN_RADIANS SQL_TOKEN_RAND SQL_TOKEN_ROUNDMAGIC
-%token <pParseNode> SQL_TOKEN_ROUND   SQL_TOKEN_SIGN    SQL_TOKEN_SIN     SQL_TOKEN_SQRT    SQL_TOKEN_TAN SQL_TOKEN_TRUNCATE
-
 // computational operation
-%token <pParseNode> SQL_TOKEN_EVERY SQL_TOKEN_INTERSECTION SQL_TOKEN_FUSION SQL_TOKEN_COLLECT 
+%token <pParseNode> SQL_TOKEN_EVERY
 
 %token <pParseNode> SQL_TOKEN_WITHIN SQL_TOKEN_ARRAY_AGG
 %token <pParseNode> SQL_TOKEN_CASE SQL_TOKEN_THEN SQL_TOKEN_END SQL_TOKEN_NULLIF SQL_TOKEN_COALESCE SQL_TOKEN_WHEN SQL_TOKEN_ELSE
@@ -235,13 +224,12 @@ using namespace connectivity;
 %type <pParseNode> char_value_exp concatenation char_factor char_primary string_value_fct char_substring_fct fold
 %type <pParseNode> form_conversion char_translation trim_fct trim_operands trim_spec bit_value_fct bit_substring_fct
 %type <pParseNode> /*bit_concatenation*/ bit_value_exp bit_factor bit_primary collate_clause char_value_fct unique_spec value_exp_commalist in_predicate_value unique_test update_source
-%type <pParseNode> function_arg_commalist3 string_function_3Argument function_arg_commalist4 string_function_4Argument function_arg_commalist2 string_function_1Argument string_function_2Argument
-%type <pParseNode> date_function_0Argument  function_name12 function_name23 function_name1 function_name2 function_name3 function_name0 numeric_function_0Argument numeric_function_1Argument numeric_function_2Argument
+%type <pParseNode> date_function_0Argument  function_name12 function_name0 
 %type <pParseNode> all query_primary sql_not for_length upper_lower comparison /* column_val */  cross_union /*opt_schema_element_list*/
 %type <pParseNode> /*op_authorization op_schema*/ nil_fkt schema_element base_table_def base_table_element base_table_element_commalist
 %type <pParseNode> column_def union_statement
 %type <pParseNode> function_args_commalist function_arg
-%type <pParseNode> catalog_name schema_name table_node numeric_function string_function function_name table_primary_as_range_column opt_as
+%type <pParseNode> catalog_name schema_name table_node function_name table_primary_as_range_column opt_as
 %type <pParseNode> case_expression else_clause result_expression result case_abbreviation case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand
 %type <pParseNode> trigger_definition trigger_name trigger_action_time trigger_event transition_table_or_variable_list triggered_action trigger_column_list triggered_when_clause triggered_SQL_statement SQL_procedure_statement old_transition_variable_name new_transition_variable_name
@@ -1825,39 +1813,7 @@ fct_spec:
             $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
             $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));
         }
-    |    function_name1 '(' function_arg ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    |    function_name2 '(' function_arg_commalist2 ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    |    function_name3 '(' function_arg_commalist3 ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    |    string_function_4Argument '(' function_arg_commalist4 ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    |    function_name '(' function_args_commalist ')'
+       |    function_name '(' function_args_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1878,79 +1834,18 @@ fct_spec:
             else
                 YYERROR;
         }
-    |    function_name23 '(' function_args_commalist ')'
-        {
-            if ( $3->count() == 2 || $3->count() == 3)
-            {
-                $$ = SQL_NEW_RULE;
-                $$->append($1);
-                $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-                $$->append($3);
-                $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-            }
-            else
-                YYERROR;
-        }
     ;
 function_name0:
         date_function_0Argument
-    |    numeric_function_0Argument
-    ;
-function_name1:
-        string_function_1Argument
-/*not (yet?) supported    |    date_function_1Argument */
-    |    numeric_function_1Argument
-    ;
-function_name2:
-        string_function_2Argument
-    |    numeric_function_2Argument
     ;
 function_name12:
-        SQL_TOKEN_ROUND
-    |    SQL_TOKEN_WEEK
-    |    SQL_TOKEN_LOGF
-    |    SQL_TOKEN_LOG
+        SQL_TOKEN_WEEK
     ;
-function_name23:
-        SQL_TOKEN_LOCATE
-/* not (yet?) supported in ECSQL    |    SQL_TOKEN_DATEDIFF */
-    ;
-function_name3:
-        string_function_3Argument
-    ;
+
 function_name:
-        string_function
-/* not (yet?) supported in ECSQL    |    date_function */
-    |    numeric_function
-    |    SQL_TOKEN_NAME
+    SQL_TOKEN_NAME
     ;
-string_function_1Argument:
-        SQL_TOKEN_LENGTH
-    |    SQL_TOKEN_ASCII
-    |    SQL_TOKEN_LTRIM
-    |    SQL_TOKEN_RTRIM
-    |    SQL_TOKEN_SPACE
-    ;
-    
-string_function_2Argument:
-        SQL_TOKEN_REPEAT        
-    |    SQL_TOKEN_LEFT
-    |    SQL_TOKEN_RIGHT
-    ;
-string_function_3Argument:
-        SQL_TOKEN_REPLACE       
-    ;
-string_function_4Argument:
-        SQL_TOKEN_INSERT
-    ;
-    
-string_function:
-        SQL_TOKEN_CHAR
-    |    SQL_TOKEN_CONCAT
-    |    SQL_TOKEN_DIFFERENCE
-    |    SQL_TOKEN_LOCATE_2      
-    |    SQL_TOKEN_SOUNDEX       
-    ;
+
 date_function_0Argument:
         SQL_TOKEN_CURDATE             
 /*time not supported in ECSQL    |    SQL_TOKEN_CURTIME             */
@@ -1979,38 +1874,6 @@ date_function:
     |    SQL_TOKEN_TIMESTAMPDIFF       
     ;
 	*/
-numeric_function_0Argument:
-        SQL_TOKEN_PI              
-    ;
-numeric_function_1Argument:
-        SQL_TOKEN_ABS
-    |    SQL_TOKEN_ACOS            
-    |    SQL_TOKEN_ASIN            
-    |    SQL_TOKEN_ATAN            
-    |    SQL_TOKEN_CEILING         
-    |    SQL_TOKEN_COS             
-    |    SQL_TOKEN_COT             
-    |    SQL_TOKEN_DEGREES         
-    |    SQL_TOKEN_FLOOR           
-    |    SQL_TOKEN_SIGN            
-    |    SQL_TOKEN_SIN             
-    |    SQL_TOKEN_SQRT            
-    |    SQL_TOKEN_TAN             
-    |    SQL_TOKEN_EXP             
-    |    SQL_TOKEN_LOG10           
-    |    SQL_TOKEN_LN
-    |    SQL_TOKEN_RADIANS
-    |    SQL_TOKEN_ROUNDMAGIC
-    ;
-numeric_function_2Argument:
-        SQL_TOKEN_ATAN2           
-    |    SQL_TOKEN_MOD             
-    |    SQL_TOKEN_POWER           
-    ;
-numeric_function:
-        SQL_TOKEN_RAND            
-    |    SQL_TOKEN_TRUNCATE
-    ;
     
 window_function:
     window_function_type SQL_TOKEN_OVER window_name_or_specification
@@ -2411,9 +2274,6 @@ set_fct_type:
     |   SQL_TOKEN_EVERY
     |   SQL_TOKEN_ANY
     |   SQL_TOKEN_SOME
-    |   SQL_TOKEN_COLLECT
-    |   SQL_TOKEN_FUSION
-    |   SQL_TOKEN_INTERSECTION
     ;
 	/*
 	
@@ -2996,31 +2856,6 @@ interval_qualifier:
     ;
 
 
-function_arg_commalist2:
-        function_arg ',' function_arg
-            {$$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);
-            $$->append($3);}
-    ;
-function_arg_commalist3:
-        function_arg ',' function_arg ',' function_arg
-        {
-            $$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);
-            $$->append($3);
-            $$->append($5);
-        }
-    ;
-function_arg_commalist4:
-        function_arg ',' function_arg ',' function_arg ',' function_arg
-        {
-            $$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);
-            $$->append($3);
-            $$->append($5);
-            $$->append($7);
-        }
-    ;
 value_exp_commalist:
         value_exp
             {$$ = SQL_NEW_COMMALISTRULE;

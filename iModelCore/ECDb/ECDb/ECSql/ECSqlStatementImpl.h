@@ -44,7 +44,7 @@ private:
     mutable ECSqlStatusContext m_currentStatusContext;
 
     virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
-    virtual ECSqlPrepareContext _InitializePrepare (Utf8CP ecsql) override;
+    virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, Utf8CP ecsql) override;
 
     static NativeLogging::ILogger& GetPrepareDiagnosticsLogger ();
 

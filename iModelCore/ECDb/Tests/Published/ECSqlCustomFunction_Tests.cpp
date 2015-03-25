@@ -12,13 +12,13 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PowECSqlFunction : ECSqlFunction, ScalarFunction::IScalar
+struct PowECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
     {
 private:
 
     virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
         {
-        if (nArgs != GetArgCount ())
+        if (nArgs != GetNumArgs ())
             {
             ctx->SetResultError("Function POW expects 2 arguments.", -1);
             return;
@@ -38,9 +38,44 @@ private:
         }
 
 public:
-    PowECSqlFunction() : ECSqlFunction("POW", 2, ECN::PrimitiveType::PRIMITIVETYPE_Double, this) {}
+    PowECSqlFunction() : ECSqlScalarFunction("POW", 2, ECN::PrimitiveType::PRIMITIVETYPE_Double, this) {}
     };
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct SqrtSqlFunction : ScalarFunction, ScalarFunction::IScalar
+    {
+private:
+    virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+        {
+        if (nArgs != GetNumArgs())
+            {
+            ctx->SetResultError("Function SQRT expects 1 argument.", -1);
+            return;
+            }
+
+        if (args[0].IsNull())
+            {
+            ctx->SetResultError("Argument to SQRT must not be NULL.", -1);
+            return;
+            }
+
+        double operand = args[0].GetValueDouble();
+        if (operand < 0.0)
+            {
+            ctx->SetResultError("Argument to SQRT must not be negative.", -1);
+            return;
+            }
+
+        double res = std::sqrt(operand);
+        ctx->SetResultDouble(res);
+        }
+
+public:
+    SqrtSqlFunction() : ScalarFunction("SQRT", 1, this) {}
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
@@ -52,20 +87,19 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomFunction)
     auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
 
     PowECSqlFunction ecsqlFunc;
-    ASSERT_EQ(SUCCESS, ecdb.AddECSqlFunction(ecsqlFunc));
+    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
 
     PowECSqlFunction ecsqlFunc2;
-    ASSERT_EQ(ERROR, ecdb.AddECSqlFunction(ecsqlFunc2)) << "Adding same ECSQL function twice is expected to fail";
+    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc2)) << "Adding same ECSQL function twice is expected to succeed.";
 
-    ASSERT_EQ(SUCCESS, ecdb.RemoveECSqlFunction(ecsqlFunc));
-    ASSERT_EQ(SUCCESS, ecdb.RemoveECSqlFunction(ecsqlFunc)) << "Removing an unregistered ECSQL function is expected to succeeed";
+    ASSERT_EQ(0, ecdb.RemoveFunction(ecsqlFunc));
+    ASSERT_EQ(0, ecdb.RemoveFunction(ecsqlFunc)) << "Removing an unregistered ECSQL function is expected to succeeed";
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_NumericECSqlFunction)
+TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredFunction)
     {
     const auto perClassRowCount = 3;
     // Create and populate a sample project
@@ -76,152 +110,195 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericECSqlFunction)
     ECSqlStatement stmt;
     ASSERT_EQ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to fail with unregistered custom ECSQL function";
 
-
     PowECSqlFunction ecsqlFunc;
-    ASSERT_EQ(SUCCESS, ecdb.AddECSqlFunction(ecsqlFunc));
+    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
 
     ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
-
-    int rowCount = 0;
-    while (stmt.Step() == ECSqlStepStatus::HasRow)
-        {
-        rowCount++;
-
-        int base = stmt.GetValueInt(0);
-        int actualFuncResult = stmt.GetValueInt(1);
-
-        ASSERT_EQ(std::pow(base, 2), actualFuncResult);
-        }
-
-    ASSERT_EQ(perClassRowCount, rowCount);
     }
 
 //---------------------------------------------------------------------------------------
-// Syntax: DISTANCE (Point1, Point2) : double
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PointDistanceECSqlFunction : ECSqlFunction, ScalarFunction::IScalar
+TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterInvalidFunction)
     {
-private:
-    virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+    const auto perClassRowCount = 3;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
+
+    struct InvalidECSqlFunction : ECSqlScalarFunction
         {
-        //The ECSQL function call DISTANCE (Point1, Point2) is mapped 
-        //to the SQLite function call DISTANCE (Point1.X, Point1.Y, Point2.X, Point2.Y)
-        if (nArgs != 4)
-            {
-            ctx->SetResultError("Wrong number of arguments for function DISTANCE.", -1);
-            return;
-            }
+        InvalidECSqlFunction() : ECSqlScalarFunction("INVALID", 2, ECN::PRIMITIVETYPE_Point2D) {}
+        };
 
-        double squareSum = 0.0;
-        const int dimensions = nArgs / 2;
-        for (int i = 0; i < dimensions; i++)
-            {
-            DbValue& coordinate1 = args[i];
-            DbValue& coordinate2 = args[i+dimensions];
+    InvalidECSqlFunction func;
+    ASSERT_EQ((int) ERROR, ecdb.AddScalarFunction(func));
+    }
 
-            if (coordinate1.IsNull() || coordinate2.IsNull())
-                {
-                ctx->SetResultError("Arguments to DISTANCE must not be NULL", -1);
-                return;
-                }
-
-            squareSum += std::pow(coordinate1.GetValueDouble () - coordinate2.GetValueDouble (), 2);
-            }
-
-        double res = std::sqrt(squareSum);
-        ctx->SetResultDouble(res);
-        }
-
-public:
-    PointDistanceECSqlFunction() : ECSqlFunction("DISTANCE", 2, 4, ECN::PrimitiveType::PRIMITIVETYPE_Double, this) {}
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_PointECSqlFunction)
+TEST_F(ECSqlTestFixture, ECSqlStatement_NumericECSqlFunction)
     {
-    auto& ecdb = SetUp("pointecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
+    const int perClassRowCount = 3;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
 
-    DPoint2d p2d1 = DPoint2d::From(1.0, 1.0);
-    DPoint2d p2d2 = DPoint2d::From(-1.0, -1.0);
-    DPoint3d p3d1 = DPoint3d::From(1.0, 1.0, 1.0);
-    DPoint3d p3d2 = DPoint3d::From(-1.0, -1.0, -1.0);
-    //insert test data
+    //insert one more test row which has a NULL column
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.P (P2D,P3D) VALUES (?,?)"));
-
-        stmt.BindPoint2D(1, p2d1);
-        stmt.BindPoint3D(2, p3d1);
-
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
         ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
-
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindPoint2D(1, p2d2);
-        stmt.BindPoint3D(2, p3d2);
-
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
-
-        //insert an empty row to check how functions deal with NULL columns
-        stmt.Reset();
-        stmt.ClearBindings();
-
-        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
-
         ecdb.SaveChanges();
         }
 
-
-    PointDistanceECSqlFunction ecsqlFunc;
-    ASSERT_EQ(SUCCESS, ecdb.AddECSqlFunction(ecsqlFunc));
+    PowECSqlFunction ecsqlFunc;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT lhs.P2D, rhs.P2D, DISTANCE (lhs.P2D, rhs.P2D) FROM ecsql.P lhs, ecsql.P rhs WHERE lhs.P2D IS NOT NULL and rhs.P2D IS NOT NULL"));
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT I,POW(I,2) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
+        int rowCount = 0;
         while (stmt.Step() == ECSqlStepStatus::HasRow)
             {
-            DPoint2d lhs = stmt.GetValuePoint2D(0);
-            DPoint2d rhs = stmt.GetValuePoint2D(1);
-            double actualDistance = stmt.GetValueDouble(2);
+            rowCount++;
 
-            EXPECT_DOUBLE_EQ(lhs.Distance(rhs), actualDistance);
+            int base = stmt.GetValueInt(0);
+            int actualFuncResult = stmt.GetValueInt(1);
+
+            ASSERT_EQ(std::pow(base, 2), actualFuncResult);
             }
+
+        ASSERT_EQ(perClassRowCount, rowCount);
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT DISTANCE (P2D, P2D) FROM ecsql.P WHERE P2D IS NOT NULL"));
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT I, POW(I,?) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        int exp = 3;
+        stmt.BindInt(1, exp);
 
         while (stmt.Step() == ECSqlStepStatus::HasRow)
             {
-            double actualDistance = stmt.GetValueDouble(0);
-            EXPECT_DOUBLE_EQ(0.0, actualDistance);
+            int base = stmt.GetValueInt(0);
+            int actualFuncResult = stmt.GetValueInt(1);
+
+            ASSERT_EQ(std::pow(base, exp), actualFuncResult);
             }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step());
         }
 
-        //with null columns
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT DISTANCE (P2D, P2D) FROM ecsql.P"));
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(I,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(NULL,2) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(NULL,NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT POW(I,2) FROM ecsql.P WHERE I IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        }
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_NumericBeSQliteFunction)
+    {
+    const auto perClassRowCount = 3;
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+
+    //insert one more test row which has a NULL column
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.P (ECInstanceId) VALUES (NULL)"));
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+        ecdb.SaveChanges();
+        }
+
+    SqrtSqlFunction besqliteFunc;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(besqliteFunc));
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT I,SQRT(I) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        int rowCount = 0;
+        while (stmt.Step() == ECSqlStepStatus::HasRow)
+            {
+            rowCount++;
+
+            int operand = stmt.GetValueInt(0);
+            double actualSqrt = stmt.GetValueDouble(1);
+
+            EXPECT_DOUBLE_EQ(std::sqrt(operand), actualSqrt);
+            }
+
+        ASSERT_EQ(perClassRowCount, rowCount);
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT SQRT(?) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        int operand = 16;
+        stmt.BindInt(1, operand);
 
         while (stmt.Step() == ECSqlStepStatus::HasRow)
             {
-            double actualDistance = stmt.GetValueDouble(0);
-            EXPECT_DOUBLE_EQ(0.0, actualDistance);
+            int actualSqrt = stmt.GetValueInt(0);
+            ASSERT_EQ(4, actualSqrt);
             }
-         }
 
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step());
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT SQRT(NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT SQRT(I) FROM ecsql.P WHERE I IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+
+        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // Syntax: DATEFROMSTRING (Str) : DateTime
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct DateFromStringECSqlFunction : ECSqlFunction, ScalarFunction::IScalar
+struct DateFromStringECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
     {
     private:
         virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
@@ -245,12 +322,13 @@ struct DateFromStringECSqlFunction : ECSqlFunction, ScalarFunction::IScalar
             else
                 {
                 double jd = -1.0;
-                ctx->SetResultDouble(dt.ToJulianDay(jd));
+                dt.ToJulianDay(jd);
+                ctx->SetResultDouble(jd);
                 }
             }
 
     public:
-        DateFromStringECSqlFunction() : ECSqlFunction("DATEFROMSTRING", 1, ECN::PrimitiveType::PRIMITIVETYPE_DateTime, this) {}
+        DateFromStringECSqlFunction() : ECSqlScalarFunction("DATEFROMSTRING", 1, ECN::PrimitiveType::PRIMITIVETYPE_DateTime, this) {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -276,7 +354,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
 
 
     DateFromStringECSqlFunction ecsqlFunc;
-    ASSERT_EQ(SUCCESS, ecdb.AddECSqlFunction(ecsqlFunc));
+    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
 
         {
         ECSqlStatement stmt;
@@ -286,12 +364,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
             {
             DateTime expectedDt = stmt.GetValueDateTime(0);
             DateTime actualDt = stmt.GetValueDateTime(1);
-            ASSERT_TRUE(expectedDt.GetYear() == actualDt.GetYear());
-            ASSERT_TRUE(expectedDt.GetMonth() == actualDt.GetMonth());
-            ASSERT_TRUE(expectedDt.GetDay() == actualDt.GetDay());
-            ASSERT_TRUE(expectedDt.GetHour() == actualDt.GetHour());
-            ASSERT_TRUE(expectedDt.GetMinute() == actualDt.GetMinute());
-            ASSERT_TRUE(expectedDt.GetSecond() == actualDt.GetSecond());
+            ASSERT_EQ(expectedDt.GetYear(), actualDt.GetYear());
+            ASSERT_EQ(expectedDt.GetMonth(), actualDt.GetMonth());
+            ASSERT_EQ(expectedDt.GetDay(), actualDt.GetDay());
+            ASSERT_EQ(expectedDt.GetHour(), actualDt.GetHour());
+            ASSERT_EQ(expectedDt.GetMinute(), actualDt.GetMinute());
+            ASSERT_EQ(expectedDt.GetSecond(), actualDt.GetSecond());
             }
         }
     }

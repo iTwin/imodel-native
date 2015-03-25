@@ -22,18 +22,18 @@ struct ECDb::Impl : NonCopyableClass
     friend struct ECDb;
         
 private:
-    struct ECSqlFunctionKey
+    struct DbFunctionKey
         {
         Utf8CP m_functionName;
         int m_argCount;
 
-        ECSqlFunctionKey() : m_functionName(nullptr), m_argCount(-1) {}
-        ECSqlFunctionKey(Utf8CP functionName, int argCount) : m_functionName(functionName), m_argCount(argCount) {}
-        explicit ECSqlFunctionKey(ECSqlFunction& function) : m_functionName(function.GetName()), m_argCount(function.GetArgCount()) {}
+        DbFunctionKey() : m_functionName(nullptr), m_argCount(-1) {}
+        DbFunctionKey(Utf8CP functionName, int argCount) : m_functionName(functionName), m_argCount(argCount) {}
+        explicit DbFunctionKey(DbFunction& function) : m_functionName(function.GetName()), m_argCount(function.GetNumArgs()) {}
 
         struct Comparer
             {
-            bool operator() (ECSqlFunctionKey const& lhs, ECSqlFunctionKey const& rhs) const
+            bool operator() (DbFunctionKey const& lhs, DbFunctionKey const& rhs) const
                 {
                 return BeStringUtilities::Stricmp(lhs.m_functionName, rhs.m_functionName) < 0 || 
                     lhs.m_argCount < rhs.m_argCount;
@@ -68,7 +68,7 @@ private:
     BeRepositoryBasedIdSequence m_classmapIdSequence;
     BeRepositoryBasedIdSequence m_propertypathIdSequence;
 
-    mutable bmap<ECSqlFunctionKey, ECSqlFunction*, ECSqlFunctionKey::Comparer> m_ecsqlFunctions;
+    mutable bmap<DbFunctionKey, ECSqlScalarFunction*, DbFunctionKey::Comparer> m_ecsqlFunctions;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl (ECDbR ecdb);
@@ -78,8 +78,8 @@ private:
     ECN::IECSchemaLocaterR GetSchemaLocater () const;
     ECN::IECClassLocaterR GetClassLocater () const;
 
-    BentleyStatus AddECSqlFunction(ECSqlFunction&) const;
-    BentleyStatus RemoveECSqlFunction(ECSqlFunction&) const;
+    BentleyStatus OnAddScalarFunction(ScalarFunction&) const;
+    void OnRemoveFunction(DbFunction&) const;
 
     void ClearECDbCache() const;
 
@@ -109,7 +109,7 @@ public:
     BeRepositoryBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
     BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
 
-    bool TryGetECSqlFunction(ECSqlFunction*& ecsqlFunction, Utf8CP name, int argCount) const;
+    bool TryGetECSqlFunction(ECSqlScalarFunction*& ecsqlFunction, Utf8CP name, int argCount) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

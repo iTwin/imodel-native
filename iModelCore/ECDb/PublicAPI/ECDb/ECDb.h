@@ -14,7 +14,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECDbSchemaManager;
-struct ECSqlFunction;
+struct ECSqlScalarFunction;
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -43,6 +43,8 @@ protected:
     ECDB_EXPORT virtual void _OnDbClose () override;
     ECDB_EXPORT virtual void _OnDbChangedByOtherConnection () override;
     ECDB_EXPORT virtual DbResult _VerifySchemaVersion (Db::OpenParams const& params) override;
+    ECDB_EXPORT virtual int _OnAddScalarFunction(ScalarFunction& func) const override;
+    ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction& func) const override;
 #endif
 
 public:
@@ -80,17 +82,6 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater () const;
 
-    //! Registers a scalar ECSQL function.
-    //! After successful registration, the function can be used in ECSQL statements just like built-in functions.
-    //! @param ecsqlFunction[in] ECSQL function to register
-    //! @return SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus AddECSqlFunction(ECSqlFunction& ecsqlFunction) const;
-
-    //! Unregisters the specified ECSQL function.
-    //! @param ecsqlFunction[in] ECSQL function to unregister
-    //! @return SUCCESS or ERROR
-    ECDB_EXPORT BentleyStatus RemoveECSqlFunction(ECSqlFunction& ecsqlFunction) const;
-
     //! Clears the ECDb cache
     ECDB_EXPORT void ClearECDbCache() const;
 
@@ -100,37 +91,33 @@ public:
 };
 
 //=======================================================================================
-//! A user-defined scalar ECSQL custom function.
-//! Register a custom ECSQL function via ECDb::AddECSqlCustomFunction.
-//! The custom function object must survive as long as the ECDb to which it is added survives, or until it is removed.
+//! A user-defined scalar ECSQL function.
+//! @remarks ECSQL functions right now only support primitive arguments and primitive return types -
+//! where primitive types even exclude Point2D and Point3D.
+//! Register an ECSQL function via ECDb::AddECSqlFunction.
+//! The function object must survive as long as the ECDb to which it is added survives, or until it is removed.
 //! It holds a pointer to an @ref BeSQLite::ScalarFunction::IScalar "IScalar" implementation. 
-//! That pointer may be changed via calls to @ref BeSQLite::ScalarFunction::SetScalar "SetScalar" during the lifetime of the 
-//! ECSqlCustomFunction.
 //! See discussion of scalar functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
 //=======================================================================================
-struct ECSqlFunction
+struct ECSqlScalarFunction : BeSQLite::ScalarFunction
     {
 private:
-    int m_ecsqlArgCount;
     ECN::PrimitiveType m_returnType;
-    BeSQLite::ScalarFunction m_sqliteFunction;
 
 public:
-    ECSqlFunction(Utf8CP name, int argCount, ECN::PrimitiveType returnType = ECN::PrimitiveType::PRIMITIVETYPE_Double, BeSQLite::ScalarFunction::IScalar* scalar = nullptr)
-        : m_ecsqlArgCount(argCount), m_returnType(returnType), m_sqliteFunction(name, argCount, scalar)
-        {}
+    //! Initializes a new ECSqlFunction.
+    //! @param[in] name Function name
+    //! @param[in] argCount Number of arguments to the function
+    //! @param[in] returnType Return type of the function
+    //! @param[in] scalar The IScalar implementation called by SQLite when executing the function.
+    ECSqlScalarFunction(Utf8CP name, int argCount, ECN::PrimitiveType returnType, BeSQLite::ScalarFunction::IScalar* scalar = nullptr)
+        : BeSQLite::ScalarFunction(name, argCount, scalar), m_returnType(returnType) {}
+   
+    virtual ~ECSqlScalarFunction() {}
 
-    ECSqlFunction(Utf8CP name, int ecsqlArgCount, int sqliteArgCount, ECN::PrimitiveType returnType = ECN::PrimitiveType::PRIMITIVETYPE_Double, BeSQLite::ScalarFunction::IScalar* scalar = nullptr)
-        : m_ecsqlArgCount(ecsqlArgCount), m_returnType(returnType), m_sqliteFunction(name, sqliteArgCount, scalar)
-        {}
-
-    Utf8CP GetName() const { return m_sqliteFunction.GetName(); }
-    int GetArgCount() const { return m_ecsqlArgCount; }
+    //! Gets the return type of the function
+    //! @return Function return type
     ECN::PrimitiveType GetReturnType() const { return m_returnType; }
-
-    //__PUBLISH_SECTION_END__
-    BeSQLite::ScalarFunction& GetSQLiteFunction() { return m_sqliteFunction; }
-    //__PUBLISH_SECTION_START__
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

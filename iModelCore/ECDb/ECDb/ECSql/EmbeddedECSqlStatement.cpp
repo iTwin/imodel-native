@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/EmbeddedECSqlStatement.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -41,12 +41,12 @@ void EmbeddedECSqlStatement::Initialize (ECSqlPrepareContext& parentPrepareConte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      02/2014
 //---------------------------------------------------------------------------------------
-ECSqlPrepareContext EmbeddedECSqlStatement::_InitializePrepare (Utf8CP ecsql)
+ECSqlPrepareContext EmbeddedECSqlStatement::_InitializePrepare(ECDbCR ecdb, Utf8CP ecsql)
     {
     if (GetArrayProperty () == nullptr)
-        return ECSqlPrepareContext (*this, GetParentPrepareContext ());
+        return ECSqlPrepareContext(ecdb, *this, GetParentPrepareContext());
     
-    return ECSqlPrepareContext (*this, GetParentPrepareContext (), *GetArrayProperty (), GetParentColumnInfo ());
+    return ECSqlPrepareContext(ecdb, *this, GetParentPrepareContext(), *GetArrayProperty(), GetParentColumnInfo());
     }
 
 //---------------------------------------------------------------------------------------
