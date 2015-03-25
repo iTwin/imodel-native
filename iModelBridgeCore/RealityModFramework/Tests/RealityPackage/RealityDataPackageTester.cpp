@@ -12,7 +12,7 @@
 
 USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 
-#define LATLONG_EPSILON 0.000001
+#define LATLONG_EPSILON 0.000000001 // precision of 0.1 millimeter
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -40,9 +40,9 @@ TEST_F (PackageTestFixture, CreateAndRead)
     {
     BeFileName outfilename  = BuildOutputFilename(L"CreateAndRead.xml");
     // Create a new package
-    RealityDataPackagePtr pPackage = RealityDataPackage::Create(L"MyName");
+    RealityDataPackagePtr pPackage = RealityDataPackage::Create(L"ProjectName");
     ASSERT_TRUE(pPackage.IsValid());
-    ASSERT_STREQ(L"MyName", pPackage->GetName().c_str()); 
+    ASSERT_STREQ(L"ProjectName", pPackage->GetName().c_str()); 
 
     pPackage->SetDescription(L"SomeDescription");
     ASSERT_STREQ(L"SomeDescription", pPackage->GetDescription().c_str()); 
@@ -53,7 +53,7 @@ TEST_F (PackageTestFixture, CreateAndRead)
     pPackage->SetPackageId(L"123asd789avbdlk");
     ASSERT_STREQ(L"123asd789avbdlk", pPackage->GetPackageId().c_str()); 
 
-    DPoint2d polygon[4] = {{1.0252, 53.04}, {441.024452, 4453.0444}, {44, 444.54}, {4541.066252, 5773.0666664}};
+    DPoint2d polygon[4] = {{1.0252, 53.04}, {41.024452, 53.0444}, {44, -55.54}, {-19.066252, -73.0666664}};
     BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(polygon, 4);
     pPackage->SetBoundingPolygon(*pBoundingPolygon);
     ASSERT_EQ(4+1/*closure point*/, pPackage->GetBoundingPolygon().GetPointCount()); 
@@ -61,32 +61,32 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_DOUBLE_EQ(polygon[3].y, pPackage->GetBoundingPolygon().GetPointCP()[3].y);
 
     // **** Data sources
-    RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create(L"./imagery/satellite.jpeg", L"image/jpeg");
+    RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create(L"./imagery/map.jpeg", L"image/jpeg");
     ASSERT_TRUE(pJpegDataSource.IsValid());
 
     RealityDataSourcePtr pPodDataSource = RealityDataSource::Create(L"./terrain/canada.pod", L"pod");
     ASSERT_TRUE(pPodDataSource.IsValid());
 
-    RealityDataSourcePtr pTifDataSource = RealityDataSource::Create(L"./terrain/satellite.tif", L"image/tif");
+    RealityDataSourcePtr pTifDataSource = RealityDataSource::Create(L"./terrain/canada.tif", L"image/tif");
     ASSERT_TRUE(pTifDataSource.IsValid());
 
     RealityDataSourcePtr pDtmDataSource = RealityDataSource::Create(L"./terrain/canada.dtm", L"dtm");
     ASSERT_TRUE(pDtmDataSource.IsValid());
 
-    RealityDataSourcePtr pShapeDataSource = RealityDataSource::Create(L"./model/shape.shp", L"shapefile");
+    RealityDataSourcePtr pShapeDataSource = RealityDataSource::Create(L"./model/roads.shp", L"shapefile");
     ASSERT_TRUE(pShapeDataSource.IsValid());
 
     RealityDataSourcePtr pWmsDataDataSource = WmsDataSource::Create(L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities&version=1.3.0");
     ASSERT_TRUE(pWmsDataDataSource.IsValid());
 
-    RealityDataSourcePtr pAviDataDataSource = RealityDataSource::Create(L"./pinned/beach.avi", L"video/avi");
+    RealityDataSourcePtr pAviDataDataSource = RealityDataSource::Create(L"./pinned/roadTraffic.avi", L"video/avi");
     ASSERT_TRUE(pAviDataDataSource.IsValid());
 
     RealityDataSourcePtr pMyHouseDataDataSource = RealityDataSource::Create(L"./pinned/myHouse.jpeg", L"image/jpeg");
     ASSERT_TRUE(pMyHouseDataDataSource.IsValid());
 
     // *** Reality entries
-    DPoint2d jpegCorners[4] = {{5.123456789, 454.987654321}, {455.4554, 2254.44}, {125.4551234, 111.22}, {445.14, 989.999}};
+    DPoint2d jpegCorners[4] = {{5.123456789, 4.987654321}, {55.4554, 22.44}, {15.4551234, 111.22}, {5.14, 89.999}};
     ImageryDataPtr pJpegImagery = ImageryData::Create(*pJpegDataSource, jpegCorners);
     ASSERT_TRUE(pJpegImagery.IsValid());
     pPackage->GetImageryGroupR().push_back(pJpegImagery);
@@ -159,8 +159,8 @@ TEST_F (PackageTestFixture, CreateAndRead)
         ASSERT_STREQ(pLeft->GetSource().GetUri().c_str(), pRight->GetSource().GetUri().c_str());
         ASSERT_STREQ(pLeft->GetSource().GetType().c_str(), pRight->GetSource().GetType().c_str());
         
-        ASSERT_EQ(pLeft->HasValidCorners(), pRight->HasValidCorners());
-        if(pLeft->HasValidCorners())
+        ASSERT_EQ(0 != (pLeft->GetCornersCP()), 0 != (pRight->GetCornersCP()));
+        if(pLeft->GetCornersCP())
             {
             ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].x, pRight->GetCornersCP()[ImageryData::LowerLeft].x, LATLONG_EPSILON);
             ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].y, pRight->GetCornersCP()[ImageryData::LowerLeft].y, LATLONG_EPSILON);

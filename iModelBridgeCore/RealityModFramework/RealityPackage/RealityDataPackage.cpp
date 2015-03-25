@@ -18,6 +18,18 @@ Utf8CP ModelData::ElementName = PACKAGE_ELEMENT_ModelData;
 Utf8CP PinnedData::ElementName = PACKAGE_ELEMENT_PinnedData;
 Utf8CP TerrainData::ElementName = PACKAGE_ELEMENT_TerrainData;
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+static bool s_IsValidLatLong(double latitude, double longitude)
+    {
+    if(IN_RANGE(latitude, -90, 90) && IN_RANGE(longitude, -180, 180))
+        return true;
+
+    return false;
+    }
+
+
 //=======================================================================================
 //                              BoundingPolygon
 //=======================================================================================
@@ -80,7 +92,7 @@ WString BoundingPolygon::ToString() const
     WString result;
     for(auto point : m_points)
         {
-        WPrintfString pointStr(L"%f %f ", point.x, point.y);
+        WPrintfString pointStr(LATLONG_PRINT_FORMAT L" ", point.x, point.y);
         result.append(pointStr);
         }
 
@@ -127,7 +139,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygon)
         }
 
     
-    return NULL;    
+    return BoundingPolygon::Create();    // Empty invalid polygon.
     }
 
 //=======================================================================================
@@ -155,6 +167,9 @@ void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_creationDate 
 BoundingPolygonCR RealityDataPackage::GetBoundingPolygon() const {return *m_pBoundingPolygon;}
 void              RealityDataPackage::SetBoundingPolygon(BoundingPolygonR polygon) {BeAssert(polygon.IsValid()); m_pBoundingPolygon = &polygon;}
 
+uint32_t RealityDataPackage::GetMajorVersion() const {return m_majorVersion;} 
+uint32_t RealityDataPackage::GetMinorVersion() const {return m_minorVersion;}
+
 RealityDataPackage::ImageryGroup const& RealityDataPackage::GetImageryGroup() const {return m_imagery;}    
 RealityDataPackage::ImageryGroup&       RealityDataPackage::GetImageryGroupR()      {return m_imagery;}   
 RealityDataPackage::ModelGroup const&   RealityDataPackage::GetModelGroup() const   {return m_model;}    
@@ -168,6 +183,8 @@ RealityDataPackage::TerrainGroup&       RealityDataPackage::GetTerrainGroupR()  
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
 RealityDataPackage::RealityDataPackage(WCharCP name)
+:m_majorVersion(PACKAGE_CURRENT_MAJOR_VERSION),
+ m_minorVersion(PACKAGE_CURRENT_MINOR_VERSION)
     {
     BeAssert(!WString::IsNullOrEmpty(name));
     m_name = name;
@@ -194,6 +211,23 @@ RealityDataPackagePtr RealityDataPackage::Create(WCharCP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
+RealityPackageStatus RealityDataPackage::ReadVersion(BeXmlNodeR rootNode)
+    {
+    Utf8String version;
+    if(BEXML_Success == rootNode.GetAttributeStringValue(version, PACKAGE_ATTRIBUTE_Version) && 
+       2 == BE_STRING_UTILITIES_UTF8_SSCANF(version.c_str(), "%u.%u", &m_majorVersion, &m_minorVersion))
+        {
+        return RealityPackageStatus::Success;
+        }
+        
+    BeDataAssert(!"missing package version or badly formatted");
+
+    return RealityPackageStatus::UnknownError;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
 RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& status, BeFileNameCR filename, WStringP pParseError)
     {
     status = RealityPackageStatus::UnknownError;
@@ -209,43 +243,33 @@ RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& s
     if(NULL == pRootNode)
         return NULL;
 
-    //&&MM do we need a member version? 
-    // Should we have an internal RealityDataPackageV1?
-    //      That is RealityDataPackage is a common interface and wraps RealityDataPackageV1, RealityDataPackageV2...?
-    // How to handle different version?  Do we allowed to create older version? maybe we could move them in a different
-    // namespace.
-    WString version;
-    if(BEXML_Success != pRootNode->GetAttributeStringValue(version, PACKAGE_ROOT_ATTRIBUTE_Version) || version.empty())
+    if(RealityPackageStatus::Success != pPackage->ReadVersion(*pRootNode) || pPackage->GetMajorVersion() > PACKAGE_CURRENT_MAJOR_VERSION)
         {
-        BeDataAssert(!"missing package version attribute");
-        status = RealityPackageStatus::UnknownVersion;
+        status = RealityPackageStatus::UnsupportedVersion;
         return NULL;
         }
 
-    //&&MM version of the namespace?
-    pXmlDom->RegisterNamespace(PACKAGE_PREFIX, PACKAGE_NAMESPACE_1_0);
+    pXmlDom->RegisterNamespace(PACKAGE_PREFIX, PACKAGE_CURRENT_NAMESPACE);
 
-    //&&MM todo use xmlXPathContextPtr  localeElementContext    = dom.AcquireXPathContext (localeElement);
+    xmlXPathContextPtr pRootContext = pXmlDom->AcquireXPathContext (pRootNode);
     // see DgnFontManager::ProcessLocaleConfiguration
 
-    //&&MM handle read errors. When an error is fatal?  ex. no boundingbox?
-
-    pXmlDom->SelectNodeContent(pPackage->m_name, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, NULL, BeXmlDom::NODE_BIAS_First);
-    pXmlDom->SelectNodeContent(pPackage->m_description, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Description, NULL, BeXmlDom::NODE_BIAS_First);
+    pXmlDom->SelectNodeContent(pPackage->m_name, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Name, pRootContext, BeXmlDom::NODE_BIAS_First);
+    pXmlDom->SelectNodeContent(pPackage->m_description, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Description, pRootContext, BeXmlDom::NODE_BIAS_First);
 
     WString creationDateUTC;
-    pXmlDom->SelectNodeContent(creationDateUTC, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_CreationDate, NULL, BeXmlDom::NODE_BIAS_First);
+    pXmlDom->SelectNodeContent(creationDateUTC, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_CreationDate, pRootContext, BeXmlDom::NODE_BIAS_First);
     pPackage->m_creationDate = DateTime();
     DateTime::FromString(pPackage->m_creationDate, creationDateUTC.c_str());
     
-    pXmlDom->SelectNodeContent(pPackage->m_copyright, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright, NULL, BeXmlDom::NODE_BIAS_First);
-    pXmlDom->SelectNodeContent(pPackage->m_packageId, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageId, NULL, BeXmlDom::NODE_BIAS_First);
+    pXmlDom->SelectNodeContent(pPackage->m_copyright, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Copyright, pRootContext, BeXmlDom::NODE_BIAS_First);
+    pXmlDom->SelectNodeContent(pPackage->m_packageId, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_PackageId, pRootContext, BeXmlDom::NODE_BIAS_First);
 
     WString polygonString;
-    pXmlDom->SelectNodeContent(polygonString, "/" PACKAGE_PREFIX ":" PACKAGE_ROOT_ELEMENT "/" PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, NULL, BeXmlDom::NODE_BIAS_First);
+    pXmlDom->SelectNodeContent(polygonString, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_BoundingPolygon, pRootContext, BeXmlDom::NODE_BIAS_First);
     pPackage->m_pBoundingPolygon = BoundingPolygon::FromString(polygonString.c_str());
-    
-    //&&MM to do polygon
+    BeAssert(!pPackage->m_pBoundingPolygon.IsNull()); // We expect at least an empty instance.
+
     status = RealityPackageStatus::Success;
 
     // Data sources
@@ -265,19 +289,19 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
     {
     RealityPackageStatus status = RealityPackageStatus::UnknownError;
 
-    //&&MM Todo validate data before writing the file. What is mandatory?
-    // 
-
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateEmpty();
 
-    BeXmlNodeP pRootNode = pXmlDom->AddNewElement(PACKAGE_ROOT_ELEMENT, NULL, NULL);
+    BeXmlNodeP pRootNode = pXmlDom->AddNewElement(PACKAGE_ELEMENT_Root, NULL, NULL);
     if(NULL == pRootNode)
         return RealityPackageStatus::UnknownError;
 
-    pRootNode->AddAttributeStringValue(PACKAGE_ROOT_ATTRIBUTE_Version, PACKAGE_VERSION_1_0);
+    // Update internal version to match the version we are persisting.
+    m_majorVersion = PACKAGE_CURRENT_MAJOR_VERSION;
+    m_minorVersion = PACKAGE_CURRENT_MINOR_VERSION;
+    pRootNode->AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, PACKAGE_CURRENT_VERSION);
     
     // Namespaces
-    pRootNode->AddNamespace(NULL, PACKAGE_NAMESPACE_1_0);       // Default namespace.
+    pRootNode->AddNamespace(NULL, PACKAGE_CURRENT_NAMESPACE);       // Set as default namespace.
     pRootNode->AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
 
     // Root children
@@ -390,7 +414,7 @@ RealityData::~RealityData(){}
 //----------------------------------------------------------------------------------------
 RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
     {
-    // Source should be the the first child element but we loop to be more flexible.
+    // Source should be the the first child element but we loop over all children to be more flexible.
     for (BeXmlNodeP pChildElement = dataNode.GetFirstChild(); NULL != pChildElement; pChildElement = pChildElement->GetNextSibling())
         {
         m_pSource = RealityDataSourceSerializer::Get().Load(*pChildElement);
@@ -424,6 +448,9 @@ ImageryData::~ImageryData(){}
 //----------------------------------------------------------------------------------------
 ImageryDataPtr ImageryData::Create(RealityDataSourceR dataSource, DPoint2dCP pCorners)
     {
+    if(NULL != NULL && !HasValidCorners(pCorners))
+        return NULL;
+
     return new ImageryData(dataSource, pCorners);
     }
 
@@ -447,7 +474,8 @@ RealityPackageStatus ImageryData::_Read(BeXmlNodeR dataNode)
     if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[LowerLeft], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerLeft))    ||
        RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[LowerRight], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_LowerRight))  ||
        RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[UpperLeft], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperLeft))    ||
-       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[UpperRight], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight)))
+       RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_corners[UpperRight], *pCornerNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_UpperRight))  ||
+       !HasValidCorners(m_corners))
         {
         InvalidateCorners();
         return status;
@@ -466,8 +494,8 @@ RealityPackageStatus ImageryData::_Write(BeXmlNodeR dataNode) const
     if(RealityPackageStatus::Success != status)
         return status;
 
-    if(!HasValidCorners())
-        return RealityPackageStatus::Success;  // Corners is optional.
+    if(!HasValidCorners(m_corners))
+        return RealityPackageStatus::Success;  // Corners are optional.
         
     BeXmlNodeP pCornerNode = dataNode.AddEmptyElement(PACKAGE_ELEMENT_Corners);
     if(NULL == pCornerNode)
@@ -487,14 +515,31 @@ RealityPackageStatus ImageryData::_Write(BeXmlNodeR dataNode) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-bool ImageryData::HasValidCorners() const {return !m_corners[0].isEqual(&m_corners[1]);} 
+bool ImageryData::HasValidCorners(DPoint2dCP pCorners)
+    {
+    if(NULL == pCorners || pCorners[0].isEqual(&pCorners[1]))
+        return false;
+
+    for(size_t i=0; i < 4; ++i)
+        {
+        if(!s_IsValidLatLong(pCorners[i].x, pCorners[i].y))
+            {
+            BeDataAssert(!"Invalid lat/long");
+            return false;
+            }
+        }
+
+    return true;
+    } 
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
 DPoint2dCP ImageryData::GetCornersCP() const
     {
-    BeAssert(HasValidCorners());
+    if(!HasValidCorners(m_corners))
+        return NULL;
+
     return m_corners;
     }
 
@@ -503,10 +548,13 @@ DPoint2dCP ImageryData::GetCornersCP() const
 //----------------------------------------------------------------------------------------
 void ImageryData::SetCorners(DPoint2dCP pCorners)
     {
-    if(pCorners)
-        memcpy(m_corners, pCorners, sizeof(m_corners));
-    else
+    if(NULL == pCorners || !HasValidCorners(pCorners))
+        {
         InvalidateCorners();
+        return;
+        }
+
+    memcpy(m_corners, pCorners, sizeof(m_corners));
     }
 
 //=======================================================================================
@@ -528,8 +576,14 @@ ModelDataPtr ModelData::Create(RealityDataSourceR dataSource)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus ModelData::_Read(BeXmlNodeR dataNode)
     {
-    // ModelData have no specific element/attributes. Read base only.
-    return T_Super::_Read(dataNode);
+    // Read base first
+    RealityPackageStatus status = T_Super::_Read(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    // Read ModelData specific here...
+
+    return status;
     }
 
 //----------------------------------------------------------------------------------------
@@ -537,8 +591,14 @@ RealityPackageStatus ModelData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus ModelData::_Write(BeXmlNodeR dataNode) const
     {
-    // ModelData have no specific element/attributes. Write base only.
-    return T_Super::_Write(dataNode);
+    // Write base first
+    RealityPackageStatus status = T_Super::_Write(dataNode);
+    if(RealityPackageStatus::Success != status)
+        return status;
+
+    // Write TerrainObject specific here...
+    
+    return status;
     }
 
 //=======================================================================================
@@ -552,7 +612,7 @@ PinnedData::~PinnedData(){}
 //----------------------------------------------------------------------------------------
 PinnedDataPtr PinnedData::Create(RealityDataSourceR dataSource, double latitude, double longitude)
     {
-    if(!IsValidLatLong(latitude, longitude))
+    if(!s_IsValidLatLong(latitude, longitude))
         return NULL;
     
     return new PinnedData(dataSource, latitude, longitude);
@@ -568,10 +628,10 @@ RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
     if(RealityPackageStatus::Success != status)
         return status;
     
-    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_location, dataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_SpatialLocation))) 
+    if(RealityPackageStatus::Success != (status = RealityDataSerializer::ReadDPoint2d(m_location, dataNode, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Position))) 
         return status;  // location is mandatory for pinned data.
 
-    return IsValidLatLong(m_location.x, m_location.y) ? RealityPackageStatus::Success : RealityPackageStatus::UnknownError;
+    return s_IsValidLatLong(m_location.x, m_location.y) ? RealityPackageStatus::Success : RealityPackageStatus::UnknownError;
     }
 
 //----------------------------------------------------------------------------------------
@@ -579,14 +639,14 @@ RealityPackageStatus PinnedData::_Read(BeXmlNodeR dataNode)
 //----------------------------------------------------------------------------------------
 RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
     {
-    BeAssert(IsValidLatLong(m_location.x, m_location.y));
+    BeAssert(s_IsValidLatLong(m_location.x, m_location.y));
 
     // Write base first
     RealityPackageStatus status = T_Super::_Write(dataNode);
     if(RealityPackageStatus::Success != status)
         return status;
 
-    status = RealityDataSerializer::WriteDPoint2d(dataNode, PACKAGE_ELEMENT_SpatialLocation, GetLocation());
+    status = RealityDataSerializer::WriteDPoint2d(dataNode, PACKAGE_ELEMENT_Position, GetLocation());
        
     return status;
     }
@@ -597,22 +657,11 @@ RealityPackageStatus PinnedData::_Write(BeXmlNodeR dataNode) const
 DPoint2dCR PinnedData::GetLocation() const{return m_location;}
 bool PinnedData::SetLocation(DPoint2dCR location)
     {
-    if(!IsValidLatLong(location.x, location.y))
+    if(!s_IsValidLatLong(location.x, location.y))
         return false;
 
     m_location = location;
     return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-bool PinnedData::IsValidLatLong(double latitude, double longitude)
-    {
-    if(IN_RANGE(latitude, -90, 90) && IN_RANGE(longitude, -180, 180))
-        return true;
-
-    return false;
     }
 
 //=======================================================================================

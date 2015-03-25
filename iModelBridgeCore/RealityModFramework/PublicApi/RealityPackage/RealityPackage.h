@@ -60,7 +60,7 @@ BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 enum class RealityPackageStatus
     {
     Success                 = SUCCESS,  //!< The operation was successful
-    UnknownVersion,                     //!< Version is either undefined or we can't handle it.
+    UnsupportedVersion,                 //!< Version is either undefined or we can't handle it.
     PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
     UnknownError            = ERROR,    //!< The operation failed with an unspecified error
     };

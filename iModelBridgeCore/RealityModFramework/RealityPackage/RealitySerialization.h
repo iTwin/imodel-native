@@ -11,6 +11,11 @@
 #include <BeXml/BeXml.h>
 #include <geom/GeomApi.h>
 
+#define XSTRINGIFY(s) STRINGIFY(s)
+#define STRINGIFY(s) #s
+#define WIDEN(quote) WIDEN2(quote)
+#define WIDEN2(quote) L##quote
+
 // **************************************************
 // Naming-Convention:
 // Elements are TitleCase. Ex: WmsSource
@@ -18,12 +23,18 @@
 #define W3SCHEMA_PREFIX     "xsi"
 #define W3SCHEMA_URI        "http://www.w3.org/2001/XMLSchema-instance"
 
+// *** Version management ***
+// Minor version upgrade must remain foreword and backward compatible.
+// Major version upgrade should occurs when the change would be incompatible with the current implementation. 
+// Namespace change occurs only when the major version changes.  
 #define PACKAGE_PREFIX              "rdp"
-#define PACKAGE_NAMESPACE_1_0       "http://www.bentley.com/RealityDataServer/1.0"
-#define PACKAGE_VERSION_1_0         L"1.0"
+#define PACKAGE_CURRENT_MAJOR_VERSION 1
+#define PACKAGE_CURRENT_MINOR_VERSION 0
+#define PACKAGE_CURRENT_VERSION       (WIDEN(XSTRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)) L"." WIDEN(XSTRINGIFY(PACKAGE_CURRENT_MINOR_VERSION)))
+#define PACKAGE_CURRENT_NAMESPACE     "http://www.bentley.com/RealityDataServer/v" XSTRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)
 
-#define PACKAGE_ROOT_ELEMENT                "RealityDataPackage"
-#define PACKAGE_ROOT_ATTRIBUTE_Version      "Version"
+#define PACKAGE_ELEMENT_Root                "RealityDataPackage"
+#define PACKAGE_ATTRIBUTE_Version           "Version"
 
 // Package 
 #define PACKAGE_ELEMENT_Name                "Name"
@@ -47,7 +58,7 @@
 
 #define PACKAGE_ELEMENT_PinnedGroup         "PinnedGroup"
 #define PACKAGE_ELEMENT_PinnedData          "PinnedData"
-#define PACKAGE_ELEMENT_SpatialLocation     "SpatialLocation"
+#define PACKAGE_ELEMENT_Position            "Position"
 
 #define PACKAGE_ELEMENT_TerrainGroup        "TerrainGroup"
 #define PACKAGE_ELEMENT_TerrainData         "TerrainData"
@@ -63,6 +74,10 @@
 #define SPACE_DELIMITER    " "
 #define SPACE_DELIMITER_U L" "
 
+// lat/long precision of 0.1 millimeter
+// g == The precision specifies the maximum number of significant digits printed. Any trailing zeros are truncated. 
+// So to get get the precision we want 9 decimal AFTER the point we need 12 digits. xxx.123456789
+#define LATLONG_PRINT_FORMAT                L"%.12g %.12g"    //  lat/long precision of 0.1 millimeter.
 
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
@@ -199,7 +214,7 @@ struct RealityDataSerializer
     static RealityPackageStatus WriteDPoint2d(BeXmlNodeR parent, Utf8CP childName, DPoint2dCR point)
         {
         WString pointString;
-        pointString.Sprintf (L"%.10g %.10g", point.x, point.y);  // Alain Robert: Lat/long precision of 1/100 millimeter.
+        pointString.Sprintf (LATLONG_PRINT_FORMAT, point.x, point.y);
         if(NULL == parent.AddElementStringValue(childName, pointString.c_str()))
             return RealityPackageStatus::UnknownError;
 

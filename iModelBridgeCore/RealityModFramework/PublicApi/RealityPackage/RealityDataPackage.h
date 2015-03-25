@@ -51,7 +51,14 @@ private:
 
 
 //=======================================================================================
-//!
+//! A RealityDataPackage holds a list of reality data source. Each source is categorized and 
+//! additional meta-data can be attached.  
+//! 
+//! File version(Major.Minor). 
+//! Major version upgrade should occurs when the change would be incompatible with the
+//! current implementation. In these case a new XSD schema and namespace are required.
+//! Minor version upgrade must remain foreword and backward compatible.
+//! 
 //! @bsiclass
 //=======================================================================================
 struct RealityDataPackage : public RefCountedBase
@@ -113,7 +120,12 @@ public:
     REALITYPACKAGE_EXPORT PinnedGroup& GetPinnedGroupR();    
     REALITYPACKAGE_EXPORT TerrainGroup& GetTerrainGroupR();    
 
+    //! Get package version.
+    uint32_t GetMajorVersion() const;
+    uint32_t GetMinorVersion() const;
+
 private:
+    RealityDataPackage() = delete;
     RealityDataPackage(WCharCP name);
     ~RealityDataPackage();
 
@@ -125,6 +137,10 @@ private:
     template<class Group_T>
     RealityPackageStatus WriteDataGroup_T(Group_T const& group, Utf8CP nodeName, BeXmlNodeR parent);
 
+    RealityPackageStatus ReadVersion(BeXmlNodeR node);
+
+    uint32_t m_majorVersion;
+    uint32_t m_minorVersion;
     WString m_name;
     WString m_description;
     WString m_copyright;
@@ -182,8 +198,6 @@ public:
     //! Create a new ImageryData. Optionally imagery corners in lat/long.
     REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, DPoint2dCP pCorners);
     
-    REALITYPACKAGE_EXPORT bool HasValidCorners() const;
-
     //! Imagery corners in lat/long.
     //! May return NULL. In such a case the corners should be read from the file header.
     REALITYPACKAGE_EXPORT DPoint2dCP GetCornersCP() const;
@@ -200,6 +214,7 @@ private:
     virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
 
+    static bool HasValidCorners(DPoint2dCP pCorners);
     void InvalidateCorners() {memset(m_corners, 0, sizeof(m_corners));}
 
     DPoint2d m_corners[4];
@@ -260,8 +275,6 @@ private:
 
     virtual RealityPackageStatus _Read(BeXmlNodeR dataNode) override;
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const override;
-
-    static bool IsValidLatLong(double latitude, double longitude);
 
     DPoint2d m_location;        //!spatial location in lat/long
 };
