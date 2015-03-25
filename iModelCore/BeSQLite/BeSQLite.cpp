@@ -1217,6 +1217,27 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::AddScalarFunction(ScalarFunction& func) const
+    {
+    const int stat = m_dbFile->AddScalarFunction(func);
+    if (stat != 0)
+        return stat;
+    
+    return _OnAddScalarFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int Db::RemoveFunction(DbFunction& func) const
+    {
+    _OnRemoveFunction(func);
+    return m_dbFile->RemoveFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::SaveProjectGuid(BeGuid projectGuid)

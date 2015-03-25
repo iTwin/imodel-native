@@ -1129,6 +1129,7 @@ public:
     };
 
     DbFunction(Utf8CP name, int nArgs) : m_name(name), m_nArgs(nArgs) {}
+    virtual ~DbFunction() {}
     Utf8CP GetName() const {return m_name.c_str();}
     int GetNumArgs() const {return m_nArgs;}
 };
@@ -1169,6 +1170,7 @@ struct ScalarFunction : DbFunction
     IScalar* m_scalar;
 
     ScalarFunction(Utf8CP name, int nArgs, IScalar* val=nullptr) : DbFunction(name,nArgs), m_scalar(val) {}
+    virtual ~ScalarFunction() {}
     void SetScalar(IScalar* val) {m_scalar=val;}
     IScalar* GetScalar() const {return m_scalar;}
 };
@@ -2387,7 +2389,11 @@ protected:
     //! @return Code indicating success or error.
     virtual DbResult _VerifySchemaVersion(OpenParams const& params) {return BE_SQLITE_OK;}
 
+    virtual int _OnAddScalarFunction(ScalarFunction& func) const { return 0; }
+    virtual void _OnRemoveFunction(DbFunction& func) const {}
+
     //__PUBLISH_SECTION_END__
+
     friend struct Statement;
     friend struct Savepoint;
     friend struct RTreeMatch;
@@ -2758,10 +2764,10 @@ public:
 
     //! Add a ScalarFunction to this Db for use in SQL. See sqlite3_create_function for return values. The ScalarFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.
-    int AddScalarFunction(ScalarFunction& func) const {return m_dbFile->AddScalarFunction(func);}
+    BE_SQLITE_EXPORT int AddScalarFunction(ScalarFunction& func) const;
 
     //! Remove a previously added DbFunction from this Db. See sqlite3_create_function for return values.
-    int RemoveFunction(DbFunction& func) const {return m_dbFile->RemoveFunction(func);}
+    BE_SQLITE_EXPORT int RemoveFunction(DbFunction& func) const;
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeDbGuid);
     BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);
