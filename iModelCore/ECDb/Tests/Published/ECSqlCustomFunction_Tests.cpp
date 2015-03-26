@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
+#include <cmath> // for std::pow
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
