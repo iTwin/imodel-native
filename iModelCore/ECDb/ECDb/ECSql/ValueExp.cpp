@@ -430,6 +430,12 @@ Utf8String ConstantValueExp::_ToString() const
 
 //****************************** ECClassIdFunctionExp *****************************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP const ECClassIdFunctionExp::NAME = "GetECClassId";
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
@@ -494,7 +500,7 @@ Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing (ECSqlParseConte
             return FinalizeParseStatus::Error;
             }
 
-        SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Long));
+        SetTypeInfo (ECSqlTypeInfo (FunctionCallExp::DetermineReturnType (ctx, NAME, 0)));
         }
 
     return FinalizeParseStatus::Completed;
@@ -519,7 +525,7 @@ Utf8String ECClassIdFunctionExp::ToECSql () const
     if (HasClassAlias ())
         ecsql.append (m_classAlias).append (".");
 
-    ecsql.append ("GetECClassId()");
+    ecsql.append (NAME).append ("()");
     return ecsql;
     }
 
@@ -527,13 +533,14 @@ Utf8String ECClassIdFunctionExp::ToECSql () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+//static
+bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> FunctionCallExp::s_builtinFunctionNonDefaultReturnTypes;
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    //We don't know the data type for function args. We choose Double
-    //as default type as it can take any numeric value and SQLite supports implicit conversions
-    //between the primitive types anyways
-    const ECN::PrimitiveType defaultType = ECN::PRIMITIVETYPE_Double;
-
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
@@ -545,7 +552,10 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& c
         if (argExp->GetType() == Exp::Type::Parameter)
             {
             ParameterExp* parameterExp = static_cast<ParameterExp*> (argExp);
-            parameterExp->SetTypeInfoFromTarget(ECSqlTypeInfo(defaultType));
+            //We don't know the data type for function args. We choose Double
+            //as default type as it can take any numeric value and SQLite supports implicit conversions
+            //between the primitive types anyways
+            parameterExp->SetTypeInfoFromTarget(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
             }
         else
             {
@@ -559,9 +569,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing (ECSqlParseContext& c
             }
         }
 
-    ECSqlScalarFunction* func = nullptr;
-    const bool isCustomFunction = ctx.GetECDb().GetECDbImplR().TryGetECSqlFunction(func, GetFunctionName(), (int) argCount);
-    const ECN::PrimitiveType returnType = isCustomFunction ? func->GetReturnType() : defaultType;
+    const ECN::PrimitiveType returnType = DetermineReturnType(ctx, GetFunctionName(), (int) argCount);
     SetTypeInfo(ECSqlTypeInfo (returnType));
     return FinalizeParseStatus::Completed;
     }
@@ -575,18 +583,80 @@ void FunctionCallExp::AddArgument (std::unique_ptr<ValueExp> argument)
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
+// @bsimethod                                    Krischan.Eberle                    03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool FunctionCallExp::IsValidArgCount (ECSqlParseContext& ctx, size_t expectedArgCount, size_t actualArgCount) const
+//static
+ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECSqlParseContext& ctx, Utf8CP functionName, int argCount)
     {
-    if (expectedArgCount != actualArgCount)
+    ECSqlScalarFunction* func = nullptr;
+    const bool isCustomFunction = ctx.GetECDb().GetECDbImplR().TryGetECSqlFunction(func, functionName, argCount);
+    if (isCustomFunction)
+        return func->GetReturnType();
+
+    //return type for SQLite built-in functions
+    //TODO: This is SQLite specific and therefore should be moved out of the parser. Maybe an external file
+    //for better maintainability?
+    if (s_builtinFunctionNonDefaultReturnTypes.empty())
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects %d argument(s)", ToECSql ().c_str (), GetFunctionName (), expectedArgCount);
-        return false;
+        s_builtinFunctionNonDefaultReturnTypes["ANY"] = ECN::PRIMITIVETYPE_Boolean;
+        s_builtinFunctionNonDefaultReturnTypes["COUNT"] = ECN::PRIMITIVETYPE_Long;
+        s_builtinFunctionNonDefaultReturnTypes["EVERY"] = ECN::PRIMITIVETYPE_Boolean;
+        s_builtinFunctionNonDefaultReturnTypes["GETECCLASSID"] = ECN::PRIMITIVETYPE_Long;
+        s_builtinFunctionNonDefaultReturnTypes["GROUP_CONCAT"] = ECN::PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["HEX"] = ECN::PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["LENGTH"] = ECN::PRIMITIVETYPE_Long;
+        s_builtinFunctionNonDefaultReturnTypes["LOWER"] = ECN::PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["LTRIM"] = ECN::PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["RANDOMBLOB"] = ECN::PRIMITIVETYPE_Binary;
+        s_builtinFunctionNonDefaultReturnTypes["REPLACE"] = PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["RTRIM"] = PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["SOME"] = ECN::PRIMITIVETYPE_Boolean;
+        s_builtinFunctionNonDefaultReturnTypes["SOUNDEX"] = PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["SUBSTR"] = PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["TRIM"] = PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["UNICODE"] = ECN::PRIMITIVETYPE_Long;
+        s_builtinFunctionNonDefaultReturnTypes["UPPER"] = ECN::PRIMITIVETYPE_String;
+        s_builtinFunctionNonDefaultReturnTypes["ZEROBLOB"] = ECN::PRIMITIVETYPE_Binary;
         }
 
-    return true;
+    auto it = s_builtinFunctionNonDefaultReturnTypes.find(functionName);
+    if (it != s_builtinFunctionNonDefaultReturnTypes.end())
+        return it->second;
+
+    //all other functions get the default return type
+    return ECN::PRIMITIVETYPE_Double;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String FunctionCallExp::_ToString() const
+    {
+    Utf8String str("FunctionCall [Function: ");
+    str.append(m_functionName).append("]");
+    return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String FunctionCallExp::ToECSql() const
+    {
+    Utf8String ecsql(m_functionName);
+    ecsql.append("(");
+    bool isFirstItem = true;
+    for (auto argExp : GetChildren())
+        {
+        if (!isFirstItem)
+            ecsql.append(",");
+
+        ecsql.append(argExp->ToECSql());
+        isFirstItem = false;
+        }
+    ecsql.append(")");
+    return std::move(ecsql);
+    }
+
 
 //****************************** LikeRhsValueExp *****************************************
 //-----------------------------------------------------------------------------------------
@@ -709,45 +779,43 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing( ECSqlParseContext
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    const auto childCount = GetChildren ().size ();
+    Utf8CP functionName = GetFunctionName();
+
+    const int childCount = (int) GetChildren().size();
     //all standard set functions require 1 arg
-    if (!IsValidArgCount (ctx, 1, childCount))
+    if (childCount != 1)
+        {
+        ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects 1 argument.", ToECSql().c_str(), functionName);
         return FinalizeParseStatus::Error;
-
-    //verify supported functions
-    auto const& functionName = GetFunctionName ();
-    if (BeStringUtilities::Stricmp (functionName, "COUNT") == 0)
-        {
-        SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Long));
         }
-    else if (BeStringUtilities::Stricmp(functionName,"AVG") == 0)
+
+    ECN::PrimitiveType returnType = DetermineReturnType(ctx, functionName, childCount);
+    SetTypeInfo(ECSqlTypeInfo(returnType));
+
+    //check arg type for all functions except COUNT (which can take any arg)
+    const StandardSetFunction standardFunction = GetStandardFunction();
+    if (standardFunction != StandardSetFunction::Count)
         {
-        if (!GetChild<ValueExp> (0)->GetTypeInfo ().IsNumeric ())
+        ECSqlTypeInfo const& argTypeInfo = GetChild<ValueExp>(0)->GetTypeInfo();
+
+        if (StandardSetFunction::Any == standardFunction ||
+            StandardSetFunction::Every == standardFunction ||
+            StandardSetFunction::Some == standardFunction)
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql ().c_str (), functionName);
-            return FinalizeParseStatus::Error;
+            if (!argTypeInfo.IsPrimitive() || argTypeInfo.GetPrimitiveType() != ECN::PRIMITIVETYPE_Boolean)
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects boolean argument", ToECSql().c_str(), functionName);
+                return FinalizeParseStatus::Error;
+                }
             }
-
-        SetTypeInfo (ECSqlTypeInfo (PRIMITIVETYPE_Double));
-        }
-    else if (BeStringUtilities::Stricmp(functionName,"MAX") == 0 ||
-             BeStringUtilities::Stricmp(functionName,"MIN") == 0 ||
-             BeStringUtilities::Stricmp(functionName,"SUM") == 0) //arg dependent
-        {
-        auto const& firstArgTypeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
-        if (!firstArgTypeInfo.IsNumeric ())
+        else
             {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql ().c_str (), functionName);
-            return FinalizeParseStatus::Error;
+            if (!argTypeInfo.IsNumeric())
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects numeric argument", ToECSql().c_str(), functionName);
+                return FinalizeParseStatus::Error;
+                }
             }
-
-        SetTypeInfo (firstArgTypeInfo);
-        }
-    else
-        {
-        BeAssert (false && "Unsupported standard set function. Check parse_general_set_fct()");
-        ctx.SetError (ECSqlStatus::ProgrammerError, "Unsupported standard set function '%s'. Check parse_general_set_fct()", functionName);
-        return FinalizeParseStatus::Error;
         }
 
     return FinalizeParseStatus::Completed;
@@ -789,12 +857,33 @@ Utf8String SetFunctionCallExp::_ToString() const
     return str;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP SetFunctionCallExp::ToString(StandardSetFunction standardFunction)
+    {
+    switch (standardFunction)
+        {
+            case StandardSetFunction::Any: return "ANY";
+            case StandardSetFunction::Avg: return "AVG";
+            case StandardSetFunction::Count: return "COUNT";
+            case StandardSetFunction::Every: return "EVERY";
+            case StandardSetFunction::Max: return "MAX";
+            case StandardSetFunction::Min: return "MIN";
+            case StandardSetFunction::Some: return "SOME";
+            case StandardSetFunction::Sum: return "SUM";
+            default:
+                BeAssert(false && "Programmer Error: new value added to StandardSetFunction enum. Please update ToString method.");
+                return nullptr;
+        }
+    }
 
-//****************************** StringFunctionCallExp *****************************************
+//****************************** FoldFunctionCallExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus StringFunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus FoldFunctionCallExp::_FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -802,24 +891,16 @@ Exp::FinalizeParseStatus StringFunctionCallExp::_FinalizeParsing (ECSqlParseCont
         return FinalizeParseStatus::NotCompleted;
         }
 
-    const auto childCount = GetChildren ().size ();
-    auto const& functionName = GetFunctionName ();
-    if (BeStringUtilities::Stricmp(functionName, "LOWER") == 0 || BeStringUtilities::Stricmp(functionName,"UPPER") == 0)
-        {
-        if (!IsValidArgCount (ctx, 1, childCount))
-            return FinalizeParseStatus::Error;
+    Utf8CP functionName = GetFunctionName();
+    const int childCount = (int) GetChildren().size();
+    
+    ECN::PrimitiveType returnType = DetermineReturnType(ctx, functionName, childCount);
+    SetTypeInfo(ECSqlTypeInfo(returnType));
 
-        auto const& typeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
-        if (!typeInfo.IsPrimitive () || typeInfo.GetPrimitiveType () != PRIMITIVETYPE_String)
-            {
-            ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);
-            return FinalizeParseStatus::Error;
-            }
-
-        }
-    else
+    ECSqlTypeInfo const& typeInfo = GetChild<ValueExp> (0)->GetTypeInfo ();
+    if (!typeInfo.IsPrimitive () || typeInfo.GetPrimitiveType () != PRIMITIVETYPE_String)
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Function '%s' not yet supported.", functionName);
+        ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid function call '%s'. Function %s expects string argument", ToECSql ().c_str (), functionName);
         return FinalizeParseStatus::Error;
         }
 
@@ -829,11 +910,27 @@ Exp::FinalizeParseStatus StringFunctionCallExp::_FinalizeParsing (ECSqlParseCont
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String StringFunctionCallExp::_ToString () const
+Utf8String FoldFunctionCallExp::_ToString () const
     {
-    Utf8String str ("StringFunctionCall [Function: ");
+    Utf8String str ("FoldFunctionCall [Function: ");
     str.append (GetFunctionName ()).append ("]");
     return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8CP FoldFunctionCallExp::ToString(FoldFunction foldFunction)
+    {
+    switch (foldFunction)
+        {
+            case FoldFunction::Lower: return "LOWER";
+            case FoldFunction::Upper: return "UPPER";
+            default:
+                BeAssert(false && "Programmer Error: new value added to FoldFunction enum. Please update ToString method.");
+                return nullptr;
+        }
     }
 
 //****************************** UnaryExp *****************************************

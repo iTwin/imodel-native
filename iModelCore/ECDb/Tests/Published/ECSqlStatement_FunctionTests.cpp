@@ -1,0 +1,89 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: Tests/Published/ECSqlStatement_FunctionTests.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ECSqlTestFixture.h"
+
+BEGIN_ECDBUNITTESTS_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct ExpectedResult
+    {
+    bool m_isSupported;
+    ECN::PrimitiveType m_returnType;
+
+    ExpectedResult() : m_isSupported(false) {}
+    explicit ExpectedResult(ECN::PrimitiveType returnType) : m_isSupported(true), m_returnType(returnType) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
+    {
+    // Create and populate a sample project
+    auto& ecdb = SetUp("ecsqlbuiltinfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), 5);
+
+    std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
+            {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},
+            {"SELECT ANY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            {"SELECT AVG(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT COUNT(*) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT COUNT(ECInstanceId) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT COUNT(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT EVERY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            {"SELECT GETECCLASSID() FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT GROUP_CONCAT(S) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT HEX(Bi) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT LENGTH(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT LOWER(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT LTRIM(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT LTRIM(S, '$') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT MAX(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT MAX(123, 125, 512) FROM ecsql.P LIMIT 1", ExpectedResult()},
+            {"SELECT MIN(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT MIN(123, 125, 512) FROM ecsql.P LIMIT 1", ExpectedResult()},
+            {"SELECT RANDOM() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT RANDOMBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
+            {"SELECT REPLACE(S,'Sample','Simple') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT RTRIM(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT RTRIM(S, '$') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT SOME(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            {"SELECT SOUNDEX(S) FROM ecsql.P LIMIT 1", ExpectedResult()}, //Only available if SQLite is compiled with SQLITE_SOUNDEX compile option
+            {"SELECT SUBSTR(S,'a',3) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT SUM(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT TOTAL(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT TRIM(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT TRIM(S, '$') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT UNICODE('K') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT UPPER(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
+            {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)}
+        };
+
+
+    for (std::pair<Utf8CP, ExpectedResult> const& kvPair : testDataset)
+        {
+        Utf8CP ecsql = kvPair.first;
+        ExpectedResult const& expectedResult = kvPair.second;
+        const ECSqlStatus expectedPrepareStat = expectedResult.m_isSupported ? ECSqlStatus::Success : ECSqlStatus::InvalidECSql;
+
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) expectedPrepareStat, (int) stmt.Prepare(ecdb, ecsql)) << ecsql;
+
+        if (!expectedResult.m_isSupported)
+            continue;
+
+        ASSERT_EQ((int) ECSqlStepStatus::HasRow, (int) stmt.Step());
+
+        ECN::ECTypeDescriptor const& actualColumnType = stmt.GetColumnInfo(0).GetDataType();
+
+        ASSERT_TRUE(actualColumnType.IsPrimitive()) << ecsql;
+        ASSERT_EQ(expectedResult.m_returnType, actualColumnType.GetPrimitiveType()) << ecsql;
+        }
+    }
+END_ECDBUNITTESTS_NAMESPACE

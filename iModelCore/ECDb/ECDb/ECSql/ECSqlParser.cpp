@@ -422,7 +422,7 @@ std::unique_ptr<PropertyNameListExp> ECSqlParser::parse_column_ref_commalist (EC
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<StringFunctionCallExp> ECSqlParser::parse_fold (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
+std::unique_ptr<FoldFunctionCallExp> ECSqlParser::parse_fold (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode)
     {
     if (!SQL_ISRULE (parseNode, fold))
         {
@@ -441,15 +441,11 @@ std::unique_ptr<StringFunctionCallExp> ECSqlParser::parse_fold (ECSqlParseContex
 
     auto functionNameNode = parseNode->getChild (0);
     const auto functionNameTokenId = functionNameNode->getTokenID ();
-    Utf8CP functionName = nullptr;
+    FoldFunctionCallExp::FoldFunction foldFunction;
     switch (functionNameTokenId)
         {
-            case SQL_TOKEN_LOWER:
-                functionName = "LOWER";
-                break;
-            case SQL_TOKEN_UPPER:
-                functionName = "UPPER";
-                break;
+            case SQL_TOKEN_LOWER: foldFunction = FoldFunctionCallExp::FoldFunction::Lower; break;
+            case SQL_TOKEN_UPPER: foldFunction = FoldFunctionCallExp::FoldFunction::Upper; break;
             default:
                 {
                 BeAssert (false && "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
@@ -463,7 +459,7 @@ std::unique_ptr<StringFunctionCallExp> ECSqlParser::parse_fold (ECSqlParseContex
     if (!ctx.IsSuccess ())
         return nullptr;
 
-    auto foldExp = std::unique_ptr<StringFunctionCallExp> (new StringFunctionCallExp (functionName));
+    auto foldExp = std::unique_ptr<FoldFunctionCallExp>(new FoldFunctionCallExp(foldFunction));
     foldExp->AddArgument (move (valueExp));
     return std::move (foldExp);
     }
@@ -717,54 +713,51 @@ BentleyStatus ECSqlParser::parse_and_add_functionarg(ECSqlParseContext& ctx, Fun
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-unique_ptr<SetFunctionCallExp> ECSqlParser::parse_general_set_fct (ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
+unique_ptr<SetFunctionCallExp> ECSqlParser::parse_general_set_fct(ECSqlParseContext& ctx, OSQLParseNode const* parseNode)
     {
-    if (!SQL_ISRULE(parseNode, general_set_fct ) && parseNode->count() == 3)
+    if (!SQL_ISRULE(parseNode, general_set_fct) && parseNode->count() == 3)
         {
-        BeAssert (false && "Wrong grammar");
+        BeAssert(false && "Wrong grammar");
         ctx.SetError(ECSqlStatus::ProgrammerError, "Wrong grammar");
         return nullptr;
         }
 
-    auto function_name = parseNode->getChild (0);
-    Utf8CP known_function_name = nullptr;
-    const auto tokenId = function_name->getTokenID();
-    switch (tokenId)
+    OSQLParseNode* functionNameNode = parseNode->getChild(0);
+    SetFunctionCallExp::StandardSetFunction standardFunction;
+    switch (functionNameNode->getTokenID())
         {
-        case SQL_TOKEN_COUNT: known_function_name = "COUNT"; break;
-        case SQL_TOKEN_AVG: known_function_name = "AVG"; break;
-        case SQL_TOKEN_MAX: known_function_name = "MAX"; break;
-        case SQL_TOKEN_MIN: known_function_name = "MIN"; break;
-        case SQL_TOKEN_SUM: known_function_name = "SUM"; break;
-            //! We donot support following functions
-            //case SQL_TOKEN_EVERY: known_funtion_name = "EVERY"; break;
-            //case SQL_TOKEN_ANY: known_funtion_name = "ANY"; break;
-            //case SQL_TOKEN_SOME: known_funtion_name = "SOME"; break;
-        default:
-            {
-            ctx.SetError(ECSqlStatus::InvalidECSql, "Unsupported standard SQL function with token ID %d", tokenId);
-            return nullptr;
-            }           
-        }
-
-    if (function_name->getTokenID() == SQL_TOKEN_COUNT)
-        {
-        auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(known_function_name));
-        if (Exp::IsAsteriskToken (parseNode->getChild(2)->getTokenValue().c_str ()))
-            {
-            auto argExp = ConstantValueExp::Create (ctx, Exp::ASTERISK_TOKEN, ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
-            functionCallExp->AddArgument(move(argExp));
-            return functionCallExp;
-            }
+            case SQL_TOKEN_ANY: standardFunction = SetFunctionCallExp::StandardSetFunction::Any; break;
+            case SQL_TOKEN_AVG: standardFunction = SetFunctionCallExp::StandardSetFunction::Avg; break;
+            case SQL_TOKEN_COUNT: standardFunction = SetFunctionCallExp::StandardSetFunction::Count; break;
+            case SQL_TOKEN_EVERY: standardFunction = SetFunctionCallExp::StandardSetFunction::Every; break;
+            case SQL_TOKEN_MIN: standardFunction = SetFunctionCallExp::StandardSetFunction::Min; break;
+            case SQL_TOKEN_MAX: standardFunction = SetFunctionCallExp::StandardSetFunction::Max; break;
+            case SQL_TOKEN_SUM: standardFunction = SetFunctionCallExp::StandardSetFunction::Sum; break;
+            case SQL_TOKEN_SOME: standardFunction = SetFunctionCallExp::StandardSetFunction::Some; break;
+            default:
+                {
+                ctx.SetError(ECSqlStatus::InvalidECSql, "Unsupported standard SQL function with token ID %d", functionNameNode->getTokenID());
+                return nullptr;
+                }
         }
 
     //Following cover COUNT(ALL|DISTINCT funtion_arg) and AVG,MAX...(ALL|DISTINCT funtion_arg)
-    auto opt_all_distinct = parseNode->getChild(2); 
-    auto setQuantifier = parse_opt_all_distinct(ctx, opt_all_distinct); 
+    OSQLParseNode* opt_all_distinctNode = parseNode->getChild(2);
+    SqlSetQuantifier setQuantifier = parse_opt_all_distinct(ctx, opt_all_distinctNode);
 
-    auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(known_function_name, setQuantifier));
-    if (SUCCESS != parse_and_add_functionarg(ctx, *functionCallExp, parseNode->getChild(3/*function_arg*/)))
-        return nullptr;
+    auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(standardFunction, setQuantifier));
+
+    if (standardFunction == SetFunctionCallExp::StandardSetFunction::Count &&
+        Exp::IsAsteriskToken(parseNode->getChild(2)->getTokenValue().c_str()))
+        {
+        auto argExp = ConstantValueExp::Create(ctx, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies));
+        functionCallExp->AddArgument(move(argExp));
+        }
+    else
+        {
+        if (SUCCESS != parse_and_add_functionarg(ctx, *functionCallExp, parseNode->getChild(3/*function_arg*/)))
+            return nullptr;
+        }
 
     if (ctx.IsSuccess())
         return functionCallExp;

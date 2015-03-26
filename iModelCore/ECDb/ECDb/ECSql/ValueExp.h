@@ -161,6 +161,8 @@ struct ECClassIdFunctionExp : ValueExp
 DEFINE_EXPR_TYPE(ECClassIdFunction)
 
 private:
+    static Utf8CP const NAME;
+
     Utf8String m_classAlias;
     RangeClassRefExp const* m_classRefExp;
 
@@ -172,8 +174,7 @@ private:
 public:
     explicit ECClassIdFunctionExp (Utf8CP classAlias)
         : ValueExp (), m_classAlias (classAlias), m_classRefExp (nullptr)
-        {
-        }
+        {}
 
     ~ECClassIdFunctionExp () {}
 
@@ -192,17 +193,11 @@ struct FunctionCallExp : ValueExp
     DEFINE_EXPR_TYPE(FunctionCall)
 private:
     Utf8String m_functionName;
-    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
-    
-    virtual Utf8String _ToString () const override
-        {
-        Utf8String str ("FunctionCall [Function: ");
-        str.append (m_functionName).append ("]");
-        return str;
-        }
 
-protected:
-    bool IsValidArgCount (ECSqlParseContext& ctx, size_t expectedArgCount, size_t actualArgCount) const;
+    static bmap<Utf8CP, ECN::PrimitiveType, CompareIUtf8> s_builtinFunctionNonDefaultReturnTypes;
+
+    virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
+    virtual Utf8String _ToString () const override;
 
 public:
     explicit FunctionCallExp (Utf8CP functionName) : ValueExp (), m_functionName(functionName) {}
@@ -212,22 +207,9 @@ public:
 
     void AddArgument (std::unique_ptr<ValueExp> argument);
 
-    virtual Utf8String ToECSql() const override  
-        {
-        Utf8String ecsql(m_functionName);
-        ecsql.append("(");
-        bool isFirstItem = true;
-        for(auto argExp : GetChildren ())
-            {
-            if (!isFirstItem)
-                ecsql.append(",");
+    virtual Utf8String ToECSql() const override;
 
-            ecsql.append(argExp->ToECSql());
-            isFirstItem = false;
-            }
-        ecsql.append(")");
-        return std::move(ecsql);
-        }
+    static ECN::PrimitiveType DetermineReturnType(ECSqlParseContext& ctx, Utf8CP functionName, int argCount);
     };
 
 
@@ -310,17 +292,34 @@ public:
 struct SetFunctionCallExp : FunctionCallExp
     {
     DEFINE_EXPR_TYPE(SetFunctionCall)
+
+public:
+    enum class StandardSetFunction
+        {
+        Any,
+        Avg,
+        Count,
+        Every,
+        Min,
+        Max,
+        Some,
+        Sum
+        };
+
 private:
+    StandardSetFunction m_standardFunction;
     SqlSetQuantifier m_setQuantifier;
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToString () const override;
-public:
-    explicit SetFunctionCallExp (Utf8CP functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified)
-        : FunctionCallExp (functionName), m_setQuantifier (setQuantifier)
-        {
-        }
 
+    static Utf8CP ToString(StandardSetFunction);
+
+public:
+    SetFunctionCallExp(StandardSetFunction standardFunction, SqlSetQuantifier setQuantifier)
+        : FunctionCallExp (ToString (standardFunction)), m_standardFunction(standardFunction), m_setQuantifier (setQuantifier) {}
+
+    StandardSetFunction GetStandardFunction() const { return m_standardFunction; }
     SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
     virtual Utf8String ToECSql() const override;
@@ -329,19 +328,25 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct StringFunctionCallExp : FunctionCallExp
+struct FoldFunctionCallExp : FunctionCallExp
     {
-DEFINE_EXPR_TYPE (StringFunctionCall)
+DEFINE_EXPR_TYPE (FoldFunctionCall)
+public:
+    enum class FoldFunction
+        {
+        Lower,
+        Upper
+        };
+
 private:
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToString () const override;
 
+    static Utf8CP ToString(FoldFunction);
+
 public:
-    explicit StringFunctionCallExp (Utf8CP functionName)
-        : FunctionCallExp (functionName)
-        {
-        }
+    explicit FoldFunctionCallExp(FoldFunction foldFunction) : FunctionCallExp(ToString(foldFunction)) {}
     };
 
 //=======================================================================================

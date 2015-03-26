@@ -36,7 +36,10 @@ private:
     //static class
     ECSqlExpPreparer ();
     ~ECSqlExpPreparer ();
-        
+
+    static ECSqlStatus PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp);
+    static ECSqlStatus PrepareFunctionArgExpList(NativeSqlBuilder& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp);
+
 public:
     static ECSqlStatus PrepareAllOrAnyExp (ECSqlPrepareContext& ctx, AllOrAnyExp const* exp);
     static ECSqlStatus PrepareBetweenRangeValueExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, BetweenRangeValueExp const* exp);

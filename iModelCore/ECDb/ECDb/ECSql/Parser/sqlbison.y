@@ -108,7 +108,7 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_ALL SQL_TOKEN_ALTER SQL_TOKEN_AMMSC SQL_TOKEN_ANY SQL_TOKEN_AS SQL_TOKEN_ASC SQL_TOKEN_AT SQL_TOKEN_AUTHORIZATION SQL_TOKEN_AVG
 
-%token <pParseNode> SQL_TOKEN_BETWEEN SQL_TOKEN_BIT SQL_TOKEN_BOTH SQL_TOKEN_BY
+%token <pParseNode> SQL_TOKEN_BETWEEN SQL_TOKEN_BIT SQL_TOKEN_BY
 
 %token <pParseNode> SQL_TOKEN_CAST SQL_TOKEN_CHARACTER SQL_TOKEN_CHECK SQL_TOKEN_COLLATE SQL_TOKEN_COMMIT SQL_TOKEN_CONTINUE SQL_TOKEN_CONVERT SQL_TOKEN_COUNT SQL_TOKEN_CREATE SQL_TOKEN_CROSS
 %token <pParseNode> SQL_TOKEN_CURRENT SQL_TOKEN_CURSOR
@@ -120,7 +120,7 @@ using namespace connectivity;
 
 %token <pParseNode> SQL_TOKEN_GROUP SQL_TOKEN_HAVING SQL_TOKEN_IN SQL_TOKEN_INDICATOR SQL_TOKEN_INNER SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_IS SQL_TOKEN_INTERSECT
 
-%token <pParseNode> SQL_TOKEN_JOIN SQL_TOKEN_KEY SQL_TOKEN_LEADING SQL_TOKEN_LIKE SQL_TOKEN_LOCAL SQL_TOKEN_LEFT SQL_TOKEN_RIGHT SQL_TOKEN_LOWER
+%token <pParseNode> SQL_TOKEN_JOIN SQL_TOKEN_KEY SQL_TOKEN_LIKE SQL_TOKEN_LOCAL SQL_TOKEN_LEFT SQL_TOKEN_RIGHT SQL_TOKEN_LOWER
 %token <pParseNode> SQL_TOKEN_MAX SQL_TOKEN_MIN SQL_TOKEN_NATURAL SQL_TOKEN_NCHAR SQL_TOKEN_NULL SQL_TOKEN_NUMERIC
 
 %token <pParseNode> SQL_TOKEN_OCTET_LENGTH SQL_TOKEN_OF SQL_TOKEN_ON SQL_TOKEN_OPTION SQL_TOKEN_ORDER SQL_TOKEN_OUTER
@@ -131,7 +131,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_SCHEMA SQL_TOKEN_SELECT SQL_TOKEN_SET SQL_TOKEN_SMALLINT SQL_TOKEN_SOME SQL_TOKEN_SQLCODE SQL_TOKEN_SQLERROR SQL_TOKEN_SUM
 /* No TIME and no TIMEZONE support in ECSQL 
 %token <pParseNode> SQL_TOKEN_TIME SQL_TOKEN_TIMEZONE_HOUR SQL_TOKEN_TIMEZONE_MINUTE SQL_TOKEN_ZONE SQL_TOKEN_WITHOUT */
-%token <pParseNode> SQL_TOKEN_TABLE SQL_TOKEN_TO SQL_TOKEN_TRAILING SQL_TOKEN_TRANSLATE SQL_TOKEN_TRIM SQL_TOKEN_TRUE SQL_TOKEN_UNION
+%token <pParseNode> SQL_TOKEN_TABLE SQL_TOKEN_TO SQL_TOKEN_TRANSLATE SQL_TOKEN_TRUE SQL_TOKEN_UNION
 %token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_UPPER SQL_TOKEN_USAGE SQL_TOKEN_USING SQL_TOKEN_VALUES SQL_TOKEN_VIEW
 %token <pParseNode> SQL_TOKEN_WHERE SQL_TOKEN_WITH SQL_TOKEN_WORK 
 
@@ -222,7 +222,7 @@ using namespace connectivity;
 %type <pParseNode> start_field non_second_datetime_field end_field single_datetime_field extract_field datetime_field /*time_zone_field opt_with_or_without_time_zone*/
 %type <pParseNode> char_length_exp octet_length_exp bit_length_exp select_sublist string_value_exp
 %type <pParseNode> char_value_exp concatenation char_factor char_primary string_value_fct char_substring_fct fold
-%type <pParseNode> form_conversion char_translation trim_fct trim_operands trim_spec bit_value_fct bit_substring_fct
+%type <pParseNode> form_conversion char_translation bit_value_fct bit_substring_fct
 %type <pParseNode> /*bit_concatenation*/ bit_value_exp bit_factor bit_primary collate_clause char_value_fct unique_spec value_exp_commalist in_predicate_value unique_test update_source
 %type <pParseNode> date_function_0Argument  function_name12 function_name0 
 %type <pParseNode> all query_primary sql_not for_length upper_lower comparison /* column_val */  cross_union /*opt_schema_element_list*/
@@ -3065,11 +3065,6 @@ char_value_fct:
             $$ = SQL_NEW_RULE;
             $$->append($1);
         }
-      | trim_fct
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-        }
     ;
 for_length:
         {$$ = SQL_NEW_RULE;}
@@ -3148,53 +3143,6 @@ char_translation:
             $$->append($5);
             $$->append($6 = newNode(")", SQL_NODE_PUNCTUATION));
         }
-    ;
-trim_fct:
-        SQL_TOKEN_TRIM  '(' trim_operands ')'
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2 = newNode("(", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = newNode(")", SQL_NODE_PUNCTUATION));
-        }
-    ;
-trim_operands:
-    trim_spec value_exp SQL_TOKEN_FROM value_exp
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-            $$->append($4);
-        }
-    | trim_spec SQL_TOKEN_FROM value_exp
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-        }
-    | value_exp SQL_TOKEN_FROM value_exp
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-            $$->append($3);
-        }
-    | SQL_TOKEN_FROM value_exp
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-        }
-    | value_exp
-    ;
-    
-trim_spec:
-        SQL_TOKEN_BOTH
-    |    SQL_TOKEN_LEADING
-    |    SQL_TOKEN_TRAILING
     ;
 
 derived_column:

@@ -1243,52 +1243,104 @@ ECSqlStatus ECSqlExpPreparer::PrepareSelectClauseExp (ECSqlPrepareContext& ctx, 
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp)
+ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const* exp)
     {
-    Utf8CP functionName = exp->GetFunctionName ();
-    NativeSqlBuilder nativeSql (functionName);
-    nativeSql.AppendSpace ().AppendParenLeft ();
-
     if (exp->GetType() == Exp::Type::SetFunctionCall)
         {
         SetFunctionCallExp const* setFunctionCallExp = static_cast<SetFunctionCallExp const*> (exp);
-        nativeSql.Append(setFunctionCallExp->GetSetQuantifier());
+        return PrepareSetFunctionCallExp(nativeSqlSnippets, ctx, *setFunctionCallExp);
         }
 
-    if (BeStringUtilities::Stricmp (functionName,"count") == 0)
+    Utf8CP functionName = exp->GetFunctionName();
+    NativeSqlBuilder nativeSql(functionName);
+    nativeSql.AppendSpace().AppendParenLeft();
+
+    ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, *exp);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    nativeSql.AppendParenRight();
+    nativeSqlSnippets.push_back(move(nativeSql));
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    01/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp)
+    {
+    const SetFunctionCallExp::StandardSetFunction standardFunction = exp.GetStandardFunction();
+
+    if (standardFunction == SetFunctionCallExp::StandardSetFunction::Count)
         {
-        //For count we simply use * as this is the same semantically and it is faster anyways in SQLite
-        nativeSql.Append(Exp::ASTERISK_TOKEN);
+        //We simply use * as this is the same semantically and it is faster anyways in SQLite
+        NativeSqlBuilder nativeSql(exp.GetFunctionName());
+        nativeSql.AppendParenLeft().Append(Exp::ASTERISK_TOKEN).AppendParenRight();
+        nativeSqlSnippets.push_back(move(nativeSql));
+        return ECSqlStatus::Success;
+        }
+
+    const bool isAnyEveryOrSome = standardFunction == SetFunctionCallExp::StandardSetFunction::Any ||
+        standardFunction == SetFunctionCallExp::StandardSetFunction::Every ||
+        standardFunction == SetFunctionCallExp::StandardSetFunction::Some;
+
+    NativeSqlBuilder nativeSql;
+    if (isAnyEveryOrSome)
+        {
+        //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
+        //ANY,SOME: checks whether at least one row in the specified BOOL column is TRUE -> MAX(Col) <> 0
+        //EVERY: checks whether all rows in the specified BOOL column are TRUE -> MIN(Col) <> 0
+        Utf8CP func = standardFunction == SetFunctionCallExp::StandardSetFunction::Every ? "MIN" : "MAX";
+        nativeSql.Append(func);
         }
     else
+        nativeSql.Append(exp.GetFunctionName());
+
+    nativeSql.AppendParenLeft().Append (exp.GetSetQuantifier(), true);
+
+    ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, exp);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    if (isAnyEveryOrSome)
+        nativeSql.Append(" <> 0");
+
+    nativeSql.AppendParenRight();
+    nativeSqlSnippets.push_back(move(nativeSql));
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    01/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgExpList(NativeSqlBuilder& nativeSql, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
+    {
+    bool isFirstItem = true;
+    for (Exp const* argExp : exp.GetChildren())
         {
-        bool isFirstItem = true;
-        for (auto argExp : exp->GetChildren())
+        if (!isFirstItem)
+            nativeSql.AppendComma();
+
+        NativeSqlBuilder::List nativeSqlArgumentList;
+        ECSqlStatus status;
+        if (IsNullExp(*argExp))
             {
-            if (!isFirstItem)
-                nativeSql.AppendComma();
-
-            NativeSqlBuilder::List nativeSqlArgumentList;
-            ECSqlStatus status;
-            if (IsNullExp(*argExp))
-                {
-                //for functions we only support args of single column primitive types so far, therefore an ECSQL NULL
-                //always means a single SQLite NULL
-                status = PrepareNullConstantValueExp(nativeSqlArgumentList, ctx, static_cast<ConstantValueExp const*> (argExp), 1);
-                }
-            else
-                status = PrepareValueExp(nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
-
-            if (status != ECSqlStatus::Success)
-                return status;
-
-            nativeSql.Append(nativeSqlArgumentList);
-            isFirstItem = false;
+            //for functions we only support args of single column primitive types so far, therefore an ECSQL NULL
+            //always means a single SQLite NULL
+            status = PrepareNullConstantValueExp(nativeSqlArgumentList, ctx, static_cast<ConstantValueExp const*> (argExp), 1);
             }
-        }
+        else
+            status = PrepareValueExp(nativeSqlArgumentList, ctx, static_cast<ValueExp const*> (argExp));
 
-    nativeSql.AppendParenRight ();
-    nativeSqlSnippets.push_back (move (nativeSql));
+        if (status != ECSqlStatus::Success)
+            return status;
+
+        nativeSql.Append(nativeSqlArgumentList);
+        isFirstItem = false;
+        }
 
     return ECSqlStatus::Success;
     }

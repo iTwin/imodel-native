@@ -74,7 +74,7 @@ private:
     static std::unique_ptr<FunctionCallExp>            parse_fct_spec                  (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static BentleyStatus                               parse_and_add_functionarg       (ECSqlParseContext& ctx, FunctionCallExp& functionCallExp, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<UnaryExp>                   parse_factor                    (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
-    static std::unique_ptr<StringFunctionCallExp>      parse_fold                      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
+    static std::unique_ptr<FoldFunctionCallExp>      parse_fold                      (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
 
     static std::unique_ptr<SetFunctionCallExp>         parse_general_set_fct           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);
     static std::unique_ptr<GroupByExp>                 parse_group_by_clause           (ECSqlParseContext& ctx, connectivity::OSQLParseNode const* parseNode);

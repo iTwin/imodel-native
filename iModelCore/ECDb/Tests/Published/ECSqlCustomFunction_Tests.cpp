@@ -373,4 +373,32 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// Syntax: DATEFROMSTRING (Str) : DateTime
+// @bsiclass                                     Krischan.Eberle                 03/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct GeometryECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
+    {
+    private:
+        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
+            {
+            if (nArgs != 1)
+                {
+                ctx->SetResultError("Wrong number of arguments for function DATEFROMSTRING.", -1);
+                return;
+                }
+
+            if (args[0].IsNull())
+                {
+                ctx->SetResultError("Argument to DISTANCE must not be NULL", -1);
+                return;
+                }
+            }
+
+    public:
+        GeometryECSqlFunction() : ECSqlScalarFunction("GEOMETRY", 1, ECN::PrimitiveType::PRIMITIVETYPE_IGeometry, this) {}
+    };
+
+
 END_ECDBUNITTESTS_NAMESPACE
