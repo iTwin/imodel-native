@@ -132,7 +132,7 @@ using namespace connectivity;
 /* No TIME and no TIMEZONE support in ECSQL 
 %token <pParseNode> SQL_TOKEN_TIME SQL_TOKEN_TIMEZONE_HOUR SQL_TOKEN_TIMEZONE_MINUTE SQL_TOKEN_ZONE SQL_TOKEN_WITHOUT */
 %token <pParseNode> SQL_TOKEN_TABLE SQL_TOKEN_TO SQL_TOKEN_TRANSLATE SQL_TOKEN_TRUE SQL_TOKEN_UNION
-%token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_UPPER SQL_TOKEN_USAGE SQL_TOKEN_USING SQL_TOKEN_VALUES SQL_TOKEN_VIEW
+%token <pParseNode> SQL_TOKEN_UNIQUE SQL_TOKEN_UNKNOWN SQL_TOKEN_UPDATE SQL_TOKEN_UPPER SQL_TOKEN_USING SQL_TOKEN_VALUES SQL_TOKEN_VIEW
 %token <pParseNode> SQL_TOKEN_WHERE SQL_TOKEN_WITH SQL_TOKEN_WORK 
 
 %token <pParseNode> SQL_TOKEN_BIT_LENGTH SQL_TOKEN_CHAR SQL_TOKEN_CHAR_LENGTH SQL_TOKEN_POSITION SQL_TOKEN_SUBSTRING SQL_TOKEN_SQL_TOKEN_INTNUM
@@ -192,7 +192,6 @@ using namespace connectivity;
 %type <pParseNode> sql /*schema */
 %type <pParseNode> column_def_opt_list column_def_opt table_constraint_def column_commalist opt_column_array_idx property_path_entry property_path
 %type <pParseNode> view_def opt_with_check_option opt_column_commalist column_ref_commalist opt_column_ref_commalist 
-%type <pParseNode> operation_commalist operation 
 %type <pParseNode> opt_order_by_clause ordering_spec_commalist
 %type <pParseNode> ordering_spec opt_asc_desc manipulative_statement commit_statement
 %type <pParseNode> /*delete_statement_positioned*/ delete_statement_searched fetch_statement
@@ -527,33 +526,6 @@ opt_column_ref_commalist:
             $$->append($1 = newNode("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
             $$->append($3 = newNode(")", SQL_NODE_PUNCTUATION));}
-    ;
-
-operation_commalist:
-        operation
-            {$$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);}
-    |       operation_commalist ',' operation
-            {$1->append($3);
-            $$ = $1;}
-    ;
-
-operation:
-            SQL_TOKEN_SELECT
-    |       SQL_TOKEN_INSERT opt_column_commalist
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);}
-    |       SQL_TOKEN_DELETE
-    |       SQL_TOKEN_UPDATE opt_column_commalist
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);}
-    |       SQL_TOKEN_REFERENCES opt_column_commalist
-            {$$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);}
-    |        SQL_TOKEN_USAGE
     ;
 
     /* module language */
