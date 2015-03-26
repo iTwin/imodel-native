@@ -723,17 +723,17 @@ unique_ptr<SetFunctionCallExp> ECSqlParser::parse_general_set_fct(ECSqlParseCont
         }
 
     OSQLParseNode* functionNameNode = parseNode->getChild(0);
-    SetFunctionCallExp::StandardSetFunction standardFunction;
+    SetFunctionCallExp::Function function;
     switch (functionNameNode->getTokenID())
         {
-            case SQL_TOKEN_ANY: standardFunction = SetFunctionCallExp::StandardSetFunction::Any; break;
-            case SQL_TOKEN_AVG: standardFunction = SetFunctionCallExp::StandardSetFunction::Avg; break;
-            case SQL_TOKEN_COUNT: standardFunction = SetFunctionCallExp::StandardSetFunction::Count; break;
-            case SQL_TOKEN_EVERY: standardFunction = SetFunctionCallExp::StandardSetFunction::Every; break;
-            case SQL_TOKEN_MIN: standardFunction = SetFunctionCallExp::StandardSetFunction::Min; break;
-            case SQL_TOKEN_MAX: standardFunction = SetFunctionCallExp::StandardSetFunction::Max; break;
-            case SQL_TOKEN_SUM: standardFunction = SetFunctionCallExp::StandardSetFunction::Sum; break;
-            case SQL_TOKEN_SOME: standardFunction = SetFunctionCallExp::StandardSetFunction::Some; break;
+            case SQL_TOKEN_ANY: function = SetFunctionCallExp::Function::Any; break;
+            case SQL_TOKEN_AVG: function = SetFunctionCallExp::Function::Avg; break;
+            case SQL_TOKEN_COUNT: function = SetFunctionCallExp::Function::Count; break;
+            case SQL_TOKEN_EVERY: function = SetFunctionCallExp::Function::Every; break;
+            case SQL_TOKEN_MIN: function = SetFunctionCallExp::Function::Min; break;
+            case SQL_TOKEN_MAX: function = SetFunctionCallExp::Function::Max; break;
+            case SQL_TOKEN_SUM: function = SetFunctionCallExp::Function::Sum; break;
+            case SQL_TOKEN_SOME: function = SetFunctionCallExp::Function::Some; break;
             default:
                 {
                 ctx.SetError(ECSqlStatus::InvalidECSql, "Unsupported standard SQL function with token ID %d", functionNameNode->getTokenID());
@@ -745,9 +745,9 @@ unique_ptr<SetFunctionCallExp> ECSqlParser::parse_general_set_fct(ECSqlParseCont
     OSQLParseNode* opt_all_distinctNode = parseNode->getChild(2);
     SqlSetQuantifier setQuantifier = parse_opt_all_distinct(ctx, opt_all_distinctNode);
 
-    auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(standardFunction, setQuantifier));
+    auto functionCallExp = unique_ptr<SetFunctionCallExp>(new SetFunctionCallExp(function, setQuantifier));
 
-    if (standardFunction == SetFunctionCallExp::StandardSetFunction::Count &&
+    if (function == SetFunctionCallExp::Function::Count &&
         Exp::IsAsteriskToken(parseNode->getChild(2)->getTokenValue().c_str()))
         {
         auto argExp = ConstantValueExp::Create(ctx, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies));

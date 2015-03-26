@@ -1271,9 +1271,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SetFunctionCallExp const& exp)
     {
-    const SetFunctionCallExp::StandardSetFunction standardFunction = exp.GetStandardFunction();
+    const SetFunctionCallExp::Function function = exp.GetFunction();
 
-    if (standardFunction == SetFunctionCallExp::StandardSetFunction::Count)
+    if (function == SetFunctionCallExp::Function::Count)
         {
         //We simply use * as this is the same semantically and it is faster anyways in SQLite
         NativeSqlBuilder nativeSql(exp.GetFunctionName());
@@ -1282,9 +1282,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
         return ECSqlStatus::Success;
         }
 
-    const bool isAnyEveryOrSome = standardFunction == SetFunctionCallExp::StandardSetFunction::Any ||
-        standardFunction == SetFunctionCallExp::StandardSetFunction::Every ||
-        standardFunction == SetFunctionCallExp::StandardSetFunction::Some;
+    const bool isAnyEveryOrSome = function == SetFunctionCallExp::Function::Any ||
+        function == SetFunctionCallExp::Function::Every ||
+        function == SetFunctionCallExp::Function::Some;
 
     NativeSqlBuilder nativeSql;
     if (isAnyEveryOrSome)
@@ -1292,7 +1292,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
         //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
         //ANY,SOME: checks whether at least one row in the specified BOOL column is TRUE -> MAX(Col) <> 0
         //EVERY: checks whether all rows in the specified BOOL column are TRUE -> MIN(Col) <> 0
-        Utf8CP func = standardFunction == SetFunctionCallExp::StandardSetFunction::Every ? "MIN" : "MAX";
+        Utf8CP func = function == SetFunctionCallExp::Function::Every ? "MIN" : "MAX";
         nativeSql.Append(func);
         }
     else

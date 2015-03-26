@@ -293,8 +293,7 @@ struct SetFunctionCallExp : FunctionCallExp
     {
     DEFINE_EXPR_TYPE(SetFunctionCall)
 
-public:
-    enum class StandardSetFunction
+    enum class Function
         {
         Any,
         Avg,
@@ -307,19 +306,19 @@ public:
         };
 
 private:
-    StandardSetFunction m_standardFunction;
+    Function m_function;
     SqlSetQuantifier m_setQuantifier;
     virtual FinalizeParseStatus _FinalizeParsing (ECSqlParseContext& ctx, FinalizeParseMode mode) override;
 
     virtual Utf8String _ToString () const override;
 
-    static Utf8CP ToString(StandardSetFunction);
-
+    static Utf8CP ToString(Function function);
 public:
-    SetFunctionCallExp(StandardSetFunction standardFunction, SqlSetQuantifier setQuantifier)
-        : FunctionCallExp (ToString (standardFunction)), m_standardFunction(standardFunction), m_setQuantifier (setQuantifier) {}
+    SetFunctionCallExp(Function function, SqlSetQuantifier setQuantifier)
+        : FunctionCallExp(ToString(function)), m_function(function), m_setQuantifier(setQuantifier)
+        {}
 
-    StandardSetFunction GetStandardFunction() const { return m_standardFunction; }
+    Function GetFunction() const { return m_function; }
     SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
     virtual Utf8String ToECSql() const override;

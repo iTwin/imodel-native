@@ -793,14 +793,14 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing( ECSqlParseContext
     SetTypeInfo(ECSqlTypeInfo(returnType));
 
     //check arg type for all functions except COUNT (which can take any arg)
-    const StandardSetFunction standardFunction = GetStandardFunction();
-    if (standardFunction != StandardSetFunction::Count)
+    Function function = GetFunction();
+    if (function != Function::Count)
         {
         ECSqlTypeInfo const& argTypeInfo = GetChild<ValueExp>(0)->GetTypeInfo();
 
-        if (StandardSetFunction::Any == standardFunction ||
-            StandardSetFunction::Every == standardFunction ||
-            StandardSetFunction::Some == standardFunction)
+        if (Function::Any == function ||
+            Function::Every == function ||
+            Function::Some == function)
             {
             if (!argTypeInfo.IsPrimitive() || argTypeInfo.GetPrimitiveType() != ECN::PRIMITIVETYPE_Boolean)
                 {
@@ -861,20 +861,21 @@ Utf8String SetFunctionCallExp::_ToString() const
 // @bsimethod                                    Krischan.Eberle                    03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP SetFunctionCallExp::ToString(StandardSetFunction standardFunction)
+Utf8CP SetFunctionCallExp::ToString(Function function)
     {
-    switch (standardFunction)
+    switch (function)
         {
-            case StandardSetFunction::Any: return "ANY";
-            case StandardSetFunction::Avg: return "AVG";
-            case StandardSetFunction::Count: return "COUNT";
-            case StandardSetFunction::Every: return "EVERY";
-            case StandardSetFunction::Max: return "MAX";
-            case StandardSetFunction::Min: return "MIN";
-            case StandardSetFunction::Some: return "SOME";
-            case StandardSetFunction::Sum: return "SUM";
+            case Function::Any: return "ANY";
+            case Function::Avg: return "AVG";
+            case Function::Count: return "COUNT";
+            case Function::Every: return "EVERY";
+            case Function::Max: return "MAX";
+            case Function::Min: return "MIN";
+            case Function::Some: return "SOME";
+            case Function::Sum: return "SUM";
+
             default:
-                BeAssert(false && "Programmer Error: new value added to StandardSetFunction enum. Please update ToString method.");
+                BeAssert(false && "Enum Function has changed. Please update ToString");
                 return nullptr;
         }
     }
