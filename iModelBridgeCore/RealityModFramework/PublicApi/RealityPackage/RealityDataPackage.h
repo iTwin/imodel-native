@@ -123,12 +123,16 @@ public:
     REALITYPACKAGE_EXPORT PinnedGroup& GetPinnedGroupR();    
     REALITYPACKAGE_EXPORT TerrainGroup& GetTerrainGroupR();    
 
+    //! Return true if during parsing unknown element(s) were found. That may indicate that new elements were added in future version of the package
+    //! and these elements were ignored. Package is valid but only known elements were loaded.
+    REALITYPACKAGE_EXPORT bool HasUnknownElements() const;
+
     //! Get package version.
     REALITYPACKAGE_EXPORT uint32_t GetMajorVersion() const;
     REALITYPACKAGE_EXPORT uint32_t GetMinorVersion() const;
 
     REALITYPACKAGE_EXPORT static RealityDataPackagePtr CreateFromString(RealityPackageStatus& status, Utf8CP pSource, WStringP pParseError = NULL);
-
+    
 private:
     RealityDataPackage() = delete;
     RealityDataPackage(WCharCP name);
@@ -154,6 +158,7 @@ private:
     WString m_packageId;
     DateTime m_creationDate;
     BoundingPolygonPtr m_pBoundingPolygon;
+    bool m_hasUnknownElements;
     
     ImageryGroup m_imagery;
     ModelGroup m_model;

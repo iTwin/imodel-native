@@ -65,7 +65,7 @@ RealityPackageStatus RealityDataSource::_Read(BeXmlNodeR dataSourceNode)
     {
     if(BEXML_Success != dataSourceNode.GetAttributeStringValue (m_uri, PACKAGE_SOURCE_ATTRIBUTE_Uri) ||
        BEXML_Success != dataSourceNode.GetAttributeStringValue (m_type, PACKAGE_SOURCE_ATTRIBUTE_Type))
-        return RealityPackageStatus::UnknownError;
+        return RealityPackageStatus::MissingSourceAttribute;
 
     return RealityPackageStatus::Success;
     }
@@ -76,7 +76,7 @@ RealityPackageStatus RealityDataSource::_Read(BeXmlNodeR dataSourceNode)
 RealityPackageStatus RealityDataSource::_Write(BeXmlNodeR dataSourceNode) const
     {
     if(m_uri.empty() || m_type.empty())
-        return RealityPackageStatus::UnknownError;
+        return RealityPackageStatus::MissingSourceAttribute;
         
     dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, m_uri.c_str());
     dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, m_type.c_str());

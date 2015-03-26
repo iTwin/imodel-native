@@ -34,7 +34,7 @@
 #define PACKAGE_CURRENT_NAMESPACE     "http://www.bentley.com/RealityDataServer/v" STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)
 
 #define PACKAGE_ELEMENT_Root                "RealityDataPackage"
-#define PACKAGE_ATTRIBUTE_Version           "Version"
+#define PACKAGE_ATTRIBUTE_Version           "version"
 
 // Package 
 #define PACKAGE_ELEMENT_Name                "Name"
@@ -174,7 +174,7 @@ struct RealityDataSourceSerializer
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
     //----------------------------------------------------------------------------------------
-    RealityDataSourcePtr Load(BeXmlNodeR node);
+    RealityDataSourcePtr Load(RealityPackageStatus& status, BeXmlNodeR node);
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -189,6 +189,49 @@ struct RealityDataSourceSerializer
 //----------------------------------------------------------------------------------------
 struct RealityDataSerializer
     {
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    static bool IsValidLatLong(double latitude, double longitude)
+        {
+        if(IN_RANGE(latitude, -90, 90) && IN_RANGE(longitude, -180, 180))
+            return true;
+
+        return false;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    static RealityPackageStatus ReadLatLong(double& latitude, double& longitude, BeXmlNodeR parent, Utf8CP childName)
+        {
+        DPoint2d latLong;
+        RealityPackageStatus status = ReadDPoint2d(latLong, parent, childName);
+        if(RealityPackageStatus::Success != status)
+            return status;
+
+        if(!IsValidLatLong(latLong.x, latLong.y))
+            return RealityPackageStatus::InvalidLatitudeLongitude;
+
+        latitude = latLong.x;
+        longitude = latLong.y;
+
+        return RealityPackageStatus::Success;
+        }
+
+     //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  3/2015
+    //----------------------------------------------------------------------------------------
+    static RealityPackageStatus WriteLatLong(BeXmlNodeR parent, Utf8CP childName, double latitude, double longitude)
+        {
+        if(!IsValidLatLong(latitude, longitude))
+            return RealityPackageStatus::InvalidLatitudeLongitude;
+
+        DPoint2d latLong = {latitude, longitude};
+
+        return WriteDPoint2d(parent, childName, latLong);
+        }
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  3/2015
@@ -227,7 +270,7 @@ struct RealityDataSerializer
     template<class RefCountedData_T>
     static RefCountedData_T TryLoad(RealityPackageStatus& status, BeXmlNodeR node)
         {
-        status = RealityPackageStatus::Success; // We return NULL and SUCCESS if node is not of RealityData type.
+        status = RealityPackageStatus::UnknownElementType; 
         if(0 != BeStringUtilities::Stricmp(node.GetName(), RefCountedData_T::element_type::ElementName))
             return NULL;
 

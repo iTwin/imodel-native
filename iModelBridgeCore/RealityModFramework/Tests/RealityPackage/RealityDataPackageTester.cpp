@@ -41,11 +41,35 @@ public:
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, OptionalCreationDataAndBoundingPolygon)
+    {
+    Utf8CP package =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='1.0'>"
+            "<Name>ProjectName</Name>"
+        "</RealityDataPackage>";
+    
+    WString parseError;
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
+    ASSERT_EQ(RealityPackageStatus::Success, status);
+    ASSERT_TRUE(pPackage.IsValid());
+
+    ASSERT_TRUE(!pPackage->GetCreationDate().IsValid());
+    ASSERT_TRUE(!pPackage->GetBoundingPolygon().IsValid());
+    ASSERT_EQ(0, pPackage->GetBoundingPolygon().GetPointCount());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
 TEST_F (PackageTestFixture, InvalidVersion)
     {
     Utf8CP package =
         "<?xml version='1.0' encoding='UTF-8'?>"
-        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' Version='999999.0'>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='999999.0'>"
             "<Name>ProjectName</Name>"
         "</RealityDataPackage>";
     
@@ -55,6 +79,59 @@ TEST_F (PackageTestFixture, InvalidVersion)
 
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
     ASSERT_EQ(RealityPackageStatus::UnsupportedVersion, status);
+    ASSERT_TRUE(!pPackage.IsValid());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, InvalidDataSource)
+    {
+    Utf8CP package =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='1.0'>"
+            "<Name>ProjectName</Name>"
+            "<ImageryGroup>"
+                "<ImageryData>"
+                    "<Source type='image/jpeg'/>"
+                "</ImageryData>"
+            "</ImageryGroup>"
+        "</RealityDataPackage>";
+    
+    WString parseError;
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
+    ASSERT_EQ(RealityPackageStatus::MissingSourceAttribute, status);
+    ASSERT_TRUE(!pPackage.IsValid());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  3/2015
+//----------------------------------------------------------------------------------------
+TEST_F (PackageTestFixture, InvalidLatLong)
+    {
+    Utf8CP package =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='1.0'>"
+            "<Name>ProjectName</Name>"
+            "<ImageryGroup>"
+                "<ImageryData>"
+                    "<Source uri='./file.ext' type='image/jpeg'/>"
+                    "<Corners>"
+                        "<LowerLeft>55.55 999.9999</LowerLeft>"
+                    "</Corners>"
+                "</ImageryData>"
+            "</ImageryGroup>"
+        "</RealityDataPackage>";
+    
+    WString parseError;
+    RealityPackageStatus status = RealityPackageStatus::UnknownError;
+    RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromString(status, package, &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
+    ASSERT_EQ(RealityPackageStatus::InvalidLatitudeLongitude, status);
     ASSERT_TRUE(!pPackage.IsValid());
     }
 
@@ -123,13 +200,29 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     #define RPACKAGE_CANADA_POD_URI "./terrain/canada.pod"
     #define RPACKAGE_CANADA_DTM_URI "./terrain/canada.dtm"
 
+    // Add unknown elements to validate our ability to support future extension of the package format.
+    #define UNKNOWN_PACKAGE_ELEMENT "<NewPackageElement>data</NewPackageElement>"
+    #define UNKNOWN_IMAGERY_ELEMENT "<NewImageryElement>data</NewImageryElement>"
+    #define UNKNOWN_IMAGERY_SOURCE_ELEMENT "<ImageryData><NewSourceElement uri='./newSource/file.ext' type='newThing'/></ImageryData>"
+    #define UNKNOWN_MODEL_ELEMENT "<NewModelElement>data</NewModelElement>"
+    #define UNKNOWN_PINNED_ELEMENT "<NewPinnedElement>data</NewPinnedElement>"
+    #define UNKNOWN_TERRAIN_ELEMENT "<NewTerrainElement>data</NewTerrainElement>"
+    #define UNKNOWN_GROUP_ELEMENT "<NewGroupElement><NewGroupData>data</NewGroupData></NewGroupElement>"
+
+//     two kind of errors: 
+//         - Known data is bad >>>  THIS is a fatal ERROR even if data is optional. If present it must be valid. be sure to report it properly. ex: bounding poly parsing ERROR.
+//         - removing UNKNOWN is the best way to avoid unclear generic ERROR.
+//         - warning/report that we encounter UNKNOWN element that were ignored.
+//         - report line number? long	xmlGetLineNo (const xmlNode * node)
+
     Utf8CP package =
         "<?xml version='1.0' encoding='UTF-8'?>"
-        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' Version='1.0'>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='1.0'>"
             "<Name>" RPACKAGE_NAME "</Name>"
             "<Description>" RPACKAGE_DESCRIPTION "</Description>"
             "<CreationDate>" RPACKAGE_DATE "</CreationDate>"
             "<Copyright>" RPACKAGE_COPYRIGHT "</Copyright>"
+            UNKNOWN_PACKAGE_ELEMENT
             "<PackageId>" RPACKAGE_ID "</PackageId>"
             "<BoundingPolygon>" RPACKAGE_POLYGON "</BoundingPolygon>"
             "<ImageryGroup>"
@@ -141,20 +234,25 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
                         "<UpperLeft>" STRINGIFY(RPACKAGE_JPEG_UL_x) " " STRINGIFY(RPACKAGE_JPEG_UL_y) "</UpperLeft>"
                         "<UpperRight>" STRINGIFY(RPACKAGE_JPEG_UR_x) " " STRINGIFY(RPACKAGE_JPEG_UR_y) "</UpperRight>"
                     "</Corners>"
+                    UNKNOWN_IMAGERY_ELEMENT
                 "</ImageryData>"
                 "<ImageryData>"
                     "<WmsSource uri='" RPACKAGE_WMS_URI_AMP "' type='wms'/>"
                 "</ImageryData>"
+                UNKNOWN_IMAGERY_SOURCE_ELEMENT
             "</ImageryGroup>"
             "<ModelGroup>"
                 "<ModelData>"
                     "<Source uri='" RPACKAGE_ROAD_URI "' type='shapefile'/>"
+                    UNKNOWN_MODEL_ELEMENT
                 "</ModelData>"
             "</ModelGroup>"
+            UNKNOWN_GROUP_ELEMENT
             "<PinnedGroup>"
                 "<PinnedData>"
                     "<Source uri='" RPACKAGE_HOUSE_URI "' type='image/jpeg'/>"
                     "<Position>" STRINGIFY(RPACKAGE_HOUSE_LAT) " " STRINGIFY(RPACKAGE_HOUSE_LONG) "</Position>"
+                    UNKNOWN_PINNED_ELEMENT
                 "</PinnedData>"
                 "<PinnedData>"
                     "<Source uri='" RPACKAGE_TRAFFIC_URI "' type='video/avi'/>"
@@ -167,8 +265,10 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
                 "</TerrainData>"
                 "<TerrainData>"
                     "<Source uri='" RPACKAGE_CANADA_DTM_URI "' type='dtm'/>"
+                    UNKNOWN_TERRAIN_ELEMENT
                 "</TerrainData>"
             "</TerrainGroup>"
+            UNKNOWN_GROUP_ELEMENT
         "</RealityDataPackage>";
 
     WString parseError;
@@ -178,6 +278,7 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
     ASSERT_EQ(RealityPackageStatus::Success, status);
     ASSERT_TRUE(pPackage.IsValid());
+    ASSERT_TRUE(pPackage->HasUnknownElements());
 
     ASSERT_EQ(1, pPackage->GetMajorVersion()); 
     ASSERT_EQ(0, pPackage->GetMinorVersion()); 
@@ -221,16 +322,6 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_STREQ(L"pod", pPackage->GetTerrainGroup()[0]->GetSource().GetType().c_str());
     ASSERT_STREQ(WIDEN(RPACKAGE_CANADA_DTM_URI), pPackage->GetTerrainGroup()[1]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"dtm", pPackage->GetTerrainGroup()[1]->GetSource().GetType().c_str());
-
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-TEST_F (PackageTestFixture, IgnoreUnknownElement)
-    {
-    //&&MM must be able to read file that have unknown element and skip them gracefully.
-
     }
 
 //----------------------------------------------------------------------------------------
@@ -311,6 +402,7 @@ TEST_F (PackageTestFixture, CreateAndRead)
        
     
     ASSERT_EQ(RealityPackageStatus::Success, pPackage->Write(outfilename));
+    ASSERT_TRUE(!pPackage->HasUnknownElements());
     
     //&&MM needwork.
     // Schema validation
@@ -334,8 +426,8 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_EQ(RealityPackageStatus::Success, readStatus);
     ASSERT_TRUE(pReadPackage.IsValid());
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
-
-
+    ASSERT_TRUE(!pReadPackage->HasUnknownElements());
+    
     ASSERT_STREQ(pPackage->GetName().c_str(), pReadPackage->GetName().c_str());
     ASSERT_STREQ(pPackage->GetDescription().c_str(), pReadPackage->GetDescription().c_str());
     ASSERT_STREQ(pPackage->GetCopyright().c_str(), pReadPackage->GetCopyright().c_str());
