@@ -1,13 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/BackDoor/PublicAPI/BackDoor/ECDb/Backdoor.h $
+|  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/Backdoor.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <UnitTests/BackDoor/ECDb/ECDbTests.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -38,6 +39,10 @@ namespace Backdoor
             }
         }
 
+    namespace IGeometryFlatBuffer
+        {
+        IGeometryPtr BytesToGeometry(bvector <Byte> &buffer);
+        }
     };
 
 END_ECDBUNITTESTS_NAMESPACE

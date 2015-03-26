@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
-#include <GeomSerialization/GeomSerializationApi.h>
 #include <cmath> // for std::pow
+#include <UnitTests/BackDoor/ECDb/Backdoor.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -404,31 +404,80 @@ struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
             bvector<Byte> byteVec;
             byteVec.reserve(blobSizeU);
             byteVec.assign(geomBlob, geomBlob + blobSizeU);
-            IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
+            IGeometryPtr geom = Backdoor::IGeometryFlatBuffer::BytesToGeometry(byteVec);
             if (geom == nullptr)
                 {
                 ctx->SetResultError("Argument to GETGEOMETRYTYPE is not an IGeometry", -1);
                 return;
                 }
 
-            Utf8CP geomTypeStr = nullptr;
             IGeometry::GeometryType type = geom->GetGeometryType();
-            switch (type)
-                {
-                    case IGeometry::GeometryType::BsplineSurface: geomTypeStr = "BsplineSurface"; break;
-                    case IGeometry::GeometryType::CurvePrimitive: geomTypeStr = "CurvePrimitive"; break;
-                    case IGeometry::GeometryType::CurveVector: geomTypeStr = "CurveVector"; break;
-                    case IGeometry::GeometryType::Polyface: geomTypeStr = "Polyface"; break;
-                    case IGeometry::GeometryType::SolidPrimitive: geomTypeStr = "SolidPrimitive"; break;
-                    default: geomTypeStr = "Unknown"; break;
-                }
-
+            Utf8CP geomTypeStr = GeometryTypeToString(type);
             ctx->SetResultText(geomTypeStr, -1, DbFunction::Context::CopyData::Yes);
             }
 
     public:
         GeometryTypeECSqlFunction() : ECSqlScalarFunction("GETGEOMETRYTYPE", 1, ECN::PrimitiveType::PRIMITIVETYPE_String, this) {}
+
+        static Utf8CP GeometryTypeToString(IGeometry::GeometryType type)
+            {
+            switch (type)
+                {
+                    case IGeometry::GeometryType::BsplineSurface: return "BsplineSurface";
+                    case IGeometry::GeometryType::CurvePrimitive: return "CurvePrimitive";
+                    case IGeometry::GeometryType::CurveVector: return "CurveVector";
+                    case IGeometry::GeometryType::Polyface: return "Polyface";
+                    case IGeometry::GeometryType::SolidPrimitive: return "SolidPrimitive";
+                    default: return "Unknown";
+                }
+            }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
+    {
+    auto& ecdb = SetUp("geometryecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
 
+    IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    Utf8CP expectedGeomTypeStr = GeometryTypeECSqlFunction::GeometryTypeToString(line->GetGeometryType());
+    //insert test data
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "INSERT INTO ecsql.PASpatial (Geometry) VALUES (?)"));
+        stmt.BindGeometry(1, *line);
+        
+        ASSERT_EQ((int) ECSqlStepStatus::Done, (int) stmt.Step());
+
+        ecdb.SaveChanges();
+        }
+
+        GeometryTypeECSqlFunction ecsqlFunc;
+        ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(Geometry) FROM ecsql.PASpatial"));
+
+        while (stmt.Step() == ECSqlStepStatus::HasRow)
+            {
+            Utf8CP actualGeomTypeStr = stmt.GetValueText(0);
+            ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);
+            }
+        }
+
+/*        {
+        ECSqlStatement stmt;
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(?) FROM ecsql.PASpatial LIMIT 1"));
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.BindGeometry (1, *line));
+
+        while (stmt.Step() == ECSqlStepStatus::HasRow)
+            {
+            Utf8CP actualGeomTypeStr = stmt.GetValueText(0);
+            ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);
+            }
+        }
+        */
+    }
 END_ECDBUNITTESTS_NAMESPACE
