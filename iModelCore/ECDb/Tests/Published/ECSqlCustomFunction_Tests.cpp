@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
+#include <GeomSerialization/GeomSerializationApi.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -311,7 +312,7 @@ struct DateFromStringECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScala
 
             if (args[0].IsNull())
                 {
-                ctx->SetResultError("Argument to DISTANCE must not be NULL", -1);
+                ctx->SetResultError("Argument to DATEFROMSTRING must not be NULL", -1);
                 return;
                 }
 
@@ -375,29 +376,57 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
     }
 
 //---------------------------------------------------------------------------------------
-// Syntax: DATEFROMSTRING (Str) : DateTime
+// Syntax: GETGEOMETRYTYPE (IGeometry) : String
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct GeometryECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
+struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
     {
     private:
         virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
             {
             if (nArgs != 1)
                 {
-                ctx->SetResultError("Wrong number of arguments for function DATEFROMSTRING.", -1);
+                ctx->SetResultError("Wrong number of arguments for function GETGEOMETRYTYPE.", -1);
                 return;
                 }
 
             if (args[0].IsNull())
                 {
-                ctx->SetResultError("Argument to DISTANCE must not be NULL", -1);
+                ctx->SetResultError("Argument to GETGEOMETRYTYPE must not be NULL", -1);
                 return;
                 }
+
+            Byte const* geomBlob = static_cast<Byte const*> (args[0].GetValueBlob());
+            int blobSize = args[0].GetValueBytes();
+            BeAssert(blobSize > 0);
+            const size_t blobSizeU = (size_t) blobSize;
+            bvector<Byte> byteVec;
+            byteVec.reserve(blobSizeU);
+            byteVec.assign(geomBlob, geomBlob + blobSizeU);
+            IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
+            if (geom == nullptr)
+                {
+                ctx->SetResultError("Argument to GETGEOMETRYTYPE is not an IGeometry", -1);
+                return;
+                }
+
+            Utf8CP geomTypeStr = nullptr;
+            IGeometry::GeometryType type = geom->GetGeometryType();
+            switch (type)
+                {
+                    case IGeometry::GeometryType::BsplineSurface: geomTypeStr = "BsplineSurface"; break;
+                    case IGeometry::GeometryType::CurvePrimitive: geomTypeStr = "CurvePrimitive"; break;
+                    case IGeometry::GeometryType::CurveVector: geomTypeStr = "CurveVector"; break;
+                    case IGeometry::GeometryType::Polyface: geomTypeStr = "Polyface"; break;
+                    case IGeometry::GeometryType::SolidPrimitive: geomTypeStr = "SolidPrimitive"; break;
+                    default: geomTypeStr = "Unknown"; break;
+                }
+
+            ctx->SetResultText(geomTypeStr, -1, DbFunction::Context::CopyData::Yes);
             }
 
     public:
-        GeometryECSqlFunction() : ECSqlScalarFunction("GEOMETRY", 1, ECN::PrimitiveType::PRIMITIVETYPE_IGeometry, this) {}
+        GeometryTypeECSqlFunction() : ECSqlScalarFunction("GETGEOMETRYTYPE", 1, ECN::PrimitiveType::PRIMITIVETYPE_String, this) {}
     };
 
 
