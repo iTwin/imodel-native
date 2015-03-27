@@ -2,12 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentInstancesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
+#pragma once
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/ContentSpecification.h>
 #include <ECPresentationRules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -18,6 +21,7 @@ Specification that creates content ECQueries for predefined ECClasses.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_instanceFilter;
         WString  m_classNames;
@@ -33,6 +37,7 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification ();
@@ -53,3 +58,5 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

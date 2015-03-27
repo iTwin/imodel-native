@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <ECObjects\ECInstanceIterable.h>
+#include <ECObjects/ECObjectsAPI.h>
 #include "ecpresentationtypedefs.h"
-#include <ECObjects\ECInstance.h>
+#include <ECObjects/ECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -28,6 +28,7 @@ struct IAUIItem : public RefCountedBase // Content Service Element
         virtual IAUIDataContextCP   _GetDataInstance() const = 0;
         virtual IAUIItemInfoCR      _GetUIItemInfo () const = 0;
 /*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
 
     public:
         //! Get the data instance bind with this ui instance.
@@ -67,6 +68,7 @@ struct  IAUIItemInfo
         virtual ItemType    _GetItemType() const = 0;
 
 /*__PUBLISH_SECTION_START__*/
+//__PUBLISH_CLASS_VIRTUAL__
     public:
     //! Constructor that initializes an item from a primitive type.
     virtual ~IAUIItemInfo ()
@@ -120,6 +122,7 @@ struct  IAUIDataContext
 
 /*__PUBLISH_SECTION_END__*/
 
+#if defined (REMOVED_FOR_BOOST)
 /*=================================================================================**//**
 * @bsistruct                                    Abeesh.Basheer                  06/2012
 +===============+===============+===============+===============+===============+======*/
@@ -150,6 +153,7 @@ struct ECInstanceIterableDataContext: public IAUIDataContext
             return true;
             }
     };
+#endif
 
 /*=================================================================================**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
@@ -203,6 +207,7 @@ struct  ECGroupingNodeDataContext : public IAUIDataContext
         virtual WString     GetMoniker () const override { return m_nodeMoniker; }
     };
 
+#if defined (REMOVED_FOR_BOOST)
 /*=================================================================================**//**
 //! A class which describes the data that is backed by a single ECInstance in the UI.
 * @bsiclass                                     Abeesh.Basheer                  04/2012
@@ -224,10 +229,11 @@ struct  ECNodeCollectionDataContext : public IAUIDataContext
         virtual ECInstanceIterableCP    GetInstanceIterable () const { return &m_data; }
         virtual void*                   GetCustomData() const {return m_customData;}
     };
+#endif
 
 /*__PUBLISH_SECTION_START__*/
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
-#pragma make_public (Bentley::ECN::IAUIDataContext)
-#pragma make_public (Bentley::ECN::IUICommand)
+//#pragma make_public (ECN::IAUIDataContext)
+//#pragma make_public (ECN::IUICommand)

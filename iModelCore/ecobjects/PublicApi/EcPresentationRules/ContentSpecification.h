@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
@@ -19,8 +21,9 @@ typedef bvector<DisplayRelatedItemsSpecificationP> DisplayRelatedItemsSpecificat
 Base class for all ContentSpecifications.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ContentSpecification
+struct EXPORT_VTABLE_ATTRIBUTE ContentSpecification
     {
+//__PUBLISH_SECTION_END__
 private:
     int                                  m_priority;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
@@ -42,9 +45,11 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void                         _WriteXml (BeXmlNodeP xmlNode) = 0;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
     //! Destructor.
-    ECOBJECTS_EXPORT                                      ~ContentSpecification (void);
+    ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);
 
     //! Reads specification from XML.
     ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
@@ -64,4 +69,4 @@ public:
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 
-#pragma make_public (Bentley::ECN::ContentSpecification)
+/** @endcond */

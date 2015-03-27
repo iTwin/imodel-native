@@ -5,8 +5,12 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/PresentationRule.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -24,6 +28,7 @@ Presentation rule for child nodes advanced grouping in the hierarchy.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupingRule : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString               m_schemaName;
         WString               m_className;
@@ -42,6 +47,7 @@ struct GroupingRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT GroupingRule ();
@@ -76,7 +82,6 @@ struct GroupingRule : public PresentationRule
 
         //! Returns a list of GroupSpecifications.
         ECOBJECTS_EXPORT GroupList&          GetGroups (void);
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,6 +90,7 @@ GroupSpecification that identifies parameters on how to group ECInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GroupSpecification
     {
+//__PUBLISH_SECTION_END__
 private:
     WString  m_contextMenuLabel;
     WString  m_defaultLabel;
@@ -105,7 +111,12 @@ protected:
     //! Writes rule information to given XmlNode.
     ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) = 0;
 
+//__PUBLISH_CLASS_VIRTUAL__
+//__PUBLISH_SECTION_START__
 public:
+    //! Virtual destructor.
+    virtual ~GroupSpecification(){}
+    
     //! Reads group specification from xml node.
     ECOBJECTS_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
 
@@ -126,6 +137,7 @@ of the same label.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SameLabelInstanceGroup : public GroupSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP           _GetXmlElementName ();
@@ -136,6 +148,7 @@ struct SameLabelInstanceGroup : public GroupSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SameLabelInstanceGroup ();
@@ -151,6 +164,7 @@ ClassGroup that identifies parameters on how to group ECInstances.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ClassGroup : public GroupSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         bool      m_createGroupForSingleItem;
         WString   m_schemaName;
@@ -166,6 +180,7 @@ struct ClassGroup : public GroupSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ClassGroup ();
@@ -181,7 +196,6 @@ struct ClassGroup : public GroupSpecification
 
         //! Base ECClass name to group ECInstances by.
         ECOBJECTS_EXPORT WStringCR                GetBaseClassName (void) const;
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,6 +205,7 @@ by a specific property.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyGroup : public GroupSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString                 m_imageId;
         bool                    m_createGroupForSingleItem;
@@ -207,6 +222,7 @@ struct PropertyGroup : public GroupSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT PropertyGroup ();
@@ -228,9 +244,7 @@ struct PropertyGroup : public GroupSpecification
 
         //! List of grouping ranges. If grouping ranges are not specified ECInstances will be grouped by common value.
         ECOBJECTS_EXPORT PropertyRangeGroupList&  GetRanges (void);
-
     };
-
 
 /*---------------------------------------------------------------------------------**//**
 PropertyGroup that identifies parameters on how to group specific class ECInstances 
@@ -239,12 +253,14 @@ by a specific property.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyRangeGroupSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_label;
         WString  m_imageId;
         WString  m_fromValue;
         WString  m_toValue;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT PropertyRangeGroupSpecification ();
@@ -269,7 +285,8 @@ struct PropertyRangeGroupSpecification
 
         //! Property that defines the range end point. It is string for being able to define Units.
         ECOBJECTS_EXPORT WStringCR                GetToValue (void) const;
-
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

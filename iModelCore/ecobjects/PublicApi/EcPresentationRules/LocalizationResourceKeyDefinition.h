@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/LocalizationResourceKeyDefinition.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -17,6 +19,7 @@ additional settings for the resource key.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LocalizationResourceKeyDefinition : public PresentationKey
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString m_id;
         WString m_key;
@@ -32,6 +35,7 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinition ();
@@ -51,3 +55,5 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

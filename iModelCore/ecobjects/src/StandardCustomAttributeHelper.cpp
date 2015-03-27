@@ -41,12 +41,16 @@ DateTimeInfo::DateTimeInfo (bool isKindNull, DateTime::Kind kind, bool isCompone
     {
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DateTimeInfo::operator== (DateTimeInfo const& rhs) const
     {
-    return m_isKindNull == rhs.m_isKindNull && m_isComponentNull == rhs.m_isComponentNull && m_info == rhs.m_info;
+    return (
+            ((m_isKindNull && rhs.m_isKindNull) || (!m_isKindNull && !rhs.m_isKindNull && m_info.GetKind () == rhs.m_info.GetKind ())) &&
+            ((m_isComponentNull && rhs.m_isComponentNull) || (!m_isComponentNull && !rhs.m_isComponentNull && m_info.GetComponent () == rhs.m_info.GetComponent ()))
+            );
     }
 
 //---------------------------------------------------------------------------------------
@@ -71,6 +75,14 @@ DateTime::Info DateTimeInfo::GetInfo (bool useDefaultIfUnset) const
     const DateTime::Component component = IsComponentNull () ? DEFAULT_COMPONENT : m_info.GetComponent ();
 
     return DateTime::Info (kind, component);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool DateTimeInfo::IsNull () const
+    {
+    return IsKindNull () && IsComponentNull ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -151,22 +163,8 @@ WString DateTimeInfo::ToString () const
     return str;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-WCharCP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_NAME = L"SystemSchema";
-//static
-WCharCP const StandardCustomAttributeHelper::DYNAMICSCHEMA_CA_NAME = L"DynamicSchema";
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool StandardCustomAttributeHelper::TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
-    {
-    return DateTimeInfoAccessor::TryGetFrom (dateTimeInfo, dateTimeProperty);
-    }
+//*********************** StandardCustomAttributesSchemaHolder *************************************
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
@@ -180,7 +178,7 @@ struct StandardCustomAttributesSchemaHolder : RefCountedBase
 {
 private:
     ECSchemaPtr            m_schema;
-    bmap<WCharCP, StandaloneECEnablerPtr> m_enablers;
+    bmap<WString, StandaloneECEnablerPtr> m_enablers;
 
     static StandardCustomAttributesSchemaHolderPtr s_schemaHolder;
 
@@ -267,14 +265,18 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateCustomAttributeInsta
     if (!m_schema.IsValid())
         _GetSchema();
 
-    bmap<WCharCP, StandaloneECEnablerPtr>::const_iterator enablerIterator = m_enablers.find(attribute);
-    StandaloneECEnablerPtr enabler = enablerIterator->second;
-    IECInstancePtr customAttributeInstance;
-    if (!enabler.IsValid())
-        return customAttributeInstance;
+    auto enablerIterator = m_enablers.find(attribute);
+    if (enablerIterator == m_enablers.end())
+        {
+        BeDataAssert (false && "Unknown supplemental schema custom attribute class name. Currently only SupplementalSchemaMetaData and SupplementalProvenance are supported.");
+        return nullptr;
+        }
 
-    StandaloneECInstancePtr standaloneInstance = enabler->CreateInstance();
-    return IECInstancePtr(standaloneInstance.get());
+    StandaloneECEnablerPtr enabler = enablerIterator->second;
+    if (!enabler.IsValid())
+        return nullptr;
+
+    return enabler->CreateInstance().get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -283,6 +285,25 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::_CreateCustomAttributeInsta
 IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstance(WCharCP attribute)
     {
     return GetHolder()->_CreateCustomAttributeInstance(attribute);
+    }
+
+//*********************** StandardCustomAttributeHelper *************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 03/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+WCharCP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_NAME = L"SystemSchema";
+//static
+WCharCP const StandardCustomAttributeHelper::DYNAMICSCHEMA_CA_NAME = L"DynamicSchema";
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
+    {
+    return DateTimeInfoAccessor::GetFrom (dateTimeInfo, dateTimeProperty);
     }
 
 
@@ -320,7 +341,7 @@ ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema (ECSchemaR sch
         ECClassP dynamicSchemaClass = schema.GetReferencedSchemas().FindClassP (dynamicSchemaClassId);
         //BeAssert (dynamicSchemaClass != NULL && "It seem BSCA schema is not referenced or current reference has version less then 1.6");
         if (dynamicSchemaClass == NULL)
-            return /* ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound; */ ECOBJECTS_STATUS_Error;
+            return ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound;
 
         IECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
         return schema.SetCustomAttribute (*dynamicSchemaInstance);

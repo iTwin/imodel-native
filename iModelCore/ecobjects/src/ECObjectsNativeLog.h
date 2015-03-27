@@ -2,12 +2,10 @@
 |
 |     $Source: src/ECObjectsNativeLog.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <Logging/BentleyLogging.h>
+#include <Logging/bentleylogging.h>
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"ECObjectsNative"))
-
-
+#define LOG (*NativeLogging::LoggingManager::GetLogger (L"ECObjectsNative"))

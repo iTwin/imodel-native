@@ -316,7 +316,7 @@ ECObjectsStatus ECClass::DeleteProperty (ECPropertyR prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP ECClass::GetPropertyByIndex (uint32_t index)
+ECPropertyP ECClass::GetPropertyByIndex (uint32_t index) const
     {
     if (index >= (uint32_t)m_propertyList.size())
         return NULL;
@@ -953,7 +953,10 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
             if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
+                {
+                LOG.errorv (L"Attempt to override a %ls property of class %ls with a different type property in derived class %ls", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
                 return status;
+                }        
             }
         }
 
@@ -1178,6 +1181,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context)
     {            
+	bool isSchemaSupplemental = WString::npos != GetSchema().GetName().find(L"_Supplemental_");
     // Get the BaseClass child nodes.
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
@@ -1189,7 +1193,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             if (SCHEMA_READ_STATUS_Success != status)
                 return status;
             }
-        else if (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT))
+        else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context);
             if (SCHEMA_READ_STATUS_Success != status)
@@ -1227,8 +1231,8 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     WString className;
     if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
         {
-        LOG.warningv (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be parsed.",  
-            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
+        LOG.warningv ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be parsed.",  
+            Utf8String (GetName()).c_str(), EC_BASE_CLASS_ELEMENT, Utf8String (qualifiedClassName).c_str());
 
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1236,8 +1240,8 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     ECSchemaCP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
     if (NULL == resolvedSchema)
         {
-        LOG.warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
-            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
+        LOG.warningv  ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+            Utf8String (GetName()).c_str(), EC_BASE_CLASS_ELEMENT, Utf8String (namespacePrefix).c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
@@ -1245,8 +1249,8 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     ECClassCP baseClass = resolvedSchema->GetClassCP (className.c_str());
     if (NULL == baseClass)
         {
-        LOG.warningv  (L"Invalid ECSchemaXML: The ECClass '%ls' contains a %hs element with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
-            this->GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+        LOG.warningv  ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+            Utf8String (GetName ()).c_str (), EC_BASE_CLASS_ELEMENT, Utf8String (qualifiedClassName).c_str (), Utf8String (className).c_str (), Utf8String (resolvedSchema->GetName ()).c_str ());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
 
@@ -1270,8 +1274,8 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 
     if (ECOBJECTS_STATUS_Success != this->AddProperty (ecProperty))
         {
-        LOG.warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%hs'", 
-            this->GetName().c_str(), this->GetSchema().GetName().c_str(), childNodeName);
+        LOG.warningv  (L"Invalid ECSchemaXML: Failed to read ECClass '%ls:%ls' because a problem occurred while adding ECProperty '%ls'", 
+            this->GetName().c_str(), this->GetSchema().GetName().c_str(), WString (childNodeName, BentleyCharEncoding::Utf8).c_str ());
         delete ecProperty;
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
@@ -1430,6 +1434,43 @@ size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
 
     return nProperties;
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetInstanceLabelProperty() const
+    {
+    /*
+     * Note: The ugly case by case comparisions is just a way to make the instance 
+     * labels from legacy ECschemas (that didn't follow consistent property naming)
+     * acceptable.
+     */
+
+    ECPropertyP instanceLabelProperty = NULL;
+    IECInstancePtr caInstance = this->GetCustomAttribute(L"InstanceLabelSpecification");
+    if (caInstance.IsValid())
+        {
+        ECValue value;
+        if (ECOBJECTS_STATUS_Success == caInstance->GetValue (value, L"PropertyName") && !value.IsNull())
+            {
+            WCharCP propertyName = value.GetString();
+            instanceLabelProperty = this->GetPropertyP (propertyName);
+            if (NULL != instanceLabelProperty)
+                return instanceLabelProperty;
+            }
+        }
+
+    WString instanceLabelPropertyNames[6] = 
+        {L"DisplayLabel", L"DISPLAYLABEL", L"displaylabel", L"Name", L"NAME", L"name"};
+    FOR_EACH (WStringCR propName, instanceLabelPropertyNames)
+        {
+        instanceLabelProperty = this->GetPropertyP (propName.c_str());
+        if (NULL != instanceLabelProperty)
+            return instanceLabelProperty;
+        }
+
+    return NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2010
@@ -1556,7 +1597,7 @@ uint32_t upperLimit
 )
     {
     EXPECTED_CONDITION (lowerLimit <= upperLimit);
-    EXPECTED_CONDITION (lowerLimit >= 0);
+    //EXPECTED_CONDITION (lowerLimit >= 0); -- always true of a UInt32
     EXPECTED_CONDITION (upperLimit > 0);
     m_lowerLimit = lowerLimit;
     m_upperLimit = upperLimit;
@@ -1658,11 +1699,10 @@ RelationshipCardinalityCR RelationshipCardinality::OneMany
 ECRelationshipConstraint::ECRelationshipConstraint
 (
 ECRelationshipClassP relationshipClass
-)
+) :m_constraintClasses(relationshipClass)
     {
     m_relClass = relationshipClass;
     m_cardinality = &s_zeroOneCardinality;
-    m_isMultiple = false;
     m_isPolymorphic = true;
     }
     
@@ -1673,10 +1713,9 @@ ECRelationshipConstraint::ECRelationshipConstraint
 (
 ECRelationshipClassP relationshipClass, 
 bool isMultiple
-)
+) :m_constraintClasses(relationshipClass,isMultiple)
     {
     m_relClass = relationshipClass;
-    m_isMultiple = isMultiple;
     m_cardinality = &s_zeroOneCardinality;
     m_isPolymorphic = true;
     }
@@ -1728,27 +1767,42 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         WString className;
         if (ECOBJECTS_STATUS_Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
             {
-            LOG.warningv (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be parsed.", 
-                CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str());
+            LOG.warningv ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be parsed.", 
+                CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (constraintClassName).c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
         
         ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
         if (NULL == resolvedSchema)
             {
-            LOG.warningv  (L"Invalid ECSchemaXML: ECRelationshipConstraint contains a %hs attribute with the namespace prefix '%ls' that can not be resolved to a referenced schema.", 
-                CONSTRAINTCLASSNAME_ATTRIBUTE, namespacePrefix.c_str());
+            LOG.warningv  ("Invalid ECSchemaXML: ECRelationshipConstraint contains a %s attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+                CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (namespacePrefix).c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
 
         ECClassCP constraintClass = resolvedSchema->GetClassCP (className.c_str());
         if (NULL == constraintClass)
             {
-            LOG.warningv  (L"Invalid ECSchemaXML: The ECRelationshipConstraint contains a %hs attribute with the value '%ls' that can not be resolved to an ECClass named '%ls' in the ECSchema '%ls'", 
-                CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
+            LOG.warningv  ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+                CONSTRAINTCLASSNAME_ATTRIBUTE, Utf8String (constraintClassName).c_str(), Utf8String (className).c_str(), Utf8String (resolvedSchema->GetName()).c_str());
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
             }
-        AddClass(*constraintClass);
+        ECRelationshipConstraintClassP ecRelationshipconstaintClass;
+        m_constraintClasses.Add(ecRelationshipconstaintClass,*constraintClass);
+        if (ecRelationshipconstaintClass != nullptr)
+            {
+            for (BeXmlNodeP childNodekey = childNode->GetFirstChild(); NULL != childNodekey; childNodekey = childNode->GetNextSibling())
+                {
+                for (BeXmlNodeP childNodekeyProperty = childNodekey->GetFirstChild(); NULL != childNodekeyProperty; childNodekeyProperty = childNodekeyProperty->GetNextSibling())
+                    {
+
+                    WString     propertyName;
+                    if (BEXML_Success != childNodekeyProperty->GetAttributeStringValue(propertyName, KEYPROPERTYNAME_ATTRIBUTE))
+                        return SCHEMA_READ_STATUS_InvalidECSchemaXml;
+                    ecRelationshipconstaintClass->AddKey(propertyName.c_str());
+                    }
+                }
+            }
         }
 
     // Add Custom Attributes
@@ -1758,7 +1812,12 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     }
     
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
+* @bsimethod                                  const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs)
+            {
+            m_ecClass = rhs.m_ecClass;
+            m_keys = std::move(rhs.m_keys);
+            return *this;
+            }  Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const
     {
@@ -1774,42 +1833,31 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlNodeR parentNode, Utf
         
     WriteCustomAttributes (*constraintNode);
 
-    for (ECClassP constraint: m_constraintClasses)
+    for (const auto &constraint : m_constraintClasses)
         {
-        BeXmlNodeP  constraintClassNode = constraintNode->AddEmptyElement (EC_CONSTRAINTCLASS_ELEMENT);
-        constraintClassNode->AddAttributeStringValue (CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), *constraint).c_str());
+        BeXmlNodeP  constraintClassNode = constraintNode->AddEmptyElement(EC_CONSTRAINTCLASS_ELEMENT);
+        constraintClassNode->AddAttributeStringValue(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), constraint->GetClass()).c_str());
+        for (auto key : constraint->GetKeys())
+            {
+            auto constraintKey = constraintClassNode->AddEmptyElement(EC_CONSTRAINTKEY_ELEMENT);
+            constraintKey->AddEmptyElement(EC_KEYPROPERTY_ELEMENT)->AddAttributeStringValue(KEYPROPERTYNAME_ATTRIBUTE, key.c_str());
+            }
         }
     
     return status;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::AddClass (ECClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     {
-    if (&(classConstraint.GetSchema()) != &(m_relClass->GetSchema()))
-        {
-        ECSchemaReferenceListCR referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
-        ECSchemaReferenceList::const_iterator schemaIterator = referencedSchemas.find (classConstraint.GetSchema().GetSchemaKey());
-        if (schemaIterator == referencedSchemas.end())
-            return ECOBJECTS_STATUS_SchemaNotFound;
-        }
 
-    if (!m_isMultiple)
-        m_constraintClasses.clear();
-    else
-        {
-        ECConstraintClassesList::const_iterator constraintClassIterator;
-        for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
-            {
-            if (*constraintClassIterator == (ECClassP)&classConstraint)
-                return ECOBJECTS_STATUS_Success;
-            }
-        }
-    m_constraintClasses.push_back((ECClassP)&classConstraint);
-    
-    return ECOBJECTS_STATUS_Success;       
+    ECRelationshipConstraintClassP ecRelationShipconstraintClass;
+    m_constraintClasses.Add(ecRelationShipconstraintClass,classConstraint );
+
+    return  m_constraintClasses.Add(ecRelationShipconstraintClass, classConstraint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1817,34 +1865,48 @@ ECObjectsStatus ECRelationshipConstraint::AddClass (ECClassCR classConstraint)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECClassCR classConstraint)
     {
-    ECConstraintClassesList::iterator constraintClassIterator;
-
-    for (constraintClassIterator = m_constraintClasses.begin(); constraintClassIterator != m_constraintClasses.end(); constraintClassIterator++)
-        {
-        if (*constraintClassIterator == (ECClassP)&classConstraint)
-            {
-            m_constraintClasses.erase(constraintClassIterator);
-            return ECOBJECTS_STATUS_Success;
-            }
-        }
-        
-    return ECOBJECTS_STATUS_ClassNotFound;
+    return m_constraintClasses.Remove(classConstraint);
     }
-    
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
+    {
+    ECConstraintClassesList listOfClasses;
+    for (auto const &constraintClassIterator : m_constraintClasses)
+        {
+        listOfClasses.push_back (const_cast<ECClassP>(&constraintClassIterator->GetClass ()));
+        }
+    return listOfClasses;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::ECRelationshipConstraintClassList(ECRelationshipClassP relClass, bool isMultiple) :m_relClass(relClass), m_isMultiple(isMultiple)
+    {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECConstraintClassesList& ECRelationshipConstraint::GetClasses () const
+ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraintClasses() const
     {
     return m_constraintClasses;
     }
-     
+ECRelationshipConstraintClassList& ECRelationshipConstraint::GetConstraintClassesR() 
+    {
+    return m_constraintClasses;
+    }
+
+bool ECRelationshipConstraintClassList::GetIsMultiple() const
+    {
+    return m_isMultiple;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipConstraint::GetIsMultiple () const
     {
-    return m_isMultiple;
+    return m_constraintClasses.GetIsMultiple();
     }
   
 /*---------------------------------------------------------------------------------**//**
@@ -1979,12 +2041,12 @@ ECRelationshipConstraintR toRelationshipConstraint
 
     ECObjectsStatus status;
     ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
-    for(ECClassP constraintClass: GetClasses())
+    for (auto constraintClass : GetConstraintClasses())
         {
-        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetClass().GetName().c_str());
         if (NULL == destConstraintClass)
             {
-            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+            status = destSchema->CopyClass(destConstraintClass, constraintClass->GetClass());
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
             }
@@ -2049,7 +2111,7 @@ OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(STRENGTHDIRECTION_Forward) 
+ECRelationshipClass::ECRelationshipClass (ECN::ECSchemaCR schema) : ECClass (schema), m_strength( STRENGTHTYPE_Referencing), m_strengthDirection(ECRelatedInstanceDirection::Forward) 
     {
     m_source = new ECRelationshipConstraint(this, false);
     m_target = new ECRelationshipConstraint(this, true);
@@ -2243,11 +2305,15 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
         
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
-        m_source->ReadXml (*sourceNode, context);
+        status = m_source->ReadXml (*sourceNode, context);
+    if (status != SCHEMA_READ_STATUS_Success)
+        return status;
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != targetNode)
-        m_target->ReadXml (*targetNode, context);
+        status = m_target->ReadXml (*targetNode, context);
+    if (status != SCHEMA_READ_STATUS_Success)
+        return status;
         
     return SCHEMA_READ_STATUS_Success;
     }
@@ -2288,6 +2354,262 @@ bool ECClass::Is (WCharCP schemaname, WCharCP classname) const
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                            Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECRelationshipConstraintClassList::iterator::Impl
+    {
+    typedef std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator const_iterator;
+    private:
+        const_iterator m_iterator;
+
+    public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+        Impl (const_iterator& iterator)
+            :m_iterator (iterator)
+            {
+            }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    const_iterator const& GetIterator () const { return m_iterator; }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    const_iterator& GetIteratorR ()  { return m_iterator; }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                             Muhammad.Zaighum                   11/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Impl& operator = (Impl& rhs)
+        {
+        m_iterator = rhs.GetIterator();
+        return *this;
+        }
+    };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::iterator (std::vector<std::unique_ptr<ECRelationshipConstraintClass>>::const_iterator x)
+:m_pimpl (new Impl (x))
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::iterator(const ECRelationshipConstraintClassList::iterator & it)
+:m_pimpl (new Impl (it.m_pimpl->GetIteratorR()))
+    {
+    } 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator::operator = (ECRelationshipConstraintClassList::iterator const& rhs)
+    {
+    *(this->m_pimpl) =  *(rhs.m_pimpl);
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::iterator()
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator:: operator++()
+    {
+    ++(m_pimpl->GetIteratorR());
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipConstraintClassList::iterator::operator==(const iterator& rhs)const
+    {
+    return m_pimpl->GetIteratorR () == rhs.m_pimpl->GetIteratorR ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipConstraintClassList::iterator::operator!=(const iterator& rhs)const
+    {
+    return m_pimpl->GetIteratorR () != rhs.m_pimpl->GetIteratorR ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::iterator::operator*()const
+    {
+    return m_pimpl->GetIteratorR ()->get ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator::~iterator()
+    {
+    delete m_pimpl;
+    m_pimpl = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::iterator::operator->()const
+    {
+    return m_pimpl->GetIteratorR ()->get ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::begin()const
+    {
+    return iterator(m_constraintClasses.begin());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::end()const
+    {
+    return iterator(m_constraintClasses.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassCP ECRelationshipConstraintClassList::operator[](size_t x)const
+    {
+    return m_constraintClasses.at(x).get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraintClassList::clear()
+    {
+    m_constraintClasses.clear();
+    return ECObjectsStatus::ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constainClass)
+    {
+    for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
+        {
+        if (&itor->get()->GetClass() == &constainClass)
+            {
+            m_constraintClasses.erase(itor);
+            return ECOBJECTS_STATUS_Success;
+            }
+        }
+
+    return ECOBJECTS_STATUS_ClassNotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraintClassList::Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass)
+    {
+    classConstraint = nullptr;
+    if (&(ecClass.GetSchema()) != &(m_relClass->GetSchema()))
+        {
+        ECSchemaReferenceListCR referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator = referencedSchemas.find(ecClass.GetSchema().GetSchemaKey());
+        if (schemaIterator == referencedSchemas.end())
+            return ECOBJECTS_STATUS_SchemaNotFound;
+        }
+
+    if (!m_isMultiple)
+        m_constraintClasses.clear();
+    else
+        {
+
+        for (auto &constraintClassIterator : m_constraintClasses)
+            {
+            if (&constraintClassIterator->GetClass() == &ecClass)
+                {
+                classConstraint = constraintClassIterator.get();
+                return ECOBJECTS_STATUS_Success;
+                }
+            }
+        }
+    auto newConstraintClass =  std::unique_ptr<ECRelationshipConstraintClass>(new ECRelationshipConstraintClass(ecClass));
+    classConstraint = newConstraintClass.get();
+    m_constraintClasses.push_back(std::move(newConstraintClass));
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClassList::~ECRelationshipConstraintClassList()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) : m_ecClass(&ecClass)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Muhammad.Zaighum                 11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs) :
+m_ecClass(rhs.m_ecClass), m_keys(std::move(rhs.m_keys))
+    { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+const ECRelationshipConstraintClass & ECRelationshipConstraintClass::operator = (ECRelationshipConstraintClass const && rhs)
+    {
+    m_ecClass = rhs.m_ecClass;
+    m_keys = std::move(rhs.m_keys);
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCR ECRelationshipConstraintClass::GetClass() const
+    {
+    return *m_ecClass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+const std::vector<WString>& ECRelationshipConstraintClass::GetKeys() const
+    {
+    return m_keys;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad.Zaighum                   11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECRelationshipConstraintClass::AddKey(WCharCP key)
+    {
+    m_keys.push_back(key);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

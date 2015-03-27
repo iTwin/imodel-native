@@ -14,6 +14,7 @@
 #ifndef DesignByContract_H_
 #define DesignByContract_H_
 
+/// @cond BENTLEY_SDK_Internal
 #include <ECObjects/ECObjects.h>
 
 //! This class is utilzed by the macros defined in this header file.  No calling code should typically ever need to use this class directly.
@@ -24,10 +25,10 @@ private:
     static int s_globalIgnoreCount;
 
 public:
+/*__PUBLISH_SECTION_START__*/
     ECOBJECTS_EXPORT static bool AreAssertsDisabled (void);
     ECOBJECTS_EXPORT AssertDisabler(void);
     ECOBJECTS_EXPORT ~AssertDisabler(void);
-/*__PUBLISH_SECTION_START__*/
 };
 
     //! Utilize this macro to disable asserts that may occur within a codeblock.
@@ -113,8 +114,8 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define PRECONDITION(_Expression, _ErrorStatus)             \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-        L"The following method precondition check has failed:\n  precondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", \
-        #_Expression, __FUNCTION__, __FILE__, __LINE__)
+        L"Precondition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
+        WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__)
 
 
 //! This macro should be utilized in published API methods to enforce the post-conditions.  The post-conditions of a method are a series of assertions near the
@@ -138,8 +139,8 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //! \endcode
 #define POSTCONDITION(_Expression, _ErrorStatus)            \
         EXPECT_CONDITION_LOG_ASSERT_RETURN(_Expression, _ErrorStatus, \
-            L"The following method postcondition check has failed:\n  postcondition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n",   \
-            #_Expression, __FUNCTION__, __FILE__, __LINE__)
+            L"Postcondition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", \
+            WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__)
 
 
 //! This macro should be utilized to check that an expected condition is true.  If the condition evaluates to false the macro will log and BeAssert leaving it to the caller
@@ -156,7 +157,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_CONDITION(_Expression)     ( (_Expression) \
-    || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LOG_ASSERT_FAILURE(L"Expected condition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__), 0) \
     || (ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
 
 //! An inverted form of EXPECTED_CONDITION if you prefer checking for the positive of an expression when writing your code.
@@ -185,7 +186,7 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
 //!         }
 //! \endcode
 #define EXPECTED_DATA_CONDITION(_Expression)     ( (_Expression) \
-    || (LOG_ASSERT_FAILURE(L"The following expected condition has failed:\n  expected condition: %hs\n  method: %hs\n  file: %hs\n  line: %i\n", #_Expression, __FUNCTION__, __FILE__, __LINE__), 0) \
+    || (LOG_ASSERT_FAILURE(L"Expected condition failed: %ls\n  method: %ls\n  file: %ls\n  line: %i\n", WString(#_Expression, BentleyCharEncoding::Utf8).c_str(), WString(__FUNCTION__, BentleyCharEncoding::Utf8).c_str(), WString(__FILE__, BentleyCharEncoding::Utf8).c_str(), __LINE__), 0) \
     || (DATA_ASSERT_FALSE_IF_NOT_DISABLED (_Expression), 0) )
 
 //! An inverted form of EXPECTED_DATA_CONDITION if you prefer checking for the positive of an expression when writing your code.
@@ -207,6 +208,9 @@ ECOBJECTS_EXPORT void LogFailureMessage (WCharCP message, ...);
     #define DEBUG_EXPECT(_Expression)    EXPECTED_CONDITION(_Expression)
     #define DEBUG_FAIL(_Message)         EXPECTED_CONDITION(false && _Message)
 #endif
-/* __PUBLISH_SECTION_START__*/
+
+/*__PUBLISH_SECTION_START__*/
+
+/// @endcond BENTLEY_SDK_Internal
+
 #endif // DesignByContract_H_
-/* __PUBLISH_SECTION_END__ */

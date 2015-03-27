@@ -2,12 +2,15 @@
 |
 |     $Source: PublicApi/EcPresentationRules/AllInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
+#pragma once
+/* __PUBLISH_SECTION_START__ */
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/ChildNodeSpecification.h>
 #include <ECPresentationRules/PresentationRuleSet.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -18,6 +21,7 @@ This specification returns all instance nodes available in the repository.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct AllInstanceNodesSpecification : public ChildNodeSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         bool     m_groupByClass;
         bool     m_groupByLabel;
@@ -33,6 +37,7 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT AllInstanceNodesSpecification ();
@@ -53,3 +58,5 @@ struct AllInstanceNodesSpecification : public ChildNodeSpecification
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */
