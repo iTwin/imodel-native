@@ -1102,18 +1102,14 @@ struct DbValue
 //=======================================================================================
 struct DbFunction
 {
-private:
-    Utf8String m_name;
-    int        m_nArgs;
-
 public:
     //=======================================================================================
     //! The "context" supplied to DbFunctions that can be used to set result values.
     // @bsiclass                                                    Keith.Bentley   06/14
     //=======================================================================================
     struct Context
-    {
-        enum class CopyData : int {No=0, Yes=-1};                                     //!< see sqlite3_destructor_type
+        {
+        enum class CopyData : int { No = 0, Yes = -1 };                                     //!< see sqlite3_destructor_type
         BE_SQLITE_EXPORT void SetResultBlob(void const* value, int length, CopyData); //!< see sqlite3_result_blob
         BE_SQLITE_EXPORT void SetResultDouble(double);                                //!< see sqlite3_result_double
         BE_SQLITE_EXPORT void SetResultError(Utf8CP, int);                            //!< see sqlite3_result_error
@@ -1126,12 +1122,29 @@ public:
         BE_SQLITE_EXPORT void SetResultText(Utf8CP value, int length, CopyData);      //!< see sqlite3_result_text
         BE_SQLITE_EXPORT void SetResultZeroblob(int length);                          //!< see sqlite3_result_zeroblob
         BE_SQLITE_EXPORT void SetResultValue(DbValue);                                //!< see sqlite3_result_value
-    };
+        };
 
-    DbFunction(Utf8CP name, int nArgs) : m_name(name), m_nArgs(nArgs) {}
+private:
+    Utf8String m_name;
+    int m_nArgs;
+    DbValueType m_returnType;
+
+protected:
+    //! Initializes a new DbFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    DbFunction(Utf8CP name, int nArgs, DbValueType returnType) : m_name(name), m_nArgs(nArgs), m_returnType(returnType) {}
+
+public:
     virtual ~DbFunction() {}
     Utf8CP GetName() const {return m_name.c_str();}
     int GetNumArgs() const {return m_nArgs;}
+    //! Gets the return type of the function.
+    //! @remarks DbValueType::NullVal means that the return type is not specified and callers
+    //! have to rely on SQLite's auto type conversion.
+    //! @return Function return type
+    DbValueType GetReturnType() const { return m_returnType; }
 };
 
 //=======================================================================================
@@ -1142,14 +1155,23 @@ public:
 //=======================================================================================
 struct AggregateFunction : DbFunction
 {
+public:
     struct IAggregate
     {
         virtual void _StepAggregate(Context*, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
         virtual void _FinishAggregate(Context*) = 0;                         //<! see "xFinal" in sqlite3_create_function
     };
+
+private:
     IAggregate* m_aggregate;
 
-    AggregateFunction(Utf8CP name, int nArgs, IAggregate* val=nullptr) : DbFunction(name,nArgs), m_aggregate(val) {}
+public:
+    //! Initializes a new AggregateFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    //! @param[in] val IAggregate implementation
+    AggregateFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IAggregate* val = nullptr) : DbFunction(name, nArgs, returnType), m_aggregate(val) {}
 
     void SetAggregate(IAggregate* val) {m_aggregate=val;}
     IAggregate* GetAggregate() const {return m_aggregate;}
@@ -1163,13 +1185,22 @@ struct AggregateFunction : DbFunction
 //=======================================================================================
 struct ScalarFunction : DbFunction
 {
+public:
     struct IScalar
     {
         virtual void _ComputeScalar(Context*, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
     };
+
+private:
     IScalar* m_scalar;
 
-    ScalarFunction(Utf8CP name, int nArgs, IScalar* val=nullptr) : DbFunction(name,nArgs), m_scalar(val) {}
+public:
+    //! Initializes a new ScalarFunction instance
+    //! @param[in] name Function name
+    //! @param[in] nArgs Number of function args
+    //! @param[in] returnType Function return type. DbValueType::NullVal means that the return type is unspecified.
+    //! @param[in] val IScalar implementation
+    ScalarFunction(Utf8CP name, int nArgs, DbValueType returnType = DbValueType::NullVal, IScalar* val = nullptr) : DbFunction(name, nArgs, returnType), m_scalar(val) {}
     virtual ~ScalarFunction() {}
     void SetScalar(IScalar* val) {m_scalar=val;}
     IScalar* GetScalar() const {return m_scalar;}
@@ -2389,7 +2420,7 @@ protected:
     //! @return Code indicating success or error.
     virtual DbResult _VerifySchemaVersion(OpenParams const& params) {return BE_SQLITE_OK;}
 
-    virtual int _OnAddScalarFunction(ScalarFunction& func) const { return 0; }
+    virtual int _OnAddFunction(DbFunction& func) const { return 0; }
     virtual void _OnRemoveFunction(DbFunction& func) const {}
 
     //__PUBLISH_SECTION_END__
@@ -2760,7 +2791,7 @@ public:
 
     //! Add an AggreateFunction to this Db for use in SQL. See sqlite3_create_function for return values. The AggregateFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.
-    int AddAggregateFunction(AggregateFunction& func) const {return m_dbFile->AddAggregateFunction(func);}
+    BE_SQLITE_EXPORT int AddAggregateFunction(AggregateFunction& func) const;
 
     //! Add a ScalarFunction to this Db for use in SQL. See sqlite3_create_function for return values. The ScalarFunction object must remain valid
     //! while this Db is valid, or until it is removed via #RemoveFunction.

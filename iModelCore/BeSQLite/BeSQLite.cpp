@@ -1219,13 +1219,25 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+int Db::AddAggregateFunction(AggregateFunction& func) const
+    {
+    const int stat = m_dbFile->AddAggregateFunction(func);
+    if (stat != 0)
+        return stat;
+
+    return _OnAddFunction(func);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
 int Db::AddScalarFunction(ScalarFunction& func) const
     {
     const int stat = m_dbFile->AddScalarFunction(func);
     if (stat != 0)
         return stat;
     
-    return _OnAddScalarFunction(func);
+    return _OnAddFunction(func);
     }
 
 /*---------------------------------------------------------------------------------**//**
