@@ -195,7 +195,8 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
     LOG.debugv (L"About to read PrsentationRuleSet from string.");
 
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString);
+    size_t stringSize = wcslen (xmlString) * sizeof(WChar);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (WChar));
     
     if (BEXML_Success != xmlStatus)
         {
@@ -243,7 +244,7 @@ WString PresentationRuleSet::WriteToXmlString ()
     WriteXml (*xmlDom.get());
 
     WString presentationRuleSetXml = L"";
-    xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_OmitByteOrderMark);
+    xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return presentationRuleSetXml;
     }

@@ -1,4 +1,4 @@
-P*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
@@ -110,9 +110,9 @@ MemoryECInstanceBase::~MemoryECInstanceBase ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MemoryECInstanceBase::SetData (const Byte * data, uint32_t size, bool freeExisitingData) //The MemoryECInstanceBase will take ownership of the memory
+void MemoryECInstanceBase::SetData (const Byte * data, uint32_t size, bool freeExisitingDataAndCreateCopyOfNewData) //The MemoryECInstanceBase will take ownership of the memory
     {
-    if (freeExisitingData)
+    if (freeExisitingDataAndCreateCopyOfNewData)
         {
         if (m_data)
             {
@@ -177,7 +177,7 @@ ECObjectsStatus          MemoryECInstanceBase::IsPerPropertyBitSet (bool& isSet,
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSet, uint8_t bitIndex) const
     {
-    static const ::UInt32     s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
+    static const ::uint32_t   s_maskFor2Bits[2] = { 0x55555555, 0xAAAAAAAA };
     
     if (2 > m_perPropertyFlagsHolder.numBitsPerProperty)
         {
@@ -187,7 +187,7 @@ ECObjectsStatus         MemoryECInstanceBase::IsAnyPerPropertyBitSet (bool& isSe
     else if (bitIndex >= m_perPropertyFlagsHolder.numBitsPerProperty)
         return ECOBJECTS_STATUS_InvalidIndexForPerPropertyFlag;
 
-    ::UInt32 mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
+    ::uint32_t mask = m_perPropertyFlagsHolder.numBitsPerProperty == 2 ? s_maskFor2Bits[(int)bitIndex] : 0xFFFFFFFF;
 
     uint32_t* addressOfPerPropertyFlags = m_perPropertyFlagsHolder.perPropertyFlags;
     if (NULL == addressOfPerPropertyFlags)
@@ -340,15 +340,15 @@ ECObjectsStatus                MemoryECInstanceBase::_ShrinkAllocation ()
 
     return ECOBJECTS_STATUS_Success;
     } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index) const
-    {
-    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
-    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
-    }
+//
+////*---------------------------------------------------------------------------------**//**
+////* @bsimethod                                                    Paul.Connelly   06/14
+////+---------------+---------------+---------------+---------------+---------------+------*/
+//ECObjectsStatus MemoryECInstanceBase::_SetCalculatedValueToMemory (ECValueCR v, PropertyLayoutCR propertyLayout, bool useIndex, UInt32 index) const
+//    {
+//    // If we're using pinned managed memory buffer, we can't resize it...we'll just re-evaluate the calculated property next time its value is requested.
+//    return !m_usingSharedMemory ? ECDBuffer::_SetCalculatedValueToMemory (v, propertyLayout, useIndex, index) : ECOBJECTS_STATUS_Success;
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
@@ -1158,7 +1158,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (uint32_t propIdx)
     {
     PropertyLayoutCP pPropertyLayout = NULL;
     ECObjectsStatus status = GetClassLayout().GetPropertyLayoutByIndex (pPropertyLayout, propIdx);
-    if (SUCCESS != status || NULL == pPropertyLayout)
+    if (ECOBJECTS_STATUS_Success != status || NULL == pPropertyLayout)
         return ECOBJECTS_STATUS_PropertyNotFound;
 
     uint32_t arrayCount = GetReservedArrayCount (*pPropertyLayout);

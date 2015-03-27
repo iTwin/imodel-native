@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/UserSettingsGroup.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -19,6 +21,7 @@ that can affect behavior of the hierarchy. These settings will be shown in UserS
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UserSettingsGroup : public PresentationKey
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString               m_categoryLabel;
         UserSettingsGroupList m_nestedSettings;
@@ -34,6 +37,7 @@ struct UserSettingsGroup : public PresentationKey
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode);
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT UserSettingsGroup ();
@@ -62,12 +66,14 @@ UserSettingsGroup.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UserSettingsItem
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString  m_id;
         WString  m_label;
         WString  m_options;
         WString  m_defaultValue;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT UserSettingsItem ();
@@ -96,3 +102,5 @@ struct UserSettingsItem
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

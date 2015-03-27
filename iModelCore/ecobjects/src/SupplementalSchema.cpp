@@ -200,9 +200,9 @@ IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
     {
     IECInstancePtr instance = StandardCustomAttributeHelper::CreateCustomAttributeInstance(SupplementalSchemaMetaData::GetCustomAttributeAccessor());
     instance->SetValue(GetPrimarySchemaNamePropertyAccessor(), ECValue(GetPrimarySchemaName().c_str()));
-    instance->SetValue(GetPrimarySchemaMajorVersionPropertyAccessor(), ECValue((::Int32)GetPrimarySchemaMajorVersion()));
-    instance->SetValue(GetPrimarySchemaMinorVersionPropertyAccessor(), ECValue((::Int32)GetPrimarySchemaMinorVersion()));
-    instance->SetValue(GetPrecedencePropertyAccessor(), ECValue((::Int32)GetSupplementalSchemaPrecedence()));
+    instance->SetValue(GetPrimarySchemaMajorVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaMajorVersion()));
+    instance->SetValue(GetPrimarySchemaMinorVersionPropertyAccessor(), ECValue((::int32_t)GetPrimarySchemaMinorVersion()));
+    instance->SetValue(GetPrecedencePropertyAccessor(), ECValue((::int32_t)GetSupplementalSchemaPrecedence()));
     instance->SetValue(GetPurposePropertyAccessor(), ECValue(GetSupplementalSchemaPurpose().c_str()));
     instance->SetValue(GetIsUserSpecificPropertyAccessor(), ECValue(IsUserSpecific()));
 
@@ -345,10 +345,13 @@ SchemaMatchType matchType
 SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
 (
 ECSchemaR primarySchema, 
-bvector<ECSchemaP>& supplementalSchemaList
+bvector<ECSchemaP>& supplementalSchemaList,
+bool createCopyOfSupplementalCustomAttribute
 )
     {
+    m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
     StopWatch timer (L"", true);
+
     bmap<uint32_t, ECSchemaP> schemasByPrecedence;
     bvector<ECSchemaP> localizationSchemas;
     SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList, localizationSchemas);
@@ -574,7 +577,7 @@ SchemaPrecedence precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::ECN::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
+ECN::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeClasses
 ( 
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
 ECCustomAttributeInstanceIterable supplementalCustomAttributes, 
@@ -590,7 +593,7 @@ WStringCP consolidatedSchemaFullName
         if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
             continue;
 
-        IECInstancePtr supplementalCustomAttribute = customAttribute->CreateCopyThroughSerialization();
+        IECInstancePtr supplementalCustomAttribute = m_createCopyOfSupplementalCustomAttribute ? customAttribute->CreateCopyThroughSerialization() : customAttribute;
         IECInstancePtr localCustomAttribute = consolidatedCustomAttributeContainer.GetCustomAttributeLocal(customAttribute->GetClass());
         IECInstancePtr consolidatedCustomAttribute;
         
@@ -602,8 +605,10 @@ WStringCP consolidatedSchemaFullName
             continue;
             }
 
-
+        if (m_createCopyOfSupplementalCustomAttribute)
             consolidatedCustomAttribute = localCustomAttribute->CreateCopyThroughSerialization();
+        else
+            consolidatedCustomAttribute = localCustomAttribute;
 
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
         if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
@@ -621,6 +626,26 @@ WStringCP consolidatedSchemaFullName
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             return status;
         }
+    for (IECInstancePtr const & customAttribute : consolidatedCustomAttributeContainer.GetPrimaryCustomAttributes(false))
+        {
+        ECClassCR classDefinition = customAttribute->GetClass();
+        bool found = false;
+        for (IECInstancePtr const & customAttribute : consolidatedCustomAttributeContainer.GetCustomAttributes(false))
+            {
+            ECClassCR currentClass = customAttribute->GetClass();
+            if (ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
+               {
+               found = true;
+               }
+            }
+        if (!found)
+            {
+            consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*customAttribute);
+            }
+        }
+
+
+
     return status;
     }
 
@@ -758,6 +783,7 @@ SchemaPrecedence precedence
             if (ECOBJECTS_STATUS_Success != status)
                 continue;
 
+            consolidatedECProperty->SetBaseProperty (inheritedECProperty);
             // By adding this property override it is possible that classes derived from this one that override this property
             // will need to have the BaseProperty updated to the newly added temp property.
             for(ECClassP derivedClass: consolidatedECClass->GetDerivedClasses())
@@ -767,6 +793,7 @@ SchemaPrecedence precedence
                     derivedECProperty->SetBaseProperty(consolidatedECProperty);
                 }
             }
+
         WString schemaName = supplementalECClass->GetSchema().GetFullSchemaName();
         status = MergeCustomAttributeClasses(*consolidatedECProperty, supplementalCustomAttributes, precedence, &schemaName, NULL);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
