@@ -43,7 +43,7 @@ protected:
     ECDB_EXPORT virtual void _OnDbClose () override;
     ECDB_EXPORT virtual void _OnDbChangedByOtherConnection () override;
     ECDB_EXPORT virtual DbResult _VerifySchemaVersion (Db::OpenParams const& params) override;
-    ECDB_EXPORT virtual int _OnAddScalarFunction(ScalarFunction& func) const override;
+    ECDB_EXPORT virtual int _OnAddFunction(DbFunction& func) const override;
     ECDB_EXPORT virtual void _OnRemoveFunction(DbFunction& func) const override;
 #endif
 
@@ -89,35 +89,5 @@ public:
     Impl& GetECDbImplR () const;
     //__PUBLISH_SECTION_START__
 };
-
-//=======================================================================================
-//! A user-defined scalar ECSQL function.
-//! @remarks ECSQL functions right now only support primitive arguments and primitive return types -
-//! where primitive types even exclude Point2D and Point3D.
-//! Register an ECSQL function via ECDb::AddECSqlFunction.
-//! The function object must survive as long as the ECDb to which it is added survives, or until it is removed.
-//! It holds a pointer to an @ref BeSQLite::ScalarFunction::IScalar "IScalar" implementation. 
-//! See discussion of scalar functions at http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
-//=======================================================================================
-struct ECSqlScalarFunction : BeSQLite::ScalarFunction
-    {
-private:
-    ECN::PrimitiveType m_returnType;
-
-public:
-    //! Initializes a new ECSqlFunction.
-    //! @param[in] name Function name
-    //! @param[in] argCount Number of arguments to the function
-    //! @param[in] returnType Return type of the function
-    //! @param[in] scalar The IScalar implementation called by SQLite when executing the function.
-    ECSqlScalarFunction(Utf8CP name, int argCount, ECN::PrimitiveType returnType, BeSQLite::ScalarFunction::IScalar* scalar = nullptr)
-        : BeSQLite::ScalarFunction(name, argCount, scalar), m_returnType(returnType) {}
-   
-    virtual ~ECSqlScalarFunction() {}
-
-    //! Gets the return type of the function
-    //! @return Function return type
-    ECN::PrimitiveType GetReturnType() const { return m_returnType; }
-    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

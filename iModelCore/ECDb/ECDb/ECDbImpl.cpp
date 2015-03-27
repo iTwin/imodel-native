@@ -210,21 +210,10 @@ ECN::IECClassLocaterR ECDb::Impl::GetClassLocater () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::OnAddScalarFunction(ScalarFunction& scalarFunction) const
+BentleyStatus ECDb::Impl::OnAddFunction(DbFunction& function) const
     {
-    ECSqlScalarFunction* ecsqlFunction = dynamic_cast<ECSqlScalarFunction*> (&scalarFunction);
-    if (ecsqlFunction == nullptr)
-        return SUCCESS;
-
-    ECN::PrimitiveType returnType = ecsqlFunction->GetReturnType();
-    if (returnType == ECN::PRIMITIVETYPE_Point2D || returnType == ECN::PRIMITIVETYPE_Point3D)
-        {
-        LOG.errorv("Failed to register ECSQL function %s. ECSQL functions can only have primitive return types (excluding Point2D and Point3D)", ecsqlFunction->GetName());
-        return ERROR;
-        }
-
-    DbFunctionKey key(*ecsqlFunction);
-    m_ecsqlFunctions[key] = ecsqlFunction;
+    DbFunctionKey key(function);
+    m_sqlFunctions[key] = &function;
     return SUCCESS;
     }
 
@@ -234,16 +223,16 @@ BentleyStatus ECDb::Impl::OnAddScalarFunction(ScalarFunction& scalarFunction) co
 void ECDb::Impl::OnRemoveFunction(DbFunction& function) const
     {
     DbFunctionKey key(function);
-    m_ecsqlFunctions.erase(key);
+    m_sqlFunctions.erase(key);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::Impl::TryGetECSqlFunction(ECSqlScalarFunction*& function, Utf8CP name, int argCount) const
+bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const
     {
-    auto it = m_ecsqlFunctions.find(DbFunctionKey(name, argCount));
-    if (it == m_ecsqlFunctions.end())
+    auto it = m_sqlFunctions.find(DbFunctionKey(name, argCount));
+    if (it == m_sqlFunctions.end())
         {
         function = nullptr;
         return false;

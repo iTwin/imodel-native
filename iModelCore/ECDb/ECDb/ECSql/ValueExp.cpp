@@ -588,10 +588,23 @@ void FunctionCallExp::AddArgument (std::unique_ptr<ValueExp> argument)
 //static
 ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECSqlParseContext& ctx, Utf8CP functionName, int argCount)
     {
-    ECSqlScalarFunction* func = nullptr;
-    const bool isCustomFunction = ctx.GetECDb().GetECDbImplR().TryGetECSqlFunction(func, functionName, argCount);
+    DbFunction* func = nullptr;
+    const bool isCustomFunction = ctx.GetECDb().GetECDbImplR().TryGetSqlFunction(func, functionName, argCount);
     if (isCustomFunction)
-        return func->GetReturnType();
+        {
+        switch (func->GetReturnType())
+            {
+                case DbValueType::BlobVal: return ECN::PRIMITIVETYPE_Binary;
+                case DbValueType::IntegerVal: return ECN::PRIMITIVETYPE_Long;
+                case DbValueType::TextVal: return ECN::PRIMITIVETYPE_String;
+
+                case DbValueType::FloatVal: 
+                //NullVal means that no return type was specified. In that case we use Double to be as generic as possible
+                case DbValueType::NullVal:
+                default:
+                    return ECN::PRIMITIVETYPE_Double;
+            }       
+        }
 
     //return type for SQLite built-in functions
     //TODO: This is SQLite specific and therefore should be moved out of the parser. Maybe an external file

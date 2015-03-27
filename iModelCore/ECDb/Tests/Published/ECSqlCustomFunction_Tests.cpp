@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PowECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
+struct PowSqlFunction : ScalarFunction, ScalarFunction::IScalar
     {
 private:
 
@@ -40,68 +40,63 @@ private:
         }
 
 public:
-    PowECSqlFunction() : ECSqlScalarFunction("POW", 2, ECN::PrimitiveType::PRIMITIVETYPE_Double, this) {}
+    PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal, this) {}
     };
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct SqrtSqlFunction : ScalarFunction, ScalarFunction::IScalar
+struct IntegerToBlobSqlFunction : ScalarFunction, ScalarFunction::IScalar
     {
-private:
-    virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
-        {
-        if (nArgs != GetNumArgs())
+    private:
+
+        virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
             {
-            ctx->SetResultError("Function SQRT expects 1 argument.", -1);
-            return;
+            if (nArgs != GetNumArgs())
+                {
+                ctx->SetResultError("Function INTEGERTOBLOB expects 1 argument.", -1);
+                return;
+                }
+
+            const void* blob = nullptr;
+            int blobSize = 0;
+            if (!args[0].IsNull())
+                {
+                int64_t i = args[0].GetValueInt64();
+                blob = &i;
+                blobSize = (int) sizeof(i);
+                }
+
+            ctx->SetResultBlob(blob, blobSize, DbFunction::Context::CopyData::Yes);
             }
 
-        if (args[0].IsNull())
-            {
-            ctx->SetResultError("Argument to SQRT must not be NULL.", -1);
-            return;
-            }
-
-        double operand = args[0].GetValueDouble();
-        if (operand < 0.0)
-            {
-            ctx->SetResultError("Argument to SQRT must not be negative.", -1);
-            return;
-            }
-
-        double res = std::sqrt(operand);
-        ctx->SetResultDouble(res);
-        }
-
-public:
-    SqrtSqlFunction() : ScalarFunction("SQRT", 1, this) {}
+    public:
+        IntegerToBlobSqlFunction() : ScalarFunction("INTEGERTOBLOB", 1, DbValueType::BlobVal, this) {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomFunction)
+TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomSqlFunction)
     {
     const auto perClassRowCount = 3;
     // Create and populate a sample project
     auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
 
-    PowECSqlFunction ecsqlFunc;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
+    PowSqlFunction func;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
 
-    PowECSqlFunction ecsqlFunc2;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc2)) << "Adding same ECSQL function twice is expected to succeed.";
+    PowSqlFunction func2;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(func2)) << "Adding same ECSQL function twice is expected to succeed.";
 
-    ASSERT_EQ(0, ecdb.RemoveFunction(ecsqlFunc));
-    ASSERT_EQ(0, ecdb.RemoveFunction(ecsqlFunc)) << "Removing an unregistered ECSQL function is expected to succeeed";
+    ASSERT_EQ(0, ecdb.RemoveFunction(func));
+    ASSERT_EQ(0, ecdb.RemoveFunction(func)) << "Removing an unregistered ECSQL function is expected to succeeed";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredFunction)
+TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
     {
     const auto perClassRowCount = 3;
     // Create and populate a sample project
@@ -112,35 +107,17 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredFunction)
     ECSqlStatement stmt;
     ASSERT_EQ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to fail with unregistered custom ECSQL function";
 
-    PowECSqlFunction ecsqlFunc;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
+    PowSqlFunction func;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
 
     ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, ecsql)) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                 03/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterInvalidFunction)
-    {
-    const auto perClassRowCount = 3;
-    // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
-
-    struct InvalidECSqlFunction : ECSqlScalarFunction
-        {
-        InvalidECSqlFunction() : ECSqlScalarFunction("INVALID", 2, ECN::PRIMITIVETYPE_Point2D) {}
-        };
-
-    InvalidECSqlFunction func;
-    ASSERT_EQ((int) ERROR, ecdb.AddScalarFunction(func));
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_NumericECSqlFunction)
+TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
     {
     const int perClassRowCount = 3;
     // Create and populate a sample project
@@ -154,8 +131,8 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericECSqlFunction)
         ecdb.SaveChanges();
         }
 
-    PowECSqlFunction ecsqlFunc;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(ecsqlFunc));
+    PowSqlFunction func;
+    ASSERT_EQ(0, ecdb.AddScalarFunction(func));
 
         {
         ECSqlStatement stmt;
@@ -224,13 +201,12 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericECSqlFunction)
 
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlTestFixture, ECSqlStatement_NumericBeSQliteFunction)
+TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
     {
-    const auto perClassRowCount = 3;
+    const int perClassRowCount = 3;
     // Create and populate a sample project
     auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
 
@@ -242,65 +218,55 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericBeSQliteFunction)
         ecdb.SaveChanges();
         }
 
-    SqrtSqlFunction besqliteFunc;
-    ASSERT_EQ(0, ecdb.AddScalarFunction(besqliteFunc));
+        IntegerToBlobSqlFunction func;
+        ASSERT_EQ(0, ecdb.AddScalarFunction(func));
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT I,SQRT(I) FROM ecsql.P WHERE I IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT L,INTEGERTOBLOB(L) FROM ecsql.P WHERE L IS NOT NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
         int rowCount = 0;
         while (stmt.Step() == ECSqlStepStatus::HasRow)
             {
             rowCount++;
+            int64_t expectedInt = stmt.GetValueInt64(0);
+            int blobSize = -1;
+            void const* actualBlob = stmt.GetValueBinary(1, &blobSize);
 
-            int operand = stmt.GetValueInt(0);
-            double actualSqrt = stmt.GetValueDouble(1);
-
-            EXPECT_DOUBLE_EQ(std::sqrt(operand), actualSqrt);
+            ASSERT_EQ(sizeof(expectedInt), blobSize);
+            int64_t actualInt = -1LL;
+            memcpy(&actualInt, actualBlob, sizeof(actualInt));
+            ASSERT_EQ(expectedInt, actualInt);
             }
 
-        ASSERT_EQ(perClassRowCount, rowCount);
+        ASSERT_TRUE(rowCount > 0);
         }
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT SQRT(?) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
+        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT L,INTEGERTOBLOB(L) FROM ecsql.P WHERE L IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
 
-        int operand = 16;
-        stmt.BindInt(1, operand);
-
+        int rowCount = 0;
         while (stmt.Step() == ECSqlStepStatus::HasRow)
             {
-            int actualSqrt = stmt.GetValueInt(0);
-            ASSERT_EQ(4, actualSqrt);
+            rowCount++;
+            int blobSize = -1;
+            void const* actualBlob = stmt.GetValueBinary(1, &blobSize);
+
+            ASSERT_EQ(0, blobSize);
+            ASSERT_TRUE(actualBlob == nullptr);
             }
 
-        stmt.Reset();
-        stmt.ClearBindings();
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step());
-        }
-
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT SQRT(NULL) FROM ecsql.P")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
-
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
-        }
-
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT SQRT(I) FROM ecsql.P WHERE I IS NULL")) << "ECSQL preparation expected to succeed with registered custom ECSQL function";
-
-        ASSERT_EQ((int) ECSqlStepStatus::Error, (int) stmt.Step()) << "Step is expected to fail if function is called with NULL arg";
+        ASSERT_TRUE(rowCount > 0);
         }
     }
 
+/*
 //---------------------------------------------------------------------------------------
 // Syntax: DATEFROMSTRING (Str) : DateTime
 // @bsiclass                                     Krischan.Eberle                 03/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct DateFromStringECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
+struct DateFromStringFunction : ScalarFunction, ScalarFunction::IScalar
     {
     private:
         virtual void _ComputeScalar(ScalarFunction::Context* ctx, int nArgs, DbValue* args) override
@@ -330,7 +296,7 @@ struct DateFromStringECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScala
             }
 
     public:
-        DateFromStringECSqlFunction() : ECSqlScalarFunction("DATEFROMSTRING", 1, ECN::PrimitiveType::PRIMITIVETYPE_DateTime, this) {}
+        DateFromStringFunction() : ScalarFunction("DATEFROMSTRING", 1, ECN::PrimitiveType::PRIMITIVETYPE_DateTime, this) {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -467,7 +433,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
             }
         }
 
-/*        {
+        {
         ECSqlStatement stmt;
         ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.Prepare(ecdb, "SELECT GETGEOMETRYTYPE(?) FROM ecsql.PASpatial LIMIT 1"));
         ASSERT_EQ((int) ECSqlStatus::Success, (int) stmt.BindGeometry (1, *line));
@@ -478,6 +444,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
             ASSERT_STREQ(expectedGeomTypeStr, actualGeomTypeStr);
             }
         }
-        */
     }
+
+    */
 END_ECDBUNITTESTS_NAMESPACE

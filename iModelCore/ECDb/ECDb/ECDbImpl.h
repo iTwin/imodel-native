@@ -68,7 +68,7 @@ private:
     BeRepositoryBasedIdSequence m_classmapIdSequence;
     BeRepositoryBasedIdSequence m_propertypathIdSequence;
 
-    mutable bmap<DbFunctionKey, ECSqlScalarFunction*, DbFunctionKey::Comparer> m_ecsqlFunctions;
+    mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl (ECDbR ecdb);
@@ -78,7 +78,7 @@ private:
     ECN::IECSchemaLocaterR GetSchemaLocater () const;
     ECN::IECClassLocaterR GetClassLocater () const;
 
-    BentleyStatus OnAddScalarFunction(ScalarFunction&) const;
+    BentleyStatus OnAddFunction(DbFunction&) const;
     void OnRemoveFunction(DbFunction&) const;
 
     void ClearECDbCache() const;
@@ -109,7 +109,7 @@ public:
     BeRepositoryBasedIdSequence& GetClassMapIdSequence () { return m_classmapIdSequence; }
     BeRepositoryBasedIdSequence& GetPropertyMapIdSequence () { return m_propertypathIdSequence; }
 
-    bool TryGetECSqlFunction(ECSqlScalarFunction*& ecsqlFunction, Utf8CP name, int argCount) const;
+    bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

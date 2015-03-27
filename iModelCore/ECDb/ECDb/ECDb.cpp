@@ -123,9 +123,9 @@ DbResult ECDb::_VerifySchemaVersion (Db::OpenParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
 //---------------+---------------+---------------+---------------+---------------+------
-int ECDb::_OnAddScalarFunction (ScalarFunction& func) const
+int ECDb::_OnAddFunction (DbFunction& func) const
     {
-    return (int) m_pimpl->OnAddScalarFunction(func);
+    return (int) m_pimpl->OnAddFunction(func);
     }
 
 //--------------------------------------------------------------------------------------
