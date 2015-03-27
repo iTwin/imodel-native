@@ -65,9 +65,6 @@
     <ClCompile Include="ecxml.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryInstanceSupport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StandaloneECInstance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -134,14 +131,20 @@
     <ClCompile Include="ECDBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DateTimeInfoAccessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StandardCustomAttributeHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDiff.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Units\Units.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BeXmlCGReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BeXmlCGWriter.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Units\ECUnitsClassLocater.cpp">
+      <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DateTimeInfoAccessor.cpp">
       <Filter>Source Files</Filter>
@@ -152,9 +155,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ecxml.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h">
@@ -176,9 +176,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\MemoryInstanceSupport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h">
@@ -217,9 +214,6 @@
     <ClInclude Include="..\PublicApi\EcPresentation\ecviewdefinition.h">
       <Filter>ECPresentation\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ECEvent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -232,7 +226,22 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DateTimeInfoAccessor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECDiff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ecobjectsnativelog.h">
@@ -244,7 +253,13 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\BeXmlCommonGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\PublicApi\ECUnits\Units.h">
+      <Filter>ECUnits\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h">
       <Filter>ECUnits\Header Files</Filter>
     </ClInclude>
   </ItemGroup>

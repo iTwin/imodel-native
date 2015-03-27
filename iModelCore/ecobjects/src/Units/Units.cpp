@@ -7,15 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 #include <ECUnits/Units.h>
+#include <ECUnits/ECUnitsClassLocater.h>
 #include <Bentley/BeAssert.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-IECClassLocaterPtr IECClassLocater::s_registeredClassLocater = NULL;
+//IECClassLocaterPtr IECClassLocater::s_registeredClassLocater = NULL;
 
 static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
 static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
-static WCharCP const  DIMENSION_SCHEMA                  = L"Dimension_Schema";
 
 static WCharCP const  UNIT_ATTRIBUTES                   = L"Unit_Attributes";
 static WCharCP const  KOQ_ATTRIBUTES                    = L"KindOfQuantity_Attributes";
@@ -42,6 +42,7 @@ static WCharCP const  FACTOR_OFFSET_CONVERTER           = L"Factor Offset Conver
 static WCharCP const  BASEUNIT_CONVERTER                = L"BaseUnit Converter";
 static WCharCP const  NOOP_CONVERTER                    = L"NoOp Converter";
 static WCharCP const  SLOPE_CONVERTER                   = L"Slope Converter";
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
@@ -106,66 +107,7 @@ bool UnitSpec::ConvertTo (double& value, UnitSpecCR target) const
     value = target.GetConverter().FromBase (this->GetConverter().ToBase (value));
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IECClassLocater::RegisterClassLocater (IECClassLocaterR classLocater) 
-    {
-    s_registeredClassLocater = IECClassLocaterPtr (&classLocater);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IECClassLocater::UnRegisterClassLocater ()
-    {
-    s_registeredClassLocater = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECClassLocaterP IECClassLocater::GetRegisteredClassLocater() 
-    {
-    return s_registeredClassLocater.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Because Graphite loads ECClasses from schemas dynamically, ECSchemas are not pre-
-* processed for units info and units info is not cached.
-* This mechanism may later be virtualized so that caching and preprocessing can be
-* implemented in non-Graphite contexts.
-* @bsistruct                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECClassLocater
-    {
-public:
-    ECClassCP       LocateClass (WCharCP schemaName, WCharCP className) const
-        {
-        static ECSchemaReadContextPtr   s_context;
-        static ECSchemaPtr              s_unitsSchema, s_koqSchema;
-
-        if (s_context.IsNull())
-            {
-            // WIP_UNITS: thread safety...
-            // WIP_UNITS: In a non-graphite build we want to hang on to the standard schemas...
-            s_context = ECSchemaReadContext::CreateContext (NULL, false);
-            SchemaKey key (UNITS_SCHEMA, 1, 0);
-            s_unitsSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-            key.m_schemaName = KOQ_SCHEMA;
-            s_koqSchema = s_context->LocateSchema (key, SCHEMAMATCHTYPE_LatestCompatible);
-            }
-
-        if (KOQ_SCHEMA == schemaName)
-            return s_koqSchema->GetClassCP (className);
-        else if (UNITS_SCHEMA == schemaName)
-            return s_unitsSchema->GetClassCP (className);
-        else
-            return NULL;
-        }
-    };
-
+    
 /*---------------------------------------------------------------------------------**//**
 * Note that the managed Units framework expects the client app to load any extra Units or
 * units customizations manually. Since schemas using Units from external units schemas
@@ -177,22 +119,28 @@ struct UnitLocater
     {
 private:
     ECPropertyCR            m_ecprop;
-    ECClassLocater          m_classLocater;
     bool                    m_createIfNonStandard;
+    IECClassLocaterR        m_ecUnitsClassLocater;
 
-    static bool GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName);
-    bool        LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const;
-    bool        LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
-
-    bool        GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
+    static bool    GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, WCharCP unitName);
+    bool    LocateUnitBySpecification (UnitR unit, WCharCP propName, WCharCP propValue) const;
+    bool    LocateUnitByKOQ (UnitR unit, WCharCP koqName) const;
+    bool    GetUnitFromSpecifications (UnitR unit, WCharCP propName, WCharCP propValue, IECInstanceCR specsAttr) const;
 public:
-    UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard) : m_ecprop(ecprop), m_createIfNonStandard(createIfNonStandard) { }
+    UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard, IECClassLocaterR ecUnitsClassLocater);
 
-    bool        LocateUnit (UnitR unit) const;
-    bool        LocateUnitByName (UnitR unit, WCharCP unitName) const;
+    bool    LocateUnit (UnitR unit) const;
+    bool    LocateUnitByName (UnitR unit, WCharCP unitName) const;
 
-    static bool LocateUnitByName (UnitR unit, WCharCP unitName, ECClassLocater const& classLocater, bool createIfNonStandard);
     };
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ramanujam.Raman                 12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitLocater::UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard, IECClassLocaterR ecUnitsClassLocater) 
+    : m_ecprop(ecprop), m_createIfNonStandard(createIfNonStandard) , m_ecUnitsClassLocater (ecUnitsClassLocater)
+    {
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
@@ -227,19 +175,12 @@ bool UnitLocater::LocateUnit (UnitR unit) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName) const
     {
-    return LocateUnitByName (unit, unitName, m_classLocater, m_createIfNonStandard);
-    }
+    ECClassCP unitClass = m_ecUnitsClassLocater.LocateClass (UNITS_SCHEMA, unitName);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitLocater::LocateUnitByName (UnitR unit, WCharCP unitName, ECClassLocater const& classLocater, bool createIfNonStandard)
-    {
     IECInstancePtr unitAttr;
-    ECClassCP unitClass = classLocater.LocateClass (UNITS_SCHEMA, unitName);
     if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES)).IsValid())
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
-    else if (createIfNonStandard)
+    else if (m_createIfNonStandard)
         {
         unit = Unit (unitName, unitName, UnitConverter (false), unitName);
         return true;
@@ -361,7 +302,7 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
         return true;
 
     // Recurse on parent KOQ (KOQ ECClasses are defined in a hierarchy)
-    ECClassCP koqClass = m_classLocater.LocateClass (KOQ_SCHEMA, koqName);
+    ECClassCP koqClass =  m_ecUnitsClassLocater.LocateClass (KOQ_SCHEMA, koqName);
     if (NULL != koqClass)
         {
         if (koqClass->HasBaseClasses())
@@ -379,22 +320,31 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, WCharCP koqName) const
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::GetUnitByName (UnitR unit, WCharCP unitName, bool createIfNotFound)
-    {
-    ECClassLocater classLocater;
-    return UnitLocater::LocateUnitByName (unit, unitName, classLocater, createIfNotFound);
-    }
+////*---------------------------------------------------------------------------------**//**
+////* @bsimethod                                                    Paul.Connelly   04/14
+////+---------------+---------------+---------------+---------------+---------------+------*/
+//bool Unit::GetUnitByName (UnitR unit, WCharCP unitName, bool createIfNotFound)
+//    {
+//    ECUnitsClassLocaterPtr classLocater = ECUnitsClassLocater::Create();
+//    return UnitLocater::LocateUnitByName (unit, unitName, *classLocater, createIfNotFound);
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
+bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater)
     {
     IECInstancePtr unitSpecAttr = ecprop.GetCustomAttribute (UNIT_SPECIFICATION);
-    return unitSpecAttr.IsValid() ? UnitLocater (ecprop, true).LocateUnit (unit) : false;
+    return unitSpecAttr.IsValid() ? UnitLocater (ecprop, true, unitsECClassLocater).LocateUnit (unit) : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ramanujam.Raman   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
+    {
+    ECUnitsClassLocaterPtr unitsECClassLocater =  ECUnitsClassLocater::Create();
+    return GetUnitForECProperty (unit, ecprop, *unitsECClassLocater);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -402,11 +352,20 @@ bool Unit::GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop)
     {
+    ECUnitsClassLocaterPtr unitsECClassLocater =  ECUnitsClassLocater::Create();
+    return GetDisplayUnitAndFormatForECProperty (displayUnit, displayFormat, storedUnit, ecprop, *unitsECClassLocater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater)
+    {
     IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
     if (attr.IsValid())
         {
         ECValue v;
-        if (ECOBJECTS_STATUS_Success != attr->GetValue(v, DISPLAY_UNIT_NAME) || v.IsNull() || !UnitLocater(ecprop, false).LocateUnitByName(displayUnit, v.GetString()))
+        if (ECOBJECTS_STATUS_Success != attr->GetValue(v, DISPLAY_UNIT_NAME) || v.IsNull() || !UnitLocater(ecprop, false, unitsECClassLocater).LocateUnitByName(displayUnit, v.GetString()))
             displayUnit = storedUnit;
         
         displayFormat.clear();
@@ -420,6 +379,15 @@ bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR dis
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance)
+    {
+    ECUnitsClassLocaterPtr unitsECClassLocater =  ECUnitsClassLocater::Create();
+    return FormatValue (formatted, inputVal, ecprop, instance, *unitsECClassLocater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * This method was requested by Graphite team. They have a need to format Units values
 * without dependency on DgnPlatform, where ECUnitsTypeAdapter lives.
 * If DgnPlatform is present, the method will use the type adapter.
@@ -428,26 +396,26 @@ bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, WStringR dis
 * schemas present in the instance's DgnFile).
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance, WCharCP accessString)
+bool Unit::FormatValue (WStringR formatted, ECValueCR inputVal, ECPropertyCR ecprop, IECInstanceCP instance, IECClassLocaterR unitsECClassLocater)
     {
     Unit storedUnit;
     ECValue v (inputVal);
 
     // if GetForECProperty() fails, we have no valid UnitSpecification attribute
-    if (v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) || !Unit::GetUnitForECProperty (storedUnit, ecprop))
+    if (v.IsNull() || !v.ConvertToPrimitiveType (PRIMITIVETYPE_Double) || !Unit::GetUnitForECProperty (storedUnit, ecprop, unitsECClassLocater))
         return false;
 
     // See if we've got a registered ECUnitsTypeAdapter from DgnPlatform
     IECTypeAdapter* typeAdapter;
     if (NULL != instance && NULL != (typeAdapter = ecprop.GetTypeAdapter()))
-        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance, accessString));
+        return typeAdapter->ConvertToString (formatted, inputVal, *IECTypeAdapterContext::Create (ecprop, *instance));
 
     // No TypeAdapter
     WCharCP label = storedUnit.GetShortLabel();
 
     Unit displayUnit;
     WString fmt;
-    if (Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, fmt, storedUnit, ecprop))
+    if (Unit::GetDisplayUnitAndFormatForECProperty(displayUnit, fmt, storedUnit, ecprop, unitsECClassLocater))
         {
         double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))

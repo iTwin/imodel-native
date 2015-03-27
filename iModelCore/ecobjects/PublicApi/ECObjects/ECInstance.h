@@ -8,49 +8,25 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include "ECObjects.h"
 #include <Bentley/DateTime.h>
+#include "ECObjects.h"
 #include <Geom/GeomApi.h>
 
-BENTLEY_TYPEDEFS (BeXmlDom)
-BENTLEY_TYPEDEFS (BeXmlNode)
-
-namespace Bentley { namespace DgnPlatform {
-    struct DgnECInstance;
-    }}
+BENTLEY_NAMESPACE_TYPEDEFS (BeXmlDom)
+BENTLEY_NAMESPACE_TYPEDEFS (BeXmlNode)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//! @addtogroup ECObjectsGroup
-//! ECObjects is a set of abstractions for working with engineering/business data and metadata. 
-//! "EC" stands for "Engineering Content".
-//! There are several implementations of the ECObjects abstractions:
-//! @li In XML (two formats ECSchemaXML and ECInstanceXML)
-//! @li This native C++ implementation
-//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces.
-//!
-//! You can think of an ECClass as being like a C++ or .NET class that only defines properties (ECClasses define no methods or behaviors.) In some ways, they are closer to .NET interfaces that hold only properties... or C++ pure virtual abstract base classes that only contain property getters and setters. They are also very analogous to a database table definition.
-//!
-//! ECClasses contain ECProperties. These are property *definitions*, not values.
-//!
-//! ECInstances represent instances of objects. Each "belongs" to an ECClass and holds ECPropertyValues. They are somewhat analogous to the rows of a database table.
-//!
-//! An ECSchema is just a collection of ECClasses.
-//!
-//! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
-//! @see Bentley::EC
-
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
-//  custom XML representation of itself. This was required to support 8.11 
-//  installedTypes as Vancouver ECStructs  
+//  custom XML representation of itself. This was required to support 8.11
+//  installedTypes as Vancouver ECStructs
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 
 //! @ingroup ECObjectsGroup
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
-//! @bsiclass
 struct ICustomECStructSerializer
     {
     //! Returns whether the given property uses a custom xml string
@@ -77,7 +53,6 @@ struct ICustomECStructSerializer
 
 //! @ingroup ECObjectsGroup
 //! Used to manage multiple custom struct serializers
-//! @bsiclass
 struct CustomStructSerializerManager
 {
 //__PUBLISH_SECTION_END__
@@ -88,6 +63,7 @@ private:
     ~CustomStructSerializerManager();
 
     ICustomECStructSerializerP GetCustomSerializer (WCharCP serializerName) const;
+//__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
 
@@ -114,20 +90,20 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! the implementation of an ECEnabler for the IECInstance.
 //! @see ECEnabler
 //!
-//! @cond BENTLEY_SDK_Desktop
+//! @if BENTLEY_SDK_Internal
 //! ### Comparison to .NET ECObjects
 //! ECN::IECInstance is the native equivalent of a .NET IECInstance.
 //! In .NET %IECInstance is a pure interface. One might implement %IECInstance, 
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
-//! @endcond BENTLEY_SDK_Desktop
+//! @endif
 //! @ingroup ECObjectsGroup
-//! @bsiclass
-//=======================================================================================    
-struct IECInstance : RefCountedBase
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
 private:
     ECObjectsStatus ChangeValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
+    ECObjectsStatus GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
 
     bool                        GetInstanceLabelPropertyName (WString& propertyName) const;
 
@@ -145,10 +121,10 @@ private:
     //! @param[in] propertyIndex Index of property to retrieve metadata from (index is 1-based)
     //! @return ECOBJECT_STATUS_Success if successful. ECOBJECTS_STATUS_DataTypeMismatch if the 
     ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, uint32_t propertyIndex) const;
-    bool TryGetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32_t propertyIndex) const;
+    ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32_t propertyIndex) const;
 
-protected:    
-    ECOBJECTS_EXPORT IECInstance(); 
+protected:
+    ECOBJECTS_EXPORT IECInstance();
     ECOBJECTS_EXPORT virtual ~IECInstance();
 
     //! Gets the unique ID for this instance
@@ -244,9 +220,11 @@ protected:
     //! @remarks For when the caller wants to directly set the InternalValue, and not go through any processing, for example with calculated properties
     ECOBJECTS_EXPORT virtual ECObjectsStatus        _SetInternalValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex);
 
-    //! Convenience method for DgnPlatform to return this instance as a DgnECInstance
-    virtual Bentley::DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
-
+/*__PUBLISH_SECTION_END__*/
+#ifdef DGN_IMPORTER_REORG_WIP
+    virtual DgnPlatform::DgnECInstance const*              _GetAsDgnECInstance() const   { return NULL; }
+#endif
+/*__PUBLISH_SECTION_START__*/
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML
     virtual bool              _SaveOnlyLoadedPropertiesToXml() const   { return false; }
 
@@ -279,7 +257,7 @@ public:
     //! @param[out] v   If successful, will contain the value of the property
     //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString) const;    
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString) const;
 //__PUBLISH_SECTION_END__
     //! Gets the value stored in the specified ECProperty, optionally including ad-hoc property values. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[out] v   If successful, will contain the value of the property
@@ -294,13 +272,13 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, WCharCP propertyAccessString, uint32_t arrayIndex) const;
     //! Gets the value stored in the ECProperty referred to by the specified property index
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t propertyIndex) const;
     //! Gets the value stored in the specified ECProperty
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] v               If successful, will contain the value of the property
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -310,7 +288,7 @@ public:
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v);    
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v);
 //__PUBLISH_SECTION_END__
     //! Sets the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in]  propertyAccessString The name of the property to set the value of
@@ -325,13 +303,13 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (WCharCP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
     //! Sets the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t propertyIndex, ECValueCR v);
     //! Sets the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -342,7 +320,7 @@ public:
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);    
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v);
 //__PUBLISH_SECTION_END__
     //! Change the value for the specified property. If propertyAccessString does not identify an ECProperty of the ECClass, attempts to locate an ad-hoc property with the specified access string
     //! @param[in]  propertyAccessString    The name of the property to set the value of
@@ -357,13 +335,13 @@ public:
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (WCharCP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
     //! Change the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @returns ECOBJECTS_STATUS_Success if successful, ECOBJECTS_STATUS_PropertyValueMatchesNoChange if no change, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    ChangeValue (uint32_t propertyIndex, ECValueCR v);
     //! Change the value for the specified property
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  v               The value to set onto the property
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
@@ -380,7 +358,7 @@ public:
     //! @param[out] isNull                  If successful, will contain true if property value is NULL.
     //! @param[in]  propertyAccessString    Name of the property to retrieve
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString) const; 
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString) const;
 
     //! Check for Null property value
     //! @param[out] isNull                  If successful, will contain true if property value is NULL.
@@ -390,37 +368,38 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, WCharCP propertyAccessString, uint32_t arrayIndex) const;
 
     //! Check for Null property value
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] isNull          If successful, will contain true if property value is NULL.
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex) const; 
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex) const;
 
     //! Check for Null property value
-    //! @Note The property index is 1-based!
+    //! @note The property index is 1-based!
     //! @param[out] isNull   If successful, will contain true if property value is NULL.
     //! @param[in]  propertyIndex   Index into the ClassLayout indicating which property to retrieve (1-based)
     //! @param[in]  arrayIndex      The array index, if this is an ArrayProperty (0-based)
     //! @returns ECOBJECTS_STATUS_Success if successful, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex, uint32_t arrayIndex) const; 
+    ECOBJECTS_EXPORT ECObjectsStatus     IsPropertyNull (bool& isNull, uint32_t propertyIndex, uint32_t arrayIndex) const;
 
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT ECObjectsStatus    GetIsPropertyNull (bool& isNull, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex); 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (uint32_t propertyIndex, ECValueCR v); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (uint32_t propertyIndex, ECValueCR v, uint32_t arrayIndex);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (uint32_t propertyIndex, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValueUsingAccessor (ECValueAccessorCR accessor, ECValueCR valueToSet);
-    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v); 
+    ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetInternalValue (WCharCP propertyAccessString, ECValueCR v, uint32_t arrayIndex);
 
     // These are provided to avoid the cost of dynamic cast.
-    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
-    ECOBJECTS_EXPORT Bentley::DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
-
+#ifdef DGN_IMPORTER_REORG_WIP
+    ECOBJECTS_EXPORT DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
+    ECOBJECTS_EXPORT DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
+#endif
     ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId);
 
     // Copy any properties which are common to both IECInstances, skip the rest.
     ECOBJECTS_EXPORT ECObjectsStatus    CopyCommonValues (ECN::IECInstanceCR source);
-/*__PUBLISH_SECTION_START__*/
+    /*__PUBLISH_SECTION_START__*/
     //! Attempts to copy all property values from one instance to this instance.
     //! It is expected that the source instance is of the same class as this instance.
     //! @param[in] source   Instance to copy values from.
@@ -512,7 +491,7 @@ public:
     //! @param[in]  displayLabel    The display label
     //! @returns SUCCESS if the display label was set, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (WCharCP displayLabel);    
-    
+
     ECOBJECTS_EXPORT ECDBuffer const*               GetECDBuffer() const; //!< Returns the underlying ECDBuffer for this instance.
     ECOBJECTS_EXPORT ECDBuffer*                     GetECDBufferP(); //!< Returns the underlying ECDBuffer for this instance.
     ECOBJECTS_EXPORT MemoryECInstanceBase const*    GetAsMemoryECInstance () const; //!< Returns the instance as a MemoryECInstance.
@@ -612,9 +591,8 @@ public:
 //! the relationship between two \ref IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
 //! @ingroup ECObjectsGroup
-//! @bsiclass
-//=======================================================================================    
-struct IECRelationshipInstance : virtual IECInstance
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
     {
     private:
         virtual void            _SetSource (IECInstanceP instance) = 0;
@@ -623,6 +601,7 @@ struct IECRelationshipInstance : virtual IECInstance
         virtual void            _SetTarget (IECInstanceP instance)= 0;
         virtual IECInstancePtr  _GetTarget () const = 0;
         virtual ECObjectsStatus _GetTargetOrderId (int64_t& targetOrderId) const = 0;
+        DECLARE_KEY_METHOD
 
     public:
 
@@ -658,7 +637,7 @@ struct ECStructArrayMemberAccessor;
 struct ECInstanceInteropHelper
     {
     // These are not convenience methods.  They are intended for managed callers.  They enable
-    // an access pattern that can get a value with only one managed to native transition    
+    // an access pattern that can get a value with only one managed to native transition
     ECOBJECTS_EXPORT static ECObjectsStatus GetValue         (IECInstanceCR, ECValueR value,          WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetInteger       (IECInstanceCR, int & value,             WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetLong          (IECInstanceCR, int64_t & value,           WCharCP managedPropertyAccessor);
@@ -667,7 +646,7 @@ struct ECInstanceInteropHelper
     ECOBJECTS_EXPORT static ECObjectsStatus GetBoolean       (IECInstanceCR, bool & value,            WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint2D       (IECInstanceCR, DPoint2dR value,         WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetPoint3D       (IECInstanceCR, DPoint3dR value,         WCharCP managedPropertyAccessor);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, DateTimeR value,       WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTime      (IECInstanceCR, DateTimeR value,         WCharCP managedPropertyAccessor);
     ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeTicks (IECInstanceCR, int64_t & value,           WCharCP managedPropertyAccessor);
 
     ECOBJECTS_EXPORT static ECObjectsStatus SetValue         (IECInstanceR, WCharCP managedPropertyAccessor, ECValueCR value);
@@ -707,7 +686,7 @@ struct ECInstanceInteropHelper
 
     ECOBJECTS_EXPORT static bool            IsPropertyReadOnly (IECInstanceCR, ECValueAccessorR);
     ECOBJECTS_EXPORT static ECN::ECEnablerP  GetEnablerForStructArrayEntry (IECInstanceR instance, ECValueAccessorR arrayMemberAccessor, SchemaKeyCR schemaKey, WCharCP className);
-    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, uint32_t index, ECN::ECValueAccessorCR structArrayValueAccessor, 
+    ECOBJECTS_EXPORT static ECObjectsStatus GetStructArrayEntry (ECN::ECValueAccessorR structArrayEntryValueAccessor, IECInstanceR instance, uint32_t index, ECN::ECValueAccessorCR structArrayValueAccessor,
                                                                   bool createPropertyIfNotFound, WCharCP wcharAccessString, SchemaKeyCR schemaKey, WCharCP className);
 
     ECOBJECTS_EXPORT static bool            IsCalculatedECProperty (IECInstanceCR instance, int propertyIndex);
@@ -797,5 +776,5 @@ typedef ECInstanceList const            &ECInstanceListCR;
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/
-#pragma make_public (Bentley::ECN::IECInstance)
+//#pragma make_public (ECN::IECInstance)
 /*__PUBLISH_SECTION_START__*/

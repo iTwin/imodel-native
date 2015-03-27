@@ -85,7 +85,7 @@ ExpressionStatus Operations::ConvertToString(ECN::ECValueR ecValue)
             wcscpy (buffer, ecValue.GetBoolean() ?  L"true"  : L"false");
             break;
         case PRIMITIVETYPE_Long:
-            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%ld", ecValue.GetLong());
+            BeStringUtilities::Snwprintf(buffer, _countof(buffer), L"%lld", ecValue.GetLong());
             break;
         case PRIMITIVETYPE_Double:
             //  TODO -- needs locale, extended type.
@@ -1957,7 +1957,7 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
         ECN::IECInstancePtr  instance = getInstanceFromResult (instanceResult);
         ECN::ECEnablerCR     enabler = instance->GetEnabler();
 
-        ::UInt32     propertyIndex;
+        ::uint32_t   propertyIndex;
         if (enabler.GetPropertyIndex(propertyIndex, refResult.m_accessString.c_str()) != ECN::ECOBJECTS_STATUS_Success)
             {
             evalResult.Clear();
@@ -1991,13 +1991,13 @@ ExpressionStatus AssignmentNode::_GetValue(EvaluationResult& evalResult, Express
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context)
+ExpressionStatus ArgumentTreeNode::EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context) const
     {
     ExpressionStatus    status = ExprStatus_Success;
     BeAssert (results.size() == 0);
     results.reserve(m_arguments.size());
 
-    for (NodePtrVectorIterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
+    for (NodePtrVector::const_iterator curr = m_arguments.begin(); curr != m_arguments.end(); ++curr)
         {
         results.push_back(EvaluationResult());
         EvaluationResultR currValue = results.back();
@@ -2437,7 +2437,7 @@ static bool     PerformCompare (T l, ExpressionToken op, T r)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<> static bool     PerformCompare<double> (double l, ExpressionToken op, double r)
+template<> /*static*/ bool     PerformCompare<double> (double l, ExpressionToken op, double r) // Android compiler gives error "explicit template specialization cannot have a storage class" with the static keyword
     {
     bool equal = DoubleOps::AlmostEqual (l, r);
     switch (op)
@@ -2767,11 +2767,11 @@ ExpressionStatus ResolvedConcatenateNode::_GetStringValue(ECValueR result, Expre
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareIntegerNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int32 leftValue = m_left->_GetIntegerValue(status, context);
+    ::int32_t leftValue = m_left->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
-    ::Int32 rightValue = m_right->_GetIntegerValue(status, context);
+    ::int32_t rightValue = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2783,11 +2783,11 @@ bool ResolvedCompareIntegerNode::_GetBooleanValue(ExpressionStatus& status, Expr
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareLongNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int64 leftValue = m_left->_GetLongValue(status, context);
+    ::int64_t leftValue = m_left->_GetLongValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
-    ::Int64 rightValue = m_right->_GetLongValue(status, context);
+    ::int64_t rightValue = m_right->_GetLongValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2831,7 +2831,7 @@ bool ResolvedCompareBooleanNode::_GetBooleanValue(ExpressionStatus& status, Expr
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareIntegerToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int32 leftValue = m_left->_GetIntegerValue(status, context);
+    ::int32_t leftValue = m_left->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -2843,7 +2843,7 @@ bool ResolvedCompareIntegerToConstantNode::_GetBooleanValue(ExpressionStatus& st
 //---------------------------------------------------------------------------------------
 bool ResolvedCompareLongToConstantNode::_GetBooleanValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int64 leftValue = m_left->_GetLongValue(status, context);
+    ::int64_t leftValue = m_left->_GetLongValue(status, context);
     if (ExprStatus_Success != status)
         return false;
 
@@ -3571,7 +3571,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
             if (0.0 == divisor)
                 return NULL;
             double result = leftValue/divisor;
-            if (result == ::Int32(result))
+            if (result == ::int32_t(result))
                 return Node::CreateIntegerLiteral(int32_t(result));
             return Node::CreateFloatLiteral(result);
             }
@@ -3599,10 +3599,10 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int32 ResolvedShiftInteger::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+::int32_t ResolvedShiftInteger::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int32 left = m_left->_GetIntegerValue(status, context);
-    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    ::int32_t left = m_left->_GetIntegerValue(status, context);
+    ::int32_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3613,7 +3613,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         case TOKEN_ShiftRight:
             return left >> right;
         case TOKEN_UnsignedShiftRight:
-            return (::Int32)((uint32_t)left >> right);
+            return (int32_t)((uint32_t)left >> right);
         }
 
     BeAssert(false && L"bad shift operator");
@@ -3623,10 +3623,10 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int64 ResolvedShiftLong::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+::int64_t ResolvedShiftLong::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
     {
-    ::Int64 left = m_left->_GetLongValue(status, context);
-    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    ::int64_t left = m_left->_GetLongValue(status, context);
+    ::int32_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3637,7 +3637,7 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
         case TOKEN_ShiftRight:
             return left >> right;
         case TOKEN_UnsignedShiftRight:
-            return (::Int64)((uint64_t)left >> right);
+            return (int64_t)((uint64_t)left >> right);
         }
 
     BeAssert(false && L"bad shift operator");
@@ -3647,12 +3647,12 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int32 ResolvedLogicalBitNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+::int32_t ResolvedLogicalBitNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
     {
     //  Assume that on success status is not set but on error it is so it there is no need to check
     //  status between calls to _GetIntegerValue.
-    ::Int32 left = m_left->_GetIntegerValue(status, context);
-    ::Int32 right = m_right->_GetIntegerValue(status, context);
+    ::int32_t left = m_left->_GetIntegerValue(status, context);
+    ::int32_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3676,12 +3676,12 @@ ResolvedTypeNodePtr ExpressionResolver::_ResolveDivideNode (DivideNodeCR node)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int64 ResolvedLogicalBitNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+::int64_t ResolvedLogicalBitNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
     {
     //  Assume that on success status is not set but on error it is so it there is no need to check
     //  status between calls to _GetIntegerValue.
-    ::Int64 left = m_left->_GetIntegerValue(status, context);
-    ::Int64 right = m_right->_GetIntegerValue(status, context);
+    ::int64_t left = m_left->_GetIntegerValue(status, context);
+    ::int64_t right = m_right->_GetIntegerValue(status, context);
     if (ExprStatus_Success != status)
         return 0;
 
@@ -3748,10 +3748,10 @@ bool ResolvedLogicalBitNode::_GetBooleanValue(ExpressionStatus& status, Expressi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-::Int32 ResolvedIIfNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
+::int32_t ResolvedIIfNode::_GetIntegerValue(ExpressionStatus& status, ExpressionContextR context)
     { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetIntegerValue(status, context) : m_false->_GetIntegerValue(status, context); }
 
-::Int64 ResolvedIIfNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
+::int64_t ResolvedIIfNode::_GetLongValue(ExpressionStatus& status, ExpressionContextR context)
     { return m_condition->_GetBooleanValue(status, context) ? m_true->_GetLongValue(status, context) : m_false->_GetLongValue(status, context); }
 
 double ResolvedIIfNode::_GetDoubleValue(ExpressionStatus& status, ExpressionContextR context)
@@ -3807,7 +3807,7 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
         {
         case PRIMITIVETYPE_Integer:
             {
-            ::Int32 value = m_left->_GetIntegerValue(status, context);
+            ::int32_t value = m_left->_GetIntegerValue(status, context);
             result.SetInteger(value);
             if (ExprStatus_Success == status)
                 status = Operations::ConvertToString(result);
@@ -3816,7 +3816,7 @@ ExpressionStatus ResolvedConvertToString::_GetStringValue(ECValueR result, Expre
 
         case PRIMITIVETYPE_Long:
             {
-            ::Int64 value = m_left->_GetLongValue(status, context);
+            ::int64_t value = m_left->_GetLongValue(status, context);
             result.SetLong(value);
             if (ExprStatus_Success == status)
                 status = Operations::ConvertToString(result);
@@ -3968,7 +3968,7 @@ private:
         else
             return ExprStatus_UnknownError;
         }
-    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::UInt32 startIndex) override
+    virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
         {
         // not applicable
         return ExprStatus_UnknownError;

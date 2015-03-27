@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECInstance.h>
@@ -16,13 +17,13 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef RefCountedPtr<StandaloneECEnabler>              StandaloneECEnablerPtr;
-typedef RefCountedPtr<ECEnabler>                        ECEnablerPtr;
-typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
+typedef RefCountedPtr<StandaloneECEnabler>        StandaloneECEnablerPtr;
+typedef RefCountedPtr<ECEnabler>                  ECEnablerPtr;
+typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 
 #define INVALID_PROPERTY_INDEX  0;
 
-//=======================================================================================    
+//=======================================================================================
 //! An ECEnabler is the interface between an ECClass and an ECInstance. Every ECInstance
 //! has an associated ECEnabler, typically shared among all ECInstances of that ECClass.
 //!
@@ -37,14 +38,14 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //! Operations involving property indices are significantly more efficient than those involving
 //! access strings and should be preferred where possible.
 //! @ingroup ECObjectsGroup
-//=======================================================================================    
+//=======================================================================================
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
     , IStandaloneEnablerLocater
 /*__PUBLISH_SECTION_START__*/
     {
     //! Interface of functor that wants to process text-valued properties
-    struct IPropertyProcessor 
+    struct IPropertyProcessor
         {
         //! Callback for primitive property on instance.
         //! @return true if the desired property was found and processing should stop; else return false if processing should continue.
@@ -65,7 +66,7 @@ private:
 
 protected:
     //! Protected as part of the RefCounted pattern
-    ECOBJECTS_EXPORT ~ECEnabler(); 
+    ECOBJECTS_EXPORT ~ECEnabler();
 
     //! Subclasses of ECEnabler should implement a FactoryMethod to construct the enabler, as
     //! part of the RefCounted pattern.
@@ -73,7 +74,7 @@ protected:
     //! /code
     //!   static ____EnablerPtr CreateEnabler (ECClassCR ecClass)
     //!       {
-    //!       return new ____Enabler (ecClass);    
+    //!       return new ____Enabler (ecClass);
     //!       };
     //! /endcode
     //! where the ____ is a name specific to your subclass, and the parameters may vary per enabler.
@@ -108,6 +109,8 @@ public:
     ECOBJECTS_EXPORT ECPropertyCP               LookupECProperty (WCharCP accessString) const;
     ECOBJECTS_EXPORT bool                       IsPropertyReadOnly (uint32_t propertyIndex) const;
 
+// constructors are hidden from published API -> make it abstract in the published API
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Primarily for debugging/logging purposes. Should match your fully-qualified class name
@@ -169,7 +172,7 @@ public:
     ECOBJECTS_EXPORT StandaloneECEnablerPtr     GetEnablerForStructArrayMember (SchemaKeyCR schemaKey, WCharCP className); 
     
 #if defined (EXPERIMENTAL_TEXT_FILTER)
-    //! Call processor on all primitive-valued properties of specified type(s) on this instance. 
+    //! Call processor on all primitive-valued properties of specified type(s) on this instance.
     //! Processing is terminated if the processor returns a non-zero value.
     //! @remarks This function returns immediately with PROPERTY_PROCESSING_RESULT_Miss if the class of \a instance is in \a failedClasses.
     //! If this function detects that the class has no properties of the specified type, it will return PROPERTY_PROCESSING_RESULT_Miss and
@@ -186,7 +189,7 @@ public:
 
 /*__PUBLISH_SECTION_END__*/
 
-//=======================================================================================    
+//=======================================================================================
 //! Wraps another enabler
 //=======================================================================================    
 struct ECWrappedEnabler : ECEnabler
@@ -225,19 +228,19 @@ public:
 //=======================================================================================    
 //! Base class for all relationship enablers
 //! @ingroup ECObjectsGroup
-//=======================================================================================    
+//=======================================================================================
  struct IECRelationshipEnabler
  {
 protected:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    virtual StandaloneECRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
+    virtual IECWipRelationshipInstancePtr _CreateWipRelationshipInstance () const = 0;
 
     //! Returns the relationship class that this enabler 'enables'
     virtual ECN::ECRelationshipClassCR     _GetRelationshipClass() const = 0;
 
  public:
     //! Get a WipRelationshipInstance that is used to set relationship name and order Ids.
-    ECOBJECTS_EXPORT StandaloneECRelationshipInstancePtr  CreateWipRelationshipInstance() const;
+    ECOBJECTS_EXPORT IECWipRelationshipInstancePtr  CreateWipRelationshipInstance() const;
     //! Returns the relationship class that this enabler 'enables'
     ECOBJECTS_EXPORT ECN::ECRelationshipClassCR      GetRelationshipClass() const;
  };
@@ -280,6 +283,7 @@ protected:
                 return ++inputIndex;
             return 0;
             }
+
         
         virtual ECObjectsStatus _GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const override
             {
@@ -332,3 +336,5 @@ public:
  /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

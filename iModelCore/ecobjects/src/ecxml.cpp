@@ -140,9 +140,9 @@ WCharCP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
-        case STRENGTHDIRECTION_Forward :
+        case ECRelatedInstanceDirection::Forward :
             return ECXML_DIRECTION_FORWARD;
-        case STRENGTHDIRECTION_Backward:
+        case ECRelatedInstanceDirection::Backward:
             return ECXML_DIRECTION_BACKWARD;
         default:
             return EMPTY_STRING;
@@ -157,9 +157,9 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
     if (0 == directionString.length())
         return ECOBJECTS_STATUS_ParseError;
     if (0 == directionString.compare(ECXML_DIRECTION_BACKWARD))
-        direction = STRENGTHDIRECTION_Backward;
+        direction = ECRelatedInstanceDirection::Backward;
     else if (0 == directionString.compare(ECXML_DIRECTION_FORWARD))
-        direction = STRENGTHDIRECTION_Forward;
+        direction = ECRelatedInstanceDirection::Forward;
     else
         return ECOBJECTS_STATUS_ParseError;
         
@@ -195,7 +195,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {
-        if (0 == swscanf(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
+        if (0 == BE_STRING_UTILITIES_SWSCANF(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
             return ECOBJECTS_STATUS_ParseError;
         LOG.debugv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
@@ -208,7 +208,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
         return ECOBJECTS_STATUS_ParseError;
         }
      
-    int scanned = swscanf(cardinalityWithoutSpaces.c_str(), L"(%d,%d)", &lowerLimit, &upperLimit);
+    int scanned = BE_STRING_UTILITIES_SWSCANF(cardinalityWithoutSpaces.c_str(), L"(%d,%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECOBJECTS_STATUS_Success;
         

@@ -2,11 +2,12 @@
 |
 |     $Source: PublicApi/ECObjects/ECDBuffer.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-/*__PUBLISH_SECTION_START__*/
 #pragma once
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include "ECObjects.h"
 
@@ -19,7 +20,7 @@
 EC_TYPEDEFS(ECDBuffer);
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-    
+
 typedef uint32_t NullflagsBitmask;
 typedef uint16_t ClassIndex;
 typedef uint16_t SchemaIndex;
@@ -45,11 +46,11 @@ enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (uint32_t)
 /*=================================================================================**//**
 * @ingroup ECObjectsGroup
 * @bsistruct
-+===============+===============+===============+===============+===============+======*/      
++===============+===============+===============+===============+===============+======*/
 struct PropertyLayout
     {
 /*__PUBLISH_SECTION_END__*/
-friend struct ClassLayout;    
+friend struct ClassLayout;
 private:
     WString                 m_accessString;
     uint32_t                m_parentStructIndex;
@@ -66,9 +67,10 @@ private:
     NullflagsBitmask    m_nullflagsBitmask;
 public:
     PropertyLayout (WCharCP accessString, uint32_t psi, ECTypeDescriptor typeDescriptor, uint32_t offset, uint32_t nullflagsOffset, uint32_t nullflagsBitmask, uint32_t modifierFlags = 0,  uint32_t modifierData = 0) : //, ECPropertyCP property) :
-        m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset), 
+        m_accessString(accessString), m_parentStructIndex (psi), m_typeDescriptor(typeDescriptor), m_offset(offset), m_nullflagsOffset(nullflagsOffset),
         m_nullflagsBitmask (nullflagsBitmask), m_modifierFlags (modifierFlags), m_modifierData (modifierData) { }; //, m_property(property) {};
 
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     PropertyLayout (){}
@@ -121,7 +123,7 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 * Responsible for managing the layout of the portion of an ECD buffer storing property
 * values.
 * @ingroup ECObjectsGroup
-+===============+===============+===============+===============+===============+======*/      
++===============+===============+===============+===============+===============+======*/
 struct ClassLayout : RefCountedBase
     {
 /*__PUBLISH_SECTION_END__*/
@@ -135,21 +137,21 @@ private:
     typedef bvector<AccessStringIndexPair>                          IndicesByAccessString;
     typedef bvector<PropertyLayoutP>                                PropertyLayoutVector;
     typedef bmap<uint32_t, bvector<uint32_t> >                          LogicalStructureMap;
-    
+
     enum State
         {
         AcceptingFixedSizeProperties,
         AcceptingVariableSizeProperties,
         Closed
         };
-    
-    // These members are expected to be persisted  
+
+    // These members are expected to be persisted
     WString                 m_className;
-    
-    PropertyLayoutVector    m_propertyLayouts;      // This is the primary collection, there is a secondary map for lookup by name, below.    
+
+    PropertyLayoutVector    m_propertyLayouts;      // This is the primary collection, there is a secondary map for lookup by name, below.
     IndicesByAccessString   m_indicesByAccessString; // Always sorted; maps access strings to indices which can be used to index into PropertyLayoutVector
     LogicalStructureMap     m_logicalStructureMap;
-    
+
     // These members are transient
     uint32_t                          m_sizeOfFixedSection;
     bool                              m_isRelationshipClass;         // make this a bitmask IsRelationshipClass, OnPartialInstanceLoaded (this should allow roundtrip native-managed-native
@@ -198,7 +200,7 @@ private:
     WString                LogicalStructureToString (uint32_t parentStructIndex = 0, uint32_t indentLevel = 0) const;
     BentleyStatus          SetClass (WCharCP  className);
 
-public:    
+public:
     WString                 GetName() const;
     int                     GetUniqueId() const;
     void                    AddPropertyLayout (WCharCP accessString, PropertyLayoutR);
@@ -218,9 +220,9 @@ public:
 
     ECOBJECTS_EXPORT void                   AddPropertyDirect (WCharCP accessString, uint32_t parentStructIndex, ECTypeDescriptor typeDescriptor, uint32_t offset, uint32_t nullflagsOffset, uint32_t nullflagsBitmask, uint32_t modifierFlags, uint32_t modifierData);
     ECOBJECTS_EXPORT ECObjectsStatus        FinishLayout ();
-
     ECOBJECTS_EXPORT ClassLayoutPtr         Clone (WCharCP name = nullptr) const;
     ECOBJECTS_EXPORT void                   SetPropertyLayoutModifierData (PropertyLayoutCR layout, uint32_t modifierData);
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     //ClassLayout (){}
@@ -287,7 +289,7 @@ public:
     //! @param[in]  readOnly        Flag indicating whether this property is read-only
     //! @returns The value of readOnly if successfully set, otherwise false
     ECOBJECTS_EXPORT bool            SetPropertyReadOnly (uint32_t propertyIndex, bool readOnly) const;
-    
+
     //! Determines the number of bytes used for property data, so far
     ECOBJECTS_EXPORT uint32_t       CalculateBytesUsed(Byte const * propertyData) const;
 
@@ -306,7 +308,7 @@ typedef bvector<ClassLayoutPtr>     ClassLayoutVector;
 /*=================================================================================**//**
 * @ingroup ECObjectsGroup
 * @bsistruct
-+===============+===============+===============+===============+===============+======*/      
++===============+===============+===============+===============+===============+======*/
 struct SchemaLayout
 {
 /*__PUBLISH_SECTION_END__*/
@@ -320,6 +322,7 @@ public:
     ClassLayoutP                            GetClassLayoutP (ClassIndex classIndex) { return const_cast<ClassLayoutP>(GetClassLayout(classIndex)); }
 
     ECOBJECTS_EXPORT ClassLayoutCP           FindClassLayout (WCharCP className, ClassIndex* classIndex) const;
+//__PUBLISH_CLASS_VIRTUAL__
 /*__PUBLISH_SECTION_START__*/
 private:
     SchemaLayout (){}
@@ -560,7 +563,7 @@ private:
     //! @param shiftBy        Positive or negative! Memory will be moved and SecondaryOffsets will be adjusted by this amount
     ECObjectsStatus                   ShiftValueData(Byte * data, uint32_t bytesAllocated, PropertyLayoutCR propertyLayout, int32_t shiftBy);
     ECObjectsStatus                   ShiftArrayIndexValueData(PropertyLayoutCR propertyLayout, uint32_t arrayIndex, uint32_t arrayCount,  uint32_t endOfValueDataOffset, int32_t shiftBy);
-        
+
     ECObjectsStatus                   EnsureSpaceIsAvailable (uint32_t& offset, PropertyLayoutCR propertyLayout, uint32_t bytesNeeded);
     ECObjectsStatus                   EnsureSpaceIsAvailableForArrayIndexValue (PropertyLayoutCR propertyLayout, uint32_t arrayIndex, uint32_t bytesNeeded);
     ECObjectsStatus                   GrowPropertyValue (PropertyLayoutCR propertyLayout, uint32_t additionalbytesNeeded);
@@ -571,7 +574,7 @@ private:
 
     ECObjectsStatus                   ModifyData (Byte const* data, void const* newData, size_t dataLength);
     ECObjectsStatus                   ModifyData (uint32_t const* data, uint32_t newData);
-    ECObjectsStatus                   MoveData (Byte* to, Byte const* from, size_t dataLength); 
+    ECObjectsStatus                   MoveData (Byte* to, Byte const* from, size_t dataLength);
 
     // These methods are for internal use by ECDBuffer only. They should be used within a single scope and *must* be paired. ScopedDataAccessor helps ensure this.
     friend struct ScopedDataAccessor;
@@ -638,25 +641,25 @@ protected:
     //! Invoked after a variable-sized array is successfully resized, to allow derived classes to adjust their internal state in response if necessary.
     virtual void                    _HandleArrayResize (PropertyLayoutCP propertyLayout, uint32_t atIndex, int32_t countDelta) { };
 
-    virtual bool                    _IsMemoryInitialized () const = 0;    
-    
-    //! Get a pointer to the first byte of the ECDBuffer's data. This points to the first byte of the ECDHeader    
-    virtual Byte const *            _GetData () const = 0;
-    virtual ECObjectsStatus         _ModifyData (uint32_t offset, void const * newData, uint32_t dataLength) = 0;
-    virtual ECObjectsStatus         _MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) = 0;
-    virtual uint32_t                _GetBytesAllocated () const = 0;
-        
+    virtual bool                   _IsMemoryInitialized () const = 0;
+
+    //! Get a pointer to the first byte of the ECDBuffer's data. This points to the first byte of the ECDHeader
+    virtual Byte const *          _GetData () const = 0;
+    virtual ECObjectsStatus       _ModifyData (uint32_t offset, void const * newData, uint32_t dataLength) = 0;
+    virtual ECObjectsStatus       _MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength) = 0;
+    virtual uint32_t              _GetBytesAllocated () const = 0;
+
     //! Reallocates memory for the IECInstance and copies the old IECInstance data into the new memory
     //! You might get more memory than used asked for, but you won't get less
     //! @param additionalBytesNeeded  Additional bytes of memory needed above current allocation
-    virtual ECObjectsStatus     _GrowAllocation (uint32_t additionalBytesNeeded) = 0;
-    
+    virtual ECObjectsStatus      _GrowAllocation (uint32_t additionalBytesNeeded) = 0;
+
     //! Shrinks the allocated IECInstance data to be as small as possible
-    virtual ECObjectsStatus     _ShrinkAllocation () = 0;
-    
+    virtual ECObjectsStatus    _ShrinkAllocation () = 0;
+
     //! Free any allocated memory
     virtual void                _FreeAllocation () = 0;
-    
+
     virtual void                _SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, int flagIndex, bool enable) {};
 
     virtual void                _ClearValues() = 0;
@@ -694,6 +697,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus        CopyDataBuffer (ECDBufferCR src, bool allowClassLayoutConversion);
     ECOBJECTS_EXPORT ClassLayoutCR          GetClassLayout () const;
     ECOBJECTS_EXPORT ECObjectsStatus        RemoveArrayElements (PropertyLayoutCR propertyLayout, uint32_t removeIndex, uint32_t removeCount);
+   
     ECOBJECTS_EXPORT void                   SetPerPropertyFlag (PropertyLayoutCR propertyLayout, bool useIndex, uint32_t index, int flagIndex, bool enable);
     ECOBJECTS_EXPORT ECN::PrimitiveType     GetStructArrayPrimitiveType () const;
 
@@ -746,7 +750,7 @@ public:
     //! Attempts to copy property values from source buffer. Expects source to have a compatible class layout.
     //! @param[in] source The ECDBuffer to copy values from
     ECOBJECTS_EXPORT ECObjectsStatus        CopyFromBuffer (ECDBufferCR source);
-    };   
+    };
 
 /*__PUBLISH_SECTION_END__*/
 
@@ -764,13 +768,17 @@ private:
     ECDBufferCP         m_buffer;
     bool                m_initialState;
 
-    void                Init();
-
     void*               operator new (size_t);
     void*               operator new[] (size_t);
 public:
+    //! Use the default constructor in combination with Init if 
+    //! it is not clear at construction time whether the evaluation of calculated
+    //! properties should be done or not.
+    ECOBJECTS_EXPORT ECDBufferScope ();
     ECOBJECTS_EXPORT explicit ECDBufferScope (ECDBufferCR buffer);
     ECOBJECTS_EXPORT explicit ECDBufferScope (IECInstanceCR instance);
+    ECOBJECTS_EXPORT void Init (ECDBufferCP buffer);
+
     ECOBJECTS_EXPORT ~ECDBufferScope();
     };
 
@@ -796,3 +804,5 @@ public:
 /*__PUBLISH_SECTION_START__*/
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

@@ -1,0 +1,14 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: tests/ECObjectsPerformanceTest.run.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+PolicyFile = $(SrcRoot)/ecobjects/mki/AssertECObjectsPolicy.mki
+%include mdl.mki
+
+always:
+     $(OutputRootDir)Product/ECObjectsTests/ECObjectsTest_Performance.exe
+
+

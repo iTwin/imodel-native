@@ -66,28 +66,29 @@
 // If you add any additional ECXML typenames you must update 
 //    - enum PrimitiveType
 //    - PrimitiveECProperty::_GetTypeName
-static WCharCP ECXML_TYPENAME_BINARY             = L"binary";
-static WCharCP ECXML_TYPENAME_BOOLEAN            = L"boolean";
-static WCharCP ECXML_TYPENAME_BOOL               = L"bool";
-static WCharCP ECXML_TYPENAME_DATETIME           = L"dateTime";
-static WCharCP ECXML_TYPENAME_DOUBLE             = L"double";
-static WCharCP ECXML_TYPENAME_INTEGER            = L"int";
-static WCharCP ECXML_TYPENAME_LONG               = L"long";
-static WCharCP ECXML_TYPENAME_POINT2D            = L"point2d";
-static WCharCP ECXML_TYPENAME_POINT3D            = L"point3d";
-static WCharCP ECXML_TYPENAME_STRING             = L"string";
-static WCharCP ECXML_TYPENAME_IGEOMETRY          = L"Bentley.GeometryNET.Common.IGeometry";
-static WCharCP ECXML_TYPENAME_IGEOMETRY_GENERIC  = L"Bentley.GeometryNET.Common"; // This is used for matching incoming types to any common geometry type
-static WCharCP ECXML_TYPENAME_IGEOMETRY_LEGACY   = L"Bentley.Geometry.Common";
-static WCharCP ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC   = L"Bentley.Geometry.Common.IGeometry";
-static WCharCP EMPTY_STRING = L"";
+#define ECXML_TYPENAME_BINARY             L"binary"
+#define ECXML_TYPENAME_BOOLEAN            L"boolean"
+#define ECXML_TYPENAME_BOOL               L"bool"
+#define ECXML_TYPENAME_DATETIME           L"dateTime"
+#define ECXML_TYPENAME_DOUBLE             L"double"
+#define ECXML_TYPENAME_INTEGER            L"int"
+#define ECXML_TYPENAME_LONG               L"long"
+#define ECXML_TYPENAME_POINT2D            L"point2d"
+#define ECXML_TYPENAME_POINT3D            L"point3d"
+#define ECXML_TYPENAME_STRING             L"string"
+#define ECXML_TYPENAME_IGEOMETRY          L"Bentley.GeometryNET.Common.IGeometry"
+// This is used for matching incoming types to any common geometry type
+#define ECXML_TYPENAME_IGEOMETRY_GENERIC  L"Bentley.GeometryNET.Common"
+#define ECXML_TYPENAME_IGEOMETRY_LEGACY   L"Bentley.Geometry.Common"
+#define ECXML_TYPENAME_IGEOMETRY_LEGACY_GENERIC L"Bentley.Geometry.Common.IGeometry";
+#define EMPTY_STRING L""
 
-static WCharCP ECXML_STRENGTH_REFERENCING        = L"referencing";
-static WCharCP ECXML_STRENGTH_HOLDING            = L"holding";
-static WCharCP ECXML_STRENGTH_EMBEDDING          = L"embedding";
+#define ECXML_STRENGTH_REFERENCING        L"referencing"
+#define ECXML_STRENGTH_HOLDING            L"holding"
+#define ECXML_STRENGTH_EMBEDDING          L"embedding"
 
-static WCharCP ECXML_DIRECTION_FORWARD           = L"forward";
-static WCharCP ECXML_DIRECTION_BACKWARD          = L"backward";
+#define ECXML_DIRECTION_FORWARD           L"forward"
+#define ECXML_DIRECTION_BACKWARD          L"backward"
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
@@ -103,7 +104,7 @@ static WCharCP ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))   \
         {   \
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs  attribute", _xmlAttributeName, _elementName);     \
+        LOG.errorv (L"Invalid ECSchemaXML: %ls element must contain a %ls  attribute", WString(_xmlAttributeName, BentleyCharEncoding::Utf8).c_str(), WString(_elementName, BentleyCharEncoding::Utf8).c_str());     \
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     if (ECOBJECTS_STATUS_Success != _setInPointer->Set##_setInPropertyName (value.c_str())) \
@@ -112,7 +113,7 @@ static WCharCP ECXML_DIRECTION_BACKWARD          = L"backward";
 #define READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS(_nodeVar,_xmlAttributeName, _setInPointer, _setInPropertyName, _elementName)   \
     if (BEXML_Success != _nodeVar.GetAttributeStringValue (value, _xmlAttributeName))     \
         {   \
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  _xmlAttributeName, _elementName);     \
+        LOG.errorv (L"Invalid ECSchemaXML: %ls element must contain a %ls attribute",  WString(_xmlAttributeName, BentleyCharEncoding::Utf8).c_str(), WString(_elementName, BentleyCharEncoding::Utf8).c_str());     \
         status = SCHEMA_READ_STATUS_InvalidECSchemaXml;        \
         }       \
     else if (ECOBJECTS_STATUS_ParseError == _setInPointer->Set##_setInPropertyName (value.c_str())) \
