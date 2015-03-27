@@ -2153,9 +2153,9 @@ void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqli
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->m_aggregate->_StepAggregate((DbFunction::Context*) context, nArgs, (DbValue*)args);}
-static void aggregateFinal(sqlite3_context* context) {((AggregateFunction*)sqlite3_user_data(context))->m_aggregate->_FinishAggregate((DbFunction::Context*) context);}
-static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->m_scalar->_ComputeScalar((DbFunction::Context*) context, nArgs, (DbValue*)args);}
+static void aggregateStep(sqlite3_context* context, int nArgs, sqlite3_value** args){((AggregateFunction*)sqlite3_user_data(context))->GetAggregate ()->_StepAggregate((DbFunction::Context*) context, nArgs, (DbValue*)args);}
+static void aggregateFinal(sqlite3_context* context) { ((AggregateFunction*) sqlite3_user_data(context))->GetAggregate()->_FinishAggregate((DbFunction::Context*) context); }
+static void scalarFunc(sqlite3_context* context, int nArgs, sqlite3_value** args) {((ScalarFunction*)sqlite3_user_data(context))->GetScalar ()->_ComputeScalar((DbFunction::Context*) context, nArgs, (DbValue*)args);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
@@ -4352,7 +4352,7 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount() const
 static int rTreeMatch(RTreeMatch::QueryInfo* info)
     {
     AggregateFunction* agg = (AggregateFunction*) info->m_context;
-    return ((RTreeMatch*) agg->m_aggregate)->_TestRange(*info);
+    return ((RTreeMatch*) agg->GetAggregate ())->_TestRange(*info);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4364,7 +4364,7 @@ void DbFile::InitRTreeMatch() const
         return;
     m_flags.m_rtreeMatchValid = true;
 
-    int stat = sqlite3_rtree_query_callback(m_sqlDb, "rTreeMatch",(int(*)(sqlite3_rtree_query_info*)) rTreeMatch, &m_rtreeMatch, NULL);
+    int stat = sqlite3_rtree_query_callback(m_sqlDb, "rTreeMatch", (int(*)(sqlite3_rtree_query_info*)) rTreeMatch, &m_rtreeMatch, nullptr);
     BeAssert(BE_SQLITE_OK == stat);
 
     stat = AddAggregateFunction(m_rtreeMatch);
@@ -4377,7 +4377,7 @@ void DbFile::InitRTreeMatch() const
 void DbFile::SetRTreeMatch(RTreeMatch* tester) const
     {
     BeAssert(m_flags.m_rtreeMatchValid);
-    BeAssert(NULL == m_rtreeMatch.m_aggregate || NULL == tester);
+    BeAssert(nullptr == m_rtreeMatch.GetAggregate() || nullptr == tester);
     m_rtreeMatch.SetAggregate(tester);
     }
 
@@ -4389,7 +4389,7 @@ DbResult RTreeMatch::StepRTree(Statement& stmt)
     {
     m_db.m_dbFile->SetRTreeMatch(this);
     DbResult rc = stmt.Step();
-    m_db.m_dbFile->SetRTreeMatch(NULL);
+    m_db.m_dbFile->SetRTreeMatch(nullptr);
     return rc;
     }
 
