@@ -239,7 +239,10 @@ RealityDataPackagePtr RealityDataPackage::CreateFromString(RealityPackageStatus&
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pSource, 0, pParseError);
     if(BEXML_Success != xmlStatus)    
+        {
+        status = RealityPackageStatus::XmlReadError;
         return NULL;
+        }
 
     return RealityDataPackage::CreateFromDom(status, *pXmlDom, L"?"/*defaultName*/, pParseError);
     }
@@ -254,11 +257,13 @@ RealityDataPackagePtr RealityDataPackage::CreateFromFile(RealityPackageStatus& s
     BeXmlStatus xmlStatus = BEXML_Success;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.c_str(), pParseError);
     if(BEXML_Success != xmlStatus)    
+        {
+        status = RealityPackageStatus::XmlReadError;
         return NULL;
+        }
 
-    return RealityDataPackage::CreateFromDom(status, *pXmlDom,filename.GetFileNameWithoutExtension().c_str(), pParseError);
+    return RealityDataPackage::CreateFromDom(status, *pXmlDom, filename.GetFileNameWithoutExtension().c_str(), pParseError);
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015

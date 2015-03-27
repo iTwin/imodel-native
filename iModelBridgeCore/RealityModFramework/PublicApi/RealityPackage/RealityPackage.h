@@ -61,6 +61,7 @@ enum class RealityPackageStatus
     {
     Success                 = SUCCESS,  //!< The operation was successful
     UnsupportedVersion,                 //!< Version is either undefined or we can't handle it.
+    XmlReadError,                       //!< File access error or invalid xml stream.
     PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
     InvalidDateFormat,                  //!< The date format is invalid. It must utc time.
     InvalidLatitudeLongitude,           //!< Latitude [-90, 90] Longitude[-180, 180] 

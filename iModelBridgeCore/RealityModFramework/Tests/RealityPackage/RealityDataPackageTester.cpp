@@ -209,12 +209,6 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     #define UNKNOWN_TERRAIN_ELEMENT "<NewTerrainElement>data</NewTerrainElement>"
     #define UNKNOWN_GROUP_ELEMENT "<NewGroupElement><NewGroupData>data</NewGroupData></NewGroupElement>"
 
-//     two kind of errors: 
-//         - Known data is bad >>>  THIS is a fatal ERROR even if data is optional. If present it must be valid. be sure to report it properly. ex: bounding poly parsing ERROR.
-//         - removing UNKNOWN is the best way to avoid unclear generic ERROR.
-//         - warning/report that we encounter UNKNOWN element that were ignored.
-//         - report line number? long	xmlGetLineNo (const xmlNode * node)
-
     Utf8CP package =
         "<?xml version='1.0' encoding='UTF-8'?>"
         "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='1.0'>"
