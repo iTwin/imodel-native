@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
-// Test programs generally want to get error status back and not assert, so they call ECSchema::AssertOnXmlError (false);
+// Test programs generally want to get error status back and not BeAssert, so they call ECSchema::AssertOnXmlError (false);
 static  bool        s_noAssert = false;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
@@ -299,7 +299,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains(L"GeometryNET"))
         propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
     else
-    	propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+        propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
         
     propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetDescription().c_str());
     if (GetIsDisplayLabelDefined())
@@ -326,7 +326,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
-        LOG.errorv (L"Invalid ECSchemaXML: %hs element must contain a %hs attribute",  propertyNode.GetName(), TYPE_NAME_ATTRIBUTE);
+        LOG.errorv(L"Invalid ECSchemaXML: %ls element must contain a %ls attribute", WString(propertyNode.GetName(), BentleyCharEncoding::Utf8).c_str(), WString(TYPE_NAME_ATTRIBUTE, BentleyCharEncoding::Utf8).c_str());
         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         }
     else if (ECOBJECTS_STATUS_ParseError == this->SetTypeName (value.c_str()))
@@ -663,7 +663,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())  
 
-    if (SCHEMA_READ_STATUS_FailedToParseXml == setterStatus)
+    if (ECOBJECTS_STATUS_Success != setterStatus)
         {
         LOG.warningv (L"Defaulting the type of ECProperty '%ls' to '%ls' in reaction to non-fatal parse error.", this->GetName().c_str(), this->GetTypeName().c_str());
         return SCHEMA_READ_STATUS_Success;
@@ -884,7 +884,7 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (uint32_t minOccurs)
 ECObjectsStatus ArrayECProperty::SetMinOccurs (WStringCR minOccurs)
     {    
     uint32_t iMinOccurs;
-    int count = swscanf (minOccurs.c_str(), L"%u", &iMinOccurs);
+    int count = BE_STRING_UTILITIES_SWSCANF (minOccurs.c_str(), L"%u", &iMinOccurs);
     if (count != 1)
         {
         LOG.errorv (L"Failed to set MinOccurs of ECProperty '%ls' to '%ls' because the value could not be parsed.  It must be a valid unsigned integer.",
@@ -924,7 +924,7 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (uint32_t maxOccurs)
 ECObjectsStatus ArrayECProperty::SetMaxOccurs (WStringCR maxOccurs)
     {    
     uint32_t iMaxOccurs;
-    int count = swscanf (maxOccurs.c_str(), L"%u", &iMaxOccurs);
+    int count = BE_STRING_UTILITIES_SWSCANF (maxOccurs.c_str(), L"%u", &iMaxOccurs);
     if (count != 1)
         {
         if (0 == wcscmp (maxOccurs.c_str(), ECXML_UNBOUNDED))
@@ -972,13 +972,26 @@ bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP            IECTypeAdapterContext::GetProperty() const                                      { return _GetProperty(); }
 uint32_t                IECTypeAdapterContext::GetComponentIndex() const                                { return _GetComponentIndex(); }
-WCharCP                 IECTypeAdapterContext::GetAccessString() const                                  { return _GetAccessString(); }
 bool                    IECTypeAdapterContext::Is3d() const                                             { return _Is3d(); }
-IECInstanceInterfaceCR  IECTypeAdapterContext::GetInstanceInterface() const                             { return _GetInstanceInterface(); }
+IECInstanceCP           IECTypeAdapterContext::GetECInstance() const                                    { return _GetECInstance(); }
+ECObjectsStatus         IECTypeAdapterContext::GetInstanceValue (ECValueR v, WCharCP accessor, uint32_t arrayIndex) const { return _GetInstanceValue (v, accessor, arrayIndex); }
 EvaluationOptions       IECTypeAdapterContext::GetEvaluationOptions () const                            { return _GetEvaluationOptions (); };
 EvaluationOptions       IECTypeAdapterContext::_GetEvaluationOptions () const                           { return m_evalOptions; };
 void                    IECTypeAdapterContext::SetEvaluationOptions (EvaluationOptions evalOptions)     { return _SetEvaluationOptions (evalOptions); };
 void                    IECTypeAdapterContext::_SetEvaluationOptions (EvaluationOptions evalOptions)    { m_evalOptions = evalOptions; };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus IECTypeAdapterContext::_GetInstanceValue (ECValueR v, WCharCP accessor, uint32_t arrayIndex) const
+    {
+    IECInstanceCP instance = GetECInstance();
+    if (NULL != instance)
+        return -1 != arrayIndex ? instance->GetValue (v, accessor, arrayIndex) : instance->GetValue (v, accessor);
+    else
+        return ECOBJECTS_STATUS_OperationNotSupported;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13

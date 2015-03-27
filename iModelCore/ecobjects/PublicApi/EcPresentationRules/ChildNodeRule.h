@@ -5,8 +5,13 @@
 |  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
+
+#include <ECPresentationRules/PresentationRule.h>
+#include <ECPresentationRules/PresentationRulesTypes.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -20,11 +25,13 @@ specifications by using sub-conditions.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SubCondition
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         WString                    m_condition;
         SubConditionList           m_subConditions;
         ChildNodeSpecificationList m_specifications;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT SubCondition ();
@@ -58,6 +65,7 @@ ChildNodeRule defines rules for generating child nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ChildNodeRule : public PresentationRule
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         RuleTargetTree             m_targetTree;
         SubConditionList           m_subConditions;
@@ -74,6 +82,7 @@ struct ChildNodeRule : public PresentationRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT ChildNodeRule ();
@@ -110,17 +119,13 @@ RootNodeRule defines rules for generating root nodes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RootNodeRule : public ChildNodeRule
     {
+    /*__PUBLISH_SECTION_END__*/
+    private:
+        bool m_autoExpand;
+
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
         ECOBJECTS_EXPORT virtual CharCP                 _GetXmlElementName () override;
-        bool m_autoExpand;
-
-    public:
-        //! Constructor. It is used to initialize the rule with default settings.
-        ECOBJECTS_EXPORT RootNodeRule ();
-
-        //! Constructor.
-        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
@@ -128,8 +133,18 @@ struct RootNodeRule : public ChildNodeRule
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) override;
 
+    /*__PUBLISH_SECTION_START__*/
+    public:
+        //! Constructor. It is used to initialize the rule with default settings.
+        ECOBJECTS_EXPORT RootNodeRule ();
+
+        //! Constructor.
+        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
+
         //! Returns flag which determines if nodes have to be automatically expanded.
         ECOBJECTS_EXPORT bool                           GetAutoExpand (void);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

@@ -2,11 +2,13 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedPropertiesSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 #include <ECPresentationRules/PresentationRuleSet.h>
 
@@ -19,6 +21,7 @@ properties of related classes.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RelatedPropertiesSpecification
     {
+    /*__PUBLISH_SECTION_END__*/
     private:
         RequiredRelationDirection          m_requiredDirection;
         WString                            m_relationshipClassNames;
@@ -26,6 +29,7 @@ struct RelatedPropertiesSpecification
         WString                            m_propertyNames;
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
 
+    /*__PUBLISH_SECTION_START__*/
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECOBJECTS_EXPORT RelatedPropertiesSpecification ();
@@ -68,3 +72,5 @@ struct RelatedPropertiesSpecification
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+/** @endcond */

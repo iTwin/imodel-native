@@ -7,12 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
 
-#if defined (_WIN32)    // WIP_NONPORT - regex
-    #define HAVE_REGEX
-    #include    <regex>
-#elif defined (__unix__)
-    // regex is coming in C++0x
-#endif
+#include    <regex>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -21,9 +16,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ParserRegex
     {
-#if defined (HAVE_REGEX)
 private:
-    std::tr1::wregex        m_regex;
+    STD_TR1::wregex         m_regex;
     bvector<WString>        m_capturedPropertyNames;        // order indicates capture group number - 1
 
     ParserRegex() { }
@@ -31,7 +25,6 @@ private:
     bool ConvertRegexString (WStringR converted, WCharCP in);
     bool ProcessCaptureGroup (WStringR converted, WCharCP& in, WCharCP end, int32_t& depth);
     bool ProcessRegex (WStringR converted, WCharCP& in, WCharCP end, int32_t& depth);
-#endif
 public:
     bool                Apply (IECInstanceR instance, WCharCP calculatedValue) const;
 
@@ -43,7 +36,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
     {
-#if defined (HAVE_REGEX)
     if (regexStr == NULL)
         return NULL;
 
@@ -53,7 +45,7 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
         {
         try
             {
-            parserRegex->m_regex = std::tr1::wregex (fixedRegexStr.c_str(), doNotUseECMA ? std::tr1::regex_constants::extended : std::tr1::regex_constants::ECMAScript);
+            parserRegex->m_regex = STD_TR1::wregex (fixedRegexStr.c_str(), doNotUseECMA ? STD_TR1::regex_constants::extended : STD_TR1::regex_constants::ECMAScript);
             }
         catch (...)
             {
@@ -68,12 +60,7 @@ ParserRegexP ParserRegex::Create (WCharCP regexStr, bool doNotUseECMA)
         }
 
     return parserRegex;
-#else
-    return NULL;
-#endif
     }
-
-#if defined (HAVE_REGEX)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
@@ -168,8 +155,8 @@ static bool SETVALUE_SUCCEEDED (ECObjectsStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
     {
-    std::tr1::match_results<WCharCP> matches;
-    if (!std::tr1::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
+    STD_TR1::match_results<WCharCP> matches;
+    if (!STD_TR1::regex_match (calculatedValue, matches, m_regex) || matches.size() != m_capturedPropertyNames.size() + 1)
         return false;
 
     for (size_t i = 0; i < m_capturedPropertyNames.size(); i++)
@@ -201,8 +188,6 @@ bool ParserRegex::Apply (IECInstanceR instance, WCharCP calculatedValue) const
 
     return true;
     }
-
-#endif  // HAVE_REGEX
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
@@ -284,7 +269,11 @@ CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPr
             {
             parserRegex = ParserRegex::Create (v.GetString(), doNotUseECMAScript);
             if (NULL == parserRegex)
-                { BeAssert (false && "A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression"); return NULL; }
+                { 
+                // ###TODO: Comment out BeAssert until Graphite CalculatedECProperty support is in better shape
+                // BeAssert (false && "A non-read-only non-default CalculatedECPropertySpecification must provide a valid ParserRegularExpression"); 
+                return NULL; 
+                }
             }
         }
 
@@ -337,7 +326,7 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
 
                 if (nullptr != typeAdapter)
                     {
-                    IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*ecprop, instance, accessString);
+                    IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*ecprop, instance);
                     context->SetEvaluationOptions (m_evaluationOptions);
 
                     if ((allowTypeConversions || enforceGlobalRepresentation) && typeAdapter->RequiresExpressionTypeConversion (m_evaluationOptions) && !typeAdapter->ConvertFromExpressionType (exprValue, *context))
@@ -402,12 +391,10 @@ ECObjectsStatus CalculatedPropertySpecification::UpdateDependentProperties (ECVa
         return ECOBJECTS_STATUS_OperationNotSupported;          // only supported for strings
     else if (NULL == m_parserRegex)
         return ECOBJECTS_STATUS_UnableToSetReadOnlyProperty;
-
     else
-        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_Error;
+        return m_parserRegex->Apply (instance, v.GetString()) ? ECOBJECTS_STATUS_Success : ECOBJECTS_STATUS_ParseError;
     }
 
-#undef HAVE_REGEX
 
 END_BENTLEY_ECOBJECT_NAMESPACE
 

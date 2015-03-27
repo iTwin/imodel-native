@@ -50,14 +50,16 @@ private:
     static void LogPropertyNotFoundError (WCharCP propertyName);
 
 public:
-    //! Retrieves the content of the \b %DateTimeInfo custom attribute from the specified date time ECProperty.
-    //! @remarks The \b %DateTimeInfo custom attribute is defined in the standard schema \b Bentley_Standard_CustomAttributes.
-    //!          See also DateTimeInfo.
-    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute
+    //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
+    //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
+    //! @b Bentley_Standard_CustomAttributes) on a date time ECProperty.
+    //! See also DateTimeInfo.
+    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
+    //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return true if \p dateTimeProperty contains the %DateTimeInfo custom attribute, false if \p dateTimeProperty 
-    //!         doesn't contain the %DateTimeInfo custom attribute or in case of errors.
-    static bool TryGetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
+    //! @return ::ECOBJECTS_STATUS_Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
+    //! is not of type ::PRIMITIVETYPE_DateTime. 
+    static ECObjectsStatus GetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
