@@ -2760,17 +2760,25 @@ public:
     //! See #SetExpirationDate.
     BE_SQLITE_EXPORT bool IsExpired() const;
 
-    //! Get the expiration date that was set for this file.
-    //! @param[out] xdate   The expiration date, if any.
+    //! @deprecated QueryExpirationDate - note the difference in return values
     //! @return BE_SQLITE_OK if this file has an expiration date, BE_SQLITE_NOTFOUND if this file does not have an expiration data, or BE_SQLITE_ERROR if the expiration date could not be read.
-    //! See #SetExpirationDate, #IsExpired
     BE_SQLITE_EXPORT DbResult GetExpirationDate (DateTime& xdate) const;
 
-    //! Set the expiration date for this file.
-    //! @param[in] xdate   The expiration date. <em>Must be UTC.</em>
+    //! @deprecated SaveExpirationDate
     //! @return non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the file.
-    //! See #GetExpirationDate, #IsExpired
     BE_SQLITE_EXPORT DbResult SetExpirationDate (DateTime const& xdate);
+
+    //! Query the ExpirationDate property of this database.
+    //! @param[out] xdate   The expiration date, if any.
+    //! @return BE_SQLITE_ROW if the ExpirationDate property was successfully found, BE_SQLITE_NOTFOUND if this database does not have an expiration data, or BE_SQLITE_ERROR if the expiration date could not be read.
+    //! See #SaveExpirationDate, #IsExpired
+    BE_SQLITE_EXPORT DbResult QueryExpirationDate (DateTime& xdate) const;
+
+    //! Saves the specified date as the ExpirationDate property of the database.
+    //! @param[in] xdate   The expiration date. <em>Must be UTC.</em>
+    //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
+    //! See #QueryExpirationDate, #IsExpired
+    BE_SQLITE_EXPORT DbResult SaveExpirationDate (DateTime const& xdate);
 };
 
 //__PUBLISH_SECTION_END__

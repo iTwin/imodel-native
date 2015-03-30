@@ -2050,7 +2050,7 @@ DbResult Db::OpenBeSQLiteDb (Utf8CP dbName, OpenParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetExpirationDate (DateTime& xdate) const
+DbResult Db::QueryExpirationDate (DateTime& xdate) const
     {
     if (!IsDbOpen())
         return BE_SQLITE_ERROR;
@@ -2068,18 +2068,39 @@ DbResult Db::GetExpirationDate (DateTime& xdate) const
         return BE_SQLITE_ERROR;
         }
 
-    return BE_SQLITE_OK;
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* DEPRECATED function - remove in Graphite06
+* @bsimethod                                    Sam.Wilson                      06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::GetExpirationDate (DateTime& xdate) const
+    {
+    DbResult result = QueryExpirationDate(xdate);
+    if (BE_SQLITE_ROW == result)
+        result = BE_SQLITE_OK;        // preserve legacy return value for now...
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::SetExpirationDate (DateTime const& xdate)
+DbResult Db::SaveExpirationDate (DateTime const& xdate)
     {
     if (xdate.IsValid() && xdate.GetInfo().GetKind() != DateTime::Kind::Utc)
         return BE_SQLITE_ERROR;
 
     return SavePropertyString (Properties::ExpirationDate(), Utf8String(xdate.ToString()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* DEPRECATED function - remove in Graphite06
+* @bsimethod                                    Sam.Wilson                      06/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SetExpirationDate (DateTime const& xdate)
+    {
+    return SaveExpirationDate(xdate);
     }
 
 /*---------------------------------------------------------------------------------**//**
