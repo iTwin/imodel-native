@@ -2632,24 +2632,32 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         // see if we can find the attributes corresponding to the relationship instance ids.
         WString sourceInstanceId;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceInstanceId, SOURCEINSTANCEID_ATTRIBUTE))
-            return INSTANCE_READ_STATUS_EmptyElement;
+            LOG.warningv (L"Source InstanceId not set on serialized relationship instance");
 
         WString sourceClassName;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceClassName, SOURCECLASS_ATTRIBUTE))
-            return INSTANCE_READ_STATUS_EmptyElement;
+            LOG.warningv (L"Source className not set on serialized relationship instance");
 
         WString targetInstanceId;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetInstanceId, TARGETINSTANCEID_ATTRIBUTE))
-            return INSTANCE_READ_STATUS_EmptyElement;
+            LOG.warningv (L"Target InstanceId not set on serialized relationship instance");
 
         WString targetClassName;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetClassName, TARGETCLASS_ATTRIBUTE))
-            return INSTANCE_READ_STATUS_EmptyElement;
+            LOG.warningv (L"Target className not set on serialized relationship instance");
 
-        IECInstancePtr source = CreateConstraintInstance(sourceClassName, sourceInstanceId, schema);
-        relationshipInstance->SetSource(source.get());
-        IECInstancePtr target = CreateConstraintInstance(targetClassName, targetInstanceId, schema);
-        relationshipInstance->SetTarget(target.get());
+        if (!WString::IsNullOrEmpty(sourceInstanceId.c_str()) && !WString::IsNullOrEmpty(sourceClassName.c_str()))
+            {
+            IECInstancePtr source = CreateConstraintInstance(sourceClassName, sourceInstanceId, schema);
+            if (source.IsValid())
+                relationshipInstance->SetSource(source.get());
+            }
+        if (!WString::IsNullOrEmpty(targetInstanceId.c_str()) && !WString::IsNullOrEmpty(targetClassName.c_str()))
+            {
+            IECInstancePtr target = CreateConstraintInstance(targetClassName, targetInstanceId, schema);
+            if (target.IsValid())
+                relationshipInstance->SetTarget(target.get());
+            }
         }
 
     return INSTANCE_READ_STATUS_Success;
