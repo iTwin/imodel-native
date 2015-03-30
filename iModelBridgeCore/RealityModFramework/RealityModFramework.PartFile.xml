@@ -44,7 +44,24 @@
         <SubPart PartName="RealityPackage"/>
     </Part>
 
+    <Part Name="RealityPlatformUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke"
+          BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)RealityModFramework/Tests/RealityPlatform/ -dBEGTEST_NAME=RealityPlatform -dBEGTEST_DEPENDENCIES=$(SrcRoot)RealityModFramework/Tests/dependencies.mki">
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="RealityPlatform"/>
+    </Part>
+
     <Part Name="RealityPackage-Tested">
+        <SubPart PartName="RealityPackageUnitTests"/>
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+    </Part>
+
+    <Part Name="RealityPlatform-Tested">
+        <SubPart PartName="RealityPlatformUnitTests"/>
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+    </Part>
+
+    <Part Name="RealityFramework-Tested">
+        <SubPart PartName="RealityPlatformUnitTests"/>
         <SubPart PartName="RealityPackageUnitTests"/>
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
     </Part>
@@ -100,10 +117,8 @@
 
 	
     <Product Name="RealityModFramework">
-        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityFramework-Tested"/>
         <SubPart PartName="RealityDataHandlerTester"/>
-        <SubPart PartName="RealityPackage"/>
-        <SubPart PartName="RealityPackage-Tested"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
