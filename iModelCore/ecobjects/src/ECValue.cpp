@@ -1447,7 +1447,7 @@ BentleyStatus ECValue::SetIGeometry(IGeometryCR geometry)
     m_primitiveType = PRIMITIVETYPE_IGeometry;
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes (geometry, buffer);
-    return SetBinaryInternal(buffer.data(), buffer.size());
+    return SetBinaryInternal(buffer.data(), buffer.size(), true);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     01/10
